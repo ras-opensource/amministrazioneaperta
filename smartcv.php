@@ -497,7 +497,7 @@ else $curpage="first-page";
     </form>
   </div>
 </div>
-  <div id="third-page" style="text-align: center; align: center; margin-left: 20%; width: 60%; z-index:6; padding: 0.2em;">
+  <div id="third-page" style="text-align: center; text-align: center; margin-left: 20%; width: 60%; z-index:6; padding: 0.2em;">
       <p>Benvenuta/o</p>
       <p>
         Di seguito sono indicate le informazioni che hai già inserito (aggiornate in data: <span id="aggiornamento_text"><?php echo $aggiornamento?></span>):
@@ -560,7 +560,7 @@ else $curpage="first-page";
         </p>
       </p>
   </div>
-  <div id="second-page" style="text-align: center; align: center; margin-left: 20%; width: 60%; z-index:6; padding: 0.2em;">
+  <div id="second-page" style="text-align: center; text-align: center; margin-left: 20%; width: 60%; z-index:6; padding: 0.2em;">
       <p>Benvenuta/o</p>
       <p>Questa è la prima volta che accedi alla piattaforma o non hai ancora inserito i dati del tuo profilo,<br/> fai click <a href='#' id='inserisci'>qui <img src='immagini/icon-modify.png' class='aa-icon-modify' alt='modifica'/></a> per inserire i tuoi dati.</p>
       <div style="text-align: left;padding: 1em;" class="ui-widget-content ui-corner-all">
