@@ -1,0 +1,16 @@
+.fasi-add { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;}
+.fasi-mod { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;}
+.fasi-del { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;}
+
+.azioni-add { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;}
+.azioni-mod { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;}
+.azioni-del { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;}
+
+.impatto-mod {cursor: pointer;}
+
+.cause-add { cursor: pointer;}
+.cause-mod { cursor: pointer;}
+.cause-del { cursor: pointer;}
+
+.evidenzia:hover {background-color: #f5f5f5;}
+.AA-processi-stats-row-rischio:odd {background-color: #f5f5f5;}

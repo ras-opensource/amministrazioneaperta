@@ -1,0 +1,90 @@
+.menutab {
+	border: 1px ridge #0099FF;
+}
+.mainmenu {
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	border-right-style: none;
+	border-left-style: none;
+	border-top-color: #00CCCC;
+	border-right-color: #00CCCC;
+	border-bottom-color: #00CCCC;
+	border-left-color: #00CCCC;
+	border-top-style: none;
+	border-bottom-style: groove;
+}
+.bordosu {
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	border-top-style: groove;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-color: #0099FF;
+	border-right-color: #0099FF;
+	border-bottom-color: #0099FF;
+	border-left-color: #0099FF;
+}
+.bordogiu {
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: dotted;
+	border-left-style: none;
+	border-top-color: #0099FF;
+	border-right-color: #0099FF;
+	border-bottom-color: #0099FF;
+	border-left-color: #0099FF;
+}
+.sezione {
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-bottom-width: 1px;
+	border-left-width: 1px;
+	border-top-style: groove;
+	border-right-style: none;
+	border-bottom-style: groove;
+	border-left-style: none;
+	border-top-color: #0099FF;
+	border-right-color: #0099FF;
+	border-bottom-color: #0099FF;
+	border-left-color: #0099FF;
+}
+
+.manina
+{
+	cursor: pointer;
+}
+a:link,a:active
+{
+	color: #000066;
+	text-decoration: none;
+}
+a:visited
+{
+	text-decoration: none;
+}
+a:hover
+{
+	color: #2233ff;
+	text-decoration: none;
+}
+html
+{
+	font-size: 1em; font-family: verdana,sans-serif;
+}
+
+li
+{
+	cursor: pointer;
+}
+
+.fasi-add { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer;}
+
