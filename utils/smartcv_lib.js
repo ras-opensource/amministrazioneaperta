@@ -300,7 +300,7 @@ $(function() {
         console.log("Seleziona la struttura");
 
         params={
-            getURL: "admin/gest_schede/system_ops.php?task=struttura-utente",
+            getURL: "utils/system_ops.php?task=struttura-utente",
             successFunction: SelectStruct,
             id_assessorato: $("#id_assessorato").val(),
             id_direzione: $("#id_direzione").val(),
