@@ -34,7 +34,7 @@ class Database
 
 	static protected $LAST_INSERT_DB=0;
 	
-	function Database( $host='localhost', $user='monitspese', $pass='1q2w3e4r', $db='monitspese', $utf8=true)
+	function Database( $host='localhost', $user='user', $pass='pwd', $db='db', $utf8=true)
 	{
 		$connessione = new mysqli($host , $user, $pass, $db);
 		if($connessione->connect_errno)
