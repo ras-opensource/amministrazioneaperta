@@ -4656,7 +4656,10 @@ async function AA_UserAuth(params=null)
                                 if(result.status.value==0)
                                 {
                                     $$("AA_UserAuthDlg").close();
-                                    AA_MainApp.ui.MainUI.refresh();
+                                    //ricarica la pagina
+                                    window.location.reload();
+
+                                    //AA_MainApp.ui.MainUI.refresh();
                                     return;
                                 }
                                 else
