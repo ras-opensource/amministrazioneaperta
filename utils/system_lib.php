@@ -7949,6 +7949,7 @@ Class AA_JSON_Template_Select extends AA_JSON_Template_Generic
         
         parent::__construct($id,$props);
     }
+    
 }
 
 //Classe per la gestione del textarea
