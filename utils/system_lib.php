@@ -232,11 +232,11 @@ Class AA_Database extends PDO_Database
 
 	public function __construct($bReset=false)
 	{
-            if(!$this->Initialize($this->AA_DBNAME,$this->AA_DBHOST,$this->AA_DBUSER,$this->AA_DBPWD,$bReset))
-            {
-                AA_Log::Log(__METHOD__." - Errore nella connessione al DB: ".$this->GetErrorMessage(),100);
-                return;
-            }
+        if(!$this->Initialize(AA_Config::AA_DBNAME,AA_Config::AA_DBHOST,AA_Config::AA_DBUSER,AA_Config::AA_DBPWD,$bReset))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella connessione al DB: ".$this->GetErrorMessage(),100);
+            return;
+        }
 	}
 }
 #-----------------------------
