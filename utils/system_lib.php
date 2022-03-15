@@ -225,10 +225,10 @@ class AA_Log
 Class AA_Database extends PDO_Database
 {
     //Parametri di connessione al DB
-    private $AA_DBHOST="localhost";
-    private $AA_DBNAME="monitspese";
-    private $AA_DBUSER="root";
-    private $AA_DBPWD="Ab123456";
+    private $AA_DBHOST=AA_Config::AA_DBHOST;
+    private $AA_DBNAME=AA_Config::AA_DBNAME;
+    private $AA_DBUSER=AA_config::AA_DBUSER;
+    private $AA_DBPWD=AA_Config::AA_DBPWD;
 
 	public function __construct($bReset=false)
 	{
