@@ -1440,7 +1440,7 @@ function AA_Module(id="AA_MODULE_DUMMY",name="Modulo generico")
     
     this.updateSearchParams = function (params) {}; //Funzione per l'aggiornamento dei parametri di ricerca
     this.resetSearchParams = function (params) {}; //Funzione per il reset dei parametri di ricerca
-    this.taskManager = "admin/gest_schede/system_ops.php"; //URL del task manager
+    this.taskManager = "utils/system_ops.php"; //URL del task manager
     this.content = {}; //Contenuto del modulo
     this.contentType = "json"; //tipo di contenuto "json","xml","text"
     this.refreshSectionContentDefault = async function (section_id = "", params="", postParams = ""){
@@ -2804,7 +2804,7 @@ var AA_MainApp={
     bootUpFunction: AA_DefaultSystemInitialization,
     
     //task manager
-    taskManager: "admin/gest_schede/system_ops.php",
+    taskManager: "utils/system_ops.php",
     
     //utility functions
     utils:{
