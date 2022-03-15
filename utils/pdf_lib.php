@@ -219,7 +219,7 @@ Class AA_PDF_Document
         $this->HeadContent=$var;
     }
 
-    public function __construct($id="generic_doc", $page_format=AA_PDF_PAGE_FORMAT_A4_PORTRAIT)
+    public function __construct($id="generic_doc", $page_format="AA_PDF_PAGE_FORMAT_A4_PORTRAIT")
     {
         //error_log(get_class()."->__construct($id)");
         
@@ -944,11 +944,11 @@ Class AA_PDF_Document
 
 Class AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE extends AA_PDF_Page
 {
-    public function __construct($doc="")
+    public function __construct($doc=null)
     {
         parent::__construct($doc);
 
-        if($doc !="")
+        if($doc instanceof AA_PDF_Document)
         {
             $title=$doc->GetTitle();
             $logoImg=$doc->GetLogoImage();
