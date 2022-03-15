@@ -1,5 +1,5 @@
 <?php
-
+include_once "config.php";
 class Database
 {
 	protected $oSql=null;
@@ -34,7 +34,7 @@ class Database
 
 	static protected $LAST_INSERT_DB=0;
 	
-	function Database( $host='localhost', $user='root', $pass='Ab123456', $db='monitspese', $utf8=true)
+	function Database( $host=AA_Config::AA_DBHOST, $user=AA_Config::AA_DBUSER, $pass=AA_Config::AA_DBPWD, $db=AA_Config::AA_DBNAME, $utf8=true)
 	{
 		$connessione = new mysqli($host , $user, $pass, $db);
 		if($connessione->connect_errno)
