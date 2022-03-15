@@ -15,6 +15,7 @@ if(isset($_REQUEST['email']))
         $error=true;
     }
     else $result="Le nuove credenziali sono state inviate alla mail indicata.";
+    
 }
 die("<status id='status'>0</status><error id='error'>$result</error>");
 ?> 
