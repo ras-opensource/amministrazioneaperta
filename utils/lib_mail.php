@@ -18,7 +18,7 @@ $mail_error = "";
 
 function SendMail($Tolist,$CClist,$subject,$body,$allegati=array(), $priority=null, $isHtml=true)
 {
-    $mail_error=="";
+    $mail_error="";
 
     if(!is_array($Tolist))
     {
