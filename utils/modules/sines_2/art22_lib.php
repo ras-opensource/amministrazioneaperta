@@ -1,5 +1,5 @@
 <?php
-include_once "../../system_lib.php";
+include_once "system_lib.php";
 
 //Costanti
 class AA_Organismi_Const
