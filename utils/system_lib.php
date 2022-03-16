@@ -1032,7 +1032,7 @@ class AA_User
 
 
     //Autenticazione via mail OTP - passo 1
-    static public function MailOTPAuthSend($email=null)
+    static public function MailOTPAuthSend($email=null,$register=true)
     {
         AA_Log::Log(get_class()."->MailOTPAuthSend($email) - Authenticate mail OTP");
 
@@ -1044,12 +1044,20 @@ class AA_User
             return false;
         }
 
-        //Verifica se la mail è già registrata sul database.
-        $registered=self::MailOTPAuthRegisterEmail($email);
-        if(!$registered)
+        if($register)
         {
-            AA_Log::Log(get_class()."->MailOTPAuthSend($email) - registrazione email fallita.",100,true,true);
-            return false;
+            //Verifica se la mail è già registrata sul database (SmartCV).
+            $registered=self::MailOTPAuthRegisterEmail($email);
+            if(!$registered)
+            {
+                AA_Log::Log(get_class()."->MailOTPAuthSend($email) - registrazione email fallita.",100,true,true);
+                return false;
+            }
+        }
+        else
+        {
+            //Verifica che alla email sia associato un utente esistente e valido
+            //to do
         }
 
         //genera ed invia il codice di controllo alla email indicata
@@ -1060,17 +1068,22 @@ class AA_User
         $code=substr(md5(uniqid(mt_rand(), true)) , 0, 5);
         $_SESSION['MailOTP-code']=$code;
 
-        //Registra il codice nel db
-        $db=new Database();
-        $query="UPDATE email_login set codice='".$code."' WHERE email='".$email."' LIMIT 1";
-        if(!$db->Query($query))
+        //------ Procedura smartCV
+        if($register)
         {
-            AA_Log::Log(get_class()."->MailOTPAuthSend($email) - errore: ".$db->lastError." - nella query: ".$query,100,true,true);
-            return false;
+            //Registra il codice nel db
+            $db=new AA_Database();
+            $query="UPDATE email_login set codice='".$code."' WHERE email='".addslashes($email)."' LIMIT 1";
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(get_class()."->MailOTPAuthSend($email) - errore: ".$db->GetErrorMessage()." - nella query: ".$query,100,true,true);
+                return false;
+            }
         }
+        //---------------------------
 
         $subject="Amministrazione Aperta - Verifica email";
-        $body="Stai ricevendo questa email perchè è stai cercando di accedere alla procedura di caricamento del curriculum vitae sulla piattaforma \"Amministrazione Aperta\" della Regione Autonoma della Sardegna";
+        $body="Stai ricevendo questa email perchè è stai cercando di accedere sulla piattaforma \"Amministrazione Aperta\" della Regione Autonoma della Sardegna";
         $body.="di seguito è riportato il codice di verifica da inserire sulla pagina di autenticazione:<br/>";
         $body.="<p>codice di verifica: <span style='font-weight: bold; font-size: 150%;'>".$code."</span></p>";
         $body.="<p>Qualora non sia stato tu ad avviare la procedura di verifica, puoi ignorare questo messaggio o segnalare l'anomalia alla casella: amministrazioneaperta@regione.sardegna.it</p>";
