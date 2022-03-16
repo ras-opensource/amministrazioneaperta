@@ -20,6 +20,15 @@ Class AA_Config
     const AA_EMAIL_FROM="you@example.org";
     const AA_EMAIL_REPLYTO="you@example.org";
     const AA_EMAIL_FRONT="Your organization";
+
+    //Cartella di archiviazione uploads (percorso assoluto)
+    const AA_UPLOADS_PATH="/home/sitod/uploads";
+    
+    //Cartella moduli (percorso relativo alla root)
+    const AA_MODULES_PATH="utils/modules";
+
+    //Percorso root applicazione
+    const AA_WWW_ROOT="/web/amministrazione_aperta";
 }
 
 //percorso librerie
