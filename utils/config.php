@@ -8,7 +8,7 @@ Class AA_Config
     const AA_DBPWD="dbpwd";
 
     //Persorso principale delle librerie
-    const AA_LIB_PATH="/home/sitod/web/amministrazione_aperta/utils";
+    const AA_LIB_PATH="";
 
     //Locale
     const AA_LOCALE="it_IT";
