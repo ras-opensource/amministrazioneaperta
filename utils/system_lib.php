@@ -9,7 +9,13 @@ class AA_Const
     //Percorso fisico della cartella di archiviazione
     const AA_UPLOADS_PATH=AA_Config::AA_UPLOADS_PATH;
     const AA_MODULES_PATH=AA_Config::AA_MODULES_PATH;
+
+    //Tabella db oggetti
+    const AA_DBTABLE_OBJECTS="aa_objects";
     
+    //tabella db moduli
+    const AA_DBTABLE_MODULES="aa_platform_modules";
+
     //Permessi
     const AA_PERMS_NONE=0;
     const AA_PERMS_READ=1;
