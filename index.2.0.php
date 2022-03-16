@@ -30,7 +30,7 @@ $user=AA_User::GetCurrentUser();
 <script src="utils/jquery-ui.min.js"></script>
 <script type="text/javascript" src="utils/webix/codebase/webix.min.js"></script>
 <script type="text/javascript" src="utils/pdfobject.min.js"></script>
-<script src="utils/system_lib.js"></script>
+<script type="text/javascript" src="utils/system_lib.js"></script>
 <script>
     //Abilita la gestione dell'interfaccia grafica integrata
     AA_MainApp.ui.enableGui=true;
