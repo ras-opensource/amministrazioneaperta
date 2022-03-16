@@ -13,10 +13,13 @@ Class AA_Config
     //Locale
     const AA_LOCALE="it_IT";
 
-    //Parametri server SMTP
+    //Parametri server SMTP e invio mail
     const AA_SMTP_SERVER="192.168.0.1";
     const AA_SMTP_USERNAME="smtp_user";
     const AA_SMTP_PWD="smtp_pwd";
+    const AA_EMAIL_FROM="you@example.org";
+    const AA_EMAIL_REPLYTO="you@example.org";
+    const AA_EMAIL_FRONT="Your organization";
 }
 
 //percorso librerie
