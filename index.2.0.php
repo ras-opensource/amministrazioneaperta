@@ -20,7 +20,6 @@ $user=AA_User::GetCurrentUser();
 <title>Amministrazione Aperta</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link rel="stylesheet" href="stili/jquery-ui.css" />
-<link rel="stylesheet" href="stili/jstree/default/style.min.css" />
 <link rel="stylesheet" type="text/css" href="utils/webix/codebase/webix.min.css" />
 <link rel="stylesheet" href="stili/mdi/css/materialdesignicons.min.css" type="text/css" />
 <link href="stili/system.css" rel="stylesheet" type="text/css" />
