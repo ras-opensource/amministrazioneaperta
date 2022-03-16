@@ -288,7 +288,7 @@ class AA_Organismi_Const
     {
         $result="<AA_Organismi_const>";
         $result.="<tipologia_organismi>";
-        foreach(AA_Incarichi_Const::GetTipoIncarichi() as $key=>$value)
+        foreach(AA_Organismi_Const::GetTipoOrganismi() as $key=>$value)
         {
             $result.='<tipo_organismo id="'.$key.'">';
             $result.='<descrizione>'.$value.'</descrizione>';
@@ -499,7 +499,7 @@ class AA_Organismi extends AA_Object
         $db=new AA_Database();
         if(!$db->Query($query))
         {
-            AA_Log::Log(__METHOD__."($dal,$al) - errore nella query: ".$query,100);
+            AA_Log::Log(__METHOD__." - errore nella query: ".$query,100);
             return array();
         }
 
@@ -2689,7 +2689,7 @@ Class AA_OrganismiProvvedimenti
             header("Cache-control: private");
             header("Content-type: application/pdf");
             header("Content-Length: ".filesize($filename));
-            if(!embed) header('Content-Disposition: attachment; filename="'.$this->tipo."_".$this->id.'.pdf"');
+            if(!$embed) header('Content-Disposition: attachment; filename="'.$this->tipo."_".$this->id.'.pdf"');
 
             $fd = fopen ($filename, "rb");
             echo fread ($fd, filesize ($filename));
@@ -5901,7 +5901,7 @@ Class AA_OrganismiNomineDocument
         header("Cache-control: private");
 		header("Content-type: application/pdf");
 		header("Content-Length: ".filesize($filename));
-		if(!embed) header('Content-Disposition: attachment; filename="'.$this->nIdNomina."_".$this->nAnno."_".$this->GetTipologia(true).'.pdf"');
+		if(!$embed) header('Content-Disposition: attachment; filename="'.$this->nIdNomina."_".$this->nAnno."_".$this->GetTipologia(true).'.pdf"');
 		
 		$fd = fopen ($filename, "rb");
 		echo fread ($fd, filesize ($filename));
