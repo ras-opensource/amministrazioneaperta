@@ -1,9 +1,6 @@
 <?php 
-$path = '/home/sitod/web/amministrazione_aperta/utils';
-setlocale(LC_ALL, 'it_IT');
-set_include_path(get_include_path().PATH_SEPARATOR.$path);
-
-include_once("system_lib.php");
+include_once("utils/config.php");
+include_once("utils/system_lib.php");
 
 session_start();
 
