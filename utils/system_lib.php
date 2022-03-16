@@ -7,8 +7,8 @@ include_once "lib_mail.php";
 class AA_Const
 {
     //Percorso fisico della cartella di archiviazione
-    const AA_UPLOADS_PATH="/home/sitod/uploads";
-    const AA_MODULES_PATH="utils/modules";
+    const AA_UPLOADS_PATH=AA_Config::AA_UPLOADS_PATH;
+    const AA_MODULES_PATH=AA_Config::AA_MODULES_PATH;
     
     //Permessi
     const AA_PERMS_NONE=0;
