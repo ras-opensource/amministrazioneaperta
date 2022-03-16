@@ -1,5 +1,8 @@
 <?php
-$path = '/home/sitod/web/amministrazione_aperta/utils/phpmailer';
+
+require_once 'config.php';
+
+$path = AA_Config::AA_LIB_PATH.'/phpmailer';
 setlocale(LC_MONETARY, 'it_IT');
 set_include_path(get_include_path().PATH_SEPARATOR.$path);
 
