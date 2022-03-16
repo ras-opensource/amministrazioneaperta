@@ -217,7 +217,7 @@ class AA_Log
         //41 = art12
         //formato: cod_op,sezione,id_rec
         
-        $db=new Database();
+        $db=new AA_Database();
 
         if($id_utente==0) $id_utente=$_SESSION['id_user'];
         $update_sql=sprintf("INSERT INTO log VALUES('','%s',NOW(),'%s','%s')",$id_utente,$op,addslashes(htmlentities($sql)));
@@ -225,6 +225,7 @@ class AA_Log
 
         self::Log("AA_Log::LogAction($id_utente,$op,$sql)", 100, true, true);
     }
+    #----------------------------
 }
 
 //Database --------------------
@@ -725,23 +726,24 @@ class AA_User
         $user=new AA_User();
         $user->bCurrentUser=false;
 
-        $db = new Database();
-        $db->Query("SELECT utenti.* from utenti where id = '".$id_user."'");
-        $rs=$db->GetRecordSet();       
-        if($rs->GetCount() > 0)
+        $db = new AA_Database();
+        $db->Query("SELECT utenti.* from utenti where id = '".addslashes($id_user)."'");
+        if($db->GetAffectedRows() > 0)
         {
-            $user->nID=$rs->Get('id');
-            $user->sNome=$rs->Get('nome');
-            $user->sCognome=$rs->Get('cognome');
-            $user->sUser=$rs->Get('user');
-            $user->sEmail=$rs->Get('email');
-            $user->nLivello=$rs->Get('livello');
-            $user->bDisabled=$rs->Get('disable');
-            $user->sFlags=$rs->Get('flags');
+            $row=$db->GetResultSet();
+
+            $user->nID=$row[0]['id'];
+            $user->sNome=$row[0]['nome'];
+            $user->sCognome=$row[0]['cognome'];
+            $user->sUser=$row[0]['user'];
+            $user->sEmail=$row[0]['email'];
+            $user->nLivello=$row[0]['livello'];
+            $user->bDisabled=$row[0]['disable'];
+            $user->sFlags=$row[0]['flags'];
             $user->bIsValid = true;
                 
             //Popola i dati della struttura
-            $user->oStruct=AA_Struct::GetStruct($rs->Get('id_assessorato'),$rs->Get('id_direzione'),$rs->Get('id_servizio'));
+            $user->oStruct=AA_Struct::GetStruct($row[0]['id_assessorato'],$row[0]['id_direzione'],$row[0]['id_servizio']);
         }
 
         return $user;
