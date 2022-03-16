@@ -5,9 +5,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-$path = '/home/sitod/web/amministrazione_aperta/utils';
-setlocale(LC_ALL, 'it_IT');
-set_include_path(get_include_path().PATH_SEPARATOR.$path);
 
 include_once("sines_lib.php");
 

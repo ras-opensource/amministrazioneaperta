@@ -1,4 +1,5 @@
 <?php
+include_once "config.php";
 include_once "system_lib.php";
 
 //Costanti
