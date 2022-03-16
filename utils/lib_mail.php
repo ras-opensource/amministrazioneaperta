@@ -2,7 +2,7 @@
 
 require_once 'config.php';
 
-$path = AA_Config::AA_LIB_PATH.'/phpmailer';
+$path = AA_Config::AA_LIB_PATH.DIRECTORY_SEPARATOR.'phpmailer';
 setlocale(LC_MONETARY, 'it_IT');
 set_include_path(get_include_path().PATH_SEPARATOR.$path);
 
