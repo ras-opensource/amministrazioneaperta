@@ -8,7 +8,7 @@ require_once 'PHPMailerAutoload.php';
 //Server settings
 $mail_SMTPDebug = 0;                                    // Enable verbose debug output
 $mail_isSMTP = true;                                    // Set mailer to use SMTP
-$mail_Host = AA_Config::AA_DBHOST;                      // Specify main and backup SMTP servers
+$mail_Host = AA_Config::AA_SMTP_SERVER;                 // Specify main and backup SMTP servers
 $mail_SMTPAuth = false;                                 // Enable SMTP authentication
 $mail_Username = AA_Config::AA_SMTP_USERNAME;           // SMTP username
 $mail_Password = AA_Config::AA_SMTP_PWD;                // SMTP password
