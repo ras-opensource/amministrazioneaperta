@@ -15,7 +15,7 @@ Class AA_Config
 }
 
 //percorso librerie
-set_include_path(get_include_path().PATH_SEPARATOR.AA_Config::AA_LIB_PATH);
+if(AA_Config::AA_LIB_PATH != "") set_include_path(get_include_path().PATH_SEPARATOR.AA_Config::AA_LIB_PATH);
 
 //Impostazioni lingua
 setlocale(LC_ALL, AA_Config::AA_LOCALE);
