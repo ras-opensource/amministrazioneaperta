@@ -55,8 +55,8 @@ function SendMail($Tolist,$CClist,$subject,$body,$allegati=array(), $priority=nu
         if($priority) $mail->Priority=$priority;
         
         //Da Amministrazione Aperta
-        $mail->setFrom('amministrazioneaperta@regione.sardegna.it', 'Amministrazione Aperta');
-        $mail->addReplyTo('amministrazioneaperta@regione.sardegna.it', 'Amministrazione Aperta');
+        $mail->setFrom(AA_Config::AA_EMAIL_FROM, AA_Config::AA_EMAIL_FRONT);
+        $mail->addReplyTo(AA_Config::AA_EMAIL_REPLYTO, AA_Config::AA_EMAIL_FRONT);
 
         //Destinatari
         foreach($Tolist as $curTo)
