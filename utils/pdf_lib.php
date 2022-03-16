@@ -1,7 +1,5 @@
 <?php
-$path = '/home/sitod/web/amministrazione_aperta/utils';
-setlocale(LC_ALL, 'it_IT');
-set_include_path(get_include_path().PATH_SEPARATOR.$path);
+include_once "config.php";
 
 Class AA_PDF_Page
 {
