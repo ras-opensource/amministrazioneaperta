@@ -8123,13 +8123,13 @@ Class AA_SessionFileUpload
         
         if(is_file($value['tmp_name']))
         {
-            $dir="/tmp/session_files";
+            $dir=DIRECTORY_SEPARATOR."tmp".DIRECTORY_SEPARATOR."session_files";
             if(!is_dir($dir))
             {
                 mkdir($dir);
             }
             
-            $filename=$dir."/".session_id()."_".Date("Ymdhis");
+            $filename=$dir.DIRECTORY_SEPARATOR.session_id()."_".Date("Ymdhis");
             
             if(move_uploaded_file($value['tmp_name'], $filename))
             {
