@@ -4535,7 +4535,7 @@ Class AA_SystemTask_GetAppStatus extends AA_GenericTask
             
             foreach($mods as $curMod)
             {
-                $modules[]=array("id"=>$curMod['id_modulo'],"remote_folder"=>AA_Const::AA_MODULES_PATH."/".$curMod['id_sidebar']."_".$curMod['id']);
+                $modules[]=array("id"=>$curMod['id_modulo'],"remote_folder"=>AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id']);
                 $sideBarContent[] = array("id"=>$curMod['id_sidebar'],"icon"=>$curMod['icon'],"value"=>$curMod['name'],"tooltip"=>$curMod['tooltip'],"module"=>$curMod['id_modulo']);
             }
             
