@@ -8,7 +8,7 @@
 var AA_sines_module= new AA_Module("AA_MODULE_SINES","SINES");
 AA_sines_module.valid = true;
 AA_sines_module.content={};
-AA_sines_modulecontentType = "json";
+AA_sines_module.contentType = "json";
 AA_sines_module.ui.icon = "mdi mdi-office-building";
 AA_sines_module.ui.name = "SINES - Sistema Informativo Enti e Società";
 AA_sines_module.ui.module_content_id = "AA_sines_module_layout";
