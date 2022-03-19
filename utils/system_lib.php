@@ -8020,7 +8020,10 @@ Class AA_SessionVar
         $this->name=$name;
         $this->value=$value;
         
-        if($this->name != "") $this->bValid=true;
+        if($this->name != "")
+        {
+            $this->bValid=true;
+        } 
     }
     
     static public function Get($name="varName")
