@@ -12,6 +12,9 @@ class AA_Const
 
     //Tabella db oggetti
     const AA_DBTABLE_OBJECTS="aa_objects";
+
+    //Tabella Assessorati
+    const AA_DBTABLE_ASSESSORATI="assessorati";
     
     //tabella db moduli
     const AA_DBTABLE_MODULES="aa_platform_modules";
@@ -8888,7 +8891,8 @@ Class AA_Object_V2
         //Verifica permessi
         if($this->GetId() > 0)
         {
-            $originalObject= new AA_Object_V2($this->GetId(),$user);
+            $class=get_class($this);
+            $originalObject= new $class($this->GetId(),$user);
             if($originalObject->GetId() > 0)
             {
                 $perms = $originalObject->GetUserCaps($user);
@@ -9000,7 +9004,7 @@ Class AA_Object_V2
         }
         
         $db=new AA_Database();
-        $query="SELECT * from aa_objects WHERE id ='".addslashes($id)."' LIMIT 1";
+        $query="SELECT * from ".AA_Const::AA_DBTABLE_OBJECTS." WHERE id ='".addslashes($id)."' LIMIT 1";
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
@@ -9063,6 +9067,261 @@ Class AA_Object_V2
         else
         {
             $this->bValid = true;
+        }
+    }
+
+    //Proprietà
+    protected $aProps=array();
+    public function GetProp($prop="")
+    {
+        if($prop !="" && $prop!=null)
+        {
+            if(in_array($prop,array_keys($this->aProps))) return $this->aProps['$prop'];
+        }
+        return "";
+    }
+    public function SetProp($prop="",$val=null)
+    {
+        if($prop !="" && $prop!=null)
+        {
+            if(in_array($prop,array_keys($this->aProps)))
+            {
+                $this->aProps[$prop]=$val;
+                return true;
+            } 
+        }
+
+        return false;
+    }
+    public function GetProps()
+    {
+        return $this->aProps;
+    }
+
+    //Db binding
+    protected $aDbBindigs=array();
+    public function SetBind($prop="",$dbField="", $bAddProp=true)
+    {
+        if($prop !="" && $prop!=null && $dbField !="" && $dbField != null)
+        {
+            if(in_array($prop,array_keys($this->aProps)))
+            {
+                $this->aDbBindings[$prop]=$dbField;
+                return true;
+            }
+            else
+            {
+                if($bAddProp) $this->aProps[$prop]="";
+                $this->aDbBindings[$prop]=$dbField;
+
+                return true;
+            } 
+        }
+
+        return false;
+    }
+    public function GetBind($prop="")
+    {
+        if($prop !="" && $prop!=null)
+        {
+            if(in_array($prop,array_keys($this->aDbBindigs)))
+            {
+                return $this->aDbBindings[$prop];
+            } 
+        }
+
+        return "";
+    }
+    public function GetDbBindings()
+    {
+        return $this->aDbBindigs;
+    }
+
+    //funzione di ricerca
+    static public function Search($params=array(),$user=AA_User::GetCurrentUser())
+    {
+        //Verifica utente
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser() || $user->IsGuest())
+            {
+                $user=AA_User::GetCurrentUser();
+            }
+        }
+        else $user=AA_User::GetCurrentUser();
+
+        $public = false;
+        if($user->IsGuest())
+        {
+            $public=true;
+        }
+
+        //Imposta la query base
+        $select="SELECT DISTINCT ".AA_Const::AA_DBTABLE_OBJECTS.".id FROM ".AA_Const::AA_DBTABLE_OBJECTS." ";
+        $join="";
+        $where="";
+        $group="";
+        $having="";
+        $order="";
+        
+        //Verifica del parametro class
+        if($params['class'] == "" || !class_exists($params['class']) || $params['class']==null)
+        {
+            $params['class']="AA_Object_V2";
+            $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".class='AA_Object_V2' ";
+        }
+        else
+        {
+            $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".class='".addslashes($params['class'])."' ";
+        }
+
+        //Parametro status non impostato o non valido
+        if($params['status'] == "" || !isset($params['status']) || $public || ($params['status'] & AA_Const::AA_STATUS_ALL) == 0) $params['status']=AA_Const::AA_STATUS_PUBBLICATA;
+
+        if($params['class'] == "AA_Object_V2" && !$public)
+        {
+            $userStruct=$user->GetStruct();
+
+            if($params['gestiti'] !="" || ($params['status'] & (AA_Const::AA_STATUS_BOZZA+AA_Const::AA_STATUS_CESTINATA+AA_Const::AA_STATUS_REVISIONATA) > 0))
+            {
+                //Visualizza solo quelle della sua struttura
+                if($userStruct->GetAssessorato(true) > 0)
+                {
+                    $params['id_assessorato']=$userStruct->GetAssessorato(true);
+                    //$where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_assessorato='".$userStruct->GetAssessorato(true)."'";    
+                }
+
+                if($userStruct->GetDirezione(true) > 0)
+                {
+                    $params['id_direzione']=$userStruct->GetDirezione(true);
+                    //$where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_direzione='".$userStruct->GetDirezione(true)."'";    
+                }
+
+                if($userStruct->GetServizio(true) > 0)
+                {
+                    $params['id_servizio']=$userStruct->GetServizio(true);
+                    //$where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_servizio='".$userStruct->GetDirezione(true)."'";    
+                }
+            }
+        }
+
+        //Filtra in base allo stato della scheda
+        $where.=" AND status ='".$params['status']."' ";
+
+        //Filtra solo oggetti della RAS
+        if($userStruct->GetTipo() == 0)
+        {
+            $join.=" INNER JOIN ".AA_Const::AA_DBTABLE_ASSESSORATI." ON ".AA_Const::AA_DBTABLE_OBJECTS.".id_assessorato=".AA_Const::AA_DBTABLE_ASSESSORATI.".id ";
+
+            //RAS
+            $where .=" AND ".AA_Const::AA_DBTABLE_ASSESSORATI.".tipo = 0";
+        }
+
+        //solo oggetti dell'ente
+        if($userStruct->GetTipo() > 0)
+        {
+            $params['id_assessorato']=$userStruct->GetAssessorato(true);
+        }
+
+        //filtro struttura
+        if($params['id_assessorato'] !="" && $params['id_assessorato'] > 0)
+        {
+            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_assessorato = '".$params['id_assessorato']."'";
+        }
+
+        if($params['id_direzione'] !="" && $params['id_direzione'] > 0)
+        {
+            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_direzione = '".$params['id_direzione']."'";
+        }
+
+        if($params['id_servizio'] !="" && $params['id_servizio'] > 0)
+        {
+            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_servizio = '".$params['id_servizio']."'";
+        }
+        //------------------------
+
+        //filtra in base al nome
+        if($params['nome'] !="")
+        {
+            $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".nome like '%".addslashes($params['nome'])."%'";
+        }
+
+        //filtra in base alla descrizione
+        if($params['descrizione'] !="")
+        {
+            $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".descrizione like '%".addslashes($params['descrizione'])."%'";
+        }
+
+        //filtra in base all'id(s)
+        if($params['id'] !="")
+        {
+            $ids=array();
+            preg_match("/([0-9]+\,*)+/",$params['id'],$ids);
+            
+            if(count($ids)>0)
+            {
+                $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id in (".$ids[0].")";
+            }
+            else $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id = '".addslashes($params['id'])."'";
+        }
+        
+        //aggiunge i join
+        if(is_array($params['join']))
+        {
+            foreach($params['join'] as $curJoin)
+            {
+                $join.=" ".$curJoin." ";
+            }
+        }
+        //-----------------------
+
+        //aggiunge i where
+        if(is_array($params['where']))
+        {
+            foreach($params['where'] as $curParam)
+            {
+                if($where=="") $where=" WHERE ".$curParam;
+                $where.="  ".$curParam;
+            }
+        }
+        //-----------------------
+
+        //aggiunge i having
+        if(is_array($params['having']))
+        {
+            foreach($params['having'] as $curParam)
+            {
+                if($having=="")$having=" HAVING ".$curParam;
+                else $having.=" AND ".$curParam;
+            }
+        }
+        //-----------------------
+
+        //aggiunge i group
+        if(is_array($params['group']))
+        {
+            foreach($params['group'] as $curParam)
+            {
+                if($group=="") $group=" GROUP BY ".$curParam;
+                else $group.=", ".$curParam;
+            }
+        }
+        //-----------------------
+
+        //aggiunge gli order
+        if(is_array($params['order']))
+        {
+            foreach($params['order'] as $curParam)
+            {
+                if($order=="")$order=" ORDER BY ".$curParam;
+                else $order.=", ".$curParam;
+            }
+        }
+        //-----------------------
+
+        foreach($params as $curParam=>$value)
+        {
+            //Imposta i parametri
         }
     }
 }
