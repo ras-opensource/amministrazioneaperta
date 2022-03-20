@@ -8244,6 +8244,9 @@ Class AA_Object_V2
         else $this->nStatusMask=AA_Const::AA_STATUS_ALL-AA_Const::AA_STATUS_REVISIONATA;
     }
     
+    //Tabella dati
+    const AA_DBTABLE_DATA="";
+
     //id data object
     protected $nId_Data=0;
     public function GetIdData()
@@ -8378,7 +8381,7 @@ Class AA_Object_V2
         else $this->bChanged=false;
     }
 
-    protected static function SaveToDb($object=null,$user=null, $bStandardChecks=false)
+    protected static function SaveToDb($object=null,$user=null, $bStandardChecks=false, $bSaveData=true)
     {
         //AA_Log::Log(__METHOD__);
         
@@ -8535,32 +8538,89 @@ Class AA_Object_V2
             }            
         }
 
-        //Salvataggio sul db
         $db=new AA_Database();
+        $where="";
+        $query="";
+        $sep="";
+
+        //Aggiorna la tabella dati se è impostata
+        if($object->GetDbDataTable() !="" && $bSaveData)
+        {
+            if(($object->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0)
+            {
+                if($object->GetIdDataRev() == 0)
+                {
+                    $query = "INSERT INTO ".$object->GetDbDataTable()." SET ";
+                    $where="";
+                }
+                else 
+                {
+                    $query = "UPDATE ".$object->GetDbDataTable()." SET ";
+                    $where=" WHERE ".$object->GetDbDataTable().".id = ".$object->GetIdDataRev()." LIMIT 1";
+                }   
+            }
+            else
+            {
+                if($object->GetIdData() == 0)
+                {
+                    $query = "INSERT INTO ".$object->GetDbDataTable()." SET ";
+                    $where="";
+                }
+                else 
+                {
+                    $query = "UPDATE ".$object->GetDbDataTable()." SET ";                
+                    $where=" WHERE ".$object->GetDbDataTable().".id = ".$object->GetIdData()." LIMIT 1";
+                }
+            }
+
+            foreach($object->GetDbBindings() as $prop=>$dbField)
+            {
+                $query.= $sep.$dbField." = '".addslashes($object->GetProp($prop))."'";
+                $sep=",";
+            }
+
+            //Aggiorna tabella dati
+            if(!$db->Query($query.$where))
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'aggiornamento della tabella dati - ".$db->GetErrorMessage(),100);
+                return false;
+            }
+
+            if(($object->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0 && $object->GetIdDataRev()==0)
+            {
+                $object->SetIdDataRev($db->GetLastInsertId());
+            }
+
+            if(($object->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) == 0 && $object->GetIdData()==0)
+            {
+                $object->SetIdData($db->GetLastInsertId());
+            }
+        }
         
+        //Salvataggio sul db        
         if($object->GetId() == 0)
         {
-            $query="INSERT INTO aa_objects SET ";
-            $where=" LIMIT 1";
+            $query="INSERT INTO ".AA_Const::AA_DBTABLE_OBJECTS." SET ";
+            $where="";
         }
         else
         {
-            $query="UPDATE aa_objects SET ";
-            $where=" WHERE aa_objects.id='". addslashes($object->GetId())."' LIMIT 1";
+            $query="UPDATE ".AA_Const::AA_DBTABLE_OBJECTS." SET ";
+            $where=" WHERE ".AA_Const::AA_DBTABLE_OBJECTS.".id='". addslashes($object->GetId())."' LIMIT 1";
         }
         
         $struct=$object->GetStruct();
         
-        $query.=" id_data='".$object->GetIdData()."'";
-        $query.=" id_data_rev='".$object->GetIdDataRev()."'";
-        $query.=" status='".$object->GetStatus()."'";
-        $query.=" nome='".addslashes($object->GetName())."'";
-        $query.=" descrizione='".addslashes($object->GetDescr())."'";
-        $query.=" id_assessorato='".$struct->GetAssessorato(true)."'";
-        $query.=" id_direzione='".$struct->GetDirezione(true)."'";
-        $query.=" id_servizio='".$struct->GetServizio(true)."'";
-        $query.=" class='".$object_class."'";
-        $query.=" log='".addslashes($object->GetLog(false))."'";
+        $query.=", id_data='".$object->GetIdData()."'";
+        $query.=", id_data_rev='".$object->GetIdDataRev()."'";
+        $query.=", status='".$object->GetStatus()."'";
+        $query.=", nome='".addslashes($object->GetName())."'";
+        $query.=", descrizione='".addslashes($object->GetDescr())."'";
+        $query.=", id_assessorato='".$struct->GetAssessorato(true)."'";
+        $query.=", id_direzione='".$struct->GetDirezione(true)."'";
+        $query.=", id_servizio='".$struct->GetServizio(true)."'";
+        $query.=", class='".$object_class."'";
+        $query.=", log='".addslashes($object->GetLog(false))."'";
         
         if(!$db->Query($query.$where))
         {
@@ -8572,9 +8632,8 @@ Class AA_Object_V2
         {
             $object->SetId($db->GetLastInsertId());
         }
-        
+                
         $object->SetChanged(false);
-        
         return true;
     }
     
@@ -9137,6 +9196,17 @@ Class AA_Object_V2
         return $this->aDbBindigs;
     }
 
+    //Tabella dati
+    protected $sDbDataTable="";
+    public function GetDbDataTable()
+    {
+        return $this->sDbDataTable;
+    }
+    public function SetDbDataTable($var="")
+    {
+        $this->sDbDataTable=$var;
+    }
+
     //funzione di ricerca
     static public function Search($params=array(),$user=AA_User::GetCurrentUser())
     {
@@ -9160,7 +9230,7 @@ Class AA_Object_V2
         $select="SELECT DISTINCT ".AA_Const::AA_DBTABLE_OBJECTS.".id FROM ".AA_Const::AA_DBTABLE_OBJECTS." ";
         $join="";
         $where="";
-        $group="";
+        $group=" GROUP by ".AA_Const::AA_DBTABLE_OBJECTS.".id";
         $having="";
         $order="";
         
@@ -9173,6 +9243,12 @@ Class AA_Object_V2
         else
         {
             $where.=" WHERE ".AA_Const::AA_DBTABLE_OBJECTS.".class='".addslashes($params['class'])."' ";
+        }
+
+        //Collegamento tabella dati
+        if($params['class']::AA_DBTABLE_DATA != "")
+        {
+            $join.=" INNER JOIN ".$params['class']::AA_DBTABLE_DATA." ON ".$params['class']::AA_DBTABLE_DATA.".id in (".AA_Const::AA_DBTABLE_OBJECTS.".id_data,".AA_Const::AA_DBTABLE_OBJECTS.".id_data_rev)";
         }
 
         //Parametro status non impostato o non valido
@@ -9319,10 +9395,64 @@ Class AA_Object_V2
         }
         //-----------------------
 
-        foreach($params as $curParam=>$value)
+        $db= new AA_Database();
+
+        //Conta i risultati
+        $query="SELECT COUNT(id) as tot FROM (".$select.$join.$where.$group.$having.") as count_filter";
+
+        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        if(!$db->Query($query))
         {
-            //Imposta i parametri
+            //Imposta lo stato di errore
+            AA_Log::Log(__METHOD__."(".print_r($params,TRUE).") - Errore :".$db->GetErrorMessage(),100);
+
+            return array(0=>-1,array());
         }
+
+        $rs=$db->GetResultSet();
+        $tot_count=$rs['0']['tot'];
+
+        //Restituisce un array vuoto se non trova nulla
+        if($tot_count==0)
+        {
+            //AA_Log::Log(__METHOD__."(".print_r($params,TRUE).") - query vuota: $query");
+            return array(0=>0,array());
+        }
+
+        //Restituisce solo il numero
+        if($params['onlyCount'] != "") return array(0=>$tot_count,array());
+
+        //Limita a 10 risultati di default
+        if(!isset($params['from']) || $params['from'] < 0 || $params['from'] > $tot_count) $params['from'] = 0;
+        if(!isset($params['count']) || $params['count'] < 0) $params['count'] = 10;
+
+        //Effettua la query
+        $query=$select.$join;
+        if(strlen($where) > 0) $query.=$where;
+        if($params['count'] !="all") $query.=$group.$having.$order." LIMIT ".$params['from'].",".$params['count'];
+        else $query.=$group.$having.$order;
+        if(!$db->Query($query))
+        {
+            //Errore query
+            AA_Log::Log(__METHOD__."(".print_r($params,TRUE).") - Errore nella query:".$db->GetErrorMessage(),100);
+            return array(0=>-1,array());
+        }
+
+        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        
+        //Popola l'array dei risultati
+        $results=array();
+        
+        if($db->GetAffectedRows() > 0)
+        {
+            foreach($db->GetResultSet() as $curRec)
+            {
+                $curResult = new $params['class']($curRec('id'),$user);
+                if($curResult->isValid()) $results[$curRec('id')]=$curResult;
+            }
+        }
+
+        return array(0=>$tot_count,$results);
     }
 }
 
