@@ -8958,7 +8958,7 @@ Class AA_Object_V2
                 if(($perms & AA_Const::AA_PERMS_DELETE)>0)
                 {
                     $db=new AA_Database();
-                    $query="DELETE from aa_objects WHERE id = '".$this->GetId()."' LIMIT 1";
+                    $query="DELETE from ".AA_Const::AA_DBTABLE_OBJECTS." WHERE id = '".$this->GetId()."' LIMIT 1";
                     if(!$db->Query($query))
                     {
                         AA_Log::Log(__METHOD__." - Errore durante l'eliminazione dell'oggetto (".$this->GetId().") - ".$db->GetErrorMessage(),100);
