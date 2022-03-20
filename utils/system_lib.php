@@ -8381,7 +8381,7 @@ Class AA_Object_V2
         else $this->bChanged=false;
     }
 
-    protected static function SaveToDb($object=null,$user=null, $bStandardChecks=false, $bSaveData=true)
+    protected static function SaveToDb($object=null,$user=null, $bStandardChecks=false, $bSaveData=false)
     {
         //AA_Log::Log(__METHOD__);
         
@@ -8637,11 +8637,11 @@ Class AA_Object_V2
         return true;
     }
     
-    protected function Save($user=null, $bForce=false)
+    protected function Save($user=null, $bForce=false, $bStandardChecks=true, $bSaveData=false)
     {
         if($bForce) $this->bChanged=true;
         
-        return static::SaveToDb($this,$user);
+        return static::SaveToDb($this,$user,$bStandardChecks,$bSaveData);
     }
     
     //pubblica
@@ -8687,7 +8687,7 @@ Class AA_Object_V2
     }
     
     //Aggiungi nuovo oggetto
-    static public function AddNew($object=null,$user=null)
+    static public function AddNew($object=null,$user=null,$bStandardCheck=true,$bSaveData=false)
     {
         //Verifica utente
         if($user instanceof AA_User)
@@ -8714,7 +8714,7 @@ Class AA_Object_V2
         $object->SetId(0);
         $object->AddLog("Inserimento",$user, AA_Const::AA_OPS_ADDNEW);
         
-        if(!$object->Save($user))
+        if(!$object->Save($user,true,$bStandardCheck,$bSaveData))
         {
             return false;
         }
@@ -8723,7 +8723,7 @@ Class AA_Object_V2
     }
     
     //Aggiorna
-    public function Update($user=null,$bStandardCheck=true)
+    public function Update($user=null,$bStandardCheck=true,$bSaveData=false)
     {        
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -8760,7 +8760,7 @@ Class AA_Object_V2
         }
         
         $this->AddLog("Modifica", AA_Const::AA_OPS_UPDATE, $user);
-        if(!$this->Save($user,true))
+        if(!$this->Save($user,true,$bStandardCheck,$bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
