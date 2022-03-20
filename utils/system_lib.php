@@ -9447,8 +9447,8 @@ Class AA_Object_V2
         {
             foreach($db->GetResultSet() as $curRec)
             {
-                $curResult = new $params['class']($curRec('id'),$user);
-                if($curResult->isValid()) $results[$curRec('id')]=$curResult;
+                $curResult = new $params['class']($curRec['id'],$user);
+                if($curResult->isValid()) $results[$curRec['id']]=$curResult;
             }
         }
 
