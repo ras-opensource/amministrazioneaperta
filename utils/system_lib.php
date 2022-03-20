@@ -8641,7 +8641,7 @@ Class AA_Object_V2
     {
         if($bForce) $this->bChanged=true;
         
-        return AA_Object_V2::SaveToDb($this,$user);
+        return static::SaveToDb($this,$user);
     }
     
     //pubblica
