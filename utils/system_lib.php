@@ -9168,11 +9168,11 @@ Class AA_Object_V2
         if($params['class'] == "" || !class_exists($params['class']) || $params['class']==null)
         {
             $params['class']="AA_Object_V2";
-            $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".class='AA_Object_V2' ";
+            $where.=" WHERE ".AA_Const::AA_DBTABLE_OBJECTS.".class='AA_Object_V2' ";
         }
         else
         {
-            $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".class='".addslashes($params['class'])."' ";
+            $where.=" WHERE ".AA_Const::AA_DBTABLE_OBJECTS.".class='".addslashes($params['class'])."' ";
         }
 
         //Parametro status non impostato o non valido
