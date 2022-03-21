@@ -17,7 +17,18 @@ Class AA_Patrimonio_Const
 #Classe oggetto patrimonio
 Class AA_Patrimonio extends AA_Object_V2
 {
-    
+    //tabella dati db
+    const AA_DBTABLE_DATA="aa_patrimonio_objects";
+
+    //Costruttore
+    public function __construct($id=0, $user=null)
+    {
+        //data table
+        $this->SetDbDataTable(static::AA_DBTABLE_DATA);
+
+        //Db binding
+        
+    }
 }
 
 #Classe per il modulo art30 gestione del patrimonio
@@ -284,22 +295,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $struct=$object->GetStruct();
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
-            
-            #Società-----------
-            $soc_tags="";
-            if($object->GetTipologia(true)==AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
-            {
-                //forma giuridica
-                $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetFormaSocietaria()."</span>";
-                
-                if($object->IsInHouse() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>in house</span>";
-                if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>TUSP</span>";
-                if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
-                
-                //stato società
-                if($object->GetStatoPatrimonio(true) > AA_Patrimonio_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStatoPatrimonio()."</span>";
-            }
-            #------------------------------------------
                            
             #Stato
             if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
@@ -318,7 +313,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             
             $templateData[]=array(
                 "id"=>$object->GetId(),
-                "tags"=>$soc_tags,
+                "tags"=>"",
                 "aggiornamento"=>$object->GetAggiornamento(),
                 "denominazione"=>$object->GetDenominazione(),
                 "pretitolo"=>$object->GetTipologia(),
@@ -355,22 +350,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $struct=$object->GetStruct();
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
-            
-            #Società-----------
-            $soc_tags="";
-            if($object->GetTipologia(true)==AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
-            {
-                //forma giuridica
-                $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetFormaSocietaria()."</span>";
-             
-                if($object->IsInHouse() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>in house</span>";
-                if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>TUSP</span>";
-                if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
-                
-                //stato società
-                if($object->GetStatoPatrimonio(true) > AA_Patrimonio_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStatoPatrimonio()."</span>";
-            }
-            #------------------------------------------
           
             #Stato
             if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
@@ -389,7 +368,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             
             $templateData[]=array(
                 "id"=>$object->GetId(),
-                "tags"=>$soc_tags,
+                "tags"=>"",
                 "aggiornamento"=>$object->GetAggiornamento(),
                 "denominazione"=>$object->GetDenominazione(),
                 "pretitolo"=>$object->GetTipologia(),
@@ -429,7 +408,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 $organismo=new AA_Patrimonio($curId,$this->oUser);
                 if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
                 {
-                    $ids_final[$curId]=$organismo->GetDenominazione();
+                    $ids_final[$curId]=$organismo->GetDescr();
                     unset($organismo);
                 }
             }
@@ -496,7 +475,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 $organismo=new AA_Patrimonio($curId,$this->oUser);
                 if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_PUBLISH)>0)
                 {
-                    $ids_final[$curId]=$organismo->GetDenominazione();
+                    $ids_final[$curId]=$organismo->GetDescr();
                     unset($organismo);
                 }
             }
@@ -564,7 +543,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 $organismo=new AA_Patrimonio($curId,$this->oUser);
                 if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0)
                 {
-                    $ids_final[$curId]=$organismo->GetDenominazione();
+                    $ids_final[$curId]=$organismo->GetDescr();
                     unset($organismo);
                 }
             }
@@ -632,7 +611,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 $organismo=new AA_Patrimonio($curId,$this->oUser);
                 if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0)
                 {
-                    $ids_final[$curId]=$organismo->GetDenominazione();
+                    $ids_final[$curId]=$organismo->GetDescr();
                     unset($organismo);
                 }
             }
@@ -709,7 +688,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 $organismo=new AA_Patrimonio($curId,$this->oUser);
                 if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
                 {
-                    $ids_final[$curId]=$organismo->GetDenominazione();
+                    $ids_final[$curId]=$organismo->GetDescr();
                     unset($organismo);
                 }
             }
@@ -790,14 +769,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Descrizione
         $wnd->AddTextField("sDescrizione","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'organismo", "placeholder"=>"inserisci qui la denominazione dell'organismo"));
         
-        //Tipologia
-        $options=array();
-        foreach(AA_Patrimonio_Const::GetTipoPatrimonio() as $id=>$label)
-        {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
-        }
-        $wnd->AddSelectField("nTipologia","Tipologia",array("required"=>true,"options"=>$options,"bottomLabel"=>"*seleziona il tipo di organismo."));
-        
         //Funzioni
         $label="Funzioni attrib.";
         $wnd->AddTextareaField("sFunzioni",$label,array("bottomLabel"=>"*Funzioni attribuite all'organismo.", "required"=>true,"placeHolder"=>"Inserisci qui le funzioni attribuite"));
@@ -819,7 +790,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if(!($object instanceof AA_Patrimonio)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali", $this->id);
 
         $form_data['id']=$object->GetID();
-        foreach($object->GetBindings() as $id_obj=>$field)
+        foreach($object->GetDbBindings() as $id_obj=>$field)
         {
             $form_data[$id_obj]=$object->GetProp($id_obj);
         }
@@ -942,7 +913,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $status="<span class='AA_Label AA_Label_LightBlue' title='Stato scheda organismo'>".$status."</span>";
         
         #Dettagli
-        if($this->oUser->IsSuperUser() && $organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$organismo->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
+        if($this->oUser->IsSuperUser() && $organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
         else
         {
             if($organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
