@@ -26,8 +26,21 @@ Class AA_Patrimonio extends AA_Object_V2
         //data table
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
-        //Db binding
-        
+        //Db data binding
+        $this->SetBind("IdData","id"); $this->SetProp("IdData",0);
+        $this->SetBind("Descrizione","descrizione");
+        $this->SetBind("CodiceComune","codice_comune");
+        $this->SetBind("SezioneCatasto","sezione_catasto");
+        $this->SetBind("FoglioCatasto","foglio_catasto");
+        $this->SetBind("ParticellaCatasto","particella_catasto");
+        $this->SetBind("Indirizzo","indirizzo");
+        $this->SetBind("RenditaCatasto","rendita_catasto");
+        $this->SetBind("ConsistenzaCatasto","consistenza_catasto");
+        $this->SetBind("ClasseCatasto","classe_catasto");
+        $this->SetBind("Titolo","titolo");
+
+        //chiama il costruttore genitore
+        parent::__construct($id,$user,true);
     }
 }
 

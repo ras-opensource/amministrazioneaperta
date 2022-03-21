@@ -9088,7 +9088,7 @@ Class AA_Object_V2
             $perms=$this->GetUserCaps($user);
             if(($perms & AA_Const::AA_PERMS_READ) == 0)
             {
-                AA_Log::Log(__METHOD__." - Errore: l'utente corrente non ha i permessi epr visualizzare l'oggetto.",100);
+                AA_Log::Log(__METHOD__." - Errore: l'utente corrente non ha i permessi per visualizzare l'oggetto.",100);
                 return false;
             }
 
@@ -9141,7 +9141,7 @@ Class AA_Object_V2
     }
     
     //Costruttore standard
-    public function __construct($id=0,$user=null) 
+    public function __construct($id=0,$user=null,$bLoadData=true) 
     {
         //Verifica utente
         if($user instanceof AA_User)
@@ -9161,7 +9161,7 @@ Class AA_Object_V2
         
         if($id > 0)
         {
-            $this->Load($id,$user);
+            $this->Load($id,$user,$bLoadData);
         }
         else
         {
