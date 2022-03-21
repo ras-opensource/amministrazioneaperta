@@ -8983,7 +8983,7 @@ Class AA_Object_V2
     }
     
     //Verifica dei permessi
-    public function GetUserCaps($user=null)
+    public function GetUserCaps($user=AA_User::GetCurrentUser())
     {
         $perms = AA_Const::AA_PERMS_NONE;
         
@@ -9044,7 +9044,7 @@ Class AA_Object_V2
     }
     
     //Funzione di caricamento
-    private function Load($id=0, $user=null, $bLoadData=true)
+    private function Load($id=0, $user=AA_User::GetCurrentUser(), $bLoadData=true)
     {
          //Verifica utente
         if($user instanceof AA_User)
@@ -9095,7 +9095,7 @@ Class AA_Object_V2
             //Carica i dati collegati
             if($this->sDbDataTable !="" && $bLoadData)
             {
-                if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0)
+                if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0 && ($perms & AA_Const::AA_PERMS_WRITE) > 0)
                 {
                     $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data_Rev." LIMIT 1";
                 }

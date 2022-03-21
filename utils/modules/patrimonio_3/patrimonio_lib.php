@@ -21,7 +21,7 @@ Class AA_Patrimonio extends AA_Object_V2
     const AA_DBTABLE_DATA="aa_patrimonio_objects";
 
     //Costruttore
-    public function __construct($id=0, $user=null)
+    public function __construct($id=0, $user=AA_User::GetCurrentUser())
     {
         //data table
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
@@ -42,6 +42,12 @@ Class AA_Patrimonio extends AA_Object_V2
         //chiama il costruttore genitore
         parent::__construct($id,$user,true);
     }
+
+    //funzione di ricerca
+    static public function Search($params=array(),$user=AA_User::GetCurrentUser())
+    {
+
+    }
 }
 
 #Classe per il modulo art30 gestione del patrimonio
@@ -58,8 +64,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $this->SetSideBarIcon("mdi mdi-home");
         $this->SetSideBarTooltip("Gestione patrimonio");
         $this->SetSideBarName("Patrimonio");
-        
-        $this->taskManagerUrl="utils/art30_ops.php";
         
         //Registrazione dei task-------------------
         $taskManager=$this->GetTaskManager();
