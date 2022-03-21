@@ -8645,7 +8645,7 @@ Class AA_Object_V2
     }
     
     //pubblica
-    public function Publish($user=null)
+    public function Publish($user=null,$bStandardChecks=true, $bSaveData=false)
     {   
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -8674,7 +8674,7 @@ Class AA_Object_V2
         $oldLog=$this->GetLog(false);
         $this->SetStatus(AA_Const::AA_STATUS_PUBBLICATA);
         $this->AddLog("Pubblicazione", AA_Const::AA_OPS_PUBLISH, $user);
-        if(!$this->Save($user))
+        if(!$this->Save($user,true,$bStandardChecks,$bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
@@ -8772,7 +8772,7 @@ Class AA_Object_V2
     }
     
     //cestina
-    public function Trash($user=null)
+    public function Trash($user=null,$bStandardChecks=true, $bSaveData=false)
     {    
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -8803,7 +8803,7 @@ Class AA_Object_V2
          $this->nStatus |= AA_Const::AA_STATUS_CESTINATA;
         
         $this->AddLog("Cestina", AA_Const::AA_OPS_TRASH, $user);
-        if(!$this->Save($user, true))
+        if(!$this->Save($user, true,$bStandardChecks, $bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
@@ -8815,7 +8815,7 @@ Class AA_Object_V2
     }
     
     //riassegna
-    public function Reassign($oStruct=null, $user=null, $bStandardCheck=true)
+    public function Reassign($oStruct=null, $user=null, $bStandardChecks=true, $bSaveData=false)
     {
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -8851,7 +8851,7 @@ Class AA_Object_V2
         $oldStruct=$this->GetStruct();
         $oldLog=$this->GetLog(false);
         
-         if(get_class($this)=="AA_Object_V2" || $bStandardCheck)
+         if(get_class($this)=="AA_Object_V2" || $bStandardChecks)
         {
             if(($this->nStatusMask & AA_Const::AA_STATUS_REVISIONATA)>0 && ($oldStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_OPERATOR)
             {
@@ -8862,7 +8862,7 @@ Class AA_Object_V2
         $this->oStruct=$oStruct;
         
         $this->AddLog("Riassegna", AA_Const::AA_OPS_REASSIGN, $user);
-        if(!$this->Save($user, true))
+        if(!$this->Save($user, true,$bStandardChecks, $bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
@@ -8875,7 +8875,7 @@ Class AA_Object_V2
     }
     
     //riassegna
-    public function Resume($user=null)
+    public function Resume($user=null,$bStandardChecks=true, $bSaveData=false)
     {
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -8909,7 +8909,7 @@ Class AA_Object_V2
         }
         
         $this->AddLog("Ripristina", AA_Const::AA_OPS_RESUME, $user);
-        if(!$this->Save($user, true))
+        if(!$this->Save($user, true,$bStandardChecks, $bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
@@ -9044,7 +9044,7 @@ Class AA_Object_V2
     }
     
     //Funzione di caricamento
-    private function Load($id=0, $user=null)
+    private function Load($id=0, $user=null, $bLoadData=true)
     {
          //Verifica utente
         if($user instanceof AA_User)
@@ -9085,6 +9085,46 @@ Class AA_Object_V2
             $this->oStruct=AA_Struct::GetStruct($rs[0]['id_assessorato'],$rs[0]['id_direzione'],$rs[0]['id_servizio']);
             $this->sClass=$rs[0]['class'];
             
+            $perms=$this->GetUserCaps($user);
+            if(($perms & AA_Const::AA_PERMS_READ) == 0)
+            {
+                AA_Log::Log(__METHOD__." - Errore: l'utente corrente non ha i permessi epr visualizzare l'oggetto.",100);
+                return false;
+            }
+
+            //Carica i dati collegati
+            if($this->sDbDataTable !="" && $bLoadData)
+            {
+                if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0)
+                {
+                    $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data_Rev." LIMIT 1";
+                }
+                else
+                {
+                    $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data." LIMIT 1";
+                }
+
+                if(!$db->Query($query))
+                {
+                    AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+                    return false;
+                }
+
+                if($db->GetAffectedRows() > 0)
+                {
+                    $data=$db->GetResultSet();
+                    foreach($this->GetDbBindings() as $prop=>$db_field)
+                    {
+                        $this->aProps[$prop]=$data[0][$db_field];
+                    }
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Errore nessun dato trovato.",100);
+                    return false;
+                }
+            }
+
             $this->bValid=true;
             return true;
         }
