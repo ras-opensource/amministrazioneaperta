@@ -18,7 +18,7 @@ Class AA_Patrimonio_Const
 Class AA_Patrimonio extends AA_Object_V2
 {
     //tabella dati db
-    const AA_DBTABLE_DATA="aa_patrimonio_objects";
+    const AA_DBTABLE_DATA="aa_patrimonio_data";
 
     //Costruttore
     public function __construct($id=0, $user=AA_User::GetCurrentUser())
