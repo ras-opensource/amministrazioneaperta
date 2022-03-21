@@ -9003,7 +9003,11 @@ Class AA_Object_V2
         if($user->IsGuest() && ($this->nStatus & (AA_Const::AA_STATUS_BOZZA|AA_Const::AA_STATUS_CESTINATA)) > 0) return $perms;
         
         //Le pubblicate sono visibili a tutti
-        if(($this->nStatus & (AA_Const::AA_STATUS_PUBBLICATA|AA_Const::AA_STATUS_CESTINATA)) == AA_Const::AA_STATUS_PUBBLICATA) $perms += AA_Const::AA_PERMS_READ;
+        if(($this->nStatus & (AA_Const::AA_STATUS_PUBBLICATA|AA_Const::AA_STATUS_CESTINATA)) == AA_Const::AA_STATUS_PUBBLICATA)
+        {
+            $perms += AA_Const::AA_PERMS_READ;
+            if($user->IsGuest()) return $perms;
+        } 
         
         $samestruct=true;
         
@@ -9056,11 +9060,12 @@ Class AA_Object_V2
         }
         else $user=AA_User::GetCurrentUser();
         
+        /*
         if($user->IsGuest())
         {
             AA_Log::Log(__METHOD__." - Utente non valido o sessione scaduta.",100);
             return false;
-        }
+        }*/
         
         $db=new AA_Database();
         $query="SELECT * from ".AA_Const::AA_DBTABLE_OBJECTS." WHERE id ='".addslashes($id)."' LIMIT 1";
