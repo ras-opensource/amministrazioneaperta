@@ -5633,7 +5633,7 @@ Class AA_GenericModule
     }
 
     //Restituisce la lista delle schede pubblicate 
-    public function GetDataSectionPubblicate_List($params=array())
+    public function GetDataGenericSectionPubblicate_List($params=array())
     {
         $templateData=array();
         
@@ -5697,6 +5697,12 @@ Class AA_GenericModule
         return array($data[0],$templateData);
     }
 
+    //Restituisce la lista delle schede pubblicate (dati - da specializzare)
+    public function GetDataSectionPubblicate_List($params=array())
+    {
+        return $this->GetDataGenericSectionPubblicate_List($params);
+    }
+
     //Funzione custom per la personalizzazione del filtro sulle schede pubblicate
     protected function GetDataSectionBozze_CustomFilter($params=array())
     {
@@ -5704,7 +5710,7 @@ Class AA_GenericModule
     }
 
     //Restituisce la lista delle schede pubblicate 
-    public function GetDataSectionBozze_List($params=array())
+    public function GetDataGenericSectionBozze_List($params=array())
     {
         $templateData=array();
         

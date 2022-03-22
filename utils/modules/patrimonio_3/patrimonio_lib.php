@@ -251,6 +251,18 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $this->TemplateGenericSection_Pubblicate($params,$bCanModify);
     }
 
+    //Restituisce la lista delle schede pubblicate (dati)
+    public function GetDataSectionPubblicate_List($params=array())
+    {
+        return $this->GetDataGenericSectionPubblicate_List($params);
+    }
+
+    //Personalizza il filtro delle schede pubblicate per il modulo corrente
+    protected function GetDataSectionPubblicate_CustomFilter($params = array())
+    {
+        return array();
+    }
+    
     //Template bozze content
     public function TemplateSection_Bozze()
     {
@@ -318,18 +330,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $content->EnableSelect();
         
         return $content->toObject();
-    }
-       
-    //Restituisce la lista delle schede pubblicate (dati)
-    public function GetDataSectionPubblicate_List($params=array())
-    {
-        return $this->GetDataSectionPubblicate_List($params);
-    }
-
-    //Personalizza il filtro delle schede pubblicate per il modulo corrente
-    protected function GetDataSectionPubblicate_CustomFilter($params = array())
-    {
-        return array();
     }
     
     //Restituisce i dati delle bozze
