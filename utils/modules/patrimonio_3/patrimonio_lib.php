@@ -248,7 +248,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $bCanModify=true;
         }
 
-        return $this->TemplateGenericSection_Pubblicate($params,$bCanModify);
+        $content=$this->TemplateGenericSection_Pubblicate($params,$bCanModify);
+        return $content->toObject();
     }
 
     //Restituisce la lista delle schede pubblicate (dati)
@@ -262,7 +263,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         return array();
     }
-    
+
     //Template bozze content
     public function TemplateSection_Bozze()
     {

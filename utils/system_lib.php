@@ -5853,11 +5853,10 @@ Class AA_GenericModule
         }
 
         $content->SetSectionName($sectionName);
-
-        $_REQUEST['count']=10;
         
         if($contentData==null)
         {
+            $params['count']=10;
             $contentData=$this->GetDataSectionPubblicate_List($params);
         }
         
@@ -5866,13 +5865,14 @@ Class AA_GenericModule
         $content->EnableMultiSelect();
         $content->EnableSelect();
         
-        return $content->toObject();
+        return $content;
     }
 
     //Template sezione pubblicate (da specializzare)
     public function TemplateSection_Pubblicate($params=array())
     {
-        return $this->TemplateGenericSection_Pubblicate($params, false);
+        $content=$this->TemplateGenericSection_Pubblicate($params,false);
+        return $content->toObject();
     }
 }
 
