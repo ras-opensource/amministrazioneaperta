@@ -3149,7 +3149,7 @@ Class AA_SinesModule extends AA_GenericModule
                 //estremi provvedimento
                 $value=$incarico->GetEstremiProvvedimento();
                 if($value=="") $value="n.d.";
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Estremi_Provvedimento",array("type"=>"clean","width"=>200, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Estremi del provvedimento: </span><br>".$value."</div>")));
+                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Estremi_Provvedimento",array("type"=>"clean","width"=>220, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Estremi del provvedimento: </span><br>".$value."</div>")));
                 
                 //Trattamento economico complessivo
                 $value=$incarico->GetCompensoSpettante();
