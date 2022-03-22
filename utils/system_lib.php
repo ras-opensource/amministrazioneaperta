@@ -5763,8 +5763,44 @@ Class AA_GenericModule
         return array($data[0],$templateData);
     }
 
+    //Layout del modulo
+    function TemplateGenericLayout()
+    {
+        $template=new AA_JSON_Template_Multiview(static::AA_UI_PREFIX."_module_layout",array("type"=>"clean","fitBiggest"=>"true"));
+        foreach ($this->GetSections() as $curSection)
+        {
+            $template->addCell(new AA_JSON_Template_Template($curSection->GetViewId(),array("name"=>$curSection->GetName(),"type"=>"clean","template"=>"","initialized"=>false,"refreshed"=>false)));
+        }
+        
+        return $template;
+    }
+
+    //Layout del modulo (da specializzare)
+    function TemplateLayout()
+    {
+        return $this->TemplateGenericLayout();
+    }
+    
+    //Template generic section placeholder
+    public function TemplateGenericSection_Placeholder()
+    {   
+        $content = new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Placeholder_Content",
+                array(
+                "type"=>"clean",
+                "template"=>"placeholder"
+            ));
+         
+        return $content;
+    }
+
+    //Template section placeholder
+    public function TemplateSection_Placeholder()
+    {    
+        return $this->TemplateGenericSection_Placeholder();
+    }
+
     //Template sezione pubblicate
-    public function TemplateSection_Pubblicate($params=array(),$bCanModify=false)
+    public function TemplateGenericSection_Pubblicate($params=array(),$bCanModify=false,$contentData=null)
     {          
         $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Pubblicate",$this->GetId());
         $content->EnablePager();
@@ -5814,14 +5850,23 @@ Class AA_GenericModule
 
         $_REQUEST['count']=10;
         
-        $contentData=$this->GetDataSectionPubblicate_List($params);
-        $content->SetContentBoxData($contentData[1]);
+        if($contentData==null)
+        {
+            $contentData=$this->GetDataSectionPubblicate_List($params);
+        }
         
+        $content->SetContentBoxData($contentData[1]);
         $content->SetPagerItemCount($contentData[0]);
         $content->EnableMultiSelect();
         $content->EnableSelect();
         
         return $content->toObject();
+    }
+
+    //Template sezione pubblicate (da specializzare)
+    public function TemplateSection_Pubblicate($params=array())
+    {
+        return $this->TemplateGenericSection_Pubblicate($params, false);
     }
 }
 

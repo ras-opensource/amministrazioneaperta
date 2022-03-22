@@ -230,29 +230,27 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Layout del modulo
     function TemplateLayout()
     {
-        $template=new AA_JSON_Template_Multiview(static::AA_UI_PREFIX."_module_layout",array("type"=>"clean","fitBiggest"=>"true"));
-        foreach ($this->GetSections() as $curSection)
-        {
-            $template->addCell(new AA_JSON_Template_Template($curSection->GetViewId(),array("name"=>$curSection->GetName(),"type"=>"clean","template"=>"","initialized"=>false,"refreshed"=>false)));
-        }
-        
-        //AA_Log::Log("TemplateLayout - ".$template,100);
-        return $template;
+        return $this->TemplateGenericLayout();
     }
     
-     //Template bozze content
+    //Template placeholder
     public function TemplateSection_Placeholder()
     {
-        
-        $content = new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Placeholder_Content",
-                array(
-                "type"=>"clean",
-                "template"=>"placeholder"
-            ));
-         
-        return $content;
+        return $this->TemplateGenericSection_Placeholder();
     }
     
+    //Template pubblicate content
+    public function TemplateSection_Pubblicate($params=array())
+    {
+        $bCanModify=false;
+        if($this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $bCanModify=true;
+        }
+
+        return $this->TemplateGenericSection_Pubblicate($params,$bCanModify);
+    }
+
     //Template bozze content
     public function TemplateSection_Bozze()
     {
