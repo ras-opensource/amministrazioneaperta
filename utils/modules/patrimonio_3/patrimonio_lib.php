@@ -27,7 +27,7 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
         //Db data binding
-        $this->SetBind("IdData","id"); $this->SetProp("IdData",0);
+        $this->SetBind("IdData","id");
         $this->SetBind("Descrizione","descrizione");
         $this->SetBind("CodiceComune","codice_comune");
         $this->SetBind("SezioneCatasto","sezione_catasto");
@@ -37,7 +37,11 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetBind("RenditaCatasto","rendita_catasto");
         $this->SetBind("ConsistenzaCatasto","consistenza_catasto");
         $this->SetBind("ClasseCatasto","classe_catasto");
-        $this->SetBind("Titolo","titolo");
+        $this->SetBind("Titolo","titolo"); 
+
+        //Valori iniziali
+        $this->SetProp("IdData",0);
+        $this->SetProp("Titolo",0);
 
         //chiama il costruttore genitore
         parent::__construct($id,$user,true);
@@ -46,13 +50,94 @@ Class AA_Patrimonio extends AA_Object_V2
     //funzione di ricerca
     static public function Search($params=array(),$user=null)
     {
+        //Verifica utente
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser())
+            {
+                $user=AA_User::GetCurrentUser();
+            }
+        }
+        else $user=AA_User::GetCurrentUser();
 
+        //---------local checks-------------
+
+        //----------------------------------
+
+        return self::Search($params,$user);
+    }
+
+    //Funzione di verifica dei permessi
+    public function GetUserCaps($user=null)
+    {
+        //Verifica utente
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser())
+            {
+               $user=AA_User::GetCurrentUser();
+            }
+        }
+        else $user=AA_User::GetCurrentUser();
+
+        $perms=parent::GetUserCaps($user);
+
+        //------------local checks---------------
+
+        //Se l'utente non ha il flag può al massimo visualizzare la scheda
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $perms = AA_Const::AA_PERMS_READ;
+        }
+        //---------------------------------------
+
+        return $perms;
+    }
+
+    static public function AddNew($object=null,$user=null,$bStandardCheck=true,$bSaveData=false)
+    {
+        //Verifica utente
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser())
+            {
+               $user=AA_User::GetCurrentUser();
+            }
+        }
+        else $user=AA_User::GetCurrentUser();
+
+        //-------------local checks---------------------
+        $bStandardCheck=false; //disable standard checks
+        $bSaveData=true; //enable save data
+
+        //Chi non ha il flag non può inserire nuovi elementi
+        if(!$user->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUserName()." non ha i permessi per inserire nuovi elementi.",100);
+            return false;
+        }
+
+        //Istanzia un nuovo oggetto Patrimonio
+        if(!($object instanceof AA_Patrimonio))
+        {
+            $object = new AA_Patrimonio(0,$user);
+            if(!$object->isValid())
+            {
+                AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUserName()." non ha i permessi per inserire nuovi elementi (oggetto non valido).",100);
+                return false;
+            }
+        }
+        //----------------------------------------------
+
+        return self::AddNew($object,$user,$bStandardCheck,$bSaveData);
     }
 }
 
 #Classe per il modulo art30 gestione del patrimonio
 Class AA_PatrimonioModule extends AA_GenericModule
 {
+    const AA_UI_PREFIX="AA_Patrimonio";
+
     public function __construct($user=null)
     {
         parent::__construct($user);
@@ -102,19 +187,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         //Schede pubblicate
         $navbarTemplate=array($this->TemplateNavbar_Bozze(1,true)->toArray());
-        $section=new AA_GenericModuleSection("Pubblicate","Schede pubblicate",true,"AA_Patrimonio_Pubblicate_Content_Box",$this->GetId(),true,true,false,true);
+        $section=new AA_GenericModuleSection("Pubblicate","Schede pubblicate",true,static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,$this->GetId(),true,true,false,true);
         $section->SetNavbarTemplate($navbarTemplate);
         $this->AddSection($section);
         
         //Bozze
         $navbarTemplate= $this->TemplateNavbar_Pubblicate(1,true)->toArray();
-        $section=new AA_GenericModuleSection("Bozze","Schede in bozza",true,"AA_Patrimonio_Bozze_Content_Box",$this->GetId(),false,true,false,true);
+        $section=new AA_GenericModuleSection("Bozze","Schede in bozza",true,static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,$this->GetId(),false,true,false,true);
         $section->SetNavbarTemplate($navbarTemplate);
         $this->AddSection($section);
         
         //dettaglio
         $navbarTemplate=$this->TemplateNavbar_Back(1,true)->toArray();
-        $section=new AA_GenericModuleSection("Dettaglio","Dettaglio",false,"AA_Patrimonio_Detail_Content_Box",$this->GetId(),false,true,true,true);
+        $section=new AA_GenericModuleSection("Dettaglio","Dettaglio",false,static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,$this->GetId(),false,true,true,true);
         $section->SetNavbarTemplate($navbarTemplate);
         $this->AddSection($section);
         
@@ -138,7 +223,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Layout del modulo
     function TemplateLayout()
     {
-        $template=new AA_JSON_Template_Multiview("AA_Patrimonio_module_layout",array("type"=>"clean","fitBiggest"=>"true"));
+        $template=new AA_JSON_Template_Multiview(static::AA_UI_PREFIX."_module_layout",array("type"=>"clean","fitBiggest"=>"true"));
         foreach ($this->GetSections() as $curSection)
         {
             $template->addCell(new AA_JSON_Template_Template($curSection->GetViewId(),array("name"=>$curSection->GetName(),"type"=>"clean","template"=>"","initialized"=>false,"refreshed"=>false)));
@@ -152,7 +237,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     public function TemplateSection_Placeholder()
     {
         
-        $content = new AA_JSON_Template_Template("AA_Patrimonio_Placeholder_Content",
+        $content = new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Placeholder_Content",
                 array(
                 "type"=>"clean",
                 "template"=>"placeholder"
@@ -173,7 +258,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         if(!$is_enabled)
         {
-            $content = new AA_JSON_Template_Template("AA_Patrimonio_Bozze_Content_Box",
+            $content = new AA_JSON_Template_Template(static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,
                 array(
                 "type"=>"clean",
                 "update_time"=>Date("Y-m-d H:i:s"),
@@ -184,7 +269,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return $content;
         }
                 
-        $content=new AA_GenericPagedSectionTemplate("AA_Patrimonio_Bozze",$this->GetId());
+        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Bozze",$this->GetId());
         $content->EnablePager();
         $content->SetPagerItemForPage(10);
         $content->EnableFiltering();
@@ -242,7 +327,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         //$content_box=$this->TemplateSectionPubblicate_List($_REQUEST);
                 
-        $content=new AA_GenericPagedSectionTemplate("AA_Patrimonio_Pubblicate",$this->GetId());
+        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Pubblicate",$this->GetId());
         $content->EnablePager();
         $content->EnablePaging();
         $content->SetPagerItemForPage(10);

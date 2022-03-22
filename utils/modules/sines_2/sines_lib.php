@@ -11,6 +11,9 @@ include_once "pdf_lib.php";
 #Classe per il modulo Sines
 Class AA_SinesModule extends AA_GenericModule
 {
+    const AA_UI_PREFIX="AA_Sines";
+    const AA_UI_SCADENZARIO_BOX="Scadenzario_Content_Box";
+
     public function __construct($user=null)
     {
         parent::__construct($user);
@@ -23,8 +26,6 @@ Class AA_SinesModule extends AA_GenericModule
         $this->SetSideBarIcon("mdi mdi-office-building");
         $this->SetSideBarTooltip("SINES - Sistema Informativo Enti e Società");
         $this->SetSideBarName("Sistema Informativo Enti e Società");
-        
-        $this->taskManagerUrl="utils/sines_ops.php";
         
         //Registrazione dei task-------------------
         $taskManager=$this->GetTaskManager();
@@ -115,25 +116,25 @@ Class AA_SinesModule extends AA_GenericModule
         
         //Schede pubblicate
         $navbarTemplate=array($this->TemplateNavbar_Bozze(1,false)->toArray(),$this->TemplateNavbar_Scadenzario(2,true)->toArray());
-        $section=new AA_GenericModuleSection("Pubblicate","Schede pubblicate",true,"AA_Sines_Pubblicate_Content_Box",$this->GetId(),true,true,false,true);
+        $section=new AA_GenericModuleSection("Pubblicate","Schede pubblicate",true, static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,$this->GetId(),true,true,false,true);
         $section->SetNavbarTemplate($navbarTemplate);
         $this->AddSection($section);
         
         //Bozze
         $navbarTemplate= $this->TemplateNavbar_Pubblicate(1,true)->toArray();
-        $section=new AA_GenericModuleSection("Bozze","Schede in bozza",true,"AA_Sines_Bozze_Content_Box",$this->GetId(),false,true,false,true);
+        $section=new AA_GenericModuleSection("Bozze","Schede in bozza",true,static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,$this->GetId(),false,true,false,true);
         $section->SetNavbarTemplate($navbarTemplate);
         $this->AddSection($section);
         
         //dettaglio
         $navbarTemplate=$this->TemplateNavbar_Back(1,true)->toArray();
-        $section=new AA_GenericModuleSection("Dettaglio","Dettaglio",false,"AA_Sines_Detail_Content_Box",$this->GetId(),false,true,true,true);
+        $section=new AA_GenericModuleSection("Dettaglio","Dettaglio",false,static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,$this->GetId(),false,true,true,true);
         $section->SetNavbarTemplate($navbarTemplate);
         $this->AddSection($section);
         
         //Scadenzario
         $navbarTemplate=$this->TemplateNavbar_Pubblicate(1,true)->toArray();
-        $section=new AA_GenericModuleSection("Scadenzario","Scadenzario",true,"AA_Sines_Scadenzario_Content_Box",$this->GetId(),false,true,false,true);
+        $section=new AA_GenericModuleSection("Scadenzario","Scadenzario",true,static::AA_UI_PREFIX."_".static::AA_UI_SCADENZARIO_BOX,$this->GetId(),false,true,false,true);
         $section->SetNavbarTemplate($navbarTemplate);
         $this->AddSection($section);
         
@@ -157,7 +158,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Layout del modulo
     function TemplateLayout()
     {
-        $template=new AA_JSON_Template_Multiview("AA_Sines_module_layout",array("type"=>"clean","fitBiggest"=>"true"));
+        $template=new AA_JSON_Template_Multiview(static::AA_UI_PREFIX."_module_layout",array("type"=>"clean","fitBiggest"=>"true"));
         foreach ($this->GetSections() as $curSection)
         {
             $template->addCell(new AA_JSON_Template_Template($curSection->GetViewId(),array("name"=>$curSection->GetName(),"type"=>"clean","template"=>"","initialized"=>false,"refreshed"=>false)));
@@ -171,7 +172,7 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplateSection_Placeholder()
     {
         
-        $content = new AA_JSON_Template_Template("AA_Sines_Placeholder_Content",
+        $content = new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Placeholder_Content",
                 array(
                 "type"=>"clean",
                 "template"=>"placeholder"
@@ -192,7 +193,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         if(!$is_enabled)
         {
-            $content = new AA_JSON_Template_Template("AA_Sines_Bozze_Content_Box",
+            $content = new AA_JSON_Template_Template(static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,
                 array(
                 "type"=>"clean",
                 "update_time"=>Date("Y-m-d H:i:s"),
@@ -203,7 +204,7 @@ Class AA_SinesModule extends AA_GenericModule
             return $content;
         }
                 
-        $content=new AA_GenericPagedSectionTemplate("AA_Sines_Bozze",$this->GetId());
+        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Bozze",$this->GetId());
         $content->EnablePager();
         $content->SetPagerItemForPage(10);
         $content->EnableFiltering();
@@ -261,7 +262,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //$content_box=$this->TemplateSectionPubblicate_List($_REQUEST);
                 
-        $content=new AA_GenericPagedSectionTemplate("AA_Sines_Pubblicate",$this->GetId());
+        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Pubblicate",$this->GetId());
         $content->EnablePager();
         $content->EnablePaging();
         $content->SetPagerItemForPage(10);
@@ -321,7 +322,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //$content_box=$this->TemplateSectionPubblicate_List($_REQUEST);
                 
-        $content=new AA_GenericPagedSectionTemplate("AA_Sines_Scadenzario",$this->GetId());
+        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Scadenzario",$this->GetId());
         $content->EnablePager();
         $content->EnablePaging();
         $content->SetPagerItemForPage(10);
@@ -666,7 +667,7 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplateSection_Revisionate()
     {
         
-        $content = new AA_JSON_Template_Template("AA_Sines_Revisionate_Content",
+        $content = new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Revisionate_Content",
                 array(
                 "type"=>"clean",
                 "template"=>"revisionate"
@@ -1516,7 +1517,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg modify organismo
     public function Template_GetOrganismoModifyDlg($object=null)
     {
-        $id="AA_Sines_GetOrganismoModifyDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoModifyDlg";
         if(!($object instanceof AA_Organismi)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali", $this->id);
 
         $form_data['id']=$object->GetID();
@@ -1624,7 +1625,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg modify organismo
     public function Template_GetOrganismoModifyDatoContabileDlg($object=null,$dato=null)
     {
-        $id="AA_Sines_GetOrganismoModifyDatoContabileDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoModifyDatoContabileDlg";
         
         if(!($object instanceof AA_Organismi)) return new AA_GenericWindowTemplate($id, "Modifica i dati contabili e la dotazione organica", $this->id);
         if(!($dato instanceof AA_OrganismiDatiContabili)) return new AA_GenericWindowTemplate($id, "Modifica i dati contabili e la dotazione organica", $this->id);
@@ -1701,7 +1702,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg modify organismo incarico
     public function Template_GetOrganismoModifyIncaricoDlg($object=null,$incarico=null)
     {
-        $id="AA_Sines_GetOrganismoModifyIncaricoDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoModifyIncaricoDlg";
         
         if(!($object instanceof AA_Organismi)) return new AA_GenericWindowTemplate($id, "Modifica incarico", $this->id);
         if(!($incarico instanceof AA_OrganismiNomine)) return new AA_GenericWindowTemplate($id, "Modifica incarico", $this->id);
@@ -1758,7 +1759,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg aggiungi organismo incarico
     public function Template_GetOrganismoAddNewIncaricoDlg($object=null,$params=array())
     {
-        $id="AA_Sines_GetOrganismoAddNewIncaricoDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoAddNewIncaricoDlg";
         
         if(!($object instanceof AA_Organismi)) return new AA_GenericWindowTemplate($id, "Aggiungi incarico", $this->id);
 
@@ -1813,7 +1814,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg aggiungi organismo incarico doc
     public function Template_GetOrganismoAddNewIncaricoDocDlg($object=null,$incarico=null)
     {
-        $id="AA_Sines_GetOrganismoAddNewIncaricoDocDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoAddNewIncaricoDocDlg";
         
         if(!($object instanceof AA_Organismi) || !($incarico instanceof AA_OrganismiNomine)) return new AA_GenericWindowTemplate($id, "Aggiungi documento", $this->id);
         
@@ -1865,7 +1866,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg aggiungi provvedimento organismo
     public function Template_GetOrganismoAddNewProvvedimentoDlg($object=null)
     {
-        $id="AA_Sines_GetOrganismoAddNewProvvedimentoDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoAddNewProvvedimentoDlg";
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
@@ -1919,7 +1920,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg modifica provvedimento organismo
     public function Template_GetOrganismoModifyProvvedimentoDlg($object=null,$provvedimento=null)
     {
-        $id="AA_Sines_GetOrganismoModifyProvvedimentoDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoModifyProvvedimentoDlg";
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
@@ -2015,7 +2016,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg aggiungi organismo incarico
     public function Template_GetOrganismoAddNewNominaDlg($object=null)
     {
-        $id="AA_Sines_GetOrganismoAddNewNominaDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoAddNewNominaDlg";
         
         if(!($object instanceof AA_Organismi)) return new AA_GenericWindowTemplate($id, "Aggiungi nomina", $this->id);
 
@@ -2079,7 +2080,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template dlg addnew dato contabile organismo
     public function Template_GetOrganismoAddNewDatoContabileDlg($object=null)
     {
-        $id="AA_Sines_GetOrganismoAddNewDatoContabileDlg";
+        $id=static::AA_UI_PREFIX."_GetOrganismoAddNewDatoContabileDlg";
         
         $form_data['nIdParent']=$object->GetID();
         $form_data['nAnno']=Date("Y");
@@ -2229,12 +2230,12 @@ Class AA_SinesModule extends AA_GenericModule
     //Template Detail
     public function TemplateSection_Detail($params)
     {
-        $id="AA_Sines_Detail_";
+        $id=static::AA_UI_PREFIX."_Detail_";
         $organismo= new AA_Organismi($params['id'],$this->oUser);
         if(!$organismo->isValid())
         {
             return new AA_JSON_Template_Template(
-                        "AA_Sines_Detail_Content_Box",
+                        static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,
                         array("update_time"=>Date("Y-m-d H:i:s"),
                         "name"=>"Dettaglio scheda organismo",
                         "type"=>"clean","template"=>AA_Log::$lastErrorLog));            
@@ -2446,7 +2447,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template section detail, tab generale
     public function TemplateDettaglio_Generale_Tab($object=null)
     {
-        $id="AA_Sines_Detail_Generale_Tab_".$object->GetId();
+        $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$object->GetId();
         $rows_fixed_height=50;
         if(!($object instanceof AA_Organismi)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
@@ -2641,7 +2642,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template section detail, tab dati contabili
     public function TemplateDettaglio_DatiContabili_Tab($object=null)
     {
-        $id="AA_Sines_Detail_DatiContabili_Tab_".$object->GetID();
+        $id=static::AA_UI_PREFIX."_Detail_DatiContabili_Tab_".$object->GetID();
         if(!($object instanceof AA_Organismi)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
         //flag società
@@ -2930,7 +2931,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template section detail, tab nomina
     public function TemplateDettaglio_Nomine_Tab($object=null,$filterData="")
     {
-        $id="AA_Sines_Detail_Nomine_Tab_".$object->GetID();
+        $id=static::AA_UI_PREFIX."_Detail_Nomine_Tab_".$object->GetID();
         if(!($object instanceof AA_Organismi)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
         //permessi
@@ -3600,7 +3601,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "icon"=>"mdi mdi-reload",
                 "module_id"=>$this->GetId(),
                 "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Sines_Bozze_Content_Box",true)
+                "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,true)
                 ))
             ));
         
@@ -3620,7 +3621,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "icon"=>"mdi mdi-reload",
                 "module_id"=>$this->GetId(),
                 "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Sines_Scadenzario_Content_Box",true)
+                "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_SCADENZARIO_BOX,true)
                 ))
             ));
         
@@ -3640,7 +3641,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "icon"=>"mdi mdi-reload",
                 "module_id"=>$this->GetId(),
                 "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Sines_Pubblicate_Content_Box",true)
+                "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,true)
                 )
                 )
             ));
@@ -3661,7 +3662,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "icon"=>"mdi mdi-reload",
                 "module_id"=>$this->GetId(),
                 "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Sines_Revisionate_Content_Box",true)
+                "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_REVISIONATE_BOX,true)
                 ))
             ));
         
@@ -3683,7 +3684,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "section_id"=>"Dettaglio",
                 "module_id"=>$this->GetId(),
                 "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Sines_Detail_Content_Box",true)
+                "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,true)
                 ))
             ));
         
@@ -3695,7 +3696,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $class="n".$level;
         if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Sines_Navbar_Link_Bozze_Content_Box",array(
+        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_Bozze_Content_Box",array(
                 "type"=>"clean",
                 "section_id"=>"Bozze",
                 "module_id"=>$this->GetId(),
@@ -3712,7 +3713,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $class="n".$level;
         if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Sines_Navbar_Link_Pubblicate_Content_Box",array(
+        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_".static::AA_UI_PUBBLICATE_BOX,array(
                 "type"=>"clean",
                 "section_id"=>"Pubblicate",
                 "module_id"=>$this->GetId(),
@@ -3729,7 +3730,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $class="n".$level;
         if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Sines_Navbar_Link_Scadenzario_Content_Box",array(
+        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_Scadenzario_Content_Box",array(
                 "type"=>"clean",
                 "section_id"=>"Scadenzario",
                 "module_id"=>$this->GetId(),
@@ -3746,7 +3747,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $class="n".$level;
         if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Sines_Navbar_Link_Back_Content_Box",array(
+        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_Back_Content_Box",array(
                 "type"=>"clean",
                 "css"=>"AA_NavbarEventListener",
                 "module_id"=>"AA_MODULE_SINES",
@@ -3763,10 +3764,10 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $class="n".$level;
         if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Sines_Navbar_Link_Revisionate_Content_Box",array(
+        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_Revisionate_Content_Box",array(
                 "type"=>"clean",
                 "css"=>"AA_NavbarEventListener",
-                "id_panel"=>"AA_Sines_Revisionate_Content_Box",
+                "id_panel"=>static::AA_UI_PREFIX."_Revisionate_Content_Box",
                 "module_id"=>"AA_MODULE_SINES",
                 "refresh_view"=>$refresh_view,
                 "tooltip"=>"Fai click per visualizzare le schede pubblicate revisionate",
@@ -3787,21 +3788,21 @@ Class AA_SinesModule extends AA_GenericModule
         
         switch($_REQUEST['section'])
         {
-            case "AA_Sines_Bozze_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX:
                 $content=$this->TemplateActionMenu_Bozze();
                 break;
             
-            case "AA_Sines_Pubblicate_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX:
                 $content=$this->TemplateActionMenu_Pubblicate();
                 break;
                
-            case "AA_Sines_Revisionate_Content_Box":
+            case static::AA_UI_PREFIX."_Revisionate_Content_Box":
                 $content=$this->TemplateActionMenu_Revisionate();
                 break;
-            case "AA_Sines_Scadenzario_Content_Box":
+            case static::AA_UI_PREFIX."_Scadenzario_Content_Box":
                 $content=$this->TemplateActionMenu_Scadenzario();
                 break;
-            case "AA_Sines_Detail_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
                 $content=$this->TemplateActionMenu_Detail();
                 break;
             default:
@@ -6753,13 +6754,13 @@ Class AA_SinesModule extends AA_GenericModule
         
         switch($_REQUEST['object'])
         {
-            case "AA_Sines_Pubblicate_List_Box":
+            case static::AA_UI_PREFIX."_Pubblicate_List_Box":
                 $_REQUEST['count']=10;
                 $data=$this->GetDataSectionPubblicate_List($_REQUEST);
                 if($data[0]>0) $objectData = $data[1];
                 break;
                 
-            case "AA_Sines_Scadenzario_List_Box":
+            case static::AA_UI_PREFIX."_Scadenzario_List_Box":
                 $_REQUEST['count']=10;
                 $data=$this->GetDataSectionScadenzario_List($_REQUEST);
                 if($data[0]>0) $objectData = $data[1];
@@ -6791,21 +6792,21 @@ Class AA_SinesModule extends AA_GenericModule
         
         if(!$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN) && !$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22))
         {
-            $_REQUEST['section']="AA_Sines_Pubblicate_Content_Box";
+            $_REQUEST['section']=static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX;
         }
         
         switch($_REQUEST['section'])
         {
-            case "AA_Sines_Bozze_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX:
                 $content[]=$module->TemplateNavbar_Pubblicate(1,true)->toArray();
                 //$content[]=$module->TemplateNavbar_Revisionate(2,true)->toArray();
                 break;
-            case "AA_Sines_Pubblicate_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX:
                 //$content[]=$module->TemplateNavbar_Revisionate()->toArray();
                 $content[]=$module->TemplateNavbar_Bozze(1,false)->toArray();
                 $content[]=$module->TemplateNavbar_Scadenzario(2,true)->toArray();
                 break;
-            case "AA_Sines_Detail_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
                 $content[]=$module->TemplateNavbar_Back(1,true)->toArray();
                 break;
             default:
@@ -6833,24 +6834,24 @@ Class AA_SinesModule extends AA_GenericModule
         switch($_REQUEST['section'])
         {
             case "Bozze":
-            case "AA_Sines_Bozze_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX:
                 $template=$this->TemplateSection_Bozze();
-                $content=array("id"=>"AA_Sines_Bozze_Content_Box","content"=>$template->toArray());
+                $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,"content"=>$template->toArray());
                 break;
             
             case "Pubblicate":
-            case "AA_Sines_Pubblicate_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX:
                 $template = $this->TemplateSection_Pubblicate();
-                $content=array("id"=>"AA_Sines_Pubblicate_Content_Box","content"=>$template->toArray());
+                $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,"content"=>$template->toArray());
                 break;
             
             case "Dettaglio":
-            case "AA_Sines_Detail_Content_Box":
-               $content=array("id"=>"AA_Sines_Detail_Content_Box","content"=>$this->TemplateSection_Detail($_REQUEST)->toArray());
+            case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
+               $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$this->TemplateSection_Detail($_REQUEST)->toArray());
                 break;
             
             default:
-                 $content=array(array("id"=>"AA_Sines_Pubblicate_Content_Box","content"=>$this->TemplateSection_Placeholder()->toArray()));
+                 $content=array(array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()));
         }
         
         //Codifica il contenuto in base64
@@ -6871,33 +6872,33 @@ Class AA_SinesModule extends AA_GenericModule
         switch($_REQUEST['object'])
         {
             case "Bozze":
-            case "AA_Sines_Bozze_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX:
                 $template=$this->TemplateSection_Bozze();
-                $content=array("id"=>"AA_Sines_Bozze_Content_Box","content"=>$template->toArray());
+                $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,"content"=>$template->toArray());
                 break;
             
             case "Pubblicate":
-            case "AA_Sines_Pubblicate_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX:
                 $template = $this->TemplateSection_Pubblicate();
-                $content=array("id"=>"AA_Sines_Pubblicate_Content_Box","content"=>$template->toArray());
+                $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,"content"=>$template->toArray());
                 break;
             
             case "Dettaglio":
-            case "AA_Sines_Detail_Content_Box":
+            case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
                $template=$this->TemplateSection_Detail($_REQUEST);
-               $content=array("id"=>"AA_Sines_Detail_Content_Box","content"=>$template->toArray());
+               $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$template->toArray());
                 break;
             
             case "Scadenzario":
-            case "AA_Sines_Scadenzario_Content_Box":
+            case static::AA_UI_PREFIX."_Scadenzario_Content_Box":
                 $template = $this->TemplateSection_Scadenzario();
-                $content=array("id"=>"AA_Sines_Scadenzario_Content_Box","content"=>$template->toArray());
+                $content=array("id"=>static::AA_UI_PREFIX."_Scadenzario_Content_Box","content"=>$template->toArray());
                 break;
             
             default:
                  $content=array(
-                    array("id"=>"AA_Sines_Pubblicate_Content_Box","content"=>$this->TemplateSection_Placeholder()->toArray()),
-                    array("id"=>"AA_Sines_Detail_Content_Box","content"=>$this->TemplateSection_Placeholder()->toArray()));
+                    array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()),
+                    array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()));
         }
         
         //Codifica il contenuto in base64
@@ -6928,7 +6929,7 @@ Class AA_SinesModule extends AA_GenericModule
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg("AA_Sines_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
        
         $dlg->SetHeight(580);
         
@@ -6975,7 +6976,7 @@ Class AA_SinesModule extends AA_GenericModule
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg("AA_Sines_Bozze_Filter", "Parametri di ricerca per le bozze pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Bozze_Filter", "Parametri di ricerca per le bozze pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 
@@ -7028,7 +7029,7 @@ Class AA_SinesModule extends AA_GenericModule
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg("AA_Sines_Scadenzario_Filter", "Parametri di ricerca per lo scadenzario nomine",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Scadenzario_Filter", "Parametri di ricerca per lo scadenzario nomine",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(780);
         $dlg->SetWidth(1080);

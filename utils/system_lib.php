@@ -1298,7 +1298,7 @@ class AA_User
     //Verifica la presenza di qualche flag
     public function HasFlag($flag)
     {
-        AA_Log::Log(get_class()."->HasFlag($flag)");
+        //AA_Log::Log(get_class()."->HasFlag($flag)");
 
         $flags=explode("|", $this->sFlags);
 
@@ -1306,7 +1306,7 @@ class AA_User
         {
             //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
             return true;
-        } 
+        }
         
         //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") non ha il flag",100, false,true);
         return false;
@@ -5444,6 +5444,21 @@ Class AA_GenericTableCellTemplateView extends AA_XML_Div_Element
 //Classe per la gestione dei moduli
 Class AA_GenericModule
 {
+    //prefisso per la generazione degli identificativi degli oggetti dell'interfaccia
+    const AA_UI_PREFIX="AA_Generic";
+
+    // id ui sezione pubblicate
+    const AA_UI_PUBBLICATE_BOX="Pubblicate_Content_Box";
+
+    //id ui sezione bozze
+    const AA_UI_BOZZE_BOX="Bozze_Content_Box";
+
+    //id ui sezione dettaglio
+    const AA_UI_DETAIL_BOX="Detail_Content_Box";
+
+     //id ui sezione revisionate
+     const AA_UI_REVISIONATE_BOX="Revisionate_Content_Box";
+    
     protected $taskManagerUrl="system_ops.php";
     public function GetTaskManagerUrl()
     {
