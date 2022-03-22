@@ -117,15 +117,11 @@ Class AA_Patrimonio extends AA_Object_V2
             return false;
         }
 
-        //Istanzia un nuovo oggetto Patrimonio
+        //Verifica validità oggetto
         if(!($object instanceof AA_Patrimonio))
         {
-            $object = new AA_Patrimonio(0,$user);
-            if(!$object->isValid())
-            {
-                AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUserName()." non ha i permessi per inserire nuovi elementi (oggetto non valido).",100);
-                return false;
-            }
+            AA_Log::Log(__METHOD__." - Errore: oggetto non valido (".print_r($object,true).").",100);
+            return false;
         }
         //----------------------------------------------
 
@@ -137,6 +133,17 @@ Class AA_Patrimonio extends AA_Object_V2
 Class AA_PatrimonioModule extends AA_GenericModule
 {
     const AA_UI_PREFIX="AA_Patrimonio";
+
+    const AA_MODULE_OBJECTS_CLASS="AA_Patrimonio";
+
+    //Task per la gestione dei dialoghi standard
+    const AA_UI_TASK_PUBBLICATE_FILTER_DLG="GetPatrimonioPubblicateFilterDlg";
+    const AA_UI_TASK_REASSIGN_DLG="GetPatrimonioReassignDlg";
+    const AA_UI_TASK_PUBLISH_DLG="GetPatrimonioPublishDlg";
+    const AA_UI_TASK_TRASH_DLG="GetPatrimonioTaskDlg";
+    const AA_UI_TASK_RESUME_DLG="GetPatrimonioResumeDlg";
+    const AA_UI_TASK_DELETE_DLG="GetPatrimonioDeleteDlg";
+    //------------------------------------
 
     public function __construct($user=null)
     {
@@ -183,7 +190,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Pdf export
         $taskManager->RegisterTask("PdfExport");
         
-        //Sezioni----------------------------------------
+        #Sezioni----------------------------------------
         
         //Schede pubblicate
         $navbarTemplate=array($this->TemplateNavbar_Bozze(1,true)->toArray());
@@ -314,174 +321,29 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         return $content->toObject();
     }
-    
-    //Template pubblicate
-    public function TemplateSection_Pubblicate()
-    {
-        $is_admin=false;
-
-        if($this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
-        {
-            $is_admin=true;
-        }
-        
-        //$content_box=$this->TemplateSectionPubblicate_List($_REQUEST);
-                
-        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Pubblicate",$this->GetId());
-        $content->EnablePager();
-        $content->EnablePaging();
-        $content->SetPagerItemForPage(10);
-        $content->EnableFiltering();
-        $content->SetFilterDlgTask("GetPubblicateFilterDlg");
-        $content->ViewExportFunctions();
-        
-        $content->SetSectionName("Schede pubblicate");
-        
-        //Imposta una dimensione fissa per il contenuto
-        //$content->SetContentItemHeight(110);
-        
-        $content->ViewDetail();
-        
-        if($is_admin)
-        {
-            $content->ViewReassign();
-            $content->SetReassignHandlerParams(array("task"=>"GetPatrimonioReassignDlg"));
-            
-            if($_REQUEST['cestinate']==0)
-            {
-                $content->ViewTrash();
-                $content->SetTrashHandlerParams(array("task"=>"GetPatrimonioTrashDlg"));
-            }
-            else 
-            {
-                $content->SetSectionName("Schede pubblicate cestinate");
-                $content->HideReassign();
-                $content->ViewResume();
-                $content->SetResumeHandlerParams(array("task"=>"GetPatrimonioResumeDlg"));
-                $content->ViewDelete();
-                $content->SetDeleteHandlerParams(array("task"=>"GetPatrimonioDeleteDlg"));
-            }            
-        }
-                
-        $_REQUEST['count']=10;
-        
-        $contentData=$this->GetDataSectionPubblicate_List($_REQUEST);
-        $content->SetContentBoxData($contentData[1]);
-        
-        $content->SetPagerItemCount($contentData[0]);
-        $content->EnableMultiSelect();
-        $content->EnableSelect();
-        
-        return $content->toObject();
-    }
        
+    //Restituisce la lista delle schede pubblicate (dati)
     public function GetDataSectionPubblicate_List($params=array())
     {
-        $templateData=array();
-        
-        $parametri=array("status"=>AA_Const::AA_STATUS_PUBBLICATA);
-        if($params['cestinate'] == 1) $parametri['status']=AA_Const::AA_STATUS_PUBBLICATA+AA_Const::AA_STATUS_CESTINATA;
-        if($params['page']) $parametri['from']=($params['page']-1)*$params['count'];
-        if($params['denominazione']) $parametri['denominazione']=$params['denominazione'];
-        if($params['tipo']) $parametri['tipo']=$params['tipo'];
-        if($params['dal']) $parametri['dal']=$params['dal'];
-        if($params['al']) $parametri['al']=$params['al'];
-        if($params['id_assessorato']) $parametri['id_assessorato']=$params['id_assessorato'];
-        if($params['id_direzione']) $parametri['id_direzione']=$params['id_direzione'];
-        if($params['incaricato']) $parametri['incaricato']=$params['incaricato'];
-        
-        $organismi=AA_Patrimonio::Search($parametri,false,$this->oUser);
-        
-        foreach($organismi[1] as $id=>$object)
-        {
-            $struct=$object->GetStruct();
-            $struttura_gest=$struct->GetAssessorato();
-            if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
-                           
-            #Stato
-            if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
-            if($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
-            if($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
-            if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
-        
-            #Dettagli
-            if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$object->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
-            else
-            {
-                if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
-            }
-            
-            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
-            
-            $templateData[]=array(
-                "id"=>$object->GetId(),
-                "tags"=>"",
-                "aggiornamento"=>$object->GetAggiornamento(),
-                "denominazione"=>$object->GetDenominazione(),
-                "pretitolo"=>$object->GetTipologia(),
-                "sottotitolo"=>$struttura_gest,
-                "stato"=>$status,
-                "dettagli"=>$details,
-                "module_id"=>$this->GetId()
-            );
-        }
+        return $this->GetDataSectionPubblicate_List($params);
+    }
 
-        return array($organismi[0],$templateData);
+    //Personalizza il filtro delle schede pubblicate per il modulo corrente
+    protected function GetDataSectionPubblicate_CustomFilter($params = array())
+    {
+        return array();
     }
     
     //Restituisce i dati delle bozze
     public function GetDataSectionBozze_List($params=array())
     {
-        $templateData=array();
-        
-        $parametri=array("status"=>AA_Const::AA_STATUS_BOZZA);
-        if($params['cestinate'] == 1) $parametri['status']=AA_Const::AA_STATUS_BOZZA+AA_Const::AA_STATUS_CESTINATA;
-        if($params['page']) $parametri['from']=($params['page']-1)*$params['count'];
-        if($params['denominazione']) $parametri['denominazione']=$params['denominazione'];
-        if($params['tipo']) $parametri['tipo']=$params['tipo'];
-        if($params['dal']) $parametri['dal']=$params['dal'];
-        if($params['al']) $parametri['al']=$params['al'];
-        if($params['id_assessorato']) $parametri['id_assessorato']=$params['id_assessorato'];
-        if($params['id_direzione']) $parametri['id_direzione']=$params['id_direzione'];
-        if($params['incaricato']) $parametri['incaricato']=$params['incaricato'];
-        
-        $organismi=AA_Patrimonio::Search($parametri,false,$this->oUser);
-        
-        foreach($organismi[1] as $id=>$object)
-        {
-            $struct=$object->GetStruct();
-            $struttura_gest=$struct->GetAssessorato();
-            if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
-          
-            #Stato
-            if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
-            if($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
-            if($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
-            if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
-        
-            #Dettagli
-            if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$object->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
-            else
-            {
-                if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
-            }
+        return $this->GetDataSectionPubblicate_List($params);
+    }
 
-            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
-            
-            $templateData[]=array(
-                "id"=>$object->GetId(),
-                "tags"=>"",
-                "aggiornamento"=>$object->GetAggiornamento(),
-                "denominazione"=>$object->GetDenominazione(),
-                "pretitolo"=>$object->GetTipologia(),
-                "sottotitolo"=>$struttura_gest,
-                "stato"=>$status,
-                "dettagli"=>$details,
-                "module_id"=>$this->GetId()
-            );
-        }
-
-        return array($organismi[0],$templateData);
+    //Personalizza il filtro delle bozze per il modulo corrente
+    protected function GetDataSectionBozze_CustomFilter($params = array())
+    {
+         return array();
     }
     
     //Template Revisionate
