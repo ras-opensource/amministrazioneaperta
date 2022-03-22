@@ -4,12 +4,8 @@ include_once "db.php";
 include_once "lib_mail.php";
 
 //Costanti
-class AA_Const
-{
-    //Percorso fisico della cartella di archiviazione
-    const AA_UPLOADS_PATH=AA_Config::AA_UPLOADS_PATH;
-    const AA_MODULES_PATH=AA_Config::AA_MODULES_PATH;
-
+class AA_Const extends AA_Config
+{    
     //Tabella db oggetti
     const AA_DBTABLE_OBJECTS="aa_objects";
 
@@ -8983,7 +8979,7 @@ Class AA_Object_V2
     }
     
     //Verifica dei permessi
-    public function GetUserCaps($user=AA_User::GetCurrentUser())
+    public function GetUserCaps($user=null)
     {
         $perms = AA_Const::AA_PERMS_NONE;
         
@@ -9048,7 +9044,7 @@ Class AA_Object_V2
     }
     
     //Funzione di caricamento
-    private function Load($id=0, $user=AA_User::GetCurrentUser(), $bLoadData=true)
+    private function Load($id=0, $user=null, $bLoadData=true)
     {
          //Verifica utente
         if($user instanceof AA_User)
@@ -9253,7 +9249,7 @@ Class AA_Object_V2
     }
 
     //funzione di ricerca
-    static public function Search($params=array(),$user=AA_User::GetCurrentUser())
+    static public function Search($params=array(),$user=null)
     {
         //Verifica utente
         if($user instanceof AA_User)

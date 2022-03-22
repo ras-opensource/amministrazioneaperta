@@ -3,7 +3,7 @@ include_once "config.php";
 include_once "system_lib.php";
 
 //Costanti
-class AA_Organismi_Const
+class AA_Organismi_Const extends AA_Const
 {
     //percorso pubblicazione documenti
     const AA_ORGANISMI_NOMINE_DOCS_PATH="/amministrazione_trasparente/art22/nomine/docs";

@@ -9,7 +9,7 @@ include_once "config.php";
 include_once "system_lib.php";
 
 #Costanti
-Class AA_Patrimonio_Const
+Class AA_Patrimonio_Const extends AA_Const
 {
     const AA_USER_FLAG_PATRIMONIO="patrimonio";
 }
@@ -21,7 +21,7 @@ Class AA_Patrimonio extends AA_Object_V2
     const AA_DBTABLE_DATA="aa_patrimonio_data";
 
     //Costruttore
-    public function __construct($id=0, $user=AA_User::GetCurrentUser())
+    public function __construct($id=0, $user=null)
     {
         //data table
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
@@ -44,7 +44,7 @@ Class AA_Patrimonio extends AA_Object_V2
     }
 
     //funzione di ricerca
-    static public function Search($params=array(),$user=AA_User::GetCurrentUser())
+    static public function Search($params=array(),$user=null)
     {
 
     }
