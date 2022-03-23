@@ -138,11 +138,13 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
     //Task per la gestione dei dialoghi standard
     const AA_UI_TASK_PUBBLICATE_FILTER_DLG="GetPatrimonioPubblicateFilterDlg";
+    const AA_UI_TASK_BOZZE_FILTER_DLG="GetPatrimonioBozzeFilterDlg";
     const AA_UI_TASK_REASSIGN_DLG="GetPatrimonioReassignDlg";
     const AA_UI_TASK_PUBLISH_DLG="GetPatrimonioPublishDlg";
     const AA_UI_TASK_TRASH_DLG="GetPatrimonioTaskDlg";
     const AA_UI_TASK_RESUME_DLG="GetPatrimonioResumeDlg";
     const AA_UI_TASK_DELETE_DLG="GetPatrimonioDeleteDlg";
+    const AA_UI_TASK_ADDNEW_DLG="GetPatrimonioAddNewDlg";
     //------------------------------------
 
     public function __construct($user=null)
@@ -264,10 +266,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return array();
     }
 
-    //Template bozze content
-    public function TemplateSection_Bozze()
+    //Template sezione bozze (da specializzare)
+    public function TemplateSection_Bozze($params=array())
     {
-       $is_enabled = false;
+        $is_enabled= false;
        
         if($this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
@@ -286,76 +288,21 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
             return $content;
         }
-                
-        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Bozze",$this->GetId());
-        $content->EnablePager();
-        $content->SetPagerItemForPage(10);
-        $content->EnableFiltering();
-        $content->EnableAddNew();
-        $content->SetAddNewDlgTask("GetPatrimonioAddNewDlg");
-        $content->SetFilterDlgTask("GetBozzeFilterDlg");
-        $content->ViewExportFunctions();
-        
-        $content->SetSectionName("Schede in bozza");
-        
-        //Imposta una dimensione fissa per il contenuto
-        //$content->SetContentItemHeight(110);
-        
-        $content->ViewDetail();
-        
-        if($_REQUEST['cestinate']==0)
-        {
-            $content->ViewTrash();
-            $content->SetTrashHandlerParams(array("task"=>"GetPatrimonioTrashDlg"));
-            $content->ViewPublish();
-            $content->SetPublishHandlerParams(array("task"=>"GetPatrimonioPublishDlg"));
-            $content->ViewReassign();
-            $content->SetReassignHandlerParams(array("task"=>"GetPatrimonioReassignDlg"));
-        }
-        else 
-        {
-            $content->SetSectionName("Schede in bozza cestinate");
-            $content->ViewResume();
-            $content->SetResumeHandlerParams(array("task"=>"GetPatrimonioResumeDlg"));
-            $content->ViewDelete();
-            $content->SetDeleteHandlerParams(array("task"=>"GetPatrimonioDeleteDlg"));
-        }            
-                
-        $_REQUEST['count']=10;
-        
-        $contentData=$this->GetDataSectionBozze_List($_REQUEST);
-        $content->SetContentBoxData($contentData[1]);
-        
-        $content->SetPagerItemCount($contentData[0]);
-        $content->EnableMultiSelect();
-        $content->EnableSelect();
-        
+
+        $content=$this->TemplateGenericSection_Bozze($params,false);
         return $content->toObject();
     }
     
     //Restituisce i dati delle bozze
     public function GetDataSectionBozze_List($params=array())
     {
-        return $this->GetDataSectionPubblicate_List($params);
+        return $this->GetDataGenericSectionBozze_List($params);
     }
 
     //Personalizza il filtro delle bozze per il modulo corrente
     protected function GetDataSectionBozze_CustomFilter($params = array())
     {
          return array();
-    }
-    
-    //Template Revisionate
-    public function TemplateSection_Revisionate()
-    {
-        
-        $content = new AA_JSON_Template_Template("AA_Patrimonio_Revisionate_Content",
-                array(
-                "type"=>"clean",
-                "template"=>"revisionate"
-            ));
-         
-        return $content;
     }
     
     //Template patrimonio trash dlg

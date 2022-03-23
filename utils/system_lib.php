@@ -5464,11 +5464,13 @@ Class AA_GenericModule
 
     //Task per la gestione dei dialoghi standard
     const AA_UI_TASK_PUBBLICATE_FILTER_DLG="GetGenericPubblicateFilterDlg";
+    const AA_UI_TASK_BOZZE_FILTER_DLG="GetGenericBozzeFilterDlg";
     const AA_UI_TASK_REASSIGN_DLG="GetGenericReassignDlg";
     const AA_UI_TASK_PUBLISH_DLG="GetGenericPublishDlg";
     const AA_UI_TASK_TRASH_DLG="GetGenericTaskDlg";
     const AA_UI_TASK_RESUME_DLG="GetGenericResumeDlg";
     const AA_UI_TASK_DELETE_DLG="GetGenericDeleteDlg";
+    const AA_UI_TASK_ADDNEW_DLG="GetGenericAddNewDlg";
     //------------------------------------
 
     protected $taskManagerUrl="system_ops.php";
@@ -5658,7 +5660,23 @@ Class AA_GenericModule
         array_merge($parametri,$this->GetDataSectionPubblicate_CustomFilter($params));
 
         //Richiama la classe di gestione degli oggetti gestiti dal modulo
-        $data=static::AA_MODULE_OBJECTS_CLASS::Search($parametri,$this->oUser);
+        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+        if(class_exists($objectClass))
+        {
+            if(function_exists($objectClass::Search)) $data=$objectClass::Search($parametri,$this->oUser);
+            else
+            {
+                AA_Log::Log(__METHOD__." Errore: Funzione di ricerca non definita ($objectClass::Search)",100);
+                $data[1]=array();
+                $data[0]=0;
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." Errore: Classe di gestione dei moduli non definita ($objectClass)",100);
+            $data[1]=array();
+            $data[0]=0;
+        }
         
         foreach($data[1] as $id=>$object)
         {
@@ -5701,72 +5719,6 @@ Class AA_GenericModule
     public function GetDataSectionPubblicate_List($params=array())
     {
         return $this->GetDataGenericSectionPubblicate_List($params);
-    }
-
-    //Funzione custom per la personalizzazione del filtro sulle schede pubblicate
-    protected function GetDataSectionBozze_CustomFilter($params=array())
-    {
-        return array();
-    }
-
-    //Restituisce la lista delle schede pubblicate 
-    public function GetDataGenericSectionBozze_List($params=array())
-    {
-        $templateData=array();
-        
-        $parametri=array("status"=>AA_Const::AA_STATUS_BOZZA);
-        if($params['cestinate'] == 1) 
-        {
-            $parametri['status'] |=AA_Const::AA_STATUS_CESTINATA;
-        }
-
-        if($params['page'] > 0) $parametri['from']=($params['page']-1)*$params['count'];
-        if($params['id_assessorato'] != "") $parametri['id_assessorato']=$params['id_assessorato'];
-        if($params['id_direzione'] != "") $parametri['id_direzione']=$params['id_direzione'];
-        if($params['id_servizio'] != "") $parametri['id_servizio']=$params['id_servizio'];
-        if($params['id'] != "") $parametri['id']=$params['id'];
-        
-        //Richiama la funzione custom per la personalizzazione dei parametri
-        array_merge($parametri,$this->GetDataSectionBozze_CustomFilter($params));
-
-        //Richiama la classe di gestione degli oggetti gestiti dal modulo
-        $data=static::AA_MODULE_OBJECTS_CLASS::Search($parametri,$this->oUser);
-        
-        foreach($data[1] as $id=>$object)
-        {
-            $struct=$object->GetStruct();
-            $struttura_gest=$struct->GetAssessorato();
-            if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
-                           
-            #Stato
-            if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
-            if($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
-            if($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
-            if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
-        
-            #Dettagli
-            if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$object->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
-            else
-            {
-                if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
-            }
-            
-            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
-            
-            $templateData[]=array(
-                "id"=>$object->GetId(),
-                "tags"=>"",
-                "aggiornamento"=>$object->GetAggiornamento(),
-                "denominazione"=>$object->GetTitolo(),
-                "pretitolo"=>"",
-                "sottotitolo"=>$struttura_gest,
-                "stato"=>$status,
-                "dettagli"=>$details,
-                "module_id"=>$this->GetId()
-            );
-        }
-
-        return array($data[0],$templateData);
     }
 
     //Layout del modulo
@@ -5828,12 +5780,9 @@ Class AA_GenericModule
             if($params['revisionate']==1)
             {
                 $sectionName.= " revisionate";
-
-                if($params['cestinate']==0)
-                {
-                    $content->ViewPublish();
-                    $content->SetPublishHandlerParams(array("task"=>static::AA_UI_TASK_PUBLISH_DLG));
-                }
+                $content->HideReassign();
+                $content->ViewPublish();
+                $content->SetPublishHandlerParams(array("task"=>static::AA_UI_TASK_PUBLISH_DLG));
             } 
 
             if($_REQUEST['cestinate']==0)
@@ -5845,6 +5794,7 @@ Class AA_GenericModule
             {
                 $sectionName.=" cestinate";
                 $content->HideReassign();
+                $content->HidePublish();
                 $content->ViewResume();
                 $content->SetResumeHandlerParams(array("task"=>static::AA_UI_TASK_RESUME_DLG));
                 $content->ViewDelete();
@@ -5872,6 +5822,148 @@ Class AA_GenericModule
     public function TemplateSection_Pubblicate($params=array())
     {
         $content=$this->TemplateGenericSection_Pubblicate($params,false);
+        return $content->toObject();
+    }
+
+    //Funzione custom per la personalizzazione del filtro sulle schede pubblicate
+    protected function GetDataSectionBozze_CustomFilter($params=array())
+    {
+        return array();
+    }
+
+    //Restituisce la lista delle schede pubblicate 
+    public function GetDataGenericSectionBozze_List($params=array())
+    {
+        $templateData=array();
+        
+        $parametri=array("status"=>AA_Const::AA_STATUS_BOZZA);
+        if($params['cestinate'] == 1) 
+        {
+            $parametri['status'] |=AA_Const::AA_STATUS_CESTINATA;
+        }
+
+        if($params['page'] > 0) $parametri['from']=($params['page']-1)*$params['count'];
+        if($params['id_assessorato'] != "") $parametri['id_assessorato']=$params['id_assessorato'];
+        if($params['id_direzione'] != "") $parametri['id_direzione']=$params['id_direzione'];
+        if($params['id_servizio'] != "") $parametri['id_servizio']=$params['id_servizio'];
+        if($params['id'] != "") $parametri['id']=$params['id'];
+        
+        //Richiama la funzione custom per la personalizzazione dei parametri
+        array_merge($parametri,$this->GetDataSectionBozze_CustomFilter($params));
+
+        //Richiama la classe di gestione degli oggetti gestiti dal modulo
+        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+        if(class_exists($objectClass))
+        {
+            if(function_exists($objectClass::Search)) $data=$objectClass::Search($parametri,$this->oUser);
+            else
+            {
+                AA_Log::Log(__METHOD__." Errore: Funzione di ricerca non definita ($objectClass::Search)",100);
+                $data[1]=array();
+                $data[0]=0;
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." Errore: Classe di gestione dei moduli non definita ($objectClass)",100);
+            $data[1]=array();
+            $data[0]=0;
+        }
+        
+        foreach($data[1] as $id=>$object)
+        {
+            $struct=$object->GetStruct();
+            $struttura_gest=$struct->GetAssessorato();
+            if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
+                           
+            #Stato
+            if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
+            if($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
+            if($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
+            if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
+        
+            #Dettagli
+            if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$object->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+            else
+            {
+                if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+            }
+            
+            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
+            
+            $templateData[]=array(
+                "id"=>$object->GetId(),
+                "tags"=>"",
+                "aggiornamento"=>$object->GetAggiornamento(),
+                "denominazione"=>$object->GetTitolo(),
+                "pretitolo"=>"",
+                "sottotitolo"=>$struttura_gest,
+                "stato"=>$status,
+                "dettagli"=>$details,
+                "module_id"=>$this->GetId()
+            );
+        }
+
+        return array($data[0],$templateData);
+    }
+
+    //Restituisce la lista delle bozze (dati - da specializzare)
+    public function GetDataSectionBozze_List($params=array())
+    {
+        return $this->GetDataGenericSectionPubblicate_List($params);
+    }
+
+    //Template section bozze content
+    public function TemplateGenericSection_Bozze($params, $contentData=null)
+    {         
+        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Bozze",$this->GetId());
+        $content->EnablePager();
+        $content->SetPagerItemForPage(10);
+        $content->EnableFiltering();
+        $content->EnableAddNew();
+        $content->SetAddNewDlgTask(static::AA_UI_TASK_ADDNEW_DLG);
+        $content->SetFilterDlgTask(static::AA_UI_TASK_BOZZE_FILTER_DLG);
+        $content->ViewExportFunctions();
+        
+        $content->SetSectionName("Schede in bozza");
+        
+        $content->ViewDetail();
+        
+        if($_REQUEST['cestinate']==0)
+        {
+            $content->ViewTrash();
+            $content->SetTrashHandlerParams(array("task"=>static::AA_UI_TASK_TRASH_DLG));
+            $content->ViewPublish();
+            $content->SetPublishHandlerParams(array("task"=>static::AA_UI_TASK_PUBLISH_DLG));
+            $content->ViewReassign();
+            $content->SetReassignHandlerParams(array("task"=>static::AA_UI_TASK_REASSIGN_DLG));
+        }
+        else 
+        {
+            $content->SetSectionName("Schede in bozza cestinate");
+            $content->ViewResume();
+            $content->SetResumeHandlerParams(array("task"=>static::AA_UI_TASK_RESUME_DLG));
+            $content->ViewDelete();
+            $content->SetDeleteHandlerParams(array("task"=>static::AA_UI_TASK_DELETE_DLG));
+        }            
+
+        if($contentData==null)
+        {
+            $params['count']=10;
+            $contentData=$this->GetDataSectionBozze_List($params);
+        }
+        $content->SetContentBoxData($contentData[1]);
+        $content->SetPagerItemCount($contentData[0]);
+        $content->EnableMultiSelect();
+        $content->EnableSelect();
+        
+        return $content;
+    }
+
+    //Template sezione bozze (da specializzare)
+    public function TemplateSection_Bozze($params=array())
+    {
+        $content=$this->TemplateGenericSection_Bozze($params,false);
         return $content->toObject();
     }
 }
