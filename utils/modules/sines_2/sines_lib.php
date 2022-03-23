@@ -30,16 +30,16 @@ Class AA_SinesModule extends AA_GenericModule
         //Registrazione dei task-------------------
         $taskManager=$this->GetTaskManager();
         
-        $taskManager->RegisterTask("GetSections");
-        $taskManager->RegisterTask("GetLayout");
-        $taskManager->RegisterTask("GetActionMenu");
-        $taskManager->RegisterTask("GetNavbarContent");
-        $taskManager->RegisterTask("GetSectionContent");
-        $taskManager->RegisterTask("GetObjectContent");
-        $taskManager->RegisterTask("GetPubblicateFilterDlg");
-        $taskManager->RegisterTask("GetBozzeFilterDlg");
+        //$taskManager->RegisterTask("GetSections");
+        //$taskManager->RegisterTask("GetLayout");
+        //$taskManager->RegisterTask("GetActionMenu");
+        //$taskManager->RegisterTask("GetNavbarContent");
+        //$taskManager->RegisterTask("GetSectionContent");
+        //$taskManager->RegisterTask("GetObjectContent");
+        //$taskManager->RegisterTask("GetPubblicateFilterDlg");
+        //$taskManager->RegisterTask("GetBozzeFilterDlg");
         $taskManager->RegisterTask("GetScadenzarioFilterDlg");
-        $taskManager->RegisterTask("GetObjectData");
+        //$taskManager->RegisterTask("GetObjectData");
         
         //organismi
         $taskManager->RegisterTask("GetOrganismoModifyDlg");
@@ -182,7 +182,7 @@ Class AA_SinesModule extends AA_GenericModule
     }
     
     //Template bozze content
-    public function TemplateSection_Bozze()
+    public function TemplateSection_Bozze($params=null)
     {
        $is_enabled = false;
        
@@ -251,7 +251,7 @@ Class AA_SinesModule extends AA_GenericModule
     }
     
     //Template pubblicate
-    public function TemplateSection_Pubblicate()
+    public function TemplateSection_Pubblicate($params=null)
     {
         $is_admin=false;
 

@@ -5450,11 +5450,17 @@ Class AA_GenericModule
     //prefisso per la generazione degli identificativi degli oggetti dell'interfaccia
     const AA_UI_PREFIX="AA_Generic";
 
-    // id ui sezione pubblicate
+    //id ui sezione pubblicate
     const AA_UI_PUBBLICATE_BOX="Pubblicate_Content_Box";
+
+    //id ui lista sezione pubblicate
+    const AA_UI_PUBBLICATE_LISTBOX="Pubblicate_List_Box";
 
     //id ui sezione bozze
     const AA_UI_BOZZE_BOX="Bozze_Content_Box";
+
+    //id ui lista sezione bozze
+    const AA_UI_BOZZE_LISTBOX="Bozze_List_Box";
 
     //id ui sezione dettaglio
     const AA_UI_DETAIL_BOX="Detail_Content_Box";
@@ -5490,6 +5496,7 @@ Class AA_GenericModule
         else return new AA_GenericModuleSection();
     }
     
+    //Restituisce le sezioni del modulo
     public function GetSections($format="raw")
     {
         if($format=="raw") return $this->sections;
@@ -5525,6 +5532,35 @@ Class AA_GenericModule
         }
         
         return $return;
+    }
+
+    //Task sections
+    public function Task_GetSections($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->GetSections("base64");
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task layout
+    public function Task_GetLayout($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json'>";
+        $content=$this->TemplateLayout();
+        $sTaskLog.= $content;
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
     }
     
     //Restituisce la configurazione sulla sidebar
@@ -5599,6 +5635,20 @@ Class AA_GenericModule
         if(!($user instanceof AA_User) || !$user->isCurrentUser()) $user=AA_User::GetCurrentUser();
         
         $this->oUser=$user;
+
+        //Registrazione dei task-------------------
+        $taskManager=$this->GetTaskManager();
+        
+        $taskManager->RegisterTask("GetSections");
+        $taskManager->RegisterTask("GetLayout");
+        $taskManager->RegisterTask("GetActionMenu");
+        $taskManager->RegisterTask("GetNavbarContent");
+        $taskManager->RegisterTask("GetSectionContent");
+        $taskManager->RegisterTask("GetObjectContent");
+        $taskManager->RegisterTask("GetPubblicateFilterDlg");
+        $taskManager->RegisterTask("GetBozzeFilterDlg");
+        $taskManager->RegisterTask("GetObjectData");
+
         return;
     }
     
@@ -5635,7 +5685,7 @@ Class AA_GenericModule
     }
 
     //Restituisce la lista delle schede pubblicate 
-    public function GetDataGenericSectionPubblicate_List($params=array())
+    protected function GetDataGenericSectionPubblicate_List($params=array())
     {
         $templateData=array();
         
@@ -5722,7 +5772,7 @@ Class AA_GenericModule
     }
 
     //Layout del modulo
-    function TemplateGenericLayout()
+    protected function TemplateGenericLayout()
     {
         $template=new AA_JSON_Template_Multiview(static::AA_UI_PREFIX."_module_layout",array("type"=>"clean","fitBiggest"=>"true"));
         foreach ($this->GetSections() as $curSection)
@@ -5734,13 +5784,13 @@ Class AA_GenericModule
     }
 
     //Layout del modulo (da specializzare)
-    function TemplateLayout()
+    public function TemplateLayout()
     {
         return $this->TemplateGenericLayout();
     }
     
     //Template generic section placeholder
-    public function TemplateGenericSection_Placeholder()
+    protected function TemplateGenericSection_Placeholder()
     {   
         $content = new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Placeholder_Content",
                 array(
@@ -5757,8 +5807,364 @@ Class AA_GenericModule
         return $this->TemplateGenericSection_Placeholder();
     }
 
+    //Task Generic Action Menù
+    protected function Task_GetGenericActionMenu($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        
+        $content="";
+        
+        switch($_REQUEST['section'])
+        {
+            case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX:
+                $content=$this->TemplateActionMenu_Bozze();
+                break;
+            case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX:
+                $content=$this->TemplateActionMenu_Pubblicate();
+                break;
+            case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
+                $content=$this->TemplateActionMenu_Detail();
+                break;
+            default:
+                $content=new AA_JSON_Template_Generic();
+                break;        
+        }
+        
+        if($content !="") $sTaskLog.= $content->toBase64();
+        
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task action menù (da specializzare)
+    public function Task_GetActionMenu($task)
+    {
+        return $this->Task_GetGenericActionMenu($task);
+    }
+
+    //Template bozze context menu
+    protected function TemplateGenericActionMenu_Bozze()
+    {
+         
+        $menu=new AA_JSON_Template_Generic("AA_ActionMenuBozze",
+            array(
+            "view"=>"contextmenu",
+            "data"=>array(array(
+                "id"=>"refresh_bozze",
+                "value"=>"Aggiorna",
+                "icon"=>"mdi mdi-reload",
+                "module_id"=>$this->GetId(),
+                "handler"=>"refreshUiObject",
+                "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,true)
+                ))
+            ));
+        
+        return $menu; 
+    }
+
+    //Task NavBarContent
+    protected function Task_GetGenericNavbarContent($task,$params=array())
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        
+        $content=array();
+        switch($params['section'])
+        {
+            case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX:
+                $content[]=$this->TemplateNavbar_Pubblicate(1,true)->toArray();
+                break;
+            case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX:
+                $content[]=$this->TemplateNavbar_Bozze(1,true)->toArray();  
+                break;
+            case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
+                $content[]=$this->TemplateNavbar_Back(1,true)->toArray();
+                break;
+            default:
+                $content[]=$this->TemplateNavbar_Pubblicate(1,true)->toArray();     
+        }      
+        
+        $spacer=new AA_JSON_Template_Generic("navbar_spacer");
+        $content[]= $spacer->toArray();
+        
+        $sTaskLog.=base64_encode(json_encode($content))."</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task NavBarContent
+    public function Task_GetNavbarContent($task)
+    {
+        return $this->Task_GetGenericNavbarContent($task,$_REQUEST);
+    }
+
+    //Template navbar bozze
+    protected function TemplateGenericNavbar_Bozze($level=1,$last=false,$refresh_view=true)
+    {
+        $class="n".$level;
+        if($last) $class.=" AA_navbar_terminator_left";
+        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_".static::AA_UI_BOZZE_BOX,array(
+                "type"=>"clean",
+                "section_id"=>"Bozze",
+                "module_id"=>$this->GetId(),
+                "refresh_view"=>$refresh_view,
+                "tooltip"=>"Fai click per visualizzare le schede in bozza",
+                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='".static::AA_UI_PREFIX."_Navbar_Link_".static::AA_UI_BOZZE_BOX."' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"Bozze\",\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                "data"=>array("label"=>"Bozze","icon"=>"mdi mdi-file-document-edit","class"=>$class))
+            );
+        return $navbar;  
+    }
+
+    //Task section object content
+    protected function Task_GetGenericObjectContent($task,$params=array(),$param="object")
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        
+        switch($params[$param])
+        {
+            case "Bozze":
+            case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX:
+                $template=$this->TemplateSection_Bozze();
+                $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,"content"=>$template->toArray());
+                break;
+            
+            case "Pubblicate":
+            case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX:
+                $template = $this->TemplateSection_Pubblicate();
+                $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,"content"=>$template->toArray());
+                break;
+            
+            case "Dettaglio":
+            case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
+               $template=$this->TemplateSection_Detail($_REQUEST);
+               $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$template->toArray());
+                break;
+            default:
+                 $content=array(
+                    array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()),
+                    array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()),
+                    array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()));
+        }
+        
+        //Codifica il contenuto in base64
+        $sTaskLog.= base64_encode(json_encode($content))."</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task object content (da specializzare)
+    public function Task_GetObjectContent($task)
+    {
+        return $this->Task_GetGenericObjectContent($task,$_REQUEST);
+    }
+
+    //Task section layout (da specializzare)
+    public function Task_GetSectionContent($task)
+    {
+        return $this->Task_GetGenericObjectContent($task,$_REQUEST,"section");
+    }
+
+    //Task object data
+    protected function Task_GetGenericObjectData($task,$params=array())
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        
+        $objectData=array(array());
+        
+        switch($params['object'])
+        {
+            case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_LISTBOX:
+                $_REQUEST['count']=10;
+                $data=$this->GetDataSectionPubblicate_List($params);
+                if($data[0]>0) $objectData = $data[1];
+                break;
+            case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_LISTBOX:
+                $_REQUEST['count']=10;
+                $data=$this->GetDataSectionBozze_List($params);
+                if($data[0]>0) $objectData = $data[1];
+                break;
+            default:
+                $objectData=array();
+        }
+        
+        $sTaskLog.= base64_encode(json_encode($objectData));
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task object data (da specializzare)
+    public function Task_GetObjectData($task)
+    {
+        return $this->Task_GetGenericObjectData($task,$_REQUEST);
+    }
+
+    //Template Detail
+    protected function TemplateGenericSection_Detail($params)
+    {
+        $id=static::AA_UI_PREFIX."_Detail_";
+        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+        if(class_exists($objectClass))
+        {
+            $object= new $objectClass($params['id'],$this->oUser);
+            if(!$object->isValid())
+            {
+                return new AA_JSON_Template_Template(
+                            static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,
+                            array("update_time"=>Date("Y-m-d H:i:s"),
+                            "name"=>"Dettaglio scheda oggetto",
+                            "type"=>"clean","template"=>"Dettaglio scheda oggetto ancora da implementare"));            
+            }    
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." Errore: Classe di gestione degli oggetti non trovata (".$objectClass.")",100);
+
+            return new AA_JSON_Template_Template(
+                static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,
+                array("update_time"=>Date("Y-m-d H:i:s"),
+                "name"=>"Dettaglio scheda oggetto",
+                "type"=>"clean","template"=>"Dettaglio scheda oggetto ancora da implementare"));
+        }
+    }
+
+    //Template detail (da specializzare)
+    public function TemplateSection_Detail($params)
+    {
+        return $this->TemplateGenericSection_Detail($params);
+    }
+
+    //Template navbar bozze (da specializzare)
+    public function TemplateNavbar_Bozze($level=1,$last=false,$refresh_view=true)
+    {
+        return $this->TemplateGenericNavbar_Bozze($level,$last,$refresh_view);
+    }
+    
+    //Template navbar pubblicate
+    protected function TemplateGenericNavbar_Pubblicate($level=1,$last=false,$refresh_view=true)
+    {
+        $class="n".$level;
+        if($last) $class.=" AA_navbar_terminator_left";
+        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_".static::AA_UI_PUBBLICATE_BOX,array(
+                "type"=>"clean",
+                "section_id"=>"Pubblicate",
+                "module_id"=>$this->GetId(),
+                "refresh_view"=>$refresh_view,
+                "tooltip"=>"Fai click per visualizzare le schede pubblicate",
+                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='".static::AA_UI_PREFIX."_Navbar_Link_".static::AA_UI_PUBBLICATE_BOX."' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"Pubblicate\",\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                "data"=>array("label"=>"Pubblicate","icon"=>"mdi mdi-certificate","class"=>$class))
+            );
+        return $navbar;  
+    }
+    
+    //Template navbar pubblicate (da specializzare)
+    public function TemplateNavbar_Pubblicate($level=1,$last=false,$refresh_view=true)
+    {
+         return $this->TemplateGenericNavbar_Pubblicate($level,$last,$refresh_view);
+    }
+
+    //Template navbar indietro
+    protected function TemplateGenericNavbar_Back($level=1,$last=false,$refresh_view=false)
+    {
+        $class="n".$level;
+        if($last) $class.=" AA_navbar_terminator_left";
+        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_Back_Content_Box",array(
+                "type"=>"clean",
+                "css"=>"AA_NavbarEventListener",
+                "module_id"=>$this->GetId(),
+                "refresh_view"=>$refresh_view,
+                "tooltip"=>"Fai click per tornare alla lista",
+                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='".static::AA_UI_PREFIX."_Navbar_Link_Back_Content_Box' onClick='AA_MainApp.utils.callHandler(\"goBack\",null,\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                "data"=>array("label"=>"Indietro","icon"=>"mdi mdi-keyboard-backspace","class"=>$class))
+            );
+        return $navbar;  
+    }
+
+    //Template navbar indietro (da specializzare)
+    public function TemplateNavbar_Back($level=1,$last=false,$refresh_view=true)
+    {
+         return $this->TemplateGenericNavbar_Back($level,$last,$refresh_view);
+    }
+    
+    //Template bozze context menu (da specializzare)
+    public function TemplateActionMenu_Bozze()
+    {
+        return $this->TemplateGenericActionMenu_Bozze();
+    }
+    
+    //Template pubblicate context menu
+    protected function TemplateGenericActionMenu_Pubblicate()
+    {
+         
+        $menu=new AA_JSON_Template_Generic("AA_ActionMenuPubblicate",
+            array(
+            "view"=>"contextmenu",
+            "data"=>array(array(
+                "id"=>"refresh_pubblicate",
+                "value"=>"Aggiorna",
+                "icon"=>"mdi mdi-reload",
+                "module_id"=>$this->GetId(),
+                "handler"=>"refreshUiObject",
+                "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,true)
+                )
+                )
+            ));
+        
+        return $menu; 
+    }
+
+    //Template pubblicate context menu (da specializzare)
+    public function TemplateActionMenu_Pubblicate()
+    {
+        return $this->TemplateGenericActionMenu_Pubblicate();
+    }
+
+    //Template detail context menu
+    protected function TemplateGenericActionMenu_Detail()
+    {
+         
+        $menu=new AA_JSON_Template_Generic("AA_ActionMenuDetail",
+            array(
+            "view"=>"contextmenu",
+            "data"=>array(array(
+                "id"=>"refresh_detail",
+                "value"=>"Aggiorna",
+                "icon"=>"mdi mdi-reload",
+                "panel_id"=>"back",
+                "section_id"=>"Dettaglio",
+                "module_id"=>$this->GetId(),
+                "handler"=>"refreshUiObject",
+                "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,true)
+                ))
+            ));
+        
+        return $menu; 
+    }
+
+    //Template detail context menu (da specializzare)
+    public function TemplateActionMenu_Detail()
+    {
+        return $this->TemplateGenericActionMenu_Detail();
+    }
+
     //Template sezione pubblicate
-    public function TemplateGenericSection_Pubblicate($params=array(),$bCanModify=false,$contentData=null)
+    protected function TemplateGenericSection_Pubblicate($params=array(),$bCanModify=false,$contentData=null)
     {          
         $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Pubblicate",$this->GetId());
         $content->EnablePager();
@@ -5832,7 +6238,7 @@ Class AA_GenericModule
     }
 
     //Restituisce la lista delle schede pubblicate 
-    public function GetDataGenericSectionBozze_List($params=array())
+    protected function GetDataGenericSectionBozze_List($params=array())
     {
         $templateData=array();
         
@@ -5914,7 +6320,7 @@ Class AA_GenericModule
     }
 
     //Template section bozze content
-    public function TemplateGenericSection_Bozze($params, $contentData=null)
+    protected function TemplateGenericSection_Bozze($params, $contentData=null)
     {         
         $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Bozze",$this->GetId());
         $content->EnablePager();
@@ -8370,7 +8776,7 @@ Class AA_SessionVar
         return $this->name;
     }
     
-    protected $value="";
+    protected $value=null;
     public function GetValue()
     {
         return $this->value;
@@ -8382,6 +8788,7 @@ Class AA_SessionVar
         return $this->bValid;
     }
     
+    //Costruttore
     protected function __construct($name="varName", $value="")
     {
         $this->name=$name;

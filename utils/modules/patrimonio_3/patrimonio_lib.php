@@ -162,17 +162,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Registrazione dei task-------------------
         $taskManager=$this->GetTaskManager();
         
-        $taskManager->RegisterTask("GetSections");
-        $taskManager->RegisterTask("GetLayout");
-        $taskManager->RegisterTask("GetActionMenu");
-        $taskManager->RegisterTask("GetNavbarContent");
-        $taskManager->RegisterTask("GetSectionContent");
-        $taskManager->RegisterTask("GetObjectContent");
-        $taskManager->RegisterTask("GetPubblicateFilterDlg");
-        $taskManager->RegisterTask("GetBozzeFilterDlg");
-        $taskManager->RegisterTask("GetScadenzarioFilterDlg");
-        $taskManager->RegisterTask("GetObjectData");
-        
         //patrimonio
         $taskManager->RegisterTask("GetPatrimonioModifyDlg");
         $taskManager->RegisterTask("GetPatrimonioAddNewDlg");
@@ -296,6 +285,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Restituisce i dati delle bozze
     public function GetDataSectionBozze_List($params=array())
     {
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            AA_Log::Log(__METHOD__." - ERRORE: l'utente corrente: ".$this->oUser->GetUserName()." non è abilitato alla visualizzazione delle bozze.",100);
+            return array();
+        }
+        
         return $this->GetDataGenericSectionBozze_List($params);
     }
 
@@ -716,55 +711,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         //Descrizione
         $wnd->AddTextField("sDescrizione","Denominazione",array("required"=>true, "bottomLabel"=>"*Denominazione dell'organismo", "placeholder"=>"inserisci qui la denominazione dell'organismo"));
-        
-        //Tipologia
-        $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Patrimonio_Const::GetTipoPatrimonio() as $id=>$label)
-        {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
-        }
-        $wnd->AddSelectField("nTipologia","Tipologia",array("required"=>true, "validateFunction"=>"IsPositive", "customInvalidMessage"=>"*Occorre selezionare la tipologia","options"=>$options,"value"=>"0", "hidden"=>true), false);
-        
-        if(($object->GetTipologia(true) & AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0)
-        {
-            //forma giuridica
-            $options=array();
-            foreach(AA_Patrimonio_Const::GetListaFormaGiuridica() as $id=>$label)
-            {
-                if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
-            }
-            $wnd->AddSelectField("nFormaSocietaria","Forma giuridica",array("required"=>true, "validateFunction"=>"IsPositive", "customInvalidMessage"=>"*Occorre selezionare la forma giuridica","bottomLabel"=>"*Selezionare la forma giuridica dalla lista.","options"=>$options,"value"=>"0"));
-            
-            //in house
-            $wnd->AddCheckBoxField("bInHouse","In house",array("bottomLabel"=>"*Abilitare se la società è in house."), false);
-            
-            //Stato società
-            $options=array();
-            foreach(AA_Patrimonio_Const::GetListaStatoPatrimonio() as $id=>$label)
-            {
-                if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
-            }
-            $wnd->AddSelectField("nStatoPatrimonio","Stato",array("bottomLabel"=>"*Selezionare lo stato della società dalla lista.", "validateFunction"=>"IsPositive", "customInvalidMessage"=>"*Occorre selezionare lo stato della società.", "required"=>true,"options"=>$options,"value"=>"0"));
-            
-            //in Tusp
-            $wnd->AddCheckBoxField("bInTUSP","TUSP",array("bottomLabel"=>"*Abilitare se la società rientra nell'allegato A del TUSP."), false);
-        }
-        
+    
         //partita iva
         $wnd->AddTextField("sPivaCf","Partita iva/cf",array("bottomLabel"=>"*Riportare la partita iva dell'organismo.", "placeholder"=>"inserisci qui la partita iva o il cf dell'organismo"));
         
-        //data inizio
-        $label="Data costituzione";
-        if(($object->GetTipologia(true) & AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0) $label="Data inizio impegno";
-        $wnd->AddDateField("sDataInizioImpegno",$label,array("bottomLabel"=>"*".$label." dell'organismo.", "stringResult"=>true, "format"=>"%Y-%m-%d", "editable"=>true), false);
-        
         //sede
         $wnd->AddTextField("sSedeLegale","Sede legale",array("bottomLabel"=>"*Sede legale dell'organismo.", "placeholder"=>"inserisci qui l'indirizzo della sede legale dell'organismo"));
-        
-        //data fine
-        $label="Data cessazione";
-        if(($object->GetTipologia(true) & AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0) $label="Data fine impegno";
-        $wnd->AddDateField("sDataFineImpegno",$label,array("bottomLabel"=>"*".$label." dell'organismo.", "stringResult"=>true, "format"=>"%Y-%m-%d", "editable"=>true), false);
         
         //pec
         $label="PEC";
@@ -773,18 +725,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //sito web
         $label="Sito web";
         $wnd->AddTextField("sSitoWeb",$label,array("bottomLabel"=>"*URL ".$label." dell'organismo.", "placeholder"=>"Inserisci qui l'url del sito web"), false);
-        
-        //Partecipazione
-        if(($object->GetTipologia(true) & AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0)
-        {
-            //partecipazione
-            $field_notes=htmlentities("*Indicare solo valori numerici nel formato: <valore in euro delle quote possedute>/<dato percentuale delle quote possedute>");
-            $field_notes.="<br>es: 1.000.000/15,25 (1 milione di euro pari al 15,25 percento delle quote totali)";
-            $label="Partecipazione";
-            $wnd->AddTextField("sPartecipazione",$label,array("bottomLabel"=>"$field_notes","bottomPadding"=>40, "placeholder"=>"Riporta qui la partecipazione"));
-            
-            //$wnd->AddSpacer(false);
-        }
         
         //Funzioni
         $label="Funzioni attribuite";
@@ -1001,7 +941,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $content = new AA_JSON_Template_Layout($id."Content_Box",
                 array(
                 "type"=>"clean",
-                "name"=>$organismo->GetDenominazione(),
+                "name"=>$organismo->GetName(),
                 "filtered"=>true
             ));
         $content->AddRow($header);
@@ -1957,212 +1897,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         return $layout;
     }
-    
-    //Template bozze context menu
-    public function TemplateActionMenu_Bozze()
-    {
-         
-        $menu=new AA_JSON_Template_Generic("AA_ActionMenuBozze",
-            array(
-            "view"=>"contextmenu",
-            "data"=>array(array(
-                "id"=>"refresh_bozze",
-                "value"=>"Aggiorna",
-                "icon"=>"mdi mdi-reload",
-                "module_id"=>$this->GetId(),
-                "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Patrimonio_Bozze_Content_Box",true)
-                ))
-            ));
-        
-        return $menu; 
-    }
-    
-    //Template pubblicate context menu
-    public function TemplateActionMenu_Pubblicate()
-    {
-         
-        $menu=new AA_JSON_Template_Generic("AA_ActionMenuPubblicate",
-            array(
-            "view"=>"contextmenu",
-            "data"=>array(array(
-                "id"=>"refresh_pubblicate",
-                "value"=>"Aggiorna",
-                "icon"=>"mdi mdi-reload",
-                "module_id"=>$this->GetId(),
-                "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Patrimonio_Pubblicate_Content_Box",true)
-                )
-                )
-            ));
-        
-        return $menu; 
-    }
-    
-    //Template revisionate context menu
-    public function TemplateActionMenu_Revisionate()
-    {
-         
-        $menu=new AA_JSON_Template_Generic("AA_ActionMenuRevisionate",
-            array(
-            "view"=>"contextmenu",
-            "data"=>array(array(
-                "id"=>"refresh_revisionate",
-                "value"=>"Aggiorna",
-                "icon"=>"mdi mdi-reload",
-                "module_id"=>$this->GetId(),
-                "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Patrimonio_Revisionate_Content_Box",true)
-                ))
-            ));
-        
-        return $menu; 
-    }
-    
-    //Template detail context menu
-    public function TemplateActionMenu_Detail()
-    {
-         
-        $menu=new AA_JSON_Template_Generic("AA_ActionMenuDetail",
-            array(
-            "view"=>"contextmenu",
-            "data"=>array(array(
-                "id"=>"refresh_detail",
-                "value"=>"Aggiorna",
-                "icon"=>"mdi mdi-reload",
-                "panel_id"=>"back",
-                "section_id"=>"Dettaglio",
-                "module_id"=>$this->GetId(),
-                "handler"=>"refreshUiObject",
-                "handler_params"=>array("AA_Patrimonio_Detail_Content_Box",true)
-                ))
-            ));
-        
-        return $menu; 
-    }
-    
-    //Template navbar bozze
-    public function TemplateNavbar_Bozze($level=1,$last=false,$refresh_view=true)
-    {
-        $class="n".$level;
-        if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Patrimonio_Navbar_Link_Bozze_Content_Box",array(
-                "type"=>"clean",
-                "section_id"=>"Bozze",
-                "module_id"=>$this->GetId(),
-                "refresh_view"=>$refresh_view,
-                "tooltip"=>"Fai click per visualizzare le schede in bozza",
-                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='AA_Patrimonio_Navbar_Link_Bozze_Content_Box' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"Bozze\",\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
-                "data"=>array("label"=>"Bozze","icon"=>"mdi mdi-file-document-edit","class"=>$class))
-            );
-        return $navbar;  
-    }
-    
-    //Template navbar pubblicate
-    public function TemplateNavbar_Pubblicate($level=1,$last=false,$refresh_view=true)
-    {
-        $class="n".$level;
-        if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Patrimonio_Navbar_Link_Pubblicate_Content_Box",array(
-                "type"=>"clean",
-                "section_id"=>"Pubblicate",
-                "module_id"=>$this->GetId(),
-                "refresh_view"=>$refresh_view,
-                "tooltip"=>"Fai click per visualizzare le schede pubblicate",
-                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='AA_Patrimonio_Navbar_Link_Pubblicate_Content_Box' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"Pubblicate\",\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
-                "data"=>array("label"=>"Pubblicate","icon"=>"mdi mdi-certificate","class"=>$class))
-            );
-        return $navbar;  
-    }
-    
-    //Template navbar indietro
-    public function TemplateNavbar_Back($level=1,$last=false,$refresh_view=false)
-    {
-        $class="n".$level;
-        if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Patrimonio_Navbar_Link_Back_Content_Box",array(
-                "type"=>"clean",
-                "css"=>"AA_NavbarEventListener",
-                "module_id"=>$this->GetId(),
-                "refresh_view"=>$refresh_view,
-                "tooltip"=>"Fai click per tornare alla lista",
-                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='AA_Patrimonio_Navbar_Link_Back_Content_Box' onClick='AA_MainApp.utils.callHandler(\"goBack\",null,\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
-                "data"=>array("label"=>"Indietro","icon"=>"mdi mdi-keyboard-backspace","class"=>$class))
-            );
-        return $navbar;  
-    }
-    
-    //Template navbar revisionate
-    public function TemplateNavbar_Revisionate($level=1,$last=false,$refresh_view=true)
-    {
-        $class="n".$level;
-        if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template("AA_Patrimonio_Navbar_Link_Revisionate_Content_Box",array(
-                "type"=>"clean",
-                "section_id"=>"Revisionate",
-                "module_id"=>$this->GetId(),
-                "refresh_view"=>$refresh_view,
-                "tooltip"=>"Fai click per visualizzare le schede pubblicate revisionate",
-                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='AA_Patrimonio_Navbar_Link_Revisionate_Content_Box'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
-                "data"=>array("label"=>"Revisionate","icon"=>"mdi mdi-help-rhombus","class"=>$class))
-            );
-        return $navbar;  
-    }
      
-    //Task
-    public function Task_GetActionMenu($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        
-        $content="";
-        
-        switch($_REQUEST['section'])
-        {
-            case "AA_Patrimonio_Bozze_Content_Box":
-                $content=$this->TemplateActionMenu_Bozze();
-                break;
-            
-            case "AA_Patrimonio_Pubblicate_Content_Box":
-                $content=$this->TemplateActionMenu_Pubblicate();
-                break;
-               
-            case "AA_Patrimonio_Revisionate_Content_Box":
-                $content=$this->TemplateActionMenu_Revisionate();
-                break;
-            case "AA_Patrimonio_Detail_Content_Box":
-                $content=$this->TemplateActionMenu_Detail();
-                break;
-            default:
-                $content=new AA_JSON_Template_Generic();
-                break;        
-        }
-        
-        if($content !="") $sTaskLog.= $content->toBase64();
-        
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
-    }
-    
-    //Task layout
-    public function Task_GetLayout($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json'>";
-        $content=$this->TemplateLayout();
-        $sTaskLog.= $content;
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
-    }
-    
     //Task Update Patrimonio
     public function Task_UpdatePatrimonio($task)
     {
@@ -2320,14 +2055,17 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $ids = $sessVar->GetValue();
             
-            foreach($ids as $curId)
+            if(is_array($ids))
             {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_READ)>0)
+                foreach($ids as $curId)
                 {
-                    $ids_final[$curId]=$organismo;
-                    unset($organismo);
-                }
+                    $organismo=new AA_Patrimonio($curId,$this->oUser);
+                    if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_READ)>0)
+                    {
+                        $ids_final[$curId]=$organismo;
+                        unset($organismo);
+                    }
+                }    
             }
             
             //Esiste almeno un organismo che può essere letto dall'utente corrente
@@ -2756,20 +2494,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         return true;
     }
-        
-    //Task sections
-    public function Task_GetSections($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        $sTaskLog.= $this->GetSections("base64");
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
-    }
     
     //Task modifica organismo
     public function Task_GetPatrimonioModifyDlg($task)
@@ -3037,158 +2761,15 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return true;
     }
     
-    //Task filter dlg
-    public function Task_GetObjectData($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        
-        $objectData=array(array());
-        
-        switch($_REQUEST['object'])
-        {
-            case "AA_Patrimonio_Pubblicate_List_Box":
-                $_REQUEST['count']=10;
-                $data=$this->GetDataSectionPubblicate_List($_REQUEST);
-                if($data[0]>0) $objectData = $data[1];
-                break;
-            case "AA_Patrimonio_Bozze_List_Box":
-                $_REQUEST['count']=10;
-                $data=$this->GetDataSectionBozze_List($_REQUEST);
-                if($data[0]>0) $objectData = $data[1];
-                break;
-            default:
-                $objectData=array();
-        }
-        
-        $sTaskLog.= base64_encode(json_encode($objectData));
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
-    }
-    
     //Task NavBarContent
     public function Task_GetNavbarContent($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        
-        $content=array();
-        
-        //Istanza del modulo
-        $module= AA_PatrimonioModule::GetInstance();
-        
-        if(!$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN) && !$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22))
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
-            $_REQUEST['section']="AA_Patrimonio_Pubblicate_Content_Box";
+            $_REQUEST['section']=static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX;
         }
         
-        switch($_REQUEST['section'])
-        {
-            case "AA_Patrimonio_Bozze_Content_Box":
-                $content[]=$module->TemplateNavbar_Pubblicate(1,true)->toArray();
-                break;
-            case "AA_Patrimonio_Pubblicate_Content_Box":
-                $content[]=$module->TemplateNavbar_Bozze(1,true)->toArray();  
-                break;
-            case "AA_Patrimonio_Detail_Content_Box":
-                $content[]=$module->TemplateNavbar_Back(1,true)->toArray();
-                break;
-            default:
-                $content[]=$module->TemplateNavbar_Pubblicate(1,true)->toArray();     
-        }      
-        
-        $spacer=new AA_JSON_Template_Generic("navbar_spacer");
-        $content[]= $spacer->toArray();
-        
-        $sTaskLog.=base64_encode(json_encode($content))."</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
-    }
-    
-    //TAsk section layout
-    public function Task_GetSectionContent($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        
-        switch($_REQUEST['section'])
-        {
-            case "Bozze":
-            case "AA_Patrimonio_Bozze_Content_Box":
-                $template=$this->TemplateSection_Bozze();
-                $content=array("id"=>"AA_Patrimonio_Bozze_Content_Box","content"=>$template->toArray());
-                break;
-            
-            case "Pubblicate":
-            case "AA_Patrimonio_Pubblicate_Content_Box":
-                $template = $this->TemplateSection_Pubblicate();
-                $content=array("id"=>"AA_Patrimonio_Pubblicate_Content_Box","content"=>$template->toArray());
-                break;
-            
-            case "Dettaglio":
-            case "AA_Patrimonio_Detail_Content_Box":
-               $content=array("id"=>"AA_Patrimonio_Detail_Content_Box","content"=>$this->TemplateSection_Detail($_REQUEST)->toArray());
-                break;
-            
-            default:
-                 $content=array(array("id"=>"AA_Patrimonio_Pubblicate_Content_Box","content"=>$this->TemplateSection_Placeholder()->toArray()));
-        }
-        
-        //Codifica il contenuto in base64
-        $sTaskLog.= base64_encode(json_encode($content))."</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
-    }
-    
-     //TAsk section layout
-    public function Task_GetObjectContent($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        
-        switch($_REQUEST['object'])
-        {
-            case "Bozze":
-            case "AA_Patrimonio_Bozze_Content_Box":
-                $template=$this->TemplateSection_Bozze();
-                $content=array("id"=>"AA_Patrimonio_Bozze_Content_Box","content"=>$template->toArray());
-                break;
-            
-            case "Pubblicate":
-            case "AA_Patrimonio_Pubblicate_Content_Box":
-                $template = $this->TemplateSection_Pubblicate();
-                $content=array("id"=>"AA_Patrimonio_Pubblicate_Content_Box","content"=>$template->toArray());
-                break;
-            
-            case "Dettaglio":
-            case "AA_Patrimonio_Detail_Content_Box":
-               $template=$this->TemplateSection_Detail($_REQUEST);
-               $content=array("id"=>"AA_Patrimonio_Detail_Content_Box","content"=>$template->toArray());
-                break;
-            default:
-                 $content=array(
-                    array("id"=>"AA_Patrimonio_Pubblicate_Content_Box","content"=>$this->TemplateSection_Placeholder()->toArray()),
-                    array("id"=>"AA_Patrimonio_Bozze_Content_Box","content"=>$this->TemplateSection_Placeholder()->toArray()),
-                    array("id"=>"AA_Patrimonio_Detail_Content_Box","content"=>$this->TemplateSection_Placeholder()->toArray()));
-        }
-        
-        //Codifica il contenuto in base64
-        $sTaskLog.= base64_encode(json_encode($content))."</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
+        return $this->Task_GetGenericNavbarContent($task,$_REQUEST);
     }
     
     //Template filtro di ricerca
