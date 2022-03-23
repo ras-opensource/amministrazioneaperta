@@ -9,8 +9,8 @@ var AA_patrimonio_module= new AA_Module("AA_MODULE_PATRIMONIO","PATRIMONIO");
 AA_patrimonio_module.valid = true;
 AA_patrimonio_module.content={};
 AA_patrimonio_module.contentType = "json";
-AA_patrimonio_module.ui.icon = "mdi mdi-office-building-marker";
-AA_patrimonio_module.ui.name = "Sistema Informativo Patrimonio Immobiliare";
+//AA_patrimonio_module.ui.icon = "mdi mdi-office-building-marker";
+//AA_patrimonio_module.ui.name = "Sistema Informativo Patrimonio Immobiliare";
 AA_patrimonio_module.ui.module_content_id = "AA_Patrimonio_module_layout";
 
 //Registrazione modulo
