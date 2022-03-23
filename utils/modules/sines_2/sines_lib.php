@@ -36,8 +36,8 @@ Class AA_SinesModule extends AA_GenericModule
         //$taskManager->RegisterTask("GetNavbarContent");
         //$taskManager->RegisterTask("GetSectionContent");
         //$taskManager->RegisterTask("GetObjectContent");
-        //$taskManager->RegisterTask("GetPubblicateFilterDlg");
-        //$taskManager->RegisterTask("GetBozzeFilterDlg");
+        $taskManager->RegisterTask("GetPubblicateFilterDlg");
+        $taskManager->RegisterTask("GetBozzeFilterDlg");
         $taskManager->RegisterTask("GetScadenzarioFilterDlg");
         //$taskManager->RegisterTask("GetObjectData");
         
