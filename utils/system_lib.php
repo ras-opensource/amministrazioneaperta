@@ -10456,6 +10456,7 @@ Class AA_Platform
             }
         }
         
+        AA_Log::Log(__METHOD__." - ".print_r($modules,true),100);
         return $modules;
     }
     
