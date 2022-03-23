@@ -290,7 +290,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             AA_Log::Log(__METHOD__." - ERRORE: l'utente corrente: ".$this->oUser->GetUserName()." non è abilitato alla visualizzazione delle bozze.",100);
             return array();
         }
-        
+
         return $this->GetDataGenericSectionBozze_List($params);
     }
 
@@ -952,7 +952,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
          ));
         $multiview->addCell($this->TemplateDettaglio_Generale_Tab($organismo));
         $multiview->addCell($this->TemplateDettaglio_DatiContabili_Tab($organismo));
-        $multiview->addCell($this->TemplateDettaglio_Nomine_Tab($organismo));
         $content->AddRow($multiview);
         
         return $content;
@@ -970,15 +969,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38));
         
         $soc_tags="";
-        $soc_tags="<span class='AA_Label AA_Label_Green' title='Forma giuridica'>".$object->GetFormaSocietaria()."</span>&nbsp;";
-        if($object->IsInHouse() == true) $soc_tags.="<span class='AA_Label AA_Label_Green'>in house</span>&nbsp;";
-        if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_Label AA_Label_Green'>TUSP</span>";
-        if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
-        
+
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        
-        if(($object->GetTipologia(true)&AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $toolbar->addElement(new AA_JSON_Template_Generic($id."_SocTags",array("view"=>"label","label"=>$soc_tags, "align"=>"center")));
         
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         
@@ -1142,11 +1135,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         //note
         $riga->AddRow($note);
-        
         $last_row->AddCol($riga);
-        
-        //documenti
-        $last_row->AddCol($this->TemplateDettaglio_Provvedimenti($object, $id, $canModify));
         
         $layout->AddRow($last_row);
         
@@ -1442,461 +1431,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $layout;
     }
     
-    //Template section detail, tab nomina
-    public function TemplateDettaglio_Nomine_Tab($object=null,$filterData="")
-    {
-        $id="AA_Patrimonio_Detail_Nomine_Tab_".$object->GetID();
-        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
-        
-        //permessi
-        $perms = $object->GetUserCaps($this->oUser);
-        $canModify=false;
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
-        
-        //layout generale
-        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
-        
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"borderless"=>true,"width"=>130));
-        
-        if($canModify)
-        {            
-            //Pulsante di Aggiunta nomina
-            $addnew_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
-               "view"=>"button",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-account-plus",
-                "label"=>"Aggiungi",
-                "align"=>"right",
-                "width"=>120,
-                "tooltip"=>"Aggiungi nomina",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioAddNewNominaDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
-            ));
-            
-            //pulsante di filtraggio
-            $saveFilterId=$id;
-            $filterDlgTask="GetPatrimonioNomineFilterDlg";
-            $filterClickAction= "try{module=AA_MainApp.getModule('".$this->id."'); if(module.isValid()){module.ui.dlg('".$filterDlgTask."',module.getRuntimeValue(".$saveFilterId.",'filter_data'),'".$this->id."')}}catch(msg){console.error(msg)}";
-
-            $filter_btn = new AA_JSON_Template_Generic($id."_Filter_btn",array(
-                "view"=>"button",
-                "align"=>"right",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-filter",
-                "label"=>"Filtra",
-                "width"=>80,
-                "filter_data"=>$filterData,
-                "tooltip"=>"Imposta un filtro di ricerca",
-                "click"=>$filterClickAction
-            ));
-            $toolbar->AddElement(new AA_JSON_Template_Generic());
-            $toolbar->AddElement($addnew_btn);
-        }
-        
-        $footer=new AA_JSON_Template_Layout($id."_Footer",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
-        
-        $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
-            "view"=>"tabbar",
-            "borderless"=>true,
-            "css"=>"AA_Bottom_TabBar",
-            "multiview"=>true,
-            "optionWidth"=>130,
-            "view_id"=>$id."_Multiview",
-            "type"=>"bottom"
-        ));
-        
-        $footer->AddCol($tabbar);
-        //$header->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        $footer->AddCol($toolbar);
-        
-        $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
-            "type"=>"clean",
-            "css"=>"AA_Detail_Content"
-         ));
-        $layout->AddRow($multiview);
-        $layout->addRow($footer);
-        
-        //Recupera le nomine
-        $riepilogo_layout_id=$id."_Riepilogo_Layout";
-        $filterNomine="";
-        $filter= AA_SessionVar::Get($id);
-        if($filter->isValid())
-        {
-            $params=(array)$filter->GetValue();
-            //AA_Log::Log(__METHOD__." - ".print_r($params,true),100);
-        }
-        $nomine=$object->GetNomineGrouped($params);
-        #--------------------------------
-        
-        //AA_Log::Log(__METHOD__.print_r($nomine,true),100);
-        
-        $options=array();
-        
-        //Data odierna
-        $now = Date("Y-m-d");
-        
-        foreach($nomine as $id_intestazione_nomina=>$curNomina)
-        {
-            //Dati riepilogo
-            $riepilogo_data_item=array("nome"=>trim(current($curNomina)->GetNome()),"cognome"=>trim(current($curNomina)->GetCognome()),"cf"=>"");
-            if(trim(current($curNomina)->GetCodiceFiscale()) !="") $riepilogo_data_item['cf']=" (".trim(current($curNomina)->GetCodiceFiscale()).")";
-            
-            $tab_label=current($curNomina)->GetNome()." ".current($curNomina)->GetCognome();
-            if(strlen($tab_label)>20)
-            {
-                $original_size=strlen($tab_label);
-                $tab_label=explode(" ",$tab_label);
-                
-                $tab_result=$tab_label[0];
-                if((strlen($tab_label[1])+strlen($tab_label[2])) < 13 && $tab_label[2] !="") $tab_result.=" ".$tab_label[1]." ".$tab_label[2];
-                else $tab_result.=" ".$tab_label[1];
-                    
-                if(strlen($tab_result) != $original_size) $tab_result.="...";
-                //if(strlen($tab_result) > 24) $tab_result.=substr($tab_result,0,10)."...";
-                $tab_label=$tab_result;
-            }
-            $ids=array_keys($curNomina);
-            if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina nomina' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioTrashNominaDlg", params: [{ids: "'.json_encode($ids).'"},{id: "'.$object->GetID().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else$tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
-           
-            //Tab label
-            $options[]=array("id"=>$id."_".$id_intestazione_nomina."_Tab", "value"=>$tab_label);
-            
-            $curNominaTab=new AA_JSON_Template_Layout($id."_".$id_intestazione_nomina."_Tab",array("type"=>"clean"));
-            
-            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
-            
-            //torna al riepilogo
-            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Riepilogo_".$id_intestazione_nomina."_btn",array(
-                   "view"=>"button",
-                    "type"=>"icon",
-                    "icon"=>"mdi mdi-keyboard-backspace",
-                    "label"=>"Riepilogo",
-                    "align"=>"left",
-                    "width"=>120,
-                    "tooltip"=>"Torna al riepilogo",
-                    "click"=>"$$('".$tabbar->GetId()."').setValue('".$riepilogo_layout_id."')"
-                )));
-            
-            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-            
-            //Nomina label
-            $incaricato_label="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;'><span style='color:#003380; font-weight: 900; font-size: larger;'>".current($curNomina)->GetNome()." ".current($curNomina)->GetCognome()."</span>";
-            if(current($curNomina)->GetCodiceFiscale() !="") $incaricato_label.="<span style='font-size: smaller;'>(".current($curNomina)->GetCodiceFiscale().")</span>";
-            $incaricato_label.="</div>";
-            $toolbar->AddElement(new AA_JSON_Template_Template($id."_Toolbar_".$id_intestazione_nomina,array("type"=>"clean","template"=>$incaricato_label)));
-                
-            //Pulsante di Modifica nome, cognome, cf
-            if($canModify)
-            {
-                $addnew_btn=new AA_JSON_Template_Generic($id."_AddNewIncarico_".$id_intestazione_nomina."_btn",array(
-                   "view"=>"button",
-                    "type"=>"icon",
-                    "icon"=>"mdi mdi-pencil-plus",
-                    "label"=>"Aggiungi",
-                    "align"=>"right",
-                    "width"=>120,
-                    "tooltip"=>"Aggiungi un nuovo incarico",
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioAddNewIncaricoDlg\", params: [{id: ".$object->GetId()."},{nome:\"".current($curNomina)->GetNome()."\"},{cognome:\"".current($curNomina)->GetCognome()."\"},{cf:\"".current($curNomina)->GetCodiceFiscale()."\"},{id: ".$object->GetID()."}]},'$this->id')"
-                ));
-                
-                $modify_btn=new AA_JSON_Template_Generic($id."_Modify_".$id_intestazione_nomina."_btn",array(
-                   "view"=>"button",
-                    "type"=>"icon",
-                    "icon"=>"mdi mdi-pencil",
-                    "label"=>"Modifica",
-                    "align"=>"right",
-                    "width"=>120,
-                    "tooltip"=>"Modifica nome, cognome e codice fiscale del nominato",
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioRenameNominaDlg\", params: [{id: ".$object->GetId()."},{ids:".json_encode($ids)."},{nome: \"".current($curNomina)->GetNome()."\"},{cognome: \"".current($curNomina)->GetCognome()."\"},{cf: \"".current($curNomina)->GetCodiceFiscale()."\"}]},'$this->id')"
-                ));
-                $toolbar->AddElement($addnew_btn);
-                $toolbar->AddElement($modify_btn);
-            }
-            else
-            {
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>240)));
-            }
-            
-            $curNominaTab->AddRow($toolbar);
-            
-            $incarichi=new AA_JSON_Template_Generic($id."_Incarichi_".$id_intestazione_nomina,array("view"=>"accordion"));
-            $collapsed=false;
-            foreach($curNomina as $id_incarico=>$incarico)
-            {
-                //dati incarico per riepilogo
-                if($incarico->GetDataFine() > $now) 
-                {
-                    if($incarico->GetNominaRas() == "1") $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGreen'>".$incarico->GetTipologia()."</span>&nbsp;";
-                    else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightBlue'>".$incarico->GetTipologia()."</span>&nbsp;";
-                }
-                else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightRed'>".$incarico->GetTipologia()."</span>&nbsp;";
-                        
-                //Intestazione incarico            
-                $header="<span class='AA_Accordion_Item_Header_Selected'>".$incarico->GetTipologia()."</span>";
-                $headerAlt="<span class='AA_Accordion_Item_Header_Collapsed'>".$incarico->GetTipologia()."</span>";
-                $curIncaricoAccordionItem=new AA_JSON_Template_Generic($id."_Incarico_".$id_intestazione_nomina."_".$id_incarico,array("view"=>"accordionitem", "css"=>"AA_AccordionHeaderItem","header"=>$header,"headerAlt"=>$headerAlt));
-                $curIncaricoAccordionItem->SetProp("collapsed",$collapsed);
-                
-                //contenuto incarico
-                $incarico_body=new AA_JSON_Template_Layout($id."_Incarico_".$id_intestazione_nomina."_".$id_incarico."_Content",array("type"=>"clean","scroll"=>"auto"));
-                $curId=$id."_Incarico_".$id_intestazione_nomina."_".$id_incarico."_Content";
-
-                $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar",array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
-
-                //stato incarico
-                $incarico_label="<span class='AA_Label AA_Label_LightBlue'>in corso</span>&nbsp;";
-                if($incarico->GetDataFine() < $now) $incarico_label="<span class='AA_Label AA_Label_LightRed'>scaduto</span>&nbsp;";
-                if($incarico->GetNominaRas()) $incarico_label.="<span class='AA_Label AA_Label_LightGreen'>nomina RAS</span>";
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Nomina_Ras",array("type"=>"clean", "width"=>150,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Stato incarico: </span><br>$incarico_label</div>")));
-                    
-                //Codice fiscale
-                //$value=$incarico->GetCodiceFiscale();
-                //if($value=="") $value="n.d";
-                //$toolbar->AddElement(new AA_JSON_Template_Template($curId."_Codice_Fiscale",array("type"=>"clean", "width"=>150,"template"=>"<div style='padding-left: .7em; margin-top: 2px;'><span style='font-weight: 700;'>Codice fiscale: </span><br>".$value."</div>")));
-                
-                //data inizio
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Data_Inizio",array("type"=>"clean", "width"=>150,"template"=>"<div style='padding-left: .7em;margin-top: 2px;'><span style='font-weight: 700;'>Data inizio incarico: </span><br>".$incarico->GetDataInizio()."</div>")));
-                    
-                //data fine
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Data_Fine",array("type"=>"clean","width"=>150, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Data fine incarico: </span><br>".$incarico->GetDataFine()."</div>")));
-
-                //estremi provvedimento
-                $value=$incarico->GetEstremiProvvedimento();
-                if($value=="") $value="n.d.";
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Estremi_Provvedimento",array("type"=>"clean","width"=>200, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Estremi del provvedimento: </span><br>".$value."</div>")));
-                
-                //Trattamento economico complessivo
-                $value=$incarico->GetCompensoSpettante();
-                if($value=="") $value="n.d.";
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Compenso_Spettante",array("type"=>"clean","width"=>300, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Trattamento economico complessivo in €: </span><br>".$value."</div>")));
-                    
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-                
-                if($canModify)
-                {
-                    //Pulsante di Modifica dato incarico                                
-                    $modify_btn=new AA_JSON_Template_Generic($curId."_Modify_btn",array(
-                       "view"=>"button",
-                        "type"=>"icon",
-                        "icon"=>"mdi mdi-pencil",
-                        "label"=>"Modifica",
-                        "align"=>"right",
-                        "width"=>120,
-                        "tooltip"=>"Modifica i dati dell'incarico visualizzato",
-                        "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioModifyIncaricoDlg\", params: [{id: ".$object->GetId()."},{id_incarico:".$id_incarico."}]},'$this->id')"
-                    ));
-                    
-                    //pulsante di eliminazione incarico
-                    $trash_btn=new AA_JSON_Template_Generic($curId."_Trash_btn",array(
-                       "view"=>"button",
-                        "type"=>"icon",
-                        "css"=>"AA_Button_Red",
-                        "icon"=>"mdi mdi-trash-can",
-                        "label"=>"Elimina",
-                        "align"=>"right",
-                        "width"=>120,
-                        "tooltip"=>"Elimina i dati dell'incarico visualizzato",
-                        "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioTrashIncaricoDlg\", params: [{id: ".$object->GetId()."},{id_incarico:".$id_incarico."}]},'$this->id')"
-                    ));
-                    $toolbar->AddElement($modify_btn);
-                    $toolbar->AddElement($trash_btn);    
-                }
-                
-                $incarico_body->AddRow($toolbar);
-                
-                //note
-                $value=$incarico->GetNote();
-                $val1=new AA_JSON_Template_Template($curId."_Note",array("height"=>60,"css"=>"AA_Header_Tabbar_Title",
-                    "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                    "data"=>array("title"=>"Note:","value"=>$value)
-                ));
-                $incarico_body->AddRow($val1);                
-                
-                //Riga compensi e documenti
-                $curId=$curId."_Compensi_Documenti";
-                $incarico_row_data=new AA_JSON_Template_Layout($curId,array());
-                
-                #compensi----------------------------------
-                $curId=$curId."_Layout_Compensi";
-                $incarico_compensi=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-right"=>"1px solid #dedede !important;")));
-                
-                $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_Compensi",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-
-                $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Compensi_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Trattamento economico</span>", "align"=>"center")));
-
-                if($canModify)
-                {
-                    //Pulsante di aggiunta compenso
-                    $add_compenso_btn=new AA_JSON_Template_Generic($curId."_AddCompenso_btn",array(
-                       "view"=>"button",
-                        "type"=>"icon",
-                        "icon"=>"mdi mdi-pencil-plus",
-                        "label"=>"Aggiungi",
-                        "align"=>"right",
-                        "width"=>120,
-                        "tooltip"=>"Aggiungi trattamento economico per l'incarico",
-                        "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioAddNewIncaricoCompensoDlg\", params: [{id: ".$object->GetId()."},{id_incarico:".$incarico->GetId()."}]},'$this->id')"
-                    ));
-
-                    $toolbar->AddElement($add_compenso_btn);
-                }
-                else 
-                {
-                    $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-                }
-
-                $incarico_compensi->AddRow($toolbar);
-
-                $options_compensi=array();
-
-                if($canModify)
-                {
-                    $options_compensi[]=array("id"=>"anno", "header"=>"Anno", "width"=>60, "css"=>array("text-align"=>"left"));
-                    $options_compensi[]=array("id"=>"parte_fissa", "header"=>"Parte fissa in €", "width"=>150,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"parte_variabile", "header"=>"Parte variabile in €", "width"=>150,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"rimborsi", "header"=>"Rimborsi in €", "width"=>150,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"totale", "header"=>"Totale (fissa+variabile) in €", "fillspace"=>true,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
-                }
-                else
-                {
-                    $options_compensi[]=array("id"=>"anno", "header"=>"Anno", "width"=>60, "css"=>array("text-align"=>"left"));
-                    $options_compensi[]=array("id"=>"parte_fissa", "header"=>"Parte fissa in €", "width"=>150,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"parte_variabile", "header"=>"Parte variabile in €", "width"=>150,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"rimborsi", "header"=>"Rimborsi in €", "width"=>150,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"totale", "header"=>"Totale (fissa+variabile) in €", "fillspace"=>true,"css"=>array("text-align"=>"center"));
-                    $options_compensi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"center"));
-                }
-
-                $compensi=new AA_JSON_Template_Generic($curId."_Compensi_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true, "scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_compensi));
-
-                $compensi_data=array();
-                foreach($incarico->GetCompensi($this->oUser) as $id_comp=>$curComp)
-                {
-                    $tot=0;
-                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioModifyIncaricoCompensoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_compenso:"'.$curComp->GetId().'"}]},"'.$this->id.'")';
-                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioTrashIncaricoCompensoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_compenso:"'.$curComp->GetId().'"}]},"'.$this->id.'")';
-                    $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-                    $tot= number_format(str_replace(array(".",","),array("","."),$curComp->GetParteFissa())+str_replace(array(".",","),array("","."),$curComp->GetParteVariabile()),2,",",".");
-                    $compensi_data[]=array("id"=>$id_comp,"anno"=>$curComp->GetAnno(),"parte_fissa"=>number_format(str_replace(array(".",","),array("","."),$curComp->GetParteFissa()),2,",","."),"parte_variabile"=>number_format(str_replace(array(".",","),array("","."),$curComp->GetParteVariabile()),2,",","."),"rimborsi"=>number_format(str_replace(array(".",","),array("","."),$curComp->GetRimborsi()),2,",","."),"note"=>$curComp->GetNote(), "totale"=>$tot,"ops"=>$ops);
-                }
-                $compensi->SetProp("data",$compensi_data);
-                if(sizeof($compensi_data) > 0) $incarico_compensi->AddRow($compensi);
-                else $incarico_compensi->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-                #--------------------------------------
-                
-                #documenti----------------------------------
-                $curId=$curId."_Layout_Documenti";
-                $incarico_documenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-left"=>"1px solid #dedede !important;")));
-                
-                $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_Documenti",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-
-                $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Documenti_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Documenti</span>", "align"=>"center")));
-
-                if($canModify)
-                {
-                    //Pulsante di aggiunta documento
-                    $add_documento_btn=new AA_JSON_Template_Generic($curId."_AddDocumento_btn",array(
-                       "view"=>"button",
-                        "type"=>"icon",
-                        "icon"=>"mdi mdi-file-plus",
-                        "label"=>"Aggiungi",
-                        "align"=>"right",
-                        "width"=>120,
-                        "tooltip"=>"Aggiungi documento per l'incarico",
-                        "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioAddNewIncaricoDocDlg\", params: [{id: ".$object->GetId()."},{id_incarico:".$incarico->GetId()."}]},'$this->id')"
-                    ));
-
-                    $toolbar->AddElement($add_documento_btn);
-                }
-                else 
-                {
-                    $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-                }
-
-                $incarico_documenti->AddRow($toolbar);
-
-                $options_documenti=array();
-
-                if($canModify)
-                {
-                    $options_documenti[]=array("id"=>"anno", "header"=>"Anno", "width"=>60, "css"=>array("text-align"=>"left"));
-                    $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "fillspace"=>true,"css"=>array("text-align"=>"center"));
-                    $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
-                }
-                else
-                {
-                    $options_documenti[]=array("id"=>"anno", "header"=>"Anno", "width"=>60, "css"=>array("text-align"=>"left"));
-                    $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "fillspace"=>true,"css"=>array("text-align"=>"center"));
-                    $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
-                }
-
-                $documenti=new AA_JSON_Template_Generic($curId."_Documenti_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
-
-                $documenti_data=array();
-                foreach($incarico->GetDocs() as $id_doc=>$curDoc)
-                {
-                    $modify='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetPublicDocumentPath().'&embed=1"},"'.$this->id.'")';
-                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioTrashIncaricoDocDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{anno:"'.$curDoc->GetAnno().'"},{tipo:"'.$curDoc->GetTipologia(true).'"}]},"'.$this->id.'")';
-                    if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Download' onClick='".$modify."'><span class='mdi mdi-floppy'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-                    else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Download' onClick='".$modify."'><span class='mdi mdi-floppy'></span></a></div>";
-                    $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetAnno(),"id_tipo"=>$curDoc->GetTipologia(true) ,"tipo"=>$curDoc->GetTipologia(),"ops"=>$ops);
-                }
-                $documenti->SetProp("data",$documenti_data);
-                if(sizeof($documenti_data) > 0) $incarico_documenti->AddRow($documenti);
-                else $incarico_documenti->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-                #--------------------------------------
-                
-                //Aggiunge i compensi
-                $incarico_row_data->AddCol($incarico_compensi);
-                
-                //Aggiunge uno spazio
-                $incarico_row_data->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>10)));
-                
-                //Aggiunge i documenti
-                $incarico_row_data->AddCol($incarico_documenti);
-                
-                //Aggiunge compensi e documenti al body dell'elemento
-                $incarico_body->AddRow($incarico_row_data);
-                                
-                //Imposta il contenuto dell'incarico corrente
-                $curIncaricoAccordionItem->SetProp("body",$incarico_body);
-                
-                //Aggiunge l'incarico alla lista
-                $incarichi->AddRow($curIncaricoAccordionItem);
-                
-                //Espande di default solo il primo
-                $collapsed=true;
-            }
-            
-            //Aggiunge la lista incarichi alla pagina
-            $curNominaTab->AddRow($incarichi);
-            
-            //Aggiunge una barra
-            $curNominaTab->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer","height"=>3,"css"=>array("border-top"=>"1px solid #dedede !important;"))));
-            
-            //Imposta l'azione del pulsante di dettaglio
-            $riepilogo_data_item["onclick"]='$$("'.$tabbar->GetId().'").setValue("'.$curNominaTab->GetId().'")';
-            $riepilogo_data[]=$riepilogo_data_item;
-            
-            //Aggiunge la pagina alla lista delle pagine
-            $multiview->AddCell($curNominaTab);
-        }
-        
-        //Riepilogo tab
-        $riepilogo_layout=$this->TemplateDettaglio_Nomine_Riepilogo_Tab($object,$id, $riepilogo_data, $id);
-        
-        array_unshift($options,array("id"=>$riepilogo_layout->GetId(), "value"=>"Riepilogo"));
-        
-        $multiview->AddCell($riepilogo_layout,true);
-        
-        $tabbar->SetProp("options",$options);
-        
-        return $layout;
-    }
+    
      
     //Task Update Patrimonio
     public function Task_UpdatePatrimonio($task)
@@ -2475,7 +2010,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return false;
         }
         
-        $organismo= AA_Patrimonio::AddNewToDb($_REQUEST, $this->oUser);
+        $organismo= AA_Patrimonio::AddNew($_REQUEST, $this->oUser);
         
         if(!($organismo instanceof AA_Patrimonio))
         {
@@ -2805,14 +2340,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Struttura
         $dlg->AddStructField(array("showAll"=>1,"hideServices"=>1,"targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
         
-        //Tipologia
-        $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Patrimonio_Const::GetTipoPatrimonio() as $id=>$label)
-        {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
-        }
-        $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
-        
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
@@ -2852,94 +2379,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Struttura
         $dlg->AddStructField(array("hideServices"=>1,"targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
         
-        //Tipologia
-        $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Patrimonio_Const::GetTipoPatrimonio() as $id=>$label)
-        {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
-        }
-        $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
-        
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
-        
-        return $dlg->GetObject();
-    }
-    
-    //Template filtro di ricerca
-    public function TemplateScadenzarioFilterDlg()
-    {
-        //Valori runtime
-        $formData=array("raggruppamento"=>$_REQUEST['raggruppamento'], "finestra_temporale"=>$_REQUEST['finestra_temporale'], "data_scadenzario"=>$_REQUEST['data_scadenzario'],"scadute"=>$_REQUEST['scadute'],"recenti"=>$_REQUEST['recenti'],"in_scadenza"=>$_REQUEST['in_scadenza'],"in_corso"=>$_REQUEST['in_corso'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"denominazione"=>$_REQUEST['denominazione'],"incaricato"=>$_REQUEST['incaricato']);
-        
-        //Valori default
-        if($_REQUEST['tipo']=="") $formData['tipo']="0";
-        if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
-        if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']="0";
-        if($_REQUEST['id_direzione']=="") $formData['id_direzione']="0";
-        if($_REQUEST['id_servizio']=="") $formData['id_servizio']="0";
-        if($_REQUEST['in_corso']=="") $formData['in_corso']="0";
-        if($_REQUEST['in_scadenza']=="") $formData['in_scadenza']="1";
-        if($_REQUEST['recenti']=="") $formData['recenti']="1";
-        if($_REQUEST['scadute']=="") $formData['scadute']="0";
-        if($_REQUEST['data_scadenzario']=="") $formData['data_scadenzario'] = Date("Y-m-d");
-        if($_REQUEST['finestra_temporale']=="") $formData['finestra_temporale'] = "1";
-        if($_REQUEST['raggruppamento']=="") $formData['raggruppamento'] = "0";
-        
-        //Valori reset
-        $resetData=array("raggruppamento"=>"0","finestra_temporale"=>"1","in_corso"=>"0","in_scadenza"=>"1","recenti"=>"1","scadute"=>"0","data_scadenzario"=>Date("Y-m-d"),"id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","incaricato"=>"");
-        
-        //Azioni da eseguire dopo l'applicazione del filtro
-        $applyActions="module.refreshCurSection()";
-        
-        $dlg = new AA_GenericFilterDlg("AA_Patrimonio_Scadenzario_Filter", "Parametri di ricerca per lo scadenzario nomine",$this->GetId(),$formData,$resetData,$applyActions);
-        
-        $dlg->SetHeight(780);
-        $dlg->SetWidth(1080);
-        $dlg->SetLabelAlign("right");
-                        
-        //Denominazione
-        $dlg->AddTextField("denominazione","Denominazione/P.IVA",array("bottomLabel"=>"*Filtra in base alla denominazione o alla partita iva dell'organismo.", "placeholder"=>"Denominazione o piva..."));
-        
-        //In corso
-        $dlg->AddSwitchBoxField("in_corso","In corso",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le nomine in corso."),false);
-        
-        //Struttura
-        $dlg->AddStructField(array("hideServices"=>1,"targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
-
-        //In scadenza
-        $dlg->AddSwitchBoxField("in_scadenza","In scadenza",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le nomine che scadono entro l'arco temporale impostato."),false);
-        
-        //Tipologia
-        $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Patrimonio_Const::GetTipoPatrimonio() as $id=>$label)
-        {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
-        }
-        $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
-        
-        //recenti
-        $dlg->AddSwitchBoxField("recenti","Recenti",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le nomine scadute da meno dell'arco temporale impostato ."),false);
-
-        //Nominato
-        $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
-        
-        //Scadute
-        $dlg->AddSwitchBoxField("scadute","Scadute",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le nomine scadute da più dell'arco temporale impostato."),false);
- 
-        //Data scadenzario
-        $dlg->AddDateField("data_scadenzario","Data scadenzario",array("editable"=>true,"bottomLabel"=>"*Seleziona la data di riferimento dello scadenzario."));
-        
-        //Finestra temporale
-        $options_finestra=array(array("id"=>1,"value"=>"1 mese"));
-        for($i = 2; $i < 13; $i++)
-        {
-            $options_finestra[]=array("id"=>$i,"value"=>$i." mesi");
-        }
-        $dlg->AddSelectField("finestra_temporale","Arco temporale",array("bottomLabel"=>"*Seleziona l'arco temporale relativo alla data di riferimento.","options"=>$options_finestra,"value"=>"1"),false);
-
-        //Raggruppamento
-        $dlg->AddSwitchBoxField("raggruppamento","Raggruppamento",array("onLabel"=>"nominativi","offLabel"=>"incarico","bottomLabel"=>"*Imposta la modalità di raggruppamento delle nomine (in base alla tipologia di incarico o ai nominativi degli incaricati)."));
         
         return $dlg->GetObject();
     }
@@ -2958,11 +2399,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
             
         //nome file
         $filename="pubblicazioni_art22";
-        if($tipo_organismo !="")
-        {
-          $tipo=AA_Patrimonio_Const::GetTipoPatrimonio(true);
-          $filename.="-".str_replace(" ","_",$tipo[$tipo_organismo]);
-        }
         $filename.="-".date("YmdHis");
         $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
         
@@ -2972,6 +2408,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $rowForPage=1;
         $lastRow=$rowForPage-1;
         $curPage=null;
+        $curPage_row="";
         $curNumPage=0;
         //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
         //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
@@ -2987,10 +2424,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
             //Intestazione
             $intestazione="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Pubblicazioni ai sensi dell'art.22 del d.lgs. 33/2013</div>";
-            if($tipo_organismo !="") 
-            {
-              $intestazione.="<div style='width: 100%; text-align: center; font-size: 18; font-weight: bold;'>".$tipo[$tipo_organismo]."</div>";
-            }
             $intestazione.="<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il ".date("Y-m-d")."</div>";
 
             $curPage->SetContent($intestazione);
@@ -3031,7 +2464,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $indice[$curPatrimonio->GetID()]=$curNumPage."|".$curPatrimonio->GetDescrizione();
             $curPage_row.="<div id='".$curPatrimonio->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
 
-            $template=new AA_PatrimonioPublicReportTemplateView("report_organismo_pdf_".$curPatrimonio->GetId(),null,$curPatrimonio,$this->oUser);
+            $template=""; //new AA_PatrimonioPublicReportTemplateView("report_organismo_pdf_".$curPatrimonio->GetId(),null,$curPatrimonio,$this->oUser);
 
             //AA_Log::Log($template,100,false,true);
 
