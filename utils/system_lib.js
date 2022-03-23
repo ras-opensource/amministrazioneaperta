@@ -3943,7 +3943,8 @@ async function AA_RefreshMainUi(params)
                     if(module.id !=="AA_MODULE_DUMMY")
                     {
                         module.taskManager=modules[curMod].remote_folder+"/taskmanager.php";
-                        //console.log("System::AA_RefreshMainUi() - modulo: "+module.id+" - task manager: "+module.taskManager);
+                        module.ui.icon=modules[curMod].icon;
+                        module.ui.name=modules[curMod].name;
                     }
                 }
             }
