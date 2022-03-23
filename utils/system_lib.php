@@ -6261,7 +6261,7 @@ Class AA_GenericModule
         $objectClass=static::AA_MODULE_OBJECTS_CLASS;
         if(class_exists($objectClass))
         {
-            if(function_exists($objectClass::Search)) $data=$objectClass::Search($parametri,$this->oUser);
+            if(is_callable(array($objectClass,"Search"),true,$func)) $data=$func($parametri,$this->oUser);
             else
             {
                 AA_Log::Log(__METHOD__." Errore: Funzione di ricerca non definita ($objectClass::Search)",100);
@@ -10456,7 +10456,7 @@ Class AA_Platform
             }
         }
         
-        AA_Log::Log(__METHOD__." - ".print_r($this,true),100);
+        //AA_Log::Log(__METHOD__." - ".print_r($this,true),100);
         return $modules;
     }
     
