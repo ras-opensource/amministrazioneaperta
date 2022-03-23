@@ -64,7 +64,7 @@ Class AA_Patrimonio extends AA_Object_V2
 
         //----------------------------------
 
-        return self::Search($params,$user);
+        return parent::Search($params,$user);
     }
 
     //Funzione di verifica dei permessi
