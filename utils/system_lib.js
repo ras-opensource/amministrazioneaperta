@@ -3938,7 +3938,7 @@ async function AA_RefreshMainUi(params)
                 {
                     
                     let module = AA_MainApp.getModule(modules[curMod].id);
-                    //console.log("System::AA_RefreshMainUi() - modulo",module,modules[curMod]);
+                    console.log("System::AA_RefreshMainUi() - modulo",module,modules[curMod]);
                     
                     if(module.id !=="AA_MODULE_DUMMY")
                     {
