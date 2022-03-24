@@ -688,12 +688,20 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
 
         //sezione catasto
-        $label="Sezione";
-        $catasto->AddTextField("SezioneCatasto",$label,array("bottomLabel"=>"*Inserire la sezione in cui è accatastato l'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la sezione catastale"));
+        $label="Sezione";        
+        $catasto->AddSwitchBoxField("SezioneCatasto",$label,array("onLabel"=>"Catasto terreni","offLabel"=>"Catasto urbano","bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile.", "required"=>true));
 
         //foglio catasto
         $label="Foglio";
         $catasto->AddTextField("FoglioCatasto",$label,array("bottomLabel"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui il foglio"));
+        
+        //particella catasto
+        $label="Particella";
+        $catasto->AddTextField("ParticellaCatasto",$label,array("bottomLabel"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la particella"),false);
+
+         //rendita catasto
+         $label="Rendita";
+         $catasto->AddTextField("RenditaCatasto",$label,array("bottomLabel"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la rendita"),false);
 
         $wnd->AddGenericObject($catasto);
 
