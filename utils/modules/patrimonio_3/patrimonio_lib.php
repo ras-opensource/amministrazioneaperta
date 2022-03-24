@@ -125,7 +125,7 @@ Class AA_Patrimonio extends AA_Object_V2
         }
         //----------------------------------------------
 
-        return self::AddNew($object,$user,$bStandardCheck,$bSaveData);
+        return parent::AddNew($object,$user,$bStandardCheck,$bSaveData);
     }
 }
 
@@ -295,7 +295,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return array();
         }
 
-        return $this->GetDataGenericSectionBozze_List($params);
+        return $this->GetDataGenericSectionBozze_List($params,"GetDataSectionBozze_CustomFilter");
     }
 
     //Personalizza il filtro delle bozze per il modulo corrente
@@ -2045,33 +2045,16 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22) && !$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
-            $task->SetError("L'utente corrente non ha i permessi per aggiugere nuovi organismi");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiugere nuovi organismi</error>";
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiugere nuovi elementi</error>";
             $task->SetLog($sTaskLog);
 
             return false;
         }
         
-        $organismo= AA_Patrimonio::AddNew($_REQUEST, $this->oUser);
-        
-        if(!($organismo instanceof AA_Patrimonio))
-        {
-            $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;       
-        }
-        
-        $sTaskLog="<status id='status' id_Rec='".$organismo->GetId()."' action='showDetailView' action_params='".json_encode(array("id"=>$organismo->GetId()))."'>0</status><content id='content'>";
-        $sTaskLog.= "Patrimonio aggiunto con successo (identificativo: ".$organismo->GetId().")";
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
+        return $this->Task_GenericAddNew($task,$_REQUEST);
     }
     
     //Task modifica organismo

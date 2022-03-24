@@ -5680,14 +5680,8 @@ Class AA_GenericModule
         return self::$oTaskManager;
     }
 
-    //Funzione custom per la personalizzazione del filtro sulle schede pubblicate
-    protected function GetDataSectionPubblicate_CustomFilter($params=array())
-    {
-        return array();
-    }
-
     //Restituisce la lista delle schede pubblicate 
-    protected function GetDataGenericSectionPubblicate_List($params=array())
+    protected function GetDataGenericSectionPubblicate_List($params=array(),$customFilterFunction=null,$customTemplateDataFunction=null)
     {
         $templateData=array();
         
@@ -5709,7 +5703,8 @@ Class AA_GenericModule
         if($params['id'] != "") $parametri['id']=$params['id'];
         
         //Richiama la funzione custom per la personalizzazione dei parametri
-        array_merge($parametri,$this->GetDataSectionPubblicate_CustomFilter($params));
+        if(function_exists($customFilterFunction)) array_merge($parametri,$customFilterFunction($params));
+        if(method_exists($this,$customFilterFunction)) array_merge($parametri,$this->$customFilterFunction($params));
 
         //Richiama la classe di gestione degli oggetti gestiti dal modulo
         $objectClass=static::AA_MODULE_OBJECTS_CLASS;
@@ -5751,7 +5746,7 @@ Class AA_GenericModule
             
             if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
             
-            $templateData[]=array(
+            $data=array(
                 "id"=>$object->GetId(),
                 "tags"=>"",
                 "aggiornamento"=>$object->GetAggiornamento(),
@@ -5762,6 +5757,19 @@ Class AA_GenericModule
                 "dettagli"=>$details,
                 "module_id"=>$this->GetId()
             );
+
+            if(method_exists($this, $customTemplateDataFunction))
+            {
+                $templateData[]=$customTemplateDataFunction($data,$object);
+            }
+            else if(function_exists($customTemplateDataFunction))
+            {
+                $templateData[]=$customTemplateDataFunction($data,$object);
+            }
+            else
+            {
+                $templateData[] = $data;
+            }
         }
 
         return array($data[0],$templateData);
@@ -5906,6 +5914,69 @@ Class AA_GenericModule
     public function Task_GetNavbarContent($task)
     {
         return $this->Task_GetGenericNavbarContent($task,$_REQUEST);
+    }
+
+    //Task Generico di aggiunta elemento
+    public function Task_GenericAddNew($task,$params=array())
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+            if(method_exists(static::AA_MODULE_OBJECTS_CLASS,"AddNew"))
+            {
+                $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+                $object = new $objectClass(0,$this->oUser);
+                if(!$object->IsValid())
+                {
+                    AA_Log::Log(__METHOD__." - ERRORE: L'utente corrente non ha i permessi per aggiungere nuovi elementi di tipo (".static::AA_MODULE_OBJECTS_CLASS.")",100);
+                    $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi di tipo (".static::AA_MODULE_OBJECTS_CLASS.")");
+                    $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiugere nuovi elementi</error>";
+                    $task->SetLog($sTaskLog);
+        
+                    return false;
+                }
+        
+                //Popolamento oggetto
+                $object->Parse($params);
+                $object->SetStruct($this->oUser->GetStruct());
+                
+                if(!AA_Patrimonio::AddNew($object,$this->oUser,false,true))
+                {
+                    $task->SetError(AA_Log::$lastErrorLog);
+                    $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+                    $task->SetLog($sTaskLog);
+        
+                    return false;       
+                }
+                
+                $sTaskLog="<status id='status' id_Rec='".$object->GetId()."' action='showDetailView' action_params='".json_encode(array("id"=>$object->GetId()))."'>0</status><content id='content'>";
+                $sTaskLog.= "Elemento aggiunto con successo (identificativo: ".$object->GetId().")";
+                $sTaskLog.="</content>";
+                
+                $task->SetLog($sTaskLog);
+                
+                return true;
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - ERRORE: Metodo di aggiunta nuovi elementi (AddNew) non definito nella classe di gestione degli elementi (".static::AA_MODULE_OBJECTS_CLASS.")",100);
+                $task->SetError(AA_Log::$lastErrorLog);
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+                $task->SetLog($sTaskLog);
+            
+                return false;       
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - ERRORE: Classe di gestione degli elementi non trovata (".static::AA_MODULE_OBJECTS_CLASS.")",100);
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;       
+        }
     }
 
     //Template navbar bozze
@@ -6233,14 +6304,8 @@ Class AA_GenericModule
         return $content->toObject();
     }
 
-    //Funzione custom per la personalizzazione del filtro sulle schede pubblicate
-    protected function GetDataSectionBozze_CustomFilter($params=array())
-    {
-        return array();
-    }
-
     //Restituisce la lista delle schede pubblicate 
-    protected function GetDataGenericSectionBozze_List($params=array())
+    protected function GetDataGenericSectionBozze_List($params=array(),$customFilterFunction=null,$customTemplateDataFunction=null)
     {
         $templateData=array();
         
@@ -6256,8 +6321,9 @@ Class AA_GenericModule
         if($params['id_servizio'] != "") $parametri['id_servizio']=$params['id_servizio'];
         if($params['id'] != "") $parametri['id']=$params['id'];
         
-        //Richiama la funzione custom per la personalizzazione dei parametri
-        array_merge($parametri,$this->GetDataSectionBozze_CustomFilter($params));
+         //Richiama la funzione custom per la personalizzazione dei parametri
+         if(function_exists($customFilterFunction)) array_merge($parametri,$customFilterFunction($params));
+         if(method_exists($this,$customFilterFunction)) array_merge($parametri,$this->$customFilterFunction($params));
 
         //Richiama la classe di gestione degli oggetti gestiti dal modulo
         $objectClass=static::AA_MODULE_OBJECTS_CLASS;
@@ -6299,7 +6365,7 @@ Class AA_GenericModule
             
             if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
             
-            $templateData[]=array(
+            $data=array(
                 "id"=>$object->GetId(),
                 "tags"=>"",
                 "aggiornamento"=>$object->GetAggiornamento(),
@@ -6310,6 +6376,19 @@ Class AA_GenericModule
                 "dettagli"=>$details,
                 "module_id"=>$this->GetId()
             );
+
+            if(method_exists($this, $customTemplateDataFunction))
+            {
+                $templateData[]=$customTemplateDataFunction($data,$object);
+            }
+            else if(function_exists($customTemplateDataFunction))
+            {
+                $templateData[]=$customTemplateDataFunction($data,$object);
+            }
+            else
+            {
+                $templateData[] = $data;
+            }
         }
 
         return array($data[0],$templateData);
@@ -9973,6 +10052,22 @@ Class AA_Object_V2
     public function GetProps()
     {
         return $this->aProps;
+    }
+
+    //Parsing dei dati
+    public function Parse($data=array(),$bOnlyData=false)
+    {
+        //Nome
+        foreach($data as $key=>$value)
+        {
+            if(!$bOnlyData)
+            {
+                if($key=="nome" || $key=="name") $this->SetName($value);
+                if($key=="descrizione" || $key=="descr") $this->SetDescr($value);    
+            }
+
+            if(isset($this->aProps[$key])) $this->aProps[$key]=$value;
+        }
     }
 
     //Db binding
