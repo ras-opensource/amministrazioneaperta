@@ -679,7 +679,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             array("id"=>"2","value"=>"posseduto"),
             array("id"=>"4","value"=>"detenuto")
         );
-        $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","tooltip"=>"Seleziona una voce dall'elenco.","options"=>$options,"value"=>"1"));
+        $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","tooltip"=>"Seleziona una voce dall'elenco.","options"=>$options,"value"=>1));
         
         //Nome
         $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile", "placeholder"=>"inserisci qui la denominazione dell'immobile"));
@@ -717,7 +717,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //Indirizzo
         $label="Indirizzo";
-        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirzzo dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo"));
+        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo"));
         
         $wnd->AddGenericObject($catasto);
 
