@@ -4283,7 +4283,7 @@ Class AA_GenericModuleTask extends AA_GenericTask
     {
         $module = $this->GetTaskManager()->GetModule();
         $taskFunction=$this->taskFunction;
-        if(is_callable(array($module,$taskFunction),true)) return $module->$taskFunction($this);
+        if(method_exists($module,$taskFunction)) return $module->$taskFunction($this);
         else return $this->GetTaskManager()->RunTask($this);
     }
 }
