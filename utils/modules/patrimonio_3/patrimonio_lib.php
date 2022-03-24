@@ -162,6 +162,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Registrazione dei task-------------------
         $taskManager=$this->GetTaskManager();
         
+        //Dialoghi di filtraggio
+        $taskManager->RegisterTask("GetPatrimonioPubblicateFilterDlg");
+        $taskManager->RegisterTask("GetPatrimonioBozzeFilterDlg");
+
         //patrimonio
         $taskManager->RegisterTask("GetPatrimonioModifyDlg");
         $taskManager->RegisterTask("GetPatrimonioAddNewDlg");
@@ -650,7 +654,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Template dlg addnew patrimonio
     public function Template_GetPatrimonioAddNewDlg()
     {
-        $id=$this->id."_AddNew_Dlg";
+        $id=$this->GetId()."_AddNew_Dlg";
         
         $form_data=array();
         
@@ -658,11 +662,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $struct=$this->oUser->GetStruct();
         $form_data['id_assessorato']=$struct->GetAssessorato(true);
         $form_data['id_direzione']=$struct->GetDirezione(true);
-        $form_data['id_servizio']=0;
-        if($form_data['id_direzione'] > 0) $form_data['struct_desc']=$struct->GetDirezione();
-        else $form_data['struct_desc']=$struct->GetAssessorato();
+        $form_data['id_servizio']=$struct->GetServizio(true);
         
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo organismo", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo immobile", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
@@ -671,24 +673,38 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetHeight(420);
         $wnd->EnableValidation();
                 
+        //Nome
+        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile", "placeholder"=>"inserisci qui la denominazione dell'immobile"));
+        
         //Descrizione
-        $wnd->AddTextField("sDescrizione","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'organismo", "placeholder"=>"inserisci qui la denominazione dell'organismo"));
-        
-        //Funzioni
-        $label="Funzioni attrib.";
-        $wnd->AddTextareaField("sFunzioni",$label,array("bottomLabel"=>"*Funzioni attribuite all'organismo.", "required"=>true,"placeHolder"=>"Inserisci qui le funzioni attribuite"));
-        
-        //Struttura
-        $wnd->AddStructField(array("hideServices"=>1,"targetForm"=>$wnd->GetFormId()), array("select"=>true),array("bottomLabel"=>"*Seleziona la struttura controllante."));
+        $label="Descrizione";
+        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la descrizione dell'immobile"));
+
+        //codice comune
+        $label="Codice Comune";
+        $wnd->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeHolder"=>"Inserisci qui il codice comune"));
+
+        //Dati catastali
+        $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
+
+        //sezione catasto
+        $label="Sezione";
+        $catasto->AddTextField("SezioneCatasto",$label,array("bottomLabel"=>"*Inserire la sezione in cui è accatastato l'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la sezione catastale"));
+
+        //foglio catasto
+        $label="Foglio";
+        $catasto->AddTextField("FoglioCatasto",$label,array("bottomLabel"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui il foglio"));
+
+        $wnd->AddGenericObject($catasto);
 
         $wnd->EnableCloseWndOnSuccessfulSave();
-        //$wnd->enableRefreshOnSuccessfulSave();
+
         $wnd->SetSaveTask("AddNewPatrimonio");
         
         return $wnd;
     }
     
-    //Template dlg modify organismo
+    //Template dlg modify immobile
     public function Template_GetPatrimonioModifyDlg($object=null)
     {
         $id="AA_Patrimonio_GetPatrimonioModifyDlg";
