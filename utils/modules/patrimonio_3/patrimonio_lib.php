@@ -721,7 +721,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //Indirizzo
         $label="Indirizzo";
-        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo"));
+        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo dell'immobile/terreno."));
         
         $wnd->AddGenericObject($catasto);
 
