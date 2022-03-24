@@ -4172,7 +4172,7 @@ Class AA_GenericModuleTaskManager extends AA_GenericTaskManager
 
         if($taskFunction == "") $taskFunction="Task_".$task;
         $module=$this->GetModule();
-        if(is_callable(array($module,$taskFunction),true))
+        if(method_exists($module,$taskFunction))
         {
             AA_Log::Log(__METHOD__."() - Aggiunta di un nuovo task: ".$task." - funzione: ".$taskFunction);
             $this->aTasks[$task]= new AA_GenericModuleTask($task,$this->oUser, $this, $taskFunction);
@@ -4284,7 +4284,11 @@ Class AA_GenericModuleTask extends AA_GenericTask
         $module = $this->GetTaskManager()->GetModule();
         $taskFunction=$this->taskFunction;
         if(method_exists($module,$taskFunction)) return $module->$taskFunction($this);
-        else return $this->GetTaskManager()->RunTask($this->sTaskName);
+        else 
+        {
+            $this->sTaskLog="<status id='status'>-1</status><error id='error'>".__METHOD__."() - Task non registrato: ".$this->sTaskName.".</error>";
+            return false;
+        }
     }
 }
 #--------------------------------------------
