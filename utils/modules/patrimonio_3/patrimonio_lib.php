@@ -669,8 +669,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(600);
-        $wnd->SetHeight(420);
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(640);
         $wnd->EnableValidation();
                 
         //Nome
@@ -678,11 +678,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la descrizione dell'immobile"));
+        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile"));
 
         //codice comune
         $label="Codice Comune";
-        $wnd->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeHolder"=>"Inserisci qui il codice comune"));
+        $wnd->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune"));
 
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
@@ -693,15 +693,15 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //foglio catasto
         $label="Foglio";
-        $catasto->AddTextField("FoglioCatasto",$label,array("bottomLabel"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui il foglio"));
+        $catasto->AddTextField("FoglioCatasto",$label,array("bottomLabel"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"Inserisci qui il foglio"));
         
         //particella catasto
         $label="Particella";
-        $catasto->AddTextField("ParticellaCatasto",$label,array("bottomLabel"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la particella"),false);
+        $catasto->AddTextField("ParticellaCatasto",$label,array("bottomLabel"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la particella"),false);
 
          //rendita catasto
          $label="Rendita";
-         $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la rendita"),false);
+         $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la rendita"),false);
 
         $wnd->AddGenericObject($catasto);
 
