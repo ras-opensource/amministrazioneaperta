@@ -679,14 +679,14 @@ Class AA_PatrimonioModule extends AA_GenericModule
             array("id"=>"2","value"=>"posseduto"),
             array("id"=>"4","value"=>"detenuto")
         );
-        $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
+        $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","bottomLabel"=>"*Indicare il titolo di possesso","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
         
         //Nome
-        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile", "placeholder"=>"inserisci qui la denominazione dell'immobile/terreno"));
+        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile/terreno.", "placeholder"=>"inserisci qui la denominazione dell'immobile/terreno"));
         
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile/terreno"));
+        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile/terreno"));
 
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
