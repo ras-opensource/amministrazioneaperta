@@ -688,10 +688,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $label="Descrizione";
         $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile"));
 
-        //codice comune
-        $label="Cod. Comune";
-        $wnd->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune..."));
-
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
 
@@ -699,6 +695,14 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $label="Sezione";        
         $catasto->AddSwitchBoxField("SezioneCatasto",$label,array("onLabel"=>"Catasto terreni","offLabel"=>"Catasto urbano","bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile.", "required"=>true));
 
+        //codice comune
+        $label="Cod. Comune";
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...")); 
+
+        //classe
+        $label="Classe";
+        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*classe dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile"), false); 
+        
         //foglio catasto
         $label="Foglio";
         $catasto->AddTextField("FoglioCatasto",$label,array("tooltip"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."));
