@@ -703,6 +703,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $label="Rendita";
         $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la rendita"),false);
 
+        //consistenza catasto
+        $label="Consistenza";
+        $catasto->AddTextField("ConsistenzaCatasto",$label,array("tooltip"=>"*Inserire la consistenza dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la consistenza"),false);
+
         //Indirizzo
         $label="Indirizzo";
         $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirzzo dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo"));
