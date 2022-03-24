@@ -12,6 +12,8 @@ include_once "system_lib.php";
 Class AA_Patrimonio_Const extends AA_Const
 {
     const AA_USER_FLAG_PATRIMONIO="patrimonio";
+
+    //Risorse per codici Comuni: https://dait.interno.gov.it/territorio-e-autonomie-locali/sut/open_data.php
 }
 
 #Classe oggetto patrimonio
