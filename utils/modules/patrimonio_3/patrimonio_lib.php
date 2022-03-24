@@ -701,7 +701,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
          //rendita catasto
          $label="Rendita";
-         $catasto->AddTextField("RenditaCatasto",$label,array("bottomLabel"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la rendita"),false);
+         $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeHolder"=>"Inserisci qui la rendita"),false);
 
         $wnd->AddGenericObject($catasto);
 
