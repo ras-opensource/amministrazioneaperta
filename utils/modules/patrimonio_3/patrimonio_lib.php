@@ -682,18 +682,18 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
         
         //Nome
-        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile", "placeholder"=>"inserisci qui la denominazione dell'immobile"));
+        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile", "placeholder"=>"inserisci qui la denominazione dell'immobile/terreno"));
         
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile"));
+        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile/terreno"));
 
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
 
         //sezione catasto
         $label="Sezione";        
-        $catasto->AddSwitchBoxField("SezioneCatasto",$label,array("onLabel"=>"Catasto terreni","offLabel"=>"Catasto urbano","bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile.", "required"=>true));
+        $catasto->AddSwitchBoxField("SezioneCatasto",$label,array("onLabel"=>"Catasto terreni","offLabel"=>"Catasto urbano","bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "required"=>true));
 
         //codice comune
         $label="Cod. Comune";
@@ -701,7 +701,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //classe
         $label="Classe";
-        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*classe dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile"), false); 
+        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile/terreno"), false); 
         
         //foglio catasto
         $label="Foglio";
