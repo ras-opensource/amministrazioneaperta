@@ -664,7 +664,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $form_data['id_direzione']=$struct->GetDirezione(true);
         $form_data['id_servizio']=$struct->GetServizio(true);
         
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo immobile", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo immobile/terreno", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
