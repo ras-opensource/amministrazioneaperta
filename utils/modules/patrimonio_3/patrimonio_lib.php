@@ -675,11 +675,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
               
         //titolo di possesso
         $options=array(
+            array("id"=>"0","value"=>"selezionare..."),
             array("id"=>"1","value"=>"di proprietà"),
             array("id"=>"2","value"=>"posseduto"),
             array("id"=>"4","value"=>"detenuto")
         );
-        $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","tooltip"=>"Seleziona una voce dall'elenco.","options"=>$options,"value"=>"di proprietà"));
+        $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","tooltip"=>"Seleziona una voce dall'elenco.","options"=>$options,"value"=>"1"));
         
         //Nome
         $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile", "placeholder"=>"inserisci qui la denominazione dell'immobile"));
