@@ -9465,7 +9465,7 @@ Class AA_Object_V2
         
         $struct=$object->GetStruct();
         
-        $query.=", id_data='".$object->GetIdData()."'";
+        $query.=" id_data='".$object->GetIdData()."'";
         $query.=", id_data_rev='".$object->GetIdDataRev()."'";
         $query.=", status='".$object->GetStatus()."'";
         $query.=", nome='".addslashes($object->GetName())."'";
@@ -9477,7 +9477,7 @@ Class AA_Object_V2
         $query.=", log='".addslashes($object->GetLog(false))."'";
         
         AA_Log::Log(__METHOD__."query: ".$query,100);
-        
+
         if(!$db->Query($query.$where))
         {
             AA_Log::Log(__METHOD__." - Errore nell'aggiornamento al db - ".$db->GetErrorMessage(),100);
