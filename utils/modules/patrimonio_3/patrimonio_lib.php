@@ -62,7 +62,7 @@ Class AA_Patrimonio extends AA_Object_V2
         else $user=AA_User::GetCurrentUser();
 
         //---------local checks-------------
-
+        $params['class']="AA_Patrimonio";
         //----------------------------------
 
         return parent::Search($params,$user);

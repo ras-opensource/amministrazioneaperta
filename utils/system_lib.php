@@ -6007,19 +6007,19 @@ Class AA_GenericModule
         {
             case "Bozze":
             case static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX:
-                $template=$this->TemplateSection_Bozze();
+                $template=$this->TemplateSection_Bozze($params);
                 $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,"content"=>$template->toArray());
                 break;
             
             case "Pubblicate":
             case static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX:
-                $template = $this->TemplateSection_Pubblicate();
+                $template = $this->TemplateSection_Pubblicate($params);
                 $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,"content"=>$template->toArray());
                 break;
             
             case "Dettaglio":
             case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
-               $template=$this->TemplateSection_Detail($_REQUEST);
+               $template=$this->TemplateSection_Detail($params);
                $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$template->toArray());
                 break;
             default:
@@ -10318,7 +10318,7 @@ Class AA_Object_V2
         $query="SELECT COUNT(id) as tot FROM (".$select.$join.$where.$group.$having.") as count_filter";
 
         AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
-        
+
         if(!$db->Query($query))
         {
             //Imposta lo stato di errore
