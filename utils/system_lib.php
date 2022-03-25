@@ -10036,7 +10036,7 @@ Class AA_Object_V2
     {
         if($prop !="" && $prop!=null)
         {
-            if(in_array($prop,array_keys($this->aProps))) return $this->aProps['$prop'];
+            if(in_array($prop,array_keys($this->aProps))) return $this->aProps[$prop];
         }
         return "";
     }
