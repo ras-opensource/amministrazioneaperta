@@ -9432,7 +9432,7 @@ Class AA_Object_V2
             }
 
             AA_Log::Log(__METHOD__."object: ".print_r($object,true),100);
-            
+
             //Aggiorna tabella dati
             if(!$db->Query($query.$where))
             {
@@ -10073,7 +10073,7 @@ Class AA_Object_V2
     }
 
     //Db binding
-    protected $aDbBindigs=array();
+    protected $aDbBindings=array();
     public function SetBind($prop="",$dbField="", $bAddProp=true)
     {
         if($prop !="" && $prop!=null && $dbField !="" && $dbField != null)
