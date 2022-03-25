@@ -9431,7 +9431,7 @@ Class AA_Object_V2
                 $sep=",";
             }
 
-            AA_Log::Log(__METHOD__."object: ".print_r($object,true),100);
+            AA_Log::Log(__METHOD__."query: ".$query,100);
 
             //Aggiorna tabella dati
             if(!$db->Query($query.$where))
@@ -9475,6 +9475,8 @@ Class AA_Object_V2
         $query.=", id_servizio='".$struct->GetServizio(true)."'";
         $query.=", class='".$object_class."'";
         $query.=", log='".addslashes($object->GetLog(false))."'";
+        
+        AA_Log::Log(__METHOD__."query: ".$query,100);
         
         if(!$db->Query($query.$where))
         {
