@@ -4179,7 +4179,7 @@ Class AA_GenericModuleTaskManager extends AA_GenericTaskManager
         }
         else
         {
-            AA_Log::Log(__METHOD__."() - Errore task non registrato - task: ".$task." - funzione: ".print_r($module,true)."->".$taskFunction,100);
+            AA_Log::Log(__METHOD__."() - Errore task non registrato - task: ".$task." - funzione: ".$taskFunction,100);
         }
     }
 }
@@ -10317,7 +10317,8 @@ Class AA_Object_V2
         //Conta i risultati
         $query="SELECT COUNT(id) as tot FROM (".$select.$join.$where.$group.$having.") as count_filter";
 
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        
         if(!$db->Query($query))
         {
             //Imposta lo stato di errore
