@@ -10108,7 +10108,7 @@ Class AA_Object_V2
     }
     public function GetDbBindings()
     {
-        return $this->aDbBindigs;
+        return $this->aDbBindings;
     }
 
     //Tabella dati

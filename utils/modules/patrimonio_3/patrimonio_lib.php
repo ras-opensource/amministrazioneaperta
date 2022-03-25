@@ -29,7 +29,6 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
         //Db data binding
-        $this->SetBind("IdData","id");
         $this->SetBind("Descrizione","descrizione");
         $this->SetBind("CodiceComune","codice_comune");
         $this->SetBind("SezioneCatasto","sezione_catasto");
