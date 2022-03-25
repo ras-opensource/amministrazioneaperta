@@ -14,6 +14,28 @@ Class AA_Patrimonio_Const extends AA_Const
     const AA_USER_FLAG_PATRIMONIO="patrimonio";
 
     //Risorse per codici Comuni: https://dait.interno.gov.it/territorio-e-autonomie-locali/sut/open_data.php
+
+    const AA_PATRIMONIO_TITOLO_PROPRIETA=1;
+    const AA_PATRIMONIO_TITOLO_POSSEDUTO=2;
+    const AA_PATRIMONIO_TITOLO_DETENUTO=4;
+
+    static $titoloList=null;
+    private static function Inizialize()
+    {
+        if(self::$titoloList==null)
+        {
+            self::$titoloList=array(
+                self::AA_PATRIMONIO_TITOLO_PROPRIETA=>"di proprietà",
+                self::AA_PATRIMONIO_TITOLO_POSSEDUTO=>"posseduto",
+                self::AA_PATRIMONIO_TITOLO_DETENUTO=>"detenuto",
+            );    
+        }
+    }
+    public static function GetTitoloList()
+    {
+        self::Inizialize();
+        return self::$titoloList;
+    }
 }
 
 #Classe oggetto patrimonio
@@ -146,6 +168,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     const AA_UI_TASK_RESUME_DLG="GetPatrimonioResumeDlg";
     const AA_UI_TASK_DELETE_DLG="GetPatrimonioDeleteDlg";
     const AA_UI_TASK_ADDNEW_DLG="GetPatrimonioAddNewDlg";
+    const AA_UI_TASK_MODIFY_DLG="GetPatrimonioModifyDlg";
     //------------------------------------
 
     public function __construct($user=null)
@@ -296,13 +319,25 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return array();
         }
 
-        return $this->GetDataGenericSectionBozze_List($params,"GetDataSectionBozze_CustomFilter");
+        return $this->GetDataGenericSectionBozze_List($params,"GetDataSectionBozze_CustomFilter","GetDataSectionBozze_CustomDataTemplate");
     }
 
     //Personalizza il filtro delle bozze per il modulo corrente
     protected function GetDataSectionBozze_CustomFilter($params = array())
     {
          return array();
+    }
+
+    //Personalizza il template dei dati delle bozze per il modulo corrente
+    protected function GetDataSectionBozze_CustomDataTemplate($data = array(),$object=null)
+    {
+        if($object instanceof AA_Patrimonio)
+        {
+            $titoloList=AA_Patrimonio_Const::GetTitoloList();
+            $data['pretitolo']=$titoloList[$object->GetProp("Titolo")];
+        }
+
+        return $data;
     }
     
     //Template patrimonio trash dlg
@@ -786,224 +821,14 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $wnd;
     }
     
-    //Template Detail
+    //Template detail (da specializzare)
     public function TemplateSection_Detail($params)
     {
-        $id="AA_Patrimonio_Detail_";
-        $organismo= new AA_Patrimonio($params['id'],$this->oUser);
-        if(!$organismo->isValid())
-        {
-            return new AA_JSON_Template_Template(
-                        "AA_Patrimonio_Detail_Content_Box",
-                        array("update_time"=>Date("Y-m-d H:i:s"),
-                        "name"=>"Dettaglio scheda organismo",
-                        "type"=>"clean","template"=>AA_Log::$lastErrorLog));            
-        }
-        
-        #Stato
-        if($organismo->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
-        if($organismo->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
-        if($organismo->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
-        if($organismo->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
-        $status="<span class='AA_Label AA_Label_LightBlue' title='Stato scheda organismo'>".$status."</span>";
-        
-        #Dettagli
-        if($this->oUser->IsSuperUser() && $organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
-        else
-        {
-            if($organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
-        }
-        
-        $perms=$organismo->GetUserCaps($this->oUser);
-        $id_org=$organismo->GetID();
-        
-        if(($perms & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
-        
-        $header=new AA_JSON_Template_Layout($id."Header"."_$id_org",array("type"=>"clean", "height"=>38,"css"=>"AA_SectionContentHeader"));
-        $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
-            "view"=>"tabbar",
-            "borderless"=>true,
-            "value"=>$id."Generale_Tab"."_$id_org",
-            "css"=>"AA_Header_TabBar",
-            "width"=>400,
-            "multiview"=>true,
-            "view_id"=>$id."Multiview"."_$id_org",
-            "options"=>array(
-                array("id"=>$id."Generale_Tab"."_$id_org", "value"=>"Generale"),
-                array("id"=>$id."DatiContabili_Tab"."_$id_org","value"=>"Dati contabili", "tooltip"=>"Dati contabili e dotazione organica"),
-                array("id"=>$id."Nomine_Tab"."_$id_org","value"=>"Nomine"))
-        )));
-        $header->addCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        $header->addCol(new AA_JSON_Template_Generic($id."Detail"."_$id_org",array(
-            "view"=>"template",
-            "borderless"=>true,
-            "css"=>"AA_SectionContentHeader",
-            "minWidth"=>500,
-            "template"=>"<div style='display: flex; width:100%; height: 100%; justify-content: center; align-items: center;'>#status#<span>&nbsp;&nbsp;</span><span>#detail#</span></div>",
-            "data"=>array("detail"=>$details,"status"=>$status)
-        )));
-        
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar"."_$id_org",array(
-            "type"=>"clean",
-            "css"=>array("background"=>"#ebf0fa","border-color"=>"transparent"),
-            "width"=>400
-        ));
-        
-        //Inserisce il pulsante di pubblicazione
-        if(($perms & AA_Const::AA_PERMS_PUBLISH) > 0 && ($organismo->GetStatus()&AA_Const::AA_STATUS_BOZZA) > 0 && ($organismo->GetStatus()&AA_Const::AA_STATUS_CESTINATA) == 0)
-        {
-            $menu_data[]= array(
-                            "id"=>$this->id."_Publish"."_$id_org",
-                            "value"=>"Pubblica",
-                            "tooltip"=>"Pubblica l'elemento",
-                            "icon"=>"mdi mdi-certificate",
-                            "module_id"=>$this->id,
-                            "handler"=>"sectionActionMenu.publish",
-                            "handler_params"=>array("task"=>"GetPatrimonioPublishDlg","object_id"=>$organismo->GetID())
-                        );
-        }
-        
-        //Inserisce il pulsante di riassegnazione ripristino
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0)
-        {
-            if(($organismo->GetStatus()&AA_Const::AA_STATUS_CESTINATA) == 0)
-            {
-                //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
-                //$menu_spacer=true;
-                $menu_data[]= array(
-                        "id"=>$this->id."_Reassign"."_$id_org",
-                        "value"=>"Riassegna",
-                        "tooltip"=>"Riassegna l'elemento",
-                        "icon"=>"mdi mdi-share-all",
-                        "module_id"=>$this->id,
-                        "handler"=>"sectionActionMenu.reassign",
-                        "handler_params"=>array("task"=>"GetPatrimonioReassignDlg","object_id"=>$organismo->GetID())
-                    );                
-            }
-            if(($organismo->GetStatus() & AA_Const::AA_STATUS_CESTINATA) > 0)
-            {
-                $menu_data[]= array(
-                        "id"=>$id."_Resume"."_$id_org",
-                        "value"=>"Ripristina",
-                        "tooltip"=>"Ripristina gli elementi selezionati (tutta la lista se non ci sono elementi selezionati)",
-                        "icon"=>"mdi mdi-recycle",
-                        "module_id"=>$this->id,
-                        "handler"=>"sectionActionMenu.resume",
-                        "handler_params"=>array("task"=>"GetPatrimonioResumeDlg","object_id"=>$organismo->GetID())
-                    );
-            }
-        }
-        
-        //Inserisce le voci di esportazione
-        //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
-        //$menu_spacer=true;
-        $menu_data[]= array(
-                    "id"=>$id."_SaveAsPdf"."_$id_org",
-                    "value"=>"Esporta in pdf",
-                    "tooltip"=>"Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file pdf",
-                    "icon"=>"mdi mdi-file-pdf",
-                    "module_id"=>$this->id,
-                    "handler"=>"sectionActionMenu.saveAsPdf",
-                    "handler_params"=>array("task"=>"GetPatrimonioSaveAsPdfDlg","object_id"=>$organismo->GetID())
-                );  
-        $menu_data[]= array(
-                    "id"=>$id."_SaveAsCsv"."_$id_org",
-                    "value"=>"Esporta in csv",
-                    "tooltip"=>"Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file csv",
-                    "icon"=>"mdi mdi-file-table",
-                    "module_id"=>$this->id,
-                    "handler"=>"sectionActionMenu.saveAsCsv",
-                    "handler_params"=>array("task"=>"GetPatrimonioSaveAsCsvDlg","object_id"=>$organismo->GetID())
-                );
-        #-------------------------------------
-        
-        //Inserisce la voce di eliminazione
-        if(($perms & AA_Const::AA_PERMS_DELETE) > 0)
-        {
-            if(($organismo->GetStatus() & AA_Const::AA_STATUS_CESTINATA) == 0)
-            {
-                //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
-                //$menu_spacer=true;
-                
-                $menu_data[]= array(
-                            "id"=>$id."_Trash"."_$id_org",
-                            "value"=>"Cestina",
-                            "css"=>"AA_Menu_Red",
-                            "tooltip"=>"Cestina l'elemento",
-                            "icon"=>"mdi mdi-trash-can",
-                            "module_id"=>$this->id,
-                            "handler"=>"sectionActionMenu.trash",
-                            "handler_params"=>array("task"=>"GetPatrimonioTrashDlg","object_id"=>$organismo->GetID())
-                        );
-            }
-            else
-            {
-                
-                $menu_data[]= array(
-                            "id"=>$id."_Delete"."_$id_org",
-                            "value"=>"Elimina",
-                            "css"=>"AA_Menu_Red",
-                            "tooltip"=>"Elimina definitivamente l'elemento",
-                            "icon"=>"mdi mdi-trash-can",
-                            "module_id"=>$this->id,
-                            "handler"=>"sectionActionMenu.delete",
-                            "handler_params"=>array("task"=>"GetPatrimonioDeleteDlg","object_id"=>$organismo->GetID())
-                        );
-            }
-        }
-        
-        //Azioni
-        $scriptAzioni="try{"
-                . "let azioni_btn=$$('".$id."_Azioni_btn_$id_org');"
-                . "if(azioni_btn){"
-                . "let azioni_menu=webix.ui(azioni_btn.config.menu_data);"
-                . "if(azioni_menu){"
-                . "azioni_menu.setContext(azioni_btn);"
-                . "azioni_menu.show(azioni_btn.\$view);"
-                . "}"
-                . "}"
-                . "}catch(msg){console.error('".$id."_Azioni_btn_$id_org',this,msg);AA_MainApp.ui.alert(msg);}";
-        $azioni_btn=new AA_JSON_Template_Generic($id."_Azioni_btn"."_$id_org",array(
-            "view"=>"button",
-            "type"=>"icon",
-            "icon"=>"mdi mdi-dots-vertical",
-            "label"=>"Azioni",
-            "align"=>"right",
-            "autowidth"=>true,
-            "menu_data"=>new AA_JSON_Template_Generic($id."_ActionMenu"."_$id_org",array("view"=>"contextmenu","data"=>$menu_data, "module_id"=>$this->GetId(),"on"=>array("onItemClick"=>"AA_MainApp.utils.getEventHandler('onDetailMenuItemClick','".$this->GetId()."')"))),
-            "tooltip"=>"Visualizza le azioni disponibili",
-            "click"=>$scriptAzioni
-        ));
-        
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        $toolbar->addElement($azioni_btn);
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>15)));
-        
-        $header->addCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        $header->addCol($toolbar);
-        
-        //Content box
-        $content = new AA_JSON_Template_Layout($id."Content_Box",
-                array(
-                "type"=>"clean",
-                "name"=>$organismo->GetName(),
-                "filtered"=>true
-            ));
-        $content->AddRow($header);
-        
-        $multiview=new AA_JSON_Template_Multiview($id."Multiview"."_$id_org",array(
-            "type"=>"clean",
-            "css"=>"AA_Detail_Content"
-         ));
-        $multiview->addCell($this->TemplateDettaglio_Generale_Tab($organismo));
-        $multiview->addCell($this->TemplateDettaglio_DatiContabili_Tab($organismo));
-        $content->AddRow($multiview);
-        
-        return $content;
-    }
+        return $this->TemplateGenericSection_Detail($params);
+    }   
     
     //Template section detail, tab generale
-    public function TemplateDettaglio_Generale_Tab($object=null)
+    public function TemplatePatrimonioDettaglio_Generale_Tab($object=null)
     {
         $id="AA_Patrimonio_Detail_Generale_Tab_".$object->GetId();
         $rows_fixed_height=50;
@@ -1186,297 +1011,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         return $layout;
     }
-    
-    //Template section detail, tab dati contabili
-    public function TemplateDettaglio_DatiContabili_Tab($object=null)
-    {
-        $id="AA_Patrimonio_Detail_DatiContabili_Tab_".$object->GetID();
-        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
-        
-        //flag società
-        if(($object->GetTipologia(true)&AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $società=true;
-        else $società=false;
-        
-        //righe con altezza imposta
-        $rows_fixed_height=50;
-        
-        //permessi
-        $perms = $object->GetUserCaps($this->oUser);
-        $canModify=false;
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
-        
-        //layout generale
-        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
-        
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"width"=>130));
-        
-        if($canModify)
-        {            
-            //Pulsante di Aggiunta dato contabile
-            $addnew_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
-               "view"=>"button",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-pencil-plus",
-                "label"=>"Aggiungi",
-                "align"=>"right",
-                "width"=>120,
-                "tooltip"=>"Aggiungi annualità",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioAddNewDatoContabileDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
-            ));
-            $toolbar->AddElement($addnew_btn);
-        }
-        
-        $header=new AA_JSON_Template_Layout($id."_Header",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
-        
-        $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
-            "view"=>"tabbar",
-            "borderless"=>true,
-            "css"=>"AA_Bottom_TabBar",
-            "multiview"=>true,
-            "optionWidth"=>100,
-            "view_id"=>$id."_Multiview",
-            "type"=>"bottom"
-        ));
-        
-        $header->AddCol($tabbar);
-        $header->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        $header->AddCol($toolbar);
-        
-        $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
-            "type"=>"clean",
-            "css"=>"AA_Detail_Content"
-         ));
-        $layout->AddRow($multiview);
-        $layout->addRow($header);
-        
-        //Aggiunge gli anni come tab
-        $dati_contabili=$object->GetDatiContabili();
-        $options=array();
-        
-        foreach($dati_contabili as $idDato=>$curDato)
-        {
-            $anno=$curDato->GetAnno();
-            if($canModify) $label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina annualità' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioTrashDatoContabileDlg", params: [{id: "'.$object->GetId().'"},{id_dato_contabile:"'.$curDato->GetId().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno."</span></div>";
-            $options[]=array("id"=>$id."_".$curDato->GetID()."_Tab", "id_rec"=>$idDato, "value"=>$label);
-            
-            $curAnno=new AA_JSON_Template_Layout($id."_".$curDato->GetID()."_Tab",array("type"=>"clean"));
-            
-            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38, "css"=>"AA_Header_Tabbar_Title"));
-            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_".$curDato->GetID(),array("view"=>"label","label"=>"<span style='color:#003380'>Dati contabili e dotazione organica - anno ".$anno."</span>", "align"=>"center")));
-                
-            //Pulsante di Modifica dato contabile
-            if($canModify)
-            {
-                $modify_btn=new AA_JSON_Template_Generic($id."_Modify_".$curDato->GetID()."_btn",array(
-                   "view"=>"button",
-                    "type"=>"icon",
-                    "icon"=>"mdi mdi-pencil",
-                    "label"=>"Modifica",
-                    "align"=>"right",
-                    "width"=>120,
-                    "tooltip"=>"Modifica dati contabili e dotazione organica per l'anno ".$anno,
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioModifyDatoContabileDlg\", params: [{id: ".$object->GetId()."},{id_dato_contabile:".$curDato->GetId()."}]},'$this->id')"
-                ));                
-                $toolbar->AddElement($modify_btn);
-            }
-            else
-            {
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-            }
-            
-            $curAnno->AddRow($toolbar);
-            
-            //Oneri totali
-            $value=$curDato->GetOneriTotali();
-            if($value=="")$value="n.d.";
-            $val1=new AA_JSON_Template_Template($id."_OneriTotali_".$curDato->GetID(),array(
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Oneri totali:","value"=>$value)
-            ));
-
-            //Dotazione organica
-            $value=$curDato->GetDotazioneOrganica();
-            if($value=="") $value="n.d.";
-            $val2=new AA_JSON_Template_Template($id."_DotazioneOrganica_".$curDato->GetID(),array(
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Dotazione organica:","value"=>$value)
-            ));
-            
-            //Prima riga
-            $riga=new AA_JSON_Template_Layout($id."_FirstRow_".$curDato->GetID(),array("height"=>$rows_fixed_height));
-            $riga->AddCol($val1);$riga->AddCol($val2);
-            $curAnno->AddRow($riga);
-            
-            //Spesa lavoro flessibile
-            $value=$curDato->GetSpesaLavoroFlessibile();
-            if($value=="")$value="n.d.";
-            $val1=new AA_JSON_Template_Template($id."_SpesaLavoroFlessibile_".$curDato->GetID(),array(
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Spesa lavoro flessibile:","value"=>$value)
-            ));
-
-            //Dipendenti
-            $value=intVal($curDato->GetDipendenti());
-            $value2=intVal($curDato->GetDipendentiDir());
-            if($value+$value2 == 0)$value="n.d.";
-            if($value2 > 0)
-            {
-                $value=($value+$value2)." di cui ".$value2." dirigenti";
-            }
-            $val2=new AA_JSON_Template_Template($id."_Dipendenti_".$curDato->GetID(),array(
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Personale assunto a tempo indeterminato:","value"=>$value)
-            ));
-
-            // riga
-            $riga=new AA_JSON_Template_Layout($id."_SecondRow_".$curDato->GetID(),array("height"=>$rows_fixed_height));
-            $riga->AddCol($val1);$riga->AddCol($val2);
-            $curAnno->AddRow($riga);
-
-
-            //spesa incarichi
-            $value=$curDato->GetSpesaIncarichi();
-            if($value=="")$value="n.d.";
-            $val1=new AA_JSON_Template_Template($id."_SpesaIncarichi_".$curDato->GetID(),array(
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Spesa incarichi:","value"=>$value)
-            ));
-
-            #Dipendenti a tempo
-            $value=intVal($curDato->GetDipendentiDet());
-            $value2=intVal($curDato->GetDipendentiDetDir());
-            if($value+$value2 == 0)$value="n.d.";
-            if($value2 > 0)
-            {
-                $value=($value+$value2)." di cui ".$value2." dirigenti";
-            }
-            $val2=new AA_JSON_Template_Template($id."_DipendentiDet_".$curDato->GetID(),array(
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Personale assunto a tempo determinato:","value"=>$value)
-            ));          
-
-            //riga
-            $riga=new AA_JSON_Template_Layout($id."_FourRow_".$curDato->GetID(),array("height"=>$rows_fixed_height));
-            $riga->AddCol($val1);$riga->AddCol($val2);
-            $curAnno->AddRow($riga);
-
-            #Fatturato
-            if($società)
-            {
-                $value=$curDato->GetFatturato();
-                if($value=="")$value="n.d.";
-                $val1=new AA_JSON_Template_Template($id."_Fatturato_".$curDato->GetID(),array(
-                    "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                    "data"=>array("title"=>"Fatturato:","value"=>$value)
-                ));
-            }
-            else
-            {
-                $val1 = new AA_JSON_Template_Generic("",array("view"=>"spacer"));
-            }
-            
-            //Spesa dotazione 
-            $value=$curDato->GetSpesaDotazioneOrganica();
-            if($value=="")$value="n.d.";
-            $val2=new AA_JSON_Template_Template($id."_SpesaDotazione_".$curDato->GetID(),array(
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Spesa dotazione organica:","value"=>$value)
-            ));
-
-            //riga
-            $riga=new AA_JSON_Template_Layout($id."_FiveRow_".$curDato->GetID(),array("height"=>$rows_fixed_height));           
-            $riga->AddCol($val1);$riga->AddCol($val2);
-            $curAnno->AddRow($riga);
-            
-            //note
-            $value=$curDato->GetNote();
-            $val1=new AA_JSON_Template_Template($id."_Note_".$curDato->GetID(),array("height"=>60,
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Note:","value"=>$value)
-            ));
-
-            $riga=new AA_JSON_Template_Layout($id."_SixRow_".$curDato->GetID(), array("css"=>array("border-top"=>"1px solid #dadee0 !important")));
-            $riga->AddCol($val1);
-            $curAnno->AddRow($riga);
-            
-            #bilanci----------------------------------
-           
-            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Bilanci_".$curDato->GetID(),array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-
-            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_Bilanci_Title_".$curDato->GetID(),array("view"=>"label","label"=>"<span style='color:#003380'>Bilanci e risultati di amministrazione - anno ".$anno."</span>", "align"=>"center")));
-
-            if($canModify)
-            {
-                //Pulsante di aggiunta bilancio
-                $add_bilancio_btn=new AA_JSON_Template_Generic($id."_AddBilancio_".$curDato->GetID()."_btn",array(
-                   "view"=>"button",
-                    "type"=>"icon",
-                    "icon"=>"mdi mdi-pencil-plus",
-                    "label"=>"Aggiungi",
-                    "align"=>"right",
-                    "width"=>120,
-                    "tooltip"=>"Aggiungi bilancio per l'anno ".$anno,
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioAddNewBilancioDlg\", params: [{id: ".$object->GetId()."},{id_dato_contabile:".$curDato->GetId()."}]},'$this->id')"
-                ));
-
-                $toolbar->AddElement($add_bilancio_btn);
-            }
-            else 
-            {
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-            }
-            
-            $curAnno->AddRow($toolbar);
-            
-            $options_bilanci=array();
-            
-            if($canModify)
-            {
-                $options_bilanci[]=array("id"=>"tipo", "header"=>"Tipo di bilancio", "width"=>250, "css"=>array("text-align"=>"left"));
-                $options_bilanci[]=array("id"=>"risultati", "header"=>"Risultati in €", "width"=>350,"css"=>array("text-align"=>"center"));
-                $options_bilanci[]=array("id"=>"note", "header"=>"note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
-                $options_bilanci[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
-            }
-            else
-            {
-                $options_bilanci[]=array("id"=>"tipo", "header"=>"Tipo di bilancio", "width"=>250, "css"=>array("text-align"=>"left"));
-                $options_bilanci[]=array("id"=>"risultati", "header"=>"Risultati in €", "width"=>350,"css"=>array("text-align"=>"center"));
-                $options_bilanci[]=array("id"=>"note", "header"=>"note", "fillspace"=>true,"css"=>array("text-align"=>"left"));                
-            }
-            
-            $bilanci=new AA_JSON_Template_Generic($id."_Bilanci_".$curDato->GetID(),array("view"=>"datatable", "scrollX"=>false, "select"=>true,"css"=>"AA_Header_DataTable","headerRowHeight"=>28,"columns"=>$options_bilanci));
-            
-            $bilanci_data=array();
-            foreach($curDato->GetBilanci($this->oUser) as $id_bil=>$curBil)
-            {
-                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioModifyBilancioDlg", params: [{id: "'.$object->GetId().'"},{id_dato_contabile:"'.$curDato->GetId().'"},{id_bilancio:"'.$curBil->GetId().'"}]},"'.$this->id.'")';
-                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioTrashBilancioDlg", params: [{id: "'.$object->GetId().'"},{id_dato_contabile:"'.$curDato->GetId().'"},{id_bilancio:"'.$curBil->GetId().'"}]},"'.$this->id.'")';
-                $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-                $bilanci_data[]=array("id"=>$curBil->GetId(),"id_tipo"=>$curBil->GetTipo(),"id_dato_contabile"=>$curDato->GetID(),"id_organismo"=>$object->GetID(),"tipo"=>$curBil->GetTipo(),"risultati"=>$curBil->GetRisultati(),"note"=>$curBil->GetNote(),"ops"=>$ops);
-            }
-            $bilanci->SetProp("data",$bilanci_data);
-            if(sizeof($bilanci_data) > 0) 
-            {
-                //AA_Log::Log(__METHOD__." Aggiungo il bilancio: ".print_r($bilanci,true),100);
-                $curAnno->AddRow($bilanci);
-            }
-            else $curAnno->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-            #--------------------------------------
-            
-            
-            //$multiview->AddCell(new AA_JSON_Template_Generic($id."_ScrollView_".$curDato->GetID()."_Tab",array("view"=>"scrollview","scroll"=>"y","body"=>$curAnno)));
-            $multiview->AddCell($curAnno);
-        }
-        
-        $tabbar->SetProp("options",$options);
-        
-        return $layout;
-    }
-    
-    
      
     //Task Update Patrimonio
     public function Task_UpdatePatrimonio($task)

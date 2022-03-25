@@ -5481,6 +5481,7 @@ Class AA_GenericModule
     const AA_UI_TASK_RESUME_DLG="GetGenericResumeDlg";
     const AA_UI_TASK_DELETE_DLG="GetGenericDeleteDlg";
     const AA_UI_TASK_ADDNEW_DLG="GetGenericAddNewDlg";
+    const AA_UI_TASK_MODIFY_DLG="GetGenericModifyDlg";
     //------------------------------------
 
     protected $taskManagerUrl="system_ops.php";
@@ -6088,35 +6089,6 @@ Class AA_GenericModule
         return $this->Task_GetGenericObjectData($task,$_REQUEST);
     }
 
-    //Template Detail
-    protected function TemplateGenericSection_Detail($params)
-    {
-        $id=static::AA_UI_PREFIX."_Detail_";
-        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
-        if(class_exists($objectClass))
-        {
-            $object= new $objectClass($params['id'],$this->oUser);
-            if(!$object->isValid())
-            {
-                return new AA_JSON_Template_Template(
-                            static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,
-                            array("update_time"=>Date("Y-m-d H:i:s"),
-                            "name"=>"Dettaglio scheda oggetto",
-                            "type"=>"clean","template"=>"Dettaglio scheda oggetto ancora da implementare"));            
-            }    
-        }
-        else
-        {
-            AA_Log::Log(__METHOD__." Errore: Classe di gestione degli oggetti non trovata (".$objectClass.")",100);
-
-            return new AA_JSON_Template_Template(
-                static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,
-                array("update_time"=>Date("Y-m-d H:i:s"),
-                "name"=>"Dettaglio scheda oggetto",
-                "type"=>"clean","template"=>"Dettaglio scheda oggetto ancora da implementare"));
-        }
-    }
-
     //Template detail (da specializzare)
     public function TemplateSection_Detail($params)
     {
@@ -6363,11 +6335,9 @@ Class AA_GenericModule
                 $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;";
                 
                 //utente
-                $lastLog=array_pop($object->GetLog());
-                
-                AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
-
-                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'>".$lastLog[1]."</span>&nbsp;";
+                $lastLog=$object->GetLog()->GetLastLog();               
+                //AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
+                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'>".$lastLog['user']."</span>&nbsp;";
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
             } 
             else
@@ -6391,7 +6361,7 @@ Class AA_GenericModule
 
             if(method_exists($this, $customTemplateDataFunction))
             {
-                $templateData[]=$customTemplateDataFunction($data,$object);
+                $templateData[]=$this->$customTemplateDataFunction($data,$object);
             }
             else if(function_exists($customTemplateDataFunction))
             {
@@ -6464,6 +6434,319 @@ Class AA_GenericModule
     {
         $content=$this->TemplateGenericSection_Bozze($params,false);
         return $content->toObject();
+    }
+
+    //Template Detail
+    public function TemplateGenericSection_Detail($params)
+    {
+        $id=static::AA_UI_PREFIX."_Detail_";
+        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+        if(class_exists($objectClass))
+        {
+            $object= new $objectClass($params['id'],$this->oUser);
+        }
+        else 
+        {
+            return new AA_JSON_Template_Template(
+                static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,
+                array("update_time"=>Date("Y-m-d H:i:s"),
+                "name"=>"Dettaglio scheda elemento",
+                "type"=>"clean","template"=>"Tipo di elemento non gestito."));
+        }
+        
+        #Stato
+        if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
+        if($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
+        if($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
+        if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
+        $status="<span class='AA_Label AA_Label_LightBlue' title='Stato scheda organismo'>".$status."</span>";
+        
+        #Dettagli
+        if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") 
+        {
+            //Aggiornamento
+            $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento()."</span>&nbsp;";
+                
+            //utente
+            $lastLog=$object->GetLog()->GetLastLog();               
+            //AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
+            $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'>".$lastLog['user']."</span>&nbsp;";
+            $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+        }
+        else
+        {
+            if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+        }
+        
+        $perms=$object->GetUserCaps($this->oUser);
+        $id_org=$object->GetID();
+        
+        if(($perms & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
+        
+        $header=new AA_JSON_Template_Layout($id."Header"."_$id_org",array("type"=>"clean", "height"=>38,"css"=>"AA_SectionContentHeader"));
+        
+        //Scheda generale di default
+        if(!is_array($params['DetailOptionTab']))
+        {
+            $params['DetailOptionTab']=array(array("id"=>$id."Generale_Tab"."_$id_org", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGenericDettaglio_Generale_Tab"));
+        }
+        $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
+            "view"=>"tabbar",
+            "borderless"=>true,
+            "value"=>$id."Generale_Tab"."_$id_org",
+            "css"=>"AA_Header_TabBar",
+            "width"=>400,
+            "multiview"=>true,
+            "view_id"=>$id."Multiview"."_$id_org",
+            "options"=>$params['DetailOptionTab']
+                //array("id"=>$id."Generale_Tab"."_$id_org", "value"=>"Generale"),
+                //array("id"=>$id."Canoni_Attivi_Tab"."_$id_org","value"=>"Canoni attivi", "tooltip"=>"Canoni attivi"),
+                //array("id"=>$id."Canoni_Passivi_Tab"."_$id_org","value"=>"Canoni attivi", "tooltip"=>"Canoni passivi")
+        )));
+        $header->addCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $header->addCol(new AA_JSON_Template_Generic($id."Detail"."_$id_org",array(
+            "view"=>"template",
+            "borderless"=>true,
+            "css"=>"AA_SectionContentHeader",
+            "minWidth"=>500,
+            "template"=>"<div style='display: flex; width:100%; height: 100%; justify-content: center; align-items: center;'>#status#<span>&nbsp;&nbsp;</span><span>#detail#</span></div>",
+            "data"=>array("detail"=>$details,"status"=>$status)
+        )));
+        
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar"."_$id_org",array(
+            "type"=>"clean",
+            "css"=>array("background"=>"#ebf0fa","border-color"=>"transparent"),
+            "width"=>400
+        ));
+        
+        //Inserisce il pulsante di pubblicazione
+        if(($perms & AA_Const::AA_PERMS_PUBLISH) > 0 && ($object->GetStatus()&AA_Const::AA_STATUS_BOZZA) > 0 && ($object->GetStatus()&AA_Const::AA_STATUS_CESTINATA) == 0)
+        {
+            $menu_data[]= array(
+                            "id"=>$this->id."_Publish"."_$id_org",
+                            "value"=>"Pubblica",
+                            "tooltip"=>"Pubblica l'elemento",
+                            "icon"=>"mdi mdi-certificate",
+                            "module_id"=>$this->id,
+                            "handler"=>"sectionActionMenu.publish",
+                            "handler_params"=>array("task"=>"GetPatrimonioPublishDlg","object_id"=>$object->GetID())
+                        );
+        }
+        
+        //Inserisce il pulsante di riassegnazione ripristino
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            if(($object->GetStatus()&AA_Const::AA_STATUS_CESTINATA) == 0)
+            {
+                //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
+                //$menu_spacer=true;
+                $menu_data[]= array(
+                        "id"=>$this->id."_Reassign"."_$id_org",
+                        "value"=>"Riassegna",
+                        "tooltip"=>"Riassegna l'elemento",
+                        "icon"=>"mdi mdi-share-all",
+                        "module_id"=>$this->id,
+                        "handler"=>"sectionActionMenu.reassign",
+                        "handler_params"=>array("task"=>"GetPatrimonioReassignDlg","object_id"=>$object->GetID())
+                    );                
+            }
+            if(($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) > 0)
+            {
+                $menu_data[]= array(
+                        "id"=>$id."_Resume"."_$id_org",
+                        "value"=>"Ripristina",
+                        "tooltip"=>"Ripristina gli elementi selezionati (tutta la lista se non ci sono elementi selezionati)",
+                        "icon"=>"mdi mdi-recycle",
+                        "module_id"=>$this->id,
+                        "handler"=>"sectionActionMenu.resume",
+                        "handler_params"=>array("task"=>"GetPatrimonioResumeDlg","object_id"=>$object->GetID())
+                    );
+            }
+        }
+        
+        //Inserisce le voci di esportazione
+        //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
+        //$menu_spacer=true;
+        $menu_data[]= array(
+                    "id"=>$id."_SaveAsPdf"."_$id_org",
+                    "value"=>"Esporta in pdf",
+                    "tooltip"=>"Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file pdf",
+                    "icon"=>"mdi mdi-file-pdf",
+                    "module_id"=>$this->id,
+                    "handler"=>"sectionActionMenu.saveAsPdf",
+                    "handler_params"=>array("task"=>"GetPatrimonioSaveAsPdfDlg","object_id"=>$object->GetID())
+                );  
+        $menu_data[]= array(
+                    "id"=>$id."_SaveAsCsv"."_$id_org",
+                    "value"=>"Esporta in csv",
+                    "tooltip"=>"Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file csv",
+                    "icon"=>"mdi mdi-file-table",
+                    "module_id"=>$this->id,
+                    "handler"=>"sectionActionMenu.saveAsCsv",
+                    "handler_params"=>array("task"=>"GetPatrimonioSaveAsCsvDlg","object_id"=>$object->GetID())
+                );
+        #-------------------------------------
+        
+        //Inserisce la voce di eliminazione
+        if(($perms & AA_Const::AA_PERMS_DELETE) > 0)
+        {
+            if(($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) == 0)
+            {
+                //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
+                //$menu_spacer=true;
+                
+                $menu_data[]= array(
+                            "id"=>$id."_Trash"."_$id_org",
+                            "value"=>"Cestina",
+                            "css"=>"AA_Menu_Red",
+                            "tooltip"=>"Cestina l'elemento",
+                            "icon"=>"mdi mdi-trash-can",
+                            "module_id"=>$this->id,
+                            "handler"=>"sectionActionMenu.trash",
+                            "handler_params"=>array("task"=>"GetPatrimonioTrashDlg","object_id"=>$object->GetID())
+                        );
+            }
+            else
+            {
+                
+                $menu_data[]= array(
+                            "id"=>$id."_Delete"."_$id_org",
+                            "value"=>"Elimina",
+                            "css"=>"AA_Menu_Red",
+                            "tooltip"=>"Elimina definitivamente l'elemento",
+                            "icon"=>"mdi mdi-trash-can",
+                            "module_id"=>$this->id,
+                            "handler"=>"sectionActionMenu.delete",
+                            "handler_params"=>array("task"=>"GetPatrimonioDeleteDlg","object_id"=>$object->GetID())
+                        );
+            }
+        }
+        
+        //Azioni
+        $scriptAzioni="try{"
+                . "let azioni_btn=$$('".$id."_Azioni_btn_$id_org');"
+                . "if(azioni_btn){"
+                . "let azioni_menu=webix.ui(azioni_btn.config.menu_data);"
+                . "if(azioni_menu){"
+                . "azioni_menu.setContext(azioni_btn);"
+                . "azioni_menu.show(azioni_btn.\$view);"
+                . "}"
+                . "}"
+                . "}catch(msg){console.error('".$id."_Azioni_btn_$id_org',this,msg);AA_MainApp.ui.alert(msg);}";
+        $azioni_btn=new AA_JSON_Template_Generic($id."_Azioni_btn"."_$id_org",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-dots-vertical",
+            "label"=>"Azioni",
+            "align"=>"right",
+            "autowidth"=>true,
+            "menu_data"=>new AA_JSON_Template_Generic($id."_ActionMenu"."_$id_org",array("view"=>"contextmenu","data"=>$menu_data, "module_id"=>$this->GetId(),"on"=>array("onItemClick"=>"AA_MainApp.utils.getEventHandler('onDetailMenuItemClick','".$this->GetId()."')"))),
+            "tooltip"=>"Visualizza le azioni disponibili",
+            "click"=>$scriptAzioni
+        ));
+        
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $toolbar->addElement($azioni_btn);
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>15)));
+        
+        $header->addCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $header->addCol($toolbar);
+        
+        //Content box
+        $content = new AA_JSON_Template_Layout($id."Content_Box",
+                array(
+                "type"=>"clean",
+                "name"=>$object->GetName(),
+                "filtered"=>true
+            ));
+        $content->AddRow($header);
+        
+        $multiview=new AA_JSON_Template_Multiview($id."Multiview"."_$id_org",array(
+            "type"=>"clean",
+            "css"=>"AA_Detail_Content"
+         ));
+
+        foreach($params['DetailOptionTab'] as $curTab)
+        {
+            if(method_exists($this,$curTab['template']) && $curTab['template'] !="")
+            {
+                $multiview->addCell($this->$curTab['template']($object));
+            }
+        }
+        $content->AddRow($multiview);
+        
+        return $content;
+    }
+
+    //Template generic section detail, tab generale
+    public function TemplateGenericDettaglio_Generale_Tab($object=null)
+    {
+        if(!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Detail_Generale_Tab_",array("template"=>"Dati non validi"));
+
+        $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$object->GetId();
+        $rows_fixed_height=50;
+        
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+        
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38));
+
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //Pulsante di modifica
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_Modify_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica le informazioni generali",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".static::AA_UI_TASK_MODIFY_DLG."\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        
+        $layout->addRow($toolbar);
+
+        //Nome
+        $value=$object->GetName();
+        if($value=="")$value="n.d.";
+        $nome=new AA_JSON_Template_Template($id."_Denominazione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Denominazione:","value"=>$value)
+        ));
+        
+        //Descrizione
+        $value=$object->GetDescr();
+        if($value=="")$value="n.d.";
+        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Descrizione:","value"=>$value)
+        ));
+        
+        //Prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-top"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($nome);
+        $layout->AddRow($riga);
+        
+        //seconda riga
+        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height));
+        $riga->AddCol($descr);
+        $layout->AddRow($riga);
+                //layout ultima riga
+        $last_row=new AA_JSON_Template_Layout($id."_LastRow");
+        $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("css"=>array("border-top"=>"1px solid #dadee0 !important")));
+                
+        $layout->AddRow($last_row);
+        
+        return $layout;
     }
 }
 
@@ -9177,14 +9460,7 @@ Class AA_Object_V2
     {
         if(!$bFormated) return $this->sLog;
         
-        $aLog=explode("\n",$this->sLog);
-        $log=array();
-        foreach($aLog as $curRow)
-        {
-            $log[]=explode("|",$curRow);
-        }
-        
-        return $log;
+        return new AA_Object_Log($this->sLog);
     }
     
     //Aggiungi un log
@@ -9954,7 +10230,7 @@ Class AA_Object_V2
             $this->sName=$rs[0]['nome'];
             $this->sDescr=$rs[0]['descrizione'];
             $this->nStatus=$rs[0]['status'];
-            $this->sLog=$rs[0]['log'];
+            $this->sLog=$rs[0]['logs'];
             $this->oStruct=AA_Struct::GetStruct($rs[0]['id_assessorato'],$rs[0]['id_direzione'],$rs[0]['id_servizio']);
             $this->sClass=$rs[0]['class'];
             
@@ -10397,16 +10673,28 @@ Class AA_Object_Log
         foreach($log as $curRow)
         {
             $row=explode("|",$curRow);
-            $this->aLog[]['data']=$row[0];
-            $this->aLog[]['user']=$row[1];
-            $this->aLog[]['op']=$row[2];
-            $this->aLog[]['msg']=$row[3];
+            $this->aLog[]=array(
+                'data'=>$row[0],
+                'user'=>$row[1],
+                'op'=>$row[2],
+                'msg'=>$row[3]);
         }
     }
     
     public function GetLog()
     {
         return $this->aLog;
+    }
+
+    //Restituisce l'ultimo log
+    public function GetLastLog()
+    {
+        $count=sizeof($this->aLog);
+        if($count>0)
+        {
+            return ($this->aLog[$count-1]);
+        }
+        else return array();
     }
 }
 
