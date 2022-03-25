@@ -15,6 +15,7 @@ Class AA_Patrimonio_Const extends AA_Const
 
     //Risorse per codici Comuni: https://dait.interno.gov.it/territorio-e-autonomie-locali/sut/open_data.php
 
+    //titolo di possesso
     const AA_PATRIMONIO_TITOLO_PROPRIETA=1;
     const AA_PATRIMONIO_TITOLO_POSSEDUTO=2;
     const AA_PATRIMONIO_TITOLO_DETENUTO=4;
@@ -30,12 +31,31 @@ Class AA_Patrimonio_Const extends AA_Const
                 self::AA_PATRIMONIO_TITOLO_DETENUTO=>"detenuto",
             );    
         }
+
+        if(self::$sezioneList==null)
+        {
+            self::$sezioneList=array(
+                self::AA_PATRIMONIO_CATASTO_URBANO=>"catasto urbano",
+                self::AA_PATRIMONIO_CATASTO_TERRENI=>"catasto terreni"
+            );    
+        }
     }
     public static function GetTitoloList()
     {
         self::Inizialize();
         return self::$titoloList;
     }
+
+    //Sezione catastale
+    const AA_PATRIMONIO_CATASTO_URBANO=0;
+    const AA_PATRIMONIO_CATASTO_TERRENI=1;
+    static $sezioneList=null;
+    public static function GetSezioneList()
+    {
+        self::Inizialize();
+        return self::$sezioneList;
+    }
+
 }
 
 #Classe oggetto patrimonio
@@ -149,6 +169,22 @@ Class AA_Patrimonio extends AA_Object_V2
         //----------------------------------------------
 
         return parent::AddNew($object,$user,$bStandardCheck,$bSaveData);
+    }
+
+    //restituisce il titolo di possesso
+    public function GetTitolo($bNumeric=false)
+    {
+        if($bNumeric) return $this->GetProp("Titolo");
+        $titoloList=AA_Patrimonio_Const::GetTitoloList();
+        return $titoloList[$this->GetProp("Titolo")];
+    }
+
+    //restituisce la sezione catastale
+    public function GetSezione($bNumeric=false)
+    {
+        if($bNumeric) return $this->GetProp("SezioneCatasto");
+        $titoloList=AA_Patrimonio_Const::GetSezioneList();
+        return $titoloList[$this->GetProp("SezioneCatasto")];
     }
 }
 
@@ -824,188 +860,144 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Template detail (da specializzare)
     public function TemplateSection_Detail($params)
     {
+        //Gestione dei tab
+        $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$params['id'];
+        $params['DetailOptionTab']=array(array("id"=>$id."Generale_Tab"."_".$params['id'], "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab"));
+        
         return $this->TemplateGenericSection_Detail($params);
     }   
     
     //Template section detail, tab generale
     public function TemplatePatrimonioDettaglio_Generale_Tab($object=null)
     {
-        $id="AA_Patrimonio_Detail_Generale_Tab_".$object->GetId();
+        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Detail_Generale_Tab_",array("template"=>"Dati non validi"));
+        
+        $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$object->GetId();
         $rows_fixed_height=50;
-        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
-        
-        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
-        
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38));
-        
-        $soc_tags="";
 
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        
-        //Pulsante di modifica
-        $canModify=false;
-        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
-        if($canModify)
-        {            
-            $modify_btn=new AA_JSON_Template_Generic($id."_Modify_btn",array(
-               "view"=>"button",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-pencil",
-                "label"=>"Modifica",
-                "align"=>"right",
-                "width"=>120,
-                "tooltip"=>"Modifica le informazioni generali",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioModifyDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
-            ));
-            $toolbar->AddElement($modify_btn);
-        }
-        
-        $layout->addRow($toolbar);
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
 
-        //Piva
-        $value=$object->GetPivaCf();
+        //Denominazione
+        $value=$object->GetName();
         if($value=="")$value="n.d.";
-        $piva=new AA_JSON_Template_Template($id."_Piva",array(
+        $denominazione=new AA_JSON_Template_Template($id."_Denomoinazione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Partita iva/codice fiscale:","value"=>$value)
+            "data"=>array("title"=>"Denominazione:","value"=>$value)
         ));
         
-        //Sede legale
-        $value=$object->GetSedeLegale();
+        //Descrizione
+        $value=$object->GetProp("Descrizione");
         if($value=="")$value="n.d.";
-        $sede_legale=new AA_JSON_Template_Template($id."_SedeLegale",array(
+        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Sede legale:","value"=>$value)
+            "data"=>array("title"=>"Descrizione:","value"=>$value)
         ));
 
-        //Pec
-        $value=$object->GetPec();
+        //Titolo di possesso
+        $value= $object->GetTitolo();
         if($value=="") $value="n.d.";
-        $pec=new AA_JSON_Template_Template($id."_Pec",array(
+        $titolo=new AA_JSON_Template_Template($id."_Titolo",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"PEC:","value"=>$value)
+            "data"=>array("title"=>"Titolo di possesso:","value"=>$value)
         ));
-        
-        //Sito web
-        $value="<a href='".$object->GetSitoWeb()."' target='_blank'>".$object->GetSitoWeb()."</a>";
-        if($object->GetSitoWeb()=="")$value="n.d.";
-        $sito=new AA_JSON_Template_Template($id."_SitoWeb",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Sito web:","value"=>$value)
-        ));
-        
-        //Funzioni attribuite
-        $value=$object->GetFunzioni();
-        if($value=="")$value="n.d.";
-        $funzioni=new AA_JSON_Template_Template($id."_Funzioni",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Funzioni attribuite:","value"=>$value)
-        ));
-        
-        //data inizio
-        $value=$object->GetDataInizioImpegno();
-        if($value=="0000-00-00") $value="n.d.";
-        $data_inizio=new AA_JSON_Template_Template($id."_DataInizio",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Data inizio impegno:","value"=>$value)
-        ));
-        
-        //data costituzione
-        $value=$object->GetDataInizioImpegno();
-        if($value=="0000-00-00") $value="n.d.";
-        $data_costituzione=new AA_JSON_Template_Template($id."_DataInizio",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Data costituzione:","value"=>$value)
-        ));    
 
-        //data fine
-        $value=$object->GetDataFineImpegno();
-        if($value=="0000-00-00") $value="n.d.";
-        if($value=="9999-12-31") $value="a tempo indeterminato";
-        $data_fine=new AA_JSON_Template_Template($id."_DataFine",array(
+        //Sezione catastale
+        $value= $object->GetSezione();
+        if($value=="") $value="n.d.";
+        $sezione=new AA_JSON_Template_Template($id."_Sezione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Data fine impegno:","value"=>$value)
+            "data"=>array("title"=>"Sezione:","value"=>$value)
+        ));
+
+        //Codice Comune
+        $value= $object->GetProp("CodiceComune");
+        if($value=="") $value="n.d.";
+        $comune=new AA_JSON_Template_Template($id."_CodiceComune",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Codice Comune:","value"=>$value)
+        ));
+
+        //Classe
+        $value= $object->GetProp("ClasseCatasto");
+        if($value=="") $value="n.d.";
+        $classe=new AA_JSON_Template_Template($id."_ClasseCatasto",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Classe:","value"=>$value)
         ));
         
-        //data cessazione
-        $value=$object->GetDataFineImpegno();
-        if($value=="0000-00-00") $value="n.d.";
-        if($value=="9999-12-31") $value="a tempo indeterminato";
-        $data_cessazione=new AA_JSON_Template_Template($id."_DataFine",array(
+        //foglio
+        $value= $object->GetSezione();
+        if($value=="") $value="n.d.";
+        $foglio=new AA_JSON_Template_Template($id."_FoglioCatasto",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Data cessazione:","value"=>$value)
+            "data"=>array("title"=>"Foglio:","value"=>$value)
         ));
         
-        //partecipazione
-        $value=$object->GetPartecipazione();
-        if($value=="" || $value=="0") $value="indiretta";
-        else
-        {
-            $part=explode("/",$value);
-            $value="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
-        }
-        $partecipazione=new AA_JSON_Template_Template($id."_DataFine",array(
+        //Particella
+        $value= $object->GetProp("ParticellaCatasto");
+        if($value=="") $value="n.d.";
+        $particella=new AA_JSON_Template_Template($id."_ParticellaCatasto",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Partecipazione:","value"=>$value)
+            "data"=>array("title"=>"Particella:","value"=>$value)
         ));
-        
-        //Stato
-        $value=$object->GetStatoPatrimonio();
-        if($value=="")$value="n.d.";
-        $stato_società=new AA_JSON_Template_Template($id."_DataFine",array(
+
+        //Rendita
+        $value= $object->GetProp("RenditaCatasto");
+        if($value=="") $value="n.d.";
+        $rendita=new AA_JSON_Template_Template($id."_RenditaCatasto",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Stato società:","value"=>$value)
-        ));        
-        
-        //note
-        $value=$object->GetNote();
-        if($value=="")$value="n.d.";
-        $note=new AA_JSON_Template_Template($id."_Note",array(
+            "data"=>array("title"=>"Rendita:","value"=>$value)
+        ));
+
+        //Consistenza
+        $value= $object->GetProp("ConsistenzaCatasto");
+        if($value=="") $value="n.d.";
+        $consistenza=new AA_JSON_Template_Template($id."_Consistenza",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Note:","value"=>$value)
+            "data"=>array("title"=>"Consistenza:","value"=>$value)
+        ));
+
+        //Indirizzo
+        $value= $object->GetProp("Indirizzo");
+        if($value=="") $value="n.d.";
+        $indirizzo=new AA_JSON_Template_Template($id."_Indirizzo",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Indirizzo:","value"=>$value)
         ));
         
         //Prima riga
-        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-top"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($piva);
-        if(($object->GetTipologia(true)&AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $riga->AddCol($data_inizio);
-        else $riga->AddCol($data_costituzione);
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height));
+        $riga->AddCol($denominazione);
         $layout->AddRow($riga);
         
         //seconda riga
         $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height));
-        $riga->AddCol($sede_legale);
-        if(($object->GetTipologia(true)&AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $riga->AddCol($data_fine);
-        else $riga->AddCol($data_cessazione);
+        $riga->AddCol($descr);
         $layout->AddRow($riga);
         
         //terza riga
-        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>$rows_fixed_height));
-        $riga->AddCol($pec);
-        if(($object->GetTipologia(true)&AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $riga->AddCol($partecipazione);
-        else $riga->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>38));
+        $riga->AddCol(new AA_JSON_Template_Generic($id."_Catasto_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati catastali</span>", "align"=>"center")));
         $layout->AddRow($riga);
         
         //Quarta riga
         $riga=new AA_JSON_Template_Layout($id."_FourRow",array("height"=>$rows_fixed_height));
-        $riga->AddCol($sito);
-        if(($object->GetTipologia(true)&AA_Patrimonio_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $riga->AddCol($stato_società);
-        else $riga->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $riga->AddCol($sezione);
+        $riga->AddCol($comune);
+        $riga->AddCol($classe);
+        $layout->AddRow($riga);
+
+        //Quinta riga
+        $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("height"=>$rows_fixed_height));
+        $riga->AddCol($foglio);
+        $riga->AddCol($particella);
+        $riga->AddCol($rendita);
+        $riga->AddCol($consistenza);
         $layout->AddRow($riga);
         
         //layout ultima riga
         $last_row=new AA_JSON_Template_Layout($id."_LastRow");
-        $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("css"=>array("border-top"=>"1px solid #dadee0 !important")));
-        
-        //funzioni
-        $riga->AddRow($funzioni);
-        
-        //note
-        $riga->AddRow($note);
-        $last_row->AddCol($riga);
+        $riga->addCol($indirizzo);
         
         $layout->AddRow($last_row);
         

@@ -6684,11 +6684,48 @@ Class AA_GenericModule
         if(!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Detail_Generale_Tab_",array("template"=>"Dati non validi"));
 
         $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$object->GetId();
+
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
+
         $rows_fixed_height=50;
+
+        //Nome
+        $value=$object->GetName();
+        if($value=="")$value="n.d.";
+        $nome=new AA_JSON_Template_Template($id."_Denominazione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Denominazione:","value"=>$value)
+        ));
+        
+        //Descrizione
+        $value=$object->GetDescr();
+        if($value=="")$value="n.d.";
+        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Descrizione:","value"=>$value)
+        ));
+        
+        //Prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height));
+        $riga->AddCol($nome);
+        $layout->AddRow($riga);
+        
+        //seconda riga
+        $riga=new AA_JSON_Template_Layout($id."_SecondRow");
+        $riga->AddCol($descr);
+        $layout->AddRow($riga);
+        
+        return $layout;
+    }
+
+    //Template generic section detail, tab generale header
+    public function TemplateGenericDettaglio_Header_Generale_Tab($object=null,$id="")
+    {
+        if(!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
@@ -6715,37 +6752,6 @@ Class AA_GenericModule
         
         $layout->addRow($toolbar);
 
-        //Nome
-        $value=$object->GetName();
-        if($value=="")$value="n.d.";
-        $nome=new AA_JSON_Template_Template($id."_Denominazione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Denominazione:","value"=>$value)
-        ));
-        
-        //Descrizione
-        $value=$object->GetDescr();
-        if($value=="")$value="n.d.";
-        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Descrizione:","value"=>$value)
-        ));
-        
-        //Prima riga
-        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-top"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($nome);
-        $layout->AddRow($riga);
-        
-        //seconda riga
-        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height));
-        $riga->AddCol($descr);
-        $layout->AddRow($riga);
-                //layout ultima riga
-        $last_row=new AA_JSON_Template_Layout($id."_LastRow");
-        $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("css"=>array("border-top"=>"1px solid #dadee0 !important")));
-                
-        $layout->AddRow($last_row);
-        
         return $layout;
     }
 }
