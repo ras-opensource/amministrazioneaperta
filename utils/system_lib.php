@@ -10171,10 +10171,10 @@ Class AA_Object_V2
         //Parametro status non impostato o non valido
         if($params['status'] == "" || !isset($params['status']) || $public || ($params['status'] & AA_Const::AA_STATUS_ALL) == 0) $params['status']=AA_Const::AA_STATUS_PUBBLICATA;
 
+        $userStruct=$user->GetStruct();
+
         if($params['class'] == "AA_Object_V2" && !$public)
         {
-            $userStruct=$user->GetStruct();
-
             if($params['gestiti'] !="" || ($params['status'] & (AA_Const::AA_STATUS_BOZZA+AA_Const::AA_STATUS_CESTINATA+AA_Const::AA_STATUS_REVISIONATA) > 0))
             {
                 //Visualizza solo quelle della sua struttura
