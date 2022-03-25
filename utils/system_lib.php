@@ -6493,7 +6493,7 @@ Class AA_GenericModule
         $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
             "view"=>"tabbar",
             "borderless"=>true,
-            "value"=>$id."Generale_Tab"."_$id_org",
+            "value"=>$params['DetailOptionTab'][0]['id'],
             "css"=>"AA_Header_TabBar",
             "width"=>400,
             "multiview"=>true,

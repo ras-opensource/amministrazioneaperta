@@ -862,7 +862,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         //Gestione dei tab
         $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$params['id'];
-        $params['DetailOptionTab']=array(array("id"=>$id."Generale_Tab"."_".$params['id'], "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab"));
+        $params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab"));
         
         return $this->TemplateGenericSection_Detail($params);
     }   
@@ -976,19 +976,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $layout->AddRow($riga);
         
         //terza riga
-        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>38));
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>38,"type"=>"section","css"=>array("background"=>"#dadee0 !important;")));
         $riga->AddCol(new AA_JSON_Template_Generic($id."_Catasto_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati catastali</span>", "align"=>"center")));
         $layout->AddRow($riga);
         
         //Quarta riga
-        $riga=new AA_JSON_Template_Layout($id."_FourRow",array("height"=>$rows_fixed_height));
+        $riga=new AA_JSON_Template_Layout($id."_FourRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddCol($sezione);
         $riga->AddCol($comune);
         $riga->AddCol($classe);
         $layout->AddRow($riga);
 
         //Quinta riga
-        $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("height"=>$rows_fixed_height));
+        $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddCol($foglio);
         $riga->AddCol($particella);
         $riga->AddCol($rendita);
@@ -997,7 +997,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         //layout ultima riga
         $last_row=new AA_JSON_Template_Layout($id."_LastRow");
-        $riga->addCol($indirizzo);
+        $last_row->addCol($indirizzo);
         
         $layout->AddRow($last_row);
         
