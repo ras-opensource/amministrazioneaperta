@@ -6364,6 +6364,9 @@ Class AA_GenericModule
                 
                 //utente
                 $lastLog=array_pop($object->GetLog());
+                
+                AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
+
                 $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'>".$lastLog[1]."</span>&nbsp;";
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
             } 
