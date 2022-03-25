@@ -6369,7 +6369,7 @@ Class AA_GenericModule
                 "id"=>$object->GetId(),
                 "tags"=>"",
                 "aggiornamento"=>$object->GetAggiornamento(),
-                "denominazione"=>$object->GetTitolo(),
+                "denominazione"=>$object->GetName(),
                 "pretitolo"=>"",
                 "sottotitolo"=>$struttura_gest,
                 "stato"=>$status,
