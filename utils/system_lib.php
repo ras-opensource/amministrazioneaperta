@@ -9434,7 +9434,7 @@ Class AA_Object_V2
             //Aggiorna tabella dati
             if(!$db->Query($query.$where))
             {
-                AA_Log::Log(__METHOD__." - Errore nell'aggiornamento della tabella dati - ".$db->GetErrorMessage(),100);
+                AA_Log::Log(__METHOD__." - Errore nell'aggiornamento della tabella dati - ".$db->GetErrorMessage()." - Query:".$query,100);
                 return false;
             }
 
