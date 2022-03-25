@@ -369,8 +369,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         if($object instanceof AA_Patrimonio)
         {
-            $titoloList=AA_Patrimonio_Const::GetTitoloList();
-            $data['pretitolo']=$titoloList[$object->GetProp("Titolo")];
+            $data['pretitolo']=$object->GetTitolo();
+            $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetSezione()."</span>";
         }
 
         return $data;
@@ -890,7 +890,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($value=="") $value="n.d.";
         $titolo=new AA_JSON_Template_Template($id."_Titolo",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Titolo di possesso:","value"=>$value)
+            "data"=>array("title"=>"Titolo di possesso:","value"=>"<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".$value."</span>")
         ));
 
         //Sezione catastale
@@ -898,7 +898,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($value=="") $value="n.d.";
         $sezione=new AA_JSON_Template_Template($id."_Sezione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Sezione:","value"=>$value)
+            "data"=>array("title"=>"Sezione:","value"=>"<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>")
         ));
 
         //Codice Comune
