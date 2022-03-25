@@ -9431,6 +9431,8 @@ Class AA_Object_V2
                 $sep=",";
             }
 
+            AA_Log::Log(__METHOD__."object: ".print_r($object,true),100);
+            
             //Aggiorna tabella dati
             if(!$db->Query($query.$where))
             {
