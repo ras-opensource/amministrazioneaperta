@@ -876,14 +876,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $rows_fixed_height=50;
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
-
-        //Denominazione
-        $value=$object->GetName();
-        if($value=="")$value="n.d.";
-        $denominazione=new AA_JSON_Template_Template($id."_Denomoinazione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Denominazione:","value"=>$value)
-        ));
         
         //Descrizione
         $value=$object->GetProp("Descrizione");
@@ -926,7 +918,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         ));
         
         //foglio
-        $value= $object->GetSezione();
+        $value= $object->GetProp("FoglioCatasto");
         if($value=="") $value="n.d.";
         $foglio=new AA_JSON_Template_Template($id."_FoglioCatasto",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
@@ -967,7 +959,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         //Prima riga
         $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height));
-        $riga->AddCol($denominazione);
+        $riga->AddCol($titolo);
         $layout->AddRow($riga);
         
         //seconda riga
