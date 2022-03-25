@@ -9474,7 +9474,7 @@ Class AA_Object_V2
         $query.=", id_direzione='".$struct->GetDirezione(true)."'";
         $query.=", id_servizio='".$struct->GetServizio(true)."'";
         $query.=", class='".$object_class."'";
-        $query.=", log='".addslashes($object->GetLog(false))."'";
+        $query.=", logs='".addslashes($object->GetLog(false))."'";
         
         AA_Log::Log(__METHOD__."query: ".$query,100);
 
@@ -9568,7 +9568,7 @@ Class AA_Object_V2
         }
         
         $object->SetId(0);
-        $object->AddLog("Inserimento",$user, AA_Const::AA_OPS_ADDNEW);
+        $object->AddLog("Inserimento",AA_Const::AA_OPS_ADDNEW,$user);
         
         if(!$object->Save($user,true,$bStandardCheck,$bSaveData))
         {
