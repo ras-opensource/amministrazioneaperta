@@ -5477,11 +5477,15 @@ Class AA_GenericModule
     const AA_UI_TASK_BOZZE_FILTER_DLG="GetGenericBozzeFilterDlg";
     const AA_UI_TASK_REASSIGN_DLG="GetGenericReassignDlg";
     const AA_UI_TASK_PUBLISH_DLG="GetGenericPublishDlg";
-    const AA_UI_TASK_TRASH_DLG="GetGenericTaskDlg";
+    const AA_UI_TASK_TRASH_DLG="GetGenericTrashDlg";
     const AA_UI_TASK_RESUME_DLG="GetGenericResumeDlg";
     const AA_UI_TASK_DELETE_DLG="GetGenericDeleteDlg";
     const AA_UI_TASK_ADDNEW_DLG="GetGenericAddNewDlg";
     const AA_UI_TASK_MODIFY_DLG="GetGenericModifyDlg";
+    //------------------------------------
+
+    //---------Task azioni standard-------
+    const AA_UI_TASK_TRASH="GenericTrash";
     //------------------------------------
 
     protected $taskManagerUrl="system_ops.php";
@@ -5918,7 +5922,7 @@ Class AA_GenericModule
     }
 
     //Task Generico di aggiunta elemento
-    public function Task_GenericAddNew($task,$params=array())
+    public function Task_GenericAddNew($task,$params=array(),$bStandardCheck=true,$bSaveData=true)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -5942,7 +5946,7 @@ Class AA_GenericModule
                 $object->Parse($params);
                 $object->SetStruct($this->oUser->GetStruct());
                 
-                if(!AA_Patrimonio::AddNew($object,$this->oUser,false,true))
+                if(!$objectClass::AddNew($object,$this->oUser,$bStandardCheck,$bSaveData))
                 {
                     $task->SetError(AA_Log::$lastErrorLog);
                     $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
@@ -5977,6 +5981,142 @@ Class AA_GenericModule
             $task->SetLog($sTaskLog);
         
             return false;       
+        }
+    }
+
+    //Task Generic Update object
+    public function Task_GenericUpdateObject($task,$params=array(),$bStandardCheck=true,$bSaveData=true)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+            $object=new $objectClass($params['id'], $this->oUser);
+            if(!$object->isValid())
+            {
+                $task->SetError("Identificativo oggetto non valido: ".$params['id']);
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo oggetto non valido: ".$params['id']."</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;
+            }
+            
+            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+            {
+                $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetName());
+                $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetName()."</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;            
+            }
+            
+            //Aggiorna i dati
+            $object->Parse($params);
+
+            //Salva i dati
+            if(!$object->Update($this->oUser,$bStandardCheck,$bSaveData))
+            {
+                $task->SetError(AA_Log::$lastErrorLog);
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salavataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;       
+            }
+            
+            $sTaskLog="<status id='status'>0</status><content id='content'>";
+            $sTaskLog.= "Dati aggiornati con successo.";
+            $sTaskLog.="</content>";
+            
+            $task->SetLog($sTaskLog);
+            
+            return true;
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - ERRORE: Classe di gestione degli elementi non trovata (".static::AA_MODULE_OBJECTS_CLASS.")",100);
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;       
+        }
+    }
+
+    //Template object trash dlg
+    public function Template_GetGenericObjectTrashDlg($params,$saveTask="TrashObject")
+    {
+        $id=static::AA_UI_PREFIX."_TrashDlg";
+
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+            $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>La classe di gestione degli oggetti non è stata trovata.</p>")));
+            $wnd->SetWidth(380);
+            $wnd->SetHeight(115);
+
+            return $wnd;
+        }
+
+        //lista oggetti da cestinare
+        if($params['ids'])
+        {
+            $ids= json_decode($params['ids']);
+            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+            
+            foreach($ids as $curId)
+            {
+                $object=new $objectClass($curId,$this->oUser);
+                if($object->isValid() && ($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
+                {
+                    $ids_final[$curId]=$object->GetName();
+                }
+            }
+
+            //Esiste almeno un organismo che può essere cestinato dall'utente corrente
+            if(sizeof($ids_final)>0)
+            {
+                $forms_data['ids']=json_encode(array_keys($ids_final));
+                $wnd=new AA_GenericFormDlg($id, "Cestina", $this->id, $forms_data,$forms_data);
+               
+                //Disattiva il pulsante di reset
+                $wnd->EnableResetButton(false);
+
+                //Imposta il nome del pulsante di conferma
+                $wnd->SetApplyButtonName("Procedi");
+
+                $tabledata=array();
+                foreach($ids_final as $id_org=>$desc)
+                {
+                    $tabledata[]=array("Denominazione"=>$desc);
+                }
+
+                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." elementi verranno cestinati, vuoi procedere?")));
+                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente elemento verrà cestinato, vuoi procedere?")));
+
+                $table=new AA_JSON_Template_Generic($id."_Table", array(
+                    "view"=>"datatable",
+                    "scrollX"=>false,
+                    "autoConfig"=>true,
+                    "select"=>false,
+                    "data"=>$tabledata
+                ));
+
+                $wnd->AddGenericObject($table);
+
+                $wnd->EnableCloseWndOnSuccessfulSave();
+                $wnd->enableRefreshOnSuccessfulSave();
+                $wnd->SetSaveTask($saveTask);
+            }
+            else
+            {
+                $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
+                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per cestinare gli organismi selezionati.</p>")));
+                $wnd->SetWidth(380);
+                $wnd->SetHeight(115);
+            }
+            
+            return $wnd;
         }
     }
 

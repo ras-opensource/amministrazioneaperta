@@ -379,68 +379,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Template patrimonio trash dlg
     public function Template_GetPatrimonioTrashDlg($params)
     {
-        //lista organismi da cestinare
-        if($params['ids'])
-        {
-            $ids= json_decode($params['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
-                {
-                    $ids_final[$curId]=$organismo->GetDescr();
-                    unset($organismo);
-                }
-            }
-
-            $id=$this->id."_TrashDlg";
-
-            //Esiste almeno un organismo che può essere cestinato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $forms_data['ids']=json_encode(array_keys($ids_final));
-                $wnd=new AA_GenericFormDlg($id, "Cestina", $this->id, $forms_data,$forms_data);
-               
-                //Disattiva il pulsante di reset
-                $wnd->EnableResetButton(false);
-
-                //Imposta il nome del pulsante di conferma
-                $wnd->SetApplyButtonName("Procedi");
-
-                $tabledata=array();
-                foreach($ids_final as $id_org=>$desc)
-                {
-                    $tabledata[]=array("Denominazione"=>$desc);
-                }
-
-                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." organismi verranno cestinati, vuoi procedere?")));
-                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente organismo verrà cestinato, vuoi procedere?")));
-
-                $table=new AA_JSON_Template_Generic($id."_Table", array(
-                    "view"=>"datatable",
-                    "scrollX"=>false,
-                    "autoConfig"=>true,
-                    "select"=>false,
-                    "data"=>$tabledata
-                ));
-
-                $wnd->AddGenericObject($table);
-
-                $wnd->EnableCloseWndOnSuccessfulSave();
-                $wnd->enableRefreshOnSuccessfulSave();
-                $wnd->SetSaveTask('TrashPatrimonio');
-            }
-            else
-            {
-                $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
-                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per cestinare gli organismi selezionati.</p>")));
-                $wnd->SetWidth(380);
-                $wnd->SetHeight(115);
-            }
-            
-            return $wnd;
-        }
+        return $this->Template_GetGenericObjectTrashDlg($params,"TrashPatrimonio");
     }
     
     //Template organismo publish dlg
@@ -807,48 +746,78 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Template dlg modify immobile
     public function Template_GetPatrimonioModifyDlg($object=null)
     {
-        $id="AA_Patrimonio_GetPatrimonioModifyDlg";
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_TASK_MODIFY_DLG;
         if(!($object instanceof AA_Patrimonio)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali", $this->id);
 
+        $id.="_".$object->GetId();
         $form_data['id']=$object->GetID();
-        foreach($object->GetDbBindings() as $id_obj=>$field)
+        $form_data['nome']=$object->GetName();
+
+        foreach($object->GetDbBindings() as $prop=>$field)
         {
-            $form_data[$id_obj]=$object->GetProp($id_obj);
+            $form_data[$prop]=$object->GetProp($prop);
         }
         
         $wnd=new AA_GenericFormDlg($id, "Modifica i dati generali", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
-        $wnd->SetLabelWidth(160);
+        $wnd->SetLabelWidth(120);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(1080);
-        $wnd->SetHeight(720);
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(640);
         
+        //titolo di possesso
+        $options=array(
+            array("id"=>"1","value"=>"di proprietà"),
+            array("id"=>"2","value"=>"posseduto"),
+            array("id"=>"4","value"=>"detenuto")
+        );
+        $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","bottomLabel"=>"*Indicare il titolo di possesso","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
+
+        //Nome
+        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile/terreno.", "placeholder"=>"inserisci qui la denominazione dell'immobile/terreno"));
+
         //Descrizione
-        $wnd->AddTextField("sDescrizione","Denominazione",array("required"=>true, "bottomLabel"=>"*Denominazione dell'organismo", "placeholder"=>"inserisci qui la denominazione dell'organismo"));
-    
-        //partita iva
-        $wnd->AddTextField("sPivaCf","Partita iva/cf",array("bottomLabel"=>"*Riportare la partita iva dell'organismo.", "placeholder"=>"inserisci qui la partita iva o il cf dell'organismo"));
-        
-        //sede
-        $wnd->AddTextField("sSedeLegale","Sede legale",array("bottomLabel"=>"*Sede legale dell'organismo.", "placeholder"=>"inserisci qui l'indirizzo della sede legale dell'organismo"));
-        
-        //pec
-        $label="PEC";
-        $wnd->AddTextField("sPec",$label,array("bottomLabel"=>"*".$label." dell'organismo.","placeholder"=>"Inserisci qui l'indirizzo pec"));
-        
-        //sito web
-        $label="Sito web";
-        $wnd->AddTextField("sSitoWeb",$label,array("bottomLabel"=>"*URL ".$label." dell'organismo.", "placeholder"=>"Inserisci qui l'url del sito web"), false);
-        
-        //Funzioni
-        $label="Funzioni attribuite";
-        $wnd->AddTextareaField("sFunzioni",$label,array("bottomLabel"=>"*".$label." all'organismo.", "required"=>true,"placeHolder"=>"Inserisci qui le funzioni attribuite"));
-        
-        //note
-        $label="Note";
-        $wnd->AddTextareaField("sNote",$label,array("placeholder"=>"Riporta qui le eventuali note"));
+        $label="Descrizione";
+        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile/terreno"));
+
+        //Dati catastali
+        $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
+
+        //sezione catasto
+        $label="Sezione";        
+        $catasto->AddSwitchBoxField("SezioneCatasto",$label,array("onLabel"=>"Catasto terreni","offLabel"=>"Catasto urbano","bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "required"=>true));
+
+        //codice comune
+        $label="Cod. Comune";
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...")); 
+
+        //classe
+        $label="Classe";
+        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile/terreno"), false); 
+
+        //foglio catasto
+        $label="Foglio";
+        $catasto->AddTextField("FoglioCatasto",$label,array("tooltip"=>"*Inserire il numero del foglio in cui è accastato l'immobile/terreno.", "required"=>true,"placeholder"=>"..."));
+
+        //particella catasto
+        $label="Particella";
+        $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+
+        //rendita catasto
+        $label="Rendita";
+        $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+
+        //consistenza catasto
+        $label="Consistenza";
+        $catasto->AddTextField("ConsistenzaCatasto",$label,array("tooltip"=>"*Inserire la consistenza dell'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+
+        //Indirizzo
+        $label="Indirizzo";
+        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo dell'immobile/terreno."));
+
+        $wnd->AddGenericObject($catasto);
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
@@ -1001,52 +970,16 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $organismo=new AA_Patrimonio($_REQUEST['id'], $this->oUser);
-        if(!$organismo->isValid())
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
-            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id']);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organismo non valido: ".$_REQUEST['id']."</error>";
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi di modifica dell'elemento</error>";
             $task->SetLog($sTaskLog);
 
             return false;
         }
         
-        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
-        {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione());
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;            
-        }
-        
-        //Aggiorna i dati
-        if(!$organismo->ParseData($_REQUEST))
-        {
-            $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel parsing dei dati. (".AA_Log::$lastErrorLog.")</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;            
-        }
-        
-        //Salva i dati
-        if(!$organismo->UpdateDb($this->oUser))
-        {
-            $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salavataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;       
-        }
-        
-        $sTaskLog="<status id='status'>0</status><content id='content'>";
-        $sTaskLog.= "Dati aggiornati con successo.";
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
+        return $this->Task_GenericUpdateObject($task,$_REQUEST,false,true);   
     }
     
     //Task trash Patrimonio
@@ -1567,13 +1500,13 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
             $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiugere nuovi elementi</error>";
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiungere nuovi elementi</error>";
             $task->SetLog($sTaskLog);
 
             return false;
         }
         
-        return $this->Task_GenericAddNew($task,$_REQUEST);
+        return $this->Task_GenericAddNew($task,$_REQUEST,false,true);
     }
     
     //Task modifica organismo
@@ -1581,12 +1514,22 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $organismo= new AA_Patrimonio($_REQUEST['id'],$this->oUser);
-        if(!$organismo->isValid())
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Patrimonio non valido o permessi insufficienti.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modifcrae l'elemento.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $object= new AA_Patrimonio($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
             $task->SetLog($sTaskLog);
         
             return false;
@@ -1594,7 +1537,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         else
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetPatrimonioModifyDlg($organismo)->toBase64();
+            $sTaskLog.= $this->Template_GetPatrimonioModifyDlg($object)->toBase64();
             $sTaskLog.="</content>";
         }
         
@@ -1724,11 +1667,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22) && !$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per cestinare/eliminare organismi.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per cestinare/eliminare elementi di questo tipo.</error>";
             
             $task->SetLog($sTaskLog);
         
