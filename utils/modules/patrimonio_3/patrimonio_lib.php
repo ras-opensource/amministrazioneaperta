@@ -361,7 +361,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Personalizza il filtro delle bozze per il modulo corrente
     protected function GetDataSectionBozze_CustomFilter($params = array())
     {
-         return array();
+        //Titolo di possesso
+        if($params['Titolo'] > 0)
+        {
+            $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".titolo = '".addslashes($params['Titolo'])."'";
+        }
+        return $params;
     }
 
     //Personalizza il template dei dati delle bozze per il modulo corrente
@@ -1695,12 +1700,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
     }
     
     //Task filter dlg
-    public function Task_GetBozzeFilterDlg($task)
+    public function Task_GetPatrimonioBozzeFilterDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        $content=$this->TemplateBozzeFilterDlg();
+        $content=$this->TemplateBozzeFilterDlg($_REQUEST);
         $sTaskLog.= base64_encode($content);
         $sTaskLog.="</content>";
         
@@ -1760,18 +1765,18 @@ Class AA_PatrimonioModule extends AA_GenericModule
     }
     
     //Template filtro di ricerca
-    public function TemplateBozzeFilterDlg()
+    public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'],"incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"Titolo"=>$params['Titolo'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
-        if($_REQUEST['tipo']=="") $formData['tipo']="0";
-        if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
-        if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']=0;
-        if($_REQUEST['id_direzione']=="") $formData['id_direzione']=0;
-        if($_REQUEST['id_servizio']=="") $formData['id_servizio']=0;
-        if($_REQUEST['cestinate']=="") $formData['cestinate']=0;
+        if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
+        if($params['id_assessorato']=="") $formData['id_assessorato']=0;
+        if($params['id_direzione']=="") $formData['id_direzione']=0;
+        if($params['id_servizio']=="") $formData['id_servizio']=0;
+        if($params['cestinate']=="") $formData['cestinate']=0;
+        if($params['Titolo']=="") $formData['Titolo']=0;
         
         //Valori reset
         $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0,"incaricato"=>"");
@@ -1779,7 +1784,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg("AA_Patrimonio_Bozze_Filter", "Parametri di ricerca per le bozze pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg("AA_Patrimonio_Bozze_Filter", "Parametri di ricerca per le bozze",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 
@@ -1787,13 +1792,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
         
         //Denominazione
-        $dlg->AddTextField("denominazione","Denominazione/P.IVA",array("bottomLabel"=>"*Filtra in base alla denominazione o alla partita iva dell'organismo.", "placeholder"=>"Denominazione o piva..."));
+        $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'immobile.", "placeholder"=>"Denominazione..."));
         
         //Struttura
-        $dlg->AddStructField(array("hideServices"=>1,"targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
+        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
         
-        //Nominato
-        $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
+        //titolo di possesso
+        $options=array(
+            array("id"=>"0","value"=>"Qualunque"),
+            array("id"=>"1","value"=>"di proprietà"),
+            array("id"=>"2","value"=>"posseduto"),
+            array("id"=>"4","value"=>"detenuto")
+        );
+        $dlg->AddSelectField("Titolo","Titolo",array("bottomLabel"=>"*Indicare il titolo di possesso","options"=>$options));
         
         return $dlg->GetObject();
     }

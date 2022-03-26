@@ -5708,10 +5708,11 @@ Class AA_GenericModule
         if($params['id_direzione'] != "") $parametri['id_direzione']=$params['id_direzione'];
         if($params['id_servizio'] != "") $parametri['id_servizio']=$params['id_servizio'];
         if($params['id'] != "") $parametri['id']=$params['id'];
+        if($params['nome'] != "") $parametri['nome']=$params['nome'];
         
         //Richiama la funzione custom per la personalizzazione dei parametri
-        if(function_exists($customFilterFunction)) array_merge($parametri,$customFilterFunction($params));
-        if(method_exists($this,$customFilterFunction)) array_merge($parametri,$this->$customFilterFunction($params));
+        if(function_exists($customFilterFunction)) $parametri=array_merge($parametri,$customFilterFunction($params));
+        if(method_exists($this,$customFilterFunction)) $parametri=array_merge($parametri,$this->$customFilterFunction($params));
 
         //Richiama la classe di gestione degli oggetti gestiti dal modulo
         $objectClass=static::AA_MODULE_OBJECTS_CLASS;
@@ -6537,10 +6538,11 @@ Class AA_GenericModule
         if($params['id_direzione'] != "") $parametri['id_direzione']=$params['id_direzione'];
         if($params['id_servizio'] != "") $parametri['id_servizio']=$params['id_servizio'];
         if($params['id'] != "") $parametri['id']=$params['id'];
+        if($params['nome'] != "") $parametri['nome']=$params['nome'];
         
          //Richiama la funzione custom per la personalizzazione dei parametri
-         if(function_exists($customFilterFunction)) array_merge($parametri,$customFilterFunction($params));
-         if(method_exists($this,$customFilterFunction)) array_merge($parametri,$this->$customFilterFunction($params));
+         if(function_exists($customFilterFunction)) $parametri=array_merge($parametri,$customFilterFunction($params));
+         if(method_exists($this,$customFilterFunction)) $parametri=array_merge($parametri,$this->$customFilterFunction($params));
 
         //Richiama la classe di gestione degli oggetti gestiti dal modulo
         $objectClass=static::AA_MODULE_OBJECTS_CLASS;
