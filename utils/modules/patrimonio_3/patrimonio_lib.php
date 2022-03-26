@@ -987,91 +987,16 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        //lista organismi da cestinare
-        if($_REQUEST['ids'])
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
-            $ids= json_decode($_REQUEST['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
-                {
-                    $ids_final[$curId]=$organismo;
-                    unset($organismo);
-                }
-            }
-            
-            //Esiste almeno un organismo che può essere cestinato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $count=0;
-                foreach( $ids_final as $id=>$organismo)
-                {
-                    
-                    if(!$organismo->Trash($this->oUser))
-                    {
-                        $count++;
-                        $result_error["$organismo->GetDenominazione()"]=AA_Log::$lastErrorLog;
-                    }
-                }
-                
-                if(sizeof($result_error)>0)
-                {
-                    $wnd=new AA_GenericWindowTemplate("TrashPatrimonio", "Avviso", $this->id);
-                    $wnd->SetWidth("640");
-                    $wnd->SetHeight("400");
-                    $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Sono stati cestinati ".(sizeof($ids)-sizeof($result_error))." organismi.<br>I seguenti non sono stati cestinati:")));
-                
-                    $tabledata=array();
-                    foreach($result_error as $org=>$desc)
-                    {
-                        $tabledata[]=array("Denominazione"=>$org,"Errore"=>$desc);
-                    }
-                    $table=new AA_JSON_Template_Generic($id."_Table", array(
-                        "view"=>"datatable",
-                        "scrollX"=>false,
-                        "autoConfig"=>true,
-                        "select"=>false,
-                        "data"=>$tabledata
-                    ));
-                    $wnd->AddView($table);
-                    
-                    $sTaskLog="<status id='status'>-1</status><error id='error' type='json' encode='base64'>";
-                    $sTaskLog.=$wnd->toBase64();
-                    $sTaskLog.="</error>";
-                    $task->SetLog($sTaskLog);
-
-                    return false;      
-                }
-                else
-                {
-                    $sTaskLog="<status id='status'>0</status><content id='content'>";
-                    $sTaskLog.= "SOno stati cestinati ".sizeof($ids_final)." organismi.";
-                    $sTaskLog.="</content>";
-
-                    $task->SetLog($sTaskLog);
-
-                    return true;
-                }
-            }
-            else
-            {
-                $task->SetError("Nella selezione non sono presenti organismi cestinabili dall'utente corrente (".$this->oUser->GetName().").");
-                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti organismi cestinabili dall'utente corrente (".$this->oUser->GetName().").</error>";
-                $task->SetLog($sTaskLog);
-
-                return false;          
-            }
-        }
-        else
-        {
-            $task->SetError("Non sono stati selezionati organismi.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati organismi.</error>";
+            $task->SetError("L'utente corrente non ha i permessi per cestinare l'elemento");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per cestinare l'elemento</error>";
             $task->SetLog($sTaskLog);
 
-            return false;          
-        } 
+            return false;
+        }
+
+        return $this->Task_GenericTrashObject($task,$_REQUEST,false);
     }
     
     //Task export pdf Patrimonio
@@ -1689,7 +1614,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }    
         else
         {
-            // to do lista da recuperare con filtro
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
             $sTaskLog.="</content><error id='error'>Identificativi non presenti.</error>";
