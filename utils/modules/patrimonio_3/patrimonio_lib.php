@@ -200,7 +200,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     const AA_UI_TASK_BOZZE_FILTER_DLG="GetPatrimonioBozzeFilterDlg";
     const AA_UI_TASK_REASSIGN_DLG="GetPatrimonioReassignDlg";
     const AA_UI_TASK_PUBLISH_DLG="GetPatrimonioPublishDlg";
-    const AA_UI_TASK_TRASH_DLG="GetPatrimonioTaskDlg";
+    const AA_UI_TASK_TRASH_DLG="GetPatrimonioTrashDlg";
     const AA_UI_TASK_RESUME_DLG="GetPatrimonioResumeDlg";
     const AA_UI_TASK_DELETE_DLG="GetPatrimonioDeleteDlg";
     const AA_UI_TASK_ADDNEW_DLG="GetPatrimonioAddNewDlg";

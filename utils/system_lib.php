@@ -5482,6 +5482,8 @@ Class AA_GenericModule
     const AA_UI_TASK_DELETE_DLG="GetGenericDeleteDlg";
     const AA_UI_TASK_ADDNEW_DLG="GetGenericAddNewDlg";
     const AA_UI_TASK_MODIFY_DLG="GetGenericModifyDlg";
+    const AA_UI_TASK_SAVEASPDF_DLG="GetGenericSaveAsPdfDlg";
+    const AA_UI_TASK_SAVEASCSV_DLG="GetGenericSaveAsCsvDlg";
     //------------------------------------
 
     //---------Task azioni standard-------
@@ -6669,7 +6671,7 @@ Class AA_GenericModule
                             "icon"=>"mdi mdi-certificate",
                             "module_id"=>$this->id,
                             "handler"=>"sectionActionMenu.publish",
-                            "handler_params"=>array("task"=>"GetPatrimonioPublishDlg","object_id"=>$object->GetID())
+                            "handler_params"=>array("task"=>static::AA_UI_TASK_PUBLISH_DLG,"object_id"=>$object->GetID())
                         );
         }
         
@@ -6687,7 +6689,7 @@ Class AA_GenericModule
                         "icon"=>"mdi mdi-share-all",
                         "module_id"=>$this->id,
                         "handler"=>"sectionActionMenu.reassign",
-                        "handler_params"=>array("task"=>"GetPatrimonioReassignDlg","object_id"=>$object->GetID())
+                        "handler_params"=>array("task"=>static::AA_UI_TASK_REASSIGN_DLG,"object_id"=>$object->GetID())
                     );                
             }
             if(($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) > 0)
@@ -6699,7 +6701,7 @@ Class AA_GenericModule
                         "icon"=>"mdi mdi-recycle",
                         "module_id"=>$this->id,
                         "handler"=>"sectionActionMenu.resume",
-                        "handler_params"=>array("task"=>"GetPatrimonioResumeDlg","object_id"=>$object->GetID())
+                        "handler_params"=>array("task"=>static::AA_UI_TASK_RESUME_DLG,"object_id"=>$object->GetID())
                     );
             }
         }
@@ -6714,7 +6716,7 @@ Class AA_GenericModule
                     "icon"=>"mdi mdi-file-pdf",
                     "module_id"=>$this->id,
                     "handler"=>"sectionActionMenu.saveAsPdf",
-                    "handler_params"=>array("task"=>"GetPatrimonioSaveAsPdfDlg","object_id"=>$object->GetID())
+                    "handler_params"=>array("task"=>static::AA_UI_TASK_SAVEASPDF_DLG,"object_id"=>$object->GetID())
                 );  
         $menu_data[]= array(
                     "id"=>$id."_SaveAsCsv"."_$id_org",
@@ -6723,7 +6725,7 @@ Class AA_GenericModule
                     "icon"=>"mdi mdi-file-table",
                     "module_id"=>$this->id,
                     "handler"=>"sectionActionMenu.saveAsCsv",
-                    "handler_params"=>array("task"=>"GetPatrimonioSaveAsCsvDlg","object_id"=>$object->GetID())
+                    "handler_params"=>array("task"=>static::AA_UI_TASK_SAVEASCSV_DLG,"object_id"=>$object->GetID())
                 );
         #-------------------------------------
         
@@ -6743,7 +6745,7 @@ Class AA_GenericModule
                             "icon"=>"mdi mdi-trash-can",
                             "module_id"=>$this->id,
                             "handler"=>"sectionActionMenu.trash",
-                            "handler_params"=>array("task"=>"GetPatrimonioTrashDlg","object_id"=>$object->GetID())
+                            "handler_params"=>array("task"=>static::AA_UI_TASK_TRASH_DLG,"object_id"=>$object->GetID())
                         );
             }
             else
@@ -6757,7 +6759,7 @@ Class AA_GenericModule
                             "icon"=>"mdi mdi-trash-can",
                             "module_id"=>$this->id,
                             "handler"=>"sectionActionMenu.delete",
-                            "handler_params"=>array("task"=>"GetPatrimonioDeleteDlg","object_id"=>$object->GetID())
+                            "handler_params"=>array("task"=>static::AA_UI_TASK_DELETE_DLG,"object_id"=>$object->GetID())
                         );
             }
         }
