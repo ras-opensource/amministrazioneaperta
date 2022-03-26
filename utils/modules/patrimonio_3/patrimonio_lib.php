@@ -455,74 +455,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
     }
     
-    //Template organismo resume dlg
-    public function Template_GetPatrimonioResumeDlg($params)
-    {
-        //lista organismi da ripristinare
-        if($params['ids'])
-        {
-            $ids= json_decode($params['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0)
-                {
-                    $ids_final[$curId]=$organismo->GetDescr();
-                    unset($organismo);
-                }
-            }
-
-            $id=$this->id."_ResumeDlg";
-
-            //Esiste almeno un organismo che può essere ripristinato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $forms_data['ids']=json_encode(array_keys($ids_final));
-                
-                $wnd=new AA_GenericFormDlg($id, "Ripristina", $this->id, $forms_data,$forms_data);
-               
-                //Disattiva il pulsante di reset
-                $wnd->EnableResetButton(false);
-
-                //Imposta il nome del pulsante di conferma
-                $wnd->SetApplyButtonName("Procedi");
-
-                $tabledata=array();
-                foreach($ids_final as $id_org=>$desc)
-                {
-                    $tabledata[]=array("Denominazione"=>$desc);
-                }
-
-                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." organismi verranno ripristinati, vuoi procedere?")));
-                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente organismo verrà ripristinato, vuoi procedere?")));
-
-                $table=new AA_JSON_Template_Generic($id."_Table", array(
-                    "view"=>"datatable",
-                    "scrollX"=>false,
-                    "autoConfig"=>true,
-                    "select"=>false,
-                    "data"=>$tabledata
-                ));
-
-                $wnd->AddGenericObject($table);
-
-                $wnd->EnableCloseWndOnSuccessfulSave();
-                $wnd->enableRefreshOnSuccessfulSave();
-                $wnd->SetSaveTask('ResumePatrimonio');
-            }
-            else
-            {
-                $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
-                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per ripristinare gli organismi selezionati.</p>")));
-                $wnd->SetWidth(380);
-                $wnd->SetHeight(115);
-            }
-            
-            return $wnd;
-        }
-    }
-    
     //Template organismo reassign dlg
     public function Template_GetPatrimonioReassignDlg($params)
     {
@@ -1058,91 +990,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        //lista organismi da ripristinare
-        if($_REQUEST['ids'])
-        {
-            $ids= json_decode($_REQUEST['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0)
-                {
-                    $ids_final[$curId]=$organismo;
-                    unset($organismo);
-                }
-            }
-            
-            //Esiste almeno un organismo che può essere ripristinato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $count=0;
-                foreach( $ids_final as $id=>$organismo)
-                {
-                    
-                    if(!$organismo->Resume($this->oUser))
-                    {
-                        $count++;
-                        $result_error["$organismo->GetDenominazione()"]=AA_Log::$lastErrorLog;
-                    }
-                }
-                
-                if(sizeof($result_error)>0)
-                {
-                    $wnd=new AA_GenericWindowTemplate("ResumePatrimonio", "Avviso", $this->id);
-                    $wnd->SetWidth("640");
-                    $wnd->SetHeight("400");
-                    $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Sono stati ripristinati ".(sizeof($ids)-sizeof($result_error))." organismi.<br>I seguenti non sono stati ripristinati:")));
-                
-                    $tabledata=array();
-                    foreach($result_error as $org=>$desc)
-                    {
-                        $tabledata[]=array("Denominazione"=>$org,"Errore"=>$desc);
-                    }
-                    $table=new AA_JSON_Template_Generic($id."_Table", array(
-                        "view"=>"datatable",
-                        "scrollX"=>false,
-                        "autoConfig"=>true,
-                        "select"=>false,
-                        "data"=>$tabledata
-                    ));
-                    $wnd->AddView($table);
-                    
-                    $sTaskLog="<status id='status'>-1</status><error id='error' type='json' encode='base64'>";
-                    $sTaskLog.=$wnd->toBase64();
-                    $sTaskLog.="</error>";
-                    $task->SetLog($sTaskLog);
-
-                    return false;      
-                }
-                else
-                {
-                    $sTaskLog="<status id='status'>0</status><content id='content'>";
-                    $sTaskLog.= "Sono stati ripristinati ".sizeof($ids_final)." organismi.";
-                    $sTaskLog.="</content>";
-
-                    $task->SetLog($sTaskLog);
-
-                    return true;
-                }
-            }
-            else
-            {
-                $task->SetError("Nella selezione non sono presenti organismi ripristinabili dall'utente corrente (".$this->oUser->GetName().").");
-                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti organismi ripristinabili dall'utente corrente (".$this->oUser->GetName().").</error>";
-                $task->SetLog($sTaskLog);
-
-                return false;          
-            }
-        }
-        else
-        {
-            $task->SetError("Non sono stati selezionati organismi.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati organismi.</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;          
-        } 
+        return $this->Task_GenericResumeObject($task,$_REQUEST,false);
     }
     
     //Task publish Patrimonio
@@ -1481,11 +1329,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22) && !$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per ripristinare organismi.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per ripristinare elementi.</error>";
             $task->SetLog($sTaskLog);
         
             return false;
@@ -1493,7 +1341,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetPatrimonioResumeDlg($_REQUEST)->toBase64();
+            $sTaskLog.= $this->Template_GetGenericResumeObjectDlg($_REQUEST,"ResumePatrimonio")->toBase64();
             $sTaskLog.="</content>";
             $task->SetLog($sTaskLog);
         
@@ -1501,7 +1349,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }    
         else
         {
-            // to do lista da recuperare con filtro
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
             $sTaskLog.="</content><error id='error'>Identificativi non presenti.</error>";
@@ -1685,12 +1532,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
     }
     
     //Task filter dlg
-    public function Task_GetPubblicateFilterDlg($task)
+    public function Task_GetPatrimonioPubblicateFilterDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        $content=$this->TemplatePubblicateFilterDlg();
+        $content=$this->TemplatePubblicateFilterDlg($_REQUEST);
         $sTaskLog.= base64_encode($content);
         $sTaskLog.="</content>";
         
@@ -1726,40 +1573,50 @@ Class AA_PatrimonioModule extends AA_GenericModule
     }
     
     //Template filtro di ricerca
-    public function TemplatePubblicateFilterDlg()
+    public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"revisionate"=>$params['revisionate'], "Titolo"=>$params['Titolo']);
         
         //Valori default
-        if($_REQUEST['tipo']=="") $formData['tipo']="0";
-        if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
-        if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']=0;
-        if($_REQUEST['id_direzione']=="") $formData['id_direzione']=0;
-        if($_REQUEST['id_servizio']=="") $formData['id_servizio']=0;
-        if($_REQUEST['cestinate']=="") $formData['cestinate']=0;
-        
+        if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
+        if($params['id_assessorato']=="") $formData['id_assessorato']=0;
+        if($params['id_direzione']=="") $formData['id_direzione']=0;
+        if($params['id_servizio']=="") $formData['id_servizio']=0;
+        if($params['cestinate']=="") $formData['cestinate']=0;
+        if($params['revisionate']=="") $formData['revisionate']=0;
+        if($params['Titolo']=="") $formData['Titolo']=0;
+
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0);
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","Titolo"=>0,"nome"=>"","cestinate"=>0,"revisionate"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg("AA_Patrimonio_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
-       
-        $dlg->SetHeight(580);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
         
+        $dlg->SetHeight(580);
+                
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
+
+        //Revisionate
+        $dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
         
         //Denominazione
-        $dlg->AddTextField("denominazione","Denominazione/P.IVA",array("bottomLabel"=>"*Filtra in base alla denominazione o alla partita iva dell'organismo.", "placeholder"=>"Denominazione o piva..."));
+        $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'immobile.", "placeholder"=>"Denominazione..."));
         
         //Struttura
-        $dlg->AddStructField(array("showAll"=>1,"hideServices"=>1,"targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
+        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
         
-        //Nominato
-        $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
+        //titolo di possesso
+        $options=array(
+            array("id"=>"0","value"=>"Qualunque"),
+            array("id"=>"1","value"=>"di proprietà"),
+            array("id"=>"2","value"=>"posseduto"),
+            array("id"=>"4","value"=>"detenuto")
+        );
+        $dlg->AddSelectField("Titolo","Titolo",array("bottomLabel"=>"*Indicare il titolo di possesso","options"=>$options));
         
         return $dlg->GetObject();
     }
@@ -1779,12 +1636,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($params['Titolo']=="") $formData['Titolo']=0;
         
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0,"incaricato"=>"");
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","Titolo"=>0,"nome"=>"","cestinate"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg("AA_Patrimonio_Bozze_Filter", "Parametri di ricerca per le bozze",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Bozze_Filter", "Parametri di ricerca per le bozze",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 

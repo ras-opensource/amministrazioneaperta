@@ -6123,6 +6123,188 @@ Class AA_GenericModule
         }
     }
 
+    //Template generic resume dlg
+    public function Template_GetGenericResumeObjectDlg($params=array(), $saveTask="ResumeObject")
+    {
+        $id=static::AA_UI_PREFIX."_ResumeDlg";
+
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+            $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>La classe di gestione degli oggetti non è stata trovata.</p>")));
+            $wnd->SetWidth(380);
+            $wnd->SetHeight(115);
+
+            return $wnd;
+        }
+
+        //lista organismi da ripristinare
+        if($params['ids'])
+        {
+            $ids= json_decode($params['ids']);
+            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+
+            foreach($ids as $curId)
+            {
+                $object=new $objectClass($curId,$this->oUser);
+                if($object->isValid() && ($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
+                {
+                    $ids_final[$curId]=$object->GetName();
+                }
+            }
+
+            //Esiste almeno un organismo che può essere ripristinato dall'utente corrente
+            if(sizeof($ids_final)>0)
+            {
+                $forms_data['ids']=json_encode(array_keys($ids_final));
+                
+                $wnd=new AA_GenericFormDlg($id, "Ripristina", $this->id, $forms_data,$forms_data);
+               
+                //Disattiva il pulsante di reset
+                $wnd->EnableResetButton(false);
+
+                //Imposta il nome del pulsante di conferma
+                $wnd->SetApplyButtonName("Procedi");
+
+                $tabledata=array();
+                foreach($ids_final as $id_org=>$desc)
+                {
+                    $tabledata[]=array("Denominazione"=>$desc);
+                }
+
+                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." elementi verranno ripristinati, vuoi procedere?")));
+                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente elemento verrà ripristinato, vuoi procedere?")));
+
+                $table=new AA_JSON_Template_Generic($id."_Table", array(
+                    "view"=>"datatable",
+                    "scrollX"=>false,
+                    "autoConfig"=>true,
+                    "select"=>false,
+                    "data"=>$tabledata
+                ));
+
+                $wnd->AddGenericObject($table);
+
+                $wnd->EnableCloseWndOnSuccessfulSave();
+                $wnd->enableRefreshOnSuccessfulSave();
+                $wnd->SetSaveTask($saveTask);
+            }
+            else
+            {
+                $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
+                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per ripristinare gli elementi selezionati.</p>")));
+                $wnd->SetWidth(380);
+                $wnd->SetHeight(115);
+            }
+            
+            return $wnd;
+        }
+    }
+
+    //Task generic resume object
+    public function Task_GenericResumeObject($task,$params=array(),$bStandardCheck=true)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+
+            $task->SetError("Classe di gestione degli oggetti non definita.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Classe di gestione degli oggetti non definita.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;          
+        }
+
+        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+
+        //lista organismi da ripristinare
+        if($params['ids'])
+        {
+            $ids= json_decode($_REQUEST['ids']);
+            
+            foreach($ids as $curId)
+            {
+                $object=new $objectClass($curId,$this->oUser);
+                if($object->isValid() && ($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
+                {
+                    $ids_final[$curId]=$object;
+                }
+            }
+            
+            //Esiste almeno un elemento che può essere ripristinato dall'utente corrente
+            if(sizeof($ids_final)>0)
+            {
+                $count=0;
+                foreach( $ids_final as $id=>$object)
+                {
+                    
+                    if(!$object->Resume($this->oUser,$bStandardCheck))
+                    {
+                        $count++;
+                        $result_error["$object->GetName()"]=AA_Log::$lastErrorLog;
+                    }
+                }
+                
+                if(sizeof($result_error)>0)
+                {
+                    $id=static::AA_UI_PREFIX."_ResumeDlg";
+                    $wnd=new AA_GenericWindowTemplate($id, "Avviso", $this->id);
+                    $wnd->SetWidth("640");
+                    $wnd->SetHeight("400");
+                    $wnd->AddView(new AA_JSON_Template_Template($id."_ResumeReport",array("template"=>"Sono stati ripristinati ".(sizeof($ids)-sizeof($result_error))." organismi.<br>I seguenti non sono stati ripristinati:")));
+                
+                    $tabledata=array();
+                    foreach($result_error as $org=>$desc)
+                    {
+                        $tabledata[]=array("Denominazione"=>$org,"Errore"=>$desc);
+                    }
+                    $table=new AA_JSON_Template_Generic($id."_Table", array(
+                        "view"=>"datatable",
+                        "scrollX"=>false,
+                        "autoConfig"=>true,
+                        "select"=>false,
+                        "data"=>$tabledata
+                    ));
+                    $wnd->AddView($table);
+                    
+                    $sTaskLog="<status id='status'>-1</status><error id='error' type='json' encode='base64'>";
+                    $sTaskLog.=$wnd->toBase64();
+                    $sTaskLog.="</error>";
+                    $task->SetLog($sTaskLog);
+
+                    return false;      
+                }
+                else
+                {
+                    $sTaskLog="<status id='status'>0</status><content id='content'>";
+                    $sTaskLog.= "Sono stati ripristinati ".sizeof($ids_final)." elementi.";
+                    $sTaskLog.="</content>";
+
+                    $task->SetLog($sTaskLog);
+
+                    return true;
+                }
+            }
+            else
+            {
+                $task->SetError("Nella selezione non sono presenti organismi ripristinabili dall'utente corrente (".$this->oUser->GetName().").");
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti organismi ripristinabili dall'utente corrente (".$this->oUser->GetName().").</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;          
+            }
+        }
+        else
+        {
+            $task->SetError("Non sono stati selezionati elementi.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati elementi.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;          
+        } 
+    }
+
     //Task generic trash object
     public function Task_GenericTrashObject($task,$params=array(),$bStandardCheck=true)
     {
@@ -6170,6 +6352,7 @@ Class AA_GenericModule
                 
                 if(sizeof($result_error)>0)
                 {
+                    $id=static::AA_UI_PREFIX."_Trash";
                     $wnd=new AA_GenericWindowTemplate(static::AA_UI_PREFIX."_Trash", "Avviso", $this->id);
                     $wnd->SetWidth("640");
                     $wnd->SetHeight("400");
