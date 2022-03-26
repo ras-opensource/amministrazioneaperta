@@ -381,12 +381,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $data;
     }
     
-    //Template patrimonio trash dlg
-    public function Template_GetPatrimonioTrashDlg($params)
-    {
-        return $this->Template_GetGenericObjectTrashDlg($params,"TrashPatrimonio");
-    }
-    
     //Template organismo publish dlg
     public function Template_GetPatrimonioPublishDlg($params)
     {
@@ -1457,7 +1451,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetPatrimonioTrashDlg($_REQUEST)->toBase64();
+            $sTaskLog.= $this->Template_GetGenericObjectTrashDlg($_REQUEST,"TrashPatrimonio")->toBase64();
             $sTaskLog.="</content>";
             
             $task->SetLog($sTaskLog);
