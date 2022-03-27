@@ -449,83 +449,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
     }
     
-    //Template organismo reassign dlg
-    public function Template_GetPatrimonioReassignDlg($params)
-    {
-        //lista organismi da ripristinare
-        if($params['ids'])
-        {
-            $ids= json_decode($params['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0)
-                {
-                    $ids_final[$curId]=$organismo->GetDescr();
-                    unset($organismo);
-                }
-            }
-
-            $id=$this->id."_ReassignDlg";
-
-            //Esiste almeno un organismo che può essere ripristinato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $forms_data['ids']=json_encode(array_keys($ids_final));
-                $struct=$this->oUser->GetStruct();
-                $forms_data['id_assessorato']=$struct->GetAssessorato(true);
-                $forms_data['id_direzione']=$struct->GetDirezione(true);
-                $forms_data['id_servizio']=0;
-                if($forms_data['id_direzione'] > 0) $forms_data['struct_desc']=$struct->GetDirezione();
-                else $forms_data['struct_desc']=$struct->GetAssessorato();
-                
-                $wnd=new AA_GenericFormDlg($id, "Riassegna", $this->id, $forms_data,$forms_data);
-                
-                //Aggiunge il campo per la struttura di riassegnazione
-                $wnd->AddStructField(array("hideServices"=>1,"targetForm"=>$wnd->GetFormId()),array("select"=>true, "bottomLabel"=>"*Seleziona la struttura di riassegnazione."));
-            
-                //Disattiva il pulsante di reset
-                $wnd->EnableResetButton(false);
-
-                //Imposta il nome del pulsante di conferma
-                $wnd->SetApplyButtonName("Procedi");
-
-                $tabledata=array();
-                foreach($ids_final as $id_org=>$desc)
-                {
-                    $tabledata[]=array("Denominazione"=>$desc);
-                }
-                
-                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." organismi verranno riassegnati, vuoi procedere?")));
-                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente organismo verrà riassegnato, vuoi procedere?")));
-
-                $table=new AA_JSON_Template_Generic($id."_Table", array(
-                    "view"=>"datatable",
-                    "scrollX"=>false,
-                    "autoConfig"=>true,
-                    "select"=>false,
-                    "data"=>$tabledata
-                ));
-
-                $wnd->AddGenericObject($table);
-
-                $wnd->EnableCloseWndOnSuccessfulSave();
-                $wnd->enableRefreshOnSuccessfulSave();
-                $wnd->SetSaveTask('ReassignPatrimonio');
-            }
-            else
-            {
-                $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
-                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per ripristinare gli organismi selezionati.</p>")));
-                $wnd->SetWidth(380);
-                $wnd->SetHeight(115);
-            }
-            
-            return $wnd;
-        }
-    }
-    
     //Template organismo delete dlg
     public function Template_GetPatrimonioDeleteDlg($params)
     {
@@ -1083,93 +1006,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        //lista organismi da riassegnare
-        if($_REQUEST['ids'])
-        {
-            $ids= json_decode($_REQUEST['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0)
-                {
-                    $ids_final[$curId]=$organismo;
-                    unset($organismo);
-                }
-            }
-            
-            //Esiste almeno un organismo che può essere ripristinato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $count=0;
-                $params['riassegna-id-assessorato']=$_REQUEST['id_assessorato'];
-                $params['riassegna-id-direzione']=$_REQUEST['id_direzione'];
-                $params['riassegna-id-servizio']=$_REQUEST['id_servizio'];
-                foreach( $ids_final as $id=>$organismo)
-                {                    
-                    if(!$organismo->Reassign($params,$this->oUser))
-                    {
-                        $count++;
-                        $result_error["$organismo->GetDenominazione()"]=AA_Log::$lastErrorLog;
-                    }
-                }
-                
-                if(sizeof($result_error)>0)
-                {
-                    $wnd=new AA_GenericWindowTemplate("ReassignPatrimonio", "Avviso", $this->id);
-                    $wnd->SetWidth("640");
-                    $wnd->SetHeight("400");
-                    $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Sono stati riassegnati ".(sizeof($ids)-sizeof($result_error))." organismi alla struttura: ".$_REQUEST['struct_desc'].".<br>I seguenti non sono stati riassegnati:")));
-                
-                    $tabledata=array();
-                    foreach($result_error as $org=>$desc)
-                    {
-                        $tabledata[]=array("Denominazione"=>$org,"Errore"=>$desc);
-                    }
-                    $table=new AA_JSON_Template_Generic($id."_Table", array(
-                        "view"=>"datatable",
-                        "scrollX"=>false,
-                        "autoConfig"=>true,
-                        "select"=>false,
-                        "data"=>$tabledata
-                    ));
-                    $wnd->AddView($table);
-                    
-                    $sTaskLog="<status id='status'>-1</status><error id='error' type='json' encode='base64'>";
-                    $sTaskLog.=$wnd->toBase64();
-                    $sTaskLog.="</error>";
-                    $task->SetLog($sTaskLog);
-
-                    return false;      
-                }
-                else
-                {
-                    $sTaskLog="<status id='status'>0</status><content id='content'>";
-                    $sTaskLog.= "Sono stati riassegnati ".sizeof($ids_final)." organismi.";
-                    $sTaskLog.="</content>";
-
-                    $task->SetLog($sTaskLog);
-
-                    return true;
-                }
-            }
-            else
-            {
-                $task->SetError("Nella selezione non sono presenti organismi riassegnabili dall'utente corrente (".$this->oUser->GetName().").");
-                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti organismi riassegnabili dall'utente corrente (".$this->oUser->GetName().").</error>";
-                $task->SetLog($sTaskLog);
-
-                return false;          
-            }
-        }
-        else
-        {
-            $task->SetError("Non sono stati selezionati organismi.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati organismi.</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;          
-        } 
+        return $this->Task_GenericReassignObject($task,$_REQUEST,false);
     }
     
     //Task delete Patrimonio
@@ -1332,6 +1169,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
             return false;
         }
+
         if($_REQUEST['ids']!="")
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
@@ -1393,16 +1231,16 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return true;
     }
     
-    //Task resume organismo
+    //Task Riassegna patrimonio
     public function Task_GetPatrimonioReassignDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22) && !$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+         if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per riassegnare organismi.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per riassegnare elementi.</error>";
             
             $task->SetLog($sTaskLog);
         
@@ -1411,7 +1249,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetPatrimonioReassignDlg($_REQUEST)->toBase64();
+            $sTaskLog.= $this->Template_GetGenericReassignObjectDlg($_REQUEST,"ReassignPatrimonio")->toBase64();
             $sTaskLog.="</content>";
             
             $task->SetLog($sTaskLog);

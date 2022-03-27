@@ -267,6 +267,10 @@ class AA_Struct
 
     //Flag di validità
     protected $bIsValid = false;
+    public function IsValid()
+    {
+        return $this->bIsValid;
+    }
 
     //Albero della struttura
     protected $aTree=array();
@@ -6252,7 +6256,7 @@ Class AA_GenericModule
                     $wnd=new AA_GenericWindowTemplate($id, "Avviso", $this->id);
                     $wnd->SetWidth("640");
                     $wnd->SetHeight("400");
-                    $wnd->AddView(new AA_JSON_Template_Template($id."_ResumeReport",array("template"=>"Sono stati ripristinati ".(sizeof($ids)-sizeof($result_error))." organismi.<br>I seguenti non sono stati ripristinati:")));
+                    $wnd->AddView(new AA_JSON_Template_Template($id."_ResumeReport",array("template"=>"Sono stati ripristinati ".(sizeof($ids)-sizeof($result_error))." elementi.<br>I seguenti non sono stati ripristinati:")));
                 
                     $tabledata=array();
                     foreach($result_error as $org=>$desc)
@@ -6288,8 +6292,205 @@ Class AA_GenericModule
             }
             else
             {
-                $task->SetError("Nella selezione non sono presenti organismi ripristinabili dall'utente corrente (".$this->oUser->GetName().").");
-                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti organismi ripristinabili dall'utente corrente (".$this->oUser->GetName().").</error>";
+                $task->SetError("Nella selezione non sono presenti elementi ripristinabili dall'utente corrente (".$this->oUser->GetName().").");
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti elementi ripristinabili dall'utente corrente (".$this->oUser->GetName().").</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;          
+            }
+        }
+        else
+        {
+            $task->SetError("Non sono stati selezionati elementi.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati elementi.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;          
+        } 
+    }
+
+    //Template generic reassign dlg
+    public function Template_GetGenericReassignObjectDlg($params=array(), $saveTask="GenericReassignObject")
+    {
+        $id=static::AA_UI_PREFIX."_ReassignDlg";
+
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+            $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>La classe di gestione degli oggetti non è stata trovata.</p>")));
+            $wnd->SetWidth(380);
+            $wnd->SetHeight(115);
+
+            return $wnd;
+        }
+
+        //lista organismi da ripristinare
+        if($params['ids'])
+        {
+            $ids= json_decode($params['ids']);
+            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+
+            foreach($ids as $curId)
+            {
+                $object=new $objectClass($curId,$this->oUser);
+                if($object->isValid() && ($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
+                {
+                    $ids_final[$curId]=$object->GetName();
+                }
+            }
+
+            //Esiste almeno un organismo che può essere ripristinato dall'utente corrente
+            if(sizeof($ids_final)>0)
+            {
+                $forms_data['ids']=json_encode(array_keys($ids_final));
+                
+                $wnd=new AA_GenericFormDlg($id, "Riassegna", $this->id, $forms_data,$forms_data);
+                $wnd->EnableValidation();
+
+                //Aggiunge il campo per la struttura di riassegnazione
+                $wnd->AddStructField(array("targetForm"=>$wnd->GetFormId()),array("select"=>true), array("required"=>true, "bottomLabel"=>"*Seleziona la struttura di riassegnazione.", "placeholder"=>"Scegli..."));
+
+                //Disattiva il pulsante di reset
+                $wnd->EnableResetButton(false);
+
+                //Imposta il nome del pulsante di conferma
+                $wnd->SetApplyButtonName("Procedi");
+
+                $tabledata=array();
+                foreach($ids_final as $id_org=>$desc)
+                {
+                    $tabledata[]=array("Denominazione"=>$desc);
+                }
+
+                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." elementi verranno riassegnati, vuoi procedere?")));
+                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente elemento verrà riassegnato, vuoi procedere?")));
+
+                $table=new AA_JSON_Template_Generic($id."_Table", array(
+                    "view"=>"datatable",
+                    "scrollX"=>false,
+                    "autoConfig"=>true,
+                    "select"=>false,
+                    "data"=>$tabledata
+                ));
+
+                $wnd->AddGenericObject($table);
+
+                $wnd->EnableCloseWndOnSuccessfulSave();
+                $wnd->enableRefreshOnSuccessfulSave();
+                $wnd->SetSaveTask($saveTask);
+            }
+            else
+            {
+                $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
+                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per ripristinare gli elementi selezionati.</p>")));
+                $wnd->SetWidth(380);
+                $wnd->SetHeight(115);
+            }
+            
+            return $wnd;
+        }
+    }
+
+    //Task generic resume object
+    public function Task_GenericReassignObject($task,$params=array(),$bStandardCheck=true)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+
+            $task->SetError("Classe di gestione degli oggetti non definita.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Classe di gestione degli oggetti non definita.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;          
+        }
+
+        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+
+        //Verifica che l'utente possa riassegnare alla struttura indicata
+        $struct=AA_Struct::GetStruct($params['id_assessorato'],$params['id_direzione'],$params['id_servizio']);
+        if(!$struct->isValid())
+        {
+            $task->SetError("Struttura indicata non valida.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Struttura indicata non valida.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;     
+        }
+
+        //lista organismi da ripristinare
+        if($params['ids'])
+        {
+            $ids= json_decode($_REQUEST['ids']);
+            
+            foreach($ids as $curId)
+            {
+                $object=new $objectClass($curId,$this->oUser);
+                if($object->isValid() && ($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0)
+                {
+                    $ids_final[$curId]=$object;
+                }
+            }
+            
+            //Esiste almeno un elemento che può essere riassegnato dall'utente corrente
+            if(sizeof($ids_final)>0)
+            {
+                $count=0;
+                foreach( $ids_final as $id=>$object)
+                {
+                    
+                    if(!$object->Reassign($struct,$this->oUser,$bStandardCheck))
+                    {
+                        $count++;
+                        $result_error["$object->GetName()"]=AA_Log::$lastErrorLog;
+                    }
+                }
+                
+                if(sizeof($result_error)>0)
+                {
+                    $id=static::AA_UI_PREFIX."_ReassignDlg";
+                    $wnd=new AA_GenericWindowTemplate($id, "Avviso", $this->id);
+                    $wnd->SetWidth("640");
+                    $wnd->SetHeight("400");
+                    $wnd->AddView(new AA_JSON_Template_Template($id."_ReassignReport",array("template"=>"Sono stati riassegnati ".(sizeof($ids)-sizeof($result_error))." elementi.<br>I seguenti non sono stati riassegnati:")));
+                
+                    $tabledata=array();
+                    foreach($result_error as $org=>$desc)
+                    {
+                        $tabledata[]=array("Denominazione"=>$org,"Errore"=>$desc);
+                    }
+                    $table=new AA_JSON_Template_Generic($id."_Table", array(
+                        "view"=>"datatable",
+                        "scrollX"=>false,
+                        "autoConfig"=>true,
+                        "select"=>false,
+                        "data"=>$tabledata
+                    ));
+                    $wnd->AddView($table);
+                    
+                    $sTaskLog="<status id='status'>-1</status><error id='error' type='json' encode='base64'>";
+                    $sTaskLog.=$wnd->toBase64();
+                    $sTaskLog.="</error>";
+                    $task->SetLog($sTaskLog);
+
+                    return false;      
+                }
+                else
+                {
+                    $sTaskLog="<status id='status'>0</status><content id='content'>";
+                    $sTaskLog.= "Sono stati ripristinati ".sizeof($ids_final)." elementi.";
+                    $sTaskLog.="</content>";
+
+                    $task->SetLog($sTaskLog);
+
+                    return true;
+                }
+            }
+            else
+            {
+                $task->SetError("Nella selezione non sono presenti elementi riassegnabili dall'utente corrente (".$this->oUser->GetName().").");
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti elementi riassegnabili dall'utente corrente (".$this->oUser->GetName().").</error>";
                 $task->SetLog($sTaskLog);
 
                 return false;          
@@ -6750,7 +6951,8 @@ Class AA_GenericModule
         {
             $struct=$object->GetStruct();
             $struttura_gest=$struct->GetAssessorato();
-            if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
+            if($struct->GetDirezione(true) > 0) $struttura_gest.=" -> ".$struct->GetDirezione();
+            if($struct->GetServizio(true) > 0) $struttura_gest.=" -> ".$struct->GetServizio();
                            
             #Stato
             if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
