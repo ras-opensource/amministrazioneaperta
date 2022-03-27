@@ -310,14 +310,31 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Restituisce la lista delle schede pubblicate (dati)
     public function GetDataSectionPubblicate_List($params=array())
     {
-        return $this->GetDataGenericSectionPubblicate_List($params);
+        return $this->GetDataGenericSectionPubblicate_List($params,"GetDataSectionPubblicate_CustomFilter","GetDataSectionPubblicate_CustomDataTemplate");
     }
 
     //Personalizza il filtro delle schede pubblicate per il modulo corrente
     protected function GetDataSectionPubblicate_CustomFilter($params = array())
     {
-        return array();
+        //Titolo di possesso
+        if($params['Titolo'] > 0)
+        {
+            $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".titolo = '".addslashes($params['Titolo'])."'";
+        }
+        return $params;
     }
+
+     //Personalizza il template dei dati delle schede pubblicate per il modulo corrente
+     protected function GetDataSectionPubblicate_CustomDataTemplate($data = array(),$object=null)
+     {
+         if($object instanceof AA_Patrimonio)
+         {
+             $data['pretitolo']=$object->GetTitolo();
+             $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetSezione()."</span>";
+         }
+ 
+         return $data;
+     }
 
     //Template sezione bozze (da specializzare)
     public function TemplateSection_Bozze($params=array())
@@ -915,90 +932,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        //lista organismi da pubblicare
-        if($_REQUEST['ids'])
-        {
-            $ids= json_decode($_REQUEST['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_PUBLISH)>0)
-                {
-                    $ids_final[$curId]=$organismo;
-                    unset($organismo);
-                }
-            }
-            
-            //Esiste almeno un organismo che può essere pubblicato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $count=0;
-                foreach( $ids_final as $id=>$organismo)
-                {
-                    if(!$organismo->Publish($this->oUser))
-                    {
-                        $count++;
-                        $result_error["$organismo->GetDenominazione()"]=AA_Log::$lastErrorLog;
-                    }
-                }
-                
-                if(sizeof($result_error)>0)
-                {
-                    $wnd=new AA_GenericWindowTemplate("PublishPatrimonio", "Avviso", $this->id);
-                    $wnd->SetWidth("640");
-                    $wnd->SetHeight("400");
-                    $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Sono stati pubblicati ".(sizeof($ids)-sizeof($result_error))." organismi.<br>I seguenti non sono stati pubblicati:")));
-                
-                    $tabledata=array();
-                    foreach($result_error as $org=>$desc)
-                    {
-                        $tabledata[]=array("Denominazione"=>$org,"Errore"=>$desc);
-                    }
-                    $table=new AA_JSON_Template_Generic($id."_Table", array(
-                        "view"=>"datatable",
-                        "scrollX"=>false,
-                        "autoConfig"=>true,
-                        "select"=>false,
-                        "data"=>$tabledata
-                    ));
-                    $wnd->AddView($table);
-                    
-                    $sTaskLog="<status id='status'>-1</status><error id='error' type='json' encode='base64'>";
-                    $sTaskLog.=$wnd->toBase64();
-                    $sTaskLog.="</error>";
-                    $task->SetLog($sTaskLog);
-
-                    return false;      
-                }
-                else
-                {
-                    $sTaskLog="<status id='status'>0</status><content id='content'>";
-                    $sTaskLog.= "Sono stati pubblicati ".sizeof($ids_final)." organismi.";
-                    $sTaskLog.="</content>";
-
-                    $task->SetLog($sTaskLog);
-
-                    return true;
-                }
-            }
-            else
-            {
-                $task->SetError("Nella selezione non sono presenti organismi pubblicabili dall'utente corrente (".$this->oUser->GetName().").");
-                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti organismi pubblicabili dall'utente corrente (".$this->oUser->GetName().").</error>";
-                $task->SetLog($sTaskLog);
-
-                return false;          
-            }
-        }
-        else
-        {
-            $task->SetError("Non sono stati selezionati organismi.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati organismi.</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;          
-        } 
+        return $this->Task_GenericPublishObject($task,$_REQUEST,false);
     }
     
     //Task reassign Patrimonio
@@ -1197,11 +1131,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22) && !$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per pubblicare organismi.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per pubblicare elementi.</error>";
             $task->SetLog($sTaskLog);
         
             return false;
@@ -1210,7 +1144,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetPatrimonioPublishDlg($_REQUEST)->toBase64();
+            $sTaskLog.= $this->Template_GetGenericPublishObjectDlg($_REQUEST,"PublishPatrimonio")->toBase64();
             $sTaskLog.="</content>";
             $task->SetLog($sTaskLog);
         
