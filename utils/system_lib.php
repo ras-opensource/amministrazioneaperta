@@ -6908,7 +6908,7 @@ Class AA_GenericModule
         
         //recupero elementi
         $objectClass="AA_Object_V2";
-        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        if(class_exists(static::AA_MODULE_OBJECTS_CLASS))
         {
             $objectClass=static::AA_MODULE_OBJECTS_CLASS;
         }
@@ -11743,7 +11743,22 @@ Class AA_Object_V2
         }
 
         //Filtra in base allo stato della scheda
-        $where.=" AND status ='".$params['status']."' ";
+        if($params['id'] == "")
+        {
+            $where.=" AND status ='".$params['status']."' ";
+
+             //filtra in base al nome
+            if($params['nome'] !="")
+            {
+                $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".nome like '%".addslashes($params['nome'])."%'";
+            }
+
+            //filtra in base alla descrizione
+            if($params['descrizione'] !="")
+            {
+                $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".descrizione like '%".addslashes($params['descrizione'])."%'";
+            }
+        }
 
         //Filtra solo oggetti della RAS
         if($userStruct->GetTipo() == 0)
@@ -11776,18 +11791,6 @@ Class AA_Object_V2
             $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_servizio = '".addslashes($params['id_servizio'])."'";
         }
         //------------------------
-
-        //filtra in base al nome
-        if($params['nome'] !="")
-        {
-            $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".nome like '%".addslashes($params['nome'])."%'";
-        }
-
-        //filtra in base alla descrizione
-        if($params['descrizione'] !="")
-        {
-            $where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".descrizione like '%".addslashes($params['descrizione'])."%'";
-        }
 
         //filtra in base all'id(s)
         if($params['id'] !="")
