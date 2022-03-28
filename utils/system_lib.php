@@ -4377,6 +4377,9 @@ Class AA_SystemTaskManager extends AA_GenericTaskManager
         
         //Upload session file
         $this->RegisterTask("UploadSessionFile", "AA_SystemTask_UploadSessionFile");
+
+        //Restituisce la finestra dei log di un oggetto
+        $this->RegisterTask("GetLogDlg", "AA_SystemTask_GetLogDlg");
     }
 }
 
@@ -4423,6 +4426,25 @@ Class AA_SystemTask_GetStructDlg extends AA_GenericTask
         $wnd=new AA_GenericStructDlg("AA_SystemStructDlg","Organigramma", $_REQUEST,"", $_REQUEST['module'], $this->oUser);
         
         //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
+        
+        $this->sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>".$wnd->toBase64()."</content><error id='error'></error>";
+        return true;
+    }
+}
+
+//Task per la visualizzazione del log di un oggetto
+Class AA_SystemTask_GetLogDlg extends AA_GenericTask
+{
+    public function __construct($user=null)
+    {
+        parent::__construct("GetLogDlg", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
+        $wnd=new AA_GenericLogDlg("AA_SystemLogDlg","Logs",$this->oUser);
         
         $this->sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>".$wnd->toBase64()."</content><error id='error'></error>";
         return true;
@@ -5758,7 +5780,7 @@ Class AA_GenericModule
                 
                 //utente e log
                 $lastLog=$object->GetLog()->GetLastLog();               
-                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'LogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
                 
                 //id
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
@@ -7162,7 +7184,7 @@ Class AA_GenericModule
                 
                 //utente e log
                 $lastLog=$object->GetLog()->GetLastLog();
-                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'LogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
                 
                 //id
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
@@ -8733,6 +8755,81 @@ Class AA_GenericPdfPreviewDlg extends AA_GenericWindowTemplate
         parent::Update();
     }
 }
+
+//Template generic  logView dlg
+Class AA_GenericLogDlg extends AA_GenericWindowTemplate
+{       
+    public function __construct($id = "", $title = "Logs", $user=null)
+    {
+        parent::__construct($id, $title);
+                
+        $this->SetWidth("720");
+        $this->SetHeight("576");
+
+        //Id oggetto non impostato
+        if($_REQUEST['id']=="")
+        {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id."_Log_Box",array("type"=>"clean","template"=>"<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>Identificativo oggetto non impostato.</div>")));
+            return;
+        }
+
+        //Verifica utente
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser() || $user->IsGuest())
+            {
+                $user=AA_User::GetCurrentUser();
+            }
+        }
+        else $user=AA_User::GetCurrentUser();
+        
+        if($user->IsGuest())
+        {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id."_Log_Box",array("type"=>"clean","template"=>"<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>Utente non valido o sessione scaduta.</div>")));
+            return;
+        }
+
+        $object = AA_Object_V2::Load($_REQUEST['id'],$user,false);
+        
+        //Invalid object
+        if(!$object->IsValid())
+        {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id."_Log_Box",array("type"=>"clean","template"=>"<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>Oggetto non valido o permessi insufficienti.</div>")));
+            return;
+        }
+        
+        //permessi insufficienti
+        if(($object->GetUserCaps($user)&AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id."_Log_Box",array("type"=>"clean","template"=>"<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>L'utente corrente non ha i permessi per visualizzare i logs dell'oggetto.</div>")));
+            return;
+        }
+
+        $logs=$object->GetLog();
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "scrollX"=>false,
+            "select"=>false,
+            "columns"=>array(
+                array("id"=>"data","header"=>"Data","width"=>150, "css"=>array("text-align"=>"left")),
+                array("id"=>"user","header"=>"Utente","width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"msg","header"=>"Operazione","fillspace"=>true, "css"=>array("text-align"=>"left"))
+            ),
+            "data"=>$logs->GetLog()
+        ));
+
+        //riquadro di visualizzazione preview pdf
+        $this->body->AddRow($table);
+        $this->body->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer","height"=>38)));
+    }
+    
+    protected function Update()
+    {
+        parent::Update();
+    }
+}
+
 
 //Template sezione paginata
 Class AA_GenericPagedSectionTemplate
