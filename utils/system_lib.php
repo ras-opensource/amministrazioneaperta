@@ -5756,10 +5756,11 @@ Class AA_GenericModule
                 //Aggiornamento
                 $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;";
                 
-                //utente
+                //utente e log
                 $lastLog=$object->GetLog()->GetLastLog();               
-                //AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
-                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'>".$lastLog['user']."</span>&nbsp;";
+                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'LogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+                
+                //id
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
             } 
             else
@@ -7159,10 +7160,11 @@ Class AA_GenericModule
                 //Aggiornamento
                 $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;";
                 
-                //utente
-                $lastLog=$object->GetLog()->GetLastLog();               
-                //AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
-                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'>".$lastLog['user']."</span>&nbsp;";
+                //utente e log
+                $lastLog=$object->GetLog()->GetLastLog();
+                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'LogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+                
+                //id
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
             } 
             else

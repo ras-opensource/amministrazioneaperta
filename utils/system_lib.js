@@ -1081,8 +1081,11 @@ function AA_Module(id="AA_MODULE_DUMMY",name="Modulo generico")
                 console.error(this.name+".dlg - task non impostato", params);
                 return false;
             }
+            
+            let taskManager=params.taskManager;
+            if(taskManager == null) taskManager=this.taskManager;
 
-            let result = await AA_VerboseTask(params.task,this.taskManager,params.params, params.postParams);
+            let result = await AA_VerboseTask(params.task,taskManager,params.params, params.postParams);
             if(result.status.value==0)
             {
                 //console.log(this.name+".dlg",params,result.content.value);
