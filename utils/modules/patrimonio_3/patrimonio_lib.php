@@ -87,7 +87,16 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetProp("Titolo",0);
 
         //chiama il costruttore genitore
-        parent::__construct($id,$user,true);
+        parent::__construct($id,$user,false);
+
+        //Carica i dati dell'oggetto
+        if($this->bValid && $this->nId > 0)
+        {
+            if(!$this->LoadData($user))
+            {
+                $this->bValid=false;
+            }
+        }
     }
 
     //funzione di ricerca

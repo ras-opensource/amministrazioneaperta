@@ -10515,58 +10515,12 @@ Class AA_Object_V2
         $sep="";
 
         //Aggiorna la tabella dati se è impostata
-        if($object->GetDbDataTable() !="" && $bSaveData)
+        if($bSaveData)
         {
-            if(($object->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0)
+            if(!$object->SaveData())
             {
-                if($object->GetIdDataRev() == 0)
-                {
-                    $query = "INSERT INTO ".$object->GetDbDataTable()." SET ";
-                    $where="";
-                }
-                else 
-                {
-                    $query = "UPDATE ".$object->GetDbDataTable()." SET ";
-                    $where=" WHERE ".$object->GetDbDataTable().".id = ".$object->GetIdDataRev()." LIMIT 1";
-                }   
-            }
-            else
-            {
-                if($object->GetIdData() == 0)
-                {
-                    $query = "INSERT INTO ".$object->GetDbDataTable()." SET ";
-                    $where="";
-                }
-                else 
-                {
-                    $query = "UPDATE ".$object->GetDbDataTable()." SET ";                
-                    $where=" WHERE ".$object->GetDbDataTable().".id = ".$object->GetIdData()." LIMIT 1";
-                }
-            }
-
-            foreach($object->GetDbBindings() as $prop=>$dbField)
-            {
-                $query.= $sep.$dbField." = '".addslashes($object->GetProp($prop))."'";
-                $sep=",";
-            }
-
-            AA_Log::Log(__METHOD__."query: ".$query,100);
-
-            //Aggiorna tabella dati
-            if(!$db->Query($query.$where))
-            {
-                AA_Log::Log(__METHOD__." - Errore nell'aggiornamento della tabella dati - ".$db->GetErrorMessage()." - Query:".$query,100);
+                AA_Log::Log(__METHOD__." - Errore nel salvataggio dei dati collegati all'oggetto.",100);
                 return false;
-            }
-
-            if(($object->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0 && $object->GetIdDataRev()==0)
-            {
-                $object->SetIdDataRev($db->GetLastInsertId());
-            }
-
-            if(($object->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) == 0 && $object->GetIdData()==0)
-            {
-                $object->SetIdData($db->GetLastInsertId());
             }
         }
         
@@ -10609,6 +10563,70 @@ Class AA_Object_V2
         }
                 
         $object->SetChanged(false);
+        return true;
+    }
+
+    //Funzione di salvataggio dei dati legati all'oggetto
+    protected function SaveData()
+    {
+        if($this->GetDbDataTable() !="")
+        {
+            if(($this->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0)
+            {
+                if($this->GetIdDataRev() == 0)
+                {
+                    $query = "INSERT INTO ".$this->GetDbDataTable()." SET ";
+                    $where="";
+                }
+                else 
+                {
+                    $query = "UPDATE ".$this->GetDbDataTable()." SET ";
+                    $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdDataRev()." LIMIT 1";
+                }   
+            }
+            else
+            {
+                if($this->GetIdData() == 0)
+                {
+                    $query = "INSERT INTO ".$this->GetDbDataTable()." SET ";
+                    $where="";
+                }
+                else 
+                {
+                    $query = "UPDATE ".$this->GetDbDataTable()." SET ";                
+                    $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdData()." LIMIT 1";
+                }
+            }
+
+            $sep="";
+            foreach($this->GetDbBindings() as $prop=>$dbField)
+            {
+                $query.= $sep.$dbField." = '".addslashes($this->GetProp($prop))."'";
+                $sep=",";
+            }
+
+            AA_Log::Log(__METHOD__."query: ".$query,100);
+
+            $db=new AA_Database();
+
+            //Aggiorna tabella dati
+            if(!$db->Query($query.$where))
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'aggiornamento della tabella dati - ".$db->GetErrorMessage()." - Query:".$query,100);
+                return false;
+            }
+
+            if(($this->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0 && $this->GetIdDataRev()==0)
+            {
+                $this->SetIdDataRev($db->GetLastInsertId());
+            }
+
+            if(($this->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) == 0 && $this->GetIdData()==0)
+            {
+                $this->SetIdData($db->GetLastInsertId());
+            }
+        }
+
         return true;
     }
     
@@ -11021,9 +11039,9 @@ Class AA_Object_V2
         
         return $perms;
     }
-    
+
     //Funzione di caricamento
-    private function Load($id=0, $user=null, $bLoadData=true)
+    static public function Load($id=0, $user=null, $bLoadData=true)
     {
          //Verifica utente
         if($user instanceof AA_User)
@@ -11034,7 +11052,7 @@ Class AA_Object_V2
             }
         }
         else $user=AA_User::GetCurrentUser();
-        
+
         /*
         if($user->IsGuest())
         {
@@ -11054,63 +11072,102 @@ Class AA_Object_V2
         {
             $rs=$db->GetResultSet();
             
-            $this->nId=$rs[0]['id'];
-            $this->nId_Data=$rs[0]['id_data'];
-            $this->nId_Data_Rev=$rs[0]['id_data_rev'];
-            $this->sAggiornamento=$rs[0]['aggiornamento'];
-            $this->sName=$rs[0]['nome'];
-            $this->sDescr=$rs[0]['descrizione'];
-            $this->nStatus=$rs[0]['status'];
-            $this->sLog=$rs[0]['logs'];
-            $this->oStruct=AA_Struct::GetStruct($rs[0]['id_assessorato'],$rs[0]['id_direzione'],$rs[0]['id_servizio']);
-            $this->sClass=$rs[0]['class'];
-            
-            $perms=$this->GetUserCaps($user);
-            if(($perms & AA_Const::AA_PERMS_READ) == 0)
+            $objectClass="AA_Object_V2";
+            if(class_exists($rs[0]['class']))
+            {
+                $objectClass=$rs[0]['class'];
+            }
+
+            $object = new $objectClass(0,$user);
+            $object->oStruct=AA_Struct::GetStruct($rs[0]['id_assessorato'],$rs[0]['id_direzione'],$rs[0]['id_servizio']);
+            $object->nStatus=$rs[0]['status'];
+            $object->sClass=$rs[0]['class'];
+            $object->sAggiornamento=$rs[0]['aggiornamento'];
+            $object->sName=$rs[0]['nome'];
+            $object->sDescr=$rs[0]['descrizione'];
+            if(($object->GetUserCaps($user)&AA_Const::AA_PERMS_READ)==0)
             {
                 AA_Log::Log(__METHOD__." - Errore: l'utente corrente non ha i permessi per visualizzare l'oggetto.",100);
+                $object->bValid=false;
+                return $object;
+            }
+
+            $object->nId=$rs[0]['id'];
+            $object->nId_Data=$rs[0]['id_data'];
+            $object->nId_Data_Rev=$rs[0]['id_data_rev'];
+            $object->sLog=$rs[0]['logs'];
+            $object->bValid=true;
+
+            //Carica i dati collegati
+            if($object->sDbDataTable !="" && $bLoadData && $object->nId > 0)
+            {
+                if(!$object->LoadData())
+                {
+                    AA_Log::Log(__METHOD__." - Errore: dati non caricati.",100);
+                    $object->bValid=false;
+                }
+                else $object->bValid=true;
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - Errore: oggetto non trovato ($id)",100);
+            $object = new AA_Object_V2(0,$user,false);
+        }
+
+        //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
+        return $object;
+    }
+
+    //Carica  i dati collegati all'oggetto.
+    protected function LoadData($user=null)
+    {
+        if($this->sDbDataTable !="" && $this->bValid && $this->nId > 0 && ($this->nId_Data > 0 || $this->nId_Data_Rev > 0))
+        {
+            //Verifica utente
+            if($user instanceof AA_User)
+            {
+                if(!$user->isCurrentUser() || $user->IsGuest())
+                {
+                    $user=AA_User::GetCurrentUser();
+                }
+            }
+            else $user=AA_User::GetCurrentUser();
+
+            $perms=$this->GetUserCaps($user);
+
+            if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0 && ($perms & AA_Const::AA_PERMS_WRITE) > 0)
+            {
+                $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data_Rev." LIMIT 1";
+            }
+            else
+            {
+                $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data." LIMIT 1";
+            }
+
+            $db=new AA_Database();
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
                 return false;
             }
 
-            //Carica i dati collegati
-            if($this->sDbDataTable !="" && $bLoadData)
+            if($db->GetAffectedRows() > 0)
             {
-                if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0 && ($perms & AA_Const::AA_PERMS_WRITE) > 0)
+                $data=$db->GetResultSet();
+                foreach($this->GetDbBindings() as $prop=>$db_field)
                 {
-                    $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data_Rev." LIMIT 1";
-                }
-                else
-                {
-                    $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data." LIMIT 1";
-                }
-
-                if(!$db->Query($query))
-                {
-                    AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
-                    return false;
-                }
-
-                if($db->GetAffectedRows() > 0)
-                {
-                    $data=$db->GetResultSet();
-                    foreach($this->GetDbBindings() as $prop=>$db_field)
-                    {
-                        $this->aProps[$prop]=$data[0][$db_field];
-                    }
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - Errore nessun dato trovato.",100);
-                    return false;
+                    $this->aProps[$prop]=$data[0][$db_field];
                 }
             }
-
-            $this->bValid=true;
-            return true;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nessun dato trovato. ".$query,100);
+                return false;
+            }
         }
-        
-        AA_Log::Log(__METHOD__." - Errore: oggetto non trovato ($id)",100);
-        return false;
+
+        return true;
     }
     
     //Flag di validità
@@ -11141,7 +11198,30 @@ Class AA_Object_V2
         
         if($id > 0)
         {
-            $this->Load($id,$user,$bLoadData);
+            $object=static::Load($id,$user,$bLoadData);
+            
+            //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
+            
+            if($object->isValid())
+            {
+                $this->nId=$id;
+                $this->oStruct=$object->oStruct;
+                $this->nStatus=$object->nStatus;
+                $this->sClass=$object->sClass;
+                $this->sAggiornamento=$object->sAggiornamento;
+                $this->sName=$object->sName;
+                $this->sDescr=$object->sDescr;
+                $this->nId_Data=$object->nId_Data;
+                $this->nId_Data_Rev=$object->nId_Data_Rev;
+                $this->sLog=$object->sLog;
+                $this->bValid=true;
+
+                //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true)." - this: ".print_r($this,true),100);
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore oggetto non valido",100);
+            }
         }
         else
         {
