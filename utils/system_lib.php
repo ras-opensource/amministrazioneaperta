@@ -5513,7 +5513,11 @@ Class AA_GenericModule
     //------------------------------------
 
     //---------Task azioni standard-------
-    const AA_UI_TASK_TRASH="GenericTrash";
+    const AA_UI_TASK_TRASH="GenericTrashObject";
+    const AA_UI_TASK_RESUME="GenericResumeObject";
+    const AA_UI_TASK_PUBLISH="GenericPublishObject";
+    const AA_UI_TASK_REASSIGN="GenericReassignObject";
+    const AA_UI_TASK_DELETE="GenericDeleteObject";
     //------------------------------------
 
     protected $taskManagerUrl="system_ops.php";
@@ -5780,7 +5784,7 @@ Class AA_GenericModule
                 
                 //utente e log
                 $lastLog=$object->GetLog()->GetLastLog();               
-                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+                $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
                 
                 //id
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
@@ -7184,7 +7188,7 @@ Class AA_GenericModule
                 
                 //utente e log
                 $lastLog=$object->GetLog()->GetLastLog();
-                $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+                $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
                 
                 //id
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
@@ -8812,9 +8816,9 @@ Class AA_GenericLogDlg extends AA_GenericWindowTemplate
             "scrollX"=>false,
             "select"=>false,
             "columns"=>array(
-                array("id"=>"data","header"=>"Data","width"=>150, "css"=>array("text-align"=>"left")),
-                array("id"=>"user","header"=>"Utente","width"=>120, "css"=>array("text-align"=>"center")),
-                array("id"=>"msg","header"=>"Operazione","fillspace"=>true, "css"=>array("text-align"=>"left"))
+                array("id"=>"data","header"=>array("Data",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"left")),
+                array("id"=>"user","header"=>array("<div style='text-align: center'>Utente</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"msg","header"=>array("Operazione",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"))
             ),
             "data"=>$logs->GetLog()
         ));
@@ -11530,17 +11534,17 @@ Class AA_Object_V2
         //filtro struttura
         if($params['id_assessorato'] !="" && $params['id_assessorato'] > 0)
         {
-            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_assessorato = '".$params['id_assessorato']."'";
+            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_assessorato = '".addslashes($params['id_assessorato'])."'";
         }
 
         if($params['id_direzione'] !="" && $params['id_direzione'] > 0)
         {
-            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_direzione = '".$params['id_direzione']."'";
+            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_direzione = '".addslashes($params['id_direzione'])."'";
         }
 
         if($params['id_servizio'] !="" && $params['id_servizio'] > 0)
         {
-            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_servizio = '".$params['id_servizio']."'";
+            $where .=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_servizio = '".addslashes($params['id_servizio'])."'";
         }
         //------------------------
 
@@ -11628,7 +11632,7 @@ Class AA_Object_V2
         //Conta i risultati
         $query="SELECT COUNT(id) as tot FROM (".$select.$join.$where.$group.$having.") as count_filter";
 
-        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         if(!$db->Query($query))
         {
