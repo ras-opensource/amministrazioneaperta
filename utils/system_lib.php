@@ -5687,6 +5687,7 @@ Class AA_GenericModule
         $taskManager->RegisterTask("GetSectionContent");
         $taskManager->RegisterTask("GetObjectContent");
         $taskManager->RegisterTask("GetObjectData");
+        $taskManager->RegisterTask("PdfExport");
 
         return;
     }
@@ -6828,6 +6829,234 @@ Class AA_GenericModule
 
             return false;          
         } 
+    }
+
+    //Task generic export pdf 
+    public function Task_PdfExport($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        //Verifica della classe degli oggetti
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+
+            $task->SetError("Classe di gestione degli oggetti non definita.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Classe di gestione degli oggetti non definita.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;          
+        }
+
+        $sessVar= AA_SessionVar::Get("SaveAsPdf_ids");
+        
+        //lista organismi da esportare
+        if($sessVar->IsValid())
+        {
+            $ids = $sessVar->GetValue();
+            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+
+            if(is_array($ids))
+            {
+                foreach($ids as $curId)
+                {
+                    $object=new $objectClass($curId,$this->oUser);
+                    if($object->isValid() && ($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_READ)>0)
+                    {
+                        $ids_final[$curId]=$object;
+                    }
+                }    
+            }
+            
+            //Esiste almeno un organismo che può essere letto dall'utente corrente
+            if(sizeof($ids_final)>0)
+            {
+                
+                $this->Template_PdfExport($ids);   
+            }
+            else
+            {
+                $task->SetError("Nella selezione non sono presenti dati leggibili dall'utente corrente (".$this->oUser->GetName().").");
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti elementi leggibili dall'utente corrente (".$this->oUser->GetName().").</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;          
+            }
+        }
+        else
+        {
+            $task->SetError("Non è stata selezionata nessuna voce.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Non è stata selezionata nessuna voce.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;          
+        } 
+    }
+
+    //Funzione di esportazione in pdf (da specializzare)
+    public function Template_PdfExport($ids=array())
+    {
+        return $this->Template_GenericPdfExport($ids);
+    }
+
+    //Template pdf export generic
+    protected function Template_GenericPdfExport($ids=array(), $bToBrowser=true,$title="Esportazione in pdf",$pageTemplateFunc="Template_GenericObjectPdfExport")
+    {
+        include_once "pdf_lib.php";
+
+        if(!is_array($ids)) return "";
+        if(sizeof($ids)==0) return "";
+        
+        //recupero elementi
+        $objectClass="AA_Object_V2";
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+        }
+
+        $objects=$objectClass::Search(array("id"=>implode(",",$ids)),false,$this->oUser);
+        $count = $objects[0];
+        #--------------------------------------------
+            
+        //nome file
+        $filename="pdf_export";
+        $filename.="-".date("YmdHis");
+        $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
+        
+        $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
+        $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
+        $curRow=0;
+        $rowForPage=1;
+        $lastRow=$rowForPage-1;
+        $curPage=null;
+        $curPage_row="";
+        $curNumPage=0;
+        //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
+        //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
+        $rowContentWidth="width: 99.8%;";
+
+        if($count >1)
+        {
+            //pagina di intestazione (senza titolo)
+            $curPage=$doc->AddPage();
+            $curPage->SetCorpoStyle("display: flex; flex-direction: column; justify-content: center; align-items: center; padding:0;");
+            $curPage->SetFooterStyle("border-top:.2mm solid black");
+            $curPage->ShowPageNumber(false);
+
+            //Intestazione
+            $intestazione="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>$title</div>";
+            $intestazione.="<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il ".date("Y-m-d")."</div>";
+
+            $curPage->SetContent($intestazione);
+            $curNumPage++;
+
+            //pagine indice (50 nominativi per pagina)
+            $indiceNumVociPerPagina=50;
+            for($i=0; $i<$count/$indiceNumVociPerPagina; $i++)
+            {
+              $curPage=$doc->AddPage();
+              $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
+              $curNumPage++;
+            }
+            #---------------------------------------
+        }
+        
+        //Imposta il titolo per le pagine successive
+        $doc->SetTitle("$title - report generato il ".date("Y-m-d"));
+  
+        $indice=array();
+        $lastPage=$count/$rowForPage+$curNumPage;
+        
+        //Rendering pagine
+        foreach($objects[1] as $id=>$curObject)
+        {
+            //inizia una nuova pagina (intestazione)
+            if($curRow==$rowForPage) $curRow=0; 
+            if($curRow==0)
+            {
+              $border="";
+              if($curPage != null) $curPage->SetContent($curPage_row);
+              $curPage=$doc->AddPage();
+              $curNumPage++;
+              //$curPage->SetCorpoStyle("display: flex; flex-direction: column;  justify-content: space-between; padding:0; border: 1px solid black");
+              $curPage_row="";
+            }
+
+            $indice[$curObject->GetID()]=$curNumPage."|".$curObject->GetName();
+            $curPage_row.="<div id='".$curObject->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+
+            if(method_exists($this,$pageTemplateFunc)) $template=$this->$pageTemplateFunc("report_object_pdf_".$curObject->GetId(),null,$curObject,$this->oUser);
+            else $template="";
+            
+            //AA_Log::Log($template,100,false,true);
+
+            $curPage_row.=$template;
+            $curPage_row.="</div>";
+            $curRow++;          
+        }
+        if($curPage != null) $curPage->SetContent($curPage_row);
+        #-----------------------------------------
+        
+        if($count > 1)
+        {
+            //Aggiornamento indice
+            $curNumPage=1;
+            $curPage=$doc->GetPage($curNumPage);
+            $vociCount=0;
+            $curRow=0;
+            $bgColor="";
+            $curPage_row="";
+
+            foreach($indice as $id=>$data)
+            {
+              if($curNumPage != (int)($vociCount/$indiceNumVociPerPagina)+1)
+              {
+                $curPage->SetContent($curPage_row);
+                $curNumPage=(int)($vociCount/$indiceNumVociPerPagina)+1;
+                $curPage=$doc->GetPage($curNumPage);
+                $curRow=0;
+                $bgColor="";
+              }
+
+              if($curPage instanceof AA_PDF_Page)
+              {
+                if($vociCount%2 > 0)
+                {
+                  $dati=explode("|",$data);
+                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+                  $curPage_row.="</div>";
+                  if($vociCount == (sizeof($indice)-1)) $curPage->SetContent($curPage_row);
+                  $curRow++;
+                }
+                else
+                {
+                  //Intestazione
+                  if($curRow==0) $curPage_row="<div style='width:100%;text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+
+                  if($curRow%2) $bgColor="background-color: #f5f5f5;";
+                  else $bgColor="";
+                  $curPage_row.="<div style='display:flex; ".$rowContentWidth." align-items: center; justify-content: space-between; text-align: center; padding: .3mm; min-height: 9mm;".$bgColor."'>";
+                  $dati=explode("|",$data);
+                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+
+                  //ultima voce
+                  if($vociCount == (sizeof($indice)-1))
+                  {
+                    $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'>&nbsp; </div><div style='width:9%;text-align: right;padding-left: 10mm'>&nbsp; </div></div>";
+                    $curPage->SetContent($curPage_row);
+                  } 
+                }
+              }
+
+              $vociCount++;
+            }            
+        }
+
+        if($bToBrowser) $doc->Render();
+        else
+        {
+            $doc->Render(false);
+            return $doc->GetFilePath();
+        }
     }
 
     //Template navbar bozze

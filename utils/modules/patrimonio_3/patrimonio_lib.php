@@ -252,7 +252,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("PublishPatrimonio");
         
         //Pdf export
-        $taskManager->RegisterTask("PdfExport");
+        //$taskManager->RegisterTask("PdfExport");
         
         #Sezioni----------------------------------------
         
@@ -879,55 +879,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $this->Task_GenericTrashObject($task,$_REQUEST,false);
     }
     
-    //Task export pdf Patrimonio
-    public function Task_PdfExport($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $sessVar= AA_SessionVar::Get("SaveAsPdf_ids");
-        
-        //lista organismi da esportare
-        if($sessVar->IsValid())
-        {
-            $ids = $sessVar->GetValue();
-            
-            if(is_array($ids))
-            {
-                foreach($ids as $curId)
-                {
-                    $organismo=new AA_Patrimonio($curId,$this->oUser);
-                    if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_READ)>0)
-                    {
-                        $ids_final[$curId]=$organismo;
-                        unset($organismo);
-                    }
-                }    
-            }
-            
-            //Esiste almeno un organismo che può essere letto dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $this->Template_PatrimonioPdfExport($ids);
-            }
-            else
-            {
-                $task->SetError("Nella selezione non sono presenti dati leggibili dall'utente corrente (".$this->oUser->GetName().").");
-                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti organismi leggibili dall'utente corrente (".$this->oUser->GetName().").</error>";
-                $task->SetLog($sTaskLog);
-
-                return false;          
-            }
-        }
-        else
-        {
-            $task->SetError("Non è stata selezionata nessuna voce.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Non è stata selezionata nessuna voce.</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;          
-        } 
-    }
-    
     //Task resume Patrimonio
     public function Task_ResumePatrimonio($task)
     {
@@ -1517,7 +1468,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
               $curPage_row="";
             }
 
-            $indice[$curPatrimonio->GetID()]=$curNumPage."|".$curPatrimonio->GetDescrizione();
+            $indice[$curPatrimonio->GetID()]=$curNumPage."|".$curPatrimonio->GetName();
             $curPage_row.="<div id='".$curPatrimonio->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
 
             $template=""; //new AA_PatrimonioPublicReportTemplateView("report_organismo_pdf_".$curPatrimonio->GetId(),null,$curPatrimonio,$this->oUser);
