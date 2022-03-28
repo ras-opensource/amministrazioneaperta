@@ -11085,12 +11085,20 @@ Class AA_Object_V2
             $object->sAggiornamento=$rs[0]['aggiornamento'];
             $object->sName=$rs[0]['nome'];
             $object->sDescr=$rs[0]['descrizione'];
-            if(($object->GetUserCaps($user)&AA_Const::AA_PERMS_READ)==0)
+            
+            $perms=$object->GetUserCaps($user);
+            if(($perms&AA_Const::AA_PERMS_READ)==0)
             {
                 AA_Log::Log(__METHOD__." - Errore: l'utente corrente non ha i permessi per visualizzare l'oggetto.",100);
                 $object->bValid=false;
                 return $object;
             }
+
+            if(($perms&AA_Const::AA_PERMS_WRITE)==0)
+            {
+                $object->bReadOnly=true;
+            }
+            else $object->bReadOnly=false;
 
             $object->nId=$rs[0]['id'];
             $object->nId_Data=$rs[0]['id_data'];
@@ -11136,7 +11144,7 @@ Class AA_Object_V2
 
             $perms=$this->GetUserCaps($user);
 
-            if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0 && ($perms & AA_Const::AA_PERMS_WRITE) > 0)
+            if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0 && !$this->bReadOnly && $this->nId_Data_Rev > 0)
             {
                 $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data_Rev." LIMIT 1";
             }
@@ -11176,7 +11184,14 @@ Class AA_Object_V2
     {
         return $this->bValid;
     }
-    
+
+    //Flag di sola lettura
+    protected $bReadOnly=true;
+    public function  IsReadOnly()
+    {
+        return $this->bReadOnly;
+    }
+
     //Costruttore standard
     public function __construct($id=0,$user=null,$bLoadData=true) 
     {
