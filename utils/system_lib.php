@@ -11142,8 +11142,6 @@ Class AA_Object_V2
             }
             else $user=AA_User::GetCurrentUser();
 
-            $perms=$this->GetUserCaps($user);
-
             if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0 && !$this->bReadOnly && $this->nId_Data_Rev > 0)
             {
                 $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data_Rev." LIMIT 1";
