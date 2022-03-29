@@ -11391,13 +11391,16 @@ Class AA_Object_V2
             AA_Log::Log(__METHOD__." - Utente non valido o sessione scaduta.",100);
             return false;
         }*/
+
+        $object = new AA_Object_V2(0,$user,false);
+        $object->bValid=false;
         
         $db=new AA_Database();
         $query="SELECT * from ".AA_Const::AA_DBTABLE_OBJECTS." WHERE id ='".addslashes($id)."' LIMIT 1";
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
-            return false;
+            return $object;
         }
         
         if($db->GetAffectedRows() > 0)
@@ -11452,7 +11455,6 @@ Class AA_Object_V2
         else
         {
             AA_Log::Log(__METHOD__." - Errore: oggetto non trovato ($id)",100);
-            $object = new AA_Object_V2(0,$user,false);
         }
 
         //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
