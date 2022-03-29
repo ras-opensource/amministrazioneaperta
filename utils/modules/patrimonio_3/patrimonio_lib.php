@@ -1472,9 +1472,7 @@ Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
         $descr->SetStyle("width: 100%; margin-bottom: .8em; text-align: left; padding: .3em;");
         $descr->SetText($val);
         #-------------------
-
-        #-------------------
-
+        
         //right panel ------
         $right_panel= new AA_XML_Div_Element("generale-tab-right-panel",$generale);
         $right_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; width:29%; border: 1px solid  #d7dbdd");
