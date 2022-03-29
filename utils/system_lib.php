@@ -12279,7 +12279,7 @@ Class AA_Platform
     //Restituisce la lista dei moduli registrati
     public function GetModules()
     {
-        if(!$this->IsValid()) return array();
+        if(!$this->bValid) return array();
         
         $modules=array();
         
