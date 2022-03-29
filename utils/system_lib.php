@@ -12196,6 +12196,19 @@ Class AA_Platform
             return;
         }
         
+        $this->oUser=$user;
+        $this->bValid=true;
+    }
+    
+    //Gestione moduli
+    protected $aModules=null;
+    protected function LoadModules()
+    {
+        if(!$this->bValid)
+        {
+            return;
+        }
+
         //Carica i moduli
         if(!isset($_SESSION['platform_modules_cache']) || isset($_REQUEST['disable_cache']))
         {
@@ -12206,7 +12219,7 @@ Class AA_Platform
                 AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage(),100);
                 return;
             }
-
+ 
             if($db->GetAffectedRows()>0)
             {
                 foreach($db->GetResultSet() as $curMod)
@@ -12214,56 +12227,32 @@ Class AA_Platform
                     $this->aModules[$curMod['id_modulo']]=$curMod;
                 }
             }
-
+ 
             //AA_Log::Log(__METHOD__." - salvo sessione: ".$this->aModules,100);
             $_SESSION['platform_modules_cache']= serialize($this->aModules);
         }
         else 
         {
-            //AA_Log::Log(__METHOD__." - sessione: ".$_SESSION['platform_modules_cache'],100);
-            $this->aModules= unserialize($_SESSION['platform_modules_cache']);
+             //AA_Log::Log(__METHOD__." - sessione: ".$_SESSION['platform_modules_cache'],100);
+             $this->aModules = unserialize($_SESSION['platform_modules_cache']);
         }
-        
-        $this->oUser=$user;
-        $this->bValid=true;
     }
-    
-    //Gestione moduli
-    protected $aModules=array();
-    
+
     //registra un modulo
     static public function RegisterModule($idMod="",$class="", $user=null)
     {
-        $platform = AA_Platform::GetInstance($user);
-        
-        if(!$platform->bValid)
-        {
-            AA_Log::Log(__METHOD__." - Modulo gestione piattaforma non valido.",100);
-            return false;
-        }
-        
-        if($idMod == "")
-        {
-            AA_Log::Log(__METHOD__." - Id Modulo non valido.",100);
-            return false;
-        }
-        
-        if(!class_exists($class))
-        {
-            AA_Log::Log(__METHOD__." - Classe modulo non esistente.",100);
-            return false;            
-        }
-        
-        AA_Log::Log(__METHOD__." - Registro il modulo: ".$idMod,100);
-        
-        //$platform->aModules[$idMod]=$class;
-        return true;
+      //to do
     }
     
     //Verifica se un modulo è registrato
     static public function IsRegistered($id="",$user=null)
     {
         $platform = AA_Platform::GetInstance($user);
+        
+        if(!$platform->bValid) return false;
+
+        if($platform->aModules==null) $platform->LoadModules();
+
         foreach($platform->aModules as $curId=>$class)
         {
             if($curId == $id) return true;
@@ -12275,6 +12264,10 @@ Class AA_Platform
     //Restituisce il modulo
     public function GetModule($id="",$user=null)
     {
+        if(!$this->bValid) return null;
+
+        if($this->aModules==null) $this->LoadModules();
+
         foreach($this->aModules as $curId=>$curMod)
         {
             if($curId == $id) return $curMod;
@@ -12292,6 +12285,8 @@ Class AA_Platform
         
         //AA_Log::Log(__METHOD__." - ".print_r($this,true),100);
         
+        if($this->aModules==null) $this->LoadModules();
+
         foreach($this->aModules as $id=>$curModule)
         {    
             $admins = explode(",",$curModule['admins']);
@@ -12309,7 +12304,7 @@ Class AA_Platform
     public function GetCurrentUser()
     {
       if($this->bValid) return $this->oUser;
-      else return AA_User::GetCurrentUser();
+      else return AA_User::UserAuth();
     }
     
     //Autenticazione
