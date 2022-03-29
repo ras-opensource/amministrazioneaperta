@@ -11003,7 +11003,7 @@ Class AA_Object_V2
         if($this->GetDbDataTable() !="" && ($idData == $this->nId_Data || $idData == $this->nId_Data_Rev) && $idData > 0)
         {
             $select = "SELECT * FROM ".$this->GetDbDataTable()." ";
-            $where=" id='".addslashes($idData)."' LIMIT 1";
+            $where=" WHERE id='".addslashes($idData)."' LIMIT 1";
 
             $db=new AA_Database();
             if(!$db->Query($select.$where))
