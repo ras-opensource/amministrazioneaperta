@@ -1392,156 +1392,142 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $dlg->GetObject();
     }
     
-    //Template pdf export single
-    public function Template_PatrimonioPdfExport($ids=array(), $bToBrowser=true,$tipo_organismo="")
+    //Funzione di esportazione in pdf (da specializzare)
+    public function Template_PdfExport($ids=array())
     {
-        if(!is_array($ids)) return "";
-        if(sizeof($ids)==0) return "";
-        
-        //recupero organismi
-        
-        $organismi=AA_Patrimonio::Search(array("ids"=>$ids),false,$this->oUser);
-        $count = $organismi[0];
-        #--------------------------------------------
-            
-        //nome file
-        $filename="pubblicazioni_art22";
-        $filename.="-".date("YmdHis");
-        $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
-        
-        $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
-        $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
-        $curRow=0;
-        $rowForPage=1;
-        $lastRow=$rowForPage-1;
-        $curPage=null;
-        $curPage_row="";
-        $curNumPage=0;
-        //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
-        //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
-        $rowContentWidth="width: 99.8%;";
+        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.30 del d.lgs. 33/2013","Template_PatrimonioPdfExport");
+    }
 
-        if($count >1)
+    //Template pdf export single
+    public function Template_PatrimonioPdfExport($id="", $parent=null,$object=null,$user=null)
+    {
+        if(!($object instanceof AA_Patrimonio))
         {
-            //pagina di intestazione (senza titolo)
-            $curPage=$doc->AddPage();
-            $curPage->SetCorpoStyle("display: flex; flex-direction: column; justify-content: center; align-items: center; padding:0;");
-            $curPage->SetFooterStyle("border-top:.2mm solid black");
-            $curPage->ShowPageNumber(false);
-
-            //Intestazione
-            $intestazione="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Pubblicazioni ai sensi dell'art.22 del d.lgs. 33/2013</div>";
-            $intestazione.="<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il ".date("Y-m-d")."</div>";
-
-            $curPage->SetContent($intestazione);
-            $curNumPage++;
-
-            //pagine indice (50 nominativi per pagina)
-            $indiceNumVociPerPagina=50;
-            for($i=0; $i<$count/$indiceNumVociPerPagina; $i++)
-            {
-              $curPage=$doc->AddPage();
-              $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
-              $curNumPage++;
-            }
-            #---------------------------------------
+            return "";
         }
         
-        //Imposta il titolo per le pagine successive
-        $doc->SetTitle("Pubblicazioni ai sensi dell'art.22 del d.lgs. 33/2013 - report generato il ".date("Y-m-d"));
-  
-        $indice=array();
-        $lastPage=$count/$rowForPage+$curNumPage;
+        if($id=="") $id="Template_PatrimonioPdfExport_".$object->GetId();
+
+        return new AA_PatrimonioPublicReportTemplateView($id,$parent,$object,$user);
+    }
+}
+
+#Classe template per la gestione del report pdf dell'oggetto
+Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
+{
+    public function __construct($id="AA_PatrimonioPublicReportTemplateView",$parent=null,$object=null, $user=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if(!($object instanceof AA_Patrimonio))
+        {
+            AA_Log::Log(__METHOD__." - oggetto non valido.", 100,false,true);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$object);
         
-        //Rendering pagine
-        foreach($organismi[1] as $id=>$curPatrimonio)
-        {
-            //inizia una nuova pagina (intestazione)
-            if($curRow==$rowForPage) $curRow=0; 
-            if($curRow==0)
-            {
-              $border="";
-              if($curPage != null) $curPage->SetContent($curPage_row);
-              $curPage=$doc->AddPage();
-              $curNumPage++;
-              //$curPage->SetCorpoStyle("display: flex; flex-direction: column;  justify-content: space-between; padding:0; border: 1px solid black");
-              $curPage_row="";
-            }
+        $this->SetStyle("width: 99%; display:flex; flex-direction: column; align-items: center;");
 
-            $indice[$curPatrimonio->GetID()]=$curNumPage."|".$curPatrimonio->GetName();
-            $curPage_row.="<div id='".$curPatrimonio->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+        #Parte generale---------------------------------
+        $generale=new AA_XML_Div_Element("AA_OrganismiPublicReportTemplateView-generale",$this);
+        $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%");
 
-            $template=""; //new AA_PatrimonioPublicReportTemplateView("report_organismo_pdf_".$curPatrimonio->GetId(),null,$curPatrimonio,$this->oUser);
+        #Denominazione----------------------------------
+        $denominazione=new AA_XML_Div_Element("generale-tab-denominazione",$generale);
+        $denominazione->SetStyle('width:100%; border-bottom: 1px solid  gray; margin-bottom: 1em; margin-top: .2em; font-size: 20px; font-weight: bold; padding: .3em');
+        $denominazione->SetText($object->GetName()."<br><span style='font-size: x-small; font-weight: normal'>".$object->GetTitolo()."</span>");
+        #-----------------------------------------------
 
-            //AA_Log::Log($template,100,false,true);
-
-            $curPage_row.=$template;
-            $curPage_row.="</div>";
-            $curRow++;          
-        }
-        if($curPage != null) $curPage->SetContent($curPage_row);
-        #-----------------------------------------
+        //left panel-------
+        $left_panel= new AA_XML_Div_Element("generale-tab-left-panel",$generale);
+        $left_panel->SetStyle("display:flex; flex-direction: column; justify-content: start; align-items: left; align-self: start; width:70%");
         
-        if($count > 1)
-        {
-            //Aggiornamento indice
-            $curNumPage=1;
-            $curPage=$doc->GetPage($curNumPage);
-            $vociCount=0;
-            $curRow=0;
-            $bgColor="";
-            $curPage_row="";
+        //Etichetta descrizione
+        $descr= new AA_XML_Div_Element("generale-tab-right-panel-dati_catastali",$left_panel);
+        $descr->SetStyle("width:100%; margin-bottom: .8em; text-align: center; background: #d7dbdd; border: 1px solid #d7dbdd");
+        $descr->SetText('<span style="font-weight:bold">Descrizione</span>');
 
-            foreach($indice as $id=>$data)
-            {
-              if($curNumPage != (int)($vociCount/$indiceNumVociPerPagina)+1)
-              {
-                $curPage->SetContent($curPage_row);
-                $curNumPage=(int)($vociCount/$indiceNumVociPerPagina)+1;
-                $curPage=$doc->GetPage($curNumPage);
-                $curRow=0;
-                $bgColor="";
-              }
+        //Descrizione
+        $val=$object->GetProp("Descrizione");
+        if($val=="") $val="n.d.";
+        $descr=new AA_XML_Div_Element("descr",$left_panel);
+        $descr->SetStyle("width: 100%; margin-bottom: .8em; text-align: left");
+        $descr->SetText($val);
+        #-------------------
 
-              if($curPage instanceof AA_PDF_Page)
-              {
-                if($vociCount%2 > 0)
-                {
-                  $dati=explode("|",$data);
-                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
-                  $curPage_row.="</div>";
-                  if($vociCount == (sizeof($indice)-1)) $curPage->SetContent($curPage_row);
-                  $curRow++;
-                }
-                else
-                {
-                  //Intestazione
-                  if($curRow==0) $curPage_row="<div style='width:100%;text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+        //right panel ------
+        $right_panel= new AA_XML_Div_Element("generale-tab-right-panel",$generale);
+        $right_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; width:29%; border: 1px solid  #d7dbdd");
+        
+        $databoxStyle="display: flex; justify-content: space-between; width: 98%; margin-bottom: .8em; border-bottom: 1px solid #d7dbdd; padding: 1%;";
+        $databoxStyleLastRow="display: flex; justify-content: space-between; width: 98%; margin-bottom: .8em; padding: 1%;";
 
-                  if($curRow%2) $bgColor="background-color: #f5f5f5;";
-                  else $bgColor="";
-                  $curPage_row.="<div style='display:flex; ".$rowContentWidth." align-items: center; justify-content: space-between; text-align: center; padding: .3mm; min-height: 9mm;".$bgColor."'>";
-                  $dati=explode("|",$data);
-                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+        //Etichetta dati catastali
+        $dati_catastali= new AA_XML_Div_Element("generale-tab-right-panel-dati_catastali",$right_panel);
+        $dati_catastali->SetStyle("width: 100%; margin-bottom: .8em; text-align: center; border-bottom: 1px solid  #d7dbdd; background: #d7dbdd");
+        $dati_catastali->SetText('<span style="font-weight:bold">Dati catastali</span>');
 
-                  //ultima voce
-                  if($vociCount == (sizeof($indice)-1))
-                  {
-                    $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'>&nbsp; </div><div style='width:9%;text-align: right;padding-left: 10mm'>&nbsp; </div></div>";
-                    $curPage->SetContent($curPage_row);
-                  } 
-                }
-              }
+        //Sezione
+        $val=$object->GetSezione();
+        if($val=="") $val="n.d.";
+        $sezione = new AA_XML_Div_Element("generale-tab-right-panel-data_inizio",$right_panel);
+        $sezione->SetStyle($databoxStyle);
+        $sezione->SetText('<span style="font-weight:bold;">Sezione:</span><span>'.$val.'</span>');
 
-              $vociCount++;
-            }            
-        }
+        //codice comune
+        $val=$object->GetProp("CodiceComune");
+        if($val=="") $val="n.d.";
+        $codcomune = new AA_XML_Div_Element("generale-tab-right-panel-cod_comune",$right_panel);
+        $codcomune->SetStyle($databoxStyle);
+        $codcomune->SetText('<span style="font-weight:bold">Codice Comune:</span><span>'.$val.'</span>');
 
-        if($bToBrowser) $doc->Render();
-        else
-        {
-            $doc->Render(false);
-            return $doc->GetFilePath();
-        }
+        //classe
+        $val=$object->GetProp("ClasseCatasto");
+        if($val=="") $val="n.d.";
+        $classe = new AA_XML_Div_Element("generale-tab-right-panel-classe",$right_panel);
+        $classe->SetStyle($databoxStyle);
+        $classe->SetText('<span style="font-weight:bold">Classe:</span>'.$val.'</span>');
+
+        //foglio
+        $val=$object->GetProp("FoglioCatasto");
+        if($val=="") $val="n.d.";
+        $foglio = new AA_XML_Div_Element("generale-tab-right-panel-foglio",$right_panel);
+        $foglio->SetStyle($databoxStyle);
+        $foglio->SetText('<span style="font-weight:bold">Foglio:</span>'.$val.'</span>');
+
+        //particella
+        $val=$object->GetProp("ParticellaCatasto");
+        if($val=="") $val="n.d.";
+        $particella = new AA_XML_Div_Element("generale-tab-right-panel-particella",$right_panel);
+        $particella->SetStyle($databoxStyle);
+        $particella->SetText('<span style="font-weight:bold">Particella:</span><span>'.$val.'</span>');
+
+        //codice comune
+        $val=$object->GetProp("RenditaCatasto");
+        if($val=="") $val="n.d.";
+        $rendita = new AA_XML_Div_Element("generale-tab-right-panel-rendita",$right_panel);
+        $rendita->SetStyle($databoxStyle);
+        $rendita->SetText('<span style="font-weight:bold">Rendita:</span><span>'.$val.'</span>');
+
+        //consistenza
+        $val=$object->GetProp("ConsistenzaCatasto");
+        if($val=="") $val="n.d.";
+        $consistenza = new AA_XML_Div_Element("generale-tab-right-panel-consistenza",$right_panel);
+        $consistenza->SetStyle($databoxStyleLastRow);
+        $consistenza->SetText('<span style="font-weight:bold">Consistenza:</span><span>'.$val.'</span>');
+        #-------------------
+
+        //Dati sui canoni
+        //To do
+
+        //legenda
+        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-top: 1em;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente prospetto sono state aggiornate l'ultima volta il ".$object->GetAggiornamento()."</span></div>";
+        $this->SetText($footer,false);
     }
 }

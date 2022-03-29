@@ -4444,7 +4444,7 @@ Class AA_SystemTask_GetLogDlg extends AA_GenericTask
     public function Run()
     {
         AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
-        $wnd=new AA_GenericLogDlg("AA_SystemLogDlg","Logs",$this->oUser);
+        $wnd=new AA_GenericLogDlg("AA_SystemLogDlg_".$_REQUEST['id'],"Logs",$this->oUser);
         
         $this->sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>".$wnd->toBase64()."</content><error id='error'></error>";
         return true;
@@ -8974,6 +8974,7 @@ Class AA_GenericPdfPreviewDlg extends AA_GenericWindowTemplate
 {       
     public function __construct($id = "", $title = "Pdf Viewer", $module="")
     {
+        if($id=="") $id="PdfPreviewDlg_".time();
         parent::__construct($id, $title, $module);
                 
         $this->SetWidth("720");
