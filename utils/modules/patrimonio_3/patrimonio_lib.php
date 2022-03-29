@@ -1446,19 +1446,33 @@ Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
 
         //left panel-------
         $left_panel= new AA_XML_Div_Element("generale-tab-left-panel",$generale);
-        $left_panel->SetStyle("display:flex; flex-direction: column; justify-content: start; align-items: left; align-self: start; width:70%");
+        $left_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; align-self: start; width:70%; flex: 1; align-self: stretch; border: 1px solid #d7dbdd;");
         
         //Etichetta descrizione
-        $descr= new AA_XML_Div_Element("generale-tab-right-panel-dati_catastali",$left_panel);
-        $descr->SetStyle("width:100%; margin-bottom: .8em; text-align: center; background: #d7dbdd; border: 1px solid #d7dbdd");
+        $descr= new AA_XML_Div_Element("generale-tab-left-panel-descrizione",$left_panel);
+        $descr->SetStyle("width:100%; margin-bottom: .8em; text-align: center; background: #d7dbdd; border-bottom: 1px solid #d7dbdd;");
         $descr->SetText('<span style="font-weight:bold">Descrizione</span>');
 
         //Descrizione
         $val=$object->GetProp("Descrizione");
         if($val=="") $val="n.d.";
         $descr=new AA_XML_Div_Element("descr",$left_panel);
-        $descr->SetStyle("width: 100%; margin-bottom: .8em; text-align: left");
+        $descr->SetStyle("display: flex; width: 100%; margin-bottom: .8em; text-align: left; align-self: stretch; flex: 1; padding: .3em");
         $descr->SetText($val);
+
+        //Etichetta indirizzo
+        $descr= new AA_XML_Div_Element("generale-tab-left-panel-indirizzo",$left_panel);
+        $descr->SetStyle("width:100%; margin-bottom: .8em; text-align: center; background: #d7dbdd; border-bottom: 1px solid #d7dbdd;");
+        $descr->SetText('<span style="font-weight:bold">Indirizzo</span>');
+
+        //Indirizzo
+        $val=$object->GetProp("Indirizzo");
+        if($val=="") $val="n.d.";
+        $descr=new AA_XML_Div_Element("indirizzo",$left_panel);
+        $descr->SetStyle("width: 100%; margin-bottom: .8em; text-align: left; padding: .3em;");
+        $descr->SetText($val);
+        #-------------------
+
         #-------------------
 
         //right panel ------
