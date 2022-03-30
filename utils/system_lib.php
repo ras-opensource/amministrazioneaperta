@@ -11562,6 +11562,23 @@ Class AA_Object_V2
                 $perms = $originalObject->GetUserCaps($user);
                 if(($perms & AA_Const::AA_PERMS_DELETE)>0)
                 {
+                    //Elimina i dati associati
+                    if($this->nId_Data > 0)
+                    {
+                        if(!$this->DeleteData($this->nId_Data))
+                        {
+                            return false;      
+                        }
+                    }
+
+                    if($this->nId_Data_Rev > 0)
+                    {
+                        if(!$this->DeleteData($this->nId_Data_Rev))
+                        {
+                            return false;
+                        }
+                    }
+
                     $db=new AA_Database();
                     $query="DELETE from ".AA_Const::AA_DBTABLE_OBJECTS." WHERE id = '".$this->GetId()."' LIMIT 1";
                     if(!$db->Query($query))
