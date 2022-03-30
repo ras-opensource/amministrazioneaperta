@@ -146,7 +146,7 @@ Class AA_Patrimonio extends AA_Object_V2
         return $perms;
     }
 
-    static public function AddNew($object=null,$user=null,$bStandardCheck=true,$bSaveData=false)
+    static public function AddNew($object=null,$user=null,$bSaveData=true)
     {
         //Verifica utente
         if($user instanceof AA_User)
@@ -177,7 +177,7 @@ Class AA_Patrimonio extends AA_Object_V2
         }
         //----------------------------------------------
 
-        return parent::AddNew($object,$user,$bStandardCheck,$bSaveData);
+        return parent::AddNew($object,$user,$bSaveData);
     }
 
     //restituisce il titolo di possesso
@@ -244,7 +244,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewPatrimonio");
         $taskManager->RegisterTask("UpdatePatrimonio");
         $taskManager->RegisterTask("PublishPatrimonio");
-        #-----------------------------------------------------------------------------------
+        #------------------------------------------------------------------------------------
     }
     
     //istanza

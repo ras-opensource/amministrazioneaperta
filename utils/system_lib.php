@@ -6849,8 +6849,8 @@ Class AA_GenericModule
                 }
                 else
                 {
-                    $sTaskLog="<status id='status'>0</status><content id='content'>";
-                    $sTaskLog.= "SOno stati cestinati ".sizeof($ids_final)." organismi.";
+                    $sTaskLog="<status id='status' action='goBack' action_params='".json_encode(array())."'>0</status><content id='content'>";
+                    $sTaskLog.= "Sono stati eliminati ".sizeof($ids_final)." organismi.";
                     $sTaskLog.="</content>";
 
                     $task->SetLog($sTaskLog);
@@ -7760,7 +7760,7 @@ Class AA_GenericModule
             return new AA_JSON_Template_Template(
                 static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,
                 array("update_time"=>Date("Y-m-d H:i:s"),
-                "name"=>"Dettaglio scheda elemento",
+                "name"=>static::AA_UI_SECTION_DETAIL_NAME,
                 "type"=>"clean","template"=>"Tipo di elemento non gestito."));
         }
         
@@ -8683,12 +8683,6 @@ Class AA_GenericFormDlg extends AA_GenericWindowTemplate
         }
         
         $this->form->SetProp("elementsConfig",$elementsConfig);
-        
-        //if($this->module=="") $module="module=AA_MainApp.curModule";
-        //else $module="module=AA_MainApp.getModule('".$this->module."')";
-        
-        //if($this->saveFormDataId=="") $filter_id="module.getActiveView()";
-        //else $filter_id="'".$this->saveFormDataId."'";
         
         if($this->applyActions=="")
         {
