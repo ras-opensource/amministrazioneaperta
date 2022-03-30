@@ -8745,6 +8745,7 @@ Class AA_GenericFormDlg extends AA_GenericWindowTemplate
             if($type=="select") $this->curRow->AddCol(new AA_JSON_Template_Select($this->id."_Field_".$name,$props));
             if($type=="switch") $this->curRow->AddCol(new AA_JSON_Template_Switch($this->id."_Field_".$name,$props));
             if($type=="datepicker")$this->curRow->AddCol(new AA_JSON_Template_Datepicker($this->id."_Field_".$name,$props));
+            if($type=="radio")$this->curRow->AddCol(new AA_JSON_Template_Radio($this->id."_Field_".$name,$props));
         }
     }
     
@@ -8803,6 +8804,12 @@ Class AA_GenericFormDlg extends AA_GenericWindowTemplate
     public function AddSelectField($name="", $label="", $props=array(),$newRow=true)
     {
         return $this->AddField($name,$label,"select",$props, $newRow);
+    }
+    
+    //Aggiungi un radio control
+    public function AddRadioField($name="", $label="", $props=array(),$newRow=true)
+    {
+        return $this->AddField($name,$label,"radio",$props, $newRow);
     }
     
     //Aggiungi un campo per la scelta delle strutture
@@ -8937,6 +8944,7 @@ Class AA_FieldSet extends AA_JSON_Template_Generic
             if($type=="select") $this->curRow->AddCol(new AA_JSON_Template_Select($this->GetId()."_Field_".$name,$props));
             if($type=="switch") $this->curRow->AddCol(new AA_JSON_Template_Switch($this->GetId()."_Field_".$name,$props));
             if($type=="datepicker")$this->curRow->AddCol(new AA_JSON_Template_Datepicker($this->GetId()."_Field_".$name,$props));
+            if($type=="radio")$this->curRow->AddCol(new AA_JSON_Template_Radio($this->GetId()."_Field_".$name,$props));
         }
     }
     
@@ -8996,7 +9004,13 @@ Class AA_FieldSet extends AA_JSON_Template_Generic
     {
         return $this->AddField($name,$label,"select",$props, $newRow);
     }
-    
+
+    //Aggiungi un radio control
+    public function AddRadioField($name="", $label="", $props=array(),$newRow=true)
+    {
+        return $this->AddField($name,$label,"radio",$props, $newRow);
+    }
+
     //Aggiungi un campo per la scelta delle strutture
     public function AddStructField($taskParams=array(),$params=array(),$fieldParams=array(), $newRow=true)
     {
@@ -10499,6 +10513,19 @@ Class AA_JSON_Template_Select extends AA_JSON_Template_Generic
     {
         $this->props["view"]="richselect";
         if($id=="") $id="AA_JSON_TEMPLATE_RICHSELECT";
+        
+        parent::__construct($id,$props);
+    }
+    
+}
+
+//Classe per la gestione dei campi radio
+Class AA_JSON_Template_Radio extends AA_JSON_Template_Generic
+{
+    public function __construct($id="",$props=null)
+    {
+        $this->props["view"]="radio";
+        if($id=="") $id="AA_JSON_TEMPLATE_RADIO";
         
         parent::__construct($id,$props);
     }

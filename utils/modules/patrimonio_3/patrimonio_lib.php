@@ -469,7 +469,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(720);
+        $wnd->SetWidth(820);
         $wnd->SetHeight(640);
         $wnd->EnableValidation();
               
@@ -492,8 +492,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
 
         //sezione catasto
-        $label="Sezione";        
-        $catasto->AddSwitchBoxField("SezioneCatasto",$label,array("onLabel"=>"Catasto terreni","offLabel"=>"Catasto urbano","bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "required"=>true));
+        $label="Sezione";
+        $options=array(
+            array("id"=>0,"value"=>"Catasto urbano"),
+            array("id"=>1,"value"=>"Catasto terreni")
+        );
+        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "required"=>true));
 
         //codice comune
         $label="Cod. Comune";
@@ -553,7 +557,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetLabelWidth(120);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(720);
+        $wnd->SetWidth(820);
         $wnd->SetHeight(640);
         
         //titolo di possesso
@@ -575,8 +579,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
 
         //sezione catasto
-        $label="Sezione";        
-        $catasto->AddSwitchBoxField("SezioneCatasto",$label,array("onLabel"=>"Catasto terreni","offLabel"=>"Catasto urbano","bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "required"=>true));
+        $label="Sezione";
+        $options=array(
+            array("id"=>0,"value"=>"Catasto urbano"),
+            array("id"=>1,"value"=>"Catasto terreni")
+        );
+        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "required"=>true));
 
         //codice comune
         $label="Cod. Comune";
