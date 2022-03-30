@@ -1314,7 +1314,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             if (module_content.status.value == "0") {
                 if (module_content.error.value) AA_MainApp.ui.message(module_content.error.value);
 
-                console.log("Nuovo contenuto del modulo (scaricato): ", module_content.content.value);
+                //console.log("Nuovo contenuto del modulo (scaricato): ", module_content.content.value);
 
                 if (module_content.content.value) {
                     if (Array.isArray(module_content.content.value)) {
