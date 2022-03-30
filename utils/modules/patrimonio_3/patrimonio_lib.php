@@ -1263,8 +1263,8 @@ Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
 
         #Denominazione----------------------------------
         $denominazione=new AA_XML_Div_Element("generale-tab-denominazione",$generale);
-        $denominazione->SetStyle('width:100%; border-bottom: 1px solid  gray; margin-bottom: 1em; margin-top: .2em; font-size: 20px; font-weight: bold; padding: .3em');
-        $denominazione->SetText($object->GetName()."<br><span style='font-size: x-small; font-weight: normal'>".$object->GetTitolo()."</span>");
+        $denominazione->SetStyle('width:100%; border-bottom: 1px solid  gray; margin-bottom: 1em; margin-top: .2em; font-size: 20px; font-weight: bold; padding: .1em');
+        $denominazione->SetText($object->GetName()."<div style='font-size: x-small; font-weight: normal; margin-top: .1em;'>".$object->GetTitolo()."</div>");
         #-----------------------------------------------
 
         //left panel-------
@@ -1295,9 +1295,7 @@ Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
         $descr->SetStyle("width: 100%; margin-bottom: .8em; text-align: left; padding: .3em;");
         $descr->SetText($val);
         #-------------------
-
-        #-------------------
-
+        
         //right panel ------
         $right_panel= new AA_XML_Div_Element("generale-tab-right-panel",$generale);
         $right_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; width:29%; border: 1px solid  #d7dbdd");

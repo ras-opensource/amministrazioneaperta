@@ -7780,7 +7780,7 @@ Class AA_GenericModule
             //utente
             $lastLog=$object->GetLog()->GetLastLog();               
             //AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
-            $details.="<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'>".$lastLog['user']."</span>&nbsp;";
+            $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
             $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
         }
         else
@@ -10949,7 +10949,7 @@ Class AA_Object_V2
         
         //Verifica solo se oggetto diretto di classe "AA_Object_V2" 
         $object_class=get_class($object);
-        if($object_class=="AA_Object_V2" || $bStandardChecks)
+        /*if($object_class=="AA_Object_V2" || $bStandardChecks)
         {
             //Verifica permessi
             if($object->GetId() > 0)
@@ -11068,6 +11068,104 @@ Class AA_Object_V2
                     return false;
                 }          
             }            
+        }*/
+        
+        //Verifica permessi
+        if($object->GetId() > 0) //Oggetto esistente
+        {
+            $originalObject = new $object_class($object->GetId(),$user);
+            if($originalObject->isValid())
+            {
+                $orgPerms = $originalObject->GetUserCaps($user);
+                $perms = $object->GetUserCaps($user);
+
+                $objStatus=$object->GetStatus();
+                $orgObjStatus=$originalObject->GetStatus();
+                
+                //Cambio di stato
+                if($objStatus != $orgObjStatus)
+                {
+                    if(($orgObjStatus&AA_Const::AA_STATUS_BOZZA) > 0)
+                    {
+                        //pubblicazione
+                        if(($objStatus&AA_Const::AA_STATUS_PUBBLICATA) > 0 && (($perms&AA_Const::AA_PERMS_WRITE) == 0 || ($orgPerms&AA_Const::AA_PERMS_PUBLISH) ==0))
+                        {
+                            AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                            return false;
+                        }
+                        
+                        //cestinazione eliminazione
+                        if(($objStatus&AA_Const::AA_STATUS_CESTINATA) > 0 && (($perms&AA_Const::AA_PERMS_DELETE) == 0 || ($orgPerms&AA_Const::AA_PERMS_DELETE) ==0))
+                        {
+                            AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        //cestinazione eliminazione
+                        if(($objStatus&AA_Const::AA_STATUS_CESTINATA) > 0 && (($perms&AA_Const::AA_PERMS_DELETE) == 0 || ($orgPerms&AA_Const::AA_PERMS_DELETE) ==0))
+                        {
+                            AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                            return false;
+                        }
+
+                        //revisione
+                        if(($objStatus&AA_Const::AA_STATUS_REVISIONATA) > 0 && (($perms&AA_Const::AA_PERMS_WRITE) == 0 || ($orgPerms&AA_Const::AA_PERMS_WRITE) ==0))
+                        {
+                            AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                            return false;
+                        }
+
+                        //pubblicazione revisioni
+                        if(($objStatus&AA_Const::AA_STATUS_REVISIONATA) == 0 && ($orgObjStatus&AA_Const::AA_STATUS_REVISIONATA) > 0  && (($perms&AA_Const::AA_PERMS_PUBLISH) == 0 || ($orgPerms&AA_Const::AA_PERMS_PUBLISH) == 0))
+                        {
+                            AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    //Modifica generica
+                    if(($perms&AA_Const::AA_PERMS_WRITE) == 0 || ($orgPerms&AA_Const::AA_PERMS_WRITE) == 0)
+                    {
+                        AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - Oggetto originale non valido.",100);
+                return false;
+            }
+        }
+        else
+        {
+            $perms = $object->GetUserCaps($user);
+            $objStatus=$object->GetStatus();
+
+            //Modifica generica
+            if(($perms&AA_Const::AA_PERMS_WRITE) == 0)
+            {
+                AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                return false;
+            }
+
+            //cestinazione
+            if(($objStatus&AA_Const::AA_STATUS_CESTINATA) > 0 && ($perms&AA_Const::AA_PERMS_DELETE) == 0)
+            {
+                AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                return false;
+            }
+
+            //pubblicazione
+            if(($objStatus&AA_Const::AA_STATUS_PUBBLICATA) > 0 && ($perms&AA_Const::AA_PERMS_PUBLISH) == 0)
+            {
+                AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
+                return false;
+            }
         }
 
         $db=new AA_Database();
@@ -11127,6 +11225,68 @@ Class AA_Object_V2
         return true;
     }
 
+    //funzione di clonazione dei dati collegati
+    protected function CloneData($idData=0, $user=null)
+    {
+        if($this->GetDbDataTable() !="" && ($idData == $this->nId_Data || $idData == $this->nId_Data_Rev) && $idData > 0)
+        {
+            $select = "SELECT * FROM ".$this->GetDbDataTable()." ";
+            $where=" WHERE id='".addslashes($idData)."' LIMIT 1";
+
+            $db=new AA_Database();
+            if(!$db->Query($select.$where))
+            {
+                AA_Log::Log(__METHOD__." - Errore nella clonazione dei dati - ".$db->GetErrorMessage(),100);
+                return 0;
+            }
+
+            if($db->GetAffectedRows()==0)
+            {
+                AA_Log::Log(__METHOD__." - Errore nella clonazione dei dati, dati non trovati ($idData)",100);
+                return 0;
+            }
+
+            $query = "INSERT INTO ".$this->GetDbDataTable()." SET ";
+            $rs=$db->GetResultSet();
+            $sep="";
+            foreach($this->GetDbBindings() as $prop=>$dbField)
+            {
+                $query.= $sep.$dbField." = '".addslashes($rs[0][$dbField])."'";
+                $sep=",";
+            }
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - Errore nella clonazione dei dati - ".$db->GetErrorMessage(),100);
+                return 0;
+            }
+
+            return $db->GetLastInsertId();
+        }
+
+        return 0;
+    }
+
+    //funzione di eliminazione dei dati collegati
+    protected function DeleteData($idData=0,$user=null)
+    {
+        if($this->GetDbDataTable() !="" && ($idData == $this->nId_Data || $idData == $this->nId_Data_Rev) && $idData > 0)
+        {
+            $query = "DELETE FROM ".$this->GetDbDataTable()." WHERE id='".addslashes($idData)."' LIMIT 1";
+
+            $db=new AA_Database();
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - Errore nella clonazione dei dati - ".$db->GetErrorMessage(),100);
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     //Funzione di salvataggio dei dati legati all'oggetto
     protected function SaveData()
     {
@@ -11134,10 +11294,16 @@ Class AA_Object_V2
         {
             if(($this->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0)
             {
+                //Revisione
                 if($this->GetIdDataRev() == 0)
                 {
-                    $query = "INSERT INTO ".$this->GetDbDataTable()." SET ";
-                    $where="";
+                    $newIdData=$this->CloneData($this->nId_Data);
+                    if($newIdData > 0)
+                    {
+                        $this->nId_Data_Rev=$this->nId_Data;
+                        $this->nId_Data=$newIdData;    
+                    }
+                    return;
                 }
                 else 
                 {
@@ -11147,6 +11313,7 @@ Class AA_Object_V2
             }
             else
             {
+                //Primo inserimento
                 if($this->GetIdData() == 0)
                 {
                     $query = "INSERT INTO ".$this->GetDbDataTable()." SET ";
@@ -11154,8 +11321,22 @@ Class AA_Object_V2
                 }
                 else 
                 {
-                    $query = "UPDATE ".$this->GetDbDataTable()." SET ";                
-                    $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdData()." LIMIT 1";
+                    if($this->GetIdDataRev() == 0)
+                    {    
+                        $query = "UPDATE ".$this->GetDbDataTable()." SET ";                
+                        $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdData()." LIMIT 1";
+                    }
+                    else
+                    {
+                        //pubblicazione Revisione
+                        if($this->DeleteData($this->nId_Data))
+                        {
+                            $this->nId_Data=$this->nId_Data_Rev;
+                            $this->nId_Data_Rev=0;    
+                        }
+
+                        return;
+                    }
                 }
             }
 
@@ -11166,7 +11347,7 @@ Class AA_Object_V2
                 $sep=",";
             }
 
-            AA_Log::Log(__METHOD__."query: ".$query,100);
+            //AA_Log::Log(__METHOD__."query: ".$query,100);
 
             $db=new AA_Database();
 
@@ -12233,6 +12414,19 @@ Class AA_Platform
             return;
         }
         
+        $this->oUser=$user;
+        $this->bValid=true;
+    }
+    
+    //Gestione moduli
+    protected $aModules=null;
+    protected function LoadModules()
+    {
+        if(!$this->bValid)
+        {
+            return;
+        }
+
         //Carica i moduli
         if(!isset($_SESSION['platform_modules_cache']) || isset($_REQUEST['disable_cache']))
         {
@@ -12243,7 +12437,7 @@ Class AA_Platform
                 AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage(),100);
                 return;
             }
-
+ 
             if($db->GetAffectedRows()>0)
             {
                 foreach($db->GetResultSet() as $curMod)
@@ -12251,56 +12445,32 @@ Class AA_Platform
                     $this->aModules[$curMod['id_modulo']]=$curMod;
                 }
             }
-
+ 
             //AA_Log::Log(__METHOD__." - salvo sessione: ".$this->aModules,100);
             $_SESSION['platform_modules_cache']= serialize($this->aModules);
         }
         else 
         {
-            //AA_Log::Log(__METHOD__." - sessione: ".$_SESSION['platform_modules_cache'],100);
-            $this->aModules= unserialize($_SESSION['platform_modules_cache']);
+             //AA_Log::Log(__METHOD__." - sessione: ".$_SESSION['platform_modules_cache'],100);
+             $this->aModules = unserialize($_SESSION['platform_modules_cache']);
         }
-        
-        $this->oUser=$user;
-        $this->bValid=true;
     }
-    
-    //Gestione moduli
-    protected $aModules=array();
-    
+
     //registra un modulo
     static public function RegisterModule($idMod="",$class="", $user=null)
     {
-        $platform = AA_Platform::GetInstance($user);
-        
-        if(!$platform->bValid)
-        {
-            AA_Log::Log(__METHOD__." - Modulo gestione piattaforma non valido.",100);
-            return false;
-        }
-        
-        if($idMod == "")
-        {
-            AA_Log::Log(__METHOD__." - Id Modulo non valido.",100);
-            return false;
-        }
-        
-        if(!class_exists($class))
-        {
-            AA_Log::Log(__METHOD__." - Classe modulo non esistente.",100);
-            return false;            
-        }
-        
-        AA_Log::Log(__METHOD__." - Registro il modulo: ".$idMod,100);
-        
-        //$platform->aModules[$idMod]=$class;
-        return true;
+      //to do
     }
     
     //Verifica se un modulo è registrato
     static public function IsRegistered($id="",$user=null)
     {
         $platform = AA_Platform::GetInstance($user);
+        
+        if(!$platform->bValid) return false;
+
+        if($platform->aModules==null) $platform->LoadModules();
+
         foreach($platform->aModules as $curId=>$class)
         {
             if($curId == $id) return true;
@@ -12312,6 +12482,10 @@ Class AA_Platform
     //Restituisce il modulo
     public function GetModule($id="",$user=null)
     {
+        if(!$this->bValid) return null;
+
+        if($this->aModules==null) $this->LoadModules();
+
         foreach($this->aModules as $curId=>$curMod)
         {
             if($curId == $id) return $curMod;
@@ -12323,12 +12497,14 @@ Class AA_Platform
     //Restituisce la lista dei moduli registrati
     public function GetModules()
     {
-        if(!$this->IsValid()) return array();
+        if(!$this->bValid) return array();
         
         $modules=array();
         
         //AA_Log::Log(__METHOD__." - ".print_r($this,true),100);
         
+        if($this->aModules==null) $this->LoadModules();
+
         foreach($this->aModules as $id=>$curModule)
         {    
             $admins = explode(",",$curModule['admins']);
@@ -12346,7 +12522,7 @@ Class AA_Platform
     public function GetCurrentUser()
     {
       if($this->bValid) return $this->oUser;
-      else return AA_User::GetCurrentUser();
+      else return AA_User::UserAuth();
     }
     
     //Autenticazione
