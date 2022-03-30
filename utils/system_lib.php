@@ -11083,7 +11083,13 @@ Class AA_Object_V2
                 $newIdData=$object->CloneData($object->nId_Data);
                 if($newIdData > 0)
                 {
-                    $object->nId_Data_Rev=$newIdData;
+                    $object->nId_Data_Rev=$object->nId_Data;
+                    $object->nId_Data=$newIdData;
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - ERRORE nel revisionamento dei dati",100);
+                    return false;
                 }
             }
 
@@ -11096,6 +11102,11 @@ Class AA_Object_V2
                     {
                         $object->nId_Data=$object->nId_Data_Rev;
                         $object->nId_Data_Rev=0;        
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - ERRORE nell'eliminazione dei dati clonati.",100);
+                        return false;
                     }
                 }                 
             }
@@ -11220,10 +11231,10 @@ Class AA_Object_V2
     {
         if($this->GetDbDataTable() !="")
         {
-            if(($this->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0)
+            if($this->nId_Data_Rev > 0)
             {
                 $query = "UPDATE ".$this->GetDbDataTable()." SET ";
-                $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdDataRev()." LIMIT 1";
+                $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->nId_Data_Rev." LIMIT 1";
             }
             else
             {
@@ -11236,7 +11247,7 @@ Class AA_Object_V2
                 else 
                 {
                     $query = "UPDATE ".$this->GetDbDataTable()." SET ";                
-                    $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdData()." LIMIT 1";
+                    $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->nId_Data." LIMIT 1";
                 }
             }
 
@@ -11256,11 +11267,6 @@ Class AA_Object_V2
             {
                 AA_Log::Log(__METHOD__." - Errore nell'aggiornamento della tabella dati - ".$db->GetErrorMessage()." - Query:".$query,100);
                 return false;
-            }
-
-            if(($this->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0 && $this->GetIdDataRev()==0)
-            {
-                $this->SetIdDataRev($db->GetLastInsertId());
             }
 
             if(($this->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) == 0 && $this->GetIdData()==0)
@@ -11305,6 +11311,12 @@ Class AA_Object_V2
             return false;
         }
         
+        if(($this->GetUserCaps($user)&AA_Const::AA_PERMS_PUBLISH)==0)
+        {
+            AA_Log::Log(__METHOD__." - Utente corrente non ha i permessi per pubblicare l'oggetto.",100);
+            return false;
+        }
+
         $oldStatus=$this->GetStatus();
         $oldLog=$this->GetLog(false);
         $this->SetStatus(AA_Const::AA_STATUS_PUBBLICATA);
@@ -11389,7 +11401,7 @@ Class AA_Object_V2
 
         if(($this->nStatusMask & AA_Const::AA_STATUS_REVISIONATA)>0)
         {
-            if(($oldStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_OPERATOR)
+            if(($oldStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && ($this->GetUserCaps($user) &  AA_Const::AA_PERMS_PUBLISH) == 0)
             {
                 $this->nStatus = $oldStatus|AA_Const::AA_STATUS_REVISIONATA;
                 $logMsg.="(Revisione)";
