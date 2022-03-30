@@ -16,7 +16,7 @@ Class AA_SinesModule extends AA_GenericModule
 
     public function __construct($user=null)
     {
-        parent::__construct($user);
+        parent::__construct($user,false);
         
         $this->SetId("AA_MODULE_SINES");
         

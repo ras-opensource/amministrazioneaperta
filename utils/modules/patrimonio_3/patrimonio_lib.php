@@ -216,19 +216,13 @@ Class AA_PatrimonioModule extends AA_GenericModule
     const AA_UI_TASK_MODIFY_DLG="GetPatrimonioModifyDlg";
     //------------------------------------
 
-    public function __construct($user=null)
+    public function __construct($user=null,$bDefaultSections=true)
     {
-        parent::__construct($user);
-        
         $this->SetId("AA_MODULE_PATRIMONIO");
         
-        //Sidebar config
-        $this->SetSideBarId("patrimonio");
-        $this->SetSideBarIcon("mdi mdi-home");
-        $this->SetSideBarTooltip("Gestione patrimonio");
-        $this->SetSideBarName("Patrimonio");
+        parent::__construct($user,$bDefaultSections);
         
-        //Registrazione dei task-------------------
+        #--------------------------------Registrazione dei task-----------------------------
         $taskManager=$this->GetTaskManager();
         
         //Dialoghi di filtraggio
@@ -250,31 +244,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewPatrimonio");
         $taskManager->RegisterTask("UpdatePatrimonio");
         $taskManager->RegisterTask("PublishPatrimonio");
-        
-        //Pdf export
-        //$taskManager->RegisterTask("PdfExport");
-        
-        #Sezioni----------------------------------------
-        
-        //Schede pubblicate
-        $navbarTemplate=array($this->TemplateNavbar_Bozze(1,true)->toArray());
-        $section=new AA_GenericModuleSection("Pubblicate","Schede pubblicate",true,static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,$this->GetId(),true,true,false,true);
-        $section->SetNavbarTemplate($navbarTemplate);
-        $this->AddSection($section);
-        
-        //Bozze
-        $navbarTemplate= $this->TemplateNavbar_Pubblicate(1,true)->toArray();
-        $section=new AA_GenericModuleSection("Bozze","Schede in bozza",true,static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,$this->GetId(),false,true,false,true);
-        $section->SetNavbarTemplate($navbarTemplate);
-        $this->AddSection($section);
-        
-        //dettaglio
-        $navbarTemplate=$this->TemplateNavbar_Back(1,true)->toArray();
-        $section=new AA_GenericModuleSection("Dettaglio","Dettaglio",false,static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,$this->GetId(),false,true,true,true);
-        $section->SetNavbarTemplate($navbarTemplate);
-        $this->AddSection($section);
-        
-        #-------------------------------------------
+        #-----------------------------------------------------------------------------------
     }
     
     //istanza
@@ -478,68 +448,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Template organismo delete dlg
     public function Template_GetPatrimonioDeleteDlg($params)
     {
-        //lista organismi da eliminare
-        if($params['ids'])
-        {
-            $ids= json_decode($params['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
-                {
-                    $ids_final[$curId]=$organismo->GetDescr();
-                    unset($organismo);
-                }
-            }
-
-            $id=$this->id."_DeleteDlg";
-
-            //Esiste almeno un organismo che può essere eliminato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $forms_data['ids']=json_encode(array_keys($ids_final));
-                $wnd=new AA_GenericFormDlg($id, "Elimina...", $this->id, $forms_data,$forms_data);
-
-                //Disattiva il pulsante di reset
-                $wnd->EnableResetButton(false);
-
-                //Imposta il nome del pulsante di conferma
-                $wnd->SetApplyButtonName("Procedi");
-
-                $tabledata=array();
-                foreach($ids_final as $id_org=>$desc)
-                {
-                    $tabledata[]=array("Denominazione"=>$desc);
-                }
-
-                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." organismi verranno <span style='text-decoration:underline'>eliminati definitivamente</span>, vuoi procedere?")));
-                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente organismo verrà <span style='text-decoration:underline'>eliminato definitivamente</span>, vuoi procedere?")));
-
-                $table=new AA_JSON_Template_Generic($id."_Table", array(
-                    "view"=>"datatable",
-                    "scrollX"=>false,
-                    "autoConfig"=>true,
-                    "select"=>false,
-                    "data"=>$tabledata
-                ));
-
-                $wnd->AddGenericObject($table);
-
-                $wnd->EnableCloseWndOnSuccessfulSave();
-                $wnd->enableRefreshOnSuccessfulSave();
-                $wnd->SetSaveTask('DeletePatrimonio');
-            }
-            else
-            {
-                $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
-                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per eliminare gli organismi selezionati.</p>")));
-                $wnd->SetWidth(380);
-                $wnd->SetHeight(115);
-            }
-            
-            return $wnd;
-        }
+        return $this->Template_GetGenericObjectDeleteDlg($params,"DeletePatrimonio");
     }
         
     //Template dlg addnew patrimonio
@@ -859,7 +768,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return false;
         }
         
-        return $this->Task_GenericUpdateObject($task,$_REQUEST,false,true);   
+        return $this->Task_GenericUpdateObject($task,$_REQUEST,true);   
     }
     
     //Task trash Patrimonio
@@ -876,7 +785,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return false;
         }
 
-        return $this->Task_GenericTrashObject($task,$_REQUEST,false);
+        return $this->Task_GenericTrashObject($task,$_REQUEST);
     }
     
     //Task resume Patrimonio
@@ -884,7 +793,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        return $this->Task_GenericResumeObject($task,$_REQUEST,false);
+        return $this->Task_GenericResumeObject($task,$_REQUEST);
     }
     
     //Task publish Patrimonio
@@ -892,107 +801,21 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        return $this->Task_GenericPublishObject($task,$_REQUEST,false);
+        return $this->Task_GenericPublishObject($task,$_REQUEST);
     }
     
     //Task reassign Patrimonio
     public function Task_ReassignPatrimonio($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        return $this->Task_GenericReassignObject($task,$_REQUEST,false);
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        return $this->Task_GenericReassignObject($task,$_REQUEST);
     }
     
     //Task delete Patrimonio
     public function Task_DeletePatrimonio($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        //lista organismi da eliminare
-        if($_REQUEST['ids'])
-        {
-            $ids= json_decode($_REQUEST['ids']);
-            
-            foreach($ids as $curId)
-            {
-                $organismo=new AA_Patrimonio($curId,$this->oUser);
-                if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
-                {
-                    $ids_final[$curId]=$organismo;
-                    unset($organismo);
-                }
-            }
-            
-            //Esiste almeno un organismo che può essere cestinato dall'utente corrente
-            if(sizeof($ids_final)>0)
-            {
-                $count=0;
-                foreach( $ids_final as $id=>$organismo)
-                {
-                    
-                    if(!$organismo->Trash($this->oUser,true))
-                    {
-                        $count++;
-                        $result_error["$organismo->GetDenominazione()"]=AA_Log::$lastErrorLog;
-                    }
-                }
-                
-                if(sizeof($result_error)>0)
-                {
-                    $wnd=new AA_GenericWindowTemplate("DeletePatrimonio", "Avviso", $this->id);
-                    $wnd->SetWidth("640");
-                    $wnd->SetHeight("400");
-                    $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Sono stati eliminati ".(sizeof($ids)-sizeof($result_error))." organismi.<br>I seguenti non sono stati eliminati:")));
-                
-                    $tabledata=array();
-                    foreach($result_error as $org=>$desc)
-                    {
-                        $tabledata[]=array("Denominazione"=>$org,"Errore"=>$desc);
-                    }
-                    $table=new AA_JSON_Template_Generic($id."_Table", array(
-                        "view"=>"datatable",
-                        "scrollX"=>false,
-                        "autoConfig"=>true,
-                        "select"=>false,
-                        "data"=>$tabledata
-                    ));
-                    $wnd->AddView($table);
-                    
-                    $sTaskLog="<status id='status'>-1</status><error id='error' type='json' encode='base64'>";
-                    $sTaskLog.=$wnd->toBase64();
-                    $sTaskLog.="</error>";
-                    $task->SetLog($sTaskLog);
-
-                    return false;      
-                }
-                else
-                {
-                    $sTaskLog="<status id='status'>0</status><content id='content'>";
-                    $sTaskLog.= "Sono stati eliminati ".sizeof($ids_final)." organismi.";
-                    $sTaskLog.="</content>";
-
-                    $task->SetLog($sTaskLog);
-
-                    return true;
-                }
-            }
-            else
-            {
-                $task->SetError("Nella selezione non sono presenti organismi eliminabili dall'utente corrente (".$this->oUser->GetName().").");
-                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti organismi eliminabili dall'utente corrente (".$this->oUser->GetName().").</error>";
-                $task->SetLog($sTaskLog);
-
-                return false;          
-            }
-        }
-        else
-        {
-            $task->SetError("Non sono stati selezionati organismi.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati organismi.</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;          
-        } 
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        return $this->Task_GenericDeleteObject($task,$_REQUEST);
     }
     
     //Task Aggiungi patrimonio

@@ -5498,6 +5498,30 @@ Class AA_GenericModule
     //id ui sezione revisionate
     const AA_UI_REVISIONATE_BOX="Revisionate_Content_Box";
 
+    //id ui sezione bozze
+    const AA_ID_SECTION_BOZZE="Bozze";
+
+    //id ui sezione pubblicate
+    const AA_ID_SECTION_PUBBLICATE="Pubblicate";
+
+    //id ui sezione dettaglio
+    const AA_ID_SECTION_DETAIL="Dettaglio";
+
+    //dicitura interfaccia sezione dettaglio
+    const AA_UI_SECTION_DETAIL_NAME="Dettaglio";
+
+    //dicitura interfaccia sezione bozze
+    const AA_UI_SECTION_BOZZE_NAME="Bozze";
+
+    //dicitura interfaccia sezione bozze cestinate
+    const AA_UI_SECTION_BOZZE_CESTINATE_NAME="Bozze cestinate";
+
+    //dicitura interfaccia sezione pubblicate
+    const AA_UI_SECTION_PUBBLICATE_NAME="Pubblicate";
+
+    //dicitura interfaccia sezione pubblicate cestinate
+    const AA_UI_SECTION_PUBBLICATE_CESTINATE_NAME="Pubblicate cestinate";
+
     //Task per la gestione dei dialoghi standard
     const AA_UI_TASK_PUBBLICATE_FILTER_DLG="GetGenericPubblicateFilterDlg";
     const AA_UI_TASK_BOZZE_FILTER_DLG="GetGenericBozzeFilterDlg";
@@ -5671,7 +5695,7 @@ Class AA_GenericModule
         return $this->oUser;
     }
     
-    public function __construct($user=null) {
+    public function __construct($user=null,$bDefaultSections=true) {
         
         if(!($user instanceof AA_User) || !$user->isCurrentUser()) $user=AA_User::GetCurrentUser();
         
@@ -5689,6 +5713,29 @@ Class AA_GenericModule
         $taskManager->RegisterTask("GetObjectData");
         $taskManager->RegisterTask("PdfExport");
 
+        if($bDefaultSections)
+        {
+            #Sezioni default
+            
+            //Schede pubblicate
+            $navbarTemplate=array($this->TemplateNavbar_Bozze(1,true)->toArray());
+            $section=new AA_GenericModuleSection(static::AA_ID_SECTION_PUBBLICATE,static::AA_UI_SECTION_PUBBLICATE_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,$this->GetId(),true,true,false,true);
+            $section->SetNavbarTemplate($navbarTemplate);
+            $this->AddSection($section);
+            
+            //Bozze
+            $navbarTemplate= $this->TemplateNavbar_Pubblicate(1,true)->toArray();
+            $section=new AA_GenericModuleSection(static::AA_ID_SECTION_BOZZE,static::AA_UI_SECTION_BOZZE_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_BOZZE_BOX,$this->GetId(),false,true,false,true);
+            $section->SetNavbarTemplate($navbarTemplate);
+            $this->AddSection($section);
+            
+            //dettaglio
+            $navbarTemplate=$this->TemplateNavbar_Back(1,true)->toArray();
+            $section=new AA_GenericModuleSection(static::AA_ID_SECTION_DETAIL,static::AA_UI_SECTION_DETAIL_NAME,false,static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,$this->GetId(),false,true,true,true);
+            $section->SetNavbarTemplate($navbarTemplate);
+            $this->AddSection($section);        
+            #-------------------------------------------
+        }
         return;
     }
     
@@ -5968,7 +6015,7 @@ Class AA_GenericModule
     }
 
     //Task Generico di aggiunta elemento
-    public function Task_GenericAddNew($task,$params=array(),$bStandardCheck=true,$bSaveData=true)
+    public function Task_GenericAddNew($task,$params=array(),$bSaveData=true)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -5992,7 +6039,7 @@ Class AA_GenericModule
                 $object->Parse($params);
                 $object->SetStruct($this->oUser->GetStruct());
                 
-                if(!$objectClass::AddNew($object,$this->oUser,$bStandardCheck,$bSaveData))
+                if(!$objectClass::AddNew($object,$this->oUser,$bSaveData))
                 {
                     $task->SetError(AA_Log::$lastErrorLog);
                     $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
@@ -6031,7 +6078,7 @@ Class AA_GenericModule
     }
 
     //Task Generic Update object
-    public function Task_GenericUpdateObject($task,$params=array(),$bStandardCheck=true,$bSaveData=true)
+    public function Task_GenericUpdateObject($task,$params=array(),$bSaveData=true)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -6061,10 +6108,10 @@ Class AA_GenericModule
             $object->Parse($params);
 
             //Salva i dati
-            if(!$object->Update($this->oUser,$bStandardCheck,$bSaveData))
+            if(!$object->Update($this->oUser,$bSaveData))
             {
                 $task->SetError(AA_Log::$lastErrorLog);
-                $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salavataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
                 $task->SetLog($sTaskLog);
 
                 return false;       
@@ -6139,6 +6186,83 @@ Class AA_GenericModule
 
                 if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." elementi verranno cestinati, vuoi procedere?")));
                 else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente elemento verrà cestinato, vuoi procedere?")));
+
+                $table=new AA_JSON_Template_Generic($id."_Table", array(
+                    "view"=>"datatable",
+                    "scrollX"=>false,
+                    "autoConfig"=>true,
+                    "select"=>false,
+                    "data"=>$tabledata
+                ));
+
+                $wnd->AddGenericObject($table);
+
+                $wnd->EnableCloseWndOnSuccessfulSave();
+                $wnd->enableRefreshOnSuccessfulSave();
+                $wnd->SetSaveTask($saveTask);
+            }
+            else
+            {
+                $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
+                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per cestinare gli organismi selezionati.</p>")));
+                $wnd->SetWidth(380);
+                $wnd->SetHeight(115);
+            }
+            
+            return $wnd;
+        }
+    }
+
+    //Template object trash dlg
+    public function Template_GetGenericObjectDeleteDlg($params,$saveTask="GenericDeleteObject")
+    {
+        $id=static::AA_UI_PREFIX."_DeleteDlg";
+
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+            $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>La classe di gestione degli oggetti non è stata trovata.</p>")));
+            $wnd->SetWidth(380);
+            $wnd->SetHeight(115);
+
+            return $wnd;
+        }
+
+        //lista oggetti da cestinare
+        if($params['ids'])
+        {
+            $ids= json_decode($params['ids']);
+            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+            
+            foreach($ids as $curId)
+            {
+                $object=new $objectClass($curId,$this->oUser);
+                if($object->isValid() && ($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
+                {
+                    $ids_final[$curId]=$object->GetName();
+                }
+            }
+
+            //Esiste almeno un organismo che può essere cestinato dall'utente corrente
+            if(sizeof($ids_final)>0)
+            {
+                $forms_data['ids']=json_encode(array_keys($ids_final));
+                $wnd=new AA_GenericFormDlg($id, "Elimina", $this->id, $forms_data,$forms_data);
+               
+                //Disattiva il pulsante di reset
+                $wnd->EnableResetButton(false);
+
+                //Imposta il nome del pulsante di conferma
+                $wnd->SetApplyButtonName("Procedi");
+
+                $tabledata=array();
+                foreach($ids_final as $id_org=>$desc)
+                {
+                    $tabledata[]=array("Denominazione"=>$desc);
+                }
+
+                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." elementi verranno eliminati, vuoi procedere?")));
+                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente elemento verrà eliminato, vuoi procedere?")));
 
                 $table=new AA_JSON_Template_Generic($id."_Table", array(
                     "view"=>"datatable",
@@ -6634,6 +6758,110 @@ Class AA_GenericModule
             {
                 $task->SetError("Nella selezione non sono presenti elementi cestinabili dall'utente corrente (".$this->oUser->GetName().").");
                 $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti elementi cestinabili dall'utente corrente (".$this->oUser->GetName().").</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;          
+            }
+        }
+        else
+        {
+            $task->SetError("Non sono stati selezionati elementi.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati elementi.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;          
+        } 
+    }
+
+    //Task generic trash object
+    public function Task_GenericDeleteObject($task,$params=array(),$bStandardCheck=true)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        {
+
+            $task->SetError("Classe di gestione degli oggetti non definita.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Classe di gestione degli oggetti non definita.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;          
+        }
+
+        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+
+        //lista oggetti da cestinare
+        if($params['ids'])
+        {
+            $ids= json_decode($params['ids']);
+            
+            foreach($ids as $curId)
+            {
+                $object=new $objectClass($curId,$this->oUser);
+                if($object->isValid() && ($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_DELETE)>0)
+                {
+                    $ids_final[$curId]=$object;
+                }
+            }
+            
+            //Esiste almeno un organismo che può essere eliminato dall'utente corrente
+            if(sizeof($ids_final)>0)
+            {
+                $count=0;
+                foreach( $ids_final as $id=>$object)
+                {
+                    
+                    if(!$object->Delete($this->oUser,$bStandardCheck,false))
+                    {
+                        $count++;
+                        $result_error[$object->GetName()]=AA_Log::$lastErrorLog;
+                    }
+                }
+                
+                if(sizeof($result_error)>0)
+                {
+                    $id=static::AA_UI_PREFIX."_Trash";
+                    $wnd=new AA_GenericWindowTemplate(static::AA_UI_PREFIX."_Trash", "Avviso", $this->id);
+                    $wnd->SetWidth("640");
+                    $wnd->SetHeight("400");
+                    $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Sono stati eliminati ".(sizeof($ids)-sizeof($result_error))." elementi.<br>I seguenti non sono stati eliminati:")));
+                
+                    $tabledata=array();
+                    foreach($result_error as $org=>$desc)
+                    {
+                        $tabledata[]=array("Denominazione"=>$org,"Errore"=>$desc);
+                    }
+                    $table=new AA_JSON_Template_Generic($id."_Table", array(
+                        "view"=>"datatable",
+                        "scrollX"=>false,
+                        "autoConfig"=>true,
+                        "select"=>false,
+                        "data"=>$tabledata
+                    ));
+                    $wnd->AddView($table);
+                    
+                    $sTaskLog="<status id='status'>-1</status><error id='error' type='json' encode='base64'>";
+                    $sTaskLog.=$wnd->toBase64();
+                    $sTaskLog.="</error>";
+                    $task->SetLog($sTaskLog);
+
+                    return false;      
+                }
+                else
+                {
+                    $sTaskLog="<status id='status'>0</status><content id='content'>";
+                    $sTaskLog.= "SOno stati cestinati ".sizeof($ids_final)." organismi.";
+                    $sTaskLog.="</content>";
+
+                    $task->SetLog($sTaskLog);
+
+                    return true;
+                }
+            }
+            else
+            {
+                $task->SetError("Nella selezione non sono presenti elementi eliminabili dall'utente corrente (".$this->oUser->GetName().").");
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti elementi eliminabili dall'utente corrente (".$this->oUser->GetName().").</error>";
                 $task->SetLog($sTaskLog);
 
                 return false;          
@@ -7290,7 +7518,7 @@ Class AA_GenericModule
     //Template sezione pubblicate
     protected function TemplateGenericSection_Pubblicate($params=array(),$bCanModify=false,$contentData=null)
     {          
-        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Pubblicate",$this->GetId());
+        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_PUBBLICATE_NAME,$this->GetId());
         $content->EnablePager();
         $content->EnablePaging();
         $content->SetPagerItemForPage(10);
@@ -7298,7 +7526,7 @@ Class AA_GenericModule
         $content->SetFilterDlgTask(static::AA_UI_TASK_PUBBLICATE_FILTER_DLG);
         $content->ViewExportFunctions();
         
-        $sectionName="Schede pubblicate";
+        $sectionName=static::AA_UI_SECTION_PUBBLICATE_NAME;
                 
         $content->ViewDetail();
         
@@ -7322,7 +7550,7 @@ Class AA_GenericModule
             }
             else 
             {
-                $sectionName.=" cestinate";
+                $sectionName=static::AA_UI_SECTION_PUBBLICATE_CESTINATE_NAME;
                 $content->HideReassign();
                 $content->HidePublish();
                 $content->ViewResume();
@@ -7467,7 +7695,7 @@ Class AA_GenericModule
     //Template section bozze content
     protected function TemplateGenericSection_Bozze($params, $contentData=null)
     {         
-        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_Bozze",$this->GetId());
+        $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_BOZZE_NAME,$this->GetId());
         $content->EnablePager();
         $content->SetPagerItemForPage(10);
         $content->EnableFiltering();
@@ -7476,11 +7704,11 @@ Class AA_GenericModule
         $content->SetFilterDlgTask(static::AA_UI_TASK_BOZZE_FILTER_DLG);
         $content->ViewExportFunctions();
         
-        $content->SetSectionName("Schede in bozza");
+        $content->SetSectionName(static::AA_UI_SECTION_BOZZE_NAME);
         
         $content->ViewDetail();
         
-        if($_REQUEST['cestinate']==0)
+        if($params['cestinate']==0)
         {
             $content->ViewTrash();
             $content->SetTrashHandlerParams(array("task"=>static::AA_UI_TASK_TRASH_DLG));
@@ -7491,7 +7719,7 @@ Class AA_GenericModule
         }
         else 
         {
-            $content->SetSectionName("Schede in bozza cestinate");
+            $content->SetSectionName(static::AA_UI_SECTION_BOZZE_CESTINATE_NAME);
             $content->ViewResume();
             $content->SetResumeHandlerParams(array("task"=>static::AA_UI_TASK_RESUME_DLG));
             $content->ViewDelete();
@@ -10685,7 +10913,7 @@ Class AA_Object_V2
         else $this->bChanged=false;
     }
 
-    protected static function SaveToDb($object=null,$user=null, $bStandardChecks=false, $bSaveData=false)
+    protected static function SaveToDb($object=null,$user=null, $bSaveData=false)
     {
         //AA_Log::Log(__METHOD__);
         
@@ -11013,7 +11241,7 @@ Class AA_Object_V2
     }
     
     //Aggiungi nuovo oggetto
-    static public function AddNew($object=null,$user=null,$bStandardCheck=true,$bSaveData=false)
+    static public function AddNew($object=null,$user=null,$bSaveData=false)
     {
         //Verifica utente
         if($user instanceof AA_User)
@@ -11040,7 +11268,7 @@ Class AA_Object_V2
         $object->SetId(0);
         $object->AddLog("Inserimento",AA_Const::AA_OPS_ADDNEW,$user);
         
-        if(!$object->Save($user,true,$bStandardCheck,$bSaveData))
+        if(!$object->Save($user,true,$bSaveData))
         {
             return false;
         }
@@ -11049,7 +11277,7 @@ Class AA_Object_V2
     }
     
     //Aggiorna
-    public function Update($user=null,$bStandardCheck=true,$bSaveData=false)
+    public function Update($user=null,$bSaveData=false)
     {        
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -11077,16 +11305,16 @@ Class AA_Object_V2
         $oldStatus=$this->GetStatus();
         $oldLog=$this->GetLog(false);
         
-        if(get_class($this)=="AA_Object_V2" || $bStandardCheck)
+        if(($this->nStatusMask & AA_Const::AA_STATUS_REVISIONATA)>0)
         {
-            if(($this->nStatusMask & AA_Const::AA_STATUS_REVISIONATA)>0 && ($oldStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_OPERATOR)
+            if(($oldStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_OPERATOR)
             {
                 $this->nStatus = $oldStatus|AA_Const::AA_STATUS_REVISIONATA;
             }            
         }
         
         $this->AddLog("Modifica", AA_Const::AA_OPS_UPDATE, $user);
-        if(!$this->Save($user,true,$bStandardCheck,$bSaveData))
+        if(!$this->Save($user,true,$bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
@@ -11126,7 +11354,7 @@ Class AA_Object_V2
         $oldStatus=$this->GetStatus();
         $oldLog=$this->GetLog(false);
         
-         $this->nStatus |= AA_Const::AA_STATUS_CESTINATA;
+        $this->nStatus |= AA_Const::AA_STATUS_CESTINATA;
         
         $this->AddLog("Cestina", AA_Const::AA_OPS_TRASH, $user);
         if(!$this->Save($user, true,$bStandardChecks, $bSaveData))
@@ -11141,7 +11369,7 @@ Class AA_Object_V2
     }
     
     //riassegna
-    public function Reassign($oStruct=null, $user=null, $bStandardChecks=true, $bSaveData=false)
+    public function Reassign($oStruct=null, $user=null, $bSaveData=false)
     {
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -11173,24 +11401,14 @@ Class AA_Object_V2
             return false;
         }
         
-        $oldStatus=$this->GetStatus();
         $oldStruct=$this->GetStruct();
         $oldLog=$this->GetLog(false);
-        
-         if(get_class($this)=="AA_Object_V2" || $bStandardChecks)
-        {
-            if(($this->nStatusMask & AA_Const::AA_STATUS_REVISIONATA)>0 && ($oldStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_OPERATOR)
-            {
-                $this->nStatus |= AA_Const::AA_STATUS_REVISIONATA;
-            }            
-        }
-        
+                
         $this->oStruct=$oStruct;
         
         $this->AddLog("Riassegna", AA_Const::AA_OPS_REASSIGN, $user);
-        if(!$this->Save($user, true,$bStandardChecks, $bSaveData))
+        if(!$this->Save($user, true, $bSaveData))
         {
-            $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
             $this->oStruct=$oldStruct;
             
@@ -11201,7 +11419,7 @@ Class AA_Object_V2
     }
     
     //riassegna
-    public function Resume($user=null,$bStandardChecks=true, $bSaveData=false)
+    public function Resume($user=null, $bSaveData=false)
     {
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -11235,7 +11453,7 @@ Class AA_Object_V2
         }
         
         $this->AddLog("Ripristina", AA_Const::AA_OPS_RESUME, $user);
-        if(!$this->Save($user, true,$bStandardChecks, $bSaveData))
+        if(!$this->Save($user, true, $bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
