@@ -700,10 +700,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $form_data=array();
         
         //Struttura
-        $struct=$this->oUser->GetStruct();
-        $form_data['id_assessorato']=$struct->GetAssessorato(true);
-        $form_data['id_direzione']=$struct->GetDirezione(true);
-        $form_data['id_servizio']=$struct->GetServizio(true);
+        $form_data['SezioneCatasto']=0;
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo immobile/terreno", $this->id,$form_data,$form_data);
         
@@ -738,7 +735,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             array("id"=>0,"value"=>"Catasto urbano"),
             array("id"=>1,"value"=>"Catasto terreni")
         );
-        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "required"=>true));
+        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "value"=>0,"required"=>true));
 
         //codice comune
         $label="Cod. Comune";

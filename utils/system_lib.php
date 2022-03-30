@@ -6642,7 +6642,7 @@ Class AA_GenericModule
                 else
                 {
                     $sTaskLog="<status id='status'>0</status><content id='content'>";
-                    $sTaskLog.= "Sono stati ripristinati ".sizeof($ids_final)." elementi.";
+                    $sTaskLog.= "Sono stati riassegnati ".sizeof($ids_final)." elementi.";
                     $sTaskLog.="</content>";
 
                     $task->SetLog($sTaskLog);
@@ -7724,6 +7724,9 @@ Class AA_GenericModule
             $content->SetResumeHandlerParams(array("task"=>static::AA_UI_TASK_RESUME_DLG));
             $content->ViewDelete();
             $content->SetDeleteHandlerParams(array("task"=>static::AA_UI_TASK_DELETE_DLG));
+            $content->HidePublish();
+            $content->HideReassign();
+            $content->EnableAddNew(false);
         }            
 
         if($contentData==null)
@@ -9460,7 +9463,7 @@ Class AA_GenericPagedSectionTemplate
             if($this->module =="") $module="AA_MainApp.curModule";
 
             $selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onSelectChange','".$this->module."','".$this->id."_List_Box')}catch(msg){console.error(msg)}";
-            
+            $onDblClickEvent="try{AA_MainApp.utils.getEventHandler('showDetailView','".$this->module."','".$this->id."_List_Box')}catch(msg){console.error(msg)}";
             if(sizeof($this->contentBoxData) > 0 && $this->contentBoxTemplate !="")
             {
                 
@@ -9484,7 +9487,7 @@ Class AA_GenericPagedSectionTemplate
                     ),
                     "template"=>$this->contentBoxTemplate,
                     "data"=>$this->contentBoxData,
-                    "on"=>array("onSelectChange"=>$selectionChangeEvent)
+                    "on"=>array("onSelectChange"=>$selectionChangeEvent,"onItemDblClick"=>$onDblClickEvent)
                 ));
             }
             else
@@ -9619,7 +9622,7 @@ Class AA_GenericPagedSectionTemplate
                         "width"=>100,
                         "disabled"=>!$this->detailEnable,
                         "tooltip"=>"Visualizza i dettagli dell'elemento selezionato",
-                        "click"=>"AA_MainApp.utils.callHandler('showDetailView',$$('".$this->id."_List_Box').getSelectedItem(),'$this->module','".$this->id."_Content_Box')"
+                        "click"=>"AA_MainApp.utils.callHandler('showDetailView',$$('".$this->id."_List_Box').getSelectedItem(),'".$this->module."','".$this->id."_Content_Box')"
                     )));
                 }
                 

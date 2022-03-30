@@ -236,6 +236,8 @@ Class AA_SinesModule extends AA_GenericModule
             $content->SetResumeHandlerParams(array("task"=>"GetOrganismoResumeDlg"));
             $content->ViewDelete();
             $content->SetDeleteHandlerParams(array("task"=>"GetOrganismoDeleteDlg"));
+            $content->HideReassign();
+            $content->EnableAddNew(false);
         }            
                 
         $_REQUEST['count']=10;

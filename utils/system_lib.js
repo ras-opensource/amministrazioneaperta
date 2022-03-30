@@ -1978,8 +1978,18 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
     //DefaultShowDetailView
     this.eventHandlers['defaultHandlers'].showDetailView = async function(item = null) {
         try {
+            
+            //Double click event
+            if(typeof item == "string")
+            {
+                //console.log("showDetailView - doubleclick", arguments,this);
+                item=$$(this.config.id).getItem(item);
+            }
+
+            //detail button event
             if (Array.isArray(item)) item = item[0];
-            if (AA_MainApp.utils.isDefined(item) && AA_MainApp.utils.isDefined(item.id)) {
+            if (AA_MainApp.utils.isDefined(item) && AA_MainApp.utils.isDefined(item.id)) 
+            {
                 if (arguments.length > 0) {
                     //di default 'this' è il modulo indicato dalla funzione "callHandler"
                     module = this;
