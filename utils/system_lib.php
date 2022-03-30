@@ -11074,6 +11074,33 @@ Class AA_Object_V2
         $query="";
         $sep="";
 
+        //Tiene conto della revisione
+        if($object->GetDbDataTable() !="" && ($object->GetStatusMask() & AA_Const::AA_STATUS_REVISIONATA) > 0)
+        {
+            //Revisione
+            if(($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) > 0 && $object->GetIdDataRev() == 0)
+            {
+                $newIdData=$object->CloneData($object->nId_Data);
+                if($newIdData > 0)
+                {
+                    $object->nId_Data_Rev=$newIdData;
+                }
+            }
+
+            //pubblicazione Revisione
+            if(($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) == 0 && $object->GetIdDataRev() > 0)
+            {
+                if($object->nId_Data>0)
+                {
+                    if($object->DeleteData($object->nId_Data))
+                    {
+                        $object->nId_Data=$object->nId_Data_Rev;
+                        $object->nId_Data_Rev=0;        
+                    }
+                }                 
+            }
+        }
+
         //Aggiorna la tabella dati se è impostata
         if($bSaveData)
         {
@@ -11195,22 +11222,8 @@ Class AA_Object_V2
         {
             if(($this->GetStatus()&AA_Const::AA_STATUS_REVISIONATA) > 0)
             {
-                //Revisione
-                if($this->GetIdDataRev() == 0)
-                {
-                    $newIdData=$this->CloneData($this->nId_Data);
-                    if($newIdData > 0)
-                    {
-                        $this->nId_Data_Rev=$this->nId_Data;
-                        $this->nId_Data=$newIdData;    
-                    }
-                    return;
-                }
-                else 
-                {
-                    $query = "UPDATE ".$this->GetDbDataTable()." SET ";
-                    $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdDataRev()." LIMIT 1";
-                }   
+                $query = "UPDATE ".$this->GetDbDataTable()." SET ";
+                $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdDataRev()." LIMIT 1";
             }
             else
             {
@@ -11222,22 +11235,8 @@ Class AA_Object_V2
                 }
                 else 
                 {
-                    if($this->GetIdDataRev() == 0)
-                    {    
-                        $query = "UPDATE ".$this->GetDbDataTable()." SET ";                
-                        $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdData()." LIMIT 1";
-                    }
-                    else
-                    {
-                        //pubblicazione Revisione
-                        if($this->DeleteData($this->nId_Data))
-                        {
-                            $this->nId_Data=$this->nId_Data_Rev;
-                            $this->nId_Data_Rev=0;    
-                        }
-
-                        return;
-                    }
+                    $query = "UPDATE ".$this->GetDbDataTable()." SET ";                
+                    $where=" WHERE ".$this->GetDbDataTable().".id = ".$this->GetIdData()." LIMIT 1";
                 }
             }
 
@@ -11273,15 +11272,15 @@ Class AA_Object_V2
         return true;
     }
     
-    protected function Save($user=null, $bForce=false, $bStandardChecks=true, $bSaveData=false)
+    protected function Save($user=null, $bForce=false, $bSaveData=false)
     {
         if($bForce) $this->bChanged=true;
         
-        return static::SaveToDb($this,$user,$bStandardChecks,$bSaveData);
+        return static::SaveToDb($this,$user,$bSaveData);
     }
     
     //pubblica
-    public function Publish($user=null,$bStandardChecks=true, $bSaveData=false)
+    public function Publish($user=null, $bSaveData=false)
     {   
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -11310,7 +11309,7 @@ Class AA_Object_V2
         $oldLog=$this->GetLog(false);
         $this->SetStatus(AA_Const::AA_STATUS_PUBBLICATA);
         $this->AddLog("Pubblicazione", AA_Const::AA_OPS_PUBLISH, $user);
-        if(!$this->Save($user,true,$bStandardChecks,$bSaveData))
+        if(!$this->Save($user,true,$bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
@@ -11359,7 +11358,7 @@ Class AA_Object_V2
     }
     
     //Aggiorna
-    public function Update($user=null,$bSaveData=false)
+    public function Update($user=null,$bSaveData=true)
     {        
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -11386,17 +11385,19 @@ Class AA_Object_V2
         
         $oldStatus=$this->GetStatus();
         $oldLog=$this->GetLog(false);
-        
+        $logMsg="modifica";
+
         if(($this->nStatusMask & AA_Const::AA_STATUS_REVISIONATA)>0)
         {
             if(($oldStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_OPERATOR)
             {
                 $this->nStatus = $oldStatus|AA_Const::AA_STATUS_REVISIONATA;
+                $logMsg.="(Revisione)";
             }            
         }
         
-        $this->AddLog("Modifica", AA_Const::AA_OPS_UPDATE, $user);
-        if(!$this->Save($user,true,$bSaveData))
+        $this->AddLog($logMsg, AA_Const::AA_OPS_UPDATE, $user);
+        if(!$this->Save($user,true, $bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;
@@ -11408,7 +11409,7 @@ Class AA_Object_V2
     }
     
     //cestina
-    public function Trash($user=null,$bStandardChecks=true, $bSaveData=false)
+    public function Trash($user=null, $bSaveData=false)
     {    
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -11439,7 +11440,7 @@ Class AA_Object_V2
         $this->nStatus |= AA_Const::AA_STATUS_CESTINATA;
         
         $this->AddLog("Cestina", AA_Const::AA_OPS_TRASH, $user);
-        if(!$this->Save($user, true,$bStandardChecks, $bSaveData))
+        if(!$this->Save($user, true, $bSaveData))
         {
             $this->nStatus=$oldStatus;
             $this->sLog=$oldLog;

@@ -64,6 +64,247 @@ Class AA_Patrimonio extends AA_Object_V2
     //tabella dati db
     const AA_DBTABLE_DATA="aa_patrimonio_data";
 
+    //tabella canoni db
+    const AA_DBTABLE_CANONI="aa_patrimonio_canoni";
+
+    //lista canoni
+    protected $aCanoni=null;
+    protected function LoadCanoni($idData=0)
+    {
+        if(!$this->IsValid())
+        {
+            $this->aCanoni=array();
+            return false;
+        } 
+
+        if($idData != $this->nId_Data && $idData != $this->nId_Data_Rev)
+        {
+            $idData=$this->nId_Data;
+        }
+
+        if(!$this->IsReadOnly() && $this->nId_Data_Rev > 0)
+        {
+            $idData=$this->nId_Data_Rev;
+        }
+
+        if($idData==0)
+        {
+            $idData=$this->nId_Data;
+        }
+
+        if($idData > 0)
+        {
+            $db=new AA_Database();
+
+            $query="SELECT * from ".static::AA_DBTABLE_CANONI." WHERE id_patrimonio=".$idData." ORDER BY tipologia,data_inizio DESC, data_fine";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+                $this->aCanoni=array();
+                return false;
+            }
+
+            if($db->GetAffectedRows()>0)
+            {
+                foreach($db->GetResultSet() as $key=>$curRow)
+                {
+                    $this->aCanoni[]=new AA_Patrimonio_Canone($curRow);
+                }
+
+                return true;
+            }
+            else $this->aCanoni=array();
+
+            return true;
+        }
+        else $this->aCanoni=array();
+    }
+
+    //Restituisce i canoni associati all'oggetto
+    public function GetCanoni()
+    {
+        if($this->aCanoni==null) $this->LoadCanoni();
+
+        return $this->aCanoni;
+    }
+
+    //Restituisce il canone con il seriale corrispondente
+    public function GetCanone($serial="")
+    {
+        if($serial=="" || !$this->IsValid()) return null;
+        
+        if($this->aCanoni == null) $this->LoadCanoni();
+
+        foreach($this->aCanoni as $curCanone)
+        {
+            if($curCanone->GetProp("serial")==$serial) return $curCanone;
+        }
+
+        return null;
+    }
+
+    //Funzione di cancellazione
+    protected function DeleteData($idData = 0, $user = null)
+    {
+        if(!$this->IsValid() || $this->IsReadOnly() || $idData == 0) return false;
+
+        if($idData != $this->nId_Data && $idData != $this->nId_Data_Rev) return false;
+
+        if(parent::DeleteData($idData,$user))
+        {
+            $db=new AA_Database();
+            if(!$db->Query("DELETE FROM ".static::AA_DBTABLE_CANONI." WHERE id_patrimonio = '".addslashes($idData)."'"))
+            {
+                AA_Log::Log(__METHOD__." - ERRORE -".$db->GetErrorMessage(),100);
+                return false;
+            }
+            else return true;
+        }
+        else return false;
+    }
+
+    //Funzione di clonazione dei dati
+    protected function CloneData($idData = 0, $user = null)
+    {
+        if(!$this->IsValid() || $this->IsReadOnly()) return 0;
+        
+        $this->LoadCanoni($idData);
+
+        $newIdData=parent::CloneData($idData,$user);
+
+        if(sizeof($this->aCanoni)>0 && $newIdData > 0)
+        {
+            foreach($this->aCanoni as $curCanone)
+            {
+                $newCanone=$curCanone;
+                $newCanone->SetProp('id_patrimonio',$newIdData);
+
+                if(!$this->AddNewCanonePriv($newCanone,$user))
+                {
+                    AA_Log::Log(__METHOD__." - ERRORE - nell'aggiunta del canone: ".print_r($newCanone,true),100);
+                }
+            }
+        }
+
+        return $newIdData;
+    }
+
+    //Funzione di aggiunta di un canone (funzione privilegiata)
+    protected function AddNewCanonePriv($newCanone=null,$user=null)
+    {
+        if(!$this->IsValid() || !($newCanone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
+        if($newCanone->GetProp('id_patrimonio') == 0) return false;
+
+        $db=new AA_Database();
+        $query="INSERT INTO ".static::AA_DBTABLE_CANONI." SET";
+        $sep="";
+        foreach($newCanone->GetProps() as $key=>$value)
+        {
+            if($key !="id")
+            {
+                $query.=$sep.$key."='".addslashes($value)."'";
+                $sep=",";    
+            }
+        }
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+            return false;
+        }
+
+        $this->aCanoni=null;
+
+        return true;
+    }
+
+    //Aggiunta di un canone
+    public function AddNewCanone($newCanone=null,$user=null)
+    {
+        if(!$this->IsValid() || !($newCanone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true)) return false;
+
+        $newCanone->SetProp('id_patrimonio',$this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $newCanone->SetProp('id_patrimonio',$this->nId_Data_Rev);
+        }
+
+        return $this->AddNewCanonePriv($newCanone,$user);
+    }
+
+    //Aggiornamento di un canone
+    public function UpdateCanone($canone=null, $user=null)
+    {
+        if(!$this->IsValid() || !($canone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
+        if($canone->GetProp('id') == 0 && $canone->GetProp('serial') == "") return false;
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true)) return false;
+
+        $canone->SetProp('id_patrimonio', $this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $canone->SetProp('id_patrimonio',$this->nId_Data_Rev);
+        }
+
+        $query="UPDATE ".static::AA_DBTABLE_CANONI." SET ";
+        $sep="";
+        foreach($canone->GetProps() as $key=>$value)
+        {
+            if($key != "id" && $key !="id_patrimonio" && $key !="serial")
+            {
+                $query.=$sep.$key." = '".addslashes($value)."'";
+                $sep=",";    
+            }
+        }
+
+        $query.=" WHERE id_patrimonio='".$canone->GetProp('id_patrimonio')."' AND (id='".$canone->GetProp('id')."' OR serial = '".$canone->GetProp('serial')."') LIMIT 1";
+
+        $db=new AA_Database();
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+            return false;
+        }
+
+        $this->aCanoni=null;
+
+        return true;
+    }
+
+    //Elimina un canone
+    public function DeleteCanone($canone=null,$user=null)
+    {
+        if(!$this->IsValid() || !($canone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
+        if($canone->GetProp('id') == 0 && $canone->GetProp('serial') == "") return false;
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true)) return false;
+
+        $canone->SetProp('id_patrimonio',$this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $canone->SetProp('id_patrimonio',$this->nId_Data_Rev);
+        }
+
+        $query="DELETE FROM ".static::AA_DBTABLE_CANONI." WHERE id_patrimonio='".$canone->GetProp('id_patrimonio')."' AND (id='".$canone->GetProp('id')."' OR serial = '".$canone->GetProp('serial')."') LIMIT 1";
+
+        $db=new AA_Database();
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+            return false;
+        }
+
+        $this->aCanoni=null;
+
+        return true;
+    }
+
     //Costruttore
     public function __construct($id=0, $user=null)
     {
@@ -469,7 +710,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(820);
+        $wnd->SetWidth(920);
         $wnd->SetHeight(640);
         $wnd->EnableValidation();
               
@@ -557,7 +798,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetLabelWidth(120);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(820);
+        $wnd->SetWidth(920);
         $wnd->SetHeight(640);
         
         //titolo di possesso
@@ -1372,5 +1613,60 @@ Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
         //legenda
         $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-top: 1em;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente prospetto sono state aggiornate l'ultima volta il ".$object->GetAggiornamento()."</span></div>";
         $this->SetText($footer,false);
+    }
+}
+
+//Classe per la gestione dei canoni
+Class AA_Patrimonio_Canone
+{
+    protected $aProps=null;
+    public function GetProps()
+    {
+        if(is_array($this->aProps)) return $this->aProps;
+        else return array();
+    }
+    public function SetProp($prop="",$value="")
+    {
+        if(is_array($this->aProp) && $prop !="")
+        {
+            if(isset($this->aProp[$prop])) $this->aProps[$prop]=$value;
+            return true;
+        }
+
+        return false;
+    }
+    public function GetProp($prop="")
+    {
+        if(is_array($this->aProp) && $prop !="")
+        {
+            if(isset($this->aProp[$prop])) return $this->aProps[$prop];
+        }
+
+        return "";
+    }
+
+    public function __construct($props=null)
+    {
+        //proprietà
+        $this->aProps=array(
+            "id"=>0,
+            "serial"=>"",
+            "id_patrimonio"=>0,
+            "conduttore"=>"",
+            "repertorio"=>"",
+            "data_inizio"=>"",
+            "data_fine"=>"",
+            "importo"=>"",
+            "note"=>"",
+            "tipologia"=>0
+        );
+
+        if(is_array($props))
+        {
+            foreach($props as $key=>$value)
+            {
+                $this->SetProp($key,$value);
+            }
+        }
     }
 }
