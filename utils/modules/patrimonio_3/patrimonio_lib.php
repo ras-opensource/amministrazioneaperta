@@ -258,7 +258,7 @@ Class AA_Patrimonio extends AA_Object_V2
             if($key != "id" && $key !="id_patrimonio" && $key !="serial")
             {
                 $query.=$sep.$key." = '".addslashes($value)."'";
-                $sep=",";    
+                $sep=",";
             }
         }
 
