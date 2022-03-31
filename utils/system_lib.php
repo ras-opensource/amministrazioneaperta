@@ -5599,6 +5599,26 @@ Class AA_GenericModule
         return $return;
     }
 
+    //Item templates
+    protected $aSectionItemTemplates=null;
+    public function SetSectionItemTemplate($section="",$template="")
+    {
+        if($section==static::AA_ID_SECTION_BOZZE || $section==static::AA_ID_SECTION_DETAIL || $section==static::AA_ID_SECTION_PUBBLICATE)
+        {
+            if(!is_array($this->aSectionItemTemplates))
+            {
+                $this->aSectionItemTemplates=array();
+            }
+
+            $this->aSectionItemTemplates[$section]=$template;
+        }
+    }
+    public function GetSectionItemTemplate($section="")
+    {
+        if(is_array($this->aSectionItemTemplates)) return $this->aSectionItemTemplates[$section];
+        else return "";
+    }
+
     //Task sections
     public function Task_GetSections($task)
     {
@@ -5736,6 +5756,13 @@ Class AA_GenericModule
             $this->AddSection($section);        
             #-------------------------------------------
         }
+
+        //SectionItemsTemplate
+        //$sectionTemplate="";
+        //$this->SetSectionItemTemplate(static::AA_ID_SECTION_BOZZE,$sectionTemplate);
+        //$this->SetSectionItemTemplate(static::AA_ID_SECTION_PUBBLICATE,$sectionTemplate);
+        $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGenericDettaglio_Generale_Tab")));
+
         return;
     }
     
@@ -7327,8 +7354,8 @@ Class AA_GenericModule
             
             case "Dettaglio":
             case static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX:
-               $template=$this->TemplateSection_Detail($params);
-               $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$template->toArray());
+                $template=$this->TemplateSection_Detail($params);
+                $content=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$template->toArray());
                 break;
             default:
                  $content=array(
@@ -7519,6 +7546,16 @@ Class AA_GenericModule
     protected function TemplateGenericSection_Pubblicate($params=array(),$bCanModify=false,$contentData=null)
     {          
         $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_PUBBLICATE_NAME,$this->GetId());
+
+        //custom items templates
+        if(is_array($this->aSectionItemTemplates))
+        {
+            if(isset($this->aSectionItemTemplates[static::AA_ID_SECTION_PUBBLICATE]) && $this->aSectionItemTemplates[static::AA_ID_SECTION_PUBBLICATE] !="")
+            {
+                $content->SetContentBoxTemplate($this->aSectionItemTemplates[static::AA_ID_SECTION_PUBBLICATE]);
+            }
+        }
+
         $content->EnablePager();
         $content->EnablePaging();
         $content->SetPagerItemForPage(10);
@@ -7696,6 +7733,16 @@ Class AA_GenericModule
     protected function TemplateGenericSection_Bozze($params, $contentData=null)
     {         
         $content=new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_BOZZE_NAME,$this->GetId());
+        
+        //custom items templates
+        if(is_array($this->aSectionItemTemplates))
+        {
+            if(isset($this->aSectionItemTemplates[static::AA_ID_SECTION_BOZZE]) && $this->aSectionItemTemplates[static::AA_ID_SECTION_BOZZE] !="")
+            {
+                $content->SetContentBoxTemplate($this->aSectionItemTemplates[static::AA_ID_SECTION_BOZZE]);
+            }
+        }
+
         $content->EnablePager();
         $content->SetPagerItemForPage(10);
         $content->EnableFiltering();
@@ -7752,7 +7799,7 @@ Class AA_GenericModule
     //Template Detail
     public function TemplateGenericSection_Detail($params)
     {
-        $id=static::AA_UI_PREFIX."_Detail_";
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_";
         $objectClass=static::AA_MODULE_OBJECTS_CLASS;
         if(class_exists($objectClass))
         {
@@ -7799,22 +7846,24 @@ Class AA_GenericModule
         $header=new AA_JSON_Template_Layout($id."Header"."_$id_org",array("type"=>"clean", "height"=>38,"css"=>"AA_SectionContentHeader"));
         
         //Scheda generale di default
-        if(!is_array($params['DetailOptionTab']))
+        if(!is_array($this->aSectionItemTemplates))
         {
-            $params['DetailOptionTab']=array(array("id"=>$id."Generale_Tab"."_$id_org", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGenericDettaglio_Generale_Tab"));
+            if($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] == "")
+            {
+                $this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]=array(array("id"=>$id."Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGenericDettaglio_Generale_Tab"));
+            }
         }
+        AA_Log::Log(__METHOD__." - ".print_r($this->aSectionItemTemplates,true),100);
+
         $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
             "view"=>"tabbar",
             "borderless"=>true,
-            "value"=>$params['DetailOptionTab'][0]['id'],
+            "value"=>$this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL][0]['id']."_$id_org",
             "css"=>"AA_Header_TabBar",
             "width"=>400,
             "multiview"=>true,
             "view_id"=>$id."Multiview"."_$id_org",
-            "options"=>$params['DetailOptionTab']
-                //array("id"=>$id."Generale_Tab"."_$id_org", "value"=>"Generale"),
-                //array("id"=>$id."Canoni_Attivi_Tab"."_$id_org","value"=>"Canoni attivi", "tooltip"=>"Canoni attivi"),
-                //array("id"=>$id."Canoni_Passivi_Tab"."_$id_org","value"=>"Canoni attivi", "tooltip"=>"Canoni passivi")
+            "options"=>$this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]
         )));
         $header->addCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         $header->addCol(new AA_JSON_Template_Generic($id."Detail"."_$id_org",array(
@@ -7966,7 +8015,7 @@ Class AA_GenericModule
         $header->addCol($toolbar);
         
         //Content box
-        $content = new AA_JSON_Template_Layout($id."Content_Box",
+        $content = new AA_JSON_Template_Layout(static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,
                 array(
                 "type"=>"clean",
                 "name"=>$object->GetName(),
@@ -7979,7 +8028,7 @@ Class AA_GenericModule
             "css"=>"AA_Detail_Content"
          ));
 
-        foreach($params['DetailOptionTab'] as $curTab)
+        foreach($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] as $curTab)
         {
             if(method_exists($this,$curTab['template']) && $curTab['template'] !="")
             {
@@ -7994,9 +8043,9 @@ Class AA_GenericModule
     //Template generic section detail, tab generale
     public function TemplateGenericDettaglio_Generale_Tab($object=null)
     {
-        if(!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Detail_Generale_Tab_",array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_",array("template"=>"Dati non validi"));
 
-        $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$object->GetId();
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".$object->GetId();
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
 

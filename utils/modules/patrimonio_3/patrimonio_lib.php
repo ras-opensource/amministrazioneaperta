@@ -486,6 +486,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdatePatrimonio");
         $taskManager->RegisterTask("PublishPatrimonio");
         #------------------------------------------------------------------------------------
+
+        //template dettaglio
+        $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab")));
     }
     
     //istanza
@@ -865,8 +868,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
     public function TemplateSection_Detail($params)
     {
         //Gestione dei tab
-        $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$params['id'];
-        $params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab"));
+        //$id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$params['id'];
+        //$params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab"));
         
         return $this->TemplateGenericSection_Detail($params);
     }   
@@ -874,9 +877,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Template section detail, tab generale
     public function TemplatePatrimonioDettaglio_Generale_Tab($object=null)
     {
-        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Detail_Generale_Tab_",array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".date("Y-m-h_h:i:s"),array("template"=>"Dati non validi"));
         
-        $id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$object->GetId();
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".$object->GetId();
         $rows_fixed_height=50;
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
