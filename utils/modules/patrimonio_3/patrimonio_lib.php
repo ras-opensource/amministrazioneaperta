@@ -1173,7 +1173,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             array("id"=>"serial","header"=>array("<div style='text-align: center'>Id</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"data_inizio","header"=>array("<div style='text-align: center'>Data inizio</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"data_fine","header"=>array("<div style='text-align: center'>Data fine</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"int"),
             array("id"=>"repertorio","header"=>array("<div style='text-align: center'>Repertorio n.</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
             array("id"=>"conduttore","header"=>array("<div style='text-align: center'>Conduttore</div>",array("content"=>"selectFilter")),"width"=>340, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text")
@@ -1191,6 +1191,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
             "view"=>"datatable",
             "scrollX"=>false,
             "select"=>false,
+            "css"=>"AA_Header_DataTable",
+            "hover"=>"AA_DataTable_Row_Hover",
             "columns"=>$columns,
             "data"=>$data
         ));

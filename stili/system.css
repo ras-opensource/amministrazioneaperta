@@ -549,6 +549,16 @@ animation: lds-dual-ring 1.2s linear infinite;
    background: #dadee0 !important;
 }
 
+.AA_Header_DataTable .webix_ss_header
+{
+    background: #dadee0 !important;
+}
+
+.AA_DataTable_Row_Hover
+{
+    background: #dadee0 !important;
+}
+
 .AA_DataTable_Ops
 {
     display: flex;
