@@ -39,6 +39,14 @@ Class AA_Patrimonio_Const extends AA_Const
                 self::AA_PATRIMONIO_CATASTO_TERRENI=>"catasto terreni"
             );    
         }
+
+        if(self::$tipoCanoneList==null)
+        {
+            self::$tipoCanoneList=array(
+                self::AA_PATRIMONIO_CANONE_ATTIVO=>"Attivo",
+                self::AA_PATRIMONIO_CANONE_PASSIVO=>"Passivo"
+            );    
+        }
     }
     public static function GetTitoloList()
     {
@@ -54,6 +62,16 @@ Class AA_Patrimonio_Const extends AA_Const
     {
         self::Inizialize();
         return self::$sezioneList;
+    }
+
+    //Tipo Canone
+    static $tipoCanoneList=null;
+    const AA_PATRIMONIO_CANONE_ATTIVO=1;
+    const AA_PATRIMONIO_CANONE_PASSIVO=2;
+    public static function GetTipoCanoneList()
+    {
+        self::Inizialize();
+        return self::$tipoCanoneList;
     }
 
 }
@@ -205,6 +223,13 @@ Class AA_Patrimonio extends AA_Object_V2
             AA_Log::Log(__METHOD__." - ERRORE - id_patrimonio non valido".print_r($newCanone,true),100);
             return false;
         } 
+
+        //Verifiche di coerenza
+        if(strcmp($newCanone->GetProp("data_fine"),$newCanone->GetProp("data_inizio")) < 0)
+        {
+            AA_Log::Log(__METHOD__." - ERRORE - la data di fine deve essere maggiore di quella di inizio.",100);
+            return false;
+        }
 
         $db=new AA_Database();
         $query="INSERT INTO ".static::AA_DBTABLE_CANONI." SET ";
@@ -1144,20 +1169,22 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         $layout->addRow($toolbar);        
         $columns=array(
-            array("id"=>"serial","header"=>array("<div style='text-align: center'>Id</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"left")),
-            array("id"=>"tipologia","header"=>array("Tipologia",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"tipo","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"serial","header"=>array("<div style='text-align: center'>Id</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"data_inizio","header"=>array("<div style='text-align: center'>Data inizio</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"data_fine","header"=>array("<div style='text-align: center'>Data fine</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"importo","header"=>array("<div style='text-align: right'>Importo</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"repertorio","header"=>array("Repertorio n.",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"conduttore","header"=>array("Conduttore",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"repertorio","header"=>array("<div style='text-align: center'>Repertorio n.</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"conduttore","header"=>array("<div style='text-align: center'>Conduttore</div>",array("content"=>"selectFilter")),"width"=>340, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text")
         );
 
         $data=array();
+        $tipoCanone=AA_Patrimonio_Const::GetTipoCanoneList();
         foreach($object->GetCanoni() as $curCanone)
         {
             $data[]=$curCanone->GetProps();
+            $data[sizeof($data)-1]['tipo']=$tipoCanone[$curCanone->GetProp("tipologia")];
         }
 
         $table=new AA_JSON_Template_Generic($id."_Canoni", array(
@@ -1285,7 +1312,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if(!$object->AddNewCanone($newCanone,$this->oUser))
         {
             $task->SetError("Errore durante l'aggiunta del nuovo canone.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore durante l'aggiunta del nuovo canone.</error>";
+            $sTaskLog="<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";
             $task->SetLog($sTaskLog);
 
             return false;
