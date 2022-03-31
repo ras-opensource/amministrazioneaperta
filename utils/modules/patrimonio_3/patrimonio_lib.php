@@ -109,7 +109,7 @@ Class AA_Patrimonio extends AA_Object_V2
             {
                 foreach($db->GetResultSet() as $key=>$curRow)
                 {
-                    $this->aCanoni[]=new AA_Patrimonio_Canone($curRow);
+                    $this->aCanoni[$curRow['serial']]=new AA_Patrimonio_Canone($curRow);
                 }
 
                 return true;
@@ -119,6 +119,8 @@ Class AA_Patrimonio extends AA_Object_V2
             return true;
         }
         else $this->aCanoni=array();
+
+        return true;
     }
 
     //Restituisce i canoni associati all'oggetto
@@ -193,11 +195,19 @@ Class AA_Patrimonio extends AA_Object_V2
     //Funzione di aggiunta di un canone (funzione privilegiata)
     protected function AddNewCanonePriv($newCanone=null,$user=null)
     {
-        if(!$this->IsValid() || !($newCanone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
-        if($newCanone->GetProp('id_patrimonio') == 0) return false;
+        if(!$this->IsValid() || !($newCanone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) 
+        {
+            AA_Log::Log(__METHOD__." - ERRORE - oggetto non valido".print_r($newCanone,true),100);
+            return false;
+        }
+        if($newCanone->GetProp('id_patrimonio') == 0)
+        {
+            AA_Log::Log(__METHOD__." - ERRORE - id_patrimonio non valido".print_r($newCanone,true),100);
+            return false;
+        } 
 
         $db=new AA_Database();
-        $query="INSERT INTO ".static::AA_DBTABLE_CANONI." SET";
+        $query="INSERT INTO ".static::AA_DBTABLE_CANONI." SET ";
         $sep="";
         foreach($newCanone->GetProps() as $key=>$value)
         {
@@ -225,7 +235,10 @@ Class AA_Patrimonio extends AA_Object_V2
         if(!$this->IsValid() || !($newCanone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
 
         //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true)) return false;
+        if(!$this->Update($user,true))
+        {
+            return false;
+        } 
 
         $newCanone->SetProp('id_patrimonio',$this->nId_Data);
         if($this->nId_Data_Rev > 0)
@@ -485,10 +498,17 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewPatrimonio");
         $taskManager->RegisterTask("UpdatePatrimonio");
         $taskManager->RegisterTask("PublishPatrimonio");
+
+        //Canoni
+        $taskManager->RegisterTask("GetPatrimonioAddNewCanoneDlg");
+        $taskManager->RegisterTask("AddNewCanone");
         #------------------------------------------------------------------------------------
 
         //template dettaglio
-        $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab")));
+        $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab"),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Canoni_Tab", "value"=>"Canoni","tooltip"=>"Canoni legati all'immobile/terreno","template"=>"TemplatePatrimonioDettaglio_Canoni_Tab")
+        ));
     }
     
     //istanza
@@ -864,6 +884,70 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $wnd;
     }
     
+    //Template dlg addnew patrimonio
+    public function Template_GetPatrimonioAddNewCanoneDlg($object=null)
+    {
+        if(!($object instanceof AA_Patrimonio) || !$object->isValid())
+        {
+            $wnd=new AA_GenericWindowTemplate($this->GetId()."_FakeDlg", "Aggiungi un nuovo canone",$this->GetId());
+            $wnd->AddView(new AA_JSON_Template_Template($this->GetId()."_Fakecontent",array("template"=>"oggetto non valido")));
+
+            return $wnd;
+        }
+
+        $id=$this->GetId()."_AddNewCanone_Dlg";
+        
+        $form_data=array("id"=>$object->GetId());
+        $form_data["serial"]=AA_Utils::uniqid();
+        $form_data["tipologia"]=1;
+        $form_data["data_inizio"]=date("Y-m-d");
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo canone", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(920);
+        $wnd->SetHeight(640);
+        $wnd->EnableValidation();
+              
+        //tipologia
+        $options=array(
+            array("id"=>1,"value"=>"Attivo"),
+            array("id"=>2,"value"=>"Passivo")
+        );
+        $wnd->AddRadioField("tipologia","Tipo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di canone.","bottomLabel"=>"*Indicare il tipo di canone","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
+        
+        //data_inizio
+        $wnd->AddDateField("data_inizio","Data inizio",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di decorrenza del canone", "placeholder"=>"inserisci qui la data di decorrenza."));
+
+        //data_fine
+        $wnd->AddDateField("data_fine","Data fine",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di scadenza del canone", "placeholder"=>"inserisci qui la data di scadenza."),false);
+
+        //importo
+        $label="Importo";
+        $wnd->AddTextField("importo",$label,array("bottomLabel"=>"*Inserire l'importo in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
+
+        //repertorio
+        $label="Repertorio";
+        $wnd->AddTextField("repertorio",$label,array("bottomLabel"=>"*Indica il numero di repertorio del contratto.", "required"=>true,"placeholder"=>"Inserisci qui il neumero di repertorio"),false);
+
+        //conduttore
+        $label="Conduttore";
+        $wnd->AddTextField("conduttore",$label,array("bottomLabel"=>"*Indica il conduttore.", "required"=>true, "placeholder"=>"Inserisci qui il conduttore"));
+
+        //note
+        $label="Note";
+        $wnd->AddTextareaField("note",$label,array("bottomLabel"=>"*note.", "placeholder"=>"Inserisci qui le note"));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        $wnd->SetSaveTask("AddNewCanone");
+        
+        return $wnd;
+    }
+
     //Template detail (da specializzare)
     public function TemplateSection_Detail($params)
     {
@@ -877,9 +961,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Template section detail, tab generale
     public function TemplatePatrimonioDettaglio_Generale_Tab($object=null)
     {
-        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".date("Y-m-h_h:i:s"),array("template"=>"Dati non validi"));
+        $sectionTemplate=$this->GetSectionItemTemplate(static::AA_ID_SECTION_DETAIL);
+        if(!is_array($sectionTemplate))
+        {
+            $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".date("Y-m-d_h:i:s");
+        }
+        else
+        {
+            $id=$sectionTemplate[0]['id'];
+        }
+
+        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
-        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".$object->GetId();
+        //$id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".$object->GetId();
         $rows_fixed_height=50;
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
@@ -1002,6 +1096,84 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         return $layout;
     }
+
+    //Template section detail, tab canoni
+    public function TemplatePatrimonioDettaglio_Canoni_Tab($object=null)
+    {
+        $sectionTemplate=$this->GetSectionItemTemplate(static::AA_ID_SECTION_DETAIL);
+        if(!is_array($sectionTemplate))
+        {
+            $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Canoni_Tab_".date("Y-m-d_h:i:s");
+        }
+        else
+        {
+            $id=$sectionTemplate[1]['id'];
+        }
+
+        if(!($object instanceof AA_Patrimonio)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        
+        //$id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Canoni_Tab_".$object->GetId();
+        $rows_fixed_height=50;
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+        
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //Pulsante di modifica
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi un nuovo canone",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioAddNewCanoneDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        
+        $layout->addRow($toolbar);        
+        $columns=array(
+            array("id"=>"serial","header"=>array("<div style='text-align: center'>Id</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"left")),
+            array("id"=>"tipologia","header"=>array("Tipologia",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"data_inizio","header"=>array("<div style='text-align: center'>Data inizio</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"data_fine","header"=>array("<div style='text-align: center'>Data fine</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"importo","header"=>array("<div style='text-align: right'>Importo</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"repertorio","header"=>array("Repertorio n.",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"conduttore","header"=>array("Conduttore",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text")
+        );
+
+        $data=array();
+        foreach($object->GetCanoni() as $curCanone)
+        {
+            $data[]=$curCanone->GetProps();
+        }
+
+        $table=new AA_JSON_Template_Generic($id."_Canoni", array(
+            "view"=>"datatable",
+            "scrollX"=>false,
+            "select"=>false,
+            "columns"=>$columns,
+            "data"=>$data
+        ));
+
+        $layout->addRow($table);
+
+        $layout->addRow(new AA_JSON_Template_Generic($id."_spacer"));
+
+        return $layout;
+    }
      
     //Task Update Patrimonio
     public function Task_UpdatePatrimonio($task)
@@ -1084,6 +1256,52 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $this->Task_GenericAddNew($task,$_REQUEST,false,true);
     }
     
+    //Task Aggiungi un canone
+    public function Task_AddNewCanone($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiungere nuovi elementi</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        $object= new AA_Patrimonio($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid() || $object->IsReadOnly() || $_REQUEST['serial']=="")
+        {
+            $task->SetError("Oggetto non valido o permessi insufficienti.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Oggetto non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $newCanone=new AA_Patrimonio_Canone($_REQUEST);
+
+        if(!$object->AddNewCanone($newCanone,$this->oUser))
+        {
+            $task->SetError("Errore durante l'aggiunta del nuovo canone.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore durante l'aggiunta del nuovo canone.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        else
+        {
+            $sTaskLog="<status id='status' id_Rec='".$object->GetId()."'>0</status><content id='content'>";
+            $sTaskLog.= "Canone aggiunto con successo";
+            $sTaskLog.="</content>";
+            
+            $task->SetLog($sTaskLog);
+            
+            return true;
+        }
+    }
+
     //Task modifica organismo
     public function Task_GetPatrimonioModifyDlg($task)
     {
@@ -1323,6 +1541,40 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $sTaskLog.= $this->Template_GetPatrimonioAddNewDlg()->toBase64();
             $sTaskLog.="</content>";
         }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task aggiunta Canone
+    public function Task_GetPatrimonioAddNewCanoneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per istanziare nuovi elementi.</error>";
+        }
+        
+        $object=new AA_Patrimonio($_REQUEST['id'],$this->oUser);
+        AA_Log::Log(__METHOD__." - object: ".print_r($object,TRUE),100);
+
+        if(!$object->IsValid() || $object->IsReadOnly() || $_REQUEST['id']=="")
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per istanziare nuovi elementi.</error>";
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetPatrimonioAddNewCanoneDlg($object)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        
         
         $task->SetLog($sTaskLog);
         
@@ -1627,9 +1879,9 @@ Class AA_Patrimonio_Canone
     }
     public function SetProp($prop="",$value="")
     {
-        if(is_array($this->aProp) && $prop !="")
+        if(is_array($this->aProps) && $prop !="")
         {
-            if(isset($this->aProp[$prop])) $this->aProps[$prop]=$value;
+            if(isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
             return true;
         }
 
@@ -1637,9 +1889,9 @@ Class AA_Patrimonio_Canone
     }
     public function GetProp($prop="")
     {
-        if(is_array($this->aProp) && $prop !="")
+        if(is_array($this->aProps) && $prop !="")
         {
-            if(isset($this->aProp[$prop])) return $this->aProps[$prop];
+            if(isset($this->aProps[$prop])) return $this->aProps[$prop];
         }
 
         return "";

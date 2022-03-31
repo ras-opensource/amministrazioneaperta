@@ -1960,6 +1960,19 @@ class AA_Utils
         //$_SESSION['log'].=AA_Log::toHTML(true);
     }
 
+    //funzione per la generazione di identificativi univoci
+    static public function uniqid($lenght = 13) {
+        // uniqid gives 13 chars, but you could adjust it to your needs.
+        if (function_exists("random_bytes")) {
+            $bytes = random_bytes(ceil($lenght / 2));
+        } elseif (function_exists("openssl_random_pseudo_bytes")) {
+            $bytes = openssl_random_pseudo_bytes(ceil($lenght / 2));
+        } else {
+            return uniqid();
+        }
+        return substr(bin2hex($bytes), 0, $lenght);
+    }
+
     //Restituisce il log di sessione in formato html
     static public function GetSessionLog()
     {
@@ -7850,15 +7863,16 @@ Class AA_GenericModule
         {
             if($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] == "")
             {
-                $this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]=array(array("id"=>$id."Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGenericDettaglio_Generale_Tab"));
+                $this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]=array(array("id"=>$id."Generale_Tab_".$id_org, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGenericDettaglio_Generale_Tab"));
             }
         }
+
         AA_Log::Log(__METHOD__." - ".print_r($this->aSectionItemTemplates,true),100);
 
         $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
             "view"=>"tabbar",
             "borderless"=>true,
-            "value"=>$this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL][0]['id']."_$id_org",
+            "value"=>$this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL][0]['id'],
             "css"=>"AA_Header_TabBar",
             "width"=>400,
             "multiview"=>true,
@@ -8043,9 +8057,19 @@ Class AA_GenericModule
     //Template generic section detail, tab generale
     public function TemplateGenericDettaglio_Generale_Tab($object=null)
     {
-        if(!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template(static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_",array("template"=>"Dati non validi"));
+        $sectionTemplate=$this->GetSectionItemTemplate(static::AA_ID_SECTION_DETAIL);
+        if(!is_array($sectionTemplate))
+        {
+            $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".date("Y-m-d_h:i:s");
+        }
+        else
+        {
+            $id=$sectionTemplate[0]['id'];
+        }
 
-        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".$object->GetId();
+        if(!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+
+        //$id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".$object->GetId();
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
 
@@ -11814,9 +11838,15 @@ Class AA_Object_V2
 
             if(($perms&AA_Const::AA_PERMS_WRITE)==0)
             {
+                //AA_Log::Log(__METHOD__." - readonly: ".$perms." ".print_r($user,true),100);
                 $object->bReadOnly=true;
             }
-            else $object->bReadOnly=false;
+            else
+            {
+                //AA_Log::Log(__METHOD__." - writable: ".print_r($object,true),100);
+                $object->bReadOnly=false;
+                //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
+            } 
 
             $object->nId=$rs[0]['id'];
             $object->nId_Data=$rs[0]['id_data'];
@@ -11859,7 +11889,7 @@ Class AA_Object_V2
             }
             else $user=AA_User::GetCurrentUser();
 
-            if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0 && !$this->bReadOnly && $this->nId_Data_Rev > 0)
+            if(($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0 && !$this->IsReadOnly() && $this->nId_Data_Rev > 0)
             {
                 $query="SELECT * FROM ".$this->sDbDataTable." WHERE id = ".$this->nId_Data_Rev." LIMIT 1";
             }
@@ -11945,6 +11975,7 @@ Class AA_Object_V2
                 $this->nId_Data_Rev=$object->nId_Data_Rev;
                 $this->sLog=$object->sLog;
                 $this->bValid=true;
+                $this->bReadOnly=$object->bReadOnly;
 
                 //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true)." - this: ".print_r($this,true),100);
             }

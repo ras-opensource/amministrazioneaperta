@@ -1933,6 +1933,26 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         }
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
+
+                    if (valFunc == "IsIsoDate") {
+                        if (!AA_MainApp.utils.isDefined(this.elements[arguments[2]].config.customInvalidMessage)) {
+                            let invalidMessage = "*Inserire una data nel formato: yyyy-mm-gg";
+                            if (!this.elements[arguments[2]].config.required) invalidMessage += " o lasciare vuoto";
+                            this.elements[arguments[2]].config.invalidMessage = invalidMessage;
+                        } else {
+                            this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
+                        }
+
+                        val=true;
+                        if(this.elements[arguments[2]].config.required && arguments[0] == "") val=false;
+                        if(arguments[0] !="")
+                        {
+                            if(arguments[0].match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)) val = false;  // Invalid format
+                            var d = new Date(arguments[0]);
+                            var dNum = d.getTime();
+                            if(!dNum && dNum !== 0) val=false;    
+                        }
+                    }
                 }
             }
 
