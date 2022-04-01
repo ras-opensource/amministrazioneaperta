@@ -5229,7 +5229,7 @@ Class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
                 else
                 {
                     $this->aRows[$row] = new AA_GenericTableRowTemplateView("AA_GenericTableRowTemplateView_".$row,$this);
-                    $this->aRows[$row]->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; width:100%; border-bottom: 1px solid black");
+                    $this->aRows[$row]->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; width:100%; border-bottom: 1px solid $this->defaultBorderColor");
                     $this->aRows[$row]->SetClass("AA_GenericTableRowTemplateView_evidenzia");
 
                     $this->aCells[$row."_".$col] = new AA_GenericTableCellTemplateView("AA_GenericTableCellTemplateView_".$row."_".$col,$this->aRows[$row]);
@@ -5252,6 +5252,12 @@ Class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
 
         $this->SetStyle("display:flex; flex-direction: column; justify-content: space-between");
 
+        //colore di default del bordo
+        $this->defaultBorderColor="black";
+        
+        //colore di sfondo della riga di intestazione
+        $this->h_bgcolor="rgb(215, 215, 215)";
+
         //proprietà
         if(is_array($props))
         {
@@ -5267,6 +5273,8 @@ Class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
             if(isset($props["width"])) $this->SetStyle("width: ".$props["width"],true);
             else $this->SetStyle("width: 100%",true);
 
+            if(isset($props["default-border-color"])) $this->defaultBorderColor=$props["default-border-color"];
+
             //bordo
             if(isset($props["border"]))
             {
@@ -5275,19 +5283,22 @@ Class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
             } 
 
             //titolo
-            if(isset($props["title"])) $this->SetText("<div style='width:100%; font-size: 16px; font-weight: bold; border-bottom: 1px solid black'>".$props["title"]."</div>",true);
+            if(isset($props["title"])) $this->SetText("<div style='width:100%; font-size: 16px; font-weight: bold; border-bottom: 1px solid $this->defaultBorderColor'>".$props["title"]."</div>",true);
 
             //evidenzia le righe
             if(isset($props["evidentiate-rows"])) $this->bEvidenziateRows=true;
+
+            //colore di sfondo dell'intestazione
+            if(isset($props['h_bgcolor'])) $this->h_bgcolor=$props['h_bgcolor'];
         }
         else
         {
             $this->SetStyle("align-items: center; width: 100%",true);
         }
-
+        
         //Riga di intestazione
         $this->aRows[0]=new AA_XML_Div_Element($id."_header",$this);
-        $this->aRows[0]->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; width: 100%; font-weight: bold; border-bottom: 1px solid black; background-color: rgb(215, 215, 215);");
+        $this->aRows[0]->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; width: 100%; font-weight: bold; border-bottom: 1px solid $this->defaultBorderColor; background-color: $this->h_bgcolor;");
     }
 
     //Imposta il contenuto di una cella
@@ -11446,7 +11457,7 @@ Class AA_Object_V2
     }
     
     //Aggiorna
-    public function Update($user=null,$bSaveData=true)
+    public function Update($user=null,$bSaveData=true,$logMsg="")
     {        
         //Verifica se l'oggetto è valido
         if(!$this->IsValid())
@@ -11473,18 +11484,20 @@ Class AA_Object_V2
         
         $oldStatus=$this->GetStatus();
         $oldLog=$this->GetLog(false);
-        $logMsg="modifica";
+        $log="modifica";
 
         if(($this->nStatusMask & AA_Const::AA_STATUS_REVISIONATA)>0)
         {
             if(($oldStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && ($this->GetUserCaps($user) &  AA_Const::AA_PERMS_PUBLISH) == 0)
             {
                 $this->nStatus = $oldStatus|AA_Const::AA_STATUS_REVISIONATA;
-                $logMsg.="(Revisione)";
+                $log.=" (revisione)";
             }            
         }
-        
-        $this->AddLog($logMsg, AA_Const::AA_OPS_UPDATE, $user);
+
+        if($logMsg !="") $log.=" - ".$logMsg;
+
+        $this->AddLog($log, AA_Const::AA_OPS_UPDATE, $user);
         if(!$this->Save($user,true, $bSaveData))
         {
             $this->nStatus=$oldStatus;

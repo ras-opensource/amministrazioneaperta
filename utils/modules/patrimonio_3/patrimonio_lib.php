@@ -260,7 +260,7 @@ Class AA_Patrimonio extends AA_Object_V2
         }
 
         //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true))
+        if(!$this->Update($user,true, "Aggiunta nuovo canone: ".$newCanone->GetProp("serial")))
         {
             return false;
         } 
@@ -288,7 +288,7 @@ Class AA_Patrimonio extends AA_Object_V2
         }
 
         //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true)) return false;
+        if(!$this->Update($user,true, "Modifica canone: ".$canone->GetProp("serial"))) return false;
 
         $canone->SetProp('id_patrimonio', $this->nId_Data);
         if($this->nId_Data_Rev > 0)
@@ -307,7 +307,7 @@ Class AA_Patrimonio extends AA_Object_V2
             }
         }
 
-        $query.=" WHERE id_patrimonio='".$canone->GetProp('id_patrimonio')."' AND (id='".$canone->GetProp('id')."' OR serial = '".$canone->GetProp('serial')."') LIMIT 1";
+        $query.=" WHERE id_patrimonio='".$canone->GetProp('id_patrimonio')."' AND serial = '".$canone->GetProp('serial')."' LIMIT 1";
 
         $db=new AA_Database();
         if(!$db->Query($query))
@@ -328,7 +328,7 @@ Class AA_Patrimonio extends AA_Object_V2
         if($canone->GetProp('id') == 0 && $canone->GetProp('serial') == "") return false;
 
         //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true)) return false;
+        if(!$this->Update($user,true,"Eliminazione canone: ".$canone->GetProp("serial"))) return false;
 
         $canone->SetProp('id_patrimonio',$this->nId_Data);
         if($this->nId_Data_Rev > 0)
@@ -336,7 +336,7 @@ Class AA_Patrimonio extends AA_Object_V2
             $canone->SetProp('id_patrimonio',$this->nId_Data_Rev);
         }
 
-        $query="DELETE FROM ".static::AA_DBTABLE_CANONI." WHERE id_patrimonio='".$canone->GetProp('id_patrimonio')."' AND (id='".$canone->GetProp('id')."' OR serial = '".$canone->GetProp('serial')."') LIMIT 1";
+        $query="DELETE FROM ".static::AA_DBTABLE_CANONI." WHERE id_patrimonio='".$canone->GetProp('id_patrimonio')."' AND serial = '".$canone->GetProp('serial')."' LIMIT 1";
 
         $db=new AA_Database();
         if(!$db->Query($query))
@@ -536,6 +536,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewCanone");
         $taskManager->RegisterTask("GetPatrimonioModifyCanoneDlg");
         $taskManager->RegisterTask("UpdateCanone");
+        $taskManager->RegisterTask("GetPatrimonioTrashCanoneDlg");
+        $taskManager->RegisterTask("TrashCanone");
         #------------------------------------------------------------------------------------
 
         //template dettaglio
@@ -936,7 +938,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $form_data["tipologia"]=1;
         $form_data["data_inizio"]=date("Y-m-d");
         
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo canone", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo canone ".$form_data["serial"], $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
@@ -960,7 +962,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //importo
         $label="Importo";
-        $wnd->AddTextField("importo",$label,array("bottomLabel"=>"*Inserire l'importo in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
+        $wnd->AddTextField("importo",$label,array("bottomLabel"=>"*Inserire l'importo, su base annua, in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
 
         //repertorio
         $label="Repertorio";
@@ -1001,7 +1003,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
         $form_data['id']=$object->GetId();
         
-        $wnd=new AA_GenericFormDlg($id, "Modifica canone", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Modifica canone ".$canone->GetProp("serial"), $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
@@ -1025,7 +1027,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //importo
         $label="Importo";
-        $wnd->AddTextField("importo",$label,array("bottomLabel"=>"*Inserire l'importo in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
+        $wnd->AddTextField("importo",$label,array("bottomLabel"=>"*Inserire l'importo, su base annua, in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
 
         //repertorio
         $label="Repertorio";
@@ -1044,6 +1046,58 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         $wnd->SetSaveTask("UpdateCanone");
         
+        return $wnd;
+    }
+
+    //Template dlg addnew patrimonio
+    public function Template_GetPatrimonioTrashCanoneDlg($object=null,$canone=null)
+    {
+        if(!($object instanceof AA_Patrimonio) || !$object->isValid() || !($canone instanceof AA_Patrimonio_Canone) || $object->IsReadOnly())
+        {
+            $wnd=new AA_GenericWindowTemplate($this->GetId()."_FakeDlg", "Elimina canone",$this->GetId());
+            $wnd->AddView(new AA_JSON_Template_Template($this->GetId()."_Fakecontent",array("template"=>"oggetto o canone non valido")));
+
+            return $wnd;
+        }
+
+        $id=$this->GetId()."_TrashCanone_Dlg";
+        $forms_data['id']=$object->GetId();
+        $forms_data['serial']=$canone->GetProp("serial");
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina canone ".$canone->GetProp("serial"), $this->id, $forms_data,$forms_data);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+
+        $tabledata=array();
+        $tabledata[]=array(
+                "immobile"=>$object->GetName(),
+                "canone"=>$canone->GetProp("serial")
+        );
+        $columns=array(
+            array("id"=>"immobile","header"=>"Immobile/terreno","fillspace"=>true),
+            array("id"=>"canone","header"=>"id Canone","fillspace"=>true)
+        );
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente canone verrà eliminato, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "scrollX"=>false,
+            "select"=>false,
+            "columns"=>$columns,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("TrashCanone");
+    
         return $wnd;
     }
 
@@ -1260,7 +1314,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         $data=array();
         $tipoCanone=AA_Patrimonio_Const::GetTipoCanoneList();
-        foreach($object->GetCanoni() as $curCanone)
+        $canoni=$object->GetCanoni();
+        foreach($canoni as $curCanone)
         {
             $data[]=$curCanone->GetProps();
             $index=sizeof($data)-1;
@@ -1273,18 +1328,25 @@ Class AA_PatrimonioModule extends AA_GenericModule
             }
         }
 
-        $table=new AA_JSON_Template_Generic($id."_Canoni", array(
-            "view"=>"datatable",
-            "scrollX"=>false,
-            "select"=>false,
-            "css"=>"AA_Header_DataTable",
-            "hover"=>"AA_DataTable_Row_Hover",
-            "columns"=>$columns,
-            "data"=>$data
-        ));
-
-        $layout->addRow($table);
-
+        if(sizeof($canoni) > 0)
+        {
+            $table=new AA_JSON_Template_Generic($id."_Canoni", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+    
+            $layout->addRow($table);
+        }
+        else
+        {
+            $layout->addRow(new AA_JSON_Template_Template($id."_vuoto",array("template"=>"<div style='text-align: center'>Non sono presenti canoni.</div>")));
+        }
+       
         $layout->addRow(new AA_JSON_Template_Generic($id."_spacer"));
 
         return $layout;
@@ -1470,6 +1532,61 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return true;
         }
     }
+
+    //Task elimina un canone
+    public function Task_TrashCanone($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $task->SetError("L'utente corrente non ha i permessi per modifcare elementi di questo tipo.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per modifcare elementi di questo tipo.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        $object= new AA_Patrimonio($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid() || $object->IsReadOnly() || $_REQUEST['serial']=="")
+        {
+            $task->SetError("Oggetto non valido o permessi insufficienti.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Oggetto non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $canone=$object->GetCanone($_REQUEST['serial']);
+        if(!($canone instanceof AA_Patrimonio_Canone))
+        {
+            $task->SetError("Canone non valido.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Canone non valido.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        if(!$object->DeleteCanone(new AA_Patrimonio_Canone($_REQUEST),$this->oUser))
+        {
+            $task->SetError("Errore durante la rimozione del canone: ".$canone->GetProp("serial"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        else
+        {
+            $sTaskLog="<status id='status' id_Rec='".$object->GetId()."'>0</status><content id='content'>";
+            $sTaskLog.= "Canone rimosso con successo";
+            $sTaskLog.="</content>";
+            
+            $task->SetLog($sTaskLog);
+            
+            return true;
+        }
+    }
+
 
     //Task modifica organismo
     public function Task_GetPatrimonioModifyDlg($task)
@@ -1785,6 +1902,42 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         return true;
     }
+
+    //Task elimina Canone
+    public function Task_GetPatrimonioTrashCanoneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per modificare elementi di questo tipo.</error>";
+        }
+        
+        $object=new AA_Patrimonio($_REQUEST['id'],$this->oUser);
+        AA_Log::Log(__METHOD__." - object: ".print_r($object,TRUE),100);
+
+        $canone=$object->GetCanone($_REQUEST['serial']);
+
+        if(!$object->IsValid() || $object->IsReadOnly() || $_REQUEST['id']=="" || $canone == null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per modificare l'oggetto: ".$object->GetName()." o canone non valido.</error>";
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetPatrimonioTrashCanoneDlg($object,$canone)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
     
     //Task filter dlg
     public function Task_GetPatrimonioPubblicateFilterDlg($task)
@@ -1944,14 +2097,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
 #Classe template per la gestione del report pdf dell'oggetto
 Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
 {
-    public function __construct($id="AA_PatrimonioPublicReportTemplateView",$parent=null,$object=null, $user=null)
+    public function __construct($id="AA_PatrimonioPublicReportTemplateView",$parent=null,$object=null)
     {
-        //Verifica utente
-        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
-        {
-            $user=AA_User::GetCurrentUser();
-        }
-
         if(!($object instanceof AA_Patrimonio))
         {
             AA_Log::Log(__METHOD__." - oggetto non valido.", 100,false,true);
@@ -2065,7 +2212,7 @@ Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
         #-------------------
 
         //Dati sui canoni
-        //To do
+        $canoni=new AA_PatrimonioReportCanoniListTemplateView($id."_Canoni",$this,$object);
 
         //legenda
         $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-top: 1em;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente prospetto sono state aggiornate l'ultima volta il ".$object->GetAggiornamento()."</span></div>";
@@ -2124,6 +2271,78 @@ Class AA_Patrimonio_Canone
             {
                 $this->SetProp($key,$value);
             }
+        }
+    }
+}
+
+
+#Classe template per la visualizzazione della lista dei canoni sul report
+Class AA_PatrimonioReportCanoniListTemplateView extends AA_GenericTableTemplateView
+{
+    public function __construct($id="AA_PatrimonioReportCanoniListTemplateView",$parent=null,$object=null)
+    {
+        if(!($object instanceof AA_Patrimonio))
+        {
+            AA_Log::Log(__METHOD__." - oggetto non valido.", 100);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$object,array("evidentiate-rows"=>true,"title"=>"Canoni","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+        
+        $canoni=$object->GetCanoni();
+
+        if(sizeof($canoni)>0)
+        {
+            $this->SetColSizes(array("10", "10","10","10","10","10","10","25"));
+            $this->SetHeaderLabels(array("Tipo","Id","Data inizio", "Data fine", "Importo<sup>1</sup>", "Repertorio", "Conduttore","Note"));
+         
+            $curRow=1;
+            foreach($canoni as $id=>$curCanone)
+            {
+                //tipologia
+                $tipo=AA_Patrimonio_Const::GetTipoCanoneList();
+                $this->SetCellText($curRow,0,$tipo[$curCanone->GetProp("tipologia")], "center");
+
+                //id
+                $this->SetCellText($curRow,1,$curCanone->GetProp("serial"), "center");
+
+                //Data inizio
+                $this->SetCellText($curRow,2,$curCanone->GetProp("data_inizio"), "center");
+
+                //Data fine
+                $this->SetCellText($curRow,3,$curCanone->GetProp("data_fine"),"center");
+
+                //importo
+                $curVal="€ ".preg_replace("/[\)|\(|€|\ |A-Za-z_]/", "", $curCanone->GetProp("importo"));
+                if($curVal=="€ ") $curVal="n.d.";
+                $this->SetCellText($curRow,4,$curVal, "center");
+
+                //repertorio
+                $curVal=$curCanone->GetProp("repertorio");
+                if($curVal=="") $curVal="n.d.";
+                $this->SetCellText($curRow,5,$curVal, "center");
+
+                //conduttore
+                $curVal=$curCanone->GetProp("conduttore");
+                if($curVal=="") $curVal="n.d.";
+                $this->SetCellText($curRow,6,$curVal, "center");
+                
+                //note
+                $curVal=$curCanone->GetProp("note");
+                $this->SetCellText($curRow,7,$curVal, "center");
+                
+                $curRow++;
+            }
+
+            $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>1. L'importo del canone, se non specificato diversamente nelle note, si intende su base annua.</div>";
+
+            $this->SetText($footer,false);
+        }
+        else
+        {
+            $this->SetColSizes(array("100"));
+            $this->SetCellText(1,0,"Non sono presenti canoni per questo immobile/terreno", "center");
         }
     }
 }
