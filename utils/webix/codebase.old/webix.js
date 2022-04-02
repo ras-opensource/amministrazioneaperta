@@ -1,6 +1,6 @@
 /**
  * @license
- * webix UI v.9.2.1
+ * webix UI v.8.4.0
  * This software is allowed to use under GPL or you need to obtain Commercial License
  * to use it in non-GPL project. Please contact sales@webix.com for details
  */
@@ -525,10 +525,11 @@
     return function () {
       return functor.apply(object, arguments);
     };
-  } //evaluate javascript code in the global scope
+  } //evaluate javascript code in the global scoope
 
   function exec(code) {
-    return window.eval(code);
+    if (window.execScript) //special handling for IE
+      window.execScript(code);else window.eval(code);
   }
   function wrap(code, wrap) {
     if (!code) return wrap;
@@ -579,7 +580,7 @@
     if (typeof str == "string") {
       var method = str.replace("()", "");
       if (scope && scope[method]) return scope[method];
-      return window[method] || exec(str);
+      return window[method] || window.eval(str);
     }
 
     return str;
@@ -587,7 +588,7 @@
   /*checks where an object is instance of Array*/
 
   function isArray(obj) {
-    return Array.isArray(obj);
+    return Array.isArray ? Array.isArray(obj) : Object.prototype.toString.call(obj) === "[object Array]";
   }
   function isDate(obj) {
     return obj instanceof Date;
@@ -1508,6 +1509,96 @@
     tag: "LI"
   };
 
+  var env = {};
+  env.cdn = "//cdn.webix.com";
+  env.codebase = "";
+  env.zIndexBase = 100;
+  env.scrollSize = 17;
+  env.strict = !!window.webix_strict;
+  env.https = document.location.protocol === "https:";
+  var agent = navigator.userAgent;
+  env.isMac = agent.indexOf("Mac") != -1;
+  if (agent.indexOf("Mobile") != -1 || agent.indexOf("Windows Phone") != -1) env.mobile = true;
+  if (env.mobile || agent.indexOf("iPad") != -1 || agent.indexOf("Android") != -1) env.touch = true;
+  if (!env.touch && navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) env.touch = true;
+  if (agent.indexOf("Opera") != -1) env.isOpera = true;else {
+    //very rough detection, but it is enough for current goals
+    env.isIE = !!document.all || agent.indexOf("Trident") !== -1;
+
+    if (env.isIE) {
+      var version = parseFloat(navigator.appVersion.split("MSIE")[1]);
+      if (version == 8) env.isIE8 = true;
+    }
+
+    env.isEdge = agent.indexOf("Edge") != -1;
+    env.isFF = agent.indexOf("Firefox") != -1;
+    env.isWebKit = agent.indexOf("KHTML") != -1;
+    env.isSafari = env.isWebKit && env.isMac && agent.indexOf("Chrome") == -1; //maximum height/width for HTML elements in pixels (rough), bigger values will be ignored by browser
+
+    if (env.isIE || env.isEdge || env.isFF) env.maxHTMLElementSize = 10000000;
+    if (env.isSafari) env.maxHTMLElementSize = 100000000;
+  }
+
+  if (agent.toLowerCase().indexOf("android") != -1) {
+    env.isAndroid = true;
+
+    if (agent.toLowerCase().indexOf("trident") != -1) {
+      env.isAndroid = false;
+      env.isIEMobile = true;
+    }
+  }
+
+  env.transform = false;
+  env.transition = false;
+  var found_index = -1;
+  var js_list = ["", "webkit", "Moz", "O", "ms"];
+  var css_list = ["", "-webkit-", "-Moz-", "-o-", "-ms-"];
+  var d = document.createElement("DIV");
+
+  for (var j = 0; j < js_list.length; j++) {
+    var name = js_list[j] ? js_list[j] + "Transform" : "transform";
+
+    if (typeof d.style[name] != "undefined") {
+      found_index = j;
+      break;
+    }
+  }
+
+  if (found_index > -1) {
+    env.cssPrefix = css_list[found_index];
+    var jp = env.jsPrefix = js_list[found_index];
+    env.transform = jp ? jp + "Transform" : "transform";
+    env.transition = jp ? jp + "Transition" : "transition";
+    env.transitionDuration = jp ? jp + "TransitionDuration" : "transitionDuration";
+    d.style[env.transform] = "translate3d(0,0,0)";
+    env.translate = d.style[env.transform] ? "translate3d" : "translate";
+    env.transitionEnd = env.cssPrefix == "-Moz-" ? "transitionend" : jp ? jp + "TransitionEnd" : "transitionend";
+  }
+
+  env.pointerevents = !env.isIE || new RegExp("Trident/.*rv:11").exec(agent) !== null; //touch events that can be prevented
+
+  env.passiveEventListeners = false;
+
+  try {
+    var opts = Object.defineProperty({}, "passive", {
+      get: function () {
+        // eslint-disable-line
+        env.passiveEventListeners = true;
+      }
+    });
+    window.addEventListener("testPassive", null, opts);
+    window.removeEventListener("testPassive", null, opts);
+  } catch (e) {} // eslint-disable-line
+
+
+  env.svg = function () {
+    return document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1");
+  }();
+
+  env.svganimation = function () {
+    return document.implementation.hasFeature("https://www.w3.org/TR/SVG11/feature#SVG-animation", "1.1");
+  }();
+
   var _native_on_selectstart = 0;
   var _style_element = {};
   var _style_cache = {};
@@ -1559,8 +1650,10 @@
       document.getElementsByTagName("head")[0].appendChild(style);
       if (group) _style_element[group] = style;else _style_element["default"] = style;
     }
+    /*IE8*/
 
-    style.appendChild(document.createTextNode(rule));
+
+    if (style.styleSheet) style.styleSheet.cssText += rule;else style.appendChild(document.createTextNode(rule));
   }
   function removeStyle(group) {
     var box = _style_element[group || "default"];
@@ -1601,6 +1694,7 @@
   function locate(e, id) {
     var trg;
     if (e.tagName) trg = e;else {
+      e = e || event;
       trg = e.target;
     }
 
@@ -1618,68 +1712,94 @@
   } //returns position of html element on the page
 
   function offset(elem) {
-    var box = elem.getBoundingClientRect();
-    var body = document.body;
-    var docElem = document.documentElement;
-    var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
-    var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
-    var clientTop = docElem.clientTop || body.clientTop || 0;
-    var clientLeft = docElem.clientLeft || body.clientLeft || 0;
-    var top = box.top + scrollTop - clientTop;
-    var left = box.left + scrollLeft - clientLeft;
-    return {
-      y: Math.round(top),
-      x: Math.round(left),
-      width: elem.offsetWidth,
-      height: elem.offsetHeight
-    };
+    if (elem.getBoundingClientRect) {
+      //HTML5 method
+      var box = elem.getBoundingClientRect();
+      var body = document.body;
+      var docElem = document.documentElement;
+      var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+      var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+      var clientTop = docElem.clientTop || body.clientTop || 0;
+      var clientLeft = docElem.clientLeft || body.clientLeft || 0;
+      var top = box.top + scrollTop - clientTop;
+      var left = box.left + scrollLeft - clientLeft;
+      return {
+        y: Math.round(top),
+        x: Math.round(left),
+        width: elem.offsetWidth,
+        height: elem.offsetHeight
+      };
+    } else {
+      //fallback to naive approach
+      var _top = 0,
+          _left = 0;
+
+      while (elem) {
+        _top = _top + parseInt(elem.offsetTop, 10);
+        _left = _left + parseInt(elem.offsetLeft, 10);
+        elem = elem.offsetParent;
+      }
+
+      return {
+        y: _top,
+        x: _left,
+        width: elem.offsetHeight,
+        height: elem.offsetWidth
+      };
+    }
   } //returns relative position of event
 
   function posRelative(ev) {
-    return {
+    ev = ev || event;
+    if (!isUndefined(ev.offsetX)) return {
       x: ev.offsetX,
       y: ev.offsetY
-    };
+    }; //ie, webkit
+    else return {
+        x: ev.layerX,
+        y: ev.layerY
+      }; //firefox
   } //returns position of event
 
   function pos(ev) {
-    if (!ev.type) // webix touch event
-      return {
-        x: ev.x,
-        y: ev.y
-      };
+    ev = ev || event;
     if (ev.touches && ev.touches[0]) ev = ev.touches[0];
+    if (ev.pageX || ev.pageY) //FF, KHTML
+      return {
+        x: ev.pageX,
+        y: ev.pageY
+      }; //IE
+
+    var d = env.isIE && document.compatMode != "BackCompat" ? document.documentElement : document.body;
     return {
-      x: ev.pageX,
-      y: ev.pageY
+      x: ev.clientX + d.scrollLeft - d.clientLeft,
+      y: ev.clientY + d.scrollTop - d.clientTop
     };
   } //prevent event action
 
   function preventEvent(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    if (e) e.returnValue = false;
     return stopEvent(e);
   } //stop event bubbling
 
   function stopEvent(e) {
-    e.stopPropagation();
+    e = e || event;
+    if (e.stopPropagation) e.stopPropagation();
+    e.cancelBubble = true;
     return false;
   }
-  function triggerEvent(node, type, name, details) {
-    var event;
-
-    if (typeof window[type] === "function") {
-      details = exports.extend(details || {}, {
-        bubbles: true,
-        cancelable: true
-      });
-      event = new window[type](name, details);
+  function triggerEvent(node, type, name) {
+    if (document.createEventObject) {
+      var ev = document.createEventObject();
+      if (node.fireEvent) node.fireEvent("on" + name, ev);
     } else {
-      //IE 11 support
-      event = document.createEvent(type);
-      event.initEvent(name, true, true);
-    }
+      var _ev = document.createEvent(type);
 
-    node.dispatchEvent(event);
+      _ev.initEvent(name, true, true);
+
+      if (node.dispatchEvent) node.dispatchEvent(_ev);
+    }
   } //add css class to the node
 
   function addCss(node, name, check) {
@@ -1696,14 +1816,15 @@
     d.style.cssText = "height:auto;visibility:hidden; position:absolute; top:0px; left:0px; overflow:hidden;" + (basewidth ? "width:" + basewidth + "px;" : "width:auto;white-space:nowrap;");
     document.body.appendChild(d);
     var all = _typeof(text) !== "object" ? [text] : text;
-    var width = 0,
-        height = 0;
+    var width = 0;
+    var height = 0;
 
     for (var i = 0; i < all.length; i++) {
-      d.innerHTML = all[i];
-      var rect = d.getBoundingClientRect();
-      width = Math.max(width, Math.ceil(rect.width));
-      height = Math.max(height, Math.ceil(rect.height));
+      d.innerHTML = all[i]; //we need to add 1 to offsetWidth/Height because these methods return value as an integer
+      //we can use ie9+ d.getBoundingClientRect().width
+
+      width = Math.max(width, d.offsetWidth + 1);
+      height = Math.max(height, d.offsetHeight + 1);
     }
 
     remove(d);
@@ -1747,13 +1868,35 @@
     start = start || 0;
     end = end || start;
     node.focus();
-    node.setSelectionRange(start, end);
+    if (node.setSelectionRange) node.setSelectionRange(start, end);else {
+      //ie8
+      var textRange = node.createTextRange();
+      textRange.collapse(true);
+      textRange.moveEnd("character", end);
+      textRange.moveStart("character", start);
+      textRange.select();
+    }
   }
   function getSelectionRange(node) {
-    return {
+    if ("selectionStart" in node) return {
       start: node.selectionStart || 0,
       end: node.selectionEnd || 0
-    };
+    };else {
+      //ie8
+      node.focus();
+      var selection = document.selection.createRange();
+      var bookmark = selection.getBookmark();
+      var textRange = node.createTextRange();
+      textRange.moveToBookmark(bookmark);
+      var length = textRange.text.length;
+      textRange.collapse(true);
+      textRange.moveStart("character", -node.value.length);
+      var start = textRange.text.length;
+      return {
+        start: start,
+        end: start + length
+      };
+    }
   }
   function addMeta(name, value) {
     document.getElementsByTagName("head").item(0).appendChild(create("meta", {
@@ -1761,34 +1904,6 @@
       content: value
     }));
   }
-
-  var html$1 = /*#__PURE__*/Object.freeze({
-    denySelect: denySelect,
-    allowSelect: allowSelect,
-    index: index,
-    createCss: createCss,
-    addStyle: addStyle,
-    removeStyle: removeStyle,
-    create: create,
-    getValue: getValue,
-    remove: remove,
-    insertBefore: insertBefore,
-    locate: locate,
-    offset: offset,
-    posRelative: posRelative,
-    pos: pos,
-    preventEvent: preventEvent,
-    stopEvent: stopEvent,
-    triggerEvent: triggerEvent,
-    addCss: addCss,
-    removeCss: removeCss,
-    getTextSize: getTextSize,
-    download: download,
-    _getClassName: _getClassName,
-    setSelectionRange: setSelectionRange,
-    getSelectionRange: getSelectionRange,
-    addMeta: addMeta
-  });
 
   var htmltable = {
     //convert json string to json object if necessary
@@ -1873,53 +1988,6 @@
       return hash;
     }
   };
-
-  var env = {};
-  env.cdn = "//cdn.webix.com";
-  env.codebase = "";
-  env.zIndexBase = 100;
-  env.scrollSize = 17;
-  env.strict = !!window.webix_strict;
-  env.https = document.location.protocol === "https:";
-  var agent = navigator.userAgent;
-  env.isMac = agent.indexOf("Mac") != -1;
-  if (/iPad|iPhone|iPod/.test(agent)) env.isIOS = true;
-  if (agent.indexOf("Android") != -1) env.isAndroid = true;
-  if (env.isIOS || env.isAndroid || agent.indexOf("Mobile") != -1 || agent.indexOf("Windows Phone") != -1) env.mobile = true;
-  if (env.mobile || navigator.maxTouchPoints > 1) env.touch = true;
-  env.fastClick = !env.touch; //very rough detection, but it is enough for current goals
-
-  if (agent.indexOf("Trident") !== -1) env.isIE = true;else if (agent.indexOf("Edge") !== -1) env.isEdge = true;else if (agent.indexOf("Firefox") !== -1) env.isFF = true;else if (agent.indexOf("Chrome") !== -1) env.isChromium = true;else if (agent.indexOf("Safari") !== -1) env.isSafari = true; //maximum height/width for HTML elements in pixels (rough), bigger values will be ignored by browser
-
-  if (env.isIE || env.isEdge || env.isFF) env.maxHTMLElementSize = 10000000;
-  if (env.isSafari) env.maxHTMLElementSize = 100000000;
-  env.transform = "transform";
-  env.transition = "transition";
-  env.transitionDuration = "transitionDuration";
-  env.translate = "translate3d";
-  env.transitionEnd = "transitionend"; //touch events that can be prevented
-
-  env.passiveEventListeners = false;
-
-  try {
-    var opts = Object.defineProperty({}, "passive", {
-      get: function () {
-        // eslint-disable-line
-        env.passiveEventListeners = true;
-      }
-    });
-    window.addEventListener("testPassive", null, opts);
-    window.removeEventListener("testPassive", null, opts);
-  } catch (e) {} // eslint-disable-line
-
-
-  env.svg = function () {
-    return document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1");
-  }();
-
-  env.svganimation = function () {
-    return document.implementation.hasFeature("https://www.w3.org/TR/SVG11/feature#SVG-animation", "1.1");
-  }();
 
   var _modules = {}; //hash of already loaded modules
   //loads module from external js file
@@ -2071,17 +2139,15 @@
       var ext = (options.ext || options).toLowerCase();
       if (ext != "xls") ext = "xlsx";
       return require(env.cdn + "/extras/xlsx.core.styles.min.js").then(bind(function () {
-        var cellDates = isUndefined(options.cellDates) ? true : options.cellDates;
         /* global XLS, XLSX */
-
         var wb = ext == "xls" ? XLS.read(arr.join(""), {
           type: "binary",
           cellStyles: true,
-          cellDates: cellDates
+          cellDates: true
         }) : XLSX.read(arr.join(""), {
           type: "binary",
           cellStyles: true,
-          cellDates: cellDates
+          cellDates: true
         });
         var res = {
           sheets: wb.Sheets,
@@ -2224,8 +2290,7 @@
   var silentErrorMarker = {};
   var AtomDataLoader = {
     $init: function (config) {
-      this._data_generation = 0; //prepare data store
-
+      //prepare data store
       this.data = {};
       this.waitData = Deferred.defer();
       if (config) this._settings.datatype = config.datatype || "json";
@@ -2248,10 +2313,11 @@
       return true;
     },
     //loads data from external URL
-    load: function (url, call, details, clear) {
+    load: function (url, call) {
       var _this = this;
 
-      var type;
+      var type,
+          details = arguments[2] || null;
 
       if (typeof call == "string") {
         //second parameter can be a loading type or callback
@@ -2260,10 +2326,10 @@
         call = arguments[2];
       }
 
-      var d = this._fetch(url, type, details || null);
+      var d = this._fetch(url, type, details);
 
       if (d && d.then) return d.then(function (data) {
-        _this._onLoad(data, clear);
+        _this._onLoad(data);
 
         if (call) ajax.$callback(_this, call, "", data, -1);
         return data;
@@ -2295,12 +2361,12 @@
         result = Deferred.resolve(result);
       }
 
-      var gen = ++this._data_generation;
+      var gen = this._data_generation;
 
       if (result && result.then) {
         return result.then(function (data) {
           // component destroyed, or clearAll was issued
-          if (_this2.$destructed || _this2._data_generation !== gen) // by returning rejection we are preventing the further executing chain
+          if (_this2.$destructed || gen && _this2._data_generation !== gen) // by returning rejection we are preventing the further executing chain
             // if user have used list.load(data).then(do_something)
             // the do_something will not be executed
             // the error handler may be triggered though
@@ -2312,24 +2378,21 @@
       return result;
     },
     //loads data from object
-    parse: function (data, type, clear) {
-      var _this3 = this;
-
+    parse: function (data, type) {
       if (data && typeof data.then == "function") {
-        var gen = ++this._data_generation; // component destroyed, or clearAll was issued
+        var generation = this._data_generation; // component destroyed, or clearAll was issued
 
-        return data.then(function (data) {
-          if (_this3.$destructed || _this3._data_generation !== gen) return Deferred.reject();
-
-          _this3.parse(data, type, clear);
-        });
+        return data.then(bind(function (data) {
+          if (this.$destructed || generation && this._data_generation !== generation) return Deferred.reject();
+          this.parse(data, type);
+        }, this));
       } //loading data from other component
 
 
       if (data && data.sync && this.sync) this._syncData(data);else if (!this.callEvent("onBeforeLoad", [])) return Deferred.reject();else {
         if (type || !this.data.driver) this.data.driver = DataDriver[type || "json"];
 
-        this._onLoad(data, clear);
+        this._onLoad(data);
       }
       return Deferred.resolve();
     },
@@ -2347,19 +2410,11 @@
       parsed = record ? driver.getDetails(record) : {};
       if (this.setValues) this.setValues(parsed, false, "auto");else this.data = parsed;
     },
-    _onLoadContinue: function (data, clear) {
+    _onLoadContinue: function (data) {
       if (data) {
-        if (!this.$onLoad || !this.$onLoad(data, this.data.driver, clear)) {
-          if (this.data && this.data._parse) {
-            if (clear) this.data.clearAll(true);
-
-            this.data._parse(data); //datastore
-
-          } else {
-            if (clear) this.clearAll(true);
-
-            this._parse(data);
-          }
+        if (!this.$onLoad || !this.$onLoad(data, this.data.driver)) {
+          if (this.data && this.data._parse) this.data._parse(data); //datastore
+          else this._parse(data);
         }
       } else this._onLoadError(data); //data loaded, view rendered, call onready handler
 
@@ -2369,8 +2424,8 @@
       this.waitData.resolve();
     },
     //default after loading callback
-    _onLoad: function (data, clear) {
-      var _this4 = this;
+    _onLoad: function (data) {
+      var _this3 = this;
 
       // webix loading object or uploaded file structure
       if (data && typeof data.text === "function" && !data.name) {
@@ -2379,8 +2434,8 @@
 
       data = this.data.driver.toObject(data);
       if (data && data.then) data.then(function (data) {
-        return _this4._onLoadContinue(data, clear);
-      });else this._onLoadContinue(data, clear);
+        return _this3._onLoadContinue(data);
+      });else this._onLoadContinue(data);
     },
     _onLoadError: function (xhttp) {
       if (xhttp !== silentErrorMarker) {
@@ -2788,7 +2843,7 @@
         this.scrollTo(x, y);
         this.callEvent("onAfterAutoScroll", []);
         var scroll = this.getScrollState();
-        return Math.abs((mode === "x" ? x : y) - scroll[mode]) < 1;
+        return scroll[mode] === (mode === "x" ? x : y);
       }
 
       return false;
@@ -2823,16 +2878,20 @@
       capture = {
         passive: context.passive,
         capture: capture
-      };
-    node.addEventListener(event, handler, capture);
+      }; //use IE's of FF's way of event's attaching
+
+    if (node.addEventListener) node.addEventListener(event, handler, capture);else if (node.attachEvent) node.attachEvent("on" + event, info[2] = function () {
+      return handler.apply(node, arguments); //IE8 fix
+    });
     return id; //return id of newly created event, can be used in eventRemove
   } //remove previously attached event
 
   function eventRemove(id) {
     if (!id) return;
     assert(_events[id], "Removing non-existing event");
-    var ev = _events[id];
-    ev[0].removeEventListener(ev[1], ev[2], !!ev[3]);
+    var ev = _events[id]; //browser specific event removing
+
+    if (ev[0].removeEventListener) ev[0].removeEventListener(ev[1], ev[2], !!ev[3]);else if (ev[0].detachEvent) ev[0].detachEvent("on" + ev[1], ev[2]);
     delete _events[id]; //delete all traces
   }
 
@@ -3211,7 +3270,7 @@
 
       var popup = element._settings.popup;
 
-      if (popup && !element._settings.readonly && !e.longtouch_drag) {
+      if (popup && !element._settings.readonly) {
         if (_typeof(popup) == "object" && !popup.name) {
           popup = element._settings.popup = ui(popup)._settings.id;
 
@@ -3278,11 +3337,11 @@
       if (!this._tooltip) {
         this._tooltip = new ui.tooltip({});
         this._tooltip._css_name = "webix_tooltip webix_global_tooltip";
-        this._webix_tooltip_mm = event$1(document, "pointermove", function (e) {
-          return _this._move_tooltip(e);
+        this._webix_tooltip_mm = event$1(document, "mousemove", this._move_tooltip, {
+          bind: this
         });
-        this._webix_tooltip_ml = event$1(document, "pointerleave", function () {
-          return _this._hide_tooltip();
+        this._webix_tooltip_ml = event$1(document, "mouseleave", this._hide_tooltip, {
+          bind: this
         });
         this._drag_event = attachEvent("onDragMode", function () {
           return _this._hide_tooltip();
@@ -3296,7 +3355,6 @@
       return this._tooltip;
     },
     _move_tooltip: function (e) {
-      if (e.pointerType !== "mouse") return;
       var c = {};
       var node = e.target;
 
@@ -3497,7 +3555,7 @@
   if (document.readyState == "complete") handler();else event$1(window, "load", handler);
   ready(function () {
     event$1(document.body, "click", function (e) {
-      callEvent("onClick", [e]);
+      callEvent("onClick", [e || window.event]);
     });
   });
 
@@ -3550,18 +3608,22 @@
     var source = e.target;
 
     if (count > 0 && message.keyboard) {
+      e = e || window.event;
       var code = e.which || e.keyCode;
       if (code != 13 && code != 32 && code != 27) return;
       var activeBox;
 
       for (var i = count - 1; i >= 0; i--) {
         var box = modalbox.pull[order[i]];
-        if (box._box != source && box._box.contains(source) && code == 32) // ignore space inside input
-          return;
 
         if (box.container && box.container.contains(source)) {
-          activeBox = box;
-          break;
+          var insideModalbox = box._box != source && box._box.contains(source);
+
+          if (code == 32 && insideModalbox) // ignore space inside input
+            return;else {
+            activeBox = box;
+            break;
+          }
         }
       }
 
@@ -3598,9 +3660,9 @@
 
 
     if (mode && node.modality === 1 || node.modality === 0) {
-      cover = cover || Array.prototype.slice.call(node.querySelectorAll(".webix_modal_cover")).filter(function (el) {
+      cover = cover || Array.from(node.querySelectorAll(".webix_modal_cover")).find(function (el) {
         return el.parentNode == node;
-      })[0];
+      });
 
       if (cover) {
         if (!node.modality) {
@@ -3643,7 +3705,6 @@
       if (text) t.hide(text.id);
       text = null;
     };
-
     if (t.position == "bottom" && t.area.firstChild) t.area.insertBefore(message, t.area.firstChild);else t.area.appendChild(message);
     if (text.expire > 0) t.timers[text.id] = window.setTimeout(function () {
       t.hide(text.id);
@@ -3703,6 +3764,7 @@
     }
 
     box.onclick = function (e) {
+      e = e || window.event;
       var source = e.target;
       if (!source.className) source = source.parentNode;
 
@@ -3745,7 +3807,7 @@
     box.style.left = x + "px"; //necessary for IE only
 
     box.onkeydown = modal_key;
-    if (hasInput) box.querySelector(".webix_popup_input input").focus();else box.focus();
+    box.focus();
     if (!config.id) config.id = _uid("modalbox");else if (modalbox.pull[config.id]) {
       modalbox.hide(config.id);
     }
@@ -4075,6 +4137,8 @@
     _view: null,
     _hotkeys: {},
     _focus_time: 0,
+    _tab_time: 0,
+    _mouse_time: 0,
     _controls: {
       "esc": "escape",
       "up": "arrowup",
@@ -4105,6 +4169,11 @@
       });
       event$1(document.body, "click", this._focus_click, {
         capture: true,
+        bind: this
+      });
+      event$1(document.body, "mousedown", function () {
+        this._mouse_time = new Date();
+      }, {
         bind: this
       });
       event$1(document.body, "focus", this._focus_tab, {
@@ -4173,11 +4242,7 @@
       if (view) {
         if (this.canFocus(view)) {
           // keep form focus
-          if (this._view && this._view.getFormView() == view && this._view.focus) this._view.focus();else {
-            //radio view with scroll: focus changes onClick event target into radiogroup, so we need call onClick before it happens
-            if (e.target.type == "radio" || e.target.getAttribute("role") == "radio") callEvent("onClick", [e]);
-            this.setFocus(view);
-          }
+          if (this._view && this._view.getFormView() == view && this._view.focus) this._view.focus();else this.setFocus(view);
         } //remove focus from an unreachable view
         else if (view.$view.contains(e.target)) e.target.blur();
       } else this.setFocus(null);
@@ -4235,9 +4300,7 @@
       if (this && this.callEvent) this.callEvent("onTimedKeyPress", []);
     },
     _keypress: function (e) {
-      var code = e.which || e.keyCode; // processing or not found
-
-      if (code == 229 || code == 0) return; // numpad keys
+      var code = e.which || e.keyCode; // numpad keys
 
       if (code > 95 && code < 106) code -= 48;
       var view = this.getFocus();
@@ -4283,6 +4346,7 @@
     },
     _tab_logic: function (view, e) {
       var mode = !e.shiftKey;
+      UIManager._tab_time = new Date();
       if (view && view._custom_tab_handler && !view._custom_tab_handler(mode, e)) return false;
 
       if (view && view._in_edit_mode) {
@@ -4929,15 +4993,20 @@
       if (typeof search === "string") search = {
         view: search
       };
-      if (_typeof(search) === "object") confirm = function (test) {
-        var config = test.config;
 
-        for (var key in search) {
-          if (config[key] != search[key]) return false;
-        }
+      if (_typeof(search) === "object") {
+        //IE8 compatibility
+        confirm = function (test) {
+          var config = test.config;
 
-        return true;
-      };else confirm = search;
+          for (var key in search) {
+            if (config[key] != search[key]) return false;
+          }
+
+          return true;
+        };
+      } else confirm = search;
+
       if (all === "self" && confirm(this)) return this;
       var results = all === "all" ? [] : false;
       var direction = all === "parent" ? this._queryGoUp : this._queryGoDown;
@@ -5153,7 +5222,7 @@
           role = target.getAttribute("role");
 
       if ((code === 13 || code === 32) && (role == "button" || role == "tab") && !this._settings.disabled) {
-        triggerEvent(target, "MouseEvent", "click");
+        triggerEvent(target, "MouseEvents", "click");
         preventEvent(e);
       }
     },
@@ -5275,12 +5344,6 @@
   */
 
   var SingleRender = exports.proto({
-    $init: function () {
-      this.type = clone(this.type);
-    },
-    customize: function (obj) {
-      type(this, obj);
-    },
     template_setter: function (value) {
       this.type.template = template(value);
     },
@@ -5288,6 +5351,9 @@
     _toHTML: function (obj) {
       var type$$1 = this.type;
       return (type$$1.templateStart ? type$$1.templateStart(obj, type$$1) : "") + type$$1.template(obj, type$$1) + (type$$1.templateEnd ? type$$1.templateEnd(obj, type$$1) : "");
+    },
+    customize: function (obj) {
+      type(this, obj);
     }
   }, AtomRender);
 
@@ -5409,9 +5475,7 @@
         this._init_tooltip_once();
 
         return value;
-      } else if (this._settings.tooltip) return {
-        template: ""
-      };
+      }
     },
     _init_tooltip_once: function () {
       TooltipControl.addTooltip(this);
@@ -5673,6 +5737,10 @@
     state._wait_animate = delay(animate, this, [node, animation], 10);
   };
 
+  animate.isSupported = function () {
+    return env.transform && env.transition && !env.isOpera;
+  };
+
   animate.formLine = function (next, current, animation) {
     var direction = animation.direction; //sometimes user can initiate animation multiple times ( fast clicking )
     //as result animation may be called against already removed from the dom node
@@ -5738,6 +5806,7 @@
       type: animation
     };
     animation = Settings._mergeSettings(animation, animate.defaults);
+    var prefix = env.cssPrefix;
     var settings = node._has_animation = animation;
     var skew_options, scale_type; //jshint -W086:true
 
@@ -5777,7 +5846,7 @@
     }
 
     var duration = settings.duration + "ms " + settings.timing + " " + settings.delay + "ms";
-    var css_general = "transformStyle: preserve-3d;"; // general css rules
+    var css_general = prefix + "TransformStyle: preserve-3d;"; // general css rules
 
     var css_transition = "";
     var css_transform = "";
@@ -5816,7 +5885,7 @@
         var y = settings.y + "px"; // translate(x, y) OR translate3d(x, y, 0)
 
         css_transform = env.translate + "(" + x + ", " + y + (env.translate == "translate3d" ? ", 0" : "") + ")";
-        css_transition = "transform " + duration;
+        css_transition = prefix + "transform " + duration;
         break;
 
       default:
@@ -5916,6 +5985,7 @@
     padding: 0,
     accordionType: "accordion",
     optionHeight: 32,
+    organogramLineColor: "#CCD7E6",
     timelineColor: "#1CA1C1",
     backColor: "#ffffff",
     //colorboard
@@ -5989,6 +6059,7 @@
     padding: 0,
     accordionType: "accordion",
     optionHeight: 24,
+    organogramLineColor: "#CCD7E6",
     timelineColor: "#1CA1C1",
     backColor: "#ffffff",
     //colorboard
@@ -6228,13 +6299,13 @@
 
   var Touch = {
     config: {
-      longTouchDelay: 700,
+      longTouchDelay: 1000,
       scrollDelay: 150,
       gravity: 500,
-      deltaStep: 10,
+      deltaStep: 30,
       speed: "0ms",
-      finish: 1000,
-      elastic: true
+      finish: 1500,
+      ellastic: true
     },
     limit: function (value) {
       Touch._limited = value !== false;
@@ -6248,13 +6319,13 @@
     $init: function () {
       Touch.$init = function () {};
 
-      event$1(document.body, env.touch.down, Touch._touchstart, {
+      event$1(document.body, mouse.down, Touch._touchstart, {
         passive: false
       });
-      event$1(document.body, env.touch.move, Touch._touchmove, {
+      event$1(document.body, mouse.move, Touch._touchmove, {
         passive: false
       });
-      event$1(document, env.touch.up, Touch._touchend);
+      event$1(document.body, mouse.up, Touch._touchend);
       event$1(document.body, "dragstart", function (e) {
         if (Touch._disabled || Touch._limited) return;
         return preventEvent(e);
@@ -6267,7 +6338,9 @@
     },
     _clear_artefacts: function () {
       Touch._start_context = Touch._current_context = Touch._prev_context = Touch._scroll_context = null;
-      Touch._scroll_mode = Touch._scroll_node = Touch._scroll_stat = Touch._long_touched = null;
+      Touch._scroll_mode = Touch._scroll_node = Touch._scroll_stat = Touch._long_touched = null; //remove(Touch._scroll);
+      //Touch._scroll = [null, null];
+
       Touch._delta = {
         _x_moment: 0,
         _y_moment: 0,
@@ -6302,7 +6375,7 @@
           var y = temp.f;
           var finish = Touch.config.finish;
 
-          var delta = Touch._get_delta(e);
+          var delta = Touch._get_delta(e, true);
 
           var view = $$(Touch._scroll_node);
           var gravity = view && view.$scroll ? view.$scroll.gravity : Touch.config.gravity;
@@ -6320,13 +6393,16 @@
               f: cny
             };
             view = $$(Touch._scroll_node);
-            if (view && view.adjustScroll) view.adjustScroll(result);
-            finish = Math.min(Touch.config.finish, Math.max(100, finish));
+            if (view && view.adjustScroll) view.adjustScroll(result); //finish = Math.max(100,(Touch._fast_correction?100:finish));
+
+            finish = Math.max(100, finish);
 
             if (x != result.e || y != result.f) {
               Touch._set_matrix(Touch._scroll_node, result.e, result.f, finish + "ms");
 
               if (Touch._scroll_master) Touch._scroll_master._sync_scroll(result.e, result.f, finish + "ms");
+
+              Touch._set_scroll(result.e, result.f, finish + "ms");
             } else {
               Touch._scroll_end();
             }
@@ -6346,7 +6422,7 @@
       Touch._translate_event("onTouchMove");
 
       if (Touch._scroll_mode) {
-        Touch._set_scroll_pos();
+        Touch._set_scroll_pos(delta);
       } else {
         Touch._axis_x = Touch._axis_check(delta._x, "x", Touch._axis_x);
         Touch._axis_y = Touch._axis_check(delta._y, "y", Touch._axis_y);
@@ -6364,13 +6440,10 @@
             }
           }
 
-          Touch._init_scroller(); //apply scrolling
+          Touch._init_scroller(delta); //apply scrolling
 
-        } else {
-          var state = Touch._is_scroll();
-
-          var _view = $$(state && state[0]); // support subviews
-
+        } else if (env.isMac) {
+          var _view = $$(Touch._start_context);
 
           if (_view && _view.$hasYScroll && _view.$hasYScroll() && e.cancelable) {
             return preventEvent(e);
@@ -6387,13 +6460,21 @@
 
       var prev = Touch._prev_context || Touch._start_context;
       var view = $$(Touch._scroll_node);
-      var elastic = view && view.$scroll ? view.$scroll.elastic : Touch.config.elastic;
-      if (Touch._scroll[0]) temp.e = Touch._correct_minmax(temp.e - prev.x + Touch._current_context.x, elastic, temp.e, Touch._scroll_stat.dx, Touch._scroll_stat.px);
-      if (Touch._scroll[1]) temp.f = Touch._correct_minmax(temp.f - prev.y + Touch._current_context.y, elastic, temp.f, Touch._scroll_stat.dy, Touch._scroll_stat.py);
+      var ellastic = view && view.$scroll ? view.$scroll.ellastic : Touch.config.ellastic;
+      if (Touch._scroll[0]) temp.e = Touch._correct_minmax(temp.e - prev.x + Touch._current_context.x, ellastic, temp.e, Touch._scroll_stat.dx, Touch._scroll_stat.px);
+      if (Touch._scroll[1]) temp.f = Touch._correct_minmax(temp.f - prev.y + Touch._current_context.y, ellastic, temp.f, Touch._scroll_stat.dy, Touch._scroll_stat.py);
 
       Touch._set_matrix(Touch._scroll_node, temp.e, temp.f, "0ms");
 
       if (Touch._scroll_master) Touch._scroll_master._sync_scroll(temp.e, temp.f, "0ms");
+
+      Touch._set_scroll(temp.e, temp.f, "0ms");
+    },
+    _set_scroll: function (dx, dy, speed) {
+      var edx = Touch._scroll_stat.px / Touch._scroll_stat.dx * -dx;
+      var edy = Touch._scroll_stat.py / Touch._scroll_stat.dy * -dy;
+      if (Touch._scroll[0]) Touch._set_matrix(Touch._scroll[0], edx, 0, speed);
+      if (Touch._scroll[1]) Touch._set_matrix(Touch._scroll[1], 0, edy, speed);
     },
     scrollTo: function (node, x, y, speed) {
       Touch._set_matrix(node, x, y, speed);
@@ -6421,7 +6502,9 @@
       };else {
         if (window.WebKitCSSMatrix)
           /* global WebKitCSSMatrix */
-          tmatrix = new WebKitCSSMatrix(matrix);else {
+          tmatrix = new WebKitCSSMatrix(matrix);else if (window.MSCSSMatrix)
+          /* global MSCSSMatrix */
+          tmatrix = new MSCSSMatrix(matrix);else {
           // matrix(1, 0, 0, 1, 0, 0) --> 1, 0, 0, 1, 0, 0
           var _tmatrix = matrix.replace(/(matrix\()(.*)(\))/gi, "$2"); // 1, 0, 0, 1, 0, 0 --> 1,0,0,1,0,0
 
@@ -6441,28 +6524,63 @@
     },
     _correct_minmax: function (value, allow, current, dx, px) {
       if (value === current) return value;
-      if (px > dx) return 0;
       var delta = Math.abs(value - current);
-      var sign = delta / (value - current);
+      var sign = delta / (value - current); //	Touch._fast_correction = true;
+
       if (value > 0) return allow ? current + sign * Math.sqrt(delta) : 0;
       var max = dx - px;
-      if (max + value < 0) return allow ? current + sign * Math.sqrt(delta) : -max;
+      if (max + value < 0) return allow ? current - Math.sqrt(-(value - current)) : -max; //	Touch._fast_correction = false;
+
       return value;
     },
     _init_scroll_node: function (node) {
       if (!node.scroll_enabled) {
         node.scroll_enabled = true;
         node.parentNode.style.position = "relative";
-        node.style.cssText += "transition:transform; user-select:none; transform-style:flat;";
+        var prefix = env.cssPrefix;
+        node.style.cssText += prefix + "transition: " + prefix + "transform; " + prefix + "user-select:none; " + prefix + "transform-style:flat;";
         node.addEventListener(env.transitionEnd, Touch._scroll_end, false);
       }
     },
     _init_scroller: function () {
-      if (Touch._scroll_mode.indexOf("x") !== -1) Touch._scroll[0] = true;
-      if (Touch._scroll_mode.indexOf("y") !== -1) Touch._scroll[1] = true;
-      if (Touch._scroll[0] || Touch._scroll[1]) Touch._scroll[2] = Touch._scroll_node;
+      if (Touch._scroll_mode.indexOf("x") != -1) Touch._scroll[0] = Touch._create_scroll("x", Touch._scroll_stat.dx, Touch._scroll_stat.px, "width");
+      if (Touch._scroll_mode.indexOf("y") != -1) Touch._scroll[1] = Touch._create_scroll("y", Touch._scroll_stat.dy, Touch._scroll_stat.py, "height");
 
       Touch._init_scroll_node(Touch._scroll_node);
+
+      window.setTimeout(function () {
+        Touch._set_scroll_pos();
+
+        if (Touch._scroll_stat && !Touch._scroll_stat.hidden) {
+          if (Touch._scroll[0]) Touch._scroll[0].style.visibility = "visible";
+          if (Touch._scroll[1]) Touch._scroll[1].style.visibility = "visible";
+        }
+      }, 0);
+    },
+    _create_scroll: function (mode, dy, py, dim) {
+      if (dy - py < 2) {
+        var matrix = Touch._get_matrix(Touch._scroll_node);
+
+        var e = mode == "y" ? matrix.e : 0;
+        var f = mode == "y" ? 0 : matrix.f;
+        if (!Touch._scroll_master) Touch._set_matrix(Touch._scroll_node, e, f, "0ms");
+        Touch._scroll_mode = Touch._scroll_mode.replace(mode, "");
+        return "";
+      }
+
+      var scroll = create("DIV", {
+        "class": "webix_scroll_" + mode
+      }, "");
+      scroll.style.visibility = "hidden";
+      scroll.style[dim] = Math.max(py * py / dy - 7, 10) + "px";
+
+      if (Touch._scroll_stat.left) {
+        if (mode === "x") scroll.style.left = Touch._scroll_stat.left + "px";else scroll.style.right = -Touch._scroll_stat.left + "px";
+      }
+
+      Touch._scroll_node.parentNode.appendChild(scroll);
+
+      return scroll;
     },
     _axis_check: function (value, mode, old) {
       if (value > Touch.config.deltaStep) {
@@ -6496,7 +6614,11 @@
         if (view.callEvent) view.callEvent("onAfterScroll", [result]);
       }
 
-      if (!Touch._scroll_mode) Touch._scroll = [null, null];
+      if (!Touch._scroll_mode) {
+        remove(Touch._scroll);
+        Touch._scroll = [null, null];
+      }
+
       Touch._active_transion = false;
     },
     _long_move: function () {
@@ -6504,22 +6626,27 @@
       Touch._was_not_moved = false;
     },
     _stop_old_scroll: function (e) {
-      if (Touch._scroll[2]) {
+      if (Touch._scroll[0] || Touch._scroll[1]) {
         Touch._stop_scroll(e, Touch._scroll[0] ? "x" : "y");
       } else return true;
     },
     _touchstart: function (e) {
+      var target = e.target;
       if (Touch._disabled) return;
       Touch._long_touched = null;
-      Touch._scroll_context = Touch._start_context = env.touch.context(e);
-      if (Touch._limited && !Touch._is_scroll()) Touch._scroll_context = null;
+      Touch._scroll_context = Touch._start_context = mouse.context(e); // in "limited" mode we should have possibility to use slider
+
+      var element = $$(e);
+
+      if (Touch._limited && !Touch._is_scroll() && !(element && element.$touchCapture)) {
+        Touch._scroll_context = null;
+      }
 
       Touch._translate_event("onTouchStart");
 
       if (Touch._stop_old_scroll(e)) Touch._long_touch_timer = window.setTimeout(Touch._long_touch, Touch.config.longTouchDelay);
-      var element = $$(e);
 
-      if (element && element.touchable && (!e.target.className || e.target.className.indexOf("webix_view") !== 0)) {
+      if (element && element.touchable && (!target.className || target.className.indexOf("webix_view") !== 0)) {
         Touch._css_button_remove = element.getNode(e);
         addCss(Touch._css_button_remove, "webix_touch");
       }
@@ -6530,31 +6657,33 @@
 
         Touch._translate_event("onLongTouch");
 
-        callEvent("onClick", [Touch._start_context]);
+        callEvent("onClick", [Touch._start_context]); //Touch._clear_artefacts();
       }
     },
     _stop_scroll: function (e, stop_mode) {
       Touch._locate(stop_mode);
 
-      if (Touch._scroll[2]) {
+      var scroll = Touch._scroll[0] || Touch._scroll[1];
+
+      if (scroll) {
         var view = Touch._get_event_view("onBeforeScroll", true);
 
         if (view) view.callEvent("onBeforeScroll", [Touch._start_context, Touch._current_context]);
+      }
 
-        if (!Touch._scroll_node || Touch._scroll_node.parentNode !== Touch._scroll[2].parentNode) {
-          Touch._clear_artefacts();
+      if (scroll && (!Touch._scroll_node || scroll.parentNode != Touch._scroll_node.parentNode)) {
+        Touch._clear_artefacts();
 
-          Touch._scroll_end();
+        Touch._scroll_end();
 
-          Touch._start_context = env.touch.context(e);
-        }
+        Touch._start_context = mouse.context(e);
       }
 
       Touch._touchmove(e);
     },
     _get_delta: function (e) {
       Touch._prev_context = Touch._current_context;
-      Touch._current_context = env.touch.context(e);
+      Touch._current_context = mouse.context(e);
       Touch._delta._x = Math.abs(Touch._start_context.x - Touch._current_context.x);
       Touch._delta._y = Math.abs(Touch._start_context.y - Touch._current_context.y);
 
@@ -6572,7 +6701,7 @@
       return Touch._delta;
     },
     _get_sizes: function (node) {
-      return {
+      Touch._scroll_stat = {
         dx: node.offsetWidth,
         dy: node.offsetHeight,
         px: node.parentNode.offsetWidth,
@@ -6581,6 +6710,7 @@
     },
     _is_scroll: function (locate_mode) {
       var node = Touch._start_context.target;
+      if (!env.touch && !env.transition && !env.transform) return null;
 
       while (node && node.tagName != "BODY") {
         if (node.getAttribute) {
@@ -6594,12 +6724,13 @@
       return null;
     },
     _locate: function (locate_mode) {
-      var state = Touch._is_scroll(locate_mode);
+      var state = this._is_scroll(locate_mode);
 
       if (state) {
         Touch._scroll_mode = state[1];
         Touch._scroll_node = state[0];
-        Touch._scroll_stat = Touch._get_sizes(state[0]);
+
+        Touch._get_sizes(state[0]);
       }
 
       return state;
@@ -6650,24 +6781,53 @@
     if (env.touch) {
       Touch.$init(); //not full screen mode
 
-      if (document.body.className.indexOf("webix_full_screen") === -1) Touch.limit(true);
-      if (env.isSafari && CSS.supports("-webkit-overflow-scrolling: touch")) addStyle(".webix_view{ -webkit-overflow-scrolling:touch; } .webix_scroll_cont{ transform:translateZ(0px); }");
+      if (document.body.className.indexOf("webix_full_screen") == -1) Touch.limit(true);
+      if (env.isSafari) addStyle(".webix_view{ -webkit-overflow-scrolling: touch; }");
+      if (window.MSCSSMatrix) addStyle(".webix_view{ -ms-touch-action: none; }");
+    } else {
+      var id = event$1(document.body, "touchstart", function (ev) {
+        if (ev.touches.length && ev.touches[0].radiusX > 4) {
+          env.touch = true;
+          setMouse(mouse);
+          touchInit();
+
+          for (var key in ui.views) {
+            var view = ui.views[key];
+            if (view && view.$touch) view.$touch();
+          }
+        }
+
+        eventRemove(id);
+      }, {
+        capture: true
+      });
     }
   }
 
+  function setMouse(mouse) {
+    mouse.down = "touchstart";
+    mouse.move = "touchmove";
+    mouse.up = "touchend";
+    mouse.context = Touch._get_context;
+  }
+
   ready(touchInit);
-  env.mouse = {
+  var mouse = env.mouse = {
     down: "mousedown",
-    move: "mousemove",
     up: "mouseup",
+    move: "mousemove",
     context: Touch._get_context_m
   };
-  env.touch = env.touch && {
-    down: "touchstart",
-    move: "touchmove",
-    up: "touchend",
-    context: Touch._get_context
-  };
+
+  if (window.navigator.pointerEnabled) {
+    mouse.down = "pointerdown";
+    mouse.move = "pointermove";
+    mouse.up = "pointerup";
+  } else if (window.navigator.msPointerEnabled) {
+    mouse.down = "MSPointerDown";
+    mouse.move = "MSPointerMove";
+    mouse.up = "MSPointerUp";
+  } else if (env.touch) setMouse(mouse);
 
   /*
   	Behavior:DND - low-level dnd handling
@@ -6731,16 +6891,19 @@
         this._drag_masters[index$$1] = null;
       }
     },
-    _createTouchDrag: function (e, pointer) {
+    _createTouchDrag: function (e) {
       var dragCtrl = DragControl;
 
       var master = this._getActiveDragMaster(); // for data items only
 
 
       if (master && master.$longTouchLimit) {
-        if (!dragCtrl._html && !dragCtrl.createDrag(e, pointer)) return;
+        if (!dragCtrl._html && !dragCtrl.createDrag(e)) return;
         e.longtouch_drag = true;
-        var pos$$1 = pos(e);
+        var pos$$1 = {
+          x: e.x,
+          y: e.y
+        };
         var customPos = dragCtrl.$dragPos(pos$$1, e);
         var ctx = dragCtrl._drag_context;
         dragCtrl._html.style.top = pos$$1.y + dragCtrl.top + (customPos || !ctx.y_offset ? 0 : ctx.y_offset) + "px";
@@ -6754,23 +6917,17 @@
     	@param ctrl 	options dnd master
     */
     addDrag: function (node, ctrl) {
-      var _this = this;
-
       node = toNode(node);
       node.webix_drag = this._getCtrl(ctrl);
 
+      _event(node, env.mouse.down, this._preStart, {
+        bind: node
+      });
+
       _event(node, "dragstart", preventEvent);
-
-      _event(node, env.mouse.down, function (e) {
-        return _this._preStart(e, node, "mouse");
-      });
-
-      if (env.touch) _event(node, env.touch.down, function (e) {
-        return _this._preStart(e, node, "touch");
-      });
     },
     //logic of drag - start, we are not creating drag immediately, instead of that we hears mouse moving
-    _preStart: function (e, node, pointer) {
+    _preStart: function (e) {
       if (DragControl._active) {
         //if we have nested drag areas, use the top one and ignore the inner one
         if (DragControl._saved_event == e) return;
@@ -6780,17 +6937,15 @@
         DragControl.destroyDrag(e);
       }
 
-      DragControl._active = node;
-      var evobj = env[pointer].context(e);
+      DragControl._active = this;
+      var evobj = env.mouse.context(e);
       DragControl._start_pos = evobj;
       DragControl._saved_event = e;
-      var passive = pointer === "touch" ? {
+      var passive = env.touch ? {
         passive: false
       } : null;
-      DragControl._webix_drag_mm = event$1(document.body, env[pointer].move, function (e) {
-        return DragControl._startDrag(e, pointer);
-      }, passive);
-      DragControl._webix_drag_mu = event$1(document, env[pointer].up, DragControl._preStartFalse); //need to run here, or will not work in IE
+      DragControl._webix_drag_mm = event$1(document.body, env.mouse.move, DragControl._startDrag, passive);
+      DragControl._webix_drag_mu = event$1(document, env.mouse.up, DragControl._preStartFalse); //need to run here, or will not work in IE
 
       addCss(document.body, "webix_noselect", 1);
     },
@@ -6801,47 +6956,37 @@
       DragControl._touch_animation = !e.cancelable;
     },
     //mouse was moved without button released - dnd started, update event handlers
-    _startDrag: function (e, pointer) {
+    _startDrag: function (e) {
       // check touch scroll animation
-      var touch = pointer === "touch";
       DragControl._touch_animation = !e.cancelable;
 
-      if (touch && DragControl._touch_animation) {
+      if (env.touch && DragControl._touch_animation) {
         DragControl._clean_dom_after_drag();
 
         return DragControl.destroyDrag(e);
       } //prevent unwanted dnd
 
 
-      var pos$$1 = env[pointer].context(e);
+      var pos$$1 = env.mouse.context(e);
 
       var master = DragControl._getActiveDragMaster(); // only long-touched elements can be dragged
 
 
-      var longTouchLimit = touch && master && master.$longTouchLimit && !Touch._long_touched;
+      var longTouchLimit = env.touch && master && master.$longTouchLimit && !Touch._long_touched;
       if (longTouchLimit || Math.abs(pos$$1.x - DragControl._start_pos.x) < 5 && Math.abs(pos$$1.y - DragControl._start_pos.y) < 5) return;
-      if (!DragControl._html && !DragControl.createDrag(DragControl._saved_event, pointer)) return DragControl._clean_dom_after_drag();
+      if (!DragControl._html && !DragControl.createDrag(DragControl._saved_event)) return DragControl._clean_dom_after_drag();
 
       DragControl._clean_dom_after_drag(true);
 
       DragControl.sendSignal("start"); //useless for now
 
-      if (touch) {
-        // important: for touch events use e.target as EventTarget
-        DragControl._webix_drag_mm = event$1(e.target, env[pointer].move, function (e) {
-          return DragControl._moveDrag(e, pointer);
-        }, {
-          passive: false
-        });
-        DragControl._webix_drag_mu = event$1(e.target, env[pointer].up, DragControl._stopDrag);
-      } else {
-        DragControl._webix_drag_mm = event$1(document.body, env[pointer].move, function (e) {
-          return DragControl._moveDrag(e, pointer);
-        });
-        DragControl._webix_drag_mu = event$1(document, env[pointer].up, DragControl._stopDrag);
-      }
+      var passive = env.touch ? {
+        passive: false
+      } : null;
+      DragControl._webix_drag_mm = event$1(document.body, env.mouse.move, DragControl._moveDrag, passive);
+      DragControl._webix_drag_mu = event$1(document, env.mouse.up, DragControl._stopDrag);
 
-      DragControl._moveDrag(e, pointer, true);
+      DragControl._moveDrag(e);
     },
     //mouse was released while dnd is active - process target
     _stopDrag: function (e) {
@@ -6864,7 +7009,7 @@
       if (!still_drag) removeCss(document.body, "webix_noselect");
     },
     //dnd is active and mouse position was changed
-    _moveDrag: function (e, pointer, first) {
+    _moveDrag: function (e) {
       var dragCtrl = DragControl;
       var pos$$1 = pos(e); //give possibility to customize drag position
 
@@ -6872,17 +7017,12 @@
 
       var ctx = dragCtrl._drag_context;
       dragCtrl._html.style.top = pos$$1.y + dragCtrl.top + (customPos || !ctx.y_offset ? 0 : ctx.y_offset) + "px";
-      dragCtrl._html.style.left = pos$$1.x + dragCtrl.left + (customPos || !ctx.x_offset ? 0 : ctx.x_offset) + "px"; // check landing at least once
-
-      if (first) dragCtrl._skip = false;
+      dragCtrl._html.style.left = pos$$1.x + dragCtrl.left + (customPos || !ctx.x_offset ? 0 : ctx.x_offset) + "px";
+      var evobj = e;
       if (dragCtrl._skip) dragCtrl._skip = false;else {
-        var evobj = e;
-
-        if (pointer === "touch") {
-          var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft;
-          var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
-          var context = env[pointer].context(e);
-          var target = document.elementFromPoint(context.x - scrollLeft, context.y - scrollTop);
+        if (env.touch) {
+          var context = env.mouse.context(e);
+          var target = document.elementFromPoint(context.x, context.y);
           evobj = new Proxy(e, {
             get: function (obj, prop) {
               if (prop === "target") {
@@ -6948,14 +7088,15 @@
       return this._html;
     },
     //called when dnd is initiated, must create drag representation
-    createDrag: function (e, pointer) {
-      var a = DragControl._active;
-      DragControl._drag_context = {};
+    createDrag: function (e) {
+      var dragCtl = DragControl;
+      var a = dragCtl._active;
+      dragCtl._drag_context = {};
       var master = this._drag_masters[a.webix_drag];
       var drag_container; //if custom method is defined - use it
 
       if (master.$dragCreate) {
-        drag_container = master.$dragCreate(a, e, pointer);
+        drag_container = master.$dragCreate(a, e);
         if (!drag_container) return false;
 
         this._setDragOffset(e);
@@ -6963,18 +7104,18 @@
         drag_container.style.position = "absolute";
       } else {
         //overvise use default one
-        var text = DragControl.$drag(a, e, pointer);
+        var text = dragCtl.$drag(a, e);
 
-        DragControl._setDragOffset(e);
+        dragCtl._setDragOffset(e);
 
         if (!text) return false;
         drag_container = document.createElement("DIV");
         drag_container.innerHTML = text;
         drag_container.className = "webix_drag_zone";
         document.body.appendChild(drag_container);
-        var context = DragControl._drag_context;
+        var context = dragCtl._drag_context;
 
-        if (context.html) {
+        if (context.html && env.pointerevents) {
           context.x_offset = -Math.round(drag_container.offsetWidth * 0.5);
           context.y_offset = -Math.round(drag_container.offsetHeight * 0.75);
         }
@@ -6987,7 +7128,7 @@
 
 
       drag_container.style.zIndex = Math.max(drag_container.style.zIndex, zIndex());
-      DragControl._skipDropH = event$1(drag_container, env[pointer].move, DragControl._skip_mark);
+      DragControl._skipDropH = event$1(drag_container, env.mouse.move, DragControl._skip_mark);
       if (!DragControl._drag_context.from) DragControl._drag_context = {
         source: a,
         from: a
@@ -7003,9 +7144,9 @@
     destroyDrag: function (e) {
       var a = DragControl._active;
       var master = this._drag_masters[a.webix_drag];
-      if (DragControl._skipDropH) DragControl._skipDropH = eventRemove(DragControl._skipDropH);
 
       if (master && master.$dragDestroy) {
+        DragControl._skipDropH = eventRemove(DragControl._skipDropH);
         if (DragControl._html) master.$dragDestroy(a, DragControl._html, e);
       } else remove(DragControl._html);
 
@@ -7021,19 +7162,22 @@
     //relative position of drag marker to mouse cursor
     left: 0,
     _setDragOffset: function (e) {
-      var pos$$1 = DragControl._start_pos;
-      var ctx = DragControl._drag_context;
+      var dragCtl = DragControl;
+      var pos$$1 = dragCtl._start_pos;
+      var ctx = dragCtl._drag_context;
       if (typeof ctx.x_offset != "undefined" && typeof ctx.y_offset != "undefined") return null;
       ctx.x_offset = ctx.y_offset = 0;
 
-      var m = DragControl._getActiveDragMaster();
+      if (env.pointerevents) {
+        var m = DragControl._getActiveDragMaster();
 
-      if (m._getDragItemPos && m !== this) {
-        var itemPos = m._getDragItemPos(pos$$1, e);
+        if (m._getDragItemPos && m !== this) {
+          var itemPos = m._getDragItemPos(pos$$1, e);
 
-        if (itemPos) {
-          ctx.x_offset = itemPos.x - pos$$1.x;
-          ctx.y_offset = itemPos.y - pos$$1.y;
+          if (itemPos) {
+            ctx.x_offset = itemPos.x - pos$$1.x;
+            ctx.y_offset = itemPos.y - pos$$1.y;
+          }
         }
       }
     },
@@ -7067,15 +7211,15 @@
       t.appendChild(s);
     },
     //called when dnd just started
-    $drag: function (s, e, p) {
+    $drag: function (s, e) {
       var m = this._drag_masters[s.webix_drag];
-      if (m.$drag && m != this) return m.$drag(s, e, p);
+      if (m.$drag && m != this) return m.$drag(s, e);
       return "<div style='" + s.style.cssText + "'>" + s.innerHTML + "</div>";
     }
   }; //global touch-drag handler
 
   attachEvent("onLongTouch", function (ev) {
-    if (DragControl._active && !DragControl._touch_animation) DragControl._createTouchDrag(ev, "touch");
+    if (DragControl._active && !DragControl._touch_animation) DragControl._createTouchDrag(ev);
   });
 
   var Movable = {
@@ -7158,8 +7302,6 @@
       return value;
     },
     _renderResizeHandler: function () {
-      var _this = this;
-
       if (!this._rwHandle) {
         var rp = this._viewobj;
 
@@ -7176,12 +7318,8 @@
         });
         rp.appendChild(this._rwHandle);
 
-        _event(this._rwHandle, env.mouse.down, function (e) {
-          return _this._wrDown(e, "mouse");
-        });
-
-        if (env.touch) _event(this._rwHandle, env.touch.down, function (e) {
-          return _this._wrDown(e, "touch");
+        _event(this._rwHandle, env.mouse.down, this._wrDown, {
+          bind: this
         });
       }
     },
@@ -7200,24 +7338,19 @@
       this._resizeFrame.style.width = width + "px";
       this._resizeFrame.style.height = height + "px";
     },
-    _wrDown: function (e, pointer) {
-      var _this2 = this;
-
+    _wrDown: function () {
       if (this.config.resize) {
         addCss(document.body, "webix_noselect webix_resize_cursor");
         this._wsReady = offset(this._viewobj);
-        var passive = pointer === "touch" ? {
-          passive: false
-        } : null;
-        this._resizeHandlersMove = event$1(document.body, env[pointer].move, function (e) {
-          return _this2._wrMove(e, pointer);
-        }, passive);
-        this._resizeHandlersUp = event$1(document, env[pointer].up, function () {
-          return _this2._wrUp();
+        this._resizeHandlersMove = event$1(document.body, env.mouse.move, this._wrMove, {
+          bind: this
+        });
+        this._resizeHandlersUp = event$1(document.body, env.mouse.up, this._wrUp, {
+          bind: this
         });
       }
     },
-    _wrMove: function (e, pointer) {
+    _wrMove: function (e) {
       if (this._wsReady !== false) {
         var elPos = pos(e);
         var progress = {
@@ -7234,8 +7367,6 @@
         this._wsProgress = progress;
 
         this._showResizeFrame(progress.x, progress.y);
-
-        if (pointer === "touch") preventEvent(e);
       }
     },
     _wrUp: function () {
@@ -7489,7 +7620,7 @@
       this._hide_timer = 1;
       delay(function () {
         this._hide_timer = 0;
-      }, this, [], env.fastClick ? 100 : 400);
+      }, this, [], env.touch ? 400 : 100);
 
       this._render_hidden_views();
 
@@ -7717,7 +7848,7 @@
           this.setPosition(_state.left, _state.top);
         } else {
           if (this._settings.position == "top") {
-            top = -1 * height;
+            if (animate.isSupported()) top = -1 * height;else top = 10;
           } //popup inside a fixed win
 
 
@@ -7869,7 +8000,7 @@
       this._area = area;
     },
     _show_at_node: function (e) {
-      this._area = toNode(e);
+      this._area = toNode(e || window$1.event);
       return this._show_at(e);
     },
     _show_at_ui: function (id, e) {
@@ -7934,7 +8065,7 @@
 
       document.body.appendChild(this._area);
       event$1(document.body, "keydown", bind(function (e) {
-        var key = e.which || e.keyCode;
+        var key = e.keyCode;
         var ctrl = !!(e.ctrlKey || e.metaKey);
 
         if (key === 86 && ctrl) {
@@ -8101,6 +8232,7 @@
 
   var CopyPaste = {
     clipboard_setter: function (value) {
+      if (env.touch) return value;
       if (value === true || value === 1) value = "modify";
       this.attachEvent("onAfterSelect", this._sel_to_clip);
       this.attachEvent("onAfterEditStop", function (v, ed) {
@@ -8131,7 +8263,7 @@
 
       delay(function () {
         //wait until editor is closed
-        if (!_this.$destructed && (!_this.getEditor || !_this.getEditor())) {
+        if (!_this.getEditor || !_this.getEditor()) {
           var sel = _this.getSelectedId(true);
 
           var data = [];
@@ -9947,7 +10079,7 @@
       //prepare data store
       config = config || "";
       this._feed_last = {};
-      this._data_generation = 0;
+      this._data_generation = 1;
       this.data = new DataStore();
       this.data.attachEvent("onClearAll", bind(this._call_onclearall, this));
       this.data.attachEvent("onServerConfig", bind(this._call_on_config, this));
@@ -9955,30 +10087,31 @@
       this.data.feed = this._feed;
       this.data.owner = config.id;
     },
-    _feed: function (from, count, callback, defer, clear) {
+    _feed: function (from, count, callback, defer) {
       //allow only single request at same time
       if (this._load_count) {
         defer = Deferred.defer();
-        this._load_count = [from, count, callback, defer, clear]; //save last ignored request
+        this._load_count = [from, count, callback, defer]; //save last ignored request
 
         return defer;
       } else this._load_count = true;
 
       this._feed_last.from = from;
       this._feed_last.count = count;
-      return this._feed_common.call(this, from, count, callback, defer, false, clear);
+      return this._feed_common.call(this, from, count, callback, false, false, defer);
     },
-    _feed_common: function (from, count, callback, defer, details, clear) {
+    _feed_common: function (from, count, callback, url, details, defer) {
       var _this = this;
 
-      var url = this.data.url;
+      var state = null;
+      url = url || this.data.url;
       if (from < 0) from = 0;
       if (!details) details = {
         start: from,
         count: count
       };
       if (this.count()) details["continue"] = "true";
-      var state = this.getState ? this.getState() : null; // proxy
+      if (this.getState) state = this.getState(); // proxy
 
       if (url && typeof url != "string") {
         if (state) {
@@ -9986,7 +10119,7 @@
           if (state.filter) details.filter = state.filter;
         }
 
-        return this.load(url, 0, details, clear).then(function (data) {
+        return this.load(url, 0, details).then(function (data) {
           return _this._feed_on_load(data, callback, defer);
         }, function () {
           return _this._feed_callback();
@@ -10021,7 +10154,7 @@
 
         if (this._feed_last.url !== url) {
           this._feed_last.url = url;
-          return this.load(url, 0, null, clear).then(function (data) {
+          return this.load(url).then(function (data) {
             return _this._feed_on_load(data, callback, defer);
           }, function () {
             return _this._feed_callback();
@@ -10057,22 +10190,22 @@
       return ajax$$1;
     },
     //load next set of data rows
-    loadNext: function (count, start, callback, url, now, clear) {
+    loadNext: function (count, start, callback, url, now) {
       var config = this._settings;
 
       if (config.datathrottle && !now) {
         if (this._throttle_request) window.clearTimeout(this._throttle_request);
         var defer = Deferred.defer();
         this._throttle_request = delay(function () {
-          defer.resolve(this.loadNext(count, start, callback, url, true, clear));
+          defer.resolve(this.loadNext(count, start, callback, url, true));
         }, this, 0, config.datathrottle);
         return defer;
       }
 
       if (!start && start !== 0) start = this.count();
       if (!count) count = config.datafetch || this.count();
-      this.data.url = url || this.data.url;
-      if (this.callEvent("onDataRequest", [start, count, callback, url]) && this.data.url) return this.data.feed.call(this, start, count, callback, false, clear);
+      this.data.url = this.data.url || url;
+      if (this.callEvent("onDataRequest", [start, count, callback, url]) && this.data.url) return this.data.feed.call(this, start, count, callback);
       return Deferred.reject();
     },
     _maybe_loading_already: function (count, from) {
@@ -10149,7 +10282,9 @@
           if (result) {
             if (!result.then) result = Deferred.resolve(result);
             result.then(function (data) {
-              _this4._onLoad(data, true);
+              _this4.clearAll();
+
+              _this4._onLoad(data);
 
               _this4.data.callEvent("onAfterFilter", []);
             }, function (x) {
@@ -10241,8 +10376,6 @@
       return settings;
     },
     setState: function (obj) {
-      var _this2 = this;
-
       var columns = this.config.columns;
       if (!obj) return;
       this.markSorting();
@@ -10309,7 +10442,6 @@
       this._updateColsSizeSettings(silent);
 
       this.callEvent("onStructureUpdate", []);
-      var server = this._skip_server_op = {};
 
       if (obj.sort) {
         var sort = obj.sort,
@@ -10323,11 +10455,7 @@
         for (var _i5 = 0; _i5 < sort.length; _i5++) {
           var _col = this.getColumnConfig(sort[_i5].id);
 
-          if (_col) {
-            this._sort(_col.id, sort[_i5].dir, _col.sort, multi);
-
-            if (_col.sort == "server") server.sort = true;
-          }
+          if (_col) this._sort(_col.id, sort[_i5].dir, _col.sort, multi);
         }
       }
 
@@ -10340,8 +10468,9 @@
 
         for (var key in obj.filter) {
           var value = obj.filter[key];
+          if (!value) continue;
+          if (!this._filter_elements[key]) continue;
           var f = this._filter_elements[key];
-          if (!value || !f) continue;
           f[2].setValue(f[0], value);
           var contentid = f[1].contentId;
           if (contentid) this._active_headers[contentid].value = value;
@@ -10359,14 +10488,7 @@
 
         this.filterByAll = temp;
         this.filterByAll();
-      } // apply server filter\sort once
-
-
-      delete this._skip_server_op;
-      if (server.sort || server.filter) this.loadNext(0, 0, 0, 0, true, true).then(function () {
-        if (server.sort) _this2._on_after_sort(server.$params);
-        if (server.filter) _this2._on_after_filter();
-      });
+      }
 
       if (obj.select && this.select) {
         var select = obj.select;
@@ -10440,7 +10562,7 @@
       context.target = id;
       context.to = to;
       if (this._auto_scroll_delay) this._auto_scroll_delay = window.clearTimeout(this._auto_scroll_delay);
-      var fragile = this._touch_scroll && !this._settings.prerender;
+      var fragile = this.addRowCss && env.touch && !this._settings.prerender;
       if (this._settings.dragscroll !== false && !fragile) this._auto_scroll_delay = delay(function (pos$$1, id) {
         this._drag_pause(id);
 
@@ -10566,7 +10688,7 @@
         context.from = this;
 
         if (this.callEvent("onBeforeDrag", [context, e])) {
-          if (Touch._start_context) delay(function () {
+          if (env.touch && this._touch_scroll == "touch") delay(function () {
             Touch._start_context = null;
           }); //set drag representation
 
@@ -10606,7 +10728,9 @@
         return target;
       }
 
-      return !!context.to;
+      if (context.to) {
+        return true;
+      } else return false;
     },
     _add_css: function (source, css) {
       for (var i = 0; i < source.length; i++) {
@@ -10705,7 +10829,7 @@
     },
     $dragOut: function (s, ot, nt) {
       if (ot != nt) {
-        if (this._remove_drop_area) this._remove_drop_area();else remove(DragControl._dropHTML);
+        remove(DragControl._dropHTML);
         this._marked_item_id = DragControl._dropHTML = null;
       }
 
@@ -10728,7 +10852,6 @@
     $dragDestroy: function () {
       var context = DragControl._drag_context;
       if (isArray(context.source)) this._remove_css(context.source, "webix_invisible");
-      if (this._settings.dynamic) this.render(null, null, "drag-end");
       remove(DragControl._html);
     },
     _init_drop_area: function () {
@@ -11017,8 +11140,12 @@
       },
       setValue: function () {},
       focus: function () {
-        this.node.focus();
-        this.node.select();
+        try {
+          //IE9
+          this.node.select();
+          this.node.focus();
+        } catch (e) {} //eslint-disable-line
+
       },
       getInputNode: function () {},
       $inline: true
@@ -11182,7 +11309,7 @@
       return this.getInputNode().getValue(this._is_string ? i18n.parseFormatStr : "") || "";
     },
     popupInit: function (popup) {
-      popup.getChildViews()[0].attachEvent("onAfterDateSelect", function (value) {
+      popup.getChildViews()[0].attachEvent("onDateSelect", function (value) {
         callEvent("onEditEnd", [value]);
       });
     }
@@ -11294,27 +11421,9 @@
   }, editors.popup);
   editors.password = exports.extend({
     render: function () {
-      var _this = this;
-
-      var node = create("div", {
-        "class": "webix_dt_editor webix_password_editor"
-      }, "<input type='password' aria-label='" + getLabel(this.config) + "'><span class='webix_icon wxi-eye'></span>");
-      var icon = node.querySelector(".webix_icon");
-
-      _event(icon, "click", function () {
-        _this.toggleInput();
-
-        _this.getInputNode(_this.node).focus();
-      });
-
-      return node;
-    },
-    toggleInput: function () {
-      var input = this.getInputNode(this.node);
-      var isPassword = input.getAttribute("type") === "password";
-      input.setAttribute("type", isPassword ? "text" : "password");
-      var icon = input.nextSibling;
-      icon.className = "webix_icon wxi-eye".concat(isPassword ? "-slash" : "");
+      return create("div", {
+        "class": "webix_dt_editor"
+      }, "<input type='password' aria-label='" + getLabel(this.config) + "'>");
     }
   }, editors.text);
   editors.$popup = {
@@ -11496,7 +11605,7 @@
         if (type.config.liveEdit) this._live_edits_handler = this.attachEvent("onKeyPress", this._handle_live_edits);
         var area = type.getPopup ? type.getPopup(node)._viewobj : node;
         if (area) _event(area, "click", this._reset_active_editor);
-        if (node) _event(node, "input", this._on_editor_change, {
+        if (node) _event(node, "change", this._on_editor_change, {
           bind: {
             view: this,
             id: id
@@ -12552,7 +12661,10 @@
     },
     moveSelection: function (mode, details, focus) {
       var config = this._settings;
-      if (config.disabled) return;
+      if (config.disabled) return; //get existing selection
+
+      var selected = this.getSelectedId(true);
+      var x_layout = this.count && (config.layout == "x" || config.xCount > 1);
 
       if ((mode == "right" || mode == "left") && this._parent_menu) {
         var parent = $$(this._parent_menu);
@@ -12561,34 +12673,19 @@
 
         if (parent.config.layout === "x") parent.moveSelection(mode);else UIManager.setFocus(parent);
         return;
-      } //get existing selection
-
-
-      var selected = this.getSelectedId(true);
-      var x_layout = this.count && (config.layout == "x" || config.xCount > 1);
-      var prev = true;
+      }
 
       if (!selected.length && this.count()) {
         if (mode == "down" || mode == "right" && x_layout) mode = "top";else if (mode == "up" || mode == "left" && x_layout) mode = "bottom";else return;
         selected = [this.getFirstId()];
-        prev = false;
       }
 
       if (selected.length == 1) {
         //if we have a selection
         selected = selected[0];
-        prev = prev === true ? selected : null;
-
-        if (mode == "left") {
-          if (this.close && !this._ignore_clicks) return this.close(selected); //tree (not window)
-
-          if (this._level_up && this._level_up(selected)) return this.render(); //grouplist
-        } else if (mode == "right") {
-          if (this.open) return this.open(selected);
-          if (this._level_down && this._level_down(selected)) return this.render();
-        }
-
-        if (mode == "top") {
+        var prev = selected;
+        if (mode == "left" && this.close) return this.close(selected);
+        if (mode == "right" && this.open) return this.open(selected);else if (mode == "top") {
           selected = this.getFirstId();
         } else if (mode == "bottom") {
           selected = this.getLastId();
@@ -12606,19 +12703,13 @@
           assert(false, "Not supported selection moving mode");
           return;
         }
-
         var dir = mode == "up" || mode == "left" || mode == "pgdown" || mode == "bottom" ? -1 : 1;
-
-        if (this._skip_item) {
-          selected = this._skip_item(selected, prev, dir);
-          if (!selected) return;
-        }
-
+        if (this._skip_item) selected = this._skip_item(selected, prev, dir);
         this.showItem(selected);
         this.select(selected);
         if (this.getSubMenu && this.getSubMenu(selected)) this._mouse_move_activation(selected, this.getItemNode(selected));
 
-        if (!config.clipboard && focus !== false) {
+        if (!this.config.clipboard && focus !== false) {
           var node = this.getItemNode(selected);
           if (node) node.focus();
         }
@@ -12835,7 +12926,7 @@
       if (column) {
         delete column.options;
         column.collection = options;
-        column.template = column.template || this._bind_template(column.optionslist);
+        column.template = column.template || this._bind_template(options, column.id, column.optionslist);
         var id = options.data.attachEvent("onStoreUpdated", function () {
           _this2.refresh();
 
@@ -12846,23 +12937,26 @@
         });
       }
     },
-    _bind_template: function (multi) {
+    _bind_template: function (options, columnId, multi) {
+      columnId = this.getColumnConfig ? columnId : "value";
+
       if (multi) {
-        var separator = typeof multi === "string" ? multi : ",";
-        return function (obj, common, value, column) {
+        var separator = typeof multi == "string" ? multi : ",";
+        return function (obj) {
+          var value = obj[columnId];
           if (!value) return "";
           var ids = value.toString().split(separator);
 
           for (var i = 0; i < ids.length; i++) {
-            var data = column.collection.data.pull[ids[i]];
+            var data = options.data.pull[ids[i]];
             ids[i] = data ? data.value || "" : "";
           }
 
           return ids.join(", ");
         };
       } else {
-        return function (obj, common, value, column) {
-          var data = column.collection.data.pull[value];
+        return function (obj) {
+          var data = options.data.pull[obj[columnId]];
           if (data && (data.value || data.value === 0)) return data.value;
           return "";
         };
@@ -12874,7 +12968,7 @@
     $init: function (config) {
       config = config || {};
       this._clickstamp = 0;
-      this._dbl_sensetive = env.touch ? 500 : 300;
+      this._dbl_sensetive = 300;
       this._item_clicked = null;
 
       this._mouse_action_extend(config.onClick, "on_click");
@@ -12886,9 +12980,16 @@
       this._mouse_action_extend(config.onMouseMove, "on_mouse_move"); //attach dom events if related collection is defined
 
 
-      if (this.on_click) _event(this._contentobj, "click", this._onClick, {
-        bind: this
-      });
+      if (this.on_click) {
+        _event(this._contentobj, "click", this._onClick, {
+          bind: this
+        });
+
+        if (env.isIE8 && this.on_dblclick) _event(this._contentobj, "dblclick", this._onDblClick, {
+          bind: this
+        });
+      }
+
       if (this.on_context) _event(this._contentobj, "contextmenu", this._onContext, {
         bind: this
       });
@@ -12902,7 +13003,7 @@
           bind: this
         });
 
-        _event(this._contentobj, "mouseout", this._onMouse, {
+        _event(this._contentobj, env.isIE ? "mouseleave" : "mouseout", this._onMouse, {
           bind: this
         });
 
@@ -12921,27 +13022,29 @@
     },
     //inner onclick object handler
     _onClick: function (e) {
-      var _this = this;
-
       if (!this.isEnabled()) return false;
 
       UIManager._focus_action(this);
 
-      if (this.on_dblclick && this.locate) {
-        if (this._clickHandler && this._item_clicked + "" == this.locate(e) + "") {
-          clearTimeout(this._clickHandler);
-          this._clickHandler = null;
-          return this._onDblClick(e);
+      if (this.on_dblclick) {
+        // emulates double click
+        var stamp = new Date().valueOf();
+
+        if (stamp - this._clickstamp <= this._dbl_sensetive && this.locate) {
+          var item = this.locate(e);
+
+          if ("" + item == "" + this._item_clicked) {
+            this._clickstamp = 0;
+            return this._onDblClick(e);
+          }
         }
 
-        this._item_clicked = this.locate(e);
-        this._clickHandler = delay(function () {
-          _this._clickHandler = null;
-          return _this._mouseEvent(e, _this.on_single_click, "ItemSingleClick");
-        }, null, [e], this._dbl_sensetive);
+        this._clickstamp = stamp;
       }
 
-      return this._mouseEvent(e, this.on_click, "ItemClick");
+      var result = this._mouseEvent(e, this.on_click, "ItemClick");
+
+      return result;
     },
     //inner ondblclick object handler
     _onDblClick: function (e) {
@@ -12977,13 +13080,22 @@
     },
     //inner mouseout object handler
     _onMouseOut: function (e) {
-      this.callEvent("onMouseOut", [e]);
+      this.callEvent("onMouseOut", [e || event]);
     },
     //common logic for click and dbl-click processing
     _mouseEvent: function (e, hash, name, pair) {
+      e = e || event;
       if (e.processed || !this._viewobj) return;
       e.processed = true;
-      var trg = e.target;
+      var trg = e.target; //IE8 can't modify event object
+      //so we need to stop event bubbling to prevent double processing
+
+      if (env.isIE8) {
+        var vid = this._settings.id;
+        var wid = trg.w_view;
+        if (!wid) trg.w_view = vid;else if (wid !== vid) return;
+      }
+
       var css = "";
       var id = null;
       var found = false; //loop through all parents
@@ -13014,9 +13126,10 @@
           }
         }
 
-        css = _getClassName(trg); //check if pre-defined reaction for element's css name exists
+        css = _getClassName(trg);
 
-        if (hash && css) {
+        if (css) {
+          //check if pre-defined reaction for element's css name exists
           css = css.toString().split(" ");
 
           for (var i = 0; i < css.length; i++) {
@@ -13258,24 +13371,29 @@
       return pager._settings;
     },
     _count_pager_total: function (level) {
-      var _this = this;
-
-      var childs = 0;
-      if (level) this.order.forEach(function (id) {
-        if (id && _this.getItem(id).$level != 1) childs++;
-      });
-      return this.count() - childs;
+      if (level && level !== 0) {
+        var count = 0;
+        this.each(function (obj) {
+          if (obj.$level == level) count++;
+        });
+        return count;
+      } else return this.count();
     },
     _count_pager_index: function (start, count) {
-      if (this._settings.pager.level) {
-        var order = this.data.order;
-        if (!order.length) count = 0;else for (var i = start; i <= start + count; i++) {
-          var id = order[i];
-          if (id && this.getItem(id).$level != 1) count++;
-        }
-      }
+      var s = this._settings.pager;
 
-      return start + count;
+      if (s.level && s.level !== 0) {
+        var end = start;
+        var max = this.data.order.length;
+        if (count) while (end < max) {
+          if (this.data.order[end] && this.data.getItem(this.data.order[end]).$level == s.level) {
+            if (count === 0) break;else count--;
+          }
+
+          end++;
+        }
+        return end;
+      } else return start + count;
     },
     setPage: function (value) {
       if (this._pager) this._pager.select(value);
@@ -13327,7 +13445,7 @@
 
         this._viewobj.setAttribute("aria-busy", "true");
 
-        if (!this._touch_scroll) {
+        if (!Touch.$active || this._touch_scroll == "native") {
           if (this.getScrollState) {
             var scroll = this.getScrollState();
 
@@ -13351,26 +13469,50 @@
       if (!config) return;
 
       if (this._progress_animate) {
-        var position = config.position || 1;
+        var position = config.position || 1; //check for css-transition support
 
-        if (config.delay) {
-          // force reflow
-          width = this._viewobj.firstChild.offsetWidth;
-          this._progress.firstChild.style[env.transitionDuration] = config.delay + "ms";
-        } // animate to new value
+        if (this._progress.style[env.transitionDuration] !== undefined || !config.delay) {
+          if (config.delay) {
+            // force reflow
+            width = this._viewobj.firstChild.offsetWidth;
+            this._progress.firstChild.style[env.transitionDuration] = config.delay + "ms";
+          } // animate to new value
 
 
-        this._progress.firstChild.style.width = position * 100 + "%";
+          this._progress.firstChild.style.width = position * 100 + "%";
+        } else {
+          //if animation is not supported fallback to timeouts [IE9]
+          var count = 0,
+              start = 0,
+              step = position / config.delay * 30,
+              view = this;
+
+          if (this._progressTimer) {
+            //reset the existing progress
+            window.clearInterval(this._progressTimer);
+            start = this._progress.firstChild.offsetWidth / this._progress.offsetWidth * 100;
+          }
+
+          this._progressTimer = window.setInterval(function () {
+            if (count * 30 == config.delay) {
+              window.clearInterval(view._progressTimer);
+            } else {
+              if (view._progress && view._progress.firstChild) view._progress.firstChild.style.width = start + count * step * position * 100 + "%";
+              count++;
+            }
+          }, 30);
+        }
       }
 
       if (this._progress_hide) clearTimeout(this._progress_hide);
-      if (config.hide) this._progress_hide = delay(this.hideProgress, this, [true], config.delay); // necessary to prevent code optimization
+      if (config.hide) this._progress_hide = delay(this.hideProgress, this, [1], config.delay); // necessary to prevent code optimization
 
       return width;
     },
     hideProgress: function (now) {
       if (this._progress) {
         if (now || !this._progress_animate) {
+          if (this._progressTimer) window.clearInterval(this._progressTimer);
           remove(this._progress);
           this._progress = null;
 
@@ -13558,7 +13700,7 @@
       }, ""));
 
       this._dataobj = (this._dataobj || this._contentobj).firstChild;
-      if (this.callEvent && !this.$hasYScroll) _event(this._viewobj, "scroll", function () {
+      if (this.callEvent && (!env.touch || this._touch_scroll == "native")) _event(this._viewobj, "scroll", function () {
         delay(function () {
           this.callEvent("onAfterScroll", []);
         }, this);
@@ -13566,24 +13708,29 @@
         bind: this
       });
     },
+    _touch_scroll: "native",
     scroll_setter: function (value) {
       if (!value) return false;
       var auto = value === "auto";
       var marker = value == "x" ? "x" : value == "xy" ? "xy" : auto ? "xy" : "y";
-      if (env.$customScroll) temp$1.enable(this, marker);
-      var style = this._dataobj.parentNode.style;
 
-      if (auto && !env.$customScroll) {
-        style.overflowX = style.overflowY = "auto";
+      if (env.$customScroll) {
+        temp$1.enable(this, marker);
       } else {
-        if (marker.indexOf("x") !== -1) {
-          this._scroll_x = true;
-          style.overflowX = "scroll";
-        }
+        var node = this._dataobj.parentNode.style;
 
-        if (marker.indexOf("y") !== -1) {
-          this._scroll_y = true;
-          style.overflowY = "scroll";
+        if (auto) {
+          node.overflowX = node.overflowY = "auto";
+        } else {
+          if (marker.indexOf("x") != -1) {
+            this._scroll_x = true;
+            node.overflowX = "scroll";
+          }
+
+          if (marker.indexOf("y") != -1) {
+            this._scroll_y = true;
+            node.overflowY = "scroll";
+          }
         }
       }
 
@@ -13643,10 +13790,11 @@
     },
     _set_noselect: function () {
       if (this._settings.select == "multiselect" || this._settings.multiselect || this._settings.select == "area") _event(this.$view, "mousedown", function (e) {
-        if (e.shiftKey || env.isIE && e.ctrlKey) {
-          var node = env.isIE ? document.body : this;
-          state._noselect_element = node;
-          addCss(node, "webix_noselect", true);
+        var shiftKey = (e || window.event).shiftKey;
+
+        if (shiftKey) {
+          state._noselect_element = this;
+          addCss(this, "webix_noselect", 1);
         }
       });
     },
@@ -14845,6 +14993,7 @@
 
   var TablePaste = {
     clipboard_setter: function (value) {
+      if (env.touch) return value;
       if (value === true || value === 1) value = "block";
       clipbuffer.init();
       this.attachEvent("onSelectChange", this._sel_to_clip);
@@ -14868,7 +15017,7 @@
 
       delay(function () {
         //wait until editor is closed
-        if (!_this.$destructed && (!_this.getEditor || !_this.getEditor())) {
+        if (!_this.getEditor || !_this.getEditor()) {
           var data = _this._get_sel_text();
 
           clipbuffer.set(data);
@@ -15065,18 +15214,18 @@
 
       this._feed_common = this._feed_commonA;
     },
-    _feed_commonA: function (from, count, callback, defer, details, clear) {
+    _feed_commonA: function (from, count, callback, url, details, defer) {
       // branch loading
       details = count === 0 ? {
         parent: encodeURIComponent(from)
       } : null;
-      return DataLoader.prototype._feed_common.call(this, from, count, callback, defer, details, clear);
+      return DataLoader.prototype._feed_common.call(this, from, count, callback, url, details, defer);
     },
     //load next set of data rows
     loadBranch: function (id, callback, url) {
       id = id || 0;
       this.data.url = url || this.data.url;
-      if (this.callEvent("onDataRequest", [id, callback, this.data.url]) && this.data.url) return this.data.feed.call(this, id, 0, callback);
+      if (this.callEvent("onDataRequest", [id, callback, this.data.url]) && this.data.url) return this.data.feed.call(this, id, 0, callback, url);
       return Deferred.reject();
     },
     _sync_hierarchy: function (id, data, mode) {
@@ -15871,7 +16020,7 @@
       if (branch) obj.$count = branch.length;
     },
     _sync_to_order: function (master) {
-      this.order = _to_array(); // send current order to prevent simultaneous use in sync mode
+      this.order = _to_array(); // send current order to prevent simultaneous use in synс mode
 
       this._sync_each_child(this.order, 0, master);
     },
@@ -16564,21 +16713,23 @@
     _mark_invalid: function (id) {
       var input = this.elements[id];
 
-      if (input && !input._settings.invalid) {
-        addCss(input._viewobj, "webix_invalid", true);
+      if (id && input) {
+        this._clear_invalid(id, true);
+
+        addCss(input._viewobj, "webix_invalid");
         input._settings.invalid = true;
         var message = input._settings.invalidMessage;
         if (typeof message === "string" && input.setBottomText) input.setBottomText();
       }
     },
-    _clear_invalid: function (id) {
+    _clear_invalid: function (id, silent) {
       var input = this.elements[id];
 
-      if (input && input._settings.invalid) {
+      if (id && input && input.$view && input._settings.invalid) {
         removeCss(input._viewobj, "webix_invalid");
         input._settings.invalid = false;
         var message = input._settings.invalidMessage;
-        if (typeof message === "string" && input.setBottomText) input.setBottomText();
+        if (typeof message === "string" && !silent && input.setBottomText) input.setBottomText();
       }
     }
   };
@@ -16870,6 +17021,10 @@
         this.render(null, null, "paint");
       }, this));
     },
+    _sync_scroll: function (x, y, t) {
+      if (this._settings.footer) Touch._set_matrix(this._footer.childNodes[1].firstChild, x, 0, t);
+      this.callEvent("onSyncScroll", [x, y, t]);
+    },
     //return html container by its ID
     //can return undefined if container doesn't exists
     getItemNode: function (search_id) {
@@ -16915,18 +17070,7 @@
         }
       }
 
-      var isDrag,
-          source,
-          marked = this._marked_item_id;
-
-      if (DragControl.active && type != "drag-end") {
-        var context = DragControl.getContext();
-        isDrag = this._init_drop_area && context.from === this; //move and order modes
-
-        source = isDrag && _to_array(copy(context.source || []));
-      }
-
-      if (type != "paint" || isDrag) {
+      if (type != "paint") {
         //repaint all
         this._htmlmap = {};
         parent.innerHTML = "";
@@ -16940,16 +17084,13 @@
         var top = Math.floor(scroll.y / this.type.height) - 2;
         var bottom = Math.ceil((scroll.y + box.height) / this.type.height) + 2;
         top = Math.max(0, top);
-        bottom = Math.min(count - 1, bottom + (isDrag ? source.length - 1 : 0));
+        bottom = Math.min(this.data.count() - 1, bottom);
         var html = [];
 
         for (var i = top; i <= bottom; i++) {
           var sid = this.data.order[i];
 
-          if (isDrag && source.find(sid) !== -1) {
-            if (sid == marked) marked = this.data.order[i + 1];
-            continue;
-          } else if (!this._htmlmap[sid]) {
+          if (!this._htmlmap[sid]) {
             var item = this.data.getItem(sid);
 
             if (!item) {
@@ -16963,28 +17104,17 @@
 
             html.push(this._toHTML(item));
           } else {
-            html.push("<div webix_skip=\"true\" ".concat(this._id, "=\"").concat(sid, "\"></div>"));
+            html.push("<div></div>");
           }
         }
 
         this._html.innerHTML = html.join("");
-
-        if (this._init_drop_area && type == "drag-in") {
-          // can be external
-          var node = this._html.querySelector("[".concat(this._id, "=\"").concat(marked, "\"]"));
-
-          if (node) {
-            this._html.insertBefore(DragControl._dropHTML[0], node);
-          } else this._html.appendChild(DragControl._dropHTML[0]);
-        }
-
         parent.style.position = "relative";
         parent.style.height = count * this.type.height + "px";
         var kids = this._html.childNodes;
 
         for (var _i = kids.length - 1; _i >= 0; _i--) {
           var child = kids[_i];
-          if (child.getAttribute("webix_skip")) continue;
           var cid = child.getAttribute(this._id);
 
           if (cid) {
@@ -17009,18 +17139,11 @@
       var count = Math.max(conf.count, this._settings.datafetch || this._settings.loadahead || 0);
       if (this._maybe_loading_already(conf.count, conf.start)) return;
       this.loadNext(count, conf.start);
-    },
-    _set_drop_area: function () {
-      this.render(null, null, "drag-in");
-    },
-    _remove_drop_area: function () {
-      remove(DragControl._dropHTML);
-      this.render(null, null, "drag-out");
     }
   };
 
-  var version = "9.2.1";
-  var name = "core";
+  var version$1 = "8.4.0";
+  var name$1 = "core";
 
   var errorMessage = "non-existing view for export";
 
@@ -17381,9 +17504,7 @@
     assert(view, errorMessage);
     if (!view) return Deferred.reject(errorMessage);
     options.export_mode = "csv";
-    exports.extend(options, {
-      filterHTML: true
-    });
+    options.filterHTML = true;
     var scheme = getExportScheme(view, options);
     var result = getExportData(view, options, scheme);
     var data = getCsvData(result, scheme);
@@ -17403,10 +17524,8 @@
   var toPDF = function (id, options) {
     options = options || {};
     options.export_mode = "pdf";
-    exports.extend(options, {
-      fontName: "pt-sans.regular",
-      boldFontName: "pt-sans.bold"
-    });
+    options.fontName = options.fontName || "pt-sans.regular";
+    options.boldFontName = options.boldFontName || "pt-sans.bold";
     id = isArray(id) ? id : [id];
     var views = [];
 
@@ -17680,11 +17799,11 @@
   function addPDFHeader(doc, options) {
     //doc footer
     if (options.docFooter !== false) {
-      options.docFooter = exports.extend(options.docFooter || {}, {
+      var ft = doc.footer();
+      ft.text({
         color: 0x666666,
         textAlign: "center"
-      });
-      doc.footer().text(options.docFooter).append(i18n.dataExport.page || "Page").pageNumber().append("  " + (i18n.dataExport.of || "of") + "  ").pageCount();
+      }).append(i18n.dataExport.page || "Page").pageNumber().append("  " + (i18n.dataExport.of || "of") + "  ").pageCount();
     }
 
     var horder = {
@@ -17910,7 +18029,7 @@
         } // set type based on cell's value
 
 
-        if (options.stubCells && !stringValue) cell.t = "z";else if (cell.v instanceof Date) {
+        if (cell.v instanceof Date) {
           cell.t = cell.t || "n";
           cell.z = cell.z || XLSX.SSF[table][14];
           cell.v = excelDate(cell.v);
@@ -17928,6 +18047,7 @@
             cell.t = "s";
           }
         }
+
         ws[cell_ref] = cell;
       }
     }
@@ -18063,6 +18183,13 @@
 
   function editStop() {
     callEvent("onEditEnd", []);
+  }
+
+  if (env.isIE8) {
+    // Not really a polyfill, silence the esModule flag
+    Object.defineProperty = function (obj, key, data) {
+      obj[key] = data.value;
+    };
   }
 
   var en = {
@@ -18736,10 +18863,8 @@
     if (typeof locale == "string") locale = i18n.locales[locale];
 
     if (locale) {
-      var origin = copy(en);
       locale.priceSettings = copy(locale.priceSettings || locale);
-      extend(origin, locale);
-      extend(i18n, origin);
+      extend(i18n, locale);
       delete i18n.calendar.monthShort_hash;
       delete i18n.calendar.monthFull_hash;
     }
@@ -19112,6 +19237,33 @@
   /*
   	Common helpers
   */
+  var html$1 = {
+    denySelect: denySelect,
+    allowSelect: allowSelect,
+    index: index,
+    createCss: createCss,
+    addStyle: addStyle,
+    removeStyle: removeStyle,
+    create: create,
+    getValue: getValue,
+    remove: remove,
+    insertBefore: insertBefore,
+    locate: locate,
+    offset: offset,
+    posRelative: posRelative,
+    pos: pos,
+    preventEvent: preventEvent,
+    stopEvent: stopEvent,
+    triggerEvent: triggerEvent,
+    addCss: addCss,
+    removeCss: removeCss,
+    getTextSize: getTextSize,
+    download: download,
+    _getClassName: _getClassName,
+    setSelectionRange: setSelectionRange,
+    getSelectionRange: getSelectionRange,
+    addMeta: addMeta
+  };
 
   var error_key = "__webix_remote_error";
 
@@ -19398,31 +19550,23 @@
     }
   }
 
-  function get_orientation() {
-    var orientation = window.screen.orientation ? window.screen.orientation.angle : window.orientation;
-    return !!(orientation % 180);
-  }
-
-  function orientation_handler() {
-    var new_orientation = get_orientation();
+  function orientation() {
+    var new_orientation = !!(window.orientation % 180);
     if (state.orientation === new_orientation) return;
     state.orientation = new_orientation;
     callEvent("onRotate", [new_orientation]);
   }
 
-  if (env.mobile) {
-    state.orientation = get_orientation();
-    event$1(window, "resize", orientation_handler);
+  if (env.touch) {
+    state.orientation = !!((isUndefined(window.orientation) ? 90 : window.orientation) % 180);
+    event$1(window, "onorientationchange" in window ? "orientationchange" : "resize", orientation);
   }
 
   function fullScreen() {
-    if (!env.mobile) return;
+    if (!env.touch) return;
+    addMeta("apple-mobile-web-app-capable", "yes");
     addMeta("viewport", "initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no");
-    env.fastClick = true;
-    if (env.isMac) addMeta("apple-mobile-web-app-capable", "yes");else {
-      addMeta("mobile-web-app-capable", "yes");
-      addStyle("body.webix_full_screen{ overflow-y: auto; }");
-    }
+    if (!env.isMac) addStyle("body.webix_full_screen{ overflow-y: auto; }");
 
     var fix = function () {
       var x = window.innerWidth;
@@ -19439,11 +19583,11 @@
 
     var onrotate = function () {
       state._freeze_resize = true;
-      delay(fix, null, [], 50);
+      delay(fix, null, [], 500);
     };
 
     attachEvent("onRotate", onrotate);
-    orientation_handler();
+    orientation();
     delay(onrotate);
   }
 
@@ -19694,9 +19838,11 @@
     }
   }, datafilter.numberFilter);
 
-  if (env.mobile || env.$customScroll) env.scrollSize = 0;
+  env.scrollSize = env.touch || env.$customScroll ? 0 : 17;
   ready(function () {
-    env.scrollSize = _detectScrollSize();
+    var size = _detectScrollSize();
+
+    env.scrollSize = env.touch ? 0 : size;
   });
 
   function _detectScrollSize() {
@@ -21577,10 +21723,11 @@
 
       this._body_cell.$setSize(cx, cy);
 
-      var scroll = this.getScrollState();
-      var top = this._body_cell._content_height - this._content_height;
-      if (top < scroll.y) // correct scrolling if necessary
-        this.scrollTo(null, top);
+      if (env.touch) {
+        var scroll = this.getScrollState();
+        var top = this._body_cell._content_height - this._content_height;
+        if (top < scroll.y) this.scrollTo(null, top);
+      }
 
       if (state._responsive_exception) {
         state._responsive_exception = false;
@@ -22169,6 +22316,11 @@
 
       if (this._viewobj.className.indexOf(" " + css) < 0) {
         addCss(this._viewobj, css);
+      } //fix collapsed columns in IE8
+
+
+      if (!env.transform) {
+        addCss(this._viewobj, "webix_ie", true);
       }
     },
     _getHeaderSize: function () {
@@ -22192,10 +22344,16 @@
             y -= this._getHeaderSize();
           } else if (this._settings.collapsed) {
             //-2 - borders
-            this._headobj.style.width = y + "px";
-            this._headobj.style.height = x + 3 + "px";
-            var d = Math.floor(y / 2 - x / 2) + (x - this._settings.headerAltHeight) / 2;
-            this._headobj.style[env.transform] = "rotate(90deg) translate(" + d + "px, " + (d + 1) + "px)";
+            if (animate.isSupported()) {
+              this._headobj.style.width = y + "px";
+              this._headobj.style.height = x + 3 + "px";
+              var d = Math.floor(y / 2 - x / 2) + (x - this._settings.headerAltHeight) / 2;
+              this._headobj.style[env.transform] = "rotate(90deg) translate(" + d + "px, " + (d + 1) + "px)";
+            } else {
+              //IE8 fix
+              this._headobj.style.width = x + "px";
+              this._headobj.style.height = y + 3 + "px";
+            }
           }
         }
 
@@ -22226,8 +22384,6 @@
       dir: "x"
     },
     $init: function (config) {
-      var _this = this;
-
       var dir = config.dir || "x";
       var node = toNode(config.container);
       var size = dir == "x" ? "width" : "height";
@@ -22235,7 +22391,9 @@
       this._key_property = dir == "x" ? "left" : "top";
       this._viewobj = create("DIV", {
         "class": "webix_resize_area webix_dir_" + dir
-      });
+      }); //[[COMPAT]] FF12 can produce 2 move events
+
+      _event(this._viewobj, env.mouse.down, stopEvent);
 
       if (margin) {
         if (dir == "x") margin = margin + " 0 " + margin;else margin = "0 " + margin + " 0 " + margin;
@@ -22258,21 +22416,9 @@
       this._moveev = event$1(node, env.mouse.move, this._onmove, {
         bind: this
       });
-      this._upev = event$1(document, env.mouse.up, this._onup, {
+      this._upev = event$1(document.body, env.mouse.up, this._onup, {
         bind: this
       });
-
-      if (env.touch) {
-        this._moveev_t = event$1(node, env.touch.move, function (e) {
-          return _this._onmove(e, "touch");
-        }, {
-          passive: false
-        });
-        this._upev_t = event$1(document, env.touch.up, this._onup, {
-          bind: this
-        });
-      }
-
       this._dragobj.style[this._key_property] = this._originobj.style[this._key_property] = config.start + "px";
       node.appendChild(this._viewobj);
       node.appendChild(this._dragobj);
@@ -22282,23 +22428,16 @@
       this.callEvent("onResizeEnd", [this._last_result]);
       eventRemove(this._moveev);
       eventRemove(this._upev);
-
-      if (env.touch) {
-        eventRemove(this._moveev_t);
-        eventRemove(this._upev_t);
-      }
-
       remove(this._viewobj);
       remove(this._dragobj);
       remove(this._originobj);
       this._viewobj = this._dragobj = this._originobj = null;
     },
-    _onmove: function (e, pointer) {
+    _onmove: function (e) {
       var eventPos = pos(e);
       this._last_result = (this._settings.dir == "x" ? eventPos.x : eventPos.y) + this._settings.start - this._settings.eventPos;
       this._dragobj.style[this._key_property] = this._last_result + "px";
       this.callEvent("onResize", [this._last_result]);
-      if (pointer === "touch") preventEvent(e);
     }
   };
   var view$d = exports.protoUI(api$d, EventSystem, Settings);
@@ -22310,19 +22449,13 @@
       height: 7
     },
     $init: function (config) {
-      var _this = this;
-
       assert(this.getParentView(), "Resizer can't be initialized outside a layout");
       this._viewobj.className += " webix_resizer";
 
       var space = this.getParentView()._margin;
 
-      _event(this._viewobj, env.mouse.down, function (e) {
-        return _this._rsDown(e, "mouse");
-      });
-
-      if (env.touch) _event(this._viewobj, env.touch.down, function (e) {
-        return _this._rsDown(e, "touch");
+      _event(this._viewobj, env.mouse.down, this._rsDown, {
+        bind: this
       });
 
       var dir = this._getResizeDir();
@@ -22350,13 +22483,14 @@
 
       this._viewobj.setAttribute("aria-grabbed", "false");
     },
-    _rsDown: function (e, pointer) {
-      var _this2 = this;
+    _rsDown: function (e) {
+      var _this = this;
 
       var cells = this._getResizerCells(); //some sibling can block resize
 
 
       if (cells && !this._settings.disabled) {
+        e = e || window.event;
         this._rs_started = true;
         this._rs_process = pos(e);
         this._rsLimit = [];
@@ -22371,9 +22505,9 @@
 
         this._rsStart(e, cells[0]);
 
-        var handler = event$1(document, env[pointer].up, function (e) {
+        var handler = event$1(document.body, env.mouse.up, function (e) {
           eventRemove(handler);
-          return _this2._rsUp(e);
+          return _this._rsUp(e);
         });
       }
     },
@@ -22383,6 +22517,7 @@
     },
     _rsStart: function (e, cell) {
       var dir, cellOffset, pos$$1, posParent, start;
+      e = e || window.event;
       dir = this._resizer_dir;
       /*layout position:relative to place absolutely positioned elements in it*/
 
@@ -22855,7 +22990,7 @@
       var next = this._cells[_next_cell];
       prev.$getSize(0, 0); //need to be moved in animate
 
-      if ((animation_options || isUndefined(animation_options)) && this._settings.animate) {
+      if ((animation_options || typeof animation_options == "undefined") && animate.isSupported() && this._settings.animate) {
         var aniset = exports.extend({}, this._settings.animate);
         if (this._settings.keepViews) aniset.keepViews = true;
         aniset.direction = this._getDirection(_next_cell, this._active_cell);
@@ -22882,7 +23017,7 @@
         animate(line, aniset);
         this._animation_promise = aniset.wait_animation = Deferred.defer();
       } else {
-        // animate:false in config
+        // browsers which don't support transform and transition, or animate:false in config
         if (this._settings.keepViews) {
           prev._viewobj.style.display = "none";
         } else {
@@ -23198,7 +23333,7 @@
       if (this._settings.navigation) this._renderPanel();
     },
     scrollTo: function (x, y) {
-      if (Touch && this._settings.animate) Touch._set_matrix(this._contentobj, x, y, this._settings.scrollSpeed || "100ms");else {
+      if (Touch && animate.isSupported() && this._settings.animate) Touch._set_matrix(this._contentobj, x, y, this._settings.scrollSpeed || "100ms");else {
         this._contentobj.style.marginLeft = x + "px";
         this._contentobj.style.marginTop = y + "px";
       }
@@ -23725,7 +23860,7 @@
           "class": "webix_inp_bottom_label",
           role: config.invalid ? "alert" : "",
           "aria-relevant": "all",
-          style: "position:absolute; bottom:0px; padding:2px 0; background:" + $active.backColor + "; left:" + (this._inputSpacing / 2 + (config.label ? config.labelWidth : 0)) + "px; "
+          style: "position:absolute; bottom:0px; padding:2px 0; background: white; left:" + (this._inputSpacing / 2 + (config.label ? config.labelWidth : 0)) + "px; "
         }, message);
 
         this._viewobj.appendChild(this._invalidMessage);
@@ -23913,14 +24048,11 @@
       editable: true
     },
     on_render: {
-      password: function (value) {
-        return !value && value !== 0 ? "" : "&bull;".repeat(value.toString().length);
-      },
       checkbox: function (value) {
         return "<input type='checkbox' class='webix_property_check' " + (value ? "checked" : "") + ">";
       },
       color: function (value) {
-        return "<div class='webix_property_col_ind' style='background-color:" + (value || "#FFFFFF") + ";'></div>" + value;
+        return "<div class=\"webix_property_col_val\"><div class='webix_property_col_ind' style=\"background-color:" + (value || "#FFFFFF") + ";\"></div><span>" + value + "</span></div>";
       }
     },
     on_edit: {
@@ -23932,8 +24064,8 @@
     on_click: {
       webix_property_check: function (ev) {
         var id = this.locate(ev);
-        var item = this.getItem(id);
-        this.callEvent("onCheck", [id, item.value = !item.value]);
+        this.getItem(id).value = !this.getItem(id).value;
+        this.callEvent("onCheck", [id, this.getItem(id).value]);
         return false;
       }
     },
@@ -24000,8 +24132,9 @@
       return null;
     },
     updateItem: function (key, data) {
+      data = data || {};
       var line = this.getItem(key);
-      if (line) exports.extend(line, data || {}, true);
+      if (line) exports.extend(line, data, true);
       this.refresh();
     },
     _cellPosition: function (id) {
@@ -24086,10 +24219,8 @@
           var post = "<div class='webix_property_label' style='width:" + this._settings.nameWidth + "px'>" + data.label + "</div><div class='webix_property_value' style='width:" + this._data_width + "px'>";
 
           if (data.collection || data.options) {
-            content = data.template(data, this.type, data.value, data);
-          } else if (data.format) {
-            content = data.format(data.value);
-          } else content = data.value;
+            content = data.template(data);
+          } else if (data.format) content = data.format(data.value);else content = data.value;
 
           if (render) content = render.call(this, data.value, data);
           html[i] = pre + post + content + "</div></div>";
@@ -24111,7 +24242,7 @@
   var api$s = {
     name: "calendar",
     defaults: {
-      date: wDate.datePart(new Date()),
+      date: new Date(),
       //selected date, not selected by default
       navigation: true,
       monthSelect: true,
@@ -24140,15 +24271,13 @@
       return wDate.dateToStr(format);
     },
     date_setter: function (date) {
-      date = wDate.copy(this._string_to_date(date));
-      date.setDate(1);
-      return date;
+      return this._string_to_date(date);
     },
     maxDate_setter: function (date) {
-      return wDate.datePart(this._string_to_date(date));
+      return this._string_to_date(date);
     },
     minDate_setter: function (date) {
-      return wDate.datePart(this._string_to_date(date));
+      return this._string_to_date(date);
     },
     minTime_setter: function (time) {
       if (typeof time == "string") {
@@ -24167,26 +24296,26 @@
       return time;
     },
     _ariaFocus: function () {
-      var _this = this;
+      var ev = "focus" + (env.isIE ? "in" : "");
 
-      _event(this.$view, "mousedown", function () {
-        _this._mouse_time = new Date();
-      });
+      if (!env.touch) {
+        _event(this.$view, ev, bind(function (e) {
+          var t = e.target.className;
+          var css = t.indexOf("webix_cal_day") !== -1 ? "webix_cal_day" : t.indexOf("webix_cal_block") !== -1 ? "webix_cal_block" : "";
 
-      _event(this.$view, "focus", function (e) {
-        // in daterange
-        if (_this._settings.master) return;
-        var prev = e.relatedTarget;
-        var css = e.target.className.indexOf("webix_cal_day") !== -1;
+          if (new Date() - UIManager._tab_time > 300 && new Date() - UIManager._mouse_time > 100 && css) {
+            var prev = e.relatedTarget;
 
-        if (prev && new Date() - _this._mouse_time > 100 && css && _this.$view.contains(prev)) {
-          var day = _this._locate_day(e.target);
+            if (prev && !isUndefined(prev.className)) {
+              var date = css == "webix_cal_day" ? this._locate_day(e.target) : this._locate_date(e.target);
 
-          if (!_this._selectedDay(day)) _this._moveSelection(day);
-        }
-      }, {
-        capture: true
-      });
+              this._moveSelection(date);
+            }
+          }
+        }, this), {
+          capture: !env.isIE
+        });
+      }
     },
     $init: function () {
       this._viewobj.className += " webix_calendar";
@@ -24203,15 +24332,6 @@
       this._ariaFocus();
 
       this.attachEvent("onKeyPress", this._onKeyPress);
-    },
-    _onKeyPress: function (code, e) {
-      var target = e.target,
-          role = target.getAttribute("role");
-
-      if ((code === 13 || code === 32) && (role == "button" || role == "log") && !this._settings.disabled) {
-        triggerEvent(target, "MouseEvent", "click");
-        preventEvent(e);
-      }
     },
     minuteStep_setter: function (value) {
       return Math.max(Math.min(value, 60), this.defaults.minuteStep);
@@ -24246,7 +24366,8 @@
     moveSelection: function (mode, details, focus) {
       if (this.config.master) return; //in daterange
 
-      var start = this.getSelectedDate(true);
+      var start = this.getSelectedDate();
+      if (this.config.multiselect) start = start[0];
       var date = wDate.copy(start || this.getVisibleDate());
 
       this._moveSelection(date, mode, focus);
@@ -24254,17 +24375,11 @@
     _moveSelection: function (date, mode, focus) {
       var css = this._zoom_logic[this._zoom_level]._keyshift(date, mode, this);
 
-      if (focus !== false) this._restore_focus(css);
-    },
-    _restore_focus: function (css, ind) {
-      var sel;
+      if (focus !== false) {
+        var sel = this._viewobj.querySelector("." + css + "[tabindex='0']");
 
-      if (ind) {
-        sel = this._viewobj.querySelector(".webix_cal_body");
-        sel = sel.childNodes[ind.rind].childNodes[ind.cind + (this._settings.weekNumber ? 1 : 0)];
-      } else sel = this._viewobj.querySelector("." + css + "[tabindex='0']");
-
-      if (sel) sel.focus();
+        if (sel) sel.focus();
+      }
     },
     _getDateBoundaries: function (date, reset) {
       // addition information about rendering event:
@@ -24363,7 +24478,7 @@
       if (!this.isVisible(s.id)) return;
       this._current_time = wDate.datePart(new Date());
       this.callEvent("onBeforeRender", []);
-      var date = this.getVisibleDate();
+      var date = this._settings.date;
 
       var bounds = this._getDateBoundaries(date, true);
 
@@ -24375,17 +24490,17 @@
       var html = "";
 
       if (s.monthHeader) {
-        html += "<div class='webix_cal_month' style='margin:0 " + cpad + "'><span role='log' aria-live='assertive' aria-atomic='true' class='webix_cal_month_name" + (!s.monthSelect || !s.navigation ? " webix_readonly'" : "' role='button' tabindex='0'") + ">" + s.calendarHeader(date) + "</span>";
+        html += "<div class='webix_cal_month' style='margin:0 " + cpad + "'><span aria-live='assertive' aria-atomic='true' class='webix_cal_month_name" + (!s.monthSelect || !s.navigation ? " webix_readonly'" : "' role='button' tabindex='0'") + ">" + s.calendarHeader(date) + "</span>";
         if (s.navigation) html += "<div role='button' tabindex='0' aria-label='" + i18n.aria.navMonth[0] + "' class='webix_cal_prev_button'></div><div role='button' tabindex='0' aria-label='" + i18n.aria.navMonth[1] + "' class='webix_cal_next_button'></div>";
         html += "</div>";
       }
 
       if (s.weekHeader) html += "<div class='webix_cal_header' style='margin:0 " + cpad + "' aria-hidden='true'>" + this._week_template(width) + "</div>";
-      html += "<div class='webix_cal_body' role='grid' style='margin:0 " + cpad + "'>" + this._body_template(width, height, bounds, sizes[2]) + "</div>";
+      html += "<div class='webix_cal_body' style='margin:0 " + cpad + "'>" + this._body_template(width, height, bounds, sizes[2]) + "</div>";
 
-      if (s.timepicker || this._icons) {
+      if (this._settings.timepicker || this._icons) {
         html += "<div class='webix_cal_footer' style='margin:0 " + cpad + "'>";
-        if (s.timepicker) html += this._timepicker_template(date);
+        if (this._settings.timepicker) html += this._timepicker_template(date);
         if (this._icons) html += this._icons_template();
         html += "</div>";
       }
@@ -24393,11 +24508,22 @@
       this._contentobj.innerHTML = html;
       this._contentobj.firstChild.style.marginTop = cpad;
 
-      if (s.type == "time") {
+      if (this._settings.type == "time") {
+        var time = this._settings.date;
+
+        if (time) {
+          if (typeof time == "string") {
+            date = i18n.parseTimeFormatDate(time);
+          } else if (isArray(time)) {
+            date.setHours(time[0]);
+            date.setMinutes(time[1]);
+          }
+        }
+
         this._changeZoomLevel(-1, date);
-      } else if (s.type == "month") {
+      } else if (this._settings.type == "month") {
         this._changeZoomLevel(1, date);
-      } else if (s.type == "year") {
+      } else if (this._settings.type == "year") {
         this._changeZoomLevel(2, date);
       }
 
@@ -24482,14 +24608,13 @@
     },
     _body_template: function (widths, heights, bounds, sqSize) {
       var s = this._settings;
-      var start = s.weekNumber ? 1 : 0;
+      var html = "";
       var day = wDate.datePart(wDate.copy(bounds._start));
+      var start = s.weekNumber ? 1 : 0;
       var weekNumber = wDate.getISOWeek(wDate.add(day, 2, "day", true));
-      var html = "",
-          focusable;
 
       for (var y = 0; y < heights.length; y++) {
-        html += "<div class='webix_cal_row' role='row' style='height:" + heights[y] + "px;line-height:" + heights[y] + "px'>";
+        html += "<div class='webix_cal_row' style='height:" + heights[y] + "px;line-height:" + heights[y] + "px'>";
 
         if (start) {
           // recalculate week number for the first week of a year
@@ -24498,56 +24623,57 @@
         }
 
         for (var x = start; x < widths.length; x++) {
-          var sel = this._selectedDay(day);
-
           var css = this._day_css(day, bounds);
 
-          var d = s.dayTemplate.call(this, day);
+          var d = this._settings.dayTemplate.call(this, day);
+
+          var sel = this._selectedDay(day);
+
           var alabel = "";
+
+          var isOutside = day.getMonth() != bounds._month;
 
           if (_typeof(d) == "object") {
             alabel = d.aria || alabel;
             d = d.text;
           } else alabel = wDate.dateToStr(i18n.aria.dateFormat)(day);
 
-          var isOutside = day.getMonth() != bounds._month;
-
-          var tabindex = sel && !isOutside ? "0" : "-1";
-          if (day.getDate() == 1 && !isOutside) tabindex = "$webix_tabindex";
-          if (tabindex == "0") focusable = true;
-          html += "<div day='" + x + "' role='gridcell' " + (isOutside ? "aria-hidden='true'" : "") + " aria-label='" + alabel + "' tabindex='" + tabindex + "' aria-selected='" + (sel && !isOutside ? "true" : "false") + "' class='" + css + "' style='text-align:center; width:" + widths[x] + "px'><span aria-hidden='true' class='webix_cal_day_inner' style='display:inline-block; " + this._getCalSizesString(sqSize, sqSize) + "'>" + d + "</span></div>";
+          html += "<div day='" + x + "' role='gridcell' " + (isOutside ? "aria-hidden='true'" : "") + " aria-label='" + alabel + "' tabindex='" + (sel && !isOutside ? "0" : "-1") + "' aria-selected='" + (sel && !isOutside ? "true" : "false") + "' class='" + css + "' style='text-align:center; width:" + widths[x] + "px'><span aria-hidden='true' class='webix_cal_day_inner' style='display:inline-block; " + this._getCalSizesString(sqSize, sqSize) + "'>" + d + "</span></div>";
           day = wDate.add(day, 1, "day");
-          if (day.getHours()) day = wDate.datePart(day);
+
+          if (day.getHours()) {
+            day = wDate.datePart(day);
+          }
         }
 
         html += "</div>";
         weekNumber++;
       }
 
-      return html.replace("$webix_tabindex", focusable || s.master ? "-1" : "0");
+      return html;
     },
     _changeDate: function (dir, step) {
+      var now = this._settings.date;
+
       if (!step) {
         step = this._zoom_logic[this._zoom_level]._changeStep;
       }
 
-      var now = this._settings.date;
+      if (!this._zoom_level) {
+        now = wDate.copy(now);
+        now.setDate(1);
+      }
+
       var next = wDate.add(now, dir * step, "month", true);
 
-      this._changeDateInternal(now, next, dir);
+      this._changeDateInternal(now, next);
     },
-    _changeDateInternal: function (now, next, dir) {
+    _changeDateInternal: function (now, next) {
       if (this.callEvent("onBeforeMonthChange", [now, next])) {
         if (this._zoom_level) {
           this._update_zoom_level(next);
         } else {
           this.showCalendar(next);
-
-          if (this._settings.monthHeader && this._settings.navigation) {
-            var css = "webix_cal_" + (dir > 0 ? "next" : "prev") + "_button";
-
-            this._restore_focus(css);
-          }
         }
 
         this.callEvent("onAfterMonthChange", [next, now]);
@@ -24634,6 +24760,8 @@
             newdate = this._findActive(wDate.add(date, inc, "hour"), mode, calendar);
           } else if (mode === false) newdate = this._findActive(date, mode, calendar);
 
+          calendar.selectDate(newdate, false, false, "user");
+
           if (newdate) {
             calendar._update_zoom_level(newdate);
 
@@ -24662,17 +24790,13 @@
       },
       "1": {
         //months
-        _isBlocked: function (i) {
-          var date = this.getVisibleDate();
-          date.setMonth(i);
+        _isBlocked: function (i, calendar) {
+          var blocked = false,
+              min = calendar._settings.minDate,
+              max = calendar._settings.maxDate,
+              year = calendar._settings.date.getFullYear();
 
-          var blocked = this._settings.blockDates && this._settings.blockDates.call(this, date);
-
-          var min = this._settings.minDate,
-              max = this._settings.maxDate,
-              year = this._settings.date.getFullYear();
-
-          if (min && !blocked) {
+          if (min) {
             var minYear = min.getFullYear();
             blocked = year < minYear || year == minYear && min.getMonth() > i;
           }
@@ -24726,16 +24850,11 @@
       },
       "2": {
         //years
-        _isBlocked: function (i) {
-          i += this._zoom_start_date;
-          var date = this.getVisibleDate();
-          date.setFullYear(i);
-
-          var blocked = this._settings.blockDates && this._settings.blockDates.call(this, date);
-
-          var min = this._settings.minDate;
-          var max = this._settings.maxDate;
-          if (blocked || min && min.getFullYear() > i || max && max.getFullYear() < i) return true;
+        _isBlocked: function (i, calendar) {
+          i += calendar._zoom_start_date;
+          var min = calendar._settings.minDate;
+          var max = calendar._settings.maxDate;
+          if (min && min.getFullYear() > i || max && max.getFullYear() < i) return true;
           return false;
         },
         _correctDate: function (date, calendar) {
@@ -24811,7 +24930,11 @@
       index$$1 = 2 - (config.weekHeader ? 0 : 1) - (config.monthHeader ? 0 : 1);
       zlogic = this._zoom_logic[this._zoom_level];
       sections = this._contentobj.childNodes;
-      if (date) this.define("date", date);
+
+      if (date) {
+        config.date = date;
+      }
+
       type = config.type; //store width and height of draw area
 
       if (!this._zoom_size) {
@@ -24836,7 +24959,7 @@
 
         this._correctBlockedTime();
 
-        html += "<div role='grid' class='webix_hours'><div role='row'>";
+        html += "<div class='webix_hours'>";
         selected = config.date.getHours();
         temp = wDate.copy(config.date);
 
@@ -24858,8 +24981,8 @@
           html += "<div aria-label='" + wDate.dateToStr(i18n.aria.hourFormat)(temp) + "' role='gridcell'" + " tabindex='" + (selected == i ? "0" : "-1") + "' aria-selected='" + (selected == i ? "true" : "false") + "' class='webix_cal_block" + css + "' data-value='" + i + "' style='" + this._getCalSizesString(width, height) + (i % 4 === 0 && !enLocale ? "clear:both;" : "") + "'><span style='display:inline-block; " + this._getCalSizesString(sqSize, sqSize) + "'>" + wDate.toFixed(enLocale ? !i || i == 12 ? 12 : i % 12 : i) + "</span></div>";
         }
 
-        html += "</div></div>";
-        html += "<div role='grid' class='webix_minutes'><div role='row'>";
+        html += "</div>";
+        html += "<div class='webix_minutes'>";
         selected = config.date.getMinutes();
         temp = wDate.copy(config.date);
 
@@ -24874,7 +24997,7 @@
           html += "<div aria-label='" + wDate.dateToStr(i18n.aria.minuteFormat)(temp) + "' role='gridcell' tabindex='" + (selected == i ? "0" : "-1") + "' aria-selected='" + (selected == i ? "true" : "false") + "' class='webix_cal_block webix_cal_block_min" + css + "' data-value='" + i + "' style='" + this._getCalSizesString(width, height) + (i / config.minuteStep % 2 === 0 ? "clear:both;" : "") + "'><span style='display:inline-block; " + this._getCalSizesString(sqSize, sqSize) + "'>" + wDate.toFixed(i) + "</span></div>";
         }
 
-        html += "</div></div>";
+        html += "</div>";
         html += "</div>";
         html += "<div class='webix_time_footer' style='margin:0 " + cpad + "'>" + this._timeButtonsTemplate() + "</div>";
         this._contentobj.innerHTML = html;
@@ -24884,13 +25007,11 @@
         //reset header
         if (config.monthHeader) {
           var header = sections[0].childNodes;
-
-          var title = zlogic._getTitle(config.date, this);
-
-          if (header[0].innerHTML != title) header[0].innerHTML = title;
+          var labels = i18n.aria["nav" + (this._zoom_level == 1 ? "Year" : "Decade")];
+          header[0].innerHTML = zlogic._getTitle(config.date, this);
+          header[0].blur();
 
           if (config.navigation) {
-            var labels = i18n.aria["nav" + (this._zoom_level == 1 ? "Year" : "Decade")];
             header[1].setAttribute("aria-label", labels[0]);
             header[2].setAttribute("aria-label", labels[1]);
           }
@@ -24900,14 +25021,14 @@
         height = Math.floor(this._reserve_box_height / 3);
         width = Math.floor(this._reserve_box_width / 4);
         sqSize = Math.min(height, width);
-        selected = this._zoom_level === 1 ? config.date.getMonth() : config.date.getFullYear() - this._zoom_start_date;
+        if (this._checkDate(config.date)) selected = this._zoom_level == 1 ? config.date.getMonth() : config.date.getFullYear();
 
         for (i = 0; i < 12; i++) {
-          css = "";
+          css = selected == (this._zoom_level == 1 ? i : zlogic._getContent(i, this)) ? " webix_selected" : "";
 
-          if (zlogic._isBlocked.call(this, i)) {
-            css = " webix_cal_day_disabled";
-          } else if (selected == i) css = " webix_selected";
+          if (zlogic._isBlocked(i, this)) {
+            css += " webix_cal_day_disabled";
+          }
 
           var format = i18n.aria[(this._zoom_level == 1 ? "month" : "year") + "Format"];
           html += "<div role='gridcell' aria-label='" + wDate.dateToStr(format)(config.date) + "' tabindex='" + (css.indexOf("selected") !== -1 ? "0" : "-1") + "' aria-selected='" + (css.indexOf("selected") !== -1 ? "true" : "false") + "' class='webix_cal_block" + css + "' data-value='" + i + "' style='" + this._getCalSizesString(width, height) + "'><span style='display:inline-block; " + this._getCalSizesString(sqSize, sqSize) + "'>" + zlogic._getContent(i, this) + "</span></div>";
@@ -24918,7 +25039,7 @@
           if (index$$1 === 1) sections[index$$1].style.marginTop = cpad;
         }
 
-        sections[index$$1].innerHTML = "<div role='row'>" + html + "</div>";
+        sections[index$$1].innerHTML = html;
 
         if (type != "year" && type != "month") {
           if (!sections[index$$1 + 1]) this._contentobj.innerHTML += "<div class='webix_time_footer' style='margin:0 " + cpad + "'>" + this._timeButtonsTemplate() + "</div>";else sections[index$$1 + 1].innerHTML = this._timeButtonsTemplate();
@@ -24950,7 +25071,7 @@
       }
     },
     _correctDate: function (date) {
-      if (this._zoom_logic[this._zoom_level]._correctDate && !this._checkDate(date)) date = this._zoom_logic[this._zoom_level]._correctDate(date, this);
+      if (!this._checkDate(date) && this._zoom_logic[this._zoom_level]._correctDate) date = this._zoom_logic[this._zoom_level]._correctDate(date, this);
       return date;
     },
     _mode_selected: function (target, config) {
@@ -24970,16 +25091,14 @@
     _selectDate: function (date, add, config) {
       if (this.callEvent("onBeforeDateSelect", [date])) {
         this.selectDate(date, true, add, config);
+        this.callEvent("onDateSelect", [date]); // should be deleted in a future version
+
         this.callEvent("onAfterDateSelect", [date]);
       }
     },
-    _locate_day: function (target, ind) {
+    _locate_day: function (target) {
       var cind = index(target) - (this._settings.weekNumber ? 1 : 0);
       var rind = index(target.parentNode);
-      if (ind) return {
-        cind: cind,
-        rind: rind
-      };
       var date = wDate.add(this._getDateBoundaries()._start, cind + rind * 7, "day", true);
 
       if (this._settings.timepicker) {
@@ -24992,7 +25111,8 @@
     _locate_date: function (target) {
       var value = target.getAttribute("data-value") * 1;
       var level = target.className.indexOf("webix_cal_block_min") != -1 ? this._zoom_level - 1 : this._zoom_level;
-      var next = this.getVisibleDate();
+      var now = this._settings.date;
+      var next = wDate.copy(now);
 
       this._zoom_logic[level]._setContent(next, value, this);
 
@@ -25014,12 +25134,9 @@
       webix_cal_day: function (e, id, target) {
         var date = this._locate_day(target);
 
-        var ind = this._settings.multiselect ? this._locate_day(target, true) : null;
         var add = this._settings.multiselect === "touch" || e.ctrlKey || e.metaKey;
 
         this._selectDate(date, add, "user");
-
-        this._restore_focus("webix_cal_day", ind);
       },
       webix_cal_time: function () {
         if (this._zoom_logic[this._zoom_level - 1]) {
@@ -25036,18 +25153,7 @@
         $$(this._settings.master)._time_mode = "end";
       },
       webix_cal_done: function () {
-        var date = this.getVisibleDate();
-
-        if (this._zoom_in) {
-          var start = this.getSelectedDate(true);
-
-          if (start) {
-            start.setHours(date.getHours());
-            start.setMinutes(date.getMinutes());
-            date = start;
-          }
-        }
-
+        var date = wDate.copy(this._settings.date);
         date = this._correctDate(date);
 
         this._selectDate(date, false, "user");
@@ -25068,18 +25174,15 @@
           var next = this._locate_date(trg);
 
           this._update_zoom_level(next);
-
-          var css = "webix_cal_block";
-          if (trg.className.indexOf("webix_cal_block_min") !== -1) css = "webix_cal_block_min";
-
-          this._restore_focus(css);
         } else {
           if (trg.className.indexOf("webix_cal_day_disabled") == -1) this._mode_selected(trg, "user");
         }
       }
     },
     _string_to_date: function (date, format) {
-      if (!date) return wDate.datePart(new Date());
+      if (!date) {
+        return wDate.datePart(new Date());
+      }
 
       if (typeof date == "string") {
         if (format) date = wDate.strToDate(format)(date);else date = i18n.parseFormatDate(date);
@@ -25092,7 +25195,7 @@
 
       var minDate = this._settings.minDate;
       var maxDate = this._settings.maxDate;
-      var outOfRange = minDate && date < minDate || maxDate && date >= wDate.add(maxDate, 1, "day", true);
+      var outOfRange = date < minDate || date > maxDate;
       return !blockedDate && !outOfRange;
     },
     _findActive: function (date, mode) {
@@ -25105,23 +25208,22 @@
       }
     },
     showCalendar: function (date) {
-      this.define("date", date);
+      date = this._string_to_date(date);
+      this._settings.date = date;
       this.render();
       this.resize();
     },
     _selectedDay: function (day) {
       return day && this._selected_days[day.valueOf()];
     },
-    getSelectedDate: function (first) {
+    getSelectedDate: function () {
       var result = [];
-      var keys = Object.keys(this._selected_days);
-      var length = first ? Math.min(1, keys.length) : keys.length;
 
-      for (var i = 0; i < length; i++) {
-        result.push(wDate.copy(this._selected_days[keys[i]]));
+      for (var key in this._selected_days) {
+        result.push(wDate.copy(this._selected_days[key]));
       }
 
-      return this.config.multiselect && !first ? result : result[0] || null;
+      return this.config.multiselect ? result : result[0] || null;
     },
     getVisibleDate: function () {
       return wDate.copy(this._settings.date);
@@ -25188,9 +25290,7 @@
 
         if (value) {
           var oldvalue = this._settings.value;
-          this.setValue(value, "user"); //value can be changed via setValue
-
-          value = this._settings.value;
+          value = this.setValue(value, "user");
           this.callEvent("onItemClick", [value, e]);
           if (value != oldvalue) this.callEvent("onSelect", [value]);
         }
@@ -25251,6 +25351,8 @@
         this.$setValue(value);
         this.callEvent("onChange", [value, oldvalue, config]);
       }
+
+      return value;
     },
     $setValue: function (value) {
       if (this.isVisible(this._settings.id)) {
@@ -25534,6 +25636,14 @@
 
       this._hValue = this._sValue = this._vValue = 0;
 
+      if (env.touch) {
+        this.attachEvent("onTouchStart", function (e, ctx) {
+          var css = e.target.className;
+          var parent = e.target.parentNode.className;
+          if (css == "webix_color_block" || parent == "webix_color_block") _this._handle_dnd(ctx || e);else if (css.indexOf("webix_color_line") == 0) _this._handle_dnd(ctx || e, true);
+        });
+      }
+
       _event(this.$view, "keydown", function (e) {
         return _this._handle_move_keyboard(e);
       });
@@ -25541,21 +25651,13 @@
       this.attachEvent("onAfterRender", function () {
         var _this2 = this;
 
-        _event(this._colorBlock, env.mouse.down, function (e) {
-          return _this2._handle_dnd(e, "mouse");
-        });
-
-        _event(this._colorLine, env.mouse.down, function (e) {
-          return _this2._handle_dnd(e, "mouse", true);
-        });
-
-        if (env.touch) {
-          _event(this._colorBlock, env.touch.down, function (e) {
-            return _this2._handle_dnd(e, "touch");
+        if (!env.touch) {
+          _event(this._colorBlock, "mousedown", function (e) {
+            return _this2._handle_dnd(e);
           });
 
-          _event(this._colorLine, env.touch.down, function (e) {
-            return _this2._handle_dnd(e, "touch", true);
+          _event(this._colorLine, "mousedown", function (e) {
+            return _this2._handle_dnd(e, true);
           });
         }
 
@@ -25570,6 +25672,7 @@
       this.attachEvent("onDestruct", function () {
         this._colorCircle = this._colorLineCircle = this._colorBlock = null;
         this._colorLine = this._colorOutText = this._colorOutBlock = this._offset = null;
+        if (this._handle_drag_events) this._detach_drag_events();
       });
     },
     $skin: function () {
@@ -25646,7 +25749,10 @@
     },
     // dragging to set value
     _move_block: function (e) {
-      var pos$$1 = pos(e);
+      var pos$$1 = env.touch ? {
+        x: e.x,
+        y: e.y
+      } : pos(e);
       var x = pos$$1.x - this._offset.x;
       var y = pos$$1.y - this._offset.y;
       x = Math.max(Math.min(x, this._offset.width), 0);
@@ -25663,7 +25769,10 @@
       this._setOutColors();
     },
     _move_line: function (e) {
-      var pos$$1 = pos(e);
+      var pos$$1 = env.touch ? {
+        x: e.x,
+        y: e.y
+      } : pos(e);
       var x = pos$$1.x - this._offset.x;
       x = Math.max(Math.min(x, this._offset.width), 0);
       this._colorLineCircle.style.left = x + "px";
@@ -25674,7 +25783,7 @@
 
       this._setBlockColors();
     },
-    _handle_dnd: function (e, pointer, line) {
+    _handle_dnd: function (e, line) {
       var _this3 = this;
 
       this._offset = offset(this._colorBlock);
@@ -25689,25 +25798,39 @@
         this._move_block(e);
       }
 
-      var passive = pointer === "touch" ? {
-        passive: false
-      } : null;
-      this._handle_drag_events = [event$1(document.body, env[pointer].move, function (e) {
-        return _this3._handle_move_process(e, pointer, line);
-      }, passive), event$1(document, env[pointer].up, function () {
-        return _this3._handle_move_stop(line);
-      })];
+      if (env.touch) {
+        this._handle_drag_events = [this.attachEvent("onTouchMove", function (e, ctx) {
+          return _this3._handle_move_process(ctx || e, line);
+        }), this.attachEvent("onTouchEnd", function () {
+          return _this3._handle_move_stop(line);
+        })];
+      } else {
+        this._handle_drag_events = [event$1(document.body, "mousemove", function (e) {
+          return _this3._handle_move_process(e, line);
+        }), event$1(window, "mouseup", function () {
+          return _this3._handle_move_stop(line);
+        })];
+      }
+
       addCss(document.body, "webix_noselect");
     },
-    _handle_move_process: function (e, pointer, line) {
+    _handle_move_process: function (e, line) {
       if (line) this._move_line(e);else this._move_block(e);
-      if (pointer === "touch") preventEvent(e);
+    },
+    _detach_drag_events: function () {
+      if (env.touch) {
+        this.detachEvent(this._handle_drag_events[0]);
+        this.detachEvent(this._handle_drag_events[1]);
+      } else {
+        eventRemove(this._handle_drag_events[0]);
+        eventRemove(this._handle_drag_events[1]);
+      }
+
+      this._handle_drag_events = null;
     },
     _handle_move_stop: function (line) {
-      //detach event handlers
-      eventRemove(this._handle_drag_events[0]);
-      eventRemove(this._handle_drag_events[1]);
-      this._handle_drag_events = null;
+      this._detach_drag_events();
+
       this.setValue(this._current_value, "user");
 
       if (line) {
@@ -25729,7 +25852,7 @@
       return Math.min(Math.max(val + inc, 0), 359);
     },
     _handle_move_keyboard: function (e) {
-      var code = e.which || e.keyCode;
+      var code = e.keyCode;
 
       if (code > 32 && code < 41) {
         var match = /webix_color_(\w*)circle/.exec(e.target.className);
@@ -25858,7 +25981,7 @@
       this._addElementHotKey(key, function (view, ev) {
         if (control.isVisible()) {
           var elem = control.$view.firstChild;
-          triggerEvent(elem, "MouseEvent", "click");
+          triggerEvent(elem, "MouseEvents", "click");
           preventEvent(ev);
         }
       });
@@ -25978,13 +26101,7 @@
       var oldvalue = this._settings.value;
 
       if (this.$compareValue(oldvalue, value)) {
-        //controls with post formating, we need to repaint value
-        if (this._rendered_input && this._pattern) {
-          value = this._pattern(value);
-          var input = this.getInputNode();
-          if (input && !isUndefined(input.value) && input.value != value) this.$setValue(value);
-        }
-
+        if (this._rendered_input && value != this.$getValue()) this.$setValue(value);
         return;
       }
 
@@ -26296,9 +26413,9 @@
             return;
           }
 
-          this._on_key_pressed(e, code);
+          preventEvent(e);
 
-          return false;
+          this._on_key_pressed(e, code);
         });
         this.attachEvent("onAfterRender", this._after_render);
 
@@ -26357,10 +26474,11 @@
       }, this);
     },
     _after_render: function () {
-      var _this = this;
+      var ev = env.isIE8 ? "propertychange" : "input";
+      if (!this._custom_format) _event(this.getInputNode(), ev, function () {
+        var stamp = new Date().valueOf(); //dark ie8 magic
 
-      if (!this._custom_format) _event(this.getInputNode(), "input", function () {
-        var stamp = new Date().valueOf();
+        var width = this.$view.offsetWidth; //eslint-disable-line
 
         if (!this._property_stamp || stamp - this._property_stamp > 100) {
           this._property_stamp = stamp;
@@ -26371,7 +26489,9 @@
       });
 
       _event(this.getInputNode(), "blur", function () {
-        return _this._applyChanges("user");
+        this._applyChanges();
+      }, {
+        bind: this
       });
     },
     _patternScheme: function (pattern) {
@@ -26507,8 +26627,8 @@
         var node = this.getInputNode(); //attach onChange handler only for controls which do not manage blur on their own
         //for example - combo
 
-        if (!this.$onBlur) _event(node, "change", function () {
-          return _this._applyChanges("user");
+        if (!this._onBlur) _event(node, "change", this._applyChanges, {
+          bind: this
         });
         if (c.suggest) $$(c.suggest).linkInput(this);
 
@@ -26523,9 +26643,11 @@
         }
       }
     },
-    _applyChanges: function (c) {
+    _applyChanges: function () {
       var value = this.getValue();
-      this.setValue(value, c);
+      var res = this.setValue(value, "user"); //controls with post formating, we need to repaint value
+
+      if (this._custom_format && res === false) this.$setValue(value);
     },
     _toggleClearIcon: function (value) {
       var c = this._settings;
@@ -26551,8 +26673,8 @@
         config.height = this.defaults.height + (config.label ? this._labelTopHeight : 0); // used in clear_setter
 
       if (!isUndefined(config.icon)) this._settings.icon = config.icon;
-      if (this.$onBlur) this.attachEvent("onBlur", function () {
-        if (this._rendered_input) this.$onBlur();
+      if (this._onBlur) this.attachEvent("onBlur", function () {
+        if (this._rendered_input) this._onBlur();
       });
       this.attachEvent("onAfterRender", this._init_onchange);
       this.attachEvent("onDestruct", function () {
@@ -26641,18 +26763,9 @@
     setBottomText: function (text, height) {
       var config = this._settings;
 
-      if (!isUndefined(text)) {
+      if (typeof text != "undefined") {
         if (config.bottomLabel == text) return;
         config.bottomLabel = text;
-      }
-
-      var sel;
-      var input = this.getInputNode();
-
-      if (input && !isUndefined(input.value)) {
-        if (input == document.activeElement) sel = getSelectionRange(input); // save input value before rendering
-
-        this._applyChanges("auto");
       }
 
       var message = (config.invalid ? config.invalidMessage : "") || config.bottomLabel;
@@ -26671,8 +26784,6 @@
         this.adjust();
         this.resize();
       } else this.render();
-
-      if (sel) setSelectionRange(this.getInputNode(), sel.start, sel.end);
     },
     $getSize: function () {
       var sizes = base$1.api.$getSize.apply(this, arguments);
@@ -26823,8 +26934,6 @@
       } else this.setValue(v, details && details.config);
     },
     suggest_setter: function (value) {
-      var _this2 = this;
-
       if (value) {
         assert(value !== true, "suggest options can't be set as true, data need to be provided instead");
 
@@ -26855,9 +26964,6 @@
 
         this._destroy_with_me.push(_view);
 
-        this.$ready.push(function () {
-          return _view._settings.master = _this2._settings.id;
-        });
         return _view._settings.id;
       }
 
@@ -27187,7 +27293,7 @@
       timeIcon: "wxi-clock",
       separator: ", "
     },
-    $onBlur: function () {
+    _onBlur: function () {
       var text$$1 = this.getText();
       if (this._settings.text == text$$1) return;
       var value = this._settings.editable ? this.getValue() : this.getPopup().getValue();
@@ -27343,8 +27449,6 @@
           if (timeMode && value != "") {
             value.setHours(time.getHours());
             value.setMinutes(time.getMinutes());
-            value.setSeconds(time.getSeconds());
-            value.setMilliseconds(time.getMilliseconds());
           } else value = time;
         } //return string from getValue
 
@@ -27452,26 +27556,14 @@
       popupWidth: 200,
       icon: "wxi-menu-down"
     },
-    $onBlur: function () {
+    _onBlur: function () {
       var text$$1 = this.getText();
       if (this._settings.text == text$$1 || isUndefined(this._settings.text) && !text$$1) return;
       var suggest = this.getPopup(); //handle clicks on suggest items
 
       if (suggest.$view.contains(document.activeElement)) return;
-      var newValues = this.config.newValues;
       var nodeValue = this.getInputNode().value;
-      var list = this.getList();
-      var value;
-
-      if (newValues) {
-        value = list.find(function (obj) {
-          return suggest.getItemText(obj.id) == nodeValue;
-        }, true);
-        if (value) value = value.id;else if (nodeValue) value = list.add({
-          value: nodeValue
-        });
-      } else value = suggest.getSuggestion(nodeValue);
-
+      var value = suggest.getSuggestion(nodeValue);
       var oldvalue = this.getValue(); //non-empty value that differs from old value and matches filtering rule
 
       if (value && value != oldvalue && !(nodeValue === "" && suggest.getItemText(value) !== "")) this.setValue(value, "user");else if (nodeValue === "") this.setValue("", "user");else if (this._revertValue) this._revertValue();
@@ -27554,10 +27646,8 @@
       return this._settings.value || "";
     },
     _ignoreLabelClick: function (ev) {
-      if (ev.type) {
-        this.focus();
-        preventEvent(ev);
-      }
+      this.focus();
+      preventEvent(ev);
     }
   };
   var view$D = exports.protoUI(api$D, text.view);
@@ -27571,20 +27661,11 @@
     getInputNode: function () {
       return this._dataobj.getElementsByTagName("input")[0];
     },
-    _init_onchange: function () {
-      var _this = this;
-
-      _event(this.getInputNode(), "keydown", function (e) {
-        if (e.keyCode == 13) richselect.api.$onBlur.apply(_this, []);
-      });
-
-      richselect.api._init_onchange.apply(this, arguments);
-    },
     _revertValue: function () {
       var value = this.getValue();
       this.$setValue(isUndefined(value) ? "" : value);
     },
-    _applyChanges: function (c) {
+    _applyChanges: function () {
       var input = this.getInputNode(),
           value = "",
           suggest = this.getPopup();
@@ -27594,7 +27675,7 @@
         if (suggest.getItemText(value) != this.getText()) value = suggest.getSuggestion() || value;
       }
 
-      if (value != this._settings.value) this.setValue(value, c);else this.$setValue(value);
+      if (value != this._settings.value) this.setValue(value, "user");else this.$setValue(value);
     },
     defaults: {
       template: function (config, common) {
@@ -27813,83 +27894,6 @@
     view: view$I
   };
 
-  var autoheight = {
-    $init: function () {
-      this.$ready.push(function () {
-        var _this = this;
-
-        if (this._settings.autoheight) {
-          addCss(this.$view, "webix_noscroll");
-          if (!this._settings.maxHeight) this._settings.maxHeight = 100;
-
-          _event(this.$view, "input", function () {
-            _this._sizeToContent(true);
-          }, {
-            capture: true
-          });
-
-          this.attachEvent("onAfterRender", function () {
-            _this._sizeToContent();
-          });
-        }
-      });
-    },
-    _sizeToContent: function (focus) {
-      var _this2 = this;
-
-      if (this._skipSizing) return this._skipSizing = false;
-      var txt = this.getInputNode();
-
-      var height = this._getTextHeight(txt.value, txt.offsetWidth);
-
-      var padding = 2 * $active.inputPadding + 2 * $active.borderWidth;
-      height = Math.max(height + padding, this._settings.minHeight);
-
-      if (height > this._settings.maxHeight) {
-        removeCss(this.$view, "webix_noscroll");
-        height = this._settings.maxHeight;
-      } else addCss(this.$view, "webix_noscroll", true);
-
-      var topView = this.getTopParentView();
-      clearTimeout(topView._template_resize_timer);
-      topView._template_resize_timer = delay(function () {
-        if (_this2.config.height != height) {
-          _this2.config.height = height;
-          var caretPos = txt.selectionEnd;
-          _this2._skipSizing = true;
-          var value = text.api.getValue.call(_this2);
-
-          _this2.resize();
-
-          _this2.callEvent("onInputResize", []);
-
-          if (focus) {
-            txt = _this2.getInputNode(); // needed to restore "\n" value after resize
-
-            text.api.$setValue.call(_this2, value);
-            txt.setSelectionRange(caretPos, caretPos);
-            txt.focus();
-          }
-        }
-      });
-    },
-    _getTextHeight: function (value, width) {
-      var d = create("textarea", {
-        "class": "webix_textarea_measure",
-        rows: "1"
-      }, "");
-      d.style.cssText = "height:auto;visibility:hidden; position:absolute; top:0px; left:0px; width:" + width + "px;";
-      document.body.appendChild(d);
-      d.value = value;
-      var height = d.scrollHeight;
-      remove(d);
-      return height;
-    },
-    $setValue: function (value) {
-      text.api.$setValue.call(this, value);
-      if (this._settings.autoheight) this._sizeToContent();
-    }
-  };
   var api$J = {
     name: "textarea",
     defaults: {
@@ -27918,12 +27922,7 @@
       return this._dataobj.getElementsByTagName("textarea")[0];
     }
   };
-  var view$J = exports.protoUI(api$J, autoheight, text.view);
-  var textarea = {
-    api: api$J,
-    view: view$J,
-    autoheight: autoheight
-  };
+  var view$J = exports.protoUI(api$J, text.view);
 
   var api$K = {
     name: "toggle",
@@ -28129,6 +28128,7 @@
 
   var api$M = {
     name: "slider",
+    $touchCapture: true,
     defaults: {
       min: 0,
       max: 100,
@@ -28244,15 +28244,7 @@
       return this._safeValue(value);
     },
     $init: function (config) {
-      var _this = this;
-
-      _event(this._viewobj, env.mouse.down, function (e) {
-        return _this._on_mouse_down_start(e, "mouse");
-      });
-
-      if (env.touch) _event(this._viewobj, env.touch.down, function (e) {
-        return _this._on_mouse_down_start(e, "touch");
-      });
+      if (env.touch) this.attachEvent("onTouchStart", bind(this._on_mouse_down_start, this));else _event(this._viewobj, "mousedown", bind(this._on_mouse_down_start, this));
 
       _event(this.$view, "keydown", bind(this._handle_move_keyboard, this));
 
@@ -28271,7 +28263,7 @@
       this._sliderBorder = $active.sliderBorder; //1px border
     },
     _handle_move_keyboard: function (e) {
-      var code = e.which || e.keyCode,
+      var code = e.keyCode,
           c = this._settings,
           value = c.value;
 
@@ -28309,30 +28301,49 @@
         }
       }
     },
-    _on_mouse_down_start: function (e, pointer) {
-      var _this2 = this;
-
+    _on_mouse_down_start: function (e) {
+      if (this._handle_drag_events) return;
       var trg = e.target;
-      if (this._mouse_down_process) this._mouse_down_process(e);
+
+      if (this._mouse_down_process) {
+        this._mouse_down_process(e);
+      }
+
       var value = this._settings.value;
       if (isArray(value)) value = copy(value);
-      this._start_value = value;
-      if (trg.className.indexOf("webix_slider") !== -1) this._settings.value = this._get_value_from_event(e);
-      var passive = pointer === "touch" ? {
-        passive: false
-      } : null;
-      this._handle_drag_events = [event$1(document.body, env[pointer].move, function (e) {
-        return _this2._handle_move_process(e, pointer);
-      }, passive), event$1(document, env[pointer].up, function () {
-        return _this2._handle_move_stop();
-      })];
+
+      if (trg.className.indexOf("webix_slider_handle") != -1) {
+        this._start_value = value;
+        return this._start_handle_dnd.apply(this, arguments);
+      } else if (trg.className.indexOf("webix_slider") != -1) {
+        this._start_value = value;
+        this._settings.value = this._get_value_from_event.apply(this, arguments);
+
+        this._start_handle_dnd(e);
+      }
+    },
+    _start_handle_dnd: function () {
+      if (env.touch) {
+        this._handle_drag_events = [this.attachEvent("onTouchMove", bind(this._handle_move_process, this)), this.attachEvent("onTouchEnd", bind(this._handle_move_stop, this))];
+      } else this._handle_drag_events = [event$1(document.body, "mousemove", bind(this._handle_move_process, this)), event$1(window, "mouseup", bind(this._handle_move_stop, this))];
+
       addCss(document.body, "webix_noselect");
     },
     _handle_move_stop: function () {
       //detach event handlers
-      eventRemove(this._handle_drag_events[0]);
-      eventRemove(this._handle_drag_events[1]);
-      this._handle_drag_events = null;
+      if (this._handle_drag_events) {
+        if (env.touch) {
+          this.detachEvent(this._handle_drag_events[0]);
+          this.detachEvent(this._handle_drag_events[1]);
+        } else {
+          eventRemove(this._handle_drag_events[0]);
+          eventRemove(this._handle_drag_events[1]);
+        }
+
+        this._handle_drag_events = null;
+      }
+
+      removeCss(document.body, "webix_noselect");
       var value = this._settings.value;
       if (isArray(value)) value = copy(value);
       this._settings.value = this._start_value;
@@ -28341,17 +28352,17 @@
       this._get_slider_handle(this._activeIndex).focus();
 
       this._activeIndex = -1;
-      removeCss(document.body, "webix_noselect");
     },
-    _handle_move_process: function (e, pointer) {
-      this._settings.value = this._get_value_from_event(e);
+    _handle_move_process: function () {
+      this._settings.value = this._get_value_from_event.apply(this, arguments);
       this.refresh();
       this.callEvent("onSliderDrag", []);
-      if (pointer === "touch") preventEvent(e);
     },
-    _get_value_from_event: function (e) {
+    _get_value_from_event: function (event, touchContext) {
+      // this method takes 2 arguments in case of touch env
+      var pos$$1 = 0;
       var ax = this._settings.vertical ? "y" : "x";
-      var pos$$1 = pos(e)[ax];
+      if (env.touch) pos$$1 = touchContext ? touchContext[ax] : event[ax];else pos$$1 = pos(event)[ax];
       return this._get_value_from_pos(pos$$1);
     },
     _get_value_from_pos: function (pos$$1) {
@@ -28499,15 +28510,15 @@
         var popupConfig = exports.extend({
           view: "popup",
           autofocus: false,
-          width: 200
+          width: obj.popupWidth || 200
         }, obj.tabbarPopup || {});
         var body = exports.extend({
           view: "list",
           borderless: true,
           select: true,
           autoheight: true,
-          yCount: 7,
-          template: template("#value#")
+          yCount: obj.yCount || 7,
+          template: template(obj.popupTemplate || "#value#")
         }, obj.tabbarPopup ? obj.tabbarPopup.body || {} : {}, true);
         body.css = "webix_tab_list ".concat(body.css || "");
         popupConfig.body = body;
@@ -28834,10 +28845,14 @@
     },
     _execCommandOnElement: function (commandName) {
       var sel, selText;
-      sel = window.getSelection();
-      selText = sel.toString().length;
-      var input = this.getInputNode();
-      if (!input.contains(sel.anchorNode) || !input.contains(sel.focusNode)) return;
+
+      if (window.getSelection) {
+        sel = window.getSelection();
+        selText = sel.toString().length;
+        var input = this.getInputNode();
+        if (!input.contains(sel.anchorNode) || !input.contains(sel.focusNode)) return;
+      } else return; //ie8
+
 
       if (selText > 0) {
         for (var i = 0; i < sel.rangeCount; ++i) {
@@ -28930,16 +28945,11 @@
     _listClassName: "webix_list",
     _itemClassName: "webix_list_item",
     $init: function (config) {
-      var _this = this;
-
       addCss(this._viewobj, this._listClassName + ((config.layout || this.defaults.layout) == "x" ? "-x" : ""));
       this.data.provideApi(this, true);
-      this.data.attachEvent("onStoreUpdated", function (id, obj, mode) {
-        if (!id || mode === "add" || mode === "delete") _this._auto_resize();
-      });
-      this.data.attachEvent("onSyncApply", function () {
-        return _this._auto_resize();
-      });
+      this._auto_resize = bind(this._auto_resize, this);
+      this.data.attachEvent("onStoreUpdated", this._auto_resize);
+      this.data.attachEvent("onSyncApply", this._auto_resize);
 
       this._viewobj.setAttribute("role", "listbox");
     },
@@ -29340,7 +29350,7 @@
 
         var html = "<div class=\"webix_text_highlight\" style=\"width:".concat(width, "px;\"><div class=\"webix_text_highlight_value\""); // iOS adds 3px of (unremovable) padding to the left and right of a textarea
 
-        if (obj.type == "textarea" && env.isIOS) html += " style=\"margin-left:".concat($active.dataPadding + 3, "px; margin-right:").concat($active.dataPadding + 3, "px;\"");
+        if (obj.type == "textarea" && env.mobile && env.isSafari) html += " style=\"margin-left:".concat($active.dataPadding + 3, "px; margin-right:").concat($active.dataPadding + 3, "px;\"");
         html += "></div></div>";
 
         if (obj.type == "textarea") {
@@ -29450,7 +29460,7 @@
       }, this);
     }
   };
-  var view$T = exports.protoUI(api$T, textarea.autoheight, text.view);
+  var view$T = exports.protoUI(api$T, text.view);
 
   var api$U = {
     name: "timeboard",
@@ -29604,7 +29614,7 @@
         name: name,
         format: {
           parse: function (a) {
-            if (a == 12 && name === "hours" && twelve) a = "00";
+            if (a == 12 && name === "hours") a = "00";
             return a.length > 1 ? a.replace(/^0/, "") : a || 0;
           },
           edit: function (a) {
@@ -29889,7 +29899,6 @@
       if (input.getInputNode) {
         node = input.getInputNode();
         node.webix_master_id = input._settings.id;
-        input.attachEvent("onInputResize", bind(this._resetPosition, this));
       } else node = toNode(input);
 
       _event(node, "keydown", function (e) {
@@ -29912,12 +29921,13 @@
     _suggestions: function (e) {
       //should be before tab and arrows handlers: IME can call keydown twice
       if (this._last_delay) this._last_delay = clearTimeout(this._last_delay);
+      e = e || event;
       var list = this.getList();
       var trg = e.target;
       if (trg == document.body && !this.isVisible() || trg.className == "webix_clipbuffer") return;
       this._last_input_target = trg;
       this._settings.master = trg.webix_master_id;
-      var code = e.which || e.keyCode; //shift and ctrl
+      var code = e.keyCode; //shift and ctrl
 
       if (code == 16 || code == 17) return; // tab - hide popup and do nothing
 
@@ -30011,7 +30021,7 @@
       var value;
       var master;
       if (this._settings.master) master = $$(this._settings.master);
-      if (master && master._editable && master._settings.editable) master._applyChanges("user");else if (visible) {
+      if (master && master._editable && master._settings.editable) master._applyChanges();else if (visible) {
         if (list.count) {
           value = list.getSelectedId(false, true);
           if (list.count() == 1 && list.getFirstId() != value) value = list.getFirstId();
@@ -30040,7 +30050,7 @@
      **/
     _navigate: function (e) {
       var list = this.getList();
-      var code = e.which || e.keyCode;
+      var code = e.keyCode;
       var data;
 
       if (list.moveSelection && code < 41 && code > 32 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
@@ -30099,12 +30109,6 @@
       } else {
         list.unselect();
         list.showItem(list.getFirstId());
-      }
-    },
-    _resetPosition: function () {
-      if (!this._settings.hidden && this._settings.master) {
-        var master = $$(this._settings.master);
-        if (master) this.show(master.$view);
       }
     }
   };
@@ -30776,6 +30780,13 @@
     }
   };
   var view$_ = exports.protoUI(api$_, DataLoader, EventSystem, base$1.view);
+
+  exports.protoUI({
+    name: "organogram",
+    defaults: {
+      template: "GPL version doesn't support organogram <br> You need Webix PRO"
+    }
+  }, template$1.view);
 
   var Pie$1 = {
     $render_pie: function (ctx, data, x, y, sIndex, map) {
@@ -34309,7 +34320,7 @@
     _setYAxisTitle: function (point0, point1) {
       var className = "webix_axis_title_y";
       var text = this.canvases["y"].renderTextAt("middle", false, 0, parseInt((point1.y - point0.y) / 2 + point0.y, 10), this._settings.yAxis.title, className);
-      if (text) text.style.left = (text.offsetHeight - text.offsetWidth) / 2 + "px";
+      if (text) text.style.left = (env.transform ? (text.offsetHeight - text.offsetWidth) / 2 : 0) + "px";
     },
     _calculateLogScale: function (nmin, nmax) {
       var startPower = Math.floor(this._log10(nmin));
@@ -34970,48 +34981,51 @@
     },
     on_click: {
       webix_list_item: function (e, id) {
-        if (this._animation_promise) return false; // important: check _level_up() first
-
-        if (this._level_up(id) || this._level_down(id)) return this.render();else if (this._settings.select) {
-          this._no_animation = true;
-          if (this._settings.select == "multiselect" || this._settings.multiselect) this.select(id, false, this._settings.multiselect == "touch" || e.ctrlKey || e.metaKey, e.shiftKey); //multiselection
-          else this.select(id);
-          this._no_animation = false;
+        if (this._animation_promise) {
+          return false;
         }
-      }
-    },
-    _level_up: function (id) {
-      for (var i = 0; i < this._nested_chain.length; i++) {
-        if (this._nested_chain[i] == id) {
-          for (var j = i; j < this._nested_chain.length; j++) {
-            this.data.getItem(this._nested_chain[j]).$template = "";
+
+        for (var i = 0; i < this._nested_chain.length; i++) {
+          if (this._nested_chain[i] == id) {
+            //one level up
+            for (var j = i; j < this._nested_chain.length; j++) {
+              this.data.getItem(this._nested_chain[j]).$template = "";
+            }
+
+            if (!i) {
+              //top level
+              this._nested_cursor = this.data.branch[0];
+              this._nested_chain = [];
+            } else {
+              this._nested_cursor = this.data.branch[this._nested_chain[i - 1]];
+
+              this._nested_chain.splice(i);
+            }
+
+            this._is_level_down = false;
+            return this.render();
           }
-
-          if (!i) {
-            //top level
-            this._nested_cursor = this.data.branch[0];
-            this._nested_chain = [];
-          } else {
-            this._nested_cursor = this.data.branch[this._nested_chain[i - 1]];
-
-            this._nested_chain.splice(i);
-          }
-
-          this._is_level_down = false;
-          return true;
         }
-      }
-    },
-    _level_down: function (id) {
-      var obj = this.getItem(id);
 
-      if (obj.$count && _power_array.find.call(this._nested_chain, id) === -1) {
-        obj.$template = "Back";
-        this._nested_cursor = this.data.branch[obj.id];
+        var obj = this.getItem(id);
 
-        this._nested_chain.push(id);
+        if (obj.$count) {
+          //one level down
+          this._is_level_down = true;
 
-        return this._is_level_down = true;
+          this._nested_chain.push(id);
+
+          obj.$template = "Back";
+          this._nested_cursor = this.data.branch[obj.id];
+          return this.render();
+        } else {
+          if (this._settings.select) {
+            this._no_animation = true;
+            if (this._settings.select == "multiselect" || this._settings.multiselect) this.select(id, false, this._settings.multiselect == "touch" || e.ctrlKey || e.metaKey, e.shiftKey); //multiselection
+            else this.select(id);
+            this._no_animation = false;
+          }
+        }
       }
     },
     getOpenState: function () {
@@ -35019,30 +35033,6 @@
         parents: this._nested_chain,
         branch: this._nested_cursor
       };
-    },
-    setOpenState: function (id) {
-      var parent = 0;
-
-      if (id) {
-        var obj = this.getItem(id);
-        parent = obj.$count ? obj.id : obj.$parent;
-      }
-
-      this._nested_cursor = this.data.branch[parent];
-      this._nested_chain = []; //build _nested_chain
-
-      while (parent) {
-        this.getItem(parent).$template = "Back";
-
-        this._nested_chain.unshift(parent);
-
-        parent = this.getItem(parent).$parent;
-      } //render
-
-
-      this._no_animation = true;
-      this.render();
-      this._no_animation = false;
     },
     render: function (id, data, type$$1) {
       var _this = this,
@@ -35085,7 +35075,7 @@
       this.data.order = _to_array([].concat(this._nested_chain).concat(this._nested_cursor));
 
       if (this.callEvent("onBeforeRender", [this.data])) {
-        if (this._no_animation || !this._dataobj.innerHTML || !this._settings.animate || this._prev_nested_chain_length == this._nested_chain.length) {
+        if (this._no_animation || !this._dataobj.innerHTML || !(animate.isSupported() && this._settings.animate) || this._prev_nested_chain_length == this._nested_chain.length) {
           // if dataobj is empty or animation is not supported
           // don't repaint invisible data
           if (id && type$$1 !== "delete" && this.data.getIndexById(id) === -1) return;
@@ -35164,8 +35154,29 @@
       }
     },
     showItem: function (id) {
-      var index = this.data.getIndexById(id);
-      if (index === -1) this.setOpenState(id); //scroll if necessary
+      var obj, parent;
+
+      if (id) {
+        obj = this.getItem(id);
+        parent = obj.$parent;
+        if (obj.$count) parent = obj.id;
+      }
+
+      this._nested_cursor = this.data.branch[parent || 0];
+      this._nested_chain = []; //build _nested_chain
+
+      while (parent) {
+        this.getItem(parent).$template = "Back";
+
+        this._nested_chain.unshift(parent);
+
+        parent = this.getItem(parent).$parent;
+      } //render
+
+
+      this._no_animation = true;
+      this.render();
+      this._no_animation = false; //scroll if necessary
 
       RenderStack.showItem.call(this, id);
     }
@@ -35635,7 +35646,7 @@
       aria: function (obj, common, marks) {
         return "role=\"treeitem\"" + (marks && marks.webix_selected ? " aria-selected=\"true\" tabindex=\"0\"" : " tabindex=\"-1\"") + (obj.$count ? "aria-expanded=\"" + (obj.open ? "true" : "false") + "\"" : "") + "aria-level=\"" + obj.$level + "\"";
       },
-      templateCommon: template("{common.icon()}{common.folder()}<span>#value#</span>"),
+      templateCommon: template("{common.icon()} {common.folder()} <span>#value#</span>"),
       templateStart: template("<div " +
       /*@attr*/
       "webix_tm_id" + "=\"#id#\" class=\"{common.classname()}\" {common.aria()}>"),
@@ -35650,7 +35661,7 @@
   };
   type(view$14, {
     name: "lineTree",
-    css: "webix_line_tree",
+    css: "webixLineTree",
     icon: function (obj, common) {
       var html = "";
       var open = "";
@@ -36174,27 +36185,12 @@
       return this._settings.height = this.type.height * Math.ceil(this.data.count() / Math.floor(width / this.type.width));
     },
     autoheight_setter: function (mode) {
-      var _this = this;
-
       if (mode) {
-        this.data.attachEvent("onStoreLoad", function () {
-          return _this.resize();
-        });
-        this.data.attachEvent("onStoreUpdated", function (id, obj, mode) {
-          if (!id || mode === "add" || mode === "delete") _this._auto_resize();
-        });
-        this.data.attachEvent("onSyncApply", function () {
-          return _this._auto_resize();
-        });
+        this.data.attachEvent("onStoreLoad", bind(this.resize, this));
         this._contentobj.style.overflowY = "hidden";
       }
 
       return mode;
-    },
-    _auto_resize: function () {
-      if (this._settings.autoheight) {
-        this.resize();
-      }
     },
     $getSize: function (dx, dy) {
       if (this._settings.xCount && this.type.width != "auto" && !this._autowidth) this._settings.width = this.type.width * this._settings.xCount + this._tilesPadding + (this._scroll_y ? env.scrollSize : 0);
@@ -36306,11 +36302,6 @@
 
       if (this.callEvent("onBeforePageChange", [id, old])) {
         this.data.page = id * 1; //must be int
-        // dynamic loading:
-        // if the current page is larger than the next one (treetable branch is open)
-        // avoid extra loading (which depends on the scroll position)
-
-        this.$master._scrollTop = 0;
 
         if (this.refresh()) {
           if (!this._settings.animate || !this._animate(old, id * 1, this._settings.animate)) this.$master.refresh();
@@ -36503,22 +36494,19 @@
     defaults: {
       sendAction: "click",
       mode: "comments",
-      highlight: true,
-      maxInputHeight: 84
+      highlight: true
     },
     $init: function (config) {
       this.$view.className += " webix_comments";
       this._destroy_with_me = [];
-      config.rows = [this.$configList(config)];
+      config.rows = [this._configList(config)];
       if (!config.moreButton) config.moreButton = template(i18n.comments.moreComments);
 
       if (!config.readonly) {
-        config.rows.push(this.$configForm(config));
+        config.rows.push(this._configForm(config));
 
         this._initMenu();
       }
-
-      if (env.mobile) config.keepButtonVisible = true;
 
       this._initUsers(config.users);
 
@@ -36558,7 +36546,7 @@
           if (view == _this._input) {
             _this.focus();
           } else if (view !== _this._sendButton && view !== _this._listMenu && (!_this._userList || view !== _this._userList.getList()) && (!e || (e.target.className || "").toString().indexOf("webix_comments_menu") === -1)) {
-            _this._changeTextarea(false);
+            _this._changeTextarea();
           }
         });
         this.attachEvent("onDestruct", function () {
@@ -36697,29 +36685,33 @@
 
       this.remove(id);
     },
-    _changeTextarea: function (expand) {
+    _changeTextarea: function (increase) {
+      // this behaviour is only for desktop, otherwise we will never see the button on mobile
       // prevent unnecessary operations
-      if (expand === this._text_expanded) return;
-      var config = this._settings;
+      if (env.touch || !increase == !this._text_expanded) return;
+      var text$$1 = this._input;
 
-      if (expand) {
+      if (increase) {
         this._sendButton.getParentView().show();
 
-        this._input.define({
-          height: config.maxInputHeight
+        text$$1.define({
+          height: 84
         });
+        this._text_expanded = true;
       } else {
-        if (UIManager.hasFocus(this._sendButton)) UIManager.setFocus(this._list);
-        if (!config.keepButtonVisible) this._sendButton.getParentView().hide();
+        if (UIManager.hasFocus(this._sendButton)) {
+          UIManager.setFocus(this._list);
+        }
 
-        this._input.define({
-          height: config.minInputHeight || this._inputHeight
+        this._sendButton.getParentView().hide();
+
+        text$$1.define({
+          height: this._inputHeight
         });
+        this._text_expanded = false;
       }
 
-      this._input.resize();
-
-      this._text_expanded = expand;
+      text$$1.resize();
     },
     focus: function () {
       var _this3 = this;
@@ -36780,7 +36772,7 @@
 
       this._destroy_with_me.push(this._listMenu);
     },
-    $configForm: function (config) {
+    _configForm: function (config) {
       var _this5 = this;
 
       var locale = i18n.comments;
@@ -36788,7 +36780,7 @@
         view: "textarea",
         localId: "textarea",
         css: "webix_comments_textarea",
-        height: config.minInputHeight || this._inputHeight,
+        height: this._inputHeight,
         name: "text",
         placeholder: locale["placeholder"],
         keyPressTimeout: 100,
@@ -36824,12 +36816,12 @@
         }, true);
       }
 
-      var form = {
+      return {
         view: "form",
         minHeight: 50,
         paddingX: 10,
         elements: [textarea, {
-          hidden: !config.keepButtonVisible,
+          hidden: !env.touch,
           cols: [{}, {
             view: "button",
             disabled: true,
@@ -36842,7 +36834,6 @@
           }]
         }]
       };
-      return form;
     },
     _highlightMention: function (text$$1, textarea) {
       var _this6 = this;
@@ -36861,7 +36852,7 @@
       }, true)) return text$$1;
       return "<span class=\"webix_comments_mention\">".concat(textarea ? text$$1 : "@" + name, "</span>");
     },
-    $configList: function (config) {
+    _configList: function (config) {
       var _this7 = this;
 
       var css = "webix_comments_";
@@ -37319,17 +37310,16 @@
       var d = create("DIV");
       d.style.cssText = "visibility:hidden;position:absolute;top:0px;left:0px;overflow:hidden;";
       document.body.appendChild(d);
-      var width = 0,
-          height = 0;
+      var width = 0;
+      var height = 0;
 
       for (var i = 0; i < c.length; i++) {
         d.className = "webix_measure_size " + c[i].css;
         d.style.width = c[i].width ? c[i].width + "px" : "auto";
         d.style.height = c[i].height ? c[i].height + "px" : "auto";
         d.innerHTML = c[i].text;
-        var rect = d.getBoundingClientRect();
-        width = Math.max(width, Math.ceil(rect.width));
-        height = Math.max(height, Math.ceil(rect.height));
+        width = Math.max(width, d.offsetWidth + 1);
+        height = Math.max(height, d.offsetHeight + 1);
       }
 
       remove(d);
@@ -37365,11 +37355,14 @@
         delete config.autowidth;
       }
 
-      this._init_mouse_events();
-
       this.data.attachEvent("onStoreUpdated", bind(function () {
         this._hide_sub_menu();
       }, this));
+      this.attachEvent("onMouseMove", this._mouse_move_menu);
+      this.attachEvent("onMouseOut", function (e) {
+        if (this._menu_was_activated() && this._settings.openAction == "click") return;
+        if (!this._child_menu_active && e.relatedTarget) this._hide_sub_menu();
+      });
       this.attachEvent("onItemClick", function (id, e, trg) {
         var item = this.getItem(id);
 
@@ -37389,8 +37382,10 @@
 
             if (parent._hide_on_item_click) parent.hide();
           } else {
-            var touch = e.pointerType && e.pointerType !== "mouse";
-            if (touch || this === parent && parent._settings.openAction == "click") this._mouse_move_activation(id, trg); //do not close popups when clicking on menu folder
+            if (env.touch || this === parent && parent._settings.openAction == "click") {
+              this._mouse_move_activation(id, trg);
+            } //do not close popups when clicking on menu folder
+
 
             e.showpopup = parent._settings.id;
           }
@@ -37401,7 +37396,7 @@
           var sel = this.getSelectedId(),
               node;
           if (sel) node = this.getItemNode(sel);
-          if (node) triggerEvent(node, "MouseEvent", "click");
+          if (node) triggerEvent(node, "MouseEvents", "click");
         }
       });
       this.data.attachEvent("onClearAll", function () {
@@ -37413,17 +37408,6 @@
 
 
       this._destroy_with_me = [];
-    },
-    _init_mouse_events: function () {
-      this.attachEvent("onMouseMove", function (id, e, target) {
-        if (!this._menu_was_activated()) return;
-
-        this._mouse_move_activation(id, target);
-      });
-      this.attachEvent("onMouseOut", function (e) {
-        if (this._menu_was_activated() && this._settings.openAction == "click") return;
-        if (!this._child_menu_active && (!e.relatedTarget || !this.$view.contains(e.relatedTarget))) this._hide_sub_menu();
-      });
     },
     sizeToContent: function () {
       if (this._settings.layout == "y") {
@@ -37522,7 +37506,13 @@
 
       return sub;
     },
+    _mouse_move_menu: function (id, e, target) {
+      if (!this._menu_was_activated()) return;
+
+      this._mouse_move_activation(id, target);
+    },
     _menu_was_activated: function () {
+      if (env.touch) return false;
       var top = this.getTopMenu();
 
       if (top._settings.openAction == "click") {
@@ -37651,6 +37641,14 @@
     $init: function () {
       this._body_cell = clone(this._dummy_cell_interface);
       this._body_cell._view = this;
+      this.attachEvent("onMouseOut", function (e) {
+        if (this.getTopMenu()._settings.openAction == "click") return;
+        if (!this._child_menu_active && !this._show_on_mouse_out && e.relatedTarget) this.hide();
+      }); //inform parent that focus is still in menu
+
+      this.attachEvent("onMouseMoving", function () {
+        if (this._parent_menu) $$(this._parent_menu)._child_menu_active = true;
+      });
       this.attachEvent("onBeforeShow", function () {
         if (this.getTopMenu()._autowidth_submenu && this.sizeToContent && !this.isVisible()) this.sizeToContent();
       });
@@ -37661,21 +37659,6 @@
       menu.api.$skin.call(this);
       popup.api.$skin.call(this);
       this.type.height = $active.menuHeight;
-    },
-    _init_mouse_events: function () {
-      this.attachEvent("onMouseMove", function (id, e, target) {
-        if (!this._menu_was_activated()) return;
-
-        this._mouse_move_activation(id, target);
-      });
-      this.attachEvent("onMouseOut", function (e) {
-        if (this.getTopMenu()._settings.openAction == "click") return;
-        if (!this._child_menu_active && !this._show_on_mouse_out && e.relatedTarget && !this.$view.contains(e.relatedTarget)) this.hide();
-      }); //inform parent that focus is still in menu
-
-      this.attachEvent("onMouseMoving", function () {
-        if (this._parent_menu) $$(this._parent_menu)._child_menu_active = true;
-      });
     },
     _dummy_cell_interface: {
       $getSize: function (dx, dy) {
@@ -37772,7 +37755,7 @@
       this._hide_timer = 1;
       delay(function () {
         this._hide_timer = 0;
-      }, this, [], env.fastClick ? 100 : 400);
+      }, this, [], env.touch ? 400 : 100);
 
       if (this.config.autofocus) {
         this._prev_focus = UIManager.getFocus();
@@ -37823,7 +37806,7 @@
       this._state = state$$1;
       this.$setSize(state$$1.width, state$$1.height);
 
-      if (typeof x == "undefined" && this._settings.animate) {
+      if (typeof x == "undefined" && this._isAnimationSupported()) {
         removeCss(this.$view, "webix_animate", true); // set initial state
 
         this._animate[this._settings.position].beforeShow.call(this, state$$1); // set apply animation css
@@ -37842,6 +37825,9 @@
       }
     },
     _state: {},
+    _isAnimationSupported: function () {
+      return animate.isSupported() && this._settings.animate && !(env.isIE && navigator.appVersion.indexOf("MSIE 9") != -1);
+    },
     hidden_setter: function (value) {
       if (value) this.hide();else this.show();
       return !!value;
@@ -37907,7 +37893,7 @@
       var maxWidth = document.documentElement.offsetWidth;
       var maxHeight = document.documentElement.offsetHeight;
 
-      if (this._settings.animate && maxWidth == this._state.maxWidth && maxHeight == this._state.maxHeight) {
+      if (this._isAnimationSupported() && maxWidth == this._state.maxWidth && maxHeight == this._state.maxHeight) {
         // call 'hide' animation handler
         this._animate[this._settings.position].hide.call(this, this._state); // hide popup
 
@@ -37969,7 +37955,7 @@
       this.attachEvent("onItemClick", function (id, ev, node) {
         var popup = this.getPopup();
         if (popup && !popup.config.hidden) ev.showpopup = popup.config.id;
-        if (ev.pointerType && ev.pointerType !== "mouse") this._showPopup(id, node);
+        if (env.touch) this._showPopup(id, node);
       });
       this.attachEvent("onBeforeSelect", function (id) {
         if (!this.getItem(id).$count) {
@@ -38169,7 +38155,7 @@
       this._destroy_with_me = [popup];
       config.popupId = popup.config.id;
 
-      _event(document.body, "pointermove", function (e) {
+      _event(document.body, "mousemove", function (e) {
         var trg = e.target;
 
         if (!popup.config.hidden && !popup.$view.contains(trg) && !this.$view.firstChild.contains(trg) && !popup.queryView({
@@ -38317,19 +38303,17 @@
       scroll: "x",
       scrollPos: 0,
       scrollSize: 18,
-      scrollVisible: true,
+      scrollVisible: 1,
       zoom: 1
     },
     $init: function (config) {
-      var _this = this;
-
       var dir = config.scroll || "x";
       var node = this._viewobj = toNode(config.container);
       node.className += " webix_vscroll_" + dir;
       node.innerHTML = "<div class='webix_vscroll_body'></div>";
 
-      _event(node, "scroll", function () {
-        return _this._onscroll_delay();
+      _event(node, "scroll", this._onscroll, {
+        bind: this
       });
 
       this._last_set_size = 0;
@@ -38340,7 +38324,6 @@
     reset: function () {
       this.config.scrollPos = 0;
       this._viewobj[this.config.scroll == "x" ? "scrollLeft" : "scrollTop"] = 0;
-      if (this._scroll_delay) clearTimeout(this._scroll_delay[0]);
     },
     _check_quantum: function (value) {
       if (value > 1500000) {
@@ -38364,7 +38347,10 @@
     },
     sizeTo: function (value, top, bottom) {
       value = value - (top || 0) - (bottom || 0);
-      var width = this._settings.scrollSize;
+      var width = this._settings.scrollSize; //IEFix
+      //IE doesn't react on scroll-click if it has not at least 1 px of visible content
+
+      if (env.isIE && width) width += 1;
 
       if (!width && this._settings.scrollVisible && !env.$customScroll) {
         this._viewobj.style.pointerEvents = "none";
@@ -38393,32 +38379,10 @@
       var max = Math.max(this.getSize() - this._last_set_size, 0);
       if (pos$$1 > max) this.scrollTo(max);
     },
-    _sync: function (value, smooth) {
-      var config = this._settings;
-      value = Math.round(value / config.zoom); //safety check for negative values
-
-      if (value < 0) value = 0;
-
-      if (smooth && this._viewobj.scrollTo) {
-        var options = {
-          top: 0,
-          left: 0,
-          behavior: "smooth"
-        };
-        options[config.scroll == "x" ? "left" : "top"] = value;
-
-        this._viewobj.scrollTo(options);
-      } else {
-        this._viewobj[config.scroll == "x" ? "scrollLeft" : "scrollTop"] = value;
-      }
-
-      this._onscroll_delay(150);
-
-      this._settings.scrollPos = value || 0;
-    },
     scrollTo: function (value) {
+      if (value < 0) value = 0;
       var config = this._settings;
-      value = Math.round(value / config.zoom); //safety check for negative values
+      value = value / config.zoom; //safety check for negative values
 
       if (value < 0) value = 0; //apply new position
 
@@ -38430,19 +38394,9 @@
         return true;
       }
     },
-    _onscroll_delay: function (time) {
-      if (this._scroll_delay) {
-        time = time || this._scroll_delay[1];
-        clearTimeout(this._scroll_delay[0]);
-      }
-
-      this._scroll_delay = [delay(this._onscroll, this, [!!time], time), time];
-    },
-    _onscroll: function (sync) {
-      this._scroll_delay = null;
-      if (sync) return;
-      var v = Math.round(this._viewobj[this._settings.scroll == "x" ? "scrollLeft" : "scrollTop"]);
-      if (v != this._settings.scrollPos) this._onscroll_inner(v, false);
+    _onscroll: function () {
+      var x = this._viewobj[this._settings.scroll == "x" ? "scrollLeft" : "scrollTop"];
+      if (Math.floor(x) != Math.floor(this._settings.scrollPos)) this._onscroll_inner(x, false);
     },
     _onscroll_inner: function (value, api) {
       //size of scroll area
@@ -38463,6 +38417,49 @@
         bind: this,
         passive: false
       });
+
+      this._add_touch_events(area);
+    },
+    _add_touch_events: function (area) {
+      if (!env.touch && window.navigator.pointerEnabled) {
+        addCss(area, "webix_scroll_touch_ie", true);
+
+        _event(area, "pointerdown", function (e) {
+          if (e.pointerType == "touch" || e.pointerType == "pen") {
+            this._start_context = Touch._get_context_m(e);
+            this._start_scroll_pos = this.getScroll();
+          }
+        }, {
+          bind: this
+        });
+
+        event$1(document.body, "pointermove", function (e) {
+          var scroll;
+
+          if (this._start_context) {
+            this._current_context = Touch._get_context_m(e);
+
+            if (this._settings.scroll == "x") {
+              scroll = this._current_context.x - this._start_context.x;
+            } else if (this._settings.scroll == "y") {
+              scroll = this._current_context.y - this._start_context.y;
+            }
+
+            if (scroll && Math.abs(scroll) > 5) {
+              this.scrollTo(this._start_scroll_pos - scroll);
+            }
+          }
+        }, {
+          bind: this
+        });
+        event$1(window, "pointerup", function () {
+          if (this._start_context) {
+            this._start_context = this._current_context = null;
+          }
+        }, {
+          bind: this
+        });
+      }
     },
     _on_wheel: function (e) {
       var dir = 0;
@@ -38482,7 +38479,7 @@
 
 
       if (env.isSafari) this._scroll_trg = e.target;
-      if (dir && this.scrollTo(this.getScroll() + dir * this._settings.scrollStep)) return preventEvent(e);
+      if (dir) if (this.scrollTo(this.getScroll() + dir * this._settings.scrollStep)) return preventEvent(e);
     }
   };
   var view$1g = exports.protoUI(api$1g, EventSystem, Settings);
@@ -38491,60 +38488,47 @@
 
   var Mixin = {
     filterByAll: function () {
-      var _this2 = this;
-
       //we need to use dynamic function creating
       var server = false;
       this.data.silent(function () {
-        var _this = this;
-
         this.filter();
         var first = false;
 
-        var _loop = function (key) {
+        for (var key in this._filter_elements) {
           assert(key, "empty column id for column with filtering");
-          if (!_this.isColumnVisible(key)) return "continue";
-          var record = _this._filter_elements[key];
+          if (!this.isColumnVisible(key)) continue;
+          var record = this._filter_elements[key];
           var originvalue = record[2].getValue(record[0]); //saving last filter value, for usage in getState
 
           var inputvalue = originvalue;
-          if (record[1].prepare) inputvalue = record[1].prepare.call(record[2], inputvalue, record[1], _this); //preserve original value
+          if (record[1].prepare) inputvalue = record[1].prepare.call(record[2], inputvalue, record[1], this); //preserve original value
 
           record[1].value = originvalue;
           var compare = record[1].compare;
-          if (!_this.callEvent("onBeforeFilter", [key, inputvalue, record[1]])) return "continue";
+          if (!this.callEvent("onBeforeFilter", [key, inputvalue, record[1]])) continue;
 
           if (record[2].$server || server) {
             //if one of filters is server side, do not run any client side filters
             server = true;
           } else {
-            if (inputvalue === "") return "continue";
+            if (inputvalue === "") continue;
 
             if (compare) {
-              compare = _this._multi_compare(key, compare);
-
-              _this.filter(bind(function (obj, value) {
+              compare = this._multi_compare(key, compare);
+              this.filter(bind(function (obj, value) {
                 if (!obj) return false;
                 return compare(obj[key], value, obj);
-              }, _this), inputvalue, first);
-            } else _this.filter(key, inputvalue, first);
+              }, this), inputvalue, first);
+            } else this.filter(key, inputvalue, first);
 
             first = true;
           }
-        };
-
-        for (var key in this._filter_elements) {
-          var _ret = _loop(key);
-
-          if (_ret === "continue") continue;
         }
+
+        if (server) this._runServerFilter();
       }, this);
 
-      if (server) {
-        if (!this._skip_server_op) this.loadNext(0, 0, 0, 0, true, true).then(function () {
-          return _this2._on_after_filter();
-        });else this._skip_server_op.filter = true;
-      } else {
+      if (!server) {
         this.refresh();
         this.callEvent("onAfterFilter", []);
       }
@@ -38619,9 +38603,18 @@
 
       return values;
     },
-    _on_after_filter: function () {
-      if (this.editStop) this.editStop();
-      this.callEvent("onAfterFilter", []);
+    _runServerFilter: function () {
+      var _this = this;
+
+      this.loadNext(0, 0, 0, 0, 1).then(function (data) {
+        if (_this.editStop) _this.editStop();
+
+        _this.clearAll(true);
+
+        _this.parse(data);
+
+        _this.callEvent("onAfterFilter", []);
+      });
     }
   };
 
@@ -38634,12 +38627,6 @@
 
         this.config.experimental = true;
         this.attachEvent("onMouseMoving", function (e) {
-          // do not show hover while dragging
-          if (DragControl.active) {
-            if (_this._last_hover) _this._last_hover = _this.removeRowCss(_this._last_hover, _this._settings.hover);
-            return;
-          }
-
           var pos = _this.locate(e); // when we click inner html element, edge calls mousemove with incorrect e.target
 
 
@@ -39220,16 +39207,15 @@
 
   var Mixin$2 = {
     blockselect_setter: function (value) {
-      var _this = this;
-
       if (value && this._block_sel_flag) {
-        _event(this._viewobj, env.mouse.down, function (e) {
-          return _this._bs_down(e, "mouse");
+        if (env.touch) this.attachEvent("onLongTouch", this._bs_down);else _event(this._viewobj, env.mouse.down, this._bs_down, {
+          bind: this
         });
 
-        if (env.touch) this.attachEvent("onLongTouch", function (e) {
-          return _this._bs_down(e, "touch");
+        _event(this._viewobj, env.mouse.move, this._bs_move, {
+          bind: this
         });
+
         this._block_sel_flag = this._bs_ready = this._bs_progress = false;
         this.attachEvent("onAfterScroll", this._update_block_selection); // auto scroll
 
@@ -39255,7 +39241,7 @@
 
       return false;
     },
-    _bs_down: function (e, pointer) {
+    _bs_down: function (e) {
       // do not listen to mousedown of subview on master
       if (this._settings.subview && this != $$(e.target)) return;
 
@@ -39263,32 +39249,20 @@
         //disable block selection when we have an active editor
         if (e.target && e.target.tagName == "INPUT" || this._rs_process) return;
         this._bs_position = offset(this._body);
-        var pos$$1 = pos(e);
+        var pos$$1 = env.touch ? e : pos(e);
         this._bs_ready = [pos$$1.x - this._bs_position.x, pos$$1.y - this._bs_position.y];
+        preventEvent(e);
 
-        this._bs_handler_init(e.target, pointer);
+        this._bs_up_init();
       }
     },
-    _bs_handler_init: function (target, pointer) {
-      var _this2 = this;
+    _bs_up_init: function () {
+      var _this = this;
 
-      if (pointer === "touch") {
-        this._bs_mm_handler = event$1(target, env[pointer].move, function (e) {
-          return _this2._bs_move(e, pointer);
-        }, {
-          passive: false
-        });
-        this._bs_mu_handler = event$1(target, env[pointer].up, function (e) {
-          return _this2._bs_up(e);
-        });
-      } else {
-        this._bs_mm_handler = event$1(this._viewobj, env[pointer].move, function (e) {
-          return _this2._bs_move(e, pointer);
-        });
-        this._bs_mu_handler = event$1(document, env[pointer].up, function (e) {
-          return _this2._bs_up(e);
-        });
-      }
+      var handler = event$1(document.body, env.mouse.up, function (e) {
+        eventRemove(handler);
+        return _this._bs_up(e);
+      });
     },
     _bs_up: function (e) {
       if (this._block_panel) {
@@ -39297,8 +39271,6 @@
         this._block_panel = remove(this._block_panel);
       }
 
-      this._bs_mm_handler = eventRemove(this._bs_mm_handler);
-      this._bs_mu_handler = eventRemove(this._bs_mu_handler);
       removeCss(document.body, "webix_noselect");
       this._bs_ready = this._bs_progress = false;
       if (this._auto_scroll_delay) this._auto_scroll_delay = window.clearTimeout(this._auto_scroll_delay);
@@ -39370,7 +39342,7 @@
             endy = Math.max(startn.top + startn.height, endn.top + endn.height);
             if (this._settings.topSplit) starty += this._getTopSplitOffset(start);
             if (this._auto_scroll_delay) this._auto_scroll_delay = window.clearTimeout(this._auto_scroll_delay);
-            if (e && (!this._touch_scroll || this._settings.prerender)) this._auto_scroll_delay = delay(this._auto_scroll, this, [pos(e)], 250);
+            if (e && (!env.touch || this._settings.prerender)) this._auto_scroll_delay = delay(this._auto_scroll, this, [pos(e)], 250);
           }
 
           var style = this._block_panel.style;
@@ -39390,12 +39362,12 @@
 
       this._body.appendChild(this._block_panel);
     },
-    _bs_move: function (e, pointer) {
+    _bs_move: function (e) {
       if (this._rs_progress) return;
 
       if (this._bs_ready !== false) {
         if (!this._bs_progress) addCss(document.body, "webix_noselect");
-        var pos$$1 = pos(e);
+        var pos$$1 = env.touch ? env.mouse.context(e) : pos(e);
         var progress = [pos$$1.x - this._bs_position.x, pos$$1.y - this._bs_position.y]; //prevent unnecessary block selection while dbl-clicking
 
         if (Math.abs(this._bs_ready[0] - progress[0]) < 5 && Math.abs(this._bs_ready[1] - progress[1]) < 5) return;
@@ -39404,7 +39376,7 @@
 
         this._bs_select(this.config.blockselect, false, e);
 
-        if (pointer === "touch") preventEvent(e);
+        if (env.touch) preventEvent(e);
       }
     },
     _locate_cell_xy: function (x, y) {
@@ -39684,19 +39656,18 @@
 
       Touch._init_scroll_node(this._body.childNodes[1].firstChild);
 
+      Touch._set_matrix(this._body.childNodes[1].firstChild, 0, 0, "0ms");
+
       this._sync_scroll(0, 0, "0ms");
     },
     $hasYScroll: function () {
       return this._dtable_height - this._dtable_offset_height > 2;
     },
     _touchNative: {
-      _touch_scroll: true,
       _scrollTo_touch: function (x, y) {
-        // limit scroll
-        var sizes = Touch._get_sizes(this._body.childNodes[1].firstChild);
+        Touch._set_matrix(this._body.childNodes[1].firstChild, -x, -y, "0ms");
 
-        x = Math.max(0, Math.min(x, sizes.dx - sizes.px));
-        y = Math.max(0, Math.min(y, sizes.dy - sizes.py)); // no delay, important for autoscroll
+        this._sync_scroll(-x, -y, "0ms");
 
         this.callEvent("onAfterScroll", [{
           e: -x,
@@ -39714,7 +39685,9 @@
       $init: function () {
         this.attachEvent("onBeforeScroll", function () {
           Touch._scroll_node = this._body.childNodes[1].firstChild;
-          Touch._scroll_stat = Touch._get_sizes(Touch._scroll_node);
+
+          Touch._get_sizes(Touch._scroll_node);
+
           Touch._scroll_master = this;
         });
         this.attachEvent("onTouchEnd", function () {
@@ -39725,13 +39698,22 @@
           if (!result) return;
           this._scrollLeft = -result.e;
           this._scrollTop = -result.f;
-
-          this._sync_scroll(result.e, result.f, "0ms");
+          if (this._x_scroll) this._x_scroll._settings.scrollPos = this._scrollLeft;
+          if (this._y_scroll) this._y_scroll._settings.scrollPos = this._scrollTop;
         });
-      }
+      },
+      _sync_scroll: function (x, y, t) {
+        Touch._set_matrix(this._body.childNodes[1].firstChild, x, y, t);
+
+        if (this._settings.leftSplit) Touch._set_matrix(this._body.childNodes[0].firstChild, 0, y, t);
+        if (this._settings.rightSplit) Touch._set_matrix(this._body.childNodes[2].firstChild, 0, y, t);
+        if (this._settings.header) Touch._set_matrix(this._header.childNodes[1].firstChild, x, 0, t);
+        if (this._settings.footer) Touch._set_matrix(this._footer.childNodes[1].firstChild, x, 0, t);
+        this.callEvent("onSyncScroll", [x, y, t]);
+      },
+      _sync_pos: function () {}
     },
     _touch: {
-      _touch_scroll: true,
       _scrollTo_touch: function (x, y) {
         delay(function () {
           this.callEvent("onAfterScroll", [{
@@ -39749,27 +39731,38 @@
         this.attachEvent("onAfterColumnHide", function () {
           this._scrollTo_touch(0, 0);
         });
+        this.attachEvent("onBeforeScroll", function () {
+          var t = Touch;
+          t._scroll_node = this._body.childNodes[1].firstChild;
+
+          t._get_sizes(t._scroll_node);
+
+          t._scroll_stat.left = this._scrollLeft;
+          t._scroll_stat.hidden = this._x_scroll._settings.scrollVisible || this._y_scroll._settings.scrollVisible;
+          t._scroll_stat.dy = this._dtable_height;
+          t._scroll_master = this;
+        });
         this.attachEvent("onAfterRender", function () {
           if (this._x_scroll && this._settings.scrollX) this._x_scroll._fixSize();
           if (this._y_scroll && this._settings.scrollY) this._y_scroll._fixSize();
         });
-        this.attachEvent("onBeforeScroll", function () {
-          Touch._scroll_node = this._body.childNodes[1].firstChild;
-          Touch._scroll_stat = Touch._get_sizes(Touch._scroll_node);
-          Touch._scroll_stat.dy = this._dtable_height;
-          Touch._scroll_master = this;
-        });
-        this.attachEvent("onTouchEnd", function () {
-          Touch._scroll_master = null;
-        });
         this.attachEvent("onAfterScroll", function (result) {
           //onAfterScroll may be triggered by some non-touch related logic
           if (!result) return;
+          var isScrollX = this._scrollLeft != -result.e;
+          var isScrollY = this._scrollTop != -result.f;
+          Touch._scroll_master = null;
+          Touch._fix_f = null;
           this._scrollTop = 0;
-          this._scrollLeft = 0;
+          this._scrollLeft = 0; //ipad can delay content rendering if 3d transformation applied
+          //switch back to 2d
 
-          this._sync_scroll(0, 0, "0ms");
+          var temp = Touch.config.translate;
+          Touch.config.translate = "translate";
 
+          this._sync_scroll(this._x_scroll ? 0 : result.e, 0, 0);
+
+          Touch.config.translate = temp;
           this._scrollLeft = -result.e;
           this._scrollTop = -result.f;
 
@@ -39777,59 +39770,35 @@
 
           this.render();
 
-          if (this._x_scroll) {
-            this._x_scroll._settings.scrollPos = -1;
+          if (isScrollX) {
+            if (this._x_scroll) this._x_scroll.scrollTo(this._scrollLeft);
+            this.callEvent("onScrollX", []);
+          }
 
-            this._x_scroll.scrollTo(this._scrollLeft);
-
+          if (isScrollY) {
+            if (this._y_scroll) this._y_scroll.scrollTo(this._scrollTop);
             this.callEvent("onScrollY", []);
           }
 
-          if (this._y_scroll) {
-            this._y_scroll._settings.scrollPos = -1;
-
-            this._y_scroll.scrollTo(this._scrollTop);
-
-            this.callEvent("onScrollY", []);
-          }
+          return false;
         });
+      },
+      _sync_scroll: function (x, y, t) {
+        y += this._scrollTop;
+        x += this._scrollLeft;
+
+        Touch._set_matrix(this._body.childNodes[1].firstChild, x, y, t);
+
+        if (this._settings.leftSplit) Touch._set_matrix(this._body.childNodes[0].firstChild, 0, y, t);
+        if (this._settings.rightSplit) Touch._set_matrix(this._body.childNodes[2].firstChild, 0, y, t);
+        if (this._settings.header) Touch._set_matrix(this._header.childNodes[1].firstChild, x, 0, t);
+        if (this._settings.footer) Touch._set_matrix(this._footer.childNodes[1].firstChild, x, 0, t);
+        this.callEvent("onSyncScroll", [x, y, t]);
+      },
+      _sync_pos: function (matrix) {
+        matrix.f -= this._scrollTop;
+        matrix.e -= this._scrollLeft;
       }
-    },
-    _sync_scroll: function (x, y, t) {
-      var diff = this._settings.prerender ? 0 : this._scrollTop;
-      y += diff;
-
-      Touch._set_matrix(this._body.childNodes[1].firstChild, x, y, t);
-
-      if (this._settings.leftSplit) Touch._set_matrix(this._body.childNodes[0].firstChild, 0, y, t);
-      if (this._settings.rightSplit) Touch._set_matrix(this._body.childNodes[2].firstChild, 0, y, t);
-      if (this._settings.header) Touch._set_matrix(this._header.childNodes[1].firstChild, x, 0, t);
-      if (this._settings.footer) Touch._set_matrix(this._footer.childNodes[1].firstChild, x, 0, t);
-      var smooth = t !== "0ms";
-      if (this._x_scroll) this._x_scroll._sync(-x, smooth);
-      if (this._y_scroll) this._y_scroll._sync(-y + diff, smooth);
-      this.callEvent("onSyncScroll", [x, y, t]);
-    },
-    _sync_y_scroll: function (y, t) {
-      var x = -this.getScrollState().x;
-
-      Touch._set_matrix(this._body.childNodes[1].firstChild, x, y, t);
-
-      if (this._settings.leftSplit) Touch._set_matrix(this._body.childNodes[0].firstChild, 0, y, t);
-      if (this._settings.rightSplit) Touch._set_matrix(this._body.childNodes[2].firstChild, 0, y, t);
-      this.callEvent("onSyncScroll", [x, y, t]);
-    },
-    _sync_x_scroll: function (x, t) {
-      var y = this._settings.prerender ? -this.getScrollState().y : 0;
-
-      Touch._set_matrix(this._body.childNodes[1].firstChild, x, y, t);
-
-      if (this._settings.header) Touch._set_matrix(this._header.childNodes[1].firstChild, x, 0, t);
-      if (this._settings.footer) Touch._set_matrix(this._footer.childNodes[1].firstChild, x, 0, t);
-      this.callEvent("onSyncScroll", [x, y, t]);
-    },
-    _sync_pos: function (matrix) {
-      if (!this._settings.prerender) matrix.f -= this._scrollTop;
     }
   };
 
@@ -40239,7 +40208,7 @@
       var result;
 
       try {
-        result = exec(expr);
+        result = window.eval(expr);
       } catch (ex) {
         assert(false, "Math error in datatable<br>" + expr);
         result = "";
@@ -40550,7 +40519,6 @@
             };
 
             if (check.call(this, id) && (!this._checkCellMerge || !this._checkCellMerge(start, id))) {
-              id.toString = this._id_to_string;
               return id;
             }
           }
@@ -40564,11 +40532,7 @@
               row: order[_i2],
               column: cols[_j].id
             };
-
-            if (check.call(this, _id)) {
-              _id.toString = this._id_to_string;
-              return _id;
-            }
+            if (check.call(this, _id)) return _id;
           }
 
           column = cols.length;
@@ -40582,35 +40546,20 @@
     /////////////////////////////
     _correct_after_focus_y: function () {
       if (this._in_edit_mode) {
-        var scrollTop = this._body.childNodes[1].firstChild.scrollTop;
-
-        if (scrollTop) {
-          this._y_scroll.scrollTo(this.getScrollState().y + scrollTop);
+        if (this._ignore_after_focus_scroll) this._ignore_after_focus_scroll = false;else {
+          this._y_scroll.scrollTo(this.getScrollState().y + this._body.childNodes[1].firstChild.scrollTop);
 
           this._body.childNodes[1].firstChild.scrollTop = 0;
+          this._ignore_after_focus_scroll = true;
         }
       }
     },
-    _correct_after_focus: function () {
+    _correct_after_focus_x: function () {
       if (this._in_edit_mode) {
-        var _this$_body$childNode = this._body.childNodes[1],
-            scrollTop = _this$_body$childNode.scrollTop,
-            scrollLeft = _this$_body$childNode.scrollLeft;
-        if (this._ignore_after_focus_scroll) return this._ignore_after_focus_scroll = false;
-        if (this._settings.prerender) this._y_scroll.scrollTo(scrollTop);
-
-        this._x_scroll.scrollTo(scrollLeft);
-
-        if (this._touch_scroll) {
-          if (scrollTop) this._body.childNodes[1].scrollTop = 0;
-          if (scrollLeft) this._body.childNodes[1].scrollLeft = 0;
-          this._ignore_after_focus_scroll = scrollTop || scrollLeft;
-        }
+        this._x_scroll.scrollTo(this._body.childNodes[1].scrollLeft);
       }
     },
     _component_specific_edit_init: function () {
-      var _this = this;
-
       this.attachEvent("onScrollY", this._update_editor_y_pos);
       this.attachEvent("onScrollX", this._update_editor_y_pos);
       this.attachEvent("onScrollY", this._refocus_inline_editor);
@@ -40626,14 +40575,8 @@
       this.attachEvent("onAfterScroll", function () {
         if (this._settings.topSplit) this.editStop();
       });
-
-      this._body.childNodes[1].onscroll = function () {
-        return _this._correct_after_focus();
-      };
-
-      if (!this._settings.prerender) this._body.childNodes[1].firstChild.onscroll = function () {
-        return _this._correct_after_focus_y();
-      };
+      this._body.childNodes[1].firstChild.onscroll = bind(this._correct_after_focus_y, this);
+      this._body.childNodes[1].onscroll = bind(this._correct_after_focus_x, this);
     },
     _update_editor_y_pos: function () {
       if (this._in_edit_mode) {
@@ -40694,8 +40637,8 @@
       }
     },
     _getInitialSpans: function (cols, elements) {
-      for (var i = 0; i < elements.length; i++) {
-        var line = elements[i];
+      for (var h = 0; h < elements.length; h++) {
+        var line = elements[h];
         if (line && line.colspan && !line.$colspan) line.$colspan = line.colspan;
       }
     },
@@ -40765,7 +40708,10 @@
           var header = cols[index].header;
 
           for (var i = 0; i < header.length; i++) {
-            if (header[i]) span = Math.max(span, header[i].colspan || 1);
+            if (header[i]) {
+              header[i].$groupSpan = header[i].colspan || 1;
+              span = Math.max(span, header[i].$groupSpan);
+            }
           }
         }
 
@@ -40804,7 +40750,8 @@
 
           for (var _i4 = 0; _i4 < _header.length; _i4++) {
             if (_header[_i4]) {
-              _header[_i4].colspan = _header[_i4].$colspan || _header[_i4].colspan;
+              _header[_i4].colspan = _header[_i4].$groupSpan || _header[_i4].colspan;
+              delete _header[_i4].$groupSpan;
               span = Math.max(span, _header[_i4].colspan || 1);
             }
           }
@@ -40945,10 +40892,9 @@
 
       this.render();
     },
-    showColumnBatch: function (batch, mode, silent) {
+    showColumnBatch: function (batch, mode) {
       var preserve = typeof mode != "undefined";
       mode = mode !== false;
-      var sub = [];
       this.eachColumn(function (id, col) {
         if (col.batch) {
           var hidden = this._hidden_column_hash[col.id];
@@ -40959,35 +40905,9 @@
             spans: true
           }, true, mode);
         }
+      }, true);
 
-        if (preserve && mode) {
-          var header = col.header;
-
-          for (var i = 0; i < header.length; i++) {
-            if (header[i] && header[i].batch && header[i].closed) sub.push(header[i].batch);
-          }
-        }
-      }, true); // hide closed batches
-
-      for (var i = 0; i < sub.length; i++) {
-        if (sub[i] != batch) this.showColumnBatch(sub[i], false, true);
-      }
-
-      if (!silent) this._refresh_columns();
-    },
-    _getHiddenColumnIndex: function (id) {
-      if (this._hidden_column_order.length) {
-        for (var i = 0; i < this._hidden_column_order.length; i++) {
-          if (this._hidden_column_order[i] == id) return i;
-        }
-
-        return -1;
-      }
-
-      return this.getColumnIndex(id);
-    },
-    _getHiddenColumnId: function (index) {
-      return this._hidden_column_order.length ? this._hidden_column_order[index] : this.columnId(index);
+      this._refresh_columns();
     }
   };
 
@@ -41300,7 +41220,7 @@
 
         var column = this._settings.columns[colindex];
 
-        if (column && column.attached && column.node) {
+        if (column.attached && column.node) {
           if (row === "$webix-drop") return DragControl._dropHTML[colindex];
           var nodeIndex = rowindex < this._settings.topSplit || this._settings.prerender ? rowindex : rowindex - minRow;
           var nodes = column.node.childNodes;
@@ -41323,7 +41243,7 @@
 
       if (value == "order") {
         control = {
-          $drag: bind(function (s, e, pointer) {
+          $drag: bind(function (s, e) {
             if (!this._isDraggable(e) || this._rs_process) return false;
             var id = this.locate(e);
             if (!id || !this.callEvent("onBeforeColumnDrag", [id.column, e])) return false;
@@ -41333,14 +41253,7 @@
               custom: "column_dnd"
             };
             var column = this.getColumnConfig(id.column);
-
-            if (pointer === "touch") {
-              var hnode = this.getHeaderNode(id.column, id.rind);
-              this._relative_column_drag = {
-                x: pos(e).x - offset(hnode).x
-              };
-            } else this._relative_column_drag = posRelative(e);
-
+            this._relative_column_drag = posRelative(e);
             this._limit_column_drag = column.width;
             this._auto_scroll_force = true;
             return "<div class='webix_dd_drag_column' style='width:" + column.width + "px'>" + (column.header[0].text || "&nbsp;") + "</div>";
@@ -41353,7 +41266,7 @@
             node.style.display = "none";
             var html = document.elementFromPoint(pos$$1.x, box.y + this._settings.headerRowHeight / 2);
             var id = html ? this.locate(html) : null;
-            var start = context.start.column;
+            var start = DragControl.getContext().start.column;
 
             if (id && id.column != start && (!this._column_dnd_temp_block || id.column != this._last_sort_dnd_node)) {
               //ignore normal dnd , and dnd from other components
@@ -41811,12 +41724,11 @@
     },
     _getExportStyles: function (options) {
       var type = options.export_mode;
-      var columns = this.config.columns;
-      var styles = [];
-      if (!this._style_hash) this._style_hash = {};
-      if (!this._style_hash[type]) this._style_hash[type] = {};
+      var columns = this.config.columns,
+          styles = [];
+      this._style_hash = this._style_hash || {};
       if (options.docHeader && type == "excel") styles = [{
-        0: this._getExportDocStyle(options.docHeader.css, type)
+        0: this._getExportDocStyle(options.docHeader.css)
       }, {
         0: {}
       }];
@@ -41870,13 +41782,13 @@
       if (options.docFooter && type == "excel") styles = styles.concat([{
         0: {}
       }, {
-        0: this._getExportDocStyle(options.docFooter.css, type)
+        0: this._getExportDocStyle(options.docFooter.css)
       }]);
       return styles;
     },
     _getExportHStyles: function (options, group, styles, type) {
-      var columns = this.config.columns;
-      var hs = []; //spans
+      var columns = this.config.columns,
+          hs = []; //spans
 
       for (var h = 0; h < columns[0][group].length; h++) {
         var hrow = {};
@@ -41916,7 +41828,7 @@
       return styles["border-".concat(type, "-width")] == "0px" ? null : color.rgbToHex(styles["border-".concat(type, "-color")]) || defaultColor;
     },
     _getExportCellStyle: function (node, name, type) {
-      if (this._style_hash[type][name]) return this._style_hash[type][name];else {
+      if (this._style_hash[name]) return this._style_hash[name];else {
         var cellStyle = this._getRules(node);
 
         var bg = color.rgbToHex(cellStyle["background-color"]) || "FFFFFF";
@@ -41932,11 +41844,11 @@
           borderTopColor: this._getBorderColor(cellStyle, bg, "top")
         };
         var rules = type == "pdf" ? common : this._getExcelCellRules(cellStyle, node, common);
-        this._style_hash[type][name] = rules;
+        this._style_hash[name] = rules;
         return rules;
       }
     },
-    _getExportDocStyle: function (css, type) {
+    _getExportDocStyle: function (css) {
       css = exports.extend(css || {}, {
         visibility: "hidden",
         "white-space": "nowrap",
@@ -41954,7 +41866,7 @@
 
       this._body.appendChild(node);
 
-      var style = this._getExportCellStyle(node, cssStr, type);
+      var style = this._getExportCellStyle(node, cssStr);
 
       remove(node);
       return style;
@@ -42233,14 +42145,14 @@
 
         if (!this._dtable_fully_ready) this._apply_headers();
 
-        if (this._content_width) {
-          if (fast_mode && (mode == "paint" || mode == "update") && id) this._repaint_single_row(id);else this._check_rendered_cols(true, true);
-        }
-
         if (!id || mode != "update") {
           this._dtable_height = this._get_total_height();
 
           this._set_split_sizes_y();
+        }
+
+        if (this._content_width) {
+          if (fast_mode && (mode == "paint" || mode == "update") && id) this._repaint_single_row(id);else this._check_rendered_cols(true, true);
         } //don't depend on hidden rows/rolumns
 
 
@@ -42458,8 +42370,9 @@
       if (header.rotate) css += " webix_measure_rotate";else for (var i = 0; i < colspan; i++) {
         width += this._columns[ind + i] ? this._columns[ind + i].width : this.config.columnWidth;
       }
-      var size = getTextSize([header.text], css, width);
-      return header.rotate ? size.width : size.height;
+      var size = getTextSize([header.text], css, width); //+1 to compensate for scrollHeight rounding
+
+      return (header.rotate ? size.width : size.height) + 1;
     },
     _normalize_headers: function (collection, heights) {
       var rows = 0; // clear array of previous values
@@ -42547,33 +42460,26 @@
         return _base;
       }
     },
-    _render_empty_hcell: function (height, css) {
-      return "<div class='".concat(css, "' style='height:").concat(height, "px;'></div>");
-    },
     _render_subheader: function (start, end, width, name, heights) {
       if (start == end) return "";
+      var html = "";
       var spans = "";
-      var html = "<div style=\"background:inherit;width:".concat(width, "px;\">");
       var count = this._columns[0][name].length;
       var left = 0;
 
       for (var i = start; i < end; i++) {
-        var top = 0;
         var _width = this._columns[i].width;
-        var abs = i == start ? "position:static;" : "position:absolute;top:".concat(top, "px;left:").concat(left, "px;");
+        var top = 0;
+        var abs = i == start ? "position:static;" : "position:absolute; top:".concat(top, "px; left:").concat(left, "px;");
         html += "<div class=\"webix_hcolumn\" style=\"".concat(abs, "width:").concat(_width, "px;overflow:hidden;\">");
 
         for (var j = 0; j < count; j++) {
+          var isSpan = false;
           var header = this._columns[i][name][j];
           var cell_height = heights[j];
-          var hcss = "webix_hcell";
-          if (this._columns[i].$selected) hcss += " webix_sel_hcell";
-          if (i == start) hcss += " webix_first";
-          if (i == end - 1) hcss += " webix_last";
-          if (j == count - 1) hcss += " webix_last_row";
 
           if (!header) {
-            html += this._render_empty_hcell(cell_height + 1, hcss);
+            html += "<div class='webix_hcell' style='border-bottom-color:transparent;border-right-color:transparent;height:".concat(cell_height + 1, "px;'></div>");
             top += cell_height + 1;
             continue;
           }
@@ -42589,47 +42495,51 @@
             this._has_active_headers = true;
           }
 
-          if (header.css) // apply unique css after content initialization
-            hcss += " " + header.css;
           var cell = "<div " +
           /*@attr*/
           "row" + "='" + j + "'" +
           /*@attr*/
           "column" + "='" + (header.colspan ? header.colspan - 1 + i : i) + "'";
+          var hcss = "webix_hcell";
+          if (header.css) hcss += " " + header.css;
+          if (this._columns[i].$selected) hcss += " webix_sel_hcell";
+          if (i == start) hcss += " webix_first";
+          var column_pos = i + (header.colspan ? header.colspan - 1 : 0);
+          if (column_pos >= end - 1) hcss += " webix_last";
+          if (header.rowspan && j + header.rowspan === count || j === count - 1) hcss += " webix_last_row";
           var sheight = "";
           if (header.contentId) cell += " " +
           /*@attr*/
           "active_id" + "='" + header.contentId + "'";
-          var isSpan = false;
           var cheight = cell_height;
 
-          if (header.colspan && header.colspan > 1 || header.rowspan && header.rowspan > 1) {
+          if (header.colspan || header.rowspan) {
             var cwidth = this._summ_right(this._columns, i, header.colspan) || _width;
 
             cheight = this._summ_next(heights, j, header.rowspan);
             if (cheight <= 0) cheight = cell_height;
-            html += this._render_empty_hcell(cell_height + 1, hcss);
-            if (header.colspan && i + header.colspan >= end) hcss += " webix_last";
-            if (header.rowspan && j + header.rowspan >= count) hcss += " webix_last_row";
             hcss += " webix_span";
+            sheight = " colspan='".concat(header.colspan || 1, "' style='position:absolute; top:").concat(top, "px; left:").concat(left, "px; line-height:").concat(cheight + 1, "px; width:").concat(cwidth, "px; height:").concat(cheight + 1, "px;'");
+            html += "<div class='webix_hcell' style='border-bottom-color:transparent;border-right-color:transparent;height:".concat(cell_height + 1, "px;'></div>");
             isSpan = true;
-            sheight = " colspan='".concat(header.colspan || 1, "' rowspan='").concat(header.rowspan || 1, "' style='position:absolute;top:").concat(top, "px;left:").concat(left, "px;line-height:").concat(cheight + 1, "px;width:").concat(cwidth, "px;height:").concat(cheight + 1, "px;'");
-          } else if (cell_height != this._settings.headerRowHeight) sheight = " style='line-height:".concat(cell_height + 1, "px;height:").concat(cell_height + 1, "px;'");
+          } else {
+            if (cell_height != this._settings.headerRowHeight) sheight = " style='line-height:".concat(cell_height + 1, "px; height:").concat(cell_height + 1, "px;'");
+          }
 
-          cell += " class=\"" + hcss + "\"";
+          if (hcss) cell += " class=\"" + hcss + "\"";
+          top += cell_height + 1;
           cell += " " + sheight + ">";
           var text = header.text === "" ? "&nbsp;" : header.text;
-          if (header.rotate) text = "<div class='webix_rotate' style='width:" + (cheight - 10) + "px;transform-origin:center " + (cheight - 15) / 2 + "px;'>" + text + "</div>";
+          if (header.rotate) text = "<div class='webix_rotate' style='width:" + (cheight - 10) + "px; transform-origin:center " + (cheight - 15) / 2 + "px;-webkit-transform-origin:center " + (cheight - 15) / 2 + "px;'>" + text + "</div>";
           cell += text + "</div>";
           if (isSpan) spans += cell;else html += cell;
-          top += cell_height + 1;
         }
 
         left += _width;
         html += "</div>";
       }
 
-      return html + spans + "</div>";
+      return html + spans;
     },
     _summ_next: function (heights, start, i) {
       var summ = -1;
@@ -42675,7 +42585,7 @@
 
           if (row_ind < state[0] + 1) {
             //scroll top - show row at top of screen
-            summ = Math.max(0, summ) - this._get_top_split_height();
+            summ = Math.max(0, summ) - (this._top_split_height || 0);
           } else if (summ + itemHeight > dataHeight) {
             //scroll bottom - show row at bottom of screen
             summ += itemHeight - dataHeight; //because of row rounding we need to scroll some extra
@@ -42747,6 +42657,7 @@
       if (x !== null) this._x_scroll.scrollTo(x);
       if (y !== null) this._y_scroll.scrollTo(y);
     },
+    _touch_scroll: "touch",
     getScrollState: function () {
       if (this._getScrollState_touch) return this._getScrollState_touch();
       var diff = this._render_scroll_shift ? 0 : this._render_scroll_diff || 0;
@@ -42759,29 +42670,18 @@
       this.showItemByIndex(this.getIndexById(id), -1);
     },
     _render_header_section: function (sec, name, heights) {
-      var _this2 = this;
-
       var header = sec.childNodes;
       header[0].innerHTML = this._render_subheader(0, this._settings.leftSplit, this._left_width, name, heights);
       header[1].innerHTML = this._render_subheader(this._settings.leftSplit, this._rightSplit, this._dtable_width, name, heights);
       header[2].innerHTML = this._render_subheader(this._rightSplit, this._columns.length, this._right_width, name, heights);
-      var x = this.getScrollState().x;
-      if (env.touch) Touch._set_matrix(header[1].firstChild, -x, 0, "0ms");else header[1].scrollLeft = x;
-
-      header[1].onscroll = function () {
-        return _this2._scroll_with_header();
-      };
+      if (this._dtable_column_refresh) header[1].scrollLeft = this.getScrollState().x;
+      header[1].onscroll = bind(this._scroll_with_header, this);
     },
     _scroll_with_header: function () {
-      var scrollLeft = this._header.childNodes[1].scrollLeft;
-      if (this._ignore_after_focus_scroll) return this._ignore_after_focus_scroll = false;
+      var active = this.getScrollState().x;
+      var header = this._header.childNodes[1].scrollLeft; // on mobile devices scrollLeft can be a non-round value
 
-      this._x_scroll.scrollTo(scrollLeft);
-
-      if (this._touch_scroll) {
-        if (scrollLeft) this._header.childNodes[1].scrollLeft = 0;
-        this._ignore_after_focus_scroll = scrollLeft;
-      }
+      if (Math.ceil(header) != Math.ceil(active)) this.scrollTo(header, null);
     },
     _refresh_tracking_header_content: function () {
       this.refreshHeaderContent(true, true);
@@ -42839,7 +42739,9 @@
     _set_size_scroll_area: function (obj, height, hdx) {
       if (this._scrollSizeY) {
         obj.style.height = Math.max(height, 1) - 1 + "px";
-        obj.style.width = (this._rightSplit ? 0 : hdx) + this._scrollSizeY - 1 + "px";
+        obj.style.width = (this._rightSplit ? 0 : hdx) + this._scrollSizeY - 1 + "px"; // temp. fix: Chrome [DIRTY]
+
+        if (env.isWebKit) var w = obj.offsetWidth; //eslint-disable-line
       } else obj.style.display = "none";
     },
     _size_header_footer_fix: function () {
@@ -42848,9 +42750,10 @@
     },
     _update_scroll: function () {
       var hasX = !(this._settings.autowidth || this._settings.scrollX === false);
-      var hasY = !(this._settings.autoheight || this._settings.scrollY === false);
       this._scrollSizeX = hasX ? env.scrollSize : 0;
+      var hasY = !(this._settings.autoheight || this._settings.scrollY === false);
       this._scrollSizeY = hasY ? env.scrollSize : 0;
+      if (env.touch) hasX = hasY = false;
 
       if (this._x_scroll) {
         this._x_scroll._settings.scrollSize = this._scrollSizeX;
@@ -42865,10 +42768,11 @@
     _create_scrolls: function () {
       this._scrollTop = 0;
       this._scrollLeft = 0;
-      var hasX = !(this._settings.autowidth || this._settings.scrollX === false);
-      var hasY = !(this._settings.autoheight || this._settings.scrollY === false);
-      if (!hasX) this._scrollSizeX = 0;
-      if (!hasY) this._scrollSizeY = 0;
+      var scrx, scry;
+      scrx = scry = 1;
+      if (this._settings.autoheight || this._settings.scrollY === false) scry = this._scrollSizeY = 0;
+      if (this._settings.autowidth || this._settings.scrollX === false) scrx = this._scrollSizeX = 0;
+      if (env.touch) scrx = scry = 0;
 
       if (!this._x_scroll) {
         this._x_scroll = ui({
@@ -42876,10 +42780,10 @@
           container: this._footer.previousSibling,
           scrollWidth: this._dtable_width,
           scrollSize: this._scrollSizeX,
-          scrollVisible: hasX
+          scrollVisible: scrx
         }); //fix for scroll space on Mac
 
-        if (!this._scrollSizeX && !env.$customScroll) this._x_scroll._viewobj.style.position = "absolute";
+        if (scrx && !this._scrollSizeX && !env.$customScroll) this._x_scroll._viewobj.style.position = "absolute";
 
         this._x_scroll.attachEvent("onScroll", bind(this._onscroll_x, this));
       }
@@ -42894,7 +42798,7 @@
           scrollHeight: 100,
           scroll: "y",
           scrollSize: this._scrollSizeY,
-          scrollVisible: hasY
+          scrollVisible: scry
         });
 
         this._y_scroll.activeArea(this._body);
@@ -42910,7 +42814,7 @@
       this._create_scrolls = function () {};
     },
     columnId: function (index$$1) {
-      return this._columns[index$$1] && this._columns[index$$1].id;
+      return this._columns[index$$1].id;
     },
     getColumnIndex: function (id) {
       for (var i = 0; i < this._columns.length; i++) {
@@ -43119,7 +43023,7 @@
       var top;
       if (index$$1 < this._settings.topSplit) top = this._getHeightByIndexSumm(0, index$$1);else {
         var first = this._render_scroll_top || 0;
-        top = this._getHeightByIndexSumm(first, index$$1) + (this._render_scroll_shift || 0) + (index$$1 >= first ? this._get_top_split_height() : 0);
+        top = this._getHeightByIndexSumm(first, index$$1) + (this._render_scroll_shift || 0) + (index$$1 >= first ? this._top_split_height || 0 : 0);
       }
       return {
         parent: parent,
@@ -43128,9 +43032,6 @@
         width: width,
         height: height
       };
-    },
-    _get_top_split_height: function () {
-      return this._settings.topSplit ? this._getHeightByIndexSumm(0, this._settings.topSplit) : 0;
     },
     _get_total_height: function () {
       var pager = this._settings.pager;
@@ -43169,8 +43070,6 @@
 
       if (!this._settings.prerender) {
         this._check_rendered_cols();
-      } else if (env.touch) {
-        this._sync_y_scroll(-value, "0ms");
       } else {
         var conts = this._body.childNodes;
 
@@ -43187,16 +43086,14 @@
       }
     },
     _setLeftScroll: function (value) {
-      this._scrollLeft = value;
-      if (env.touch) return this._sync_x_scroll(-value, "0ms");
-      this._body.childNodes[1].scrollLeft = value;
+      this._body.childNodes[1].scrollLeft = this._scrollLeft = value;
       if (this._settings.header) this._header.childNodes[1].scrollLeft = value;
       if (this._settings.footer) this._footer.childNodes[1].scrollLeft = value;
     },
     _onscroll_x: function (value) {
       var scrollChange = this._scrollLeft !== value;
       if (this._renderDelay) this._delayedLeftScroll = value;else this._setLeftScroll(value);
-      if (!this._settings.prerender) this._check_rendered_cols(true);
+      if (this._settings.prerender === false) this._check_rendered_cols(this._minimize_dom_changes ? false : true);
       if (env.$customScroll) temp$1._update_scroll(this._body);
 
       if (scrollChange) {
@@ -43264,7 +43161,7 @@
       var xdef = xind > 0 && t ? -(this._getHeightByIndex(xind - 1) + t) : 0;
       var xend = xind;
       if (t) xind--;
-      t += (this._dtable_offset_height || this._content_height) - this._get_top_split_height();
+      t += (this._dtable_offset_height || this._content_height) - (this._top_split_height || 0);
 
       if (rowHeight) {
         var _dep = Math.ceil(t / rowHeight);
@@ -43285,7 +43182,7 @@
       var item = this.getItem(id);
       var rowindex = this.getIndexById(id);
 
-      var state = this._get_y_range(this._settings.prerender === true);
+      var state = this._get_y_range();
 
       var freeze = this._settings.topSplit;
       var freezeCss = "";
@@ -43360,7 +43257,7 @@
       this._rows_cache = [];
     },
     _adjust_rows: function () {
-      if (this._rows_body && !this._touch_scroll && this._settings.prerender) {
+      if (this._settings.prerender && this._rows_body) {
         var state = this.getScrollState();
         this._rows_body.style.top = "-" + (state.y || 0) + "px";
       }
@@ -43422,14 +43319,13 @@
           this._rows_body.style.top = this._render_scroll_shift + "px";
 
           this._body.appendChild(this._rows_body);
-
-          this.attachEvent("onSyncScroll", function (x, y, t) {
-            Touch._set_matrix(this._rows_body, 0, y, t);
-          });
         }
 
         this._rows_body.appendChild(_row);
 
+        this.attachEvent("onSyncScroll", function (x, y, t) {
+          Touch._set_matrix(this._rows_body, 0, y, t);
+        });
         if (this._settings.subview) this.callEvent("onSubViewRender", [item, _row]);
       }
     },
@@ -43752,6 +43648,7 @@
 
       this._y_scroll.define("scrollHeight", wanted_height);
 
+      this._top_split_height = this._settings.topSplit ? this._getHeightByIndexSumm(0, this._settings.topSplit) : 0;
       this._dtable_offset_height = Math.max(0, this._content_height - this._scrollSizeX - this._header_height - this._footer_height);
 
       for (var i = 0; i < 3; i++) {
@@ -43801,6 +43698,15 @@
         this._header_fix_width = delta;
 
         this._size_header_footer_fix();
+      } // temp. fix: Chrome [DIRTY]
+
+
+      if (env.isWebKit) {
+        var w = this._body.childNodes[0].offsetWidth; //eslint-disable-line
+
+        w = this._body.childNodes[1].offsetWidth;
+        w = this._body.childNodes[1].firstChild.offsetWidth;
+        w = this._body.childNodes[2].offsetWidth;
       }
 
       this._x_scroll.sizeTo(this._content_width - this._scrollSizeY);
@@ -43825,9 +43731,9 @@
       return sizes;
     },
     _restore_scroll_state: function () {
-      if (this._x_scroll) {
+      if (this._x_scroll && !env.touch) {
         var state = this.getScrollState();
-        this._x_scroll.config.scrollPos = this._y_scroll.config.scrollPos = -1;
+        this._x_scroll.config.scrollPos = this._y_scroll.config.scrollPos = 0;
         this.scrollTo(state.x, state.y);
       }
     },
@@ -43956,7 +43862,7 @@
     _last_order: [],
     _last_sorted: {},
     _sort: function (col_id, direction, type$$1, preserve) {
-      var _this3 = this;
+      var _this2 = this;
 
       preserve = this._settings.sort === "multi" && preserve;
       direction = direction || "asc";
@@ -43979,14 +43885,18 @@
       this._last_sorted[col.id] = config;
 
       if (type$$1 == "server") {
-        var params = [col.id, direction, type$$1];
-        if (this._last_order.length > 1) params = [this._last_order.map(function (id) {
-          return _this3._last_sorted[id];
+        var parameters = [col.id, direction, type$$1];
+        if (this._last_order.length > 1) parameters = [this._last_order.map(function (id) {
+          return _this2._last_sorted[id];
         })];
-        this.callEvent("onBeforeSort", params);
-        if (!this._skip_server_op) this.loadNext(0, 0, 0, 0, true, true).then(function () {
-          return _this3._on_after_sort(params);
-        });else this._skip_server_op.$params = params; // save last parameters
+        this.callEvent("onBeforeSort", parameters);
+        this.loadNext(0, 0, 0, 0, 1).then(function (data) {
+          _this2.clearAll(true);
+
+          _this2.parse(data);
+
+          _this2.callEvent("onAfterSort", parameters);
+        });
       } else {
         if (type$$1 == "text") {
           var new_id = "$text_" + col.id;
@@ -43998,14 +43908,11 @@
         }
 
         if (this._last_order.length > 1) this.data.sort(this._last_order.map(function (id) {
-          return _this3._last_sorted[id];
+          return _this2._last_sorted[id];
         }));else this.data.sort(config);
       }
 
       this.markSorting(col.id, config.dir, preserve);
-    },
-    _on_after_sort: function (params) {
-      this.callEvent("onAfterSort", params);
     },
     _mouseEventCall: function (css_call, e, id, trg) {
       var functor, i, res;
@@ -44020,6 +43927,7 @@
     },
     //because we using non-standard rendering model, custom logic for mouse detection need to be used
     _mouseEvent: function (e, hash, name, pair) {
+      e = e || event;
       var trg = e.target;
       if (this._settings.subview && this != $$(trg)) return; //define some vars, which will be used below
 
@@ -44032,7 +43940,7 @@
       while (trg && trg.parentNode && trg != this._viewobj.parentNode) {
         var trgCss = _getClassName(trg);
 
-        if ((css = trgCss) && hash) {
+        if (css = trgCss) {
           css = css.toString().split(" ");
 
           for (var i = css.length - 1; i >= 0; i--) {
@@ -44305,9 +44213,7 @@
       return TablePaste.clipboard_setter.call(this, value);
     },
     _run_load_next: function (conf, direction) {
-      var start = conf.start;
-
-      for (var i = 0; i < start; i++) {
+      for (var i = 0; i < conf.start; i++) {
         var id = this.data.order[i];
         if (id && this.getItem(id).$level != 1) conf.start--;
       }
@@ -44753,8 +44659,8 @@
   exports.filters = filters;
   exports.patterns = patterns;
   exports.fullscreen = fullscreen;
-  exports.version = version;
-  exports.name = name;
+  exports.version = version$1;
+  exports.name = name$1;
   exports.level_in = level_in;
   exports.level_out = level_out;
   exports.clone = clone;
