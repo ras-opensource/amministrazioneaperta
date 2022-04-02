@@ -12435,7 +12435,7 @@ Class AA_Platform
         }
         else
         {
-            return AA_Const::AA_PUBLIC_MODULES_PATH.$module['id_sidebar']."_".$module['id'].DIRECTORY_SEPARATOR."/taskmanager.php";
+            return AA_Const::AA_PUBLIC_MODULES_PATH."/".$module['id_sidebar']."_".$module['id']."/taskmanager.php";
         }
     }
 

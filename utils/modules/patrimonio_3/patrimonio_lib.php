@@ -891,7 +891,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","suggest"=>$this->taskManagerUrl."?task=GetPatrimonioListCodiciIstat")); 
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","suggest"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")); 
 
         //classe
         $label="Classe";
@@ -1844,13 +1844,15 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
-        $filter=$_REQUEST["filter['value']"];
+        $filter=$_REQUEST["filter"];
 
         $db=new AA_Database();
         $query="SELECT codice FROM ".AA_Patrimonio::AA_DBTABLE_CODICI_ISTAT;
-        if($filter !="") $query.=" WHERE codice like '%".addslashes($filter)."'";
-        $query.=" LIMIT 20";
+        if($filter !="") $query.=" WHERE codice like '".addslashes($filter['value'])."%'";
+        $query.=" LIMIT 10";
 
+        //AA_Log::Log(__METHOD__." - query ".$query.print_r($_REQUEST,true),100);
+        
         //errore nella query
         if(!$db->Query($query))
         {
