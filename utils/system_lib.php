@@ -4577,7 +4577,7 @@ Class AA_SystemTask_GetAppStatus extends AA_GenericTask
             
             foreach($mods as $curMod)
             {
-                $modules[]=array("id"=>$curMod['id_modulo'],"remote_folder"=>AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'],"icon"=>$curMod['icon'],"name"=>$curMod['tooltip']);
+                $modules[]=array("id"=>$curMod['id_modulo'],"remote_folder"=>AA_Const::AA_PUBLIC_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'],"icon"=>$curMod['icon'],"name"=>$curMod['tooltip']);
                 $sideBarContent[] = array("id"=>$curMod['id_sidebar'],"icon"=>$curMod['icon'],"value"=>$curMod['name'],"tooltip"=>$curMod['tooltip'],"module"=>$curMod['id_modulo']);
             }
             
@@ -5744,6 +5744,10 @@ Class AA_GenericModule
         if(!($user instanceof AA_User) || !$user->isCurrentUser()) $user=AA_User::GetCurrentUser();
         
         $this->oUser=$user;
+
+        //Task manager url
+        $platform=AA_Platform::GetInstance($user);
+        $this->taskManagerUrl=$platform->GetModuleTaskManagerURL($this->id);
 
         //Registrazione dei task-------------------
         $taskManager=$this->GetTaskManager();
@@ -12416,6 +12420,25 @@ Class AA_Platform
         return self::$oInstance;
     }
     
+    //Restituisce l'url del task manager
+    public function GetModuleTaskManagerURL($id_module="")
+    {
+        if(!$this->IsValid())
+        {
+            return AA_Const::AA_PUBLIC_LIB_PATH.DIRECTORY_SEPARATOR."system_ops.php";
+        }
+
+        $module=$this->GetModule($id_module);
+        if($module==null)
+        {
+            return AA_Const::AA_PUBLIC_LIB_PATH.DIRECTORY_SEPARATOR."system_ops.php";
+        }
+        else
+        {
+            return AA_Const::AA_PUBLIC_MODULES_PATH.$module['id_sidebar']."_".$module['id'].DIRECTORY_SEPARATOR."/taskmanager.php";
+        }
+    }
+
     protected function __construct($user = null) 
     {
         //Verifica utente

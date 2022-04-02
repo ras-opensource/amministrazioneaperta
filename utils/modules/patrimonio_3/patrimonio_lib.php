@@ -85,6 +85,9 @@ Class AA_Patrimonio extends AA_Object_V2
     //tabella canoni db
     const AA_DBTABLE_CANONI="aa_patrimonio_canoni";
 
+    //file codici istat
+    const AA_DBTABLE_CODICI_ISTAT="aa_patrimonio_codici_istat";
+
     //lista canoni
     protected $aCanoni=null;
     protected function LoadCanoni($idData=0)
@@ -540,6 +543,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("TrashCanone");
         #------------------------------------------------------------------------------------
 
+        //Task Lista codici istat
+        $taskManager->RegisterTask("GetPatrimonioListaCodiciIstat");
+
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab"),
@@ -885,7 +891,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...")); 
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","suggest"=>$this->taskManagerUrl."?task=GetPatrimonioListCodiciIstat")); 
 
         //classe
         $label="Classe";
@@ -1810,7 +1816,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return true;
     }
     
-    //Task aggiunta organismo
+    //Task aggiunta patrimonio
     public function Task_GetPatrimonioAddNewDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -1831,6 +1837,42 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $task->SetLog($sTaskLog);
         
         return true;
+    }
+
+    //Task aggiunta organismo
+    public function Task_GetPatrimonioListaCodiciIstat($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        $filter=$_REQUEST["filter['value']"];
+
+        $db=new AA_Database();
+        $query="SELECT codice FROM ".AA_Patrimonio::AA_DBTABLE_CODICI_ISTAT;
+        if($filter !="") $query.=" WHERE codice like '%".addslashes($filter)."'";
+        $query.=" LIMIT 20";
+
+        //errore nella query
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - ERRORE ".$db->GetErrorMessage(),100);
+            die("[]");
+        }
+
+        //Query vuota
+        if($db->GetAffectedRows() == 0)
+        {
+            die("[]");
+        }
+        
+        $result=array();
+        $count=1;
+        foreach($db->GetResultSet() as $curRow)
+        {
+            $result[]=array("id"=>$count,"value"=>$curRow['codice']);
+            $count++;
+        }
+
+        die(json_encode($result));
     }
 
     //Task aggiunta Canone

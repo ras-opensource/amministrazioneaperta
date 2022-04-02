@@ -9,6 +9,7 @@ Class AA_Config
 
     //Persorso principale delle librerie
     const AA_LIB_PATH="";
+    const AA_PUBLIC_LIB_PATH="";
 
     //Locale
     const AA_LOCALE="it_IT";
@@ -26,6 +27,7 @@ Class AA_Config
     
     //Cartella moduli (percorso relativo alla root)
     const AA_MODULES_PATH="utils/modules";
+    const AA_PUBLIC_MODULES_PATH="utils/modules";
 
     //Percorso root applicazione
     const AA_WWW_ROOT="/web/amministrazione_aperta";

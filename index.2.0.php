@@ -6,11 +6,9 @@ session_start();
 
 //Verifica utente
 $user=AA_User::GetCurrentUser();
-/*if($user->IsGuest())
-{
- header("location: login.php");
- exit;
-}*/
+$platform = AA_Platform::GetInstance($user);
+
+$lib_path=AA_Const::AA_PUBLIC_LIB_PATH;
 ?>
 <html>
 <head>
@@ -24,20 +22,20 @@ $user=AA_User::GetCurrentUser();
 <script src="utils/cryptojs/aes.js"></script>
 <script src="utils/jquery-3.5.1.min.js"></script>
 <script src="utils/jquery-ui.min.js"></script>
-<script type="text/javascript" src="utils/webix/codebase/webix.min.js"></script>
-<script type="text/javascript" src="utils/pdfobject.min.js"></script>
-<script type="text/javascript" src="utils/system_lib.js"></script>
+<script type="text/javascript" src="<?php echo $lib_path;?>/webix/codebase/webix.min.js"></script>
+<script type="text/javascript" src="<?php echo $lib_path;?>/pdfobject.min.js"></script>
+<script type="text/javascript" src="<?php echo $lib_path;?>/system_lib.js"></script>
 <script>
     //Abilita la gestione dell'interfaccia grafica integrata
     AA_MainApp.ui.enableGui=true;
 </script>
 <?php
-$platform = AA_Platform::GetInstance($user);
+
 foreach($platform->GetModules() as $curMod)
 {
-    foreach(glob("utils/modules/".$curMod['id_sidebar']."_".$curMod['id']."/*.js") as $curScript)
+    foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'].DIRECTORY_SEPARATOR."*.js") as $curScript)
     {
-        echo '<script src="/web/amministrazione_aperta/'.$curScript.'"></script>';
+        echo '<script src="'.AA_Const::AA_WWW_ROOT.'/'.$curScript.'"></script>';
     }
 }
 ?>
