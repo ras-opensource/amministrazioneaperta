@@ -7882,7 +7882,7 @@ Class AA_GenericModule
             }
         }
 
-        AA_Log::Log(__METHOD__." - ".print_r($this->aSectionItemTemplates,true),100);
+        //AA_Log::Log(__METHOD__." - ".print_r($this->aSectionItemTemplates,true),100);
 
         $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
             "view"=>"tabbar",
