@@ -1941,7 +1941,6 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $sTaskLog.="</content>";
         }
         
-        
         $task->SetLog($sTaskLog);
         
         return true;
