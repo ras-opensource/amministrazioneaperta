@@ -977,8 +977,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         form.setValues(oldValues);
                     }
 
-                    //console.log(this.name+".dlg",forms);
+                    return true;
                 }
+                
+                return false;
             } else {
                 console.error(this.name + ".dlg", result.error.value);
                 AA_MainApp.ui.alert(result.error.value);
