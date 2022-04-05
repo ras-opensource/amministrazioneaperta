@@ -979,7 +979,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                     return true;
                 }
-                
+
                 return false;
             } else {
                 console.error(this.name + ".dlg", result.error.value);
@@ -1945,14 +1945,13 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
                         }
 
-                        val=true;
-                        if(this.elements[arguments[2]].config.required && arguments[0] == "") val=false;
-                        if(arguments[0] !="")
-                        {
-                            if(arguments[0].match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)) val = false;  // Invalid format
+                        val = true;
+                        if (this.elements[arguments[2]].config.required && arguments[0] == "") val = false;
+                        if (arguments[0] != "") {
+                            if (arguments[0].match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)) val = false; // Invalid format
                             var d = new Date(arguments[0]);
                             var dNum = d.getTime();
-                            if(!dNum && dNum !== 0) val=false;    
+                            if (!dNum && dNum !== 0) val = false;
                         }
                     }
                 }
@@ -2000,18 +1999,16 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
     //DefaultShowDetailView
     this.eventHandlers['defaultHandlers'].showDetailView = async function(item = null) {
         try {
-            
+
             //Double click event
-            if(typeof item == "string")
-            {
+            if (typeof item == "string") {
                 //console.log("showDetailView - doubleclick", arguments,this);
-                item=$$(this.config.id).getItem(item);
+                item = $$(this.config.id).getItem(item);
             }
 
             //detail button event
             if (Array.isArray(item)) item = item[0];
-            if (AA_MainApp.utils.isDefined(item) && AA_MainApp.utils.isDefined(item.id)) 
-            {
+            if (AA_MainApp.utils.isDefined(item) && AA_MainApp.utils.isDefined(item.id)) {
                 if (arguments.length > 0) {
                     //di default 'this' è il modulo indicato dalla funzione "callHandler"
                     module = this;
@@ -3606,7 +3603,10 @@ function AA_Message(msg = "", type = "success", timeout = 4000) {
 
 //Funzione per la visualizzazione del messaggio di attesa
 function AA_ShowWaitMessage(msg = "Attendere prego...", type = "info") {
-    if (AA_MainApp.ui.waitMessage != "undefined" && AA_MainApp.ui.waitMessage != "") return;
+    if (typeof AA_MainApp.ui.waitMessage == "string") {
+        console.log("AA_ShowWaitMessage - messaggio già impostato.");
+        return;
+    }
 
     AA_MainApp.ui.waitMessage = webix.message({
         text: "<span class='lds-dual-ring'></span><span style='margin-left: .5em'>" + msg + "</span>",
@@ -3617,9 +3617,9 @@ function AA_ShowWaitMessage(msg = "Attendere prego...", type = "info") {
 }
 
 function AA_HideWaitMessage() {
-    if (AA_MainApp.ui.waitMessage != "undefined" && AA_MainApp.ui.waitMessage != "") {
+    if (typeof AA_MainApp.ui.waitMessage == "string") {
         webix.message.hide(AA_MainApp.ui.waitMessage);
-        AA_MainApp.ui.waitMessage = "";
+        AA_MainApp.ui.waitMessage = null;
     }
 
 }
