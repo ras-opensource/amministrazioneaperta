@@ -14,14 +14,14 @@ $lib_path=AA_Const::AA_PUBLIC_LIB_PATH;
 <head>
 <title>Amministrazione Aperta</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" href="stili/jquery-ui.css" />
-<link rel="stylesheet" type="text/css" href="utils/webix/codebase/webix.min.css" />
+<link rel="stylesheet" href="<?php echo $lib_path;?>/jquery/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" href="<?php echo $lib_path;?>/webix/codebase/webix.min.css" />
 <link rel="stylesheet" href="stili/mdi/css/materialdesignicons.min.css" type="text/css" />
 <link href="stili/system.css" rel="stylesheet" type="text/css" />
 <link href="stili/organismi.css" rel="stylesheet" type="text/css" />
-<script src="utils/cryptojs/aes.js"></script>
-<script src="utils/jquery-3.5.1.min.js"></script>
-<script src="utils/jquery-ui.min.js"></script>
+<script src="<?php echo $lib_path;?>/cryptojs/aes.js"></script>
+<script src="<?php echo $lib_path;?>/jquery/jquery-3.6.0.min.js"></script>
+<script src="<?php echo $lib_path;?>/jquery/jquery-ui.min.js"></script>
 <script type="text/javascript" src="<?php echo $lib_path;?>/webix/codebase/webix.min.js"></script>
 <script type="text/javascript" src="<?php echo $lib_path;?>/pdfobject.min.js"></script>
 <script type="text/javascript" src="<?php echo $lib_path;?>/system_lib.js"></script>
