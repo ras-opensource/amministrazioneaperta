@@ -1211,9 +1211,15 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //Indirizzo
         $value= $object->GetProp("Indirizzo");
-        if($value=="") $value="n.d.";
+        if($value=="") 
+        {
+            $value="n.d.";
+            $template="<span style='font-weight:700'>#title#</span><br><span>#value#</span>";
+        }
+        else $template="<span style='font-weight:700'>#title#</span><br><a title='Fai click per visualizzare l&#39;immobile o il terreno su Google maps' href='https://www.google.it/maps/place/".str_replace(" ","+",$value)."' target='_blank'>#value#</a>";
+
         $indirizzo=new AA_JSON_Template_Template($id."_Indirizzo",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "template"=>$template,
             "data"=>array("title"=>"Indirizzo:","value"=>$value)
         ));
         
