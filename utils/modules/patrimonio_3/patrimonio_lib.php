@@ -891,7 +891,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","textValue"=>"codice","suggest"=>array("url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat"))); 
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","textValue"=>"codice","suggest"=>array("data"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat"))); 
 
         //classe
         $label="Classe";
