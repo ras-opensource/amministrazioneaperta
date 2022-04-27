@@ -891,7 +891,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","template"=>"#codice#","suggest"=>array("url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
 
         //classe
         $label="Classe";
@@ -1849,7 +1849,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $db=new AA_Database();
         $query="SELECT codice,comune FROM ".AA_Patrimonio::AA_DBTABLE_CODICI_ISTAT;
         if($filter !="") $query.=" WHERE codice like '".addslashes($filter['value'])."%' OR comune like '".addslashes($filter['value'])."%'";
-        $query.=" LIMIT 10";
+        //$query.=" LIMIT 10";
 
         //AA_Log::Log(__METHOD__." - query ".$query.print_r($_REQUEST,true),100);
         
@@ -1870,7 +1870,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $count=1;
         foreach($db->GetResultSet() as $curRow)
         {
-            $result[]=array("id"=>$count,"codice"=>$curRow['codice'],"value"=>$curRow['comune']."(".$curRow['codice'].")");
+            $result[]=array("id"=>$count,"codice"=>$curRow['codice'],"value"=>$curRow['comune']." (".$curRow['codice'].")");
             $count++;
         }
 
