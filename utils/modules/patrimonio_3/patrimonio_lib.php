@@ -804,7 +804,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","suggest"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")); 
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
 
         //classe
         $label="Classe";
@@ -891,7 +891,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice Comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
 
         //classe
         $label="Classe";
