@@ -1310,12 +1310,17 @@ function Art15_Query($params)
       $path="/home/sitod/uploads/monitspese/art15/curriculum/";
       if(file_exists($path.$rs->Get('id')))
       {
-	$xml_result.="<curriculum>https:///sitod.regione.sardegna.it/web/amministrazione_trasparente/art15/curriculum/?id=".$rs->Get('id')."</curriculum>";
+	      $xml_result.="<curriculum>https:///sitod.regione.sardegna.it/web/amministrazione_trasparente/art15/curriculum/?id=".$rs->Get('id')."</curriculum>";
       }
       $path="/home/sitod/uploads/monitspese/art15/dichiarazioni/";
       if(file_exists($path.$rs->Get('id')))
       {
-	$xml_result.="<dichiarazione>https:///sitod.regione.sardegna.it/web/amministrazione_trasparente/art15/dichiarazioni/?id=".$rs->Get('id')."</dichiarazione>";
+	      $xml_result.="<dichiarazione>https:///sitod.regione.sardegna.it/web/amministrazione_trasparente/art15/dichiarazioni/?id=".$rs->Get('id')."</dichiarazione>";
+      }
+      $path="/home/sitod/uploads/monitspese/art15/attestazioni/";
+      if(file_exists($path.$rs->Get('id')))
+      {
+	      $xml_result.="<attestazione>https:///sitod.regione.sardegna.it/web/amministrazione_trasparente/art15/attestazioni/?id=".$rs->Get('id')."</attestazione>";
       }
       $xml_result.= "</scheda>";
       
@@ -4402,6 +4407,169 @@ function AA_XML_ReportPO_V2($param="")
   return $xml->toXML();
 }
 //--------------------------------------------
+
+//Flusso xml pubblicazioni collaboratori e consulenti (art 15 d.lgs. 33/2013) - vecchio modulo
+function AA_XML_ReportArt15($param="")
+{
+  //Parametri
+  $anno=$param->getElementsByTagName("anno")->item(0)->textContent;
+  $nome=$param->getElementsByTagName("nome")->item(0)->textContent;
+  $cognome=$param->getElementsByTagName("cognome")->item(0)->textContent;
+  $email=$param->getElementsByTagName("email")->item(0)->textContent;
+  $verbose=$param->getElementsByTagName("verbose")->item(0)->textContent;
+  $id_struttura=$param->getElementsByTagName("id_struttura")->item(0)->textContent; //identificativo struttura, lasciare vuoto per RAS
+  $struttura=$param->getElementsByTagName("struttura")->item(0)->textContent; //nome struttura, lasciare vuoto per RAS
+  $id_user=$param->getElementsByTagName("id_user")->item(0)->textContent; //identificativo utente
+  $tipo_incarico=$param->getElementsByTagName("tipo_incarico")->item(0)->textContent; //tipologia incarico
+  $output=$param->getElementsByTagName("output")->item(0)->textContent; //tipologia output ("pdf","csv","xml");
+  if($output == "") $output="xml";
+  if($anno == "") $anno=date("Y");
+
+  //accesso al db
+  $db=new AA_Database();
+
+  //Recupera le pubblicazioni
+  $query="SELECT * FROM art15_pubblicazioni LEFT JOIN assessorati on  art15_pubblicazioni.id_assessorato=assessorati.id WHERE anno_rif ='".$anno."' AND assessorati.tipo=0 AND nome not like '' AND cognome not like ''";
+  $path = "/home/sitod/uploads/monitspese/art15";
+  $path_curriculum=$path."/curriculum/";
+  $path_dichiarazioni=$path."/dichiarazioni/";
+  $path_attestazioni=$path."/attestazioni/";
+  
+  $logo="logo_ras.gif";
+
+  $query.=" ORDER by art15_pubblicazioni.cognome, art15_pubblicazioni.nome";
+
+  $return="<pubblicazioni_art15>";
+  $return.="<anno>".$anno."</anno>";
+
+  $count = 0;
+  $po=array();
+
+  $doc=null;
+  $logo="logo_ras.gif";
+
+  $db->Query($query);
+  
+  if($output=="pdf")
+  {
+    $doc = new AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE("pubblicazioni_art15_RAS_".$anno);
+    $doc->SetLogoImage($logo);
+    $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
+    $doc->SetPageCorpoStyle("border: 1px solid black; display: flex; flex-direction: column; justify-content: space-between; padding:0;");
+    $doc->SetTitle("Pubblicazioni Titolari di incarichi di collaborazione o consulenza - art.15 del d.lgs. 33/2013 - anno ".$anno);
+    $curRow=0;
+    $rowForPage=10;
+    $curPage=null;
+    $curNumPage=0;
+    $lastPage=sizeof($po)/$rowForPage;
+    $columns_width=array("anno_rif"=>"7%","cognome"=>"7%","nome"=>"7%","cf"=>"7%","oggetto"=>"7%","data_conferimento"=>"7%","data_inizio"=>"7%","data_fine"=>"7%","estremi_atto"=>"7%","importo","parte_variabile","importo_erogato","attestazione_verifica","curriculum","dichiarazione");
+  }
+
+  $tot_count=$db->GetAffectedRows();
+  if($tot_count > 0)
+  {
+    $rs=$db->GetResultSet();
+    $path = "/home/sitod/uploads/amministrazione_trasparente/art14/curriculum/";
+    
+    do 
+    {
+      $nome=$rs->Get("nome");
+      $cognome=$rs->Get("cognome");
+      $email=$rs->Get("email");
+      $curriculum_file=md5($email).".pdf";
+
+      if(file_exists($path.$curriculum_file))
+      {
+        $col=1;
+        if(!($count%2)) $col=2;
+  
+        if($doc)
+        {
+          $curPage_Row="";
+          $border="";
+          //inizia una nuova pagina (intestazione)
+          if($curRow==$rowForPage) $curRow=0; 
+          if($curRow==0)
+          {
+            $border="";
+            if($curPage != null) $curPage->SetContent($curPage_row);
+            $curPage=$doc->AddPage();
+            $curNumPage++;
+            if($curNumPage >= $lastPage) $curPage->SetCorpoStyle("border: 1px solid black; display: flex; flex-direction: column; padding:0;");
+            $curPage_row="<div style='display:flex; align-items: center; justify-content: space-between; background-color: rgb(190, 190, 190); border-bottom: 1px solid black; font-weight: bold; text-align: center; padding: .3mm; min-height: 10mm'>";
+            $curPage_row.="<div style='".$border." width:".$columns_width["titolare_1col"].";'>Titolare</div>";
+            $curPage_row.="<div style='border-right: 1px solid black;".$border." width:".$columns_width["curriculum_1col"]."'>Curriculum</div>";
+            $curPage_row.="<div style='".$border." width:".$columns_width["titolare_2col"].";'>Titolare</div>";
+            $curPage_row.="<div style='".$border." width:".$columns_width["curriculum_2col"]."'>Curriculum</div>";
+            $curPage_row.="</div>";
+  
+            $curRow++;
+          }
+          //----------------------
+          if(!($count%2))
+          {
+            if(!($curRow%2)) $bgColor="background-color: #f5f5f5;";
+            else $bgColor="";        
+            if($curRow != $rowForPage-1) $curPage_row.="<div style='display:flex;  align-items: center; justify-content: space-between; border-bottom: 1px solid black; text-align: center; padding: .3mm; min-height: 9mm;".$bgColor."'>";
+            else $curPage_row.="<div style='display:flex;  align-items: center; justify-content: space-between; text-align: center; padding: .3mm; min-height: 9mm;".$bgColor."'>";  
+          }
+        }
+        else
+        {
+          $return.='<po uid="'.$rs->Get('id').'">';
+        }
+        
+        //Nome e cognome
+        {
+          $return.="<nome>".$nome."</nome>";
+          $return.="<cognome>".$cognome."</cognome>";
+          if($verbose !="") $return.="<email>".$email."</email>";
+          if($count%2) $border="border-left: 1px solid black;";
+          if($doc) $curPage_row.="<div style='".$border." width:".$columns_width["titolare_".$col."col"]."; text-align: left; padding-left: 10mm'>".ucwords(mb_strtolower($cognome,"UTF-8"))." ".ucwords(mb_strtolower($nome,"UTF-8"))."</div>";
+          $border="";
+        }
+        
+        $urlCurriculum="https:///sitod.regione.sardegna.it/web/amministrazione_trasparente/pubblicazioni/art14/curriculum/?po=1&amp;anno=".$anno."&amp;email=".$email;
+    
+        $return.="<curriculum stato='1'>".$urlCurriculum."</curriculum>";
+        if($doc)
+        {
+          $curPage_row.="<div style='".$border." width:".$columns_width["curriculum_".$col."col"]."'><a href='".$urlCurriculum."' alt='Consulta il curriculum'>consulta</a></div>";
+        }
+  
+        $return.="</po>";
+        $count++;
+  
+        if($doc)
+        {
+          //$curPage_row.=$count%2;
+          if(($count%2) == 0)
+          {
+            $curPage_row.="</div>";
+            $curRow++;  
+          }
+        }  
+      }
+    }while($rs->MoveNext());
+
+    if($doc && $count%2)
+    {
+        $curPage_row.="</div>";
+        //$curRow++;  
+    }
+  }
+
+  $return.="<count>".$count."</count>";
+  $return.="</report_pubblicazioni_po>";
+  if($doc)
+  {
+    if($curPage != null) $curPage->SetContent($curPage_row);
+    $doc->Render();
+    exit;
+  } 
+  
+  return $return;
+}
 
 //Pubblicazioni art. 14 comma 1d e 1e d.lgs. 33/3013
 function Art14_1d_1e_Query($param)
