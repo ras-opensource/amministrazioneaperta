@@ -867,6 +867,13 @@ class AA_Organismi extends AA_Object
         }
         
         $this->IsChanged();
+
+        //Aggiorna il db
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Aggiunto provvedimento (".$provvedimento->GetTipologia().")",AA_Const::AA_OPS_UPDATE,$user);
+        }
+
         return $this->UpdateDb();
     }
     
@@ -943,6 +950,13 @@ class AA_Organismi extends AA_Object
         }
         
         $this->IsChanged();
+
+        //Aggiorna il db
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Aggiornato provvedimento (".$provvedimento->GetTipologia().")",AA_Const::AA_OPS_UPDATE,$user);
+        }
+
         return $this->UpdateDb($user);
     }
     
@@ -1058,6 +1072,12 @@ class AA_Organismi extends AA_Object
         }
         
         $this->IsChanged();
+        
+        //log
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Rimosso provvedimento (".$provvedimento->GetTipologia().")",AA_Const::AA_OPS_UPDATE,$user);
+        }
         return $this->UpdateDb($user);
     }
     
@@ -1175,7 +1195,13 @@ class AA_Organismi extends AA_Object
         else
         {
             $new_organismo->SetStruct($user->GetStruct());
-            if(!$new_organismo->UpdateDb($user))
+
+            //Aggiorna il log
+            if($new_organismo->bLogEnabled)
+            {
+                $new_organismo->AddLog("Inserimento",AA_Const::AA_OPS_ADDNEW,$user);
+            }
+            if(!$new_organismo->UpdateDb($user,null,true))
             {
                 AA_Log::Log(__METHOD__." - Errore durante il salvataggio del nuovo organismo sul DB (tentativo n. 2).", 100,false,true);
                 return null;    
@@ -2062,7 +2088,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $this->sRisultatibilancio=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
     }
 
-    public function UpdateDb($user=null,$data=null)
+    public function UpdateDb($user=null,$data=null,$bLog=false)
     {
         //verifica utente
         if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
@@ -5457,7 +5483,7 @@ Class AA_OrganismiNomine extends AA_Object
     }
 
     //Aggiorna il database
-    public function UpdateDb($user=null,$data=null)
+    public function UpdateDb($user=null,$data=null, $bLog=false)
     {
         if(!($this->VerifyData()))
         {

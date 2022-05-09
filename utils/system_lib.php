@@ -2857,7 +2857,7 @@ class AA_Object
     }
 
     //Aggiorna il db in base all'utente corrente ed eventualmente ai dati passati
-    public function UpdateDb($user=null,$data=null)
+    public function UpdateDb($user=null,$data=null, $bLog=false)
     {
         //verifica utente
         if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
@@ -2912,10 +2912,11 @@ class AA_Object
         $this->SetChanged();
 
         //Aggiorna il db
-        if($this->bLogEnabled)
+        if($this->bLogEnabled && !$bLog)
         {
             $this->AddLog("Modifica",AA_Const::AA_OPS_UPDATE,$user);
         }
+
         if($this->DbSync($user))
         {
             if($this->oParent instanceof AA_Object && $this->IsParentUpdateEnabled()) return $this->oParent->UpdateDb($user);
@@ -2968,6 +2969,12 @@ class AA_Object
             $this->nStatus |= AA_Const::AA_STATUS_CESTINATA;
             $this->SetChanged();
 
+            //Aggiorna il db
+            if($this->bLogEnabled)
+            {
+                $this->AddLog("Cestina",AA_Const::AA_OPS_TRASH,$user);
+            }
+
             if($this->DbSync($user))
             {
                 //Aggiorna il genitore
@@ -3002,6 +3009,12 @@ class AA_Object
             $this->nStatus = AA_Const::AA_STATUS_BOZZA;
             $this->SetChanged();
         }
+
+         //Aggiorna il db
+         if($this->bLogEnabled)
+         {
+             $this->AddLog("Ripristina",AA_Const::AA_OPS_RESUME,$user);
+         }
 
         //Aggiornamento db
         if($this->DbSync())
@@ -3040,6 +3053,12 @@ class AA_Object
         if(!$this->VerifyDbSync($user) || !$this->IsValid())
         {
             return false;
+        }
+
+        //Aggiorna il db
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Riassegna",AA_Const::AA_OPS_REASSIGN,$user);
         }
 
         //Aggiornamento db
@@ -3082,6 +3101,12 @@ class AA_Object
 
         $this->nStatus=AA_Const::AA_STATUS_PUBBLICATA;
         $this->SetChanged();
+        
+        //Aggiorna il log
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Pubblica",AA_Const::AA_OPS_PUBLISH,$user);
+        }
 
         //Aggiorna il db
         if($this->DbSync())
