@@ -3251,6 +3251,9 @@ class AA_Object
             if($rs->Get("aggiornamento") !="" && $this->IsAggiornamentoDbSyncEnabled()) $this->tAggiornamento=$rs->Get("aggiornamento");
             else $this->tAggiornamento=date("Y-m-d");
 
+            if($rs->Get("log") != "" && $this->bLogEnabled) $this->sLog=$rs->Get("log");
+            else $this->sLog="";
+
             //campi collegati
             foreach($this->oDbBind->GetBindings() as $var=>$db_field)
             {
