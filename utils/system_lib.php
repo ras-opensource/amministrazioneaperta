@@ -2251,9 +2251,39 @@ class AA_Object
         return $this->bEnableAggiornamentoDbSync;
     }
 
-    //Logs
-    protected $sLogs="";
+    //------------------- Log -----------------
+    protected $sLog="";
+    protected $bLogEnabled=false;
+    public function GetLog($bFormated=true)
+    {
+        if(!$bFormated) return $this->sLog;
+        
+        return new AA_Object_Log($this->sLog);
+    }
 
+    //Aggiungi un log
+    protected function AddLog($log="",$actionType="0",$user=null)
+    {
+        //Verifica utente valido
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser() || $user->IsGuest())
+            {
+                $user=AA_User::GetCurrentUser();
+            }
+        }
+        else $user=AA_User::GetCurrentUser();
+        
+        if($this->sLog !="") $this->sLog.="\n";
+        $this->sLog.=Date("Y-m-d H:i:s")."|".$user->GetUsername()."|".$actionType."|".$log;
+    }
+
+    //resetta il log
+    protected function ResetLog()
+    {
+        $this->sLog="";
+    }
+    #-----------------------------------------------------------
     //Struttura
     protected $oStruct=null;
     protected function SetStruct($struct=null)
@@ -2725,6 +2755,12 @@ class AA_Object
             }
         }
 
+        //Salvataggio dei logs
+        if($this->bLogEnabled)
+        {
+            $query.=$separator."log='".addslashes($this->sLog)."'";
+        }
+
         if($this->nID > 0) $query.=" WHERE id='".$this->GetId()."' LIMIT 1";
 
         $db=new Database();
@@ -2876,6 +2912,10 @@ class AA_Object
         $this->SetChanged();
 
         //Aggiorna il db
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Modifica",AA_Const::AA_OPS_UPDATE,$user);
+        }
         if($this->DbSync($user))
         {
             if($this->oParent instanceof AA_Object && $this->IsParentUpdateEnabled()) return $this->oParent->UpdateDb($user);

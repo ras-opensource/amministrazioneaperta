@@ -332,6 +332,9 @@ class AA_Organismi extends AA_Object
         //Abilita l'aggiornamento della struttura nel db
         $this->EnableStructDbSync();
 
+        //Abilita la gestione dei logs
+        $this->bLogEnabled=true;
+
         //Aggiunge i bindings ai campi del db
         $this->oDbBind->AddBind("sDescrizione","denominazione");
         $this->oDbBind->AddBind("nTipologia","tipo");
