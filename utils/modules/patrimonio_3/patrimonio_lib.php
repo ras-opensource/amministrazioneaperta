@@ -804,7 +804,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento","required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
 
         //classe
         $label="Classe";
@@ -891,7 +891,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
+        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento","required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
 
         //classe
         $label="Classe";
@@ -1216,7 +1216,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $value="n.d.";
             $template="<span style='font-weight:700'>#title#</span><br><span>#value#</span>";
         }
-        else $template="<span style='font-weight:700'>#title#</span><br><a title='Fai click per visualizzare l&#39;immobile o il terreno su Google maps' href='https://www.google.it/maps/place/".str_replace(" ","+",$value)."' target='_blank'>#value#</a>";
+        else $template="<span style='font-weight:700'>#title#</span><br><a title='Fai click per visualizzare l&#39;immobile o il terreno su Google maps' href='https://www.google.it/maps/place/".str_replace(" ","+",$value)."' target='_blank'><span>#value#</span><span class='mdi mdi-google-maps'></span></a>";
 
         $indirizzo=new AA_JSON_Template_Template($id."_Indirizzo",array(
             "template"=>$template,
