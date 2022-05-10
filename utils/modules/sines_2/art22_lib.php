@@ -1442,12 +1442,9 @@ class AA_Organismi extends AA_Object
         {           
             $where.=" AND id_assessorato='".$params["id_assessorato"]."'";
         }
-        else
-        {
-            if($params["id_direzione"] > 0)
-            {                
-                $where.=" AND id_direzione='".$params["id_direzione"]."'";    
-            }
+        if($params["id_direzione"] > 0)
+        {                
+            $where.=" AND id_direzione='".$params["id_direzione"]."'";
         }
 
         //Filtra in base alla data
