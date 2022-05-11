@@ -39,7 +39,7 @@ Class AA_SinesModule extends AA_GenericModule
         $taskManager->RegisterTask("GetPubblicateFilterDlg");
         $taskManager->RegisterTask("GetBozzeFilterDlg");
         $taskManager->RegisterTask("GetScadenzarioFilterDlg");
-        //$taskManager->RegisterTask("GetObjectData");
+        $taskManager->RegisterTask("GetLogDlg");
         
         //organismi
         $taskManager->RegisterTask("GetOrganismoModifyDlg");
@@ -379,6 +379,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         foreach($organismi[1] as $id=>$object)
         {
+            $userCaps=$object->GetUserCaps($this->oUser);
             $struct=$object->GetStruct();
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
@@ -406,13 +407,25 @@ Class AA_SinesModule extends AA_GenericModule
             if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
         
             #Dettagli
-            if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$object->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+            if(($userCaps&AA_Const::AA_PERMS_PUBLISH) > 0 && $object->GetAggiornamento() != "")
+            {
+                //Aggiornamento
+                $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;";
+                
+                //utente e log
+                $lastLog=$object->GetLog()->GetLastLog();
+                if($lastLog['user']=="") $lastLog['user']=$object->GetUser()->GetUsername();        
+                $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+                
+                //id
+                $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+            } 
             else
             {
                 if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
             }
             
-            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
+            if(($userCaps & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
             
             $templateData[]=array(
                 "id"=>$object->GetId(),
@@ -471,6 +484,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         foreach($organismi[1] as $id=>$object)
         {
+            $userCaps=$object->GetUserCaps($this->oUser);
             $struct=$object->GetStruct();
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
@@ -497,14 +511,26 @@ Class AA_SinesModule extends AA_GenericModule
             if($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
             if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
         
-            #Dettagli
-            if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$object->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
-            else
-            {
-                if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
-            }
+           #Dettagli
+           if(($userCaps&AA_Const::AA_PERMS_PUBLISH) > 0 && $object->GetAggiornamento() != "")
+           {
+               //Aggiornamento
+               $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;";
+               
+               //utente e log
+               $lastLog=$object->GetLog()->GetLastLog();
+               if($lastLog['user']=="") $lastLog['user']=$object->GetUser()->GetUsername();        
+               $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+               
+               //id
+               $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+           } 
+           else
+           {
+               if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+           }
             
-            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
+            if(($userCaps & AA_Const::AA_PERMS_WRITE) == 0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
             
             //Nomine
             $params_nomine=Array('nomina_altri'=>"0");
@@ -614,6 +640,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         foreach($organismi[1] as $id=>$object)
         {
+            $userCaps=$object->GetUserCaps($this->oUser);
             $struct=$object->GetStruct();
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
@@ -639,15 +666,27 @@ Class AA_SinesModule extends AA_GenericModule
             if($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
             if($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
             if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
-        
+    
             #Dettagli
-            if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$object->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+            if(($userCaps&AA_Const::AA_PERMS_PUBLISH) > 0 && $object->GetAggiornamento() != "")
+            {
+                //Aggiornamento
+                $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;";
+                
+                //utente e log
+                $lastLog=$object->GetLog()->GetLastLog();
+                if($lastLog['user']=="") $lastLog['user']=$object->GetUser()->GetUsername();
+                $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+                
+                //id
+                $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+            } 
             else
             {
                 if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
             }
 
-            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
+            if(($userCaps & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
             
             $templateData[]=array(
                 "id"=>$object->GetId(),
@@ -3859,6 +3898,20 @@ Class AA_SinesModule extends AA_GenericModule
         $sTaskLog.= $content;
         $sTaskLog.="</content>";
         
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //GetLogDlg
+    public function Task_GetLogDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $wnd = new AA_SinesLogDlg("AA_SinesLogDlg_".$_REQUEST['id'],"Logs",$this->oUser);
+        
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>".$wnd->toBase64()."</content><error id='error'></error>";
+
         $task->SetLog($sTaskLog);
         
         return true;
@@ -7309,5 +7362,79 @@ Class AA_SinesModule extends AA_GenericModule
             $doc->Render(false);
             return $doc->GetFilePath();
         }
+    }
+}
+
+//Template logView dlg
+Class AA_SinesLogDlg extends AA_GenericWindowTemplate
+{       
+    public function __construct($id = "", $title = "Logs", $user=null)
+    {
+        parent::__construct($id, $title);
+                
+        $this->SetWidth("720");
+        $this->SetHeight("576");
+
+        //Id oggetto non impostato
+        if($_REQUEST['id']=="")
+        {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id."_Log_Box",array("type"=>"clean","template"=>"<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>Identificativo oggetto non impostato.</div>")));
+            return;
+        }
+
+        //Verifica utente
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser() || $user->IsGuest())
+            {
+                $user=AA_User::GetCurrentUser();
+            }
+        }
+        else $user=AA_User::GetCurrentUser();
+        
+        if($user->IsGuest())
+        {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id."_Log_Box",array("type"=>"clean","template"=>"<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>Utente non valido o sessione scaduta.</div>")));
+            return;
+        }
+
+        $object = AA_Organismi::Load($_REQUEST['id'],$user);
+        
+        //Invalid object
+        if(!$object->IsValid())
+        {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id."_Log_Box",array("type"=>"clean","template"=>"<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>Oggetto non valido o permessi insufficienti.</div>")));
+            return;
+        }
+        
+        //permessi insufficienti
+        if(($object->GetUserCaps($user)&AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id."_Log_Box",array("type"=>"clean","template"=>"<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>L'utente corrente non ha i permessi per visualizzare i logs dell'oggetto.</div>")));
+            return;
+        }
+
+        $logs=$object->GetLog();
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "scrollX"=>false,
+            "select"=>false,
+            "columns"=>array(
+                array("id"=>"data","header"=>array("Data",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"left")),
+                array("id"=>"user","header"=>array("<div style='text-align: center'>Utente</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"msg","header"=>array("Operazione",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"))
+            ),
+            "data"=>$logs->GetLog()
+        ));
+
+        //riquadro di visualizzazione preview pdf
+        $this->body->AddRow($table);
+        $this->body->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer","height"=>38)));
+    }
+    
+    protected function Update()
+    {
+        parent::Update();
     }
 }

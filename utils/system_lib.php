@@ -5937,6 +5937,7 @@ Class AA_GenericModule
         foreach($data[1] as $id=>$object)
         {
             $struct=$object->GetStruct();
+            $userCaps=$object->GetUserCaps($this->oUser);
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione(true) > 0) $struttura_gest.=" -> ".$struct->GetDirezione();
             if($struct->GetServizio(true) > 0) $struttura_gest.=" -> ".$struct->GetServizio();
@@ -5948,7 +5949,7 @@ Class AA_GenericModule
             if($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status.=" cestinata";
         
             #Dettagli
-            if($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "")
+            if(($userCaps&AA_Const::AA_PERMS_PUBLISH) > 0 && $object->GetAggiornamento() != "")
             {
                 //Aggiornamento
                 $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;";
@@ -5965,7 +5966,7 @@ Class AA_GenericModule
                 if($object->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$object->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
             }
             
-            if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
+            if(($userCaps & AA_Const::AA_PERMS_WRITE) == 0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
             
             $data=array(
                 "id"=>$object->GetId(),
