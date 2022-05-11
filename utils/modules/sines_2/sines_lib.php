@@ -414,7 +414,11 @@ Class AA_SinesModule extends AA_GenericModule
                 
                 //utente e log
                 $lastLog=$object->GetLog()->GetLastLog();
-                if($lastLog['user']=="") $lastLog['user']=$object->GetUser()->GetUsername();        
+                if($lastLog['user']=="")
+                {
+                    $lastLog['user']=$object->GetUser()->GetUsername();
+                }
+                
                 $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
                 
                 //id
