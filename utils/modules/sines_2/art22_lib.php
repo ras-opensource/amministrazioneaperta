@@ -874,7 +874,7 @@ class AA_Organismi extends AA_Object
             $this->AddLog("Aggiunto provvedimento (".$provvedimento->GetTipologia().")",AA_Const::AA_OPS_UPDATE,$user);
         }
 
-        return $this->UpdateDb();
+        return $this->UpdateDb($user,null,false);
     }
     
     //Aggiorna un provvedimento esistente
@@ -957,7 +957,7 @@ class AA_Organismi extends AA_Object
             $this->AddLog("Aggiornato provvedimento (".$provvedimento->GetTipologia().")",AA_Const::AA_OPS_UPDATE,$user);
         }
 
-        return $this->UpdateDb($user);
+        return $this->UpdateDb($user,null,false);
     }
     
     //Restituisce un provvedimento esistente
@@ -1078,7 +1078,7 @@ class AA_Organismi extends AA_Object
         {
             $this->AddLog("Rimosso provvedimento (".$provvedimento->GetTipologia().")",AA_Const::AA_OPS_UPDATE,$user);
         }
-        return $this->UpdateDb($user);
+        return $this->UpdateDb($user,null,false);
     }
     
     //Rimuovi tutti i provvedimenti
@@ -1184,7 +1184,13 @@ class AA_Organismi extends AA_Object
         if(($new_organismo->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE) > 0)
         {
             $new_organismo->EnableDbSync();
-            if(!$new_organismo->UpdateDb($user))
+            //Aggiorna il log
+            if($new_organismo->bLogEnabled)
+            {
+                $new_organismo->AddLog("Inserimento",AA_Const::AA_OPS_ADDNEW,$user);
+            }
+
+            if(!$new_organismo->UpdateDb($user,null,false))
             {
                 AA_Log::Log(__METHOD__." - Errore durante il salvataggio del nuovo organismo sul DB.", 100,false,true);
                 return null;    
@@ -1201,7 +1207,7 @@ class AA_Organismi extends AA_Object
             {
                 $new_organismo->AddLog("Inserimento",AA_Const::AA_OPS_ADDNEW,$user);
             }
-            if(!$new_organismo->UpdateDb($user,null,true))
+            if(!$new_organismo->UpdateDb($user,null,false))
             {
                 AA_Log::Log(__METHOD__." - Errore durante il salvataggio del nuovo organismo sul DB (tentativo n. 2).", 100,false,true);
                 return null;    

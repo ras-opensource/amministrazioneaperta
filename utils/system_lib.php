@@ -2857,7 +2857,7 @@ class AA_Object
     }
 
     //Aggiorna il db in base all'utente corrente ed eventualmente ai dati passati
-    public function UpdateDb($user=null,$data=null, $bLog=false)
+    public function UpdateDb($user=null,$data=null, $bLog=true)
     {
         //verifica utente
         if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
@@ -2912,7 +2912,7 @@ class AA_Object
         $this->SetChanged();
 
         //Aggiorna il db
-        if($this->bLogEnabled && !$bLog)
+        if($this->bLogEnabled && $bLog)
         {
             $this->AddLog("Modifica",AA_Const::AA_OPS_UPDATE,$user);
         }
