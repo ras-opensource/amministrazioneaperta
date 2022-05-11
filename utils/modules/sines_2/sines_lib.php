@@ -418,7 +418,7 @@ Class AA_SinesModule extends AA_GenericModule
                 {
                     $lastLog['user']=$object->GetUser()->GetUsername();
                 }
-                
+
                 $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: ".$object->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
                 
                 //id
@@ -2286,6 +2286,8 @@ Class AA_SinesModule extends AA_GenericModule
                         "type"=>"clean","template"=>AA_Log::$lastErrorLog));            
         }
         
+        $perms=$organismo->GetUserCaps($this->oUser);
+
         #Stato
         if($organismo->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
         if($organismo->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
@@ -2294,13 +2296,34 @@ Class AA_SinesModule extends AA_GenericModule
         $status="<span class='AA_Label AA_Label_LightBlue' title='Stato scheda organismo'>".$status."</span>";
         
         #Dettagli
-        if($this->oUser->IsSuperUser() && $organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$organismo->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
+        if(($perms&AA_Const::AA_PERMS_PUBLISH) > 0 && $organismo->GetAggiornamento() != "")
+        {
+            //Aggiornamento
+            $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;";
+            
+            //utente e log
+            $lastLog=$organismo->GetLog()->GetLastLog();
+            if($lastLog['user']=="")
+            {
+                $lastLog['user']=$organismo->GetUser()->GetUsername();
+            }
+
+            $details.="<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: ".$organismo->GetId()."}},'".$this->GetId()."');\">".$lastLog['user']."</span>&nbsp;";
+            
+            //id
+            $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
+        } 
         else
         {
             if($organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
         }
-        
-        $perms=$organismo->GetUserCaps($this->oUser);
+
+        //if($this->oUser->IsSuperUser() && $organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Utente'><span class='mdi mdi-account'></span>&nbsp;".$organismo->GetUser()->GetUsername()."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
+        //else
+        //{
+        //    if($organismo->GetAggiornamento() != "") $details="<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;".$organismo->GetAggiornamento(true)."</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$organismo->GetId()."</span>";
+        //}
+       
         $id_org=$organismo->GetID();
         
         if(($perms & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
