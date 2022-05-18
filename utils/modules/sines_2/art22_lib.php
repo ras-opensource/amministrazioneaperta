@@ -5815,7 +5815,7 @@ Class AA_OrganismiBilanci
         $return ="<bilancio>";
         $return.="<tipo id_tipo='".$this->GetTipo(true)."'>".$this->GetTipo()."</tipo>";
         $return.="<risultati>".$this->GetRisultati()."</risultati>";
-        $return.="<note>".htmlentities($this->GetNote())."</note>";
+        $return.="<note>".mb_encode_numericentity($this->GetNote(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</note>";
         $return.="</bilancio>";
         
         return $return;
