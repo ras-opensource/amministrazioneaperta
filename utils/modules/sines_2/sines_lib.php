@@ -2587,7 +2587,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($value=="")$value="n.d.";
         $funzioni=new AA_JSON_Template_Template($id."_Funzioni",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Funzioni attribuite:","value"=>$value)
+            "data"=>array("title"=>"Funzioni attribuite:","value"=>nl2br($value))
         ));
         
         //data inizio
@@ -2650,7 +2650,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($value=="")$value="n.d.";
         $note=new AA_JSON_Template_Template($id."_Note",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Note:","value"=>$value)
+            "data"=>array("title"=>"Note:","value"=>nl2br($value))
         ));
         
         //Prima riga
