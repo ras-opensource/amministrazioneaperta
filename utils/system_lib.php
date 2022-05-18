@@ -8463,12 +8463,12 @@ Class AA_GenericWindowTemplate
         
         $this->module=$module;
         
-        $script= 'if($$(\''.$this->id.'_Wnd\').config.fullscreen){webix.fullscreen.exit();$$(\''.$this->id.'_btn_resize\').define({icon:"mdi mdi-fullscreen", tooltip:"Mostra la finestra a schermo intero"});$$(\''.$this->id.'_btn_resize\').refresh();}else{webix.fullscreen.set($$(\''.$this->id.'_Wnd\'));$$(\''.$this->id.'_btn_resize\').define({icon:"mdi mdi-fullscreen-exit", tooltip:"Torna alla visualizzazione normale"});$$(\''.$this->id.'_btn_resize\').refresh();}';
+        //$script=""; // 'if($$(\''.$this->id.'_Wnd\').config.fullscreen){webix.fullscreen.exit();$$(\''.$this->id.'_btn_resize\').define({icon:"mdi mdi-fullscreen", tooltip:"Mostra la finestra a schermo intero"});$$(\''.$this->id.'_btn_resize\').refresh();}else{webix.fullscreen.set($$(\''.$this->id.'_Wnd\'));$$(\''.$this->id.'_btn_resize\').define({icon:"mdi mdi-fullscreen-exit", tooltip:"Torna alla visualizzazione normale"});$$(\''.$this->id.'_btn_resize\').refresh();}';
         
         $this->body=new AA_JSON_Template_Layout($this->id."_Content_Box", array("type"=>"clean"));
         $this->head=new AA_JSON_Template_Generic($this->id."_head", array("css"=>"AA_Wnd_header_box","view"=>"toolbar","height"=>"38","elements"=>array(
                 array("id"=>$this->id."_Title","css"=>"AA_Wnd_title","template"=>$this->title),
-                array("id"=>$this->id."_btn_resize", "view"=>"icon", "icon"=>"mdi mdi-fullscreen", "css"=>"AA_Wnd_btn_fullscreen","width"=>24,"height"=>24, "tooltip"=>"Mostra la finestra a schermo intero","click"=>$script),
+                array("id"=>$this->id."_btn_resize", "view"=>"icon", "icon"=>"mdi mdi-fullscreen", "css"=>"AA_Wnd_btn_fullscreen","width"=>24,"height"=>24, "tooltip"=>"Mostra la finestra a schermo intero"),
                 array("id"=>$this->id."_btn_close", "view"=>"icon", "icon"=>"mdi mdi-close", "css"=>"AA_Wnd_btn_close","width"=>24,"height"=>24, "tooltip"=>"Chiudi la finestra","click"=>"$$('".$this->id."_Wnd').close();"))));
         
         $this->wnd = new AA_JSON_Template_Generic($this->id."_Wnd",array(

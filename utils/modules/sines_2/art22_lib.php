@@ -7108,8 +7108,8 @@ Class AA_OrganismiPublicReportTemplateView extends AA_GenericObjectTemplateView
 
         //note
         $note=new AA_XML_Div_Element("generale-tab-note",$generale);
-        $note->SetStyle('width:100%; border-top: 1px solid gray; margin-bottom: .8em;');
-        $note->SetText($organismo->GetNote());
+        $note->SetStyle('width:100%; border-top: 1px solid gray; margin-bottom: .8em;text-align: left;');
+        $note->SetText(nl2br($organismo->GetNote()));
         #-------------------
 
         //Aggiunge i dati contabili

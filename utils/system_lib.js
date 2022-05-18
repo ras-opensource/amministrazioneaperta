@@ -960,8 +960,27 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
             let result = await AA_VerboseTask(params.task, taskManager, params.params, params.postParams);
             if (result.status.value == 0) {
-                //console.log(this.name+".dlg",params,result.content.value);
+                //console.log(this.name + ".dlg", params, result.content.value);
                 if (result.content.value) {
+
+                    //Gestione ridimensionamento finestra
+                    let btn_resize = (result.content.value.head.elements[1]);
+
+                    if (btn_resize) {
+                        result.content.value.head.elements[1].click = function() {
+                            if ($$(result.content.value.id).config.fullscreen) {
+                                webix.fullscreen.exit();
+                                $$(wnd.config.id + '_btn_resize').define({ icon: "mdi mdi-fullscreen", tooltip: "Mostra la finestra a schermo intero" });
+                                $$(wnd.config.id + '_btn_resize').refresh();
+                            } else {
+                                webix.fullscreen.set($$(result.content.value.id));
+                                $$(wnd.config.id + '_btn_resize').define({ icon: "mdi mdi-fullscreen-exit", tooltip: "Torna alla visualizzazione normale" });
+                                $$(wnd.config.id + '_btn_resize').refresh();
+                            }
+                        };
+                    }
+                    //-----------------------------------------------
+
                     let wnd = webix.ui(result.content.value);
 
                     wnd.show();
@@ -1747,7 +1766,27 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             if (AA_MainApp.utils.isDefined(params) && AA_MainApp.utils.isDefined(params.url)) {
                 let result = await AA_VerboseTask("GetPdfPreviewDlg", AA_MainApp.taskManager);
                 if (result.status.value == 0) {
-                    webix.ui(result.content.value).show();
+
+                    //pulsante di ridimensionamento
+                    let btn_resize = (result.content.value.head.elements[1]);
+
+                    if (btn_resize) {
+                        result.content.value.head.elements[1].click = function() {
+                            if ($$(result.content.value.id).config.fullscreen) {
+                                webix.fullscreen.exit();
+                                $$(wnd.config.id + '_btn_resize').define({ icon: "mdi mdi-fullscreen", tooltip: "Mostra la finestra a schermo intero" });
+                                $$(wnd.config.id + '_btn_resize').refresh();
+                            } else {
+                                webix.fullscreen.set($$(result.content.value.id));
+                                $$(wnd.config.id + '_btn_resize').define({ icon: "mdi mdi-fullscreen-exit", tooltip: "Torna alla visualizzazione normale" });
+                                $$(wnd.config.id + '_btn_resize').refresh();
+                            }
+                        };
+                    }
+
+                    let wnd = webix.ui(result.content.value);
+
+                    wnd.show();
 
                     var options = {
                         pdfOpenParams: {
