@@ -527,7 +527,6 @@ class PDO_Database
 				{
 					//Ultimo id inserito
 					self::$nLastInsertId=PDO_Database::$oPdo->lastInsertId();
-					$this->nLastInsertId=self::$nLastInsertId;	
 				}
 
 				$this->nStatus=0;
