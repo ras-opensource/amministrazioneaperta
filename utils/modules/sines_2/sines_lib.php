@@ -2908,7 +2908,7 @@ Class AA_SinesModule extends AA_GenericModule
             $value=$curDato->GetNote();
             $val1=new AA_JSON_Template_Template($id."_Note_".$curDato->GetID(),array("height"=>60,
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Note:","value"=>$value)
+                "data"=>array("title"=>"Note:","value"=>nl2br($value))
             ));
 
             $riga=new AA_JSON_Template_Layout($id."_SixRow_".$curDato->GetID(), array("css"=>array("border-top"=>"1px solid #dadee0 !important")));
