@@ -647,19 +647,19 @@ class AA_Organismi extends AA_Object
         $xml='<organismo id="'.$this->GetID().'" aggiornamento="'.$this->GetAggiornamento().'" stato="'.$this->GetStatus().'">';
 
         //parte generale
-        $xml.="<denominazione>".$this->GetDenominazione()."</denominazione>";
+        $xml.="<denominazione>".mb_encode_numericentity($this->GetDenominazione(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</denominazione>";
         $xml.="<tipologia id_tipo='".$this->GetTipologia(true)."'>".$this->GetTipologia()."</tipologia>";
         $xml.="<piva>".$this->GetPivaCf()."</piva>";
-        $xml.="<sede>".$this->GetSedeLegale()."</sede>";
+        $xml.="<sede>".mb_encode_numericentity($this->GetSedeLegale(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</sede>";
         $xml.="<pec>".$this->GetPec()."</pec>";
-        $xml.="<web>".htmlentities($this->GetSitoWeb())."</web>";
+        $xml.="<web>".mb_encode_numericentity($this->GetSitoWeb(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</web>";
         $xml.="<data_inizio>".$this->GetDataInizioImpegno()."</data_inizio>";
         $xml.="<data_fine>".$this->GetDataFineImpegno()."</data_fine>";
         $xml.="<partecipazione>".$this->GetPartecipazione()."</partecipazione>";
         $xml.="<stato_organismo id_tipo='".$this->GetStatoOrganismo(true)."'>".$this->GetStatoOrganismo()."</stato_organismo>";
         $xml.="<partecipazione>".$this->GetPartecipazione()."</partecipazione>";
-        $xml.="<funzioni>".$this->GetFunzioni()."</funzioni>";
-        $xml.="<note>".mb_encode_numericentity($this->GetNote())."</note>";
+        $xml.="<funzioni>".mb_encode_numericentity($this->GetFunzioni(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</funzioni>";
+        $xml.="<note>".mb_encode_numericentity($this->GetNote(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</note>";
         //--------------
 
         //dati contabili
