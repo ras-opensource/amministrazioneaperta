@@ -1755,7 +1755,7 @@ class AA_Organismi extends AA_Object
             $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
             if($nomina->IsValid())
             {
-                $index=trim(strtolower($nomina->GetNome()))."|".trim(strtolower($nomina->GetCognome()))."|".trim(strtolower($nomina->GetCodiceFiscale()));
+                $index=base64_encode(trim(strtolower($nomina->GetNome()))."|".trim(strtolower($nomina->GetCognome()))."|".trim(strtolower($nomina->GetCodiceFiscale())));
                 if($params['raggruppamento'] == "0")  $index=$nomina->GetTipologia(true);
                 
                 $result[$index][$curNomina['id']]=$nomina;
