@@ -659,7 +659,7 @@ class AA_Organismi extends AA_Object
         $xml.="<stato_organismo id_tipo='".$this->GetStatoOrganismo(true)."'>".$this->GetStatoOrganismo()."</stato_organismo>";
         $xml.="<partecipazione>".$this->GetPartecipazione()."</partecipazione>";
         $xml.="<funzioni>".$this->GetFunzioni()."</funzioni>";
-        $xml.="<note>".$this->GetNote()."</note>";
+        $xml.="<note>".mb_encode_numericentity($this->GetNote())."</note>";
         //--------------
 
         //dati contabili
