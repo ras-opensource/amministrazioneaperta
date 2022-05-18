@@ -2586,7 +2586,8 @@ Class AA_SinesModule extends AA_GenericModule
         $value=$object->GetFunzioni();
         if($value=="")$value="n.d.";
         $funzioni=new AA_JSON_Template_Template($id."_Funzioni",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "autoheight"=>true,
             "data"=>array("title"=>"Funzioni attribuite:","value"=>nl2br($value))
         ));
         
@@ -2649,7 +2650,7 @@ Class AA_SinesModule extends AA_GenericModule
         $value=$object->GetNote();
         if($value=="")$value="n.d.";
         $note=new AA_JSON_Template_Template($id."_Note",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Note:","value"=>nl2br($value))
         ));
         
@@ -2686,10 +2687,12 @@ Class AA_SinesModule extends AA_GenericModule
         $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("css"=>array("border-top"=>"1px solid #dadee0 !important")));
         
         //funzioni
-        $riga->AddRow($funzioni);
+        $box=new AA_JSON_Template_Generic($id."_funzioni_box",array("view"=>"scrollview","scroll"=>"y","autoheight"=>true,"body"=>$funzioni));
+        $riga->AddRow($box);
         
         //note
-        $riga->AddRow($note);
+        $box=new AA_JSON_Template_Generic($id."_note_box",array("view"=>"scrollview","scroll"=>"y","autoheight"=>true,"body"=>$note));
+        $riga->AddRow($box);
         
         $last_row->AddCol($riga);
         
