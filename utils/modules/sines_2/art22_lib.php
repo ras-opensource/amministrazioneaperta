@@ -7465,7 +7465,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                     if($curNomina->IsNominaRas())
                     {
                         $color="green";
-                        if($dataFine <= $curDate)
+                        if($dataFine >= $curDate)
                         {
                             $num_nomine_ras++;
                         }
