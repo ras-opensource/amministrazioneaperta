@@ -7537,9 +7537,9 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
             }
 
             $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>1. I nominativi dei rappresentanti dell'Amministrazione Regionale sono indicati in colore verde.</div>";
-            $footer.="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>2. Il trattamento economico complessivo è la somma degli emolumenti percepiti relativi all'arco temporale di validità dell'incarico.</div>";
+            $footer.="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>2. Il trattamento economico complessivo è la somma degli emolumenti percepiti relativi all'arco temporale di validità dell'incarico o alla data di aggiornamento del presente prospetto qualora l'incarico sia ancora in corso.</div>";
             if($num_nomine_ras >0) $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Il numero dei rappresentanti in carica dell'Amministrazione Regionale è ".$num_nomine_ras.".</div>";
-            else $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Non sono presenti rappresentanti dell'Amministrazione Regionale in carica.</div>";
+            else $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Non sono presenti rappresentanti in carica dell'Amministrazione Regionale.</div>";
 
             $this->SetText($footer,false);
         }
