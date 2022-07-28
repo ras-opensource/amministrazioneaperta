@@ -7449,7 +7449,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
         if($num_nomine>0)
         {
             $this->SetColSizes(array("10","10","10","10","10","10", "10","25"));
-            $this->SetHeaderLabels(array("Nome","Cognome","Incarico","Data inizio", "Data fine", "Trattamento econ.<sup>1</sup>", "Documenti", "Note"));    
+            $this->SetHeaderLabels(array("Nome<sup>1</sup>","Cognome<sup>1</sup>","Incarico","Data inizio", "Data fine", "Trattamento econ.<sup>2</sup>", "Documenti", "Note"));    
          
             $curRow=1;
 
@@ -7460,21 +7460,8 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
             {
                 if(($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE)==0)
                 {
-                    //Nome
-                    $this->SetCellText($curRow,0,$curNomina->GetNome(), "center");
-
-                    //Cognome
-                    $this->SetCellText($curRow,1,$curNomina->GetCognome(), "center");
-
-                    //tipo nomina
-                    $this->SetCellText($curRow,2,$curNomina->GetTipologia(),"center");
-
-                    //Data inizio
-                    $this->SetCellText($curRow,3,$curNomina->GetDataInizio(), "center");
-
-                    //Data fine
-                    $dataFine=$curNomina->GetDataFine();
                     $color="";
+                    $dataFine=$curNomina->GetDataFine();
                     if($curNomina->IsNominaRas())
                     {
                         $color="green";
@@ -7483,10 +7470,20 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                             $num_nomine_ras++;
                         }
                     }
-                    if($dataFine < $curDate)
-                    {
-                        $color="red";
-                    }
+
+                    //Nome
+                    $this->SetCellText($curRow,0,$curNomina->GetNome(), "center",$color);
+
+                    //Cognome
+                    $this->SetCellText($curRow,1,$curNomina->GetCognome(), "center",$color);
+
+                    //tipo nomina
+                    $this->SetCellText($curRow,2,$curNomina->GetTipologia(),"center");
+
+                    //Data inizio
+                    $this->SetCellText($curRow,3,$curNomina->GetDataInizio(), "center");
+
+                    $color="";
                     if($dataFine < $curDate)
                     {
                         $color="red";
@@ -7540,7 +7537,8 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                 }
             }
 
-            $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>1. Il trattamento economico complessivo è la somma degli emolumenti percepiti relativi all'arco temporale di validità dell'incarico.</div>";
+            $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>1. I nominativi dei rappresentanti dell'Amministrazione Regionale sono indicati in colore verde.</div>";
+            $footer.="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>2. Il trattamento economico complessivo è la somma degli emolumenti percepiti relativi all'arco temporale di validità dell'incarico.</div>";
             if($num_nomine_ras >0) $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Il numero dei rappresentanti dell'Amministrazione Regionale è ".$num_nomine_ras.".</div>";
             else $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Non sono presenti rappresentanti dell'Amministrazione Regionale.</div>";
 
