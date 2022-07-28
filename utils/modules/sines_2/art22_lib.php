@@ -7436,7 +7436,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
         }
 
         //Chiama il costruttore della classe base
-        parent::__construct($id,$parent,$organismo,array("evidentiate-rows"=>true,"title"=>"Nomine e amministratori","border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+        parent::__construct($id,$parent,$organismo,array("evidentiate-rows"=>true,"title"=>"Componenti degli organi di amministrazione e di controllo","border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
         
         //solo gli ultimi 5 anni
         $dal=(date("Y")-6)."-12-31";
