@@ -7124,7 +7124,7 @@ Class AA_OrganismiPublicReportTemplateView extends AA_GenericObjectTemplateView
         $this->AppendChild($nomine);
 
         //legenda
-        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-bottom: 2em'>L'elenco delle nomine contiene esclusivamente i nominativi dei componenti proposti o designati dalla Regione Autonoma della Sardegna.</span></div>";
+        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-bottom: 2em'>Nel presente prospetto sono espoti esclusivamente i dati dei rappresentanti dell'Amministrazione Regionale negli organi di governo e i dati relativi agli incarichi di Amministratore dell'Ente.</span></div>";
         $footer.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
         $this->SetText($footer,false);
     }
