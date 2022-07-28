@@ -7440,7 +7440,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
         
         //solo gli ultimi 5 anni
         $dal=(date("Y")-6)."-12-31";
-        $nomine=$organismo->GetNomine($dal,"",true);
+        $nomine=$organismo->GetNomine($dal,"",false);
 
         $num_nomine=sizeof($nomine);
         if($num_nomine>0)
@@ -7449,6 +7449,9 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
             $this->SetHeaderLabels(array("Nome","Cognome","Incarico","Data inizio", "Data fine", "Trattamento econ.<sup>1</sup>", "Documenti", "Note"));    
          
             $curRow=1;
+
+            $num_nomine_ras=0;
+
             foreach($nomine as $id=>$curNomina)
             {
                 //Nome
@@ -7511,9 +7514,15 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                 if(strlen($note) > 75) $text_align="left";
                 $this->SetCellText($curRow,7,$note, $text_align);
                 $curRow++;
+
+                if($curNomina->IsNominaRas() && $dataFine <= $curDate)
+                {
+                    $num_nomine_ras++;
+                }
             }
 
             $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>1. Il trattamento economico complessivo è la somma degli emolumenti percepiti relativi all'arco temporale di validità dell'incarico.</div>";
+            $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>Sono ".$num_nomine_ras." i componenti nominati dall'Amministrazione regionale negli organi di governo.</div>";
 
             $this->SetText($footer,false);
         }
