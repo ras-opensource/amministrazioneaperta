@@ -88,6 +88,9 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_PRESIDENTE_ORGANO_INDIRIZZO=33538432;
     const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67076864;
     
+    //nomine da pubblicare
+    const AA_NOMINE_NON_PUBBLICARE=12579424;
+
     //Tipo di documenti
     static private $TIPO_DOCS=null;
     const AA_ORGANISMI_DOC_NONE=0;
@@ -7436,7 +7439,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
         }
 
         //Chiama il costruttore della classe base
-        parent::__construct($id,$parent,$organismo,array("evidentiate-rows"=>true,"title"=>"Componenti degli organi di amministrazione e di controllo","border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+        parent::__construct($id,$parent,$organismo,array("evidentiate-rows"=>true,"title"=>"Rappresentanti dell'Amministrazione Regionale negli organi di governo e incarichi di Amministratore","border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
         
         //solo gli ultimi 5 anni
         $dal=(date("Y")-6)."-12-31";
@@ -7451,79 +7454,95 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
             $curRow=1;
 
             $num_nomine_ras=0;
+            $curDate=date("Y-m-d");
 
             foreach($nomine as $id=>$curNomina)
             {
-                //Nome
-                $this->SetCellText($curRow,0,$curNomina->GetNome(), "center");
-
-                //Cognome
-                $this->SetCellText($curRow,1,$curNomina->GetCognome(), "center");
-
-                //tipo nomina
-                $this->SetCellText($curRow,2,$curNomina->GetTipologia(),"center");
-
-                //Data inizio
-                $this->SetCellText($curRow,3,$curNomina->GetDataInizio(), "center");
-
-                //Data fine
-                $dataFine=$curNomina->GetDataFine();
-                $curDate=date("Y-m-d");
-                if($dataFine < $curDate)
+                if(($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE)==0)
                 {
-                    $color="red";
-                }
-                else $color="";
-                $this->SetCellText($curRow,4,$curNomina->GetDataFine(), "center", $color);
+                    //Nome
+                    $this->SetCellText($curRow,0,$curNomina->GetNome(), "center");
 
-                //compenso spettante
-                $curVal="€ ".preg_replace("/[\)|\(|€|\ |A-Za-z_]/", "", $curNomina->GetCompensoSpettante());
-                if($curVal=="€ ") $curVal="n.d.";
-                $this->SetCellText($curRow,5,$curVal, "center");
+                    //Cognome
+                    $this->SetCellText($curRow,1,$curNomina->GetCognome(), "center");
 
-                //compenso erogato
-                //$curVal="€ ".preg_replace("/[\)|\(|€|\ |A-Za-z_]/", "", $curNomina->GetCompensoErogato());
-                //if($curVal=="€ ") $curVal="n.d.";
-                //$this->SetCellText($curRow,6,$curVal, "center");
-                
-                //Documenti------------------
-                $box=$this->GetCell($curRow,6);
-                $box->SetStyle("text-align: center", true);
+                    //tipo nomina
+                    $this->SetCellText($curRow,2,$curNomina->GetTipologia(),"center");
 
-                if(sizeof($curNomina->GetDocs()) > 0)
-                {
-                    //vedi i documenti
-                    $vedi=new AA_XML_A_Element("",$box); $vedi->SetClass("AA_Button_Nomina_View_Docs ui-icon ui-icon-disk"); $vedi->SetAttribs(array("href"=>"https:///sitod.regione.sardegna.it/".AA_Organismi_const::AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH."/docs.php?all=1&nomina=".$curNomina->GetId(), "id-object"=>$organismo->GetId(),"id-nomina"=>$curNomina->GetId(),"title"=>"download"));
-                    $vedi->SetStyle("display: inline-block; margin-right: 1em; cursor: pointer");
-                    $vedi->SetText("download");
-                    //---------------------------
-                }
-                else
-                {
-                    $this->SetCellText($curRow,6,"n.d.", "center");
-                }
-                #--------------------------------
+                    //Data inizio
+                    $this->SetCellText($curRow,3,$curNomina->GetDataInizio(), "center");
 
-                //Note
-                $note=$curNomina->GetNote();
-                $ratio=5*strlen($note)/$num_nomine;
-                if(strlen($note) > $ratio) $note=substr($note,0,$ratio)."...";
-                $note_box=$this->GetCell($curRow,7);
-                $note_box->SetStyle("font-size: smaller;", true);
-                $text_align="center";
-                if(strlen($note) > 75) $text_align="left";
-                $this->SetCellText($curRow,7,$note, $text_align);
-                $curRow++;
+                    //Data fine
+                    $dataFine=$curNomina->GetDataFine();
+                    $color="";
+                    if($curNomina->IsNominaRas())
+                    {
+                        $color="green";
+                        if($dataFine <= $curDate)
+                        {
+                            $num_nomine_ras++;
+                        }
+                    }
+                    if($dataFine < $curDate)
+                    {
+                        $color="red";
+                    }
+                    if($dataFine < $curDate)
+                    {
+                        $color="red";
+                    }
+                    
+                    $this->SetCellText($curRow,4,$curNomina->GetDataFine(), "center", $color);
 
-                if($curNomina->IsNominaRas() && $dataFine >= $curDate)
-                {
-                    $num_nomine_ras++;
+                    //compenso spettante
+                    $curVal="€ ".preg_replace("/[\)|\(|€|\ |A-Za-z_]/", "", $curNomina->GetCompensoSpettante());
+                    if($curVal=="€ ") $curVal="n.d.";
+                    $this->SetCellText($curRow,5,$curVal, "center");
+
+                    //compenso erogato
+                    //$curVal="€ ".preg_replace("/[\)|\(|€|\ |A-Za-z_]/", "", $curNomina->GetCompensoErogato());
+                    //if($curVal=="€ ") $curVal="n.d.";
+                    //$this->SetCellText($curRow,6,$curVal, "center");
+                    
+                    //Documenti------------------
+                    $box=$this->GetCell($curRow,6);
+                    $box->SetStyle("text-align: center", true);
+
+                    if(sizeof($curNomina->GetDocs()) > 0)
+                    {
+                        //vedi i documenti
+                        $vedi=new AA_XML_A_Element("",$box); $vedi->SetClass("AA_Button_Nomina_View_Docs ui-icon ui-icon-disk"); $vedi->SetAttribs(array("href"=>"https:///sitod.regione.sardegna.it/".AA_Organismi_const::AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH."/docs.php?all=1&nomina=".$curNomina->GetId(), "id-object"=>$organismo->GetId(),"id-nomina"=>$curNomina->GetId(),"title"=>"download"));
+                        $vedi->SetStyle("display: inline-block; margin-right: 1em; cursor: pointer");
+                        $vedi->SetText("download");
+                        //---------------------------
+                    }
+                    else
+                    {
+                        $this->SetCellText($curRow,6,"n.d.", "center");
+                    }
+                    #--------------------------------
+
+                    //Note
+                    $note=$curNomina->GetNote();
+                    $ratio=5*strlen($note)/$num_nomine;
+                    if(strlen($note) > $ratio) $note=substr($note,0,$ratio)."...";
+                    $note_box=$this->GetCell($curRow,7);
+                    $note_box->SetStyle("font-size: smaller;", true);
+                    $text_align="center";
+                    if(strlen($note) > 75) $text_align="left";
+                    $this->SetCellText($curRow,7,$note, $text_align);
+                    $curRow++;
+
+                    if($curNomina->IsNominaRas() && $dataFine >= $curDate)
+                    {
+                        $num_nomine_ras++;
+                    }
                 }
             }
 
             $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>1. Il trattamento economico complessivo è la somma degli emolumenti percepiti relativi all'arco temporale di validità dell'incarico.</div>";
-            if($num_nomine_ras >0) $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Il numero dei componenti nominati e/o designati dall'Amministrazione Regionale è ".$num_nomine_ras.".</div>";
-            else $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Non sono presenti componenti nominati e/o designati dall'Amministrazione Regionale.</div>";
+            if($num_nomine_ras >0) $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Il numero dei rappresentanti dell'Amministrazione Regionale è ".$num_nomine_ras.".</div>";
+            else $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Non sono presenti rappresentanti dell'Amministrazione Regionale.</div>";
 
             $this->SetText($footer,false);
         }
