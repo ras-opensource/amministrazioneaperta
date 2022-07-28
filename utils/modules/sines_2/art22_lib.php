@@ -7458,7 +7458,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
 
             foreach($nomine as $id=>$curNomina)
             {
-                if(($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE)==0)
+                if(($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE) == 0)
                 {
                     $color="";
                     $dataFine=$curNomina->GetDataFine();
@@ -7529,6 +7529,10 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                     if(strlen($note) > 75) $text_align="left";
                     $this->SetCellText($curRow,7,$note, $text_align);
                     $curRow++;
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__."Da non pubblicare: ".$curNomina->GetNome()." ".$curNomina->GetCognome()." ".$curNomina->Tipologia(),100);
                 }
             }
 
