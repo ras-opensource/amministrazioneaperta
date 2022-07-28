@@ -7522,8 +7522,8 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
             }
 
             $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>1. Il trattamento economico complessivo è la somma degli emolumenti percepiti relativi all'arco temporale di validità dell'incarico.</div>";
-            if($num_nomine_ras >0) $footer.="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>I componenti nominati dall'Amministrazione regionale sono ".$num_nomine_ras.".</div>";
-            else $footer.="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>Non sono presenti componenti nominati dall'Amministrazione regionale.</div>";
+            if($num_nomine_ras >0) $footer.="<div style='text-align: left; width: 100%; margin-top: .3em;'>I componenti nominati dall'Amministrazione regionale sono ".$num_nomine_ras.".</div>";
+            else $footer.="<div style='text-align: left; width: 100%; margin-top: .3em;'>Non sono presenti componenti nominati dall'Amministrazione regionale.</div>";
 
             $this->SetText($footer,false);
         }
