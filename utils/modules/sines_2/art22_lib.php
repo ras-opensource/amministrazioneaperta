@@ -7529,11 +7529,6 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                     if(strlen($note) > 75) $text_align="left";
                     $this->SetCellText($curRow,7,$note, $text_align);
                     $curRow++;
-
-                    if($curNomina->IsNominaRas() && $dataFine >= $curDate)
-                    {
-                        $num_nomine_ras++;
-                    }
                 }
             }
 
