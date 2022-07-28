@@ -83,13 +83,13 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_INDIRIZZO=1048576;
     const AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_INDIRIZZO=2097152;
     const AA_ORGANISMI_NOMINA_COMPONENTE_OIV=4194304;
-    const AA_ORGANISMI_NOMINA_PRESIDENTE_OIV=8384608;
-    const AA_ORGANISMI_NOMINA_DIRETTORE_GENERALE=16769216;
-    const AA_ORGANISMI_NOMINA_PRESIDENTE_ORGANO_INDIRIZZO=33538432;
-    const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67076864;
+    const AA_ORGANISMI_NOMINA_PRESIDENTE_OIV=8388608;
+    const AA_ORGANISMI_NOMINA_DIRETTORE_GENERALE=16777216; //16769216;
+    const AA_ORGANISMI_NOMINA_PRESIDENTE_ORGANO_INDIRIZZO=33554432;
+    const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67108864; //67076864;
     
     //nomine da pubblicare
-    const AA_NOMINE_NON_PUBBLICARE=12579424;
+    const AA_NOMINE_NON_PUBBLICARE=12604000;
 
     //Tipo di documenti
     static private $TIPO_DOCS=null;
@@ -7532,7 +7532,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                 }
                 else
                 {
-                    AA_Log::Log(__METHOD__."Da non pubblicare: ".$curNomina->GetNome()." ".$curNomina->GetCognome()." ".$curNomina->Tipologia(),100);
+                    AA_Log::Log(__METHOD__."Da non pubblicare: ".$curNomina->GetNome()." ".$curNomina->GetCognome()." ".$curNomina->GetTipologia(),100);
                 }
             }
 
