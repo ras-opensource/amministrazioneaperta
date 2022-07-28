@@ -7532,7 +7532,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                 }
                 else
                 {
-                    AA_Log::Log(__METHOD__."Da non pubblicare: ".$curNomina->GetNome()." ".$curNomina->GetCognome()." ".$curNomina->GetTipologia(),100);
+                    //AA_Log::Log(__METHOD__."Da non pubblicare: ".$curNomina->GetNome()." ".$curNomina->GetCognome()." ".$curNomina->GetTipologia(),100);
                 }
             }
 
