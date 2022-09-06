@@ -1609,7 +1609,7 @@ class AA_User
             return false;
         }
 
-        $flags="";
+        $flags="U0|S0";
         $separatore="";
         
         //Solo admin imposta le flags
@@ -1631,7 +1631,8 @@ class AA_User
             if(isset($params['art30'])) {$flags.=$separatore."art30";$separatore="|";}
             if(isset($params['gest_processi'])) {$flags.=$separatore."processi";$separatore="|";}
             if(isset($params['gest_incarichi_titolari'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;$separatore="|";}
-            if(isset($params['gest_incarichi'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI;$separatore="|";}             
+            if(isset($params['gest_incarichi'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI;$separatore="|";}
+            if(isset($params['gest_patrimonio'])) {$flags.=$separatore."patrimonio";$separatore="|";}
         }
 
         //la modifica delle schede pubblicate può essere abilitata anche dagli altri utenti amministratori
@@ -1740,10 +1741,12 @@ class AA_User
             if(isset($params['art23'])) {$flags.=$separatore."art23";$separatore="|";}
             if(isset($params['art22'])) {$flags.=$separatore."art22";$separatore="|";}
             if(isset($params['art22_admin'])) {$flags.=$separatore."art22_admin";$separatore="|";}
-            if(isset($params['art30'])) {$flags.=$separatore."art30";$separatore="|";}
+            if(isset($params['art30'])) {$flags.=$separatore."art30";$separatore="|";} //old
+
             if(isset($params['gest_processi'])) {$flags.=$separatore."processi";$separatore="|";}
             if(isset($params['gest_incarichi_titolari'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;$separatore="|";}
             if(isset($params['gest_incarichi'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI;$separatore="|";}
+            if(isset($params['gest_patrimonio'])) {$flags.=$separatore."patrimonio";$separatore="|";}
             
             //AA_Log::Log(get_class()."->UpdateUser($idUser, $params)", 100, false,true);
         }
