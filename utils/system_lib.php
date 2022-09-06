@@ -1764,7 +1764,7 @@ class AA_User
             $sql.=",id_servizio='".$params['servizio']."'";
             $sql.=",id_settore='".$params['settore']."'";
             if($params['livello'] !="") $sql.=",livello='".$params['livello']."'";
-            $sql.=",flags='".$flags."'";
+            if($this->IsSuperUser()) $sql.=",flags='".$flags."'";
             if(isset($params['disable'])) $sql.=",disable='1'";
             else $sql.=",disable='0'";
         }
