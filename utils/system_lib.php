@@ -1632,7 +1632,7 @@ class AA_User
             if(isset($params['gest_processi'])) {$flags.=$separatore."processi";$separatore="|";}
             if(isset($params['gest_incarichi_titolari'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;$separatore="|";}
             if(isset($params['gest_incarichi'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI;$separatore="|";}
-            if(isset($params['gest_patrimonio'])) {$flags.=$separatore."patrimonio";$separatore="|";}
+            if(isset($params['patrimonio'])) {$flags.=$separatore."patrimonio";$separatore="|";}
         }
 
         //la modifica delle schede pubblicate può essere abilitata anche dagli altri utenti amministratori
