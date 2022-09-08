@@ -12630,7 +12630,7 @@ Class AA_Platform
         foreach($this->aModules as $id=>$curModule)
         {    
             $admins = explode(",",$curModule['admins']);
-            if($curModule['enable']==1 || in_array($this->oUser->GetId(), $admins))
+            if($curModule['enable']==1 || in_array($this->oUser->GetId(),$admins))
             {
                 $modules[$id]=$curModule;
             }
