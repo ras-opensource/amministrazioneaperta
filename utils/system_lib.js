@@ -2550,6 +2550,8 @@ var AA_MainApp = {
             content: [{ id: "navbar_spacer", view: "spacer" }]
         },
         MainUI: {
+            //titolo dell'App
+            appTitle: "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>",
             setup: AA_SetupMainUi,
             refresh: AA_RefreshMainUi,
             moduleContentBox: "AA_ModuleContentBox",
@@ -3568,7 +3570,7 @@ function AA_SetupMainUi() {
                 cols: [
                     { view: "label", width: 200, align: "left", template: "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>" },
                     {},
-                    { view: "label", label: "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>", align: "center", minWidth: 500 },
+                    { view: "label", label: AA_MainApp.ui.MainUI.appTitle, align: "center", minWidth: 500 },
                     {},
                     { view: "spacer", width: "36" },
                     { id: "AA_icon_user", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-account" },
