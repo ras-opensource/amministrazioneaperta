@@ -3385,11 +3385,13 @@ async function AA_RefreshMainUi(params) {
             var sidebar = JSON.parse($(getAppStatus.content.value)[1].innerText);
 
             if (typeof sidebar != "undefined") {
+                console.log("System::AA_RefreshMainUi() sidebar: ",$(getAppStatus.content.value)[1]);
+
                 $$("AA_MainSidebar").parse(sidebar);
 
                 AA_MainApp.ui.sidebar.content = sidebar;
 
-                if(AA_MainApp.ui.sidebar.itemSelected == "" && $(getAppStatus.content.value)[1].attr("itemSelected") != "") AA_MainApp.ui.sidebar.itemSelected=$(getAppStatus.content.value)[1].attr("itemSelected");
+                if(AA_MainApp.ui.sidebar.itemSelected == "" && $(getAppStatus.content.value)[1].attributes("itemSelected") != "") AA_MainApp.ui.sidebar.itemSelected=$(getAppStatus.content.value)[1].attr("itemSelected");
 
                 if (AA_MainApp.ui.sidebar.itemSelected != "") {
                     //Seleziona l'item corrente
