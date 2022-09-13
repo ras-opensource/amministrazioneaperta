@@ -3370,7 +3370,7 @@ async function AA_RefreshMainUi(params) {
                 for (curMod in modules) {
 
                     let module = AA_MainApp.getModule(modules[curMod].id);
-                    console.log("System::AA_RefreshMainUi() - modulo", module, modules[curMod]);
+                    //console.log("System::AA_RefreshMainUi() - modulo", module, modules[curMod]);
 
                     if (module.id !== "AA_MODULE_DUMMY") {
                         module.taskManager = modules[curMod].remote_folder + "/taskmanager.php";
@@ -3385,13 +3385,19 @@ async function AA_RefreshMainUi(params) {
             var sidebar = JSON.parse($(getAppStatus.content.value)[1].innerText);
 
             if (typeof sidebar != "undefined") {
-                console.log("System::AA_RefreshMainUi() sidebar: ",$(getAppStatus.content.value)[1]);
+                console.log("System::AA_RefreshMainUi() sidebar: ",$(getAppStatus.content.value)[1].attributes["itemSelected"]);
+
+                let itemSelected="";
+                if($(getAppStatus.content.value)[1].attributes["itemSelected"])
+                {
+                    itemSelected=$(getAppStatus.content.value)[1].attributes["itemSelected"].nodeValue;
+                }
 
                 $$("AA_MainSidebar").parse(sidebar);
 
                 AA_MainApp.ui.sidebar.content = sidebar;
 
-                if(AA_MainApp.ui.sidebar.itemSelected == "" && $(getAppStatus.content.value)[1].attributes("itemSelected") != "") AA_MainApp.ui.sidebar.itemSelected=$(getAppStatus.content.value)[1].attr("itemSelected");
+                if(AA_MainApp.ui.sidebar.itemSelected == "" && itemSelected != "") AA_MainApp.ui.sidebar.itemSelected=itemSelected;
 
                 if (AA_MainApp.ui.sidebar.itemSelected != "") {
                     //Seleziona l'item corrente
