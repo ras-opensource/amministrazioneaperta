@@ -11387,7 +11387,7 @@ Class AA_Object_V2
             $db=new AA_Database();
             if(!$db->Query($query))
             {
-                AA_Log::Log(__METHOD__." - Errore nella clonazione dei dati - ".$db->GetErrorMessage(),100);
+                AA_Log::Log(__METHOD__." - Errore nella eliminazione dei dati - ".$db->GetErrorMessage(),100);
                 return false;
             }
 
