@@ -2798,7 +2798,15 @@ function AA_DefaultSystemInitialization(params) {
         AA_MainApp.searchBoxParams.struttura_desc_search = struct_descr_search;
     }
 
+    //nuova interfaccia
     if (AA_MainApp.ui.enableGui) {
+
+        //titolo dell'App
+        AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
+            
+        //logo
+        AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
+
         //inizializza l'interfaccia principale
         AA_MainApp.ui.MainUI.setup();
 
@@ -2807,6 +2815,7 @@ function AA_DefaultSystemInitialization(params) {
         console.log("Amministrazione Aperta - Inizializzazione di sistema conclusa.");
         return;
     }
+    //-------------------------------
 
     //old stuff
     if (AA_MainApp.InitializeFunction) {
