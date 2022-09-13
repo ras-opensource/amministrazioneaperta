@@ -3389,6 +3389,8 @@ async function AA_RefreshMainUi(params) {
 
                 AA_MainApp.ui.sidebar.content = sidebar;
 
+                if(AA_MainApp.ui.sidebar.itemSelected == "" && $(getAppStatus.content.value)[1].attr("itemSelected") != "") AA_MainApp.ui.sidebar.itemSelected=$(getAppStatus.content.value)[1].attr("itemSelected");
+
                 if (AA_MainApp.ui.sidebar.itemSelected != "") {
                     //Seleziona l'item corrente
                     AA_MainApp.ui.sidebar.select(AA_MainApp.ui.sidebar.itemSelected);

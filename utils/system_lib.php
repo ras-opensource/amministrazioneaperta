@@ -4641,17 +4641,19 @@ Class AA_SystemTask_GetAppStatus extends AA_GenericTask
         
         if($platform->IsValid())
         {
-            $this->sTaskLog.="<sidebar id='sidebar'>";
-            
             $sideBarContent=array();
             $mods=$platform->GetModules();
-            
+
             foreach($mods as $curMod)
             {
                 $modules[]=array("id"=>$curMod['id_modulo'],"remote_folder"=>AA_Const::AA_PUBLIC_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'],"icon"=>$curMod['icon'],"name"=>$curMod['tooltip']);
+                
+                //Modulo da selezionare
+                if($_REQUEST['module'] != "" && $_REQUEST['module']==$curMod['id_modulo']) $itemSelected=$curMod['id_sidebar'];
+
                 $sideBarContent[] = array("id"=>$curMod['id_sidebar'],"icon"=>$curMod['icon'],"value"=>$curMod['name'],"tooltip"=>$curMod['tooltip'],"module"=>$curMod['id_modulo']);
             }
-            
+            $this->sTaskLog.="<sidebar id='sidebar' itemSelected='$itemSelected'>";
             $this->sTaskLog.= json_encode($sideBarContent);
             
             $this->sTaskLog.='</sidebar>';
