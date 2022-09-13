@@ -3357,8 +3357,13 @@ async function AA_RefreshMainUi(params) {
     console.log("System::AA_RefreshMainUi()");
 
     try {
+
+        //Parametri url
+        const urlParams = new URLSearchParams(window.location.search);
+        //console.log("System::AA_RefreshMainUi() - parametri: ", urlParams);
+
         //Recupero i dati della piattaforma
-        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager);
+        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager,"module="+urlParams.get("module"));
 
         if (getAppStatus.status.value == "0") {
             if (getAppStatus.error.value != "") AA_MainApp.ui.message(getAppStatus.error.value);

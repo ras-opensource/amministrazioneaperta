@@ -4637,7 +4637,7 @@ Class AA_SystemTask_GetAppStatus extends AA_GenericTask
         //registered mods
         $platform = AA_Platform::GetInstance($this->oUser);
         
-        //AA_Log::Log(__METHOD__." - ".print_r($AA_Platform,true),100);
+        //AA_Log::Log(__METHOD__." - ".print_r($_REQUEST,true),100);
         
         if($platform->IsValid())
         {
@@ -4646,18 +4646,18 @@ Class AA_SystemTask_GetAppStatus extends AA_GenericTask
 
             foreach($mods as $curMod)
             {
+                //Modulo da selezionare
+                if($_REQUEST['module'] == $curMod['id_modulo'])
+                {
+                    //AA_Log::Log(__METHOD__." - Seleziono il modulo: ".$_REQUEST['module'],100);
+                    $itemSelected=$curMod['id_sidebar'];
+                } 
+
                 $modules[]=array("id"=>$curMod['id_modulo'],"remote_folder"=>AA_Const::AA_PUBLIC_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'],"icon"=>$curMod['icon'],"name"=>$curMod['tooltip']);
 
                 $sideBarContent[] = array("id"=>$curMod['id_sidebar'],"icon"=>$curMod['icon'],"value"=>$curMod['name'],"tooltip"=>$curMod['tooltip'],"module"=>$curMod['id_modulo']);
             }
             
-            //Modulo da selezionare
-            if($_REQUEST['module'] != "" && $_REQUEST['module']==$curMod['id_modulo'])
-            {
-                AA_Log::Log(__METHOD__." - Seleziono il modulo: ".$_REQUEST['module'],100);
-                $itemSelected=$curMod['id_sidebar'];
-            } 
-
             $this->sTaskLog.="<sidebar id='sidebar' itemSelected='$itemSelected'>";
             $this->sTaskLog.= json_encode($sideBarContent);
             
