@@ -3376,7 +3376,6 @@ async function AA_RefreshMainUi(params) {
             //console.log("System::AA_RefreshMainUi() - moduli",modules);
             if (typeof modules != "undefined") {
                 for (curMod in modules) {
-
                     let module = AA_MainApp.getModule(modules[curMod].id);
                     //console.log("System::AA_RefreshMainUi() - modulo", module, modules[curMod]);
 
