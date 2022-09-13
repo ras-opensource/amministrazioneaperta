@@ -1216,6 +1216,7 @@ class AA_User
             
             $_SESSION['token']=null;
             unset($_SESSION);
+            session_destroy();
         }
     }
 

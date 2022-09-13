@@ -2517,7 +2517,10 @@ var AA_MainApp = {
         goToPage: 1
     },
 
+    //Autenticazione utente
     userAuth: AA_UserAuth,
+    logIn: AA_UserAuth,
+    logOut: AA_LogOut,
 
     ui: {
         enableGui: false,
@@ -3570,7 +3573,7 @@ function AA_SetupMainUi() {
                     {},
                     { view: "spacer", width: "36" },
                     { id: "AA_icon_user", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-account" },
-                    { id: "AA_icon_logout", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-logout", tooltip: "Esci" },
+                    { id: "AA_icon_logout", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-logout", tooltip: "Esci", click: AA_MainApp.logOut },
                     { view: "spacer", width: "44" }
                 ]
             },
@@ -4067,6 +4070,30 @@ async function AA_UserAuth(params = null) {
         }
     } catch (msg) {
         console.error("AA_UserAuth() - " + msg);
+        AA_MainApp.ui.alert(msg);
+        return Promise.reject(msg);
+    }
+}
+
+//LogOut
+async function AA_LogOut(params = null) {
+    try {
+
+        //Log out
+        let result = await AA_VerboseTask("UserLogOut", AA_MainApp.taskManager);
+
+        if (result.status.value == 0) {
+            
+            //ricarica la pagina
+            window.location.reload();
+
+            return;
+        } else {
+            AA_MainApp.ui.alert(result.error.value);
+            return;
+        }
+    } catch (msg) {
+        console.error("AA_MainApp.logOut", msg);
         AA_MainApp.ui.alert(msg);
         return Promise.reject(msg);
     }
