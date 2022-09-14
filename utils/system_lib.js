@@ -2517,7 +2517,10 @@ var AA_MainApp = {
         goToPage: 1
     },
 
+    //Autenticazione utente
     userAuth: AA_UserAuth,
+    logIn: AA_UserAuth,
+    logOut: AA_LogOut,
 
     ui: {
         enableGui: false,
@@ -2547,6 +2550,12 @@ var AA_MainApp = {
             content: [{ id: "navbar_spacer", view: "spacer" }]
         },
         MainUI: {
+            //titolo dell'App
+            appTitle: "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>",
+            
+            //logo
+            appLogo: "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>",
+
             setup: AA_SetupMainUi,
             refresh: AA_RefreshMainUi,
             moduleContentBox: "AA_ModuleContentBox",
@@ -2789,7 +2798,15 @@ function AA_DefaultSystemInitialization(params) {
         AA_MainApp.searchBoxParams.struttura_desc_search = struct_descr_search;
     }
 
+    //nuova interfaccia
     if (AA_MainApp.ui.enableGui) {
+
+        //titolo dell'App
+        AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
+            
+        //logo
+        AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
+
         //inizializza l'interfaccia principale
         AA_MainApp.ui.MainUI.setup();
 
@@ -2798,6 +2815,7 @@ function AA_DefaultSystemInitialization(params) {
         console.log("Amministrazione Aperta - Inizializzazione di sistema conclusa.");
         return;
     }
+    //-------------------------------
 
     //old stuff
     if (AA_MainApp.InitializeFunction) {
@@ -3357,8 +3375,13 @@ async function AA_RefreshMainUi(params) {
     console.log("System::AA_RefreshMainUi()");
 
     try {
+
+        //Parametri url
+        const urlParams = new URLSearchParams(window.location.search);
+        //console.log("System::AA_RefreshMainUi() - parametri: ", urlParams);
+
         //Recupero i dati della piattaforma
-        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager);
+        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager,"module="+urlParams.get("module"));
 
         if (getAppStatus.status.value == "0") {
             if (getAppStatus.error.value != "") AA_MainApp.ui.message(getAppStatus.error.value);
@@ -3368,9 +3391,8 @@ async function AA_RefreshMainUi(params) {
             //console.log("System::AA_RefreshMainUi() - moduli",modules);
             if (typeof modules != "undefined") {
                 for (curMod in modules) {
-
                     let module = AA_MainApp.getModule(modules[curMod].id);
-                    console.log("System::AA_RefreshMainUi() - modulo", module, modules[curMod]);
+                    //console.log("System::AA_RefreshMainUi() - modulo", module, modules[curMod]);
 
                     if (module.id !== "AA_MODULE_DUMMY") {
                         module.taskManager = modules[curMod].remote_folder + "/taskmanager.php";
@@ -3385,9 +3407,19 @@ async function AA_RefreshMainUi(params) {
             var sidebar = JSON.parse($(getAppStatus.content.value)[1].innerText);
 
             if (typeof sidebar != "undefined") {
+                console.log("System::AA_RefreshMainUi() sidebar: ",$(getAppStatus.content.value)[1].attributes["itemSelected"]);
+
+                let itemSelected="";
+                if($(getAppStatus.content.value)[1].attributes["itemSelected"])
+                {
+                    itemSelected=$(getAppStatus.content.value)[1].attributes["itemSelected"].nodeValue;
+                }
+
                 $$("AA_MainSidebar").parse(sidebar);
 
                 AA_MainApp.ui.sidebar.content = sidebar;
+
+                if(AA_MainApp.ui.sidebar.itemSelected == "" && itemSelected != "") AA_MainApp.ui.sidebar.itemSelected=itemSelected;
 
                 if (AA_MainApp.ui.sidebar.itemSelected != "") {
                     //Seleziona l'item corrente
@@ -3549,13 +3581,13 @@ function AA_SetupMainUi() {
                 css: "AA_header",
                 height: 60,
                 cols: [
-                    { view: "label", width: 200, align: "left", template: "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>" },
+                    { view: "label", width: 200, align: "left", template: AA_MainApp.ui.MainUI.appLogo},
                     {},
-                    { view: "label", label: "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>", align: "center", minWidth: 500 },
+                    { view: "label", label: AA_MainApp.ui.MainUI.appTitle, align: "center", minWidth: 500 },
                     {},
                     { view: "spacer", width: "36" },
                     { id: "AA_icon_user", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-account" },
-                    { id: "AA_icon_logout", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-logout", tooltip: "Esci" },
+                    { id: "AA_icon_logout", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-logout", tooltip: "Esci", click: AA_MainApp.logOut },
                     { view: "spacer", width: "44" }
                 ]
             },
@@ -4052,6 +4084,30 @@ async function AA_UserAuth(params = null) {
         }
     } catch (msg) {
         console.error("AA_UserAuth() - " + msg);
+        AA_MainApp.ui.alert(msg);
+        return Promise.reject(msg);
+    }
+}
+
+//LogOut
+async function AA_LogOut(params = null) {
+    try {
+
+        //Log out
+        let result = await AA_VerboseTask("UserLogOut", AA_MainApp.taskManager);
+
+        if (result.status.value == 0) {
+            
+            //ricarica la pagina
+            window.location.reload();
+
+            return;
+        } else {
+            AA_MainApp.ui.alert(result.error.value);
+            return;
+        }
+    } catch (msg) {
+        console.error("AA_MainApp.logOut", msg);
         AA_MainApp.ui.alert(msg);
         return Promise.reject(msg);
     }

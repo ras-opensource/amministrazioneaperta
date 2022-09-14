@@ -1216,6 +1216,7 @@ class AA_User
             
             $_SESSION['token']=null;
             unset($_SESSION);
+            session_destroy();
         }
     }
 
@@ -1609,7 +1610,7 @@ class AA_User
             return false;
         }
 
-        $flags="";
+        $flags="U0|S0";
         $separatore="";
         
         //Solo admin imposta le flags
@@ -1631,7 +1632,8 @@ class AA_User
             if(isset($params['art30'])) {$flags.=$separatore."art30";$separatore="|";}
             if(isset($params['gest_processi'])) {$flags.=$separatore."processi";$separatore="|";}
             if(isset($params['gest_incarichi_titolari'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;$separatore="|";}
-            if(isset($params['gest_incarichi'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI;$separatore="|";}             
+            if(isset($params['gest_incarichi'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI;$separatore="|";}
+            if(isset($params['patrimonio'])) {$flags.=$separatore."patrimonio";$separatore="|";}
         }
 
         //la modifica delle schede pubblicate può essere abilitata anche dagli altri utenti amministratori
@@ -1740,10 +1742,12 @@ class AA_User
             if(isset($params['art23'])) {$flags.=$separatore."art23";$separatore="|";}
             if(isset($params['art22'])) {$flags.=$separatore."art22";$separatore="|";}
             if(isset($params['art22_admin'])) {$flags.=$separatore."art22_admin";$separatore="|";}
-            if(isset($params['art30'])) {$flags.=$separatore."art30";$separatore="|";}
+            if(isset($params['art30'])) {$flags.=$separatore."art30";$separatore="|";} //old
+
             if(isset($params['gest_processi'])) {$flags.=$separatore."processi";$separatore="|";}
             if(isset($params['gest_incarichi_titolari'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;$separatore="|";}
             if(isset($params['gest_incarichi'])) {$flags.=$separatore.AA_Const::AA_USER_FLAG_INCARICHI;$separatore="|";}
+            if(isset($params['patrimonio'])) {$flags.=$separatore."patrimonio";$separatore="|";}
             
             //AA_Log::Log(get_class()."->UpdateUser($idUser, $params)", 100, false,true);
         }
@@ -1764,7 +1768,7 @@ class AA_User
             $sql.=",id_servizio='".$params['servizio']."'";
             $sql.=",id_settore='".$params['settore']."'";
             if($params['livello'] !="") $sql.=",livello='".$params['livello']."'";
-            $sql.=",flags='".$flags."'";
+            if($this->IsSuperUser()) $sql.=",flags='".$flags."'";
             if(isset($params['disable'])) $sql.=",disable='1'";
             else $sql.=",disable='0'";
         }
@@ -4634,21 +4638,28 @@ Class AA_SystemTask_GetAppStatus extends AA_GenericTask
         //registered mods
         $platform = AA_Platform::GetInstance($this->oUser);
         
-        //AA_Log::Log(__METHOD__." - ".print_r($AA_Platform,true),100);
+        //AA_Log::Log(__METHOD__." - ".print_r($_REQUEST,true),100);
         
         if($platform->IsValid())
         {
-            $this->sTaskLog.="<sidebar id='sidebar'>";
-            
             $sideBarContent=array();
             $mods=$platform->GetModules();
-            
+
             foreach($mods as $curMod)
             {
+                //Modulo da selezionare
+                if($_REQUEST['module'] == $curMod['id_modulo'])
+                {
+                    //AA_Log::Log(__METHOD__." - Seleziono il modulo: ".$_REQUEST['module'],100);
+                    $itemSelected=$curMod['id_sidebar'];
+                } 
+
                 $modules[]=array("id"=>$curMod['id_modulo'],"remote_folder"=>AA_Const::AA_PUBLIC_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'],"icon"=>$curMod['icon'],"name"=>$curMod['tooltip']);
+
                 $sideBarContent[] = array("id"=>$curMod['id_sidebar'],"icon"=>$curMod['icon'],"value"=>$curMod['name'],"tooltip"=>$curMod['tooltip'],"module"=>$curMod['id_modulo']);
             }
             
+            $this->sTaskLog.="<sidebar id='sidebar' itemSelected='$itemSelected'>";
             $this->sTaskLog.= json_encode($sideBarContent);
             
             $this->sTaskLog.='</sidebar>';
@@ -11376,7 +11387,7 @@ Class AA_Object_V2
             $db=new AA_Database();
             if(!$db->Query($query))
             {
-                AA_Log::Log(__METHOD__." - Errore nella clonazione dei dati - ".$db->GetErrorMessage(),100);
+                AA_Log::Log(__METHOD__." - Errore nella eliminazione dei dati - ".$db->GetErrorMessage(),100);
                 return false;
             }
 
@@ -12627,7 +12638,7 @@ Class AA_Platform
         foreach($this->aModules as $id=>$curModule)
         {    
             $admins = explode(",",$curModule['admins']);
-            if($curModule['enable']==1 || in_array($this->oUser->GetId(), $admins))
+            if($curModule['enable']==1 || in_array($this->oUser->GetId(),$admins))
             {
                 $modules[$id]=$curModule;
             }
