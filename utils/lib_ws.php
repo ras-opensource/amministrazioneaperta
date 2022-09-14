@@ -3937,7 +3937,7 @@ function AA_XML_ReportArt22($param="")
         //$template=new AA_OrganismiPublicReportTemplateView("report_organismo_pdf_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
         
         //Prima pagina
-        $curPage_row.=new AA_OrganismiPublicReportTemplateGeneralPageView("report_organismo_pdf_general_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+        $curPage_row.=new AA_OrganismiPublicReportTemplateGeneralPageView("report_organismo_pdf_general_page_".$curOrganismo->GetId(),null,$curOrganismo,$user);
         $curPage_row.="</div>";
         $curPage->SetContent($curPage_row);
 
@@ -3947,7 +3947,7 @@ function AA_XML_ReportArt22($param="")
         $curNumPage++;
         $curPage_row="";
         $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
-        $curPage_row.=new AA_OrganismiPublicReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+        $curPage_row.=new AA_OrganismiPublicReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$user);
         $curPage_row.="</div>";
         $curPage->SetContent($curPage_row);
       }
