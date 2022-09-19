@@ -1351,8 +1351,10 @@ class AA_User
     }
 
     //Restituisce il nome
-    public function GetFlags()
+    public function GetFlags($bArray=false)
     {
+        if($bArray) return explode("|",$this->sFlags);
+
         return $this->sFlags;
     }
 
@@ -5700,6 +5702,33 @@ Class AA_GenericModule
         }
         
         return $return;
+    }
+
+    //Restituisce le flags collegate al modulo
+    protected $flags;
+    public function GetFlags()
+    {
+        if(!is_array($this->flags) && $this->id !="AA_MODULE_GENERIC")
+        {
+            $db=new AA_Database();
+            $query="SELECT flags FROM ".AA_Const::AA_DBTABLE_MODULES;
+            $query.=" WHERE id_modulo like '".addslashes($this->id)."' LIMIT 1";
+
+            if(!$db->query($query))
+            {
+                AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+                return "";
+            }
+
+            if($db->GetAffectedRows()>0)
+            {
+                foreach($db->GetResultSet() as $key=>$curRow)
+                {
+                    return json_decode($curRow,true);
+                }
+            }
+            else $this->flags=array();
+        }
     }
 
     //Item templates
@@ -12638,13 +12667,25 @@ Class AA_Platform
         foreach($this->aModules as $id=>$curModule)
         {    
             $admins = explode(",",$curModule['admins']);
-            if($curModule['enable']==1 || in_array($this->oUser->GetId(),$admins))
+            $flags=json_decode($curModule['flags'],true);
+            $userFlags=$this->oUser->GetFlags(true);
+
+            if(in_array($this->oUser->GetId(),$admins))
             {
-                $modules[$id]=$curModule;
+                //Amministratori del modulo
+                if(sizeof($flags)==0) $modules[$id]=$curModule;
+            }
+            else
+            {
+                //Utilizzatori del modulo
+                if($curModule['enable']==1 && sizeof(array_intersect_key($userFlags,$flags)) > 0)
+                {
+                    $modules[$id]=$curModule;
+                }    
             }
         }
         
-        //AA_Log::Log(__METHOD__." - ".print_r($this,true),100);
+        //AA_Log::Log(__METHOD__." - ".print_r($modules,true),100);
         return $modules;
     }
     
