@@ -828,7 +828,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //Indirizzo
         $label="Indirizzo";
-        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo dell'immobile/terreno (es. viale Trento 69, Cagliari)."));
+        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile/terreno (es. viale Trento 69, Cagliari).", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo dell'immobile/terreno (es. viale Trento 69, Cagliari)."));
         
         $wnd->AddGenericObject($catasto);
 
@@ -876,7 +876,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile/terreno (es. viale Trento 69, Cagliari).", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile/terreno"));
+        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile/terreno"));
 
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
