@@ -36,7 +36,7 @@ class AA_Const extends AA_Config
     const AA_STATUS_CESTINATA = 8;
     const AA_STATUS_ALL = 15;
 
-    //User flags
+    //User flags (deprecated, compat only) - moved to modules
     const AA_USER_FLAG_PROCESSI = "processi";
     const AA_USER_FLAG_INCARICHI_TITOLARI = "incarichi_titolari";
     const AA_USER_FLAG_INCARICHI = "incarichi";
@@ -47,7 +47,7 @@ class AA_Const extends AA_Config
     const AA_TASK_STATUS_OK = 0;
     const AA_TASK_STATUS_FAIL = -1;
 
-    //Oggetti
+    //Oggetti (deprecated, compat only) - moved to modules
     const AA_OBJECT_ART26 = 26;
     const AA_OBJECT_ART37 = 37;
     const AA_OBJECT_ART22 = 22;
@@ -55,7 +55,7 @@ class AA_Const extends AA_Config
     const AA_OBJECT_ART22_NOMINE = 24;
     const AA_OBJECT_RISICO = 25;
     
-    //Moduli
+    //Moduli (deprecated, compat only) - moved to modules
     const AA_MODULE_HOME="AA_MODULE_HOME";
     const AA_MODULE_STRUTTURE="AA_MODULE_STRUTTURE";
     const AA_MODULE_UTENTI="AA_MODULE_UTENTI";
@@ -5708,30 +5708,42 @@ Class AA_GenericModule
     }
 
     //Restituisce le flags collegate al modulo
-    protected $flags;
+    protected $flags=null;
     public function GetFlags()
     {
-        if(!is_array($this->flags) && $this->id !="AA_MODULE_GENERIC")
+        if(!is_array($this->flags))
         {
-            $db=new AA_Database();
-            $query="SELECT flags FROM ".AA_Const::AA_DBTABLE_MODULES;
-            $query.=" WHERE id_modulo like '".addslashes($this->id)."' LIMIT 1";
-
-            if(!$db->query($query))
+            if($this->id !="AA_MODULE_GENERIC")
             {
-                AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
-                return "";
-            }
-
-            if($db->GetAffectedRows()>0)
-            {
-                foreach($db->GetResultSet() as $key=>$curRow)
+                $db=new AA_Database();
+                $query="SELECT flags FROM ".AA_Const::AA_DBTABLE_MODULES;
+                $query.=" WHERE id_modulo like '".addslashes($this->id)."' LIMIT 1";
+    
+                if(!$db->query($query))
                 {
-                    return json_decode($curRow,true);
+                    AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+                    $this->flags=array();
+                    return array();
                 }
+    
+                if($db->GetAffectedRows()>0)
+                {
+                    foreach($db->GetResultSet() as $key=>$curRow)
+                    {
+                        $this->flags=json_decode($curRow,true);
+                        if(!is_array($this->flags))
+                        {
+                            if(json_last_error() > 0) AA_Log::Log(__METHOD__." - module flags:".print_r($this->flags,true)." - error: ".json_last_error(),100);
+                            $this->flags=array();
+                        }
+                    }
+                }
+                else $this->flags=array();
             }
             else $this->flags=array();
         }
+
+        return $this->flags;
     }
 
     //Item templates
