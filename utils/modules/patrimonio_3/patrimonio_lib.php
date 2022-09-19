@@ -105,7 +105,7 @@ Class AA_Patrimonio extends AA_Object_V2
             {
                 foreach($db->GetResultSet() as $key=>$curRow)
                 {
-                    return ucfirst($curRow['comune']);
+                    return ucfirst(strtolower($curRow['comune']));
                 }
             }
 
@@ -1241,7 +1241,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $value=$localit;
         }
-        else $value.=",".$localit;
+        else $value.=", ".$localit;
         $template="<span style='font-weight:700'>#title#</span><br><a title='Fai click per visualizzare l&#39;immobile o il terreno su Google maps' href='https://www.google.it/maps/place/".str_replace(" ","+",$value)."' target='_blank'><span>#value#</span><span class='mdi mdi-google-maps'></span></a>";
         
         $indirizzo=new AA_JSON_Template_Template($id."_Indirizzo",array(
