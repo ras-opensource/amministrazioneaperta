@@ -694,7 +694,8 @@ class AA_User
         //$this->nID ==1909
         if($this->nID==1) return true;
         if($this->HasFlag("SU")) return true;
-        else return false;
+        
+        return false;
     }
 
     //Restituisce la struttura
@@ -1304,6 +1305,8 @@ class AA_User
     public function HasFlag($flag)
     {
         //AA_Log::Log(get_class()."->HasFlag($flag)");
+
+        if($flag == "") return false;
 
         $flags=explode("|", $this->sFlags);
 
@@ -12667,25 +12670,30 @@ Class AA_Platform
         foreach($this->aModules as $id=>$curModule)
         {    
             $admins = explode(",",$curModule['admins']);
-            $flags=json_decode($curModule['flags'],true);
+            $flags=json_decode(utf8_encode($curModule['flags']),true);
+            if(!is_array($flags))
+            {
+                AA_Log::Log(__METHOD__." - module flags:".print_r($flags,true)." - error: ".json_last_error(),100);
+                $flags=array();
+            }
+            
             $userFlags=$this->oUser->GetFlags(true);
 
             if(in_array($this->oUser->GetId(),$admins))
             {
                 //Amministratori del modulo
-                if(sizeof($flags)==0) $modules[$id]=$curModule;
+                $modules[$id]=$curModule;
             }
             else
             {
                 //Utilizzatori del modulo
-                if($curModule['enable']==1 && sizeof(array_intersect_key($userFlags,$flags)) > 0)
+                if($curModule['enable']==1)
                 {
-                    $modules[$id]=$curModule;
+                    if(sizeof($flags) == 0 || in_array($userFlags,$flags)) $modules[$id]=$curModule;
                 }    
             }
         }
         
-        //AA_Log::Log(__METHOD__." - ".print_r($modules,true),100);
         return $modules;
     }
     

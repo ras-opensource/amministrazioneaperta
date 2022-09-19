@@ -1598,7 +1598,7 @@ class AA_Organismi extends AA_Object
             return array(0=>-1,array());
         }
 
-        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         $rs=$db->GetRecordSet();
         
