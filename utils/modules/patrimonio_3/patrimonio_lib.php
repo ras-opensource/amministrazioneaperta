@@ -87,6 +87,31 @@ Class AA_Patrimonio extends AA_Object_V2
 
     //file codici istat
     const AA_DBTABLE_CODICI_ISTAT="aa_patrimonio_codici_istat";
+    static public function GetComuneFromCodice($codice="")
+    {
+        if($codice !="")
+        {
+            $db=new AA_Database();
+            $query="SELECT comune FROM ".AA_Patrimonio::AA_DBTABLE_CODICI_ISTAT;
+            $query.=" WHERE codice like '".addslashes($codice)."' LIMIT 1";
+
+            if(!$db->query($query))
+            {
+                AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+                return "";
+            }
+
+            if($db->GetAffectedRows()>0)
+            {
+                foreach($db->GetResultSet() as $key=>$curRow)
+                {
+                    return $curRow['comune'];
+                }
+            }
+
+            return "";
+        }
+    }
 
     //lista canoni
     protected $aCanoni=null;
@@ -549,7 +574,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplatePatrimonioDettaglio_Generale_Tab"),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Canoni_Tab", "value"=>"Canoni","tooltip"=>"Canoni legati all'immobile/terreno","template"=>"TemplatePatrimonioDettaglio_Canoni_Tab")
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Canoni_Tab", "value"=>"Canoni","tooltip"=>"Canoni legati all'immobile","template"=>"TemplatePatrimonioDettaglio_Canoni_Tab")
         ));
     }
     
@@ -767,7 +792,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Struttura
         $form_data['SezioneCatasto']=0;
         
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo immobile/terreno", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo immobile", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
@@ -785,11 +810,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","bottomLabel"=>"*Indicare il titolo di possesso","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
         
         //Nome
-        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile/terreno.", "placeholder"=>"inserisci qui la denominazione dell'immobile/terreno"));
+        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile.", "placeholder"=>"inserisci qui la denominazione dell'immobile"));
         
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile/terreno"));
+        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile"));
 
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
@@ -800,7 +825,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             array("id"=>0,"value"=>"Catasto urbano"),
             array("id"=>1,"value"=>"Catasto terreni")
         );
-        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "value"=>0,"required"=>true));
+        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile.", "value"=>0,"required"=>true));
 
         //codice comune
         $label="Cod. Comune";
@@ -808,27 +833,27 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //classe
         $label="Classe";
-        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile/terreno"), false); 
+        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile"), false); 
         
         //foglio catasto
         $label="Foglio";
-        $catasto->AddTextField("FoglioCatasto",$label,array("tooltip"=>"*Inserire il numero del foglio in cui è accastato l'immobile/terreno.", "required"=>true,"placeholder"=>"..."));
+        $catasto->AddTextField("FoglioCatasto",$label,array("tooltip"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."));
         
         //particella catasto
         $label="Particella";
-        $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+        $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."),false);
 
         //rendita catasto
         $label="Rendita";
-        $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+        $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeholder"=>"..."),false);
 
         //consistenza catasto
         $label="Consistenza";
-        $catasto->AddTextField("ConsistenzaCatasto",$label,array("tooltip"=>"*Inserire la consistenza dell'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+        $catasto->AddTextField("ConsistenzaCatasto",$label,array("tooltip"=>"*Inserire la consistenza dell'immobile.", "required"=>true,"placeholder"=>"..."),false);
 
         //Indirizzo
         $label="Indirizzo";
-        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile/terreno (es. viale Trento 69, Cagliari).", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo dell'immobile/terreno (es. viale Trento 69, Cagliari)."));
+        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile senza indicare il comune.", "required"=>true,"placeholder"=>"es.: viale Trento 69"));
         
         $wnd->AddGenericObject($catasto);
 
@@ -872,11 +897,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","bottomLabel"=>"*Indicare il titolo di possesso","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
 
         //Nome
-        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile/terreno.", "placeholder"=>"inserisci qui la denominazione dell'immobile/terreno"));
+        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile.", "placeholder"=>"inserisci qui la denominazione dell'immobile"));
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile/terreno"));
+        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile"));
 
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
@@ -887,7 +912,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             array("id"=>0,"value"=>"Catasto urbano"),
             array("id"=>1,"value"=>"Catasto terreni")
         );
-        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile/terreno.", "required"=>true));
+        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile.", "required"=>true));
 
         //codice comune
         $label="Cod. Comune";
@@ -895,27 +920,27 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //classe
         $label="Classe";
-        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile/terreno.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile/terreno"), false); 
+        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile"), false); 
 
         //foglio catasto
         $label="Foglio";
-        $catasto->AddTextField("FoglioCatasto",$label,array("tooltip"=>"*Inserire il numero del foglio in cui è accastato l'immobile/terreno.", "required"=>true,"placeholder"=>"..."));
+        $catasto->AddTextField("FoglioCatasto",$label,array("tooltip"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."));
 
         //particella catasto
         $label="Particella";
-        $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+        $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."),false);
 
         //rendita catasto
         $label="Rendita";
-        $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+        $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeholder"=>"..."),false);
 
         //consistenza catasto
         $label="Consistenza";
-        $catasto->AddTextField("ConsistenzaCatasto",$label,array("tooltip"=>"*Inserire la consistenza dell'immobile/terreno.", "required"=>true,"placeholder"=>"..."),false);
+        $catasto->AddTextField("ConsistenzaCatasto",$label,array("tooltip"=>"*Inserire la consistenza dell'immobile.", "required"=>true,"placeholder"=>"..."),false);
 
         //Indirizzo
         $label="Indirizzo";
-        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile/terreno (es. viale Trento 69, Cagliari).", "required"=>true,"placeholder"=>"Inserisci qui l'indirizzo dell'immobile/terreno (es. viale Trento 69, Cagliari)."));
+        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile senza indicare il comune.", "required"=>true,"placeholder"=>"es.: viale Trento 69"));
 
         $wnd->AddGenericObject($catasto);
 
@@ -1084,7 +1109,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 "canone"=>$canone->GetProp("serial")
         );
         $columns=array(
-            array("id"=>"immobile","header"=>"Immobile/terreno","fillspace"=>true),
+            array("id"=>"immobile","header"=>"immobile","fillspace"=>true),
             array("id"=>"canone","header"=>"id Canone","fillspace"=>true)
         );
 
@@ -1211,13 +1236,14 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //Indirizzo
         $value= $object->GetProp("Indirizzo");
+        $localit=AA_Patrimonio::GetComuneFromCodice($object->GetProp("CodiceComune"));
         if($value=="") 
         {
-            $value="n.d.";
-            $template="<span style='font-weight:700'>#title#</span><br><span>#value#</span>";
+            $value=$localit;
         }
-        else $template="<span style='font-weight:700'>#title#</span><br><a title='Fai click per visualizzare l&#39;immobile o il terreno su Google maps' href='https://www.google.it/maps/place/".str_replace(" ","+",$value)."' target='_blank'><span>#value#</span><span class='mdi mdi-google-maps'></span></a>";
-
+        else $value.=",".$localit;
+        $template="<span style='font-weight:700'>#title#</span><br><a title='Fai click per visualizzare l&#39;immobile o il terreno su Google maps' href='https://www.google.it/maps/place/".str_replace(" ","+",$value)."' target='_blank'><span>#value#</span><span class='mdi mdi-google-maps'></span></a>";
+        
         $indirizzo=new AA_JSON_Template_Template($id."_Indirizzo",array(
             "template"=>$template,
             "data"=>array("title"=>"Indirizzo:","value"=>$value)
@@ -2391,7 +2417,7 @@ Class AA_PatrimonioReportCanoniListTemplateView extends AA_GenericTableTemplateV
         else
         {
             $this->SetColSizes(array("100"));
-            $this->SetCellText(1,0,"Non sono presenti canoni per questo immobile/terreno", "center");
+            $this->SetCellText(1,0,"Non sono presenti canoni per questo immobile", "center");
         }
     }
 }
