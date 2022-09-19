@@ -105,7 +105,7 @@ Class AA_Patrimonio extends AA_Object_V2
             {
                 foreach($db->GetResultSet() as $key=>$curRow)
                 {
-                    return $curRow['comune'];
+                    return ucfirst($curRow['comune']);
                 }
             }
 
