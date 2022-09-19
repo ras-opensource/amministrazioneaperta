@@ -12582,7 +12582,7 @@ Class AA_Platform
     
     //Gestione moduli
     protected $aModules=null;
-    protected function LoadModules()
+    protected function LoadModules($bDisableCache=false)
     {
         if(!$this->bValid)
         {
@@ -12590,7 +12590,7 @@ Class AA_Platform
         }
 
         //Carica i moduli
-        if(!isset($_SESSION['platform_modules_cache']) || isset($_REQUEST['disable_cache']))
+        if(!isset($_SESSION['platform_modules_cache']) || isset($_REQUEST['disable_cache']) || $bDisableCache)
         {
             $db=new AA_Database();
             $query="SELECT * from aa_platform_modules";
@@ -12602,14 +12602,60 @@ Class AA_Platform
  
             if($db->GetAffectedRows()>0)
             {
+                $userFlags=$this->oUser->GetFlags(true);
+
                 foreach($db->GetResultSet() as $curMod)
                 {
-                    $this->aModules[$curMod['id_modulo']]=$curMod;
+                    $admins = explode(",",$curMod['admins']);
+                    $mod_flags=json_decode($curMod['flags'],true);
+                    if(!is_array($mod_flags))
+                    {
+                        if(json_last_error() > 0) AA_Log::Log(__METHOD__." - module flags:".print_r($mod_flags,true)." - error: ".json_last_error(),100);
+                        $flags=array();
+                    }
+                    else 
+                    {
+                        $flags=array_keys($mod_flags);
+                        //AA_Log::Log(__METHOD__." - module flags:".print_r($mod_flags,true),100);
+                    }
+                
+                    if(in_array($this->oUser->GetId(),$admins))
+                    {
+                        //Amministratori del modulo
+                        $this->aModules[$curMod['id_modulo']]=$curMod;
+                    }
+                    else
+                    {
+                        //Utilizzatori del modulo
+                        if($curMod['enable']==1)
+                        {
+                            if(sizeof($flags) == 0) 
+                            {
+                                //modulo pubblico
+                                $this->aModules[$curMod['id_modulo']]=$curMod;
+                            }
+                            else
+                            {
+                                //Modulo a visibilità limitata
+                                if(sizeof($userFlags) > 0)
+                                {
+                                    foreach($userFlags as $curFlag)
+                                    {
+                                        if(in_array($curFlag,$flags)) $this->aModules[$curMod['id_modulo']]=$curMod;
+                                    }    
+                                }
+                                else
+                                {
+                                    AA_Log::Log(__METHOD__." - L'utente corrente (".$this->oUser->GetUsername().") non ha i permessi per accedere al modulo: ".$curMod['id_modulo']." - userFlags: ".print_r($userFlags,true)." - module flags:".print_r($flags,true),100);
+                                }    
+                            }
+                        }    
+                    }
                 }
             }
  
-            //AA_Log::Log(__METHOD__." - salvo sessione: ".$this->aModules,100);
-            $_SESSION['platform_modules_cache']= serialize($this->aModules);
+            //AA_Log::Log(__METHOD__." - salvo sessione: ".print_r($this->aModules,true),100);
+            $_SESSION['platform_modules_cache'] = serialize($this->aModules);
         }
         else 
         {
@@ -12661,40 +12707,13 @@ Class AA_Platform
     {
         if(!$this->bValid) return array();
         
-        $modules=array();
+        //$modules=array();
         
         //AA_Log::Log(__METHOD__." - ".print_r($this,true),100);
         
         if($this->aModules==null) $this->LoadModules();
 
-        foreach($this->aModules as $id=>$curModule)
-        {    
-            $admins = explode(",",$curModule['admins']);
-            $flags=json_decode(utf8_encode($curModule['flags']),true);
-            if(!is_array($flags))
-            {
-                AA_Log::Log(__METHOD__." - module flags:".print_r($flags,true)." - error: ".json_last_error(),100);
-                $flags=array();
-            }
-            
-            $userFlags=$this->oUser->GetFlags(true);
-
-            if(in_array($this->oUser->GetId(),$admins))
-            {
-                //Amministratori del modulo
-                $modules[$id]=$curModule;
-            }
-            else
-            {
-                //Utilizzatori del modulo
-                if($curModule['enable']==1)
-                {
-                    if(sizeof($flags) == 0 || in_array($userFlags,$flags)) $modules[$id]=$curModule;
-                }    
-            }
-        }
-        
-        return $modules;
+        return $this->aModules;
     }
     
     //Restituisce l'utente corrente
