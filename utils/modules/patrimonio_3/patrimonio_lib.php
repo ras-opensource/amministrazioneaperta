@@ -457,6 +457,13 @@ Class AA_Patrimonio extends AA_Object_V2
         }
         //---------------------------------------
 
+        //Se l'utente ha il flag e può modificare la scheda allora può fare tutto
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && $user->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $perms = AA_Const::AA_PERMS_ALL;
+        }
+        //---------------------------------------
+
         return $perms;
     }
 
