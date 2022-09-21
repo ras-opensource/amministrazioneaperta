@@ -245,7 +245,7 @@ Class AA_Database extends PDO_Database
         }
 	}
 }
-#-----------------------------
+#--------------------------------
 
 //STRUCT Class
 class AA_Struct
