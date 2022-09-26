@@ -4134,7 +4134,24 @@ Class AA_SinesModule extends AA_GenericModule
 
                 //AA_Log::Log(__METHOD__." - params: ".print_r((array)$params,true),100);
 
-                $objects=AA_Organismi::Search((array) $params,false,$this->oUser);
+                //Verifica della sezione
+                $params=(array) $params;
+
+                if($params['section']=="Bozze")
+                {
+                    $param["status"]=AA_Const::AA_STATUS_BOZZA;
+                }
+                else
+                {
+                    $param["status"]=AA_Const::AA_STATUS_PUBBLICATA;
+                }
+                
+                if($params['cestinate'] == 1) 
+                {
+                    $params['status'] |=AA_Const::AA_STATUS_CESTINATA;
+                }
+
+                $objects=AA_Organismi::Search($params,false,$this->oUser);
                 
                 if($objects[0]==0)
                 {

@@ -7295,6 +7295,21 @@ Class AA_GenericModule
             {
                 $params=$sessParams->GetValue();
 
+                //Verifica della sezione 
+                if($params['section']==static::AA_ID_SECTION_BOZZE)
+                {
+                    $param["status"]=AA_Const::AA_STATUS_BOZZA;
+                }
+                else
+                {
+                    $param["status"]=AA_Const::AA_STATUS_PUBBLICATA;
+                }
+                
+                if($params['cestinate'] == 1) 
+                {
+                    $params['status'] |=AA_Const::AA_STATUS_CESTINATA;
+                }
+
                 if($objectClass == "AA_Object") $objects=$objectClass::Search($params,false,$this->oUser);
                 else $objects=$objectClass::Search($params, $this->oUser);
 
