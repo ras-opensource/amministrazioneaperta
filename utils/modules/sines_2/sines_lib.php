@@ -4092,9 +4092,10 @@ Class AA_SinesModule extends AA_GenericModule
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $sessVar= AA_SessionVar::Get("SaveAsPdf_ids");
+        $sessParams = AA_SessionVar::Get("SaveAsPdf_params");
         
         //lista organismi da esportare
-        if($sessVar->IsValid())
+        if($sessVar->IsValid() && !isset($_REQUEST['fromParams']))
         {
             $ids = $sessVar->GetValue();
             $ids_final=array();
@@ -4107,7 +4108,6 @@ Class AA_SinesModule extends AA_GenericModule
                     if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_READ)>0)
                     {
                         $ids_final[$curId]=$organismo;
-                        unset($organismo);
                     }
                 }    
             }
@@ -4115,7 +4115,7 @@ Class AA_SinesModule extends AA_GenericModule
             //Esiste almeno un organismo che può essere letto dall'utente corrente
             if(sizeof($ids_final)>0)
             {
-                $this->Template_OrganismiPdfExport($ids);
+                $this->Template_OrganismiPdfExport($ids_final);
             }
             else
             {
@@ -4128,11 +4128,26 @@ Class AA_SinesModule extends AA_GenericModule
         }
         else
         {
-            $task->SetError("Non sono stati selezionati organismi.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Non sono stati selezionati organismi.</error>";
-            $task->SetLog($sTaskLog);
+            if($sessParams->isValid())
+            {
+                $params=$sessParams->GetValue();
 
-            return false;          
+                //AA_Log::Log(__METHOD__." - params: ".print_r((array)$params,true),100);
+
+                $objects=AA_Organismi::Search((array) $params,false,$this->oUser);
+                
+                if($objects[0]==0)
+                {
+                    $task->SetError("Non è stata individuata nessuna corrispondenza in base ai parametri indicati.");
+                    $sTaskLog="<status id='status'>-1</status><error id='error'>Non è stata individuata nessa corrispondenza in base ai parametri indicati.</error>";
+                    $task->SetLog($sTaskLog);
+                    return false;          
+                }
+                else
+                {
+                    $this->Template_OrganismiPdfExport($objects[1]);
+                }
+            }
         } 
     }
     
@@ -7227,15 +7242,17 @@ Class AA_SinesModule extends AA_GenericModule
     }
     
     //Template pdf export single
-    public function Template_OrganismiPdfExport($ids=array(), $bToBrowser=true,$tipo_organismo="")
+    public function Template_OrganismiPdfExport($organismi=array(), $bToBrowser=true,$tipo_organismo="")
     {
-        if(!is_array($ids)) return "";
-        if(sizeof($ids)==0) return "";
+        AA_Log::Log(__METHOD__." starting building pdf: ".time(),100);
+
+        if(!is_array($organismi)) return "";
+        if(sizeof($organismi)==0) return "";
         
         //recupero organismi
         
-        $organismi=AA_Organismi::Search(array("ids"=>$ids),false,$this->oUser);
-        $count = $organismi[0];
+        //$organismi=AA_Organismi::Search(array("ids"=>$ids),false,$this->oUser);
+        $count = sizeof($organismi);
         #--------------------------------------------
             
         //nome file
@@ -7297,7 +7314,7 @@ Class AA_SinesModule extends AA_GenericModule
         $curPage_row="";
 
         //Rendering pagine
-        foreach($organismi[1] as $id=>$curOrganismo)
+        foreach($organismi as $id=>$curOrganismo)
         {
             //Aggiunge una pagina
             $curPage=$doc->AddPage();
@@ -7385,6 +7402,8 @@ Class AA_SinesModule extends AA_GenericModule
             }            
         }
 
+        AA_Log::Log(__METHOD__." done building pdf: ".time(),100);
+        AA_Log::Log(__METHOD__." start rendering pdf: ".time(),100);
         if($bToBrowser) $doc->Render();
         else
         {

@@ -7241,7 +7241,7 @@ Class AA_GenericModule
     //Task generic export pdf 
     public function Task_PdfExport($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         //Verifica della classe degli oggetti
         if(!class_exists(static::AA_MODULE_OBJECTS_CLASS))
@@ -7254,14 +7254,15 @@ Class AA_GenericModule
             return false;          
         }
 
-        $sessVar= AA_SessionVar::Get("SaveAsPdf_ids");
-        
+        $sessVar = AA_SessionVar::Get("SaveAsPdf_ids");
+        $sessParams = AA_SessionVar::Get("SaveAsPdf_params");
+        $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+
         //lista organismi da esportare
-        if($sessVar->IsValid())
+        if($sessVar->IsValid() && !isset($_REQUEST['fromParams']))
         {
             $ids = $sessVar->GetValue();
-            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
-
+            
             if(is_array($ids))
             {
                 foreach($ids as $curId)
@@ -7277,8 +7278,7 @@ Class AA_GenericModule
             //Esiste almeno un organismo che può essere letto dall'utente corrente
             if(sizeof($ids_final)>0)
             {
-                
-                $this->Template_PdfExport($ids);   
+                $this->Template_PdfExport($ids_final);   
             }
             else
             {
@@ -7291,37 +7291,51 @@ Class AA_GenericModule
         }
         else
         {
-            $task->SetError("Non è stata selezionata nessuna voce.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Non è stata selezionata nessuna voce.</error>";
-            $task->SetLog($sTaskLog);
+            if($sessParams->isValid())
+            {
+                $params=$sessParams->GetValue();
 
-            return false;          
+                if($objectClass == "AA_Object") $objects=$objectClass::Search($params,false,$this->oUser);
+                else $objects=$objectClass::Search($params, $this->oUser);
+
+                if($objects[0]==0)
+                {
+                    $task->SetError("Non è stata individuata nessa corrispondenza in base ai parametri indicati.");
+                    $sTaskLog="<status id='status'>-1</status><error id='error'>Non è stata individuata nessa corrispondenza in base ai parametri indicati.</error>";
+                    $task->SetLog($sTaskLog);
+                    return false;          
+                }
+                else
+                {
+                    $this->Template_PdfExport($objects[1]);
+                }
+            }
         } 
     }
 
     //Funzione di esportazione in pdf (da specializzare)
-    public function Template_PdfExport($ids=array())
+    public function Template_PdfExport($objects=array())
     {
-        return $this->Template_GenericPdfExport($ids);
+        return $this->Template_GenericPdfExport($objects);
     }
 
     //Template pdf export generic
-    protected function Template_GenericPdfExport($ids=array(), $bToBrowser=true,$title="Esportazione in pdf",$pageTemplateFunc="Template_GenericObjectPdfExport")
+    protected function Template_GenericPdfExport($objects=array(), $bToBrowser=true,$title="Esportazione in pdf",$pageTemplateFunc="Template_GenericObjectPdfExport")
     {
         include_once "pdf_lib.php";
 
-        if(!is_array($ids)) return "";
-        if(sizeof($ids)==0) return "";
+        if(!is_array($objects)) return "";
+        if(sizeof($objects)==0) return "";
         
         //recupero elementi
-        $objectClass="AA_Object_V2";
-        if(class_exists(static::AA_MODULE_OBJECTS_CLASS))
-        {
-            $objectClass=static::AA_MODULE_OBJECTS_CLASS;
-        }
+        //$objectClass="AA_Object_V2";
+        //if(class_exists(static::AA_MODULE_OBJECTS_CLASS))
+        //{
+        //    $objectClass=static::AA_MODULE_OBJECTS_CLASS;
+        //}
 
-        $objects=$objectClass::Search(array("id"=>implode(",",$ids)),false,$this->oUser);
-        $count = $objects[0];
+        //$objects=$objectClass::Search(array("id"=>implode(",",$ids)),false,$this->oUser);
+        //$count = sizeof($objects);
         #--------------------------------------------
             
         //nome file
@@ -7374,7 +7388,7 @@ Class AA_GenericModule
         $lastPage=$count/$rowForPage+$curNumPage;
         
         //Rendering pagine
-        foreach($objects[1] as $id=>$curObject)
+        foreach($objects as $id=>$curObject)
         {
             //inizia una nuova pagina (intestazione)
             if($curRow==$rowForPage) $curRow=0; 

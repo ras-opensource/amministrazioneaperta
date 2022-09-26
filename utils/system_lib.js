@@ -960,7 +960,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
             let result = await AA_VerboseTask(params.task, taskManager, params.params, params.postParams);
             if (result.status.value == 0) {
-                
+
                 let wnd = webix.ui(result.content.value);
 
                 wnd.show();
@@ -1741,7 +1741,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         try {
 
             if (AA_MainApp.utils.isDefined(params) && AA_MainApp.utils.isDefined(params.url)) {
-                let result = await AA_VerboseTask("GetPdfPreviewDlg", AA_MainApp.taskManager);
+
+                console.log("eventHandlers.defaultHandlers.pdfPreview params:", params);
+
+                let result = await AA_VerboseTask("GetPdfPreviewDlg", AA_MainApp.taskManager, params.queryString, params.postParams);
                 if (result.status.value == 0) {
                     let wnd = webix.ui(result.content.value);
 
@@ -2069,8 +2072,9 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
     //SaveAsPdf
     this.eventHandlers['defaultHandlers']['sectionActionMenu'].saveAsPdf = async function(params) {
         try {
-            console.log("defaultHandlers.saveAsPdf", this, arguments);
+            //console.log("defaultHandlers.saveAsPdf", this, arguments);
             let sel = [];
+            let queryString = null;
 
             //lista
             if (AA_MainApp.utils.isDefined(params) && AA_MainApp.utils.isDefined(params.list_id)) {
@@ -2078,7 +2082,17 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 if (list_box) {
                     sel = list_box.getSelectedId(true);
                     if (sel.length == 0) {
-                        sel = list_box.data.order;
+                        //sel = list_box.data.order;
+                        let filter_id = list_box.config.filter_id;
+                        if (!AA_MainApp.utils.isDefined(filter_id)) filter_id = this.getActiveView();
+                        queryString = this.getRuntimeValue(filter_id, "filter_data");
+                        if (!AA_MainApp.utils.isDefined(queryString)) {
+                            queryString = { count: "all", section: this.curSection.id };
+                        } else {
+                            queryString.count = "all";
+                            queryString.section = this.curSection.id;
+                        }
+                        console.log("defaultHandlers.saveAsPdf - queryString:", queryString);
                     }
                 }
             }
@@ -2097,6 +2111,12 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     console.error("defaultHandlers.saveAsPdf", this, arguments);
                     return false;
                 }
+            } else {
+                let result = await AA_MainApp.setSessionVar("SaveAsPdf_params", queryString);
+                if (result) {
+                    await AA_MainApp.utils.callHandler("pdfPreview", { url: this.taskManager + "?task=PdfExport&fromParams=1" }, this.id);
+                }
+                return true;
             }
         } catch (msg) {
             console.error("defaultHandlers.saveAsPdf", msg, this, arguments);
@@ -2496,6 +2516,23 @@ var AA_MainApp = {
         }
     },
 
+    //Funzione per la memorizzazione di variabili di sessione
+    unsetSessionVar: async function(name, value) {
+        try {
+            let postParams = { name: name, value: JSON.stringify(value) };
+            let result = await AA_VerboseTask("UnsetSessionVar", AA_MainApp.taskManager, "", postParams);
+            if (result.status.value == 0) {
+                return true;
+            } else {
+                console.error("AA_MainApp.unsetSessionVar", result.error.value, arguments);
+                return false;
+            }
+        } catch (msg) {
+            console.error("AA_MainApp.unsetSessionVar", msg, arguments);
+            return Promise.reject(msg);
+        }
+    },
+
     //modulo corrente
     curModule: AA_dummy_module,
 
@@ -2552,7 +2589,7 @@ var AA_MainApp = {
         MainUI: {
             //titolo dell'App
             appTitle: "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>",
-            
+
             //logo
             appLogo: "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>",
 
@@ -2803,7 +2840,7 @@ function AA_DefaultSystemInitialization(params) {
 
         //titolo dell'App
         AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
-            
+
         //logo
         AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
 
@@ -3381,7 +3418,7 @@ async function AA_RefreshMainUi(params) {
         //console.log("System::AA_RefreshMainUi() - parametri: ", urlParams);
 
         //Recupero i dati della piattaforma
-        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager,"module="+urlParams.get("module"));
+        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module"));
 
         if (getAppStatus.status.value == "0") {
             if (getAppStatus.error.value != "") AA_MainApp.ui.message(getAppStatus.error.value);
@@ -3407,19 +3444,18 @@ async function AA_RefreshMainUi(params) {
             var sidebar = JSON.parse($(getAppStatus.content.value)[1].innerText);
 
             if (typeof sidebar != "undefined") {
-                console.log("System::AA_RefreshMainUi() sidebar: ",$(getAppStatus.content.value)[1].attributes["itemSelected"]);
+                console.log("System::AA_RefreshMainUi() sidebar: ", $(getAppStatus.content.value)[1].attributes["itemSelected"]);
 
-                let itemSelected="";
-                if($(getAppStatus.content.value)[1].attributes["itemSelected"])
-                {
-                    itemSelected=$(getAppStatus.content.value)[1].attributes["itemSelected"].nodeValue;
+                let itemSelected = "";
+                if ($(getAppStatus.content.value)[1].attributes["itemSelected"]) {
+                    itemSelected = $(getAppStatus.content.value)[1].attributes["itemSelected"].nodeValue;
                 }
 
                 $$("AA_MainSidebar").parse(sidebar);
 
                 AA_MainApp.ui.sidebar.content = sidebar;
 
-                if(AA_MainApp.ui.sidebar.itemSelected == "" && itemSelected != "") AA_MainApp.ui.sidebar.itemSelected=itemSelected;
+                if (AA_MainApp.ui.sidebar.itemSelected == "" && itemSelected != "") AA_MainApp.ui.sidebar.itemSelected = itemSelected;
 
                 if (AA_MainApp.ui.sidebar.itemSelected != "") {
                     //Seleziona l'item corrente
@@ -3581,7 +3617,7 @@ function AA_SetupMainUi() {
                 css: "AA_header",
                 height: 60,
                 cols: [
-                    { view: "label", width: 200, align: "left", template: AA_MainApp.ui.MainUI.appLogo},
+                    { view: "label", width: 200, align: "left", template: AA_MainApp.ui.MainUI.appLogo },
                     {},
                     { view: "label", label: AA_MainApp.ui.MainUI.appTitle, align: "center", minWidth: 500 },
                     {},
@@ -3730,6 +3766,9 @@ function AA_Sidebar_CustomIconTemplate(obj) {
 async function AA_Get(url, postParams = "") {
     let result;
     try {
+
+        console.log("AA_Get", arguments);
+
         if (postParams == "") result = await $.get(url);
         else result = await $.post(url, postParams);
         return result;
@@ -3742,6 +3781,8 @@ async function AA_Get(url, postParams = "") {
 //Funzione che restituisce il risultato di un task
 async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", verbose = false, raw = false) {
     try {
+        //console.log("AA_Task", arguments);
+
         if (taskManagerURL == "") taskManagerURL = AA_MainApp.curModule.taskManager;
 
         let url = taskManagerURL + "?task=" + task;
@@ -4097,7 +4138,7 @@ async function AA_LogOut(params = null) {
         let result = await AA_VerboseTask("UserLogOut", AA_MainApp.taskManager);
 
         if (result.status.value == 0) {
-            
+
             //ricarica la pagina
             window.location.reload();
 
