@@ -7293,18 +7293,18 @@ Class AA_GenericModule
         {
             if($sessParams->isValid())
             {
-                $params=$sessParams->GetValue();
+                $params=(array) $sessParams->GetValue();
 
                 //Verifica della sezione 
                 if($params['section']==static::AA_ID_SECTION_BOZZE)
                 {
-                    $param["status"]=AA_Const::AA_STATUS_BOZZA;
+                    $params["status"]=AA_Const::AA_STATUS_BOZZA;
                 }
                 else
                 {
-                    $param["status"]=AA_Const::AA_STATUS_PUBBLICATA;
+                    $params["status"]=AA_Const::AA_STATUS_PUBBLICATA;
                 }
-                
+
                 if($params['cestinate'] == 1) 
                 {
                     $params['status'] |=AA_Const::AA_STATUS_CESTINATA;

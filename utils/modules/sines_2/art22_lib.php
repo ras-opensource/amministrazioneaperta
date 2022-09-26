@@ -89,7 +89,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67108864; //67076864;
     
     //nomine da pubblicare
-    const AA_NOMINE_NON_PUBBLICARE=12587616;
+    const AA_NOMINE_NON_PUBBLICARE=12591616;
 
     //Tipo di documenti
     static private $TIPO_DOCS=null;

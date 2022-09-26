@@ -4130,20 +4130,18 @@ Class AA_SinesModule extends AA_GenericModule
         {
             if($sessParams->isValid())
             {
-                $params=$sessParams->GetValue();
+                $params=(array) $sessParams->GetValue();
 
                 //AA_Log::Log(__METHOD__." - params: ".print_r((array)$params,true),100);
 
                 //Verifica della sezione
-                $params=(array) $params;
-
                 if($params['section']=="Bozze")
                 {
-                    $param["status"]=AA_Const::AA_STATUS_BOZZA;
+                    $params["status"]=AA_Const::AA_STATUS_BOZZA;
                 }
                 else
                 {
-                    $param["status"]=AA_Const::AA_STATUS_PUBBLICATA;
+                    $params["status"]=AA_Const::AA_STATUS_PUBBLICATA;
                 }
                 
                 if($params['cestinate'] == 1) 
