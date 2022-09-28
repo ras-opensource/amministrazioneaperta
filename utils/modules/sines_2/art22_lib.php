@@ -7318,7 +7318,7 @@ Class AA_OrganismiPublicReportTemplateNominePageView extends AA_GenericObjectTem
         $this->AppendChild($nomine);
 
         //legenda
-        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-bottom: 2em'>L'elenco delle nomine contiene esclusivamente i nominativi dei componenti proposti o designati dalla Regione Autonoma della Sardegna.</span></div>";
+        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-bottom: 2em'>Nel presente prospetto sono esposti i dati dei rappresentanti designati dall'Amministrazione regionale negli organi di governo dell’ente e quelli relativi ai titolari di incarichi di amministratore dell'ente, siano essi nominati dalla Regione o meno.</span></div>";
         $footer.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
         $this->SetText($footer,false);
     }
@@ -7480,14 +7480,6 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                 $table->SetText($result);
             }
         }
-
-        //$nomine=new AA_OrganismiReportNomineListTemplateView("AA_OrganismiPublicReportTemplateView-nomine",null,$organismo, $user);        
-        //$this->SetText($result,false);
-
-        //legenda
-        
-        //$footer.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
-        //$this->SetText($footer,false);
     }
 }
 
@@ -7774,84 +7766,6 @@ Class AA_OrganismiReportDatiContabiliListTemplateView extends AA_GenericTableTem
 
             $this->SetText($footer,false);
         }
-    }
-}
-
-Class AA_OrganismiReportScadenzarioNomineTableTemplateView extends AA_GenericTableTemplateView
-{
-    public function __construct($id="AA_OrganismiReportScadenzarioNomineTableTemplateView",$parent=null, $user=null,$props=null)
-    {
-        //Verifica utente
-        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
-        {
-            $user=AA_User::GetCurrentUser();
-        
-            if($user==null || !$user->isValid() || !$user->isCurrentUser())
-            {
-                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
-                return;
-            }
-        }
-
-        if(!is_array($props)) $props=array("evidentiate-rows"=>true,"title"=>"AA_OrganismiReportScadenzarioNomineTableTemplateView","border"=>"1px solid gray;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em");
-        
-        //Chiama il costruttore della classe base
-        parent::__construct($id,$parent,null,$props);
-        
-        $this->SetColSizes(array("99"));
-
-        /*
-        //in corso
-        {
-            $curRow=1;
-
-            //colore
-            $colore_box=$this->GetCell($curRow,0);
-            $colore_box->SetStyle("background-color: #d9f2d9;", true);
-            $this->SetCellText($curRow,0,'&nbsp;', "center");
-
-            //significato
-            $this->SetCellText($curRow,1,'La nomina è <b>in corso</b> e <b>scadrà oltre il periodo di riferimento</b> a partire dalla data di pivot.');
-        }
-
-        //in scadenza
-        {
-            $curRow=2;
-
-            //colore
-            $colore_box=$this->GetCell($curRow,0);
-            $colore_box->SetStyle("background-color: #ffffcc", true);
-            $this->SetCellText($curRow,0,'&nbsp', "center");
-
-            //significato
-            $this->SetCellText($curRow,1,'La nomina è <b>in corso</b> e <b>scadrà entro il periodo di riferimento</b> a partire dalla data di pivot.');
-        }
-
-        //recenti
-        {
-            $curRow=3;
-
-            //colore
-            $colore_box=$this->GetCell($curRow,0);
-            $colore_box->SetStyle("background-color: #ffebcc;", true);
-            $this->SetCellText($curRow,0,'&nbsp;', "center");
-
-            //significato
-            $this->SetCellText($curRow,1,'La nomina è <b>scaduta da un periodo inferiore a quello di riferimento</b> a ritroso dalla data di pivot.');
-        }
-
-        //scadute
-        {
-            $curRow=3;
-
-            //colore
-            $colore_box=$this->GetCell($curRow,0);
-            $colore_box->SetStyle("background-color: #ffd9cc;", true);
-            $this->SetCellText($curRow,0,'&nbsp;', "center");
-
-            //significato
-            $this->SetCellText($curRow,1,'La nomina è <b>scaduta da un periodo superiore a quello di riferimento</b> a ritroso dalla data di pivot.');
-        }*/
     }
 }
 
