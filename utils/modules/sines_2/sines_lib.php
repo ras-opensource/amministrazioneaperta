@@ -7526,7 +7526,6 @@ Class AA_SinesModule extends AA_GenericModule
             $curPage_row="";
             $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
             $curPage_row.=new AA_OrganismiReportScadenzarioNomineTemplateView("report_organismo_scadenzario_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
-            //$curPage_row.=new AA_OrganismiReportScadenzarioLegendaTemplateView("report_organismo_scadenzario_legenda_".$curOrganismo->GetId(),null,null,$this->oUser);
             $curPage_row.="</div>";
             $curPage->SetContent($curPage_row);
 
