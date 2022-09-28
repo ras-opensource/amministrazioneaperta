@@ -400,7 +400,10 @@ Class AA_PDF_Document
         } 
 
         //Crea il file da renderizzare
-        $html_file='<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        $html_file='<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8">';
+        $html_file.='<link href="'.AA_Config::AA_APP_FILESYSTEM_FOLDER.'/stili/system.css" rel="stylesheet" type="text/css" />';
+        $html_file.='<link href="'.AA_Config::AA_APP_FILESYSTEM_FOLDER.'/stili/organismi.css" rel="stylesheet" type="text/css" />';
+        $html_file.='
         <style>
             @page {size: %PAGE_WIDTH%%PDF_UNIT% %PAGE_HEIGHT%%PDF_UNIT%; margin: 0;}
             @media print

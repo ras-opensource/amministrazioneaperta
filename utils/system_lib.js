@@ -2105,7 +2105,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             if (sel.length > 0) {
                 let result = await AA_MainApp.setSessionVar("SaveAsPdf_ids", sel);
                 if (result) {
-                    await AA_MainApp.utils.callHandler("pdfPreview", { url: this.taskManager + "?task=PdfExport" }, this.id);
+                    await AA_MainApp.utils.callHandler("pdfPreview", { url: this.taskManager + "?task=PdfExport&section=" + this.curSection.id }, this.id);
                     return true;
                 } else {
                     console.error("defaultHandlers.saveAsPdf", this, arguments);
@@ -2114,7 +2114,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             } else {
                 let result = await AA_MainApp.setSessionVar("SaveAsPdf_params", queryString);
                 if (result) {
-                    await AA_MainApp.utils.callHandler("pdfPreview", { url: this.taskManager + "?task=PdfExport&fromParams=1" }, this.id);
+                    await AA_MainApp.utils.callHandler("pdfPreview", { url: this.taskManager + "?task=PdfExport&fromParams=1&section=" + this.curSection.id }, this.id);
                 }
                 return true;
             }
@@ -3767,7 +3767,7 @@ async function AA_Get(url, postParams = "") {
     let result;
     try {
 
-        console.log("AA_Get", arguments);
+        //console.log("AA_Get", arguments);
 
         if (postParams == "") result = await $.get(url);
         else result = await $.post(url, postParams);

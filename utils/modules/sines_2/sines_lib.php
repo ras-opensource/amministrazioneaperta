@@ -451,7 +451,7 @@ Class AA_SinesModule extends AA_GenericModule
     public function GetDataSectionScadenzario_List($params=array())
     {
         $templateData=array();
-        
+
         $parametri=array("status"=>AA_Const::AA_STATUS_PUBBLICATA);
         if($params['page']) $parametri['from']=($params['page']-1)*$params['count'];
         if($params['denominazione']) $parametri['denominazione']=$params['denominazione'];
@@ -484,6 +484,9 @@ Class AA_SinesModule extends AA_GenericModule
         $mesePrec->modify("-".$parametri['finestra_temporale']." month");
         $data_scadenzario=new DateTime($parametri['data_scadenzario']);
         
+        //Memorizza i paramettri dello scadenzario
+        $_SESSION['AA_Organismi_Scadenzario_Filter_Params']=serialize($parametri);
+
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         
         foreach($organismi[1] as $id=>$object)
@@ -4115,7 +4118,8 @@ Class AA_SinesModule extends AA_GenericModule
             //Esiste almeno un organismo che può essere letto dall'utente corrente
             if(sizeof($ids_final)>0)
             {
-                $this->Template_OrganismiPdfExport($ids_final);
+                if($_REQUEST['section'] == "Scadenzario") $this->Template_OrganismiScadenzarioPdfExport($ids_final);
+                else $this->Template_OrganismiPdfExport($ids_final);
             }
             else
             {
@@ -4132,8 +4136,6 @@ Class AA_SinesModule extends AA_GenericModule
             {
                 $params=(array) $sessParams->GetValue();
 
-                //AA_Log::Log(__METHOD__." - params: ".print_r((array)$params,true),100);
-
                 //Verifica della sezione
                 if($params['section']=="Bozze")
                 {
@@ -4141,7 +4143,13 @@ Class AA_SinesModule extends AA_GenericModule
                 }
                 else
                 {
-                    $params["status"]=AA_Const::AA_STATUS_PUBBLICATA;
+                    if($params['section'] !="Scadenzario") $params["status"]=AA_Const::AA_STATUS_PUBBLICATA;
+                    else 
+                    {
+                        $params=unserialize($_SESSION['AA_Organismi_Scadenzario_Filter_Params']);
+                        if(is_array($params)) $params['count']='all';
+                        else $params=array('status'=>'AA_Const::AA_STATUS_PUBBLICATA','count'=>'all');
+                    }
                 }
                 
                 if($params['cestinate'] == 1) 
@@ -4160,7 +4168,8 @@ Class AA_SinesModule extends AA_GenericModule
                 }
                 else
                 {
-                    $this->Template_OrganismiPdfExport($objects[1]);
+                    if($_REQUEST['section'] == "Scadenzario") $this->Template_OrganismiScadenzarioPdfExport($objects[1]);
+                    else $this->Template_OrganismiPdfExport($objects[1]);
                 }
             }
         } 
@@ -7256,7 +7265,7 @@ Class AA_SinesModule extends AA_GenericModule
         return $dlg->GetObject();
     }
     
-    //Template pdf export single
+    //Template pdf export generic
     public function Template_OrganismiPdfExport($organismi=array(), $bToBrowser=true,$tipo_organismo="")
     {
         AA_Log::Log(__METHOD__." starting building pdf: ".time(),100);
@@ -7419,6 +7428,165 @@ Class AA_SinesModule extends AA_GenericModule
 
         AA_Log::Log(__METHOD__." done building pdf: ".time(),100);
         AA_Log::Log(__METHOD__." start rendering pdf: ".time(),100);
+        if($bToBrowser) $doc->Render();
+        else
+        {
+            $doc->Render(false);
+            return $doc->GetFilePath();
+        }
+    }
+
+    //Template pdf export scadenzario
+    public function Template_OrganismiScadenzarioPdfExport($organismi=array(), $bToBrowser=true,$tipo_organismo="")
+    {
+        if(!is_array($organismi)) return "";
+        if(sizeof($organismi)==0) return "";
+        
+        //recupero organismi
+        
+        //$organismi=AA_Organismi::Search(array("ids"=>$ids),false,$this->oUser);
+        $count = sizeof($organismi);
+        #--------------------------------------------
+            
+        //nome file
+        $filename="pubblicazioni_art22";
+        if($tipo_organismo !="")
+        {
+          $tipo=AA_Organismi_Const::GetTipoOrganismi(true);
+          $filename.="-".str_replace(" ","_",$tipo[$tipo_organismo]);
+        }
+        $filename.="-".date("YmdHis");
+        $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
+        
+        $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
+        $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
+        $curRow=0;
+        $rowForPage=1;
+        $lastRow=$rowForPage-1;
+        $curPage=null;
+        $curNumPage=0;
+        //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
+        //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
+        $rowContentWidth="width: 99.8%;";
+
+        //pagina di intestazione (senza titolo)
+        $curPage=$doc->AddPage();
+        $curPage->SetCorpoStyle("display: flex; flex-direction: column; justify-content: center; align-items: center; padding:0;");
+        $curPage->SetFooterStyle("border-top:.2mm solid black");
+        $curPage->ShowPageNumber(false);
+
+        //Intestazione
+        $intestazione="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Scadenzario nomine Organismi RAS</div>";
+        if($tipo_organismo !="") 
+        {
+            $intestazione.="<div style='width: 100%; text-align: center; font-size: 18; font-weight: bold;'>".$tipo[$tipo_organismo]."</div>";
+        }
+        $intestazione.="<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il ".date("Y-m-d")."</div>";
+
+        $curPage->SetContent($intestazione);
+        $curNumPage++;
+
+        //pagine indice (50 nominativi per pagina)
+        $indiceNumVociPerPagina=50;
+        for($i=0; $i<$count/$indiceNumVociPerPagina; $i++)
+        {
+            $curPage=$doc->AddPage();
+            $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
+            $curNumPage++;
+        }
+        #---------------------------------------
+
+        //Imposta il titolo per le pagine successive
+        $doc->SetTitle("Scadenzario nomine Organismi RAS- report generato il ".date("Y-m-d"));
+  
+        $indice=array();
+        $lastPage=$count/$rowForPage+$curNumPage;
+        $curPage_row="";
+
+        //Rendering pagine
+        foreach($organismi as $id=>$curOrganismo)
+        {
+            //Aggiunge una pagina
+            $curPage=$doc->AddPage();
+            $curNumPage++;
+            $curPage_row="";
+
+            //Aggiorna l'indice
+            $indice[$curOrganismo->GetID()]=$curNumPage."|".$curOrganismo->GetDescrizione();
+            
+            //pagina geenrale
+            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+            $curPage_row.=new AA_OrganismiPublicReportTemplateGeneralPageView("report_organismo_scadenzario_generale_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+            $curPage_row.="</div>";
+            $curPage->SetContent($curPage_row);
+            
+            //nomine
+            $curPage=$doc->AddPage();
+            $curNumPage++;
+            $curPage_row="";
+            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+            $curPage_row.=new AA_OrganismiReportScadenzarioNomineTemplateView("report_organismo_scadenzario_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+            //$curPage_row.=new AA_OrganismiReportScadenzarioLegendaTemplateView("report_organismo_scadenzario_legenda_".$curOrganismo->GetId(),null,null,$this->oUser);
+            $curPage_row.="</div>";
+            $curPage->SetContent($curPage_row);
+
+        }
+        #-----------------------------------------
+
+        {
+            //Aggiornamento indice
+            $curNumPage=1;
+            $curPage=$doc->GetPage($curNumPage);
+            $vociCount=0;
+            $curRow=0;
+            $bgColor="";
+            $curPage_row="";
+
+            foreach($indice as $id=>$data)
+            {
+              if($curNumPage != (int)($vociCount/$indiceNumVociPerPagina)+1)
+              {
+                $curPage->SetContent($curPage_row);
+                $curNumPage=(int)($vociCount/$indiceNumVociPerPagina)+1;
+                $curPage=$doc->GetPage($curNumPage);
+                $curRow=0;
+                $bgColor="";
+              }
+
+              if($curPage instanceof AA_PDF_Page)
+              {
+                if($vociCount%2 > 0)
+                {
+                  $dati=explode("|",$data);
+                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+                  $curPage_row.="</div>";
+                  if($vociCount == (sizeof($indice)-1)) $curPage->SetContent($curPage_row);
+                  $curRow++;
+                }
+                else
+                {
+                  //Intestazione
+                  if($curRow==0) $curPage_row="<div style='width:100%;text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+
+                  if($curRow%2) $bgColor="background-color: #f5f5f5;";
+                  else $bgColor="";
+                  $curPage_row.="<div style='display:flex; ".$rowContentWidth." align-items: center; justify-content: space-between; text-align: center; padding: .3mm; min-height: 9mm;".$bgColor."'>";
+                  $dati=explode("|",$data);
+                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+
+                  //ultima voce
+                  if($vociCount == (sizeof($indice)-1))
+                  {
+                    $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'>&nbsp; </div><div style='width:9%;text-align: right;padding-left: 10mm'>&nbsp; </div></div>";
+                    $curPage->SetContent($curPage_row);
+                  } 
+                }
+              }
+
+              $vociCount++;
+            }            
+        }
+
         if($bToBrowser) $doc->Render();
         else
         {

@@ -24,6 +24,9 @@ Class AA_Config
 
     //Cartella di archiviazione uploads (percorso assoluto)
     const AA_UPLOADS_PATH="/home/sitod/uploads";
+
+    //Cartella percorso fisico dell'applicazione
+    const AA_APP_FILESYSTEM_FOLDER="";
     
     //Cartella moduli (percorso relativo alla root)
     const AA_MODULES_PATH="utils/modules";

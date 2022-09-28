@@ -7324,6 +7324,132 @@ Class AA_OrganismiPublicReportTemplateNominePageView extends AA_GenericObjectTem
     }
 }
 
+
+#Classe template per la gestione del report pdf dello scadenzario (pagina nomine)
+Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTemplateView
+{
+    public function __construct($id="AA_OrganismiReportScadenzarioNomineTemplateView",$parent=null,$organismo=null, $user=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return;
+            }
+        }
+
+        if(!($organismo instanceof AA_Organismi))
+        {
+            AA_Log::Log(__METHOD__." - organismo non valido.", 100,false,true);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$organismo);
+        
+        $this->SetStyle("width: 99%; display:flex; flex-direction: column; align-items: center;");
+
+        #Parte generale---------------------------------
+        $generale=new AA_XML_Div_Element("AA_OrganismiPublicReportTemplateView-generale",$this);
+        $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%");
+
+        #Denominazione----------------------------------
+        $denominazione=new AA_XML_Div_Element("generale-tab-denominazione",$generale);
+        $denominazione->SetStyle('width:100%; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .2em; font-size: 20px; font-weight: bold');
+        $denominazione->SetText($organismo->GetDenominazione()."<br><span style='font-size: x-small; font-weight: normal'>".$organismo->GetTipologia()."</span>");
+        #-----------------------------------------------
+
+        //Aggiunge le nomine
+        $parametri=unserialize($_SESSION['AA_Organismi_Scadenzario_Filter_Params']);
+        $meseProx=new DateTime($parametri['data_scadenzario']);
+        $meseProx->modify("+".$parametri['finestra_temporale']." month");
+        $mesePrec=new DateTime($parametri['data_scadenzario']);
+        $mesePrec->modify("-".$parametri['finestra_temporale']." month");
+        $data_scadenzario=new DateTime($parametri['data_scadenzario']);
+
+        //Raggruppa per incarico
+        $params_nomine['raggruppamento']=$parametri['raggruppamento'];
+            
+        //Imposta i limiti temporali
+        if($parametri['in_scadenza'] != "1" || $parametri['in_corso'] != "1" || $parametri['scadute'] != "1" || $parametri['recenti'] != "1")
+        {
+            if($parametri['in_scadenza'] == "1" && $parametri['scadute'] != "1") $params_nomine['scadenzario_dal']=$parametri['data_scadenzario'];
+            if($parametri['recenti'] == "1" && $parametri['in_corso'] !="1") $params_nomine['scadenzario_al']=$parametri['data_scadenzario'];
+            if($parametri['in_scadenza'] == "1" && $parametri['in_corso'] !="1") $params_nomine['scadenzario_al']=$meseProx->format("Y-m-d");
+            if($parametri['recenti'] == "1" && $parametri['scadute'] !="1") $params_nomine['scadenzario_dal']=$mesePrec->format("Y-m-d");
+        }
+        
+        $nomine=$organismo->GetNomineGrouped($params_nomine);
+        $nomine_list=array();
+        
+        foreach($nomine as $nomina)
+        {
+            $curNomina=current($nomina);
+            $datafine=new DateTime($curNomina->GetDataFine());
+            
+            $view=false;
+            if($parametri['in_corso']=="1" && $datafine > $meseProx)
+            {
+                $view=true;
+                $label_class="AA_Label_LightGreen";
+                $label_scadenza="Scade tra: ";
+            }
+                
+            if($parametri['in_scadenza']=="1" && $datafine >= $data_scadenzario && $datafine <= $meseProx)
+            {
+                $view=true;
+                $label_class="AA_Label_LightYellow";
+                $label_scadenza="Scade tra: ";
+            }
+            
+            if($parametri['recenti']=="1" && $datafine >= $mesePrec && $datafine <= $data_scadenzario)
+            {
+                $view=true;
+                $label_class="AA_Label_LightOrange";
+                $label_scadenza="Scaduta da: ";
+            }
+            
+            if($parametri['scadute']=="1" && $datafine < $mesePrec)
+            {
+                $view=true;
+                $label_class="AA_Label_LightRed";
+                $label_scadenza="Scaduta da: ";
+            }
+            
+            //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
+            
+            if($view)
+            {
+                $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
+                if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" (".$curNomina->GetCodiceFiscale().")";
+                $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em;'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza.$datafine->diff($data_scadenzario)->format("%a")." giorni</div></div>";
+            }
+        }
+        
+        $result="";
+        foreach($nomine_list as $x)
+        {
+            foreach($x as $y)
+            {
+                $result.=$y;
+            }
+        }
+
+        //$nomine=new AA_OrganismiReportNomineListTemplateView("AA_OrganismiPublicReportTemplateView-nomine",null,$organismo, $user);        
+        $this->SetText($result,false);
+
+        //legenda
+        
+        //$footer.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+        //$this->SetText($footer,false);
+    }
+}
+
+
 #Classe template per la gestione della view generale dell'item dell'organismo
 Class AA_OrganismiGeneralTabTemplateView extends AA_GenericObjectTemplateView
 {
@@ -7605,6 +7731,84 @@ Class AA_OrganismiReportDatiContabiliListTemplateView extends AA_GenericTableTem
             else $footer.="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .5em;font-size: smaller;'>2. Risultati di amministrazione dell'anno di riferimento.</div>";
 
             $this->SetText($footer,false);
+        }
+    }
+}
+
+Class AA_OrganismiReportScadenzarioLegendaTemplateView extends AA_GenericTableTemplateView
+{
+    public function __construct($id="AA_OrganismiReportScadenzarioLegendaTemplateView",$parent=null, $user=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return;
+            }
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,null,array("evidentiate-rows"=>true,"title"=>"Legenda","border"=>"1px solid gray;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+
+        
+        $this->SetColSizes(array("10","89"));
+            
+        $this->SetHeaderLabels(array("Colore","Significato"));    
+
+        //in corso
+        {
+            $curRow=1;
+
+            //colore
+            $colore_box=$this->GetCell($curRow,0);
+            $colore_box->SetStyle("background-color: #d9f2d9;", true);
+            $this->SetCellText($curRow,0,'&nbsp;', "center");
+
+            //significato
+            $this->SetCellText($curRow,1,'La nomina è <b>in corso</b> e <b>scadrà oltre il periodo di riferimento</b> a partire dalla data di pivot.');
+        }
+
+        //in scadenza
+        {
+            $curRow=2;
+
+            //colore
+            $colore_box=$this->GetCell($curRow,0);
+            $colore_box->SetStyle("background-color: #ffffcc", true);
+            $this->SetCellText($curRow,0,'&nbsp', "center");
+
+            //significato
+            $this->SetCellText($curRow,1,'La nomina è <b>in corso</b> e <b>scadrà entro il periodo di riferimento</b> a partire dalla data di pivot.');
+        }
+
+        //recenti
+        {
+            $curRow=3;
+
+            //colore
+            $colore_box=$this->GetCell($curRow,0);
+            $colore_box->SetStyle("background-color: #ffebcc;", true);
+            $this->SetCellText($curRow,0,'&nbsp;', "center");
+
+            //significato
+            $this->SetCellText($curRow,1,'La nomina è <b>scaduta da un periodo inferiore a quello di riferimento</b> a ritroso dalla data di pivot.');
+        }
+
+        //scadute
+        {
+            $curRow=3;
+
+            //colore
+            $colore_box=$this->GetCell($curRow,0);
+            $colore_box->SetStyle("background-color: #ffd9cc;", true);
+            $this->SetCellText($curRow,0,'&nbsp;', "center");
+
+            //significato
+            $this->SetCellText($curRow,1,'La nomina è <b>scaduta da un periodo superiore a quello di riferimento</b> a ritroso dalla data di pivot.');
         }
     }
 }
