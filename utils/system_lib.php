@@ -8982,7 +8982,6 @@ Class AA_GenericFormDlg extends AA_GenericWindowTemplate
                 $this->curRow=new AA_JSON_Template_Layout($this->id."_Layout_Row");
                 $this->layout->AddRow($this->curRow);
             }
-
             if($type=="text") $this->curRow->AddCol(new AA_JSON_Template_Text($this->id."_Field_".$name,$props));
             if($type=="textarea") $this->curRow->AddCol(new AA_JSON_Template_Textarea($this->id."_Field_".$name,$props));
             if($type=="checkbox") $this->curRow->AddCol(new AA_JSON_Template_Checkbox($this->id."_Field_".$name,$props));
@@ -8990,6 +8989,12 @@ Class AA_GenericFormDlg extends AA_GenericWindowTemplate
             if($type=="switch") $this->curRow->AddCol(new AA_JSON_Template_Switch($this->id."_Field_".$name,$props));
             if($type=="datepicker")$this->curRow->AddCol(new AA_JSON_Template_Datepicker($this->id."_Field_".$name,$props));
             if($type=="radio")$this->curRow->AddCol(new AA_JSON_Template_Radio($this->id."_Field_".$name,$props));
+
+            //Se il campo è invisibile aggiunge uno spacer
+            if($props['hidden']==true)
+            {
+                $this->curRow->AddCol(new AA_JSON_Template_Generic($this->id."_Spacer_".$name,array("view"=>"spacer","minHeight"=>"0","minWidth"=>"0","height"=>1)));
+            }
         }
     }
     

@@ -12,6 +12,70 @@ include_once "system_lib.php";
 Class AA_Provvedimenti_Const extends AA_Const
 {
     const AA_USER_FLAG_PROVVEDIMENTI="provvedimenti";
+
+    //Tipo provvedimenti
+    const AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE=1;
+    const AA_TIPO_PROVVEDIMENTO_ACCORDO=2;
+
+    static private $AA_MODALITA_SCELTA_CONTRAENTE=null;
+
+    static private function init()
+    {
+        if(self::$AA_MODALITA_SCELTA_CONTRAENTE == null)
+        {
+            self::$AA_MODALITA_SCELTA_CONTRAENTE=array(
+                1=>"01-Procedura aperta",
+                2=>"02-PROCEDURA RISTRETTA",
+                3=>"03-PROCEDURA NEGOZIATA PREVIA PUBBLICAZIONE DEL BANDO",
+                4=>"04-PROCEDURA NEGOZIATA SENZA PREVIA PUBBLICAZIONE DEL BANDO",
+                5=>"05-DIALOGO COMPETITIVO",
+                6=>"06-PROCEDURA NEGOZIATA SENZA PREVIA INDIZIONE DI GARA ART. 221 D.LGS. 163/2006",
+                7=>"07-SISTEMA DINAMICO DI ACQUISIZIONE",
+                8=>"08-AFFIDAMENTO IN ECONOMIA - COTTIMO FIDUCIARIO",
+                14=>"14-PROCEDURA SELETTIVA EX ART 238 C.7, D.LGS. 163/2006",
+                17=>"17-AFFIDAMENTO DIRETTO EX ART. 5 DELLA LEGGE 381/91",
+                21=>"21-PROCEDURA RISTRETTA DERIVANTE DA AVVISI CON CUI SI INDICE LA GARA",
+                22=>"22-PROCEDURA NEGOZIATA DERIVANTE DA AVVISI CON CUI SI INDICE LA GARA",
+                23=>"23-AFFIDAMENTO IN ECONOMIA - AFFIDAMENTO DIRETTO",
+                24=>"24-AFFIDAMENTO DIRETTO A SOCIETA' IN HOUSE",
+                25=>"25-AFFIDAMENTO DIRETTO A SOCIETA'...NELLE CONCESSIONI DI LL.PP",
+                26=>"26-AFFIDAMENTO DIRETTO IN ADESIONE AD ACCORDO QUADRO/CONVENZIONE",
+                27=>"27-CONFRONTO COMPETITIVO IN ADESIONE AD ACCORDO QUADRO/CONVENZIONE",
+                28=>"28-PROCEDURA AI SENSI DEI REGOLAMENTI DEGLI ORGANI COSTITUZIONALI",
+                29=>"29-PROCEDURA RISTRETTA SEMPLIFICATA",
+                30=>"30-PROCEDURA DERIVANTE DA LEGGE REGIONALE",
+                31=>"31-AFFIDAMENTO DIRETTO PER VARIANTE SUPERIORE AL 20% DELL'IMPORTO CONTRATTUALE",
+                32=>"32-AFFIDAMENTO RISERVATO",
+                33=>"33-PROCEDURA NEGOZIATA PER AFFIDAMENTI SOTTO SOGLIA",
+                34=>"34-PROCEDURA ART.16 COMMA 2-BIS DPR 380/2001 PER OPERE URBANIZZAZIONE A SCOMPUTO PRIMARIE SOTTO SOGLIA COMUNITARIA",
+                35=>"35-PARTERNARIATO PER L’INNOVAZIONE",
+                36=>"36-AFFIDAMENTO DIRETTO PER LAVORI, SERVIZI O FORNITURE SUPPLEMENTARI",
+                37=>"37-PROCEDURA COMPETITIVA CON NEGOZIAZIONE",
+                38=>"38-PROCEDURA DISCIPLINATA DA REGOLAMENTO INTERNO PER SETTORI SPECIALI",
+            );
+        }
+
+        if(self::$AA_LISTA_TIPOLOGIA == null)
+        {
+            self::$AA_LISTA_TIPOLOGIA=array(
+                1=>"Provvedimento di scelta del contraente",
+                2=>"Accordo"
+            );
+        }
+    }
+
+    static function GetListaModalita()
+    {
+        self::init();
+        return self::$AA_MODALITA_SCELTA_CONTRAENTE;
+    }
+
+    static private $AA_LISTA_TIPOLOGIA=null;
+    static function GetListaTipologia()
+    {
+        self::init();
+        return self::$AA_LISTA_TIPOLOGIA;
+    }
 }
 
 #Classe oggetto provvedimenti
@@ -69,6 +133,24 @@ Class AA_Provvedimenti extends AA_Object_V2
             }
         }
     }
+
+    //Restituisce il tipo
+    public function GetTipo($bNumeric=false)
+    {
+        if($bNumeric==true) return $this->aProps['Tipo'];
+
+        $listaTipo=AA_Provvedimenti_Const::GetListaTipologia();
+        return $listaTipo[$this->aProps['Tipo']];
+    }
+
+     //Restituisce la modalità di scelta del contraente
+     public function GetModalita($bNumeric=false)
+     {
+         if($bNumeric==true) return $this->aProps['Modalita'];
+ 
+         $listaTipo=AA_Provvedimenti_Const::GetListaModalita();
+         return $listaTipo[$this->aProps['Modalita']];
+     }
 
     //funzione di ricerca
     static public function Search($params=array(),$user=null)
@@ -336,13 +418,15 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
     //Personalizza il template dei dati delle bozze per il modulo corrente
     protected function GetDataSectionBozze_CustomDataTemplate($data = array(),$object=null)
     {
-        /*
+        
         if($object instanceof AA_Provvedimenti)
         {
-            $data['pretitolo']=$object->GetTitolo();
-            $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetSezione()."</span>";
+
+            $data['pretitolo']=$object->GetTipo();
+            if($object->GetTipo(true) == AA_Provvedimenti_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE) $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetModalita()."</span>";
+            else $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetProp('Contraente')."</span>";
         }
-        */
+        
         return $data;
     }
     
@@ -428,7 +512,9 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $form_data=array();
         
         $anno_fine=Date('Y');
-        $form_data['AnnoRif']=$anno_fine;
+        $form_data['AnnoRiferimento']=$anno_fine;
+        $form_data['Modalita']=0;
+        $form_data['Contraente']="n.d.";
         
         //Struttura
         $form_data['Tipo']=-1;
@@ -443,21 +529,33 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $wnd->EnableValidation();
               
         //tipo
-        $options=array(
-            array("id"=>"1","value"=>"Provvedimento di scelta del contraente"),
-            array("id"=>"2","value"=>"Accordo con altre amministrazioni")
-        );
-        $wnd->AddSelectField("Tipo","Tipo",array("required"=>true,"validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di provvedimento.","bottomLabel"=>"*Indicare il tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
+        $selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
+        $options=array();
+        foreach(AA_Provvedimenti_Const::GetListaTipologia() as $key=>$value)
+        {
+            $options[]=array("id"=>$key,"value"=>$value);
+        }
+        $wnd->AddSelectField("Tipo","Tipo",array("required"=>true,"validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di provvedimento.","bottomLabel"=>"*Indicare il tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options,"on"=>array("onChange"=>$selectionChangeEvent)));
+        
+        //modalità
+        $options=array();
+        foreach(AA_Provvedimenti_Const::GetListaModalita() as $key=>$value)
+        {
+            $options[]=array("id"=>$key,"value"=>$value);
+        }
+        $wnd->AddSelectField("Modalita","Modalità",array("hidden"=>"true", "required"=>"true","validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di modalità di scelta del contraente.","bottomLabel"=>"*Indicare il tipo di modalità","placeholder"=>"Scegli una voce...","options"=>$options,"gravity"=>100));
+
+        //Contraente
+        $wnd->AddTextField("Contraente","Contraente",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione del contraente.", "placeholder"=>"Denominazione del contraente...","gravity"=>100));        
 
         $anno_start=($anno_fine-10);
-
         //anno riferimento
         $options=array();
         for($i=$anno_fine; $i>=$anno_start; $i--)
         {
             $options[]=array("id"=>$i, "value"=>$i);
         }
-        $wnd->AddSelectField("AnnoRif","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));
+        $wnd->AddSelectField("AnnoRiferimento","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));
 
         //Nome
         $wnd->AddTextField("nome","Oggetto",array("required"=>true, "bottomLabel"=>"*Inserisci l'oggetto del provvedimento.", "placeholder"=>"Oggetto del provvedimento..."));
@@ -468,9 +566,6 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         //estremi
         $wnd->AddTextField("Estremi","Estremi",array("required"=>true, "bottomLabel"=>"*Inserisci gli estremi dell'atto.", "placeholder"=>"Estremi dell'atto..."));
-
-        //Contraente
-        $wnd->AddTextField("Contraente","Contraente",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione del contraente.", "placeholder"=>"Denominazione del contraente..."));
 
         $wnd->EnableCloseWndOnSuccessfulSave();
 
