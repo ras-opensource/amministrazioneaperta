@@ -718,7 +718,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Template organismo publish dlg
     public function Template_GetPatrimonioPublishDlg($params)
     {
-        //lista organismi da ripristinare
+        //lista elementi da ripristinare
         if($params['ids'])
         {
             $ids= json_decode($params['ids']);
@@ -754,8 +754,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
                     $tabledata[]=array("Denominazione"=>$desc);
                 }
 
-                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." organismi verranno pubblicato, vuoi procedere?")));
-                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente organismo verrà pubblicato, vuoi procedere?")));
+                if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." elementi verranno pubblicati, vuoi procedere?")));
+                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente elemento verrà pubblicato, vuoi procedere?")));
 
                 $table=new AA_JSON_Template_Generic($id."_Table", array(
                     "view"=>"datatable",
@@ -774,7 +774,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             else
             {
                 $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
-                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per pubblicare gli organismi selezionati.</p>")));
+                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per pubblicare gli elementi selezionati.</p>")));
                 $wnd->SetWidth(380);
                 $wnd->SetHeight(115);
             }
@@ -1475,7 +1475,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return false;
         }
         
-        return $this->Task_GenericAddNew($task,$_REQUEST,false,true);
+        return $this->Task_GenericAddNew($task,$_REQUEST);
     }
     
     //Task Aggiungi un canone
@@ -1834,7 +1834,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per cestinare/eliminare organismi.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per cestinare/eliminare elementi.</error>";
         }
         if($_REQUEST['ids']!="")
         {
@@ -2193,7 +2193,7 @@ Class AA_PatrimonioPublicReportTemplateView extends AA_GenericObjectTemplateView
         $this->SetStyle("width: 99%; display:flex; flex-direction: column; align-items: center;");
 
         #Parte generale---------------------------------
-        $generale=new AA_XML_Div_Element("AA_OrganismiPublicReportTemplateView-generale",$this);
+        $generale=new AA_XML_Div_Element("AA_PatrimonioPublicReportTemplateView-generale",$this);
         $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%");
 
         #Denominazione----------------------------------

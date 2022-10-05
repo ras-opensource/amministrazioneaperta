@@ -6383,7 +6383,7 @@ Class AA_GenericModule
             else
             {
                 $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
-                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per cestinare gli organismi selezionati.</p>")));
+                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per cestinare gli elementi selezionati.</p>")));
                 $wnd->SetWidth(380);
                 $wnd->SetHeight(115);
             }
@@ -6460,7 +6460,7 @@ Class AA_GenericModule
             else
             {
                 $wnd=new AA_GenericWindowTemplate($id, "Avviso",$this->id);
-                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per cestinare gli organismi selezionati.</p>")));
+                $wnd->AddView(new AA_JSON_Template_Template("",array("css"=>array("text-align"=>"center"),"template"=>"<p>L'utente corrente non ha i permessi per cestinare gli elementi selezionati.</p>")));
                 $wnd->SetWidth(380);
                 $wnd->SetHeight(115);
             }
@@ -6484,7 +6484,7 @@ Class AA_GenericModule
             return $wnd;
         }
 
-        //lista organismi da ripristinare
+        //lista elementi da ripristinare
         if($params['ids'])
         {
             $ids= json_decode($params['ids']);
@@ -6564,7 +6564,7 @@ Class AA_GenericModule
 
         $objectClass=static::AA_MODULE_OBJECTS_CLASS;
 
-        //lista organismi da ripristinare
+        //lista elementi da ripristinare
         if($params['ids'])
         {
             $ids= json_decode($_REQUEST['ids']);
@@ -6666,7 +6666,7 @@ Class AA_GenericModule
             return $wnd;
         }
 
-        //lista organismi da ripristinare
+        //lista elementi da ripristinare
         if($params['ids'])
         {
             $ids= json_decode($params['ids']);
@@ -6761,7 +6761,7 @@ Class AA_GenericModule
             return false;     
         }
 
-        //lista organismi da ripristinare
+        //lista elementi da ripristinare
         if($params['ids'])
         {
             $ids= json_decode($_REQUEST['ids']);
@@ -6925,7 +6925,7 @@ Class AA_GenericModule
                 else
                 {
                     $sTaskLog="<status id='status'>0</status><content id='content'>";
-                    $sTaskLog.= "SOno stati cestinati ".sizeof($ids_final)." organismi.";
+                    $sTaskLog.= "SOno stati cestinati ".sizeof($ids_final)." elementi.";
                     $sTaskLog.="</content>";
 
                     $task->SetLog($sTaskLog);
@@ -7029,7 +7029,7 @@ Class AA_GenericModule
                 else
                 {
                     $sTaskLog="<status id='status' action='goBack' action_params='".json_encode(array())."'>0</status><content id='content'>";
-                    $sTaskLog.= "Sono stati eliminati ".sizeof($ids_final)." organismi.";
+                    $sTaskLog.= "Sono stati eliminati ".sizeof($ids_final)." elementi.";
                     $sTaskLog.="</content>";
 
                     $task->SetLog($sTaskLog);
@@ -7071,7 +7071,7 @@ Class AA_GenericModule
             return $wnd;
         }
 
-        //lista organismi da ripristinare
+        //lista elementi da ripristinare
         if($params['ids'])
         {
             $ids= json_decode($params['ids']);
@@ -7258,7 +7258,7 @@ Class AA_GenericModule
         $sessParams = AA_SessionVar::Get("SaveAsPdf_params");
         $objectClass=static::AA_MODULE_OBJECTS_CLASS;
 
-        //lista organismi da esportare
+        //lista elementi da esportare
         if($sessVar->IsValid() && !isset($_REQUEST['fromParams']))
         {
             $ids = $sessVar->GetValue();
@@ -11285,19 +11285,58 @@ Class AA_Object_V2
                 AA_Log::Log(__METHOD__." - Oggetto originale non valido.",100);
                 return false;
             }
+
+            //Tiene conto della revisione
+            if($object->GetDbDataTable() !="" && ($object->GetStatusMask() & AA_Const::AA_STATUS_REVISIONATA) > 0 && $object->GetId() > 0)
+            {
+                //Revisione
+                if(($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) > 0 && $object->GetIdDataRev() == 0)
+                {
+                    $newIdData=$object->CloneData($object->nId_Data);
+                    if($newIdData > 0)
+                    {
+                        $object->nId_Data_Rev=$object->nId_Data;
+                        $object->nId_Data=$newIdData;
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - ERRORE nel revisionamento dei dati",100);
+                        return false;
+                    }
+                }
+
+                //pubblicazione Revisione
+                if(($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) == 0 && $object->GetIdDataRev() > 0)
+                {
+                    if($object->nId_Data>0)
+                    {
+                        if($object->DeleteData($object->nId_Data))
+                        {
+                            $object->nId_Data=$object->nId_Data_Rev;
+                            $object->nId_Data_Rev=0;        
+                        }
+                        else
+                        {
+                            AA_Log::Log(__METHOD__." - ERRORE nell'eliminazione dei dati clonati.",100);
+                            return false;
+                        }
+                    }                 
+                }
+            }
         }
         else
         {
+            $object->SetStatus(AA_Const::AA_STATUS_BOZZA);
             $perms = $object->GetUserCaps($user);
-            $objStatus=$object->GetStatus();
-
+            
             //Modifica generica
             if(($perms&AA_Const::AA_PERMS_WRITE) == 0)
             {
                 AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
                 return false;
             }
-
+            
+            /*
             //cestinazione
             if(($objStatus&AA_Const::AA_STATUS_CESTINATA) > 0 && ($perms&AA_Const::AA_PERMS_DELETE) == 0)
             {
@@ -11310,51 +11349,13 @@ Class AA_Object_V2
             {
                 AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUsername()." non ha sufficienti permessi per salvare le modifiche all'oggetto: ".$object->GetName(),100);
                 return false;
-            }
+            }*/
         }
 
         $db=new AA_Database();
         $where="";
         $query="";
         $sep="";
-
-        //Tiene conto della revisione
-        if($object->GetDbDataTable() !="" && ($object->GetStatusMask() & AA_Const::AA_STATUS_REVISIONATA) > 0)
-        {
-            //Revisione
-            if(($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) > 0 && $object->GetIdDataRev() == 0)
-            {
-                $newIdData=$object->CloneData($object->nId_Data);
-                if($newIdData > 0)
-                {
-                    $object->nId_Data_Rev=$object->nId_Data;
-                    $object->nId_Data=$newIdData;
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - ERRORE nel revisionamento dei dati",100);
-                    return false;
-                }
-            }
-
-            //pubblicazione Revisione
-            if(($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) == 0 && $object->GetIdDataRev() > 0)
-            {
-                if($object->nId_Data>0)
-                {
-                    if($object->DeleteData($object->nId_Data))
-                    {
-                        $object->nId_Data=$object->nId_Data_Rev;
-                        $object->nId_Data_Rev=0;        
-                    }
-                    else
-                    {
-                        AA_Log::Log(__METHOD__." - ERRORE nell'eliminazione dei dati clonati.",100);
-                        return false;
-                    }
-                }                 
-            }
-        }
 
         //Aggiorna la tabella dati se è impostata
         if($bSaveData)
