@@ -948,9 +948,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 console.error(this.name + ".dlg - parametri non impostati");
                 return false;
             }
-            if (AA_MainApp.utils.isDefined(params.task)) {
-                console.log(this.name + ".dlg", params);
-            } else {
+            if (!AA_MainApp.utils.isDefined(params.task)) {
                 console.error(this.name + ".dlg - task non impostato", params);
                 return false;
             }
@@ -963,8 +961,6 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                 let wnd = webix.ui(result.content.value);
 
-                wnd.show();
-
                 //Imposta la validazione del form (se presente)
                 let forms = wnd.queryView("form", "all");
                 for (form of forms) {
@@ -975,6 +971,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     form.reconstruct();
                     form.setValues(oldValues);
                 }
+
+                wnd.show();
 
                 return true;
             } else {
@@ -1787,7 +1785,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
     //default form validation
     this.eventHandlers['defaultHandlers'].validateForm = function() {
         try {
-            //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm",this, arguments);
+            console.log(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.validateForm", this, arguments);
 
             let val = true;
 
@@ -1813,7 +1811,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         }
 
                         if (arguments[0] != "" || this.elements[arguments[2]].config.required) {
-                            let found = /^[\+]?[0-9]+(\.[0-9]{3})*(\,[0-9]{2})?$/.test(arguments[0]);
+                            let found = /^[\+]?[1-9]+(\.[0-9]{3})*(\,[0-9]{2})?$/.test(arguments[0]);
                             if (!found) {
                                 val = false;
                             }
@@ -2355,25 +2353,14 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         activeMenuContent: "", //menu contestuale alla sezione attiva
         layout: {},
         module_content_id: "AA_ModuleContent",
-        dlg: async function(task, params, module, taskManager = "") {
+        dlg: async function(task, param, module, taskManager = "") {
             try {
-                //console.log(".ui.dlg("+task+","+params+","+module+")",params);
+                //console.log(".ui.dlg(" + task + "," + param + "," + module + ")", param);
+                let params = { "task": task, "params": param, "module": module, "taskManager": taskManager };
                 let mod = AA_MainApp.getModule(module);
                 if (mod.isValid()) {
-                    if (taskManager == "") taskManager = mod.taskManager;
-                    let result = await AA_VerboseTask(task, taskManager, params);
-                    if (result.status.value == 0) {
-                        //console.log(".ui.dlg("+task+","+params+","+module+","+taskManager+")",params,result.content.value);
-                        if (result.content.value) await webix.ui(result.content.value).show();
-                    } else {
-                        console.error(".ui.dlg(" + task + "," + params + "," + module + "," + taskManager + ")", result.error.value);
-                        AA_MainApp.ui.alert(result.error.value);
-                        return Promise.reject(result.error.value);
-                    }
-                } else {
-                    console.error(".ui.dlg(" + task + "," + params + "," + module + "," + taskManager + ") - modulo non valido.");
-                    return false;
-                }
+                    return mod.dlg(params);
+                } else return AA_MainApp.setCurrentModule.dlg(params);
             } catch (msg) {
                 console.error(".ui.dlg(" + task + "," + params + "," + module + "," + taskManager + ")", msg);
                 AA_MainApp.ui.alert(msg);

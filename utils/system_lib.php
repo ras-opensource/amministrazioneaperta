@@ -9806,7 +9806,7 @@ Class AA_GenericPagedSectionTemplate
                     if($this->saveFilterId != "") $saveFilterId="'".$this->saveFilterId."'";
                     else $saveFilterId="module.getActiveView()";
 
-                    $filterClickAction= "try{module=AA_MainApp.getModule('".$this->module."'); if(module.isValid()){module.ui.dlg('".$this->filterDlgTask."',module.getRuntimeValue(".$saveFilterId.",'filter_data'),'".$this->module."')}}catch(msg){console.error(msg)}";
+                    $filterClickAction= "try{module=AA_MainApp.getModule('".$this->module."'); if(module.isValid()){module.dlg({task:'".$this->filterDlgTask."',postParams: module.getRuntimeValue(".$saveFilterId.",'filter_data'), module: '".$this->module."'})}}catch(msg){console.error(msg)}";
 
                     $filter_btn = new AA_JSON_Template_Generic($this->id."_Filter_btn",array(
                     "view"=>"button",
@@ -9830,7 +9830,7 @@ Class AA_GenericPagedSectionTemplate
                     if($toolbar_spacer) $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>10)));
                     $toolbar_spacer=true;
                     
-                    $addnewClickAction= "try{module=AA_MainApp.getModule('".$this->module."'); if(module.isValid()){module.ui.dlg('".$this->addNewDlgTask."','','".$this->module."')}}catch(msg){console.error(msg)}";
+                    $addnewClickAction= "try{module=AA_MainApp.getModule('".$this->module."'); if(module.isValid()){module.dlg({task:'".$this->addNewDlgTask."',module:'".$this->module."'})}}catch(msg){console.error(msg)}";
 
                     $addnew_btn = new AA_JSON_Template_Generic($this->id."_AddNew_btn",array(
                     "view"=>"button",

@@ -47,7 +47,6 @@ Class AA_Provvedimenti extends AA_Object_V2
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
         //Db data binding
-        $this->SetBind("Descrizione","descrizione");
         $this->SetBind("Estremi","estremi_atto");
         $this->SetBind("AnnoRiferimento","anno_rif");
         $this->SetBind("Tipo","tipo");
@@ -207,18 +206,6 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewProvvedimenti");
         $taskManager->RegisterTask("UpdateProvvedimenti");
         $taskManager->RegisterTask("PublishProvvedimenti");
-
-        //Canoni
-        $taskManager->RegisterTask("GetProvvedimentiAddNewCanoneDlg");
-        $taskManager->RegisterTask("AddNewCanone");
-        $taskManager->RegisterTask("GetProvvedimentiModifyCanoneDlg");
-        $taskManager->RegisterTask("UpdateCanone");
-        $taskManager->RegisterTask("GetProvvedimentiTrashCanoneDlg");
-        $taskManager->RegisterTask("TrashCanone");
-        #------------------------------------------------------------------------------------
-
-        //Task Lista codici istat
-        $taskManager->RegisterTask("GetProvvedimentiListaCodiciIstat");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -441,10 +428,10 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $form_data=array();
         
         $anno_fine=Date('Y');
-        $form_data['anno_rif']=$anno_fine;
+        $form_data['AnnoRif']=$anno_fine;
         
         //Struttura
-        $form_data['Tipo']=0;
+        $form_data['Tipo']=-1;
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo provvedimento/accordo", $this->id,$form_data,$form_data);
         
@@ -460,25 +447,30 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
             array("id"=>"1","value"=>"Provvedimento di scelta del contraente"),
             array("id"=>"2","value"=>"Accordo con altre amministrazioni")
         );
-        $wnd->AddSelectField("Tipo","tipo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di provvedimento.","bottomLabel"=>"*Indicare il tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
+        $wnd->AddSelectField("Tipo","Tipo",array("required"=>true,"validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di provvedimento.","bottomLabel"=>"*Indicare il tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
 
         $anno_start=($anno_fine-10);
 
         //anno riferimento
+        $options=array();
         for($i=$anno_fine; $i>=$anno_start; $i--)
         {
             $options[]=array("id"=>$i, "value"=>$i);
         }
-        $wnd->AddSelectField("AnnoRif","Anno di riferimento",array("required"=>true,"validateFunction"=>"IsPositive","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));
+        $wnd->AddSelectField("AnnoRif","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));
 
         //Nome
         $wnd->AddTextField("nome","Oggetto",array("required"=>true, "bottomLabel"=>"*Inserisci l'oggetto del provvedimento.", "placeholder"=>"Oggetto del provvedimento..."));
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
+        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
 
+        //estremi
+        $wnd->AddTextField("Estremi","Estremi",array("required"=>true, "bottomLabel"=>"*Inserisci gli estremi dell'atto.", "placeholder"=>"Estremi dell'atto..."));
 
+        //Contraente
+        $wnd->AddTextField("Contraente","Contraente",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione del contraente.", "placeholder"=>"Denominazione del contraente..."));
 
         $wnd->EnableCloseWndOnSuccessfulSave();
 
