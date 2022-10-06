@@ -516,7 +516,6 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $form_data['Modalita']=0;
         $form_data['Contraente']="n.d.";
         
-        //Struttura
         $form_data['Tipo']=-1;
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo provvedimento/accordo", $this->id,$form_data,$form_data);
@@ -577,12 +576,12 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
     //Template dlg modify immobile
     public function Template_GetProvvedimentiModifyDlg($object=null)
     {
-        $id=static::AA_UI_PREFIX."_".static::AA_UI_TASK_MODIFY_DLG;
+        $id=$this->GetId()."_Modify_Dlg";
         if(!($object instanceof AA_Provvedimenti)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali", $this->id);
 
-        $id.="_".$object->GetId();
         $form_data['id']=$object->GetID();
         $form_data['nome']=$object->GetName();
+        $form_data['descrizione']=$object->GetDescr();
 
         foreach($object->GetDbBindings() as $prop=>$field)
         {
@@ -598,61 +597,45 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $wnd->SetWidth(920);
         $wnd->SetHeight(640);
         
-        //titolo di possesso
-        $options=array(
-            array("id"=>"1","value"=>"di proprietà"),
-            array("id"=>"2","value"=>"posseduto"),
-            array("id"=>"4","value"=>"detenuto")
-        );
-        $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","bottomLabel"=>"*Indicare il titolo di possesso","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
+        //tipo
+        $selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
+        $options=array();
+        foreach(AA_Provvedimenti_Const::GetListaTipologia() as $key=>$value)
+        {
+            $options[]=array("id"=>$key,"value"=>$value);
+        }
+        $wnd->AddSelectField("Tipo","Tipo",array("required"=>true,"validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di provvedimento.","bottomLabel"=>"*Indicare il tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options,"on"=>array("onChange"=>$selectionChangeEvent)));
+        
+        //modalità
+        $options=array();
+        foreach(AA_Provvedimenti_Const::GetListaModalita() as $key=>$value)
+        {
+            $options[]=array("id"=>$key,"value"=>$value);
+        }
+        $wnd->AddSelectField("Modalita","Modalità",array("hidden"=>"true", "required"=>"true","validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di modalità di scelta del contraente.","bottomLabel"=>"*Indicare il tipo di modalità","placeholder"=>"Scegli una voce...","options"=>$options,"gravity"=>100));
+
+        //Contraente
+        $wnd->AddTextField("Contraente","Contraente",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione del contraente.", "placeholder"=>"Denominazione del contraente...","gravity"=>100));        
+
+        $anno_fine=Date('Y');
+        $anno_start=($anno_fine-10);
+        //anno riferimento
+        $options=array();
+        for($i=$anno_fine; $i>=$anno_start; $i--)
+        {
+            $options[]=array("id"=>$i, "value"=>$i);
+        }
+        $wnd->AddSelectField("AnnoRiferimento","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));
 
         //Nome
-        $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile.", "placeholder"=>"inserisci qui la denominazione dell'immobile"));
+        $wnd->AddTextField("nome","Oggetto",array("required"=>true, "bottomLabel"=>"*Inserisci l'oggetto del provvedimento.", "placeholder"=>"Oggetto del provvedimento..."));
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile"));
+        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
 
-        //Dati catastali
-        $catasto = new AA_FieldSet("AA_PROVVEDIMENTI_CATASTO","Dati catastali");
-
-        //sezione catasto
-        $label="Sezione";
-        $options=array(
-            array("id"=>0,"value"=>"Catasto urbano"),
-            array("id"=>1,"value"=>"Catasto terreni")
-        );
-        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile.", "required"=>true));
-
-        //codice comune
-        $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento","required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetProvvedimentiListaCodiciIstat")));
-
-        //classe
-        $label="Classe";
-        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile"), false); 
-
-        //foglio catasto
-        $label="Foglio";
-        $catasto->AddTextField("FoglioCatasto",$label,array("tooltip"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."));
-
-        //particella catasto
-        $label="Particella";
-        $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."),false);
-
-        //rendita catasto
-        $label="Rendita";
-        $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeholder"=>"..."),false);
-
-        //consistenza catasto
-        $label="Consistenza";
-        $catasto->AddTextField("ConsistenzaCatasto",$label,array("tooltip"=>"*Inserire la consistenza dell'immobile.", "required"=>true,"placeholder"=>"..."),false);
-
-        //Indirizzo
-        $label="Indirizzo";
-        $catasto->AddTextField("Indirizzo",$label,array("bottomLabel"=>"*Inserire l'indirizzo dell'immobile senza indicare il comune.", "required"=>true,"placeholder"=>"es.: viale Trento 69"));
-
-        $wnd->AddGenericObject($catasto);
+        //estremi
+        $wnd->AddTextField("Estremi","Estremi",array("required"=>true, "bottomLabel"=>"*Inserisci gli estremi dell'atto.", "placeholder"=>"Estremi dell'atto..."));
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
@@ -691,80 +674,76 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
         
+        //tipo
+        $value=$object->GetTipo();
+        if($value=="")$value="n.d.";
+        $tipo=new AA_JSON_Template_Template($id."_Oggetto",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span class='AA_Label AA_Label_LightOrange'>#value#</span>",
+            "data"=>array("title"=>"Tipo:","value"=>$value)
+        ));
+
         //Descrizione
-        $value=$object->GetProp("Descrizione");
+        $value=$object->GetDescr();
         if($value=="")$value="n.d.";
         $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "data"=>array("title"=>"Descrizione:","value"=>$value)
         ));
 
-        //Codice Comune
-        $value= $object->GetProp("CodiceComune");
-        if($value=="") $value="n.d.";
-        $comune=new AA_JSON_Template_Template($id."_CodiceComune",array(
+        //anno riferimento
+        $value=$object->GetProp("AnnoRiferimento");
+        if($value=="")$value="n.d.";
+        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Codice Comune:","value"=>$value)
-        ));
-
-        //Classe
-        $value= $object->GetProp("ClasseCatasto");
-        if($value=="") $value="n.d.";
-        $classe=new AA_JSON_Template_Template($id."_ClasseCatasto",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Classe:","value"=>$value)
+            "data"=>array("title"=>"Anno:","value"=>$value)
         ));
         
-        //foglio
-        $value= $object->GetProp("FoglioCatasto");
+        //estremi
+        $value= $object->GetProp("Estremi");
         if($value=="") $value="n.d.";
-        $foglio=new AA_JSON_Template_Template($id."_FoglioCatasto",array(
+        $estremi=new AA_JSON_Template_Template($id."_Estremi",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Foglio:","value"=>$value)
+            "data"=>array("title"=>"Estremi atto:","value"=>$value)
         ));
+
+        $modalita=null;
+        $contraente=null;
+        if($object->GetTipo(true) == AA_Provvedimenti_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE)
+        {
+            $value=$object->GetModalita();
+            if($value=="") $value="n.d.";
+            $modalita=new AA_JSON_Template_Template($id."_Modalita",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><br><span class='AA_Label AA_Label_LightGreen'>#value#</span>",
+                "data"=>array("title"=>"Modalità:","value"=>$value)));
+        }
+        else
+        {
+            $value=$object->GetTipo();
+            if($value=="") $value="n.d.";
+            $contraente=new AA_JSON_Template_Template($id."_Modalita",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><br><span class='AA_Label AA_Label_LightGreen'>#value#</span>",
+                "data"=>array("title"=>"Contraente:","value"=>$value)));
+        }
         
-        //Particella
-        $value= $object->GetProp("ParticellaCatasto");
-        if($value=="") $value="n.d.";
-        $particella=new AA_JSON_Template_Template($id."_ParticellaCatasto",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Particella:","value"=>$value)
-        ));
-
-        //Rendita
-        $value= $object->GetProp("RenditaCatasto");
-        if($value=="") $value="n.d.";
-        $rendita=new AA_JSON_Template_Template($id."_RenditaCatasto",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Rendita:","value"=>$value)
-        ));
-
-        //Consistenza
-        $value= $object->GetProp("ConsistenzaCatasto");
-        if($value=="") $value="n.d.";
-        $consistenza=new AA_JSON_Template_Template($id."_Consistenza",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Consistenza:","value"=>$value)
-        ));
+        //prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($anno_rif);
+        $riga->AddCol($tipo);
+        if($modalita) $riga->AddCol($modalita);
+        if($contraente) $riga->AddCol($contraente);
+        $riga->AddCol($estremi);
+        $layout->AddRow($riga);
         
         //seconda riga
-        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height));
-        $riga->AddCol($descr);
-        $layout->AddRow($riga);
-        
+        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","gravity"=>1)));
+        //$riga->addCol($oggetto);
+        //$layout->AddRow($riga);
+
         //terza riga
-        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>38,"type"=>"section","css"=>array("background"=>"#dadee0 !important;")));
-        $riga->AddCol(new AA_JSON_Template_Generic($id."_Catasto_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati catastali</span>", "align"=>"center")));
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
+        $riga->addCol($descr);
         $layout->AddRow($riga);
 
-        //Quinta riga
-        $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($foglio);
-        $riga->AddCol($particella);
-        $riga->AddCol($rendita);
-        $riga->AddCol($consistenza);
-        $layout->AddRow($riga);        
-        
         return $layout;
     }
      

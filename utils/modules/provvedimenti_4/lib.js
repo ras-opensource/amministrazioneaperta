@@ -25,8 +25,19 @@ AA_provvedimenti_module.eventHandlers['defaultHandlers'].onTipoProvSelectChange 
                 contraente.show();
             }
 
+            contraente = $$(AA_provvedimenti_module.id + '_Modify_Dlg_Field_Contraente');
+            if (contraente) {
+                contraente.show();
+            }
+
             //nascondi la modalità di scelta
             let mod = $$(AA_provvedimenti_module.id + '_AddNew_Dlg_Field_Modalita');
+            if (mod) {
+                mod.hide();
+            }
+
+            //nascondi la modalità di scelta
+            mod = $$(AA_provvedimenti_module.id + '_Modify_Dlg_Field_Modalita');
             if (mod) {
                 mod.hide();
             }
@@ -37,8 +48,18 @@ AA_provvedimenti_module.eventHandlers['defaultHandlers'].onTipoProvSelectChange 
             if (contraente) {
                 contraente.hide();
             }
+            
+            contraente = $$(AA_provvedimenti_module.id + '_Modify_Dlg_Field_Contraente');
+            if (contraente) {
+                contraente.hide();
+            }
             //visualizza la modalità di scelta
             let mod = $$(AA_provvedimenti_module.id + '_AddNew_Dlg_Field_Modalita');
+            if (mod) {
+                mod.show();
+            }
+            
+            mod = $$(AA_provvedimenti_module.id + '_Modify_Dlg_Field_Modalita');
             if (mod) {
                 mod.show();
             }
