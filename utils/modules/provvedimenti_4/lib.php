@@ -561,7 +561,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
+        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
 
         //estremi
         $wnd->AddTextField("Estremi","Estremi",array("required"=>true, "bottomLabel"=>"*Inserisci gli estremi dell'atto.", "placeholder"=>"Estremi dell'atto..."));
@@ -632,7 +632,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
+        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
 
         //estremi
         $wnd->AddTextField("Estremi","Estremi",array("required"=>true, "bottomLabel"=>"*Inserisci gli estremi dell'atto.", "placeholder"=>"Estremi dell'atto..."));
