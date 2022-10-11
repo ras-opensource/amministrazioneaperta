@@ -718,7 +718,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         }
         else
         {
-            $value=$object->GetTipo();
+            $value=$object->GetProp("Contraente");
             if($value=="") $value="n.d.";
             $contraente=new AA_JSON_Template_Template($id."_Modalita",array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span class='AA_Label AA_Label_LightGreen'>#value#</span>",
