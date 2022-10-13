@@ -355,14 +355,26 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
      //Personalizza il template dei dati delle schede pubblicate per il modulo corrente
      protected function GetDataSectionPubblicate_CustomDataTemplate($data = array(),$object=null)
      {
-        /*
-         if($object instanceof AA_Provvedimenti)
-         {
-             $data['pretitolo']=$object->GetTitolo();
-             $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetSezione()."</span>";
-        }*/
- 
-         return $data;
+        if($object instanceof AA_Provvedimenti)
+        {
+
+            $data['pretitolo']=$object->GetTipo();
+            if($object->GetTipo(true) != AA_Provvedimenti_Const::AA_TIPO_PROVVEDIMENTO_ACCORDO)
+            {
+                $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetModalita()."</span>";
+            } 
+            else
+            {
+                $tag="";
+                foreach(explode("|",$object->GetProp('Contraente')) as $value)
+                {
+                    $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
+                }
+                $data['tags']=$tag;
+            } 
+        }
+        
+        return $data;
      }
 
     //Template sezione bozze (da specializzare)
@@ -423,8 +435,19 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         {
 
             $data['pretitolo']=$object->GetTipo();
-            if($object->GetTipo(true) == AA_Provvedimenti_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE) $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetModalita()."</span>";
-            else $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetProp('Contraente')."</span>";
+            if($object->GetTipo(true) != AA_Provvedimenti_Const::AA_TIPO_PROVVEDIMENTO_ACCORDO)
+            {
+                $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetModalita()."</span>";
+            } 
+            else
+            {
+                $tag="";
+                foreach(explode("|",$object->GetProp('Contraente')) as $value)
+                {
+                    $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
+                }
+                $data['tags']=$tag;
+            } 
         }
         
         return $data;
@@ -708,7 +731,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         $modalita=null;
         $contraente=null;
-        if($object->GetTipo(true) == AA_Provvedimenti_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE)
+        if($object->GetTipo(true) != AA_Provvedimenti_Const::AA_TIPO_PROVVEDIMENTO_ACCORDO)
         {
             $value=$object->GetModalita();
             if($value=="") $value="n.d.";
@@ -718,11 +741,15 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         }
         else
         {
-            $value=$object->GetProp("Contraente");
-            if($value=="") $value="n.d.";
+            $tag="";
+            foreach(explode("|",$object->GetProp('Contraente')) as $value)
+            {
+                $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
+            }
+            if($tag=="") $tag="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>n.d.</span>";;
             $contraente=new AA_JSON_Template_Template($id."_Modalita",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><br><span class='AA_Label AA_Label_LightGreen'>#value#</span>",
-                "data"=>array("title"=>"Stipulanti:","value"=>$value)));
+                "template"=>"<span style='font-weight:700'>#title#</span><br>#value#",
+                "data"=>array("title"=>"Stipulanti:","value"=>$tag)));
         }
         
         //prima riga
