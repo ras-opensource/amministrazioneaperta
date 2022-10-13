@@ -24,21 +24,21 @@ Class AA_Provvedimenti_Const extends AA_Const
         if(self::$AA_MODALITA_SCELTA_CONTRAENTE == null)
         {
             self::$AA_MODALITA_SCELTA_CONTRAENTE=array(
-                1=>"01-Procedura aperta",
+                1=>"01-PROCEDURA APERTA",
                 2=>"02-PROCEDURA RISTRETTA",
-                3=>"03-PROCEDURA NEGOZIATA PREVIA PUBBLICAZIONE DEL BANDO",
-                4=>"04-PROCEDURA NEGOZIATA SENZA PREVIA PUBBLICAZIONE DEL BANDO",
+                3=>"03-PROCEDURA NEGOZIATA PREVIA PUBBLICAZIONE",
+                4=>"04-PROCEDURA NEGOZIATA SENZA PREVIA PUBBLICAZIONE",
                 5=>"05-DIALOGO COMPETITIVO",
-                6=>"06-PROCEDURA NEGOZIATA SENZA PREVIA INDIZIONE DI GARA ART. 221 D.LGS. 163/2006",
+                6=>"06-PROCEDURA NEGOZIATA SENZA PREVIA INDIZIONE DI GARA (SETTORI SPECIALI)",
                 7=>"07-SISTEMA DINAMICO DI ACQUISIZIONE",
                 8=>"08-AFFIDAMENTO IN ECONOMIA - COTTIMO FIDUCIARIO",
                 14=>"14-PROCEDURA SELETTIVA EX ART 238 C.7, D.LGS. 163/2006",
                 17=>"17-AFFIDAMENTO DIRETTO EX ART. 5 DELLA LEGGE 381/91",
                 21=>"21-PROCEDURA RISTRETTA DERIVANTE DA AVVISI CON CUI SI INDICE LA GARA",
-                22=>"22-PROCEDURA NEGOZIATA DERIVANTE DA AVVISI CON CUI SI INDICE LA GARA",
-                23=>"23-AFFIDAMENTO IN ECONOMIA - AFFIDAMENTO DIRETTO",
+                22=>"22-PROCEDURA NEGOZIATA CON PREVIA INDIZIONE DI GARA (SETTORI SPECIALI)",
+                23=>"23-AFFIDAMENTO DIRETTO",
                 24=>"24-AFFIDAMENTO DIRETTO A SOCIETA' IN HOUSE",
-                25=>"25-AFFIDAMENTO DIRETTO A SOCIETA'...NELLE CONCESSIONI DI LL.PP",
+                25=>"25-AFFIDAMENTO DIRETTO A SOCIETA' RAGGRUPPATE/CONSORZIATE O CONTROLLATE NELLE CONCESSIONI E NEI PARTENARIATI",
                 26=>"26-AFFIDAMENTO DIRETTO IN ADESIONE AD ACCORDO QUADRO/CONVENZIONE",
                 27=>"27-CONFRONTO COMPETITIVO IN ADESIONE AD ACCORDO QUADRO/CONVENZIONE",
                 28=>"28-PROCEDURA AI SENSI DEI REGOLAMENTI DEGLI ORGANI COSTITUZIONALI",
@@ -52,6 +52,7 @@ Class AA_Provvedimenti_Const extends AA_Const
                 36=>"36-AFFIDAMENTO DIRETTO PER LAVORI, SERVIZI O FORNITURE SUPPLEMENTARI",
                 37=>"37-PROCEDURA COMPETITIVA CON NEGOZIAZIONE",
                 38=>"38-PROCEDURA DISCIPLINATA DA REGOLAMENTO INTERNO PER SETTORI SPECIALI",
+                39=>"39-AFFIDAMENTO DIRETTO PER MODIFICHE CONTRATTUALI O VARIANTI PER LE QUALI È NECESSARIA UNA NUOVA PROCEDURA DI AFFIDAMENTO"
             );
         }
 
@@ -568,7 +569,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $wnd->AddSelectField("Modalita","Modalità",array("hidden"=>"true", "required"=>"true","validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di modalità di scelta del contraente.","bottomLabel"=>"*Indicare il tipo di modalità","placeholder"=>"Scegli una voce...","options"=>$options,"gravity"=>100));
 
         //Contraente
-        $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti.", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));
+        $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti (utilizzare il carattere | \"pipe\" come separatore).", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));
 
         $anno_start=($anno_fine-10);
         //anno riferimento
@@ -638,7 +639,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $wnd->AddSelectField("Modalita","Modalità",array("hidden"=>"true", "required"=>"true","validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di modalità di scelta del contraente.","bottomLabel"=>"*Indicare il tipo di modalità","placeholder"=>"Scegli una voce...","options"=>$options,"gravity"=>100));
 
         //Contraente
-        $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti.", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));        
+        $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti (utilizzare il carattere | \"pipe\" come separatore).", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));        
 
         $anno_fine=Date('Y');
         $anno_start=($anno_fine-10);
@@ -749,7 +750,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
             if($tag=="") $tag="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>n.d.</span>";;
             $contraente=new AA_JSON_Template_Template($id."_Modalita",array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br>#value#",
-                "data"=>array("title"=>"Stipulanti:","value"=>$tag)));
+                "data"=>array("title"=>"Enti esterni stipulanti:","value"=>$tag)));
         }
         
         //prima riga
