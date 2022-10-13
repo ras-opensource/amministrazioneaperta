@@ -7071,6 +7071,8 @@ Class AA_SinesModule extends AA_GenericModule
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
+        $dlg->SetApplyButtonName("Filtra");
+
         return $dlg->GetObject();
     }
     
@@ -7118,6 +7120,8 @@ Class AA_SinesModule extends AA_GenericModule
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
+        $dlg->SetApplyButtonName("Filtra");
+
         return $dlg->GetObject();
     }
     
@@ -7195,6 +7199,8 @@ Class AA_SinesModule extends AA_GenericModule
 
         //Raggruppamento
         $dlg->AddSwitchBoxField("raggruppamento","Raggruppamento",array("onLabel"=>"nominativi","offLabel"=>"incarico","bottomLabel"=>"*Imposta la modalità di raggruppamento delle nomine (in base alla tipologia di incarico o ai nominativi degli incaricati)."));
+        
+        $dlg->SetApplyButtonName("Filtra");
         
         return $dlg->GetObject();
     }

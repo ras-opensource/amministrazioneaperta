@@ -2108,6 +2108,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         );
         $dlg->AddSelectField("Titolo","Titolo",array("bottomLabel"=>"*Indicare il titolo di possesso","options"=>$options));
         
+        $dlg->SetApplyButtonName("Filtra");
+        
         return $dlg->GetObject();
     }
     
@@ -2153,6 +2155,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         );
         $dlg->AddSelectField("Titolo","Titolo",array("bottomLabel"=>"*Indicare il titolo di possesso","options"=>$options));
         
+        $dlg->SetApplyButtonName("Filtra");
+
         return $dlg->GetObject();
     }
     
