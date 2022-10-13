@@ -545,7 +545,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $wnd->AddSelectField("Modalita","Modalità",array("hidden"=>"true", "required"=>"true","validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di modalità di scelta del contraente.","bottomLabel"=>"*Indicare il tipo di modalità","placeholder"=>"Scegli una voce...","options"=>$options,"gravity"=>100));
 
         //Contraente
-        $wnd->AddTextField("Contraente","Contraente",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione del contraente.", "placeholder"=>"Denominazione del contraente...","gravity"=>100));        
+        $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti.", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));
 
         $anno_start=($anno_fine-10);
         //anno riferimento
@@ -615,7 +615,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $wnd->AddSelectField("Modalita","Modalità",array("hidden"=>"true", "required"=>"true","validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di modalità di scelta del contraente.","bottomLabel"=>"*Indicare il tipo di modalità","placeholder"=>"Scegli una voce...","options"=>$options,"gravity"=>100));
 
         //Contraente
-        $wnd->AddTextField("Contraente","Contraente",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione del contraente.", "placeholder"=>"Denominazione del contraente...","gravity"=>100));        
+        $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti.", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));        
 
         $anno_fine=Date('Y');
         $anno_start=($anno_fine-10);
@@ -722,7 +722,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
             if($value=="") $value="n.d.";
             $contraente=new AA_JSON_Template_Template($id."_Modalita",array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span class='AA_Label AA_Label_LightGreen'>#value#</span>",
-                "data"=>array("title"=>"Contraente:","value"=>$value)));
+                "data"=>array("title"=>"Stipulanti:","value"=>$value)));
         }
         
         //prima riga
