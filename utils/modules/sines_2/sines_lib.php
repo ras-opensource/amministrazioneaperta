@@ -1341,7 +1341,7 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $options[]=array("id"=>$i, "value"=>$i);
         }
-        $wnd->AddSelectField("anno","Anno",array("required"=>true,"validateFunction"=>"IsPositive","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));        
+        $wnd->AddSelectField("anno","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));        
         
         //parte fissa
         $wnd->AddTextField("parte_fissa","Parte fissa",array("validateFunction"=>"IsNumber", "bottomLabel"=>"*Indicare l'importo lordo della parte fissa del trattamento economico.", "placeholder"=>"inserisci qui la parte fissa del compenso."));

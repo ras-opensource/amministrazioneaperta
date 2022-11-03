@@ -1811,7 +1811,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         }
 
                         if (arguments[0] != "" || this.elements[arguments[2]].config.required) {
-                            let found = /^[\+]?[1-9]+(\.[0-9]{3})*(\,[0-9]{2})?$/.test(arguments[0]);
+                            let found = /^[\+]?[0-9]+(\.[0-9]{3})*(\,[0-9]{2})?$/.test(arguments[0]);
                             if (!found) {
                                 val = false;
                             }
