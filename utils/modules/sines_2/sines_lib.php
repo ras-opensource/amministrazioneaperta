@@ -2200,7 +2200,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $id=$this->id."_AddNewBilancio_Dlg";
         
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo bilancio", $this->id);
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo bilancio riferito all'anno ".$dato_contabile->GetAnno(), $this->id);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(80);
@@ -2242,7 +2242,7 @@ Class AA_SinesModule extends AA_GenericModule
         $form_data['sRisultati']=$bilancio->GetRisultati();
         $form_data['sNote']=$bilancio->GetNote();
         
-        $wnd=new AA_GenericFormDlg($id, "Modifica bilancio", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Modifica bilancio riferito all'anno ".$dato_contabile->GetAnno(), $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(80);
