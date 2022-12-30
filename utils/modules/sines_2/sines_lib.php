@@ -7161,7 +7161,7 @@ Class AA_SinesModule extends AA_GenericModule
         $dlg->AddTextField("denominazione","Denominazione/P.IVA",array("bottomLabel"=>"*Filtra in base alla denominazione o alla partita iva dell'organismo.", "placeholder"=>"Denominazione o piva..."));
         
         //In corso
-        $dlg->AddSwitchBoxField("in_corso","In corso",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le nomine in corso."),false);
+        $dlg->AddSwitchBoxField("in_corso","In corso",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine che scadranno oltre l'arco temporale impostato."),false);
         
         //Struttura
         $dlg->AddStructField(array("hideServices"=>1,"targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
@@ -7184,7 +7184,7 @@ Class AA_SinesModule extends AA_GenericModule
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
         //Scadute
-        $dlg->AddSwitchBoxField("scadute","Scadute",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le nomine scadute da più dell'arco temporale impostato."),false);
+        $dlg->AddSwitchBoxField("scadute","Scadute",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine scadute oltre l'arco temporale impostato."),false);
  
         //Data scadenzario
         $dlg->AddDateField("data_scadenzario","Data scadenzario",array("editable"=>true,"bottomLabel"=>"*Seleziona la data di riferimento dello scadenzario."));
