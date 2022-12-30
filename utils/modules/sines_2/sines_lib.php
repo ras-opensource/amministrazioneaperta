@@ -567,28 +567,28 @@ Class AA_SinesModule extends AA_GenericModule
                 {
                     $view=true;
                     $label_class="AA_Label_LightGreen";
-                    $label_scadenza="Scade tra: ";
+                    $label_scadenza="Scade il: ";
                 }
                     
                 if($parametri['in_scadenza']=="1" && $datafine >= $data_scadenzario && $datafine <= $meseProx)
                 {
                     $view=true;
                     $label_class="AA_Label_LightYellow";
-                    $label_scadenza="Scade tra: ";
+                    $label_scadenza="Scade il: ";
                 }
                 
                 if($parametri['recenti']=="1" && $datafine >= $mesePrec && $datafine <= $data_scadenzario)
                 {
                     $view=true;
                     $label_class="AA_Label_LightOrange";
-                    $label_scadenza="Scaduta da: ";
+                    $label_scadenza="Scaduta il: ";
                 }
                 
                 if($parametri['scadute']=="1" && $datafine < $mesePrec)
                 {
                     $view=true;
                     $label_class="AA_Label_LightRed";
-                    $label_scadenza="Scaduta da: ";
+                    $label_scadenza="Scaduta il: ";
                 }
                 
                 //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
@@ -597,7 +597,7 @@ Class AA_SinesModule extends AA_GenericModule
                 {
                     $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
                     if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" (".$curNomina->GetCodiceFiscale().")";
-                    $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em;'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza.$datafine->diff($data_scadenzario)->format("%a")." giorni</div></div>";
+                    $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em;'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza."<br/>".$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
                 }
             }
             
@@ -7191,7 +7191,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //Finestra temporale
         $options_finestra=array(array("id"=>1,"value"=>"1 mese"));
-        for($i = 2; $i < 13; $i++)
+        for($i = 2; $i < 25; $i++)
         {
             $options_finestra[]=array("id"=>$i,"value"=>$i." mesi");
         }

@@ -7396,7 +7396,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
             {
                 $view=true;
                 $label_class="AA_Label_LightGreen";
-                $label_scadenza="Scade tra: ";
+                $label_scadenza="Scade il: ";
                 $index="in_corso";
             }
                 
@@ -7404,7 +7404,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
             {
                 $view=true;
                 $label_class="AA_Label_LightYellow";
-                $label_scadenza="Scade tra: ";
+                $label_scadenza="Scade il: ";
                 $index="in_scadenza";
             }
             
@@ -7412,7 +7412,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
             {
                 $view=true;
                 $label_class="AA_Label_LightOrange";
-                $label_scadenza="Scaduta da: ";
+                $label_scadenza="Scaduta il: ";
                 $index="recenti";
             }
             
@@ -7420,7 +7420,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
             {
                 $view=true;
                 $label_class="AA_Label_LightRed";
-                $label_scadenza="Scaduta da: ";
+                $label_scadenza="Scaduta il: ";
                 $index="scadute";
             }
             
@@ -7430,7 +7430,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
             {
                 $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
                 if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" (".$curNomina->GetCodiceFiscale().")";
-                $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza.$datafine->diff($data_scadenzario)->format("%a")." giorni</div></div>";
+                $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza.$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
             }
         }
 
@@ -7461,7 +7461,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
 
             if($index=="recenti")
             {
-                $title="<div>Nomine <b>scadute da meno di ".$parametri['finestra_temporale']." $mese</b> a a far data del ".$data.":</div>";
+                $title="<div>Nomine <b>scadute da meno di ".$parametri['finestra_temporale']." $mese</b> a far data del ".$data.":</div>";
             }
             
             if($index=="scadute") 
