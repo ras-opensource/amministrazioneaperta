@@ -7167,7 +7167,7 @@ Class AA_SinesModule extends AA_GenericModule
         $dlg->AddStructField(array("hideServices"=>1,"targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
 
         //In scadenza
-        $dlg->AddSwitchBoxField("in_scadenza","In scadenza",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le nomine che scadono entro l'arco temporale impostato."),false);
+        $dlg->AddSwitchBoxField("in_scadenza","In scadenza",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine che scadranno nell'arco temporale impostato."),false);
         
         //Tipologia
         $options=array(array("id"=>"0","value"=>"Qualunque"));
@@ -7178,7 +7178,7 @@ Class AA_SinesModule extends AA_GenericModule
         $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
         
         //recenti
-        $dlg->AddSwitchBoxField("recenti","Recenti",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le nomine scadute da meno dell'arco temporale impostato ."),false);
+        $dlg->AddSwitchBoxField("recenti","Recenti",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine scadute nell'arco temporale impostato ."),false);
 
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
