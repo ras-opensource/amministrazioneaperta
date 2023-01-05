@@ -374,6 +374,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['id_assessorato']) $parametri['id_assessorato']=$params['id_assessorato'];
         if($params['id_direzione']) $parametri['id_direzione']=$params['id_direzione'];
         if($params['incaricato']) $parametri['incaricato']=$params['incaricato'];
+        if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
         
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         
@@ -461,6 +462,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['al']) $parametri['al']=$params['al'];
         if($params['id_assessorato']) $parametri['id_assessorato']=$params['id_assessorato'];
         if($params['id_direzione']) $parametri['id_direzione']=$params['id_direzione'];
+        if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
         
         $parametri['in_scadenza']=$params['in_scadenza'];
         $parametri['in_corso']=$params['in_corso'];
@@ -642,6 +644,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['id_assessorato']) $parametri['id_assessorato']=$params['id_assessorato'];
         if($params['id_direzione']) $parametri['id_direzione']=$params['id_direzione'];
         if($params['incaricato']) $parametri['incaricato']=$params['incaricato'];
+        if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
         
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         
@@ -7031,10 +7034,11 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg()
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
         
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
+        if($_REQUEST['tipo_nomina']=="") $formData['tipo_nomina']="0";
         if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
         if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']=0;
         if($_REQUEST['id_direzione']=="") $formData['id_direzione']=0;
@@ -7049,7 +7053,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
        
-        $dlg->SetHeight(580);
+        $dlg->SetHeight(620);
         
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
@@ -7068,6 +7072,14 @@ Class AA_SinesModule extends AA_GenericModule
         }
         $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
         
+        //Tipo nomina
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        foreach(AA_Organismi_Const::GetTipoNomine() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $dlg->AddSelectField("tipo_nomina","Tipo nomina",array("bottomLabel"=>"*Filtra in base alla tipologia della nomina.","options"=>$options,"value"=>"0"));
+
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
@@ -7080,10 +7092,11 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg()
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'],"incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'],"incaricato"=>$_REQUEST['incaricato']);
         
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
+        if($_REQUEST['tipo_nomina']=="") $formData['tipo_nomina']="0";
         if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
         if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']=0;
         if($_REQUEST['id_direzione']=="") $formData['id_direzione']=0;
@@ -7117,6 +7130,14 @@ Class AA_SinesModule extends AA_GenericModule
         }
         $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
         
+        //Tipo nomina
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        foreach(AA_Organismi_Const::GetTipoNomine() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $dlg->AddSelectField("tipo_nomina","Tipo nomina",array("bottomLabel"=>"*Filtra in base alla tipologia della nomina.","options"=>$options,"value"=>"0"));
+
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
@@ -7129,10 +7150,11 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplateScadenzarioFilterDlg()
     {
         //Valori runtime
-        $formData=array("raggruppamento"=>$_REQUEST['raggruppamento'], "finestra_temporale"=>$_REQUEST['finestra_temporale'], "data_scadenzario"=>$_REQUEST['data_scadenzario'],"scadute"=>$_REQUEST['scadute'],"recenti"=>$_REQUEST['recenti'],"in_scadenza"=>$_REQUEST['in_scadenza'],"in_corso"=>$_REQUEST['in_corso'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"denominazione"=>$_REQUEST['denominazione'],"incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("raggruppamento"=>$_REQUEST['raggruppamento'], "finestra_temporale"=>$_REQUEST['finestra_temporale'], "data_scadenzario"=>$_REQUEST['data_scadenzario'],"scadute"=>$_REQUEST['scadute'],"recenti"=>$_REQUEST['recenti'],"in_scadenza"=>$_REQUEST['in_scadenza'],"in_corso"=>$_REQUEST['in_corso'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'], "tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"incaricato"=>$_REQUEST['incaricato']);
         
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
+        if($_REQUEST['tipo_nomina']=="") $formData['tipo_nomina']="0";
         if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
         if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']="0";
         if($_REQUEST['id_direzione']=="") $formData['id_direzione']="0";
@@ -7153,7 +7175,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Scadenzario_Filter", "Parametri di ricerca per lo scadenzario nomine",$this->GetId(),$formData,$resetData,$applyActions);
         
-        $dlg->SetHeight(780);
+        $dlg->SetHeight(830);
         $dlg->SetWidth(1080);
         $dlg->SetLabelAlign("right");
                         
@@ -7186,9 +7208,20 @@ Class AA_SinesModule extends AA_GenericModule
         //Scadute
         $dlg->AddSwitchBoxField("scadute","Scadute",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine scadute oltre l'arco temporale impostato."),false);
  
-        //Data scadenzario
-        $dlg->AddDateField("data_scadenzario","Data scadenzario",array("editable"=>true,"bottomLabel"=>"*Seleziona la data di riferimento dello scadenzario."));
+        //Tipo nomina
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        foreach(AA_Organismi_Const::GetTipoNomine() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $dlg->AddSelectField("tipo_nomina","Tipo nomina",array("bottomLabel"=>"*Filtra in base alla tipologia della nomina.","options"=>$options,"value"=>"0"));
         
+         //Data scadenzario
+        $dlg->AddDateField("data_scadenzario","Data scadenzario",array("editable"=>true,"bottomLabel"=>"*Seleziona la data di riferimento dello scadenzario."), false);
+        
+        //Raggruppamento
+        $dlg->AddSwitchBoxField("raggruppamento","Raggruppamento",array("onLabel"=>"nominativi","offLabel"=>"incarico","bottomLabel"=>"*Imposta la modalità di raggruppamento delle nomine (in base alla tipologia di incarico o ai nominativi degli incaricati)."));
+
         //Finestra temporale
         $options_finestra=array(array("id"=>1,"value"=>"1 mese"));
         for($i = 2; $i < 25; $i++)
@@ -7197,9 +7230,6 @@ Class AA_SinesModule extends AA_GenericModule
         }
         $dlg->AddSelectField("finestra_temporale","Arco temporale",array("bottomLabel"=>"*Seleziona l'arco temporale relativo alla data di riferimento.","options"=>$options_finestra,"value"=>"1"),false);
 
-        //Raggruppamento
-        $dlg->AddSwitchBoxField("raggruppamento","Raggruppamento",array("onLabel"=>"nominativi","offLabel"=>"incarico","bottomLabel"=>"*Imposta la modalità di raggruppamento delle nomine (in base alla tipologia di incarico o ai nominativi degli incaricati)."));
-        
         $dlg->SetApplyButtonName("Filtra");
         
         return $dlg->GetObject();

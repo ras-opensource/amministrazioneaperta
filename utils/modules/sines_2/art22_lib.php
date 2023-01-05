@@ -1388,6 +1388,7 @@ class AA_Organismi extends AA_Object
     // $params['in_scadenza']: Visualizza gli organismi che hanno nomine che scadono entro un mese dalla data di scadenza impostata.
     // $params['scadute']: Visualizza gli organismi che hanno nomine che scadute da più di un mese dalla data di scadenza impostata.
     // $params['recenti']: Visualizza solo i gli organismi che hanno nomine che sono scadute da meno di un mese dalla data di scadenza impostata.
+    // $params['tipo_nomina']: Visualizza solo i gli organismi che hanno il tipo di nomina impostata.
     
     static public function Search($params,$bOnlyCount=false, $user=null)
     {
@@ -1473,18 +1474,25 @@ class AA_Organismi extends AA_Object
             $where.=" AND tipo & ".$params['tipo']." > 0 ";
         }
                 
-        //Filtra in base all'incaricato
-        if($params['incaricato'] !="")
+        //Filtra in base all'incaricato o tipo di nomina
+        if($params['incaricato'] !="" || $params['tipo_nomina'] > 0)
         {
             $join=" LEFT JOIN ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." on ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".id_organismo=".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id";
-            $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome like '%". addslashes(trim($params['incaricato']))."%' ";
-            $where.=" OR ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome like '%". addslashes(trim($params['incaricato']))."%' ";
-            $where.=" OR ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale like '%". addslashes(trim($params['incaricato']))."%') ";
+            if($params['incaricato'] !="")
+            {
+                $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome like '%". addslashes(trim($params['incaricato']))."%' ";
+                $where.=" OR ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome like '%". addslashes(trim($params['incaricato']))."%' ";
+                $where.=" OR ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale like '%". addslashes(trim($params['incaricato']))."%') ";    
+            }
+            if($params['tipo_nomina'] > 0)
+            {
+                $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".tipo_incarico like '". addslashes(trim($params['tipo_nomina']))."' ";
+            }
         }
         
         //Filtra in base alla denominazione o alla partita iva/cf
-        if(isset($params['denominazione'])) $where.=" AND (denominazione like '%".$params['denominazione']."%' OR piva_cf like '%".$params['denominazione']."%') ";
-        
+        if(isset($params['denominazione'])) $where.=" AND (denominazione like '%".addslashes(trim($params['denominazione']))."%' OR piva_cf like '%".addslashes(trim($params['denominazione']))."%') ";
+
         //id impostati
         if(is_array($params['ids']) && sizeof($params['ids']) > 0)
         {
