@@ -7200,13 +7200,13 @@ Class AA_SinesModule extends AA_GenericModule
         $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
         
         //recenti
-        $dlg->AddSwitchBoxField("recenti","Recenti",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine scadute nell'arco temporale impostato ."),false);
+        $dlg->AddSwitchBoxField("recenti","Scadute a b.t.",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine scadute nell'arco temporale impostato (breve termine)."),false);
 
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
         //Scadute
-        $dlg->AddSwitchBoxField("scadute","Scadute",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine scadute oltre l'arco temporale impostato."),false);
+        $dlg->AddSwitchBoxField("scadute","Scadute a l.t.",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Nomine scadute oltre l'arco temporale impostato (lungo termine)."),false);
  
         //Tipo nomina
         $options=array(array("id"=>"0","value"=>"Qualunque"));
