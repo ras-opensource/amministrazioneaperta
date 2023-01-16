@@ -20,6 +20,8 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINE_DB_TABLE="art22_nomine";
     const AA_ORGANISMI_COMPENSI_DB_TABLE="art22_nomine_compensi";
     const AA_ORGANISMI_PROVVEDIMENTI_DB_TABLE="art22_provvedimenti_new";
+    const AA_DBTABLE_ORGANIGRAMMA="art22_organigramma";
+    const AA_DBTABLE_ORGANIGRAMMA_INCARICHI="art22_organigramma_incarichi";
 
     //Tipologia organismi
     static private $TIPOLOGIA=null;
@@ -301,6 +303,170 @@ class AA_Organismi_Const extends AA_Const
         $result.="</tipologia_organismi>";
 
         return $result;
+    }
+}
+
+//Classe Organigramma incarico
+Class AA_Organismi_Organigramma_Incarico
+{
+    //Costruttore di default
+    public function __construct($data="")
+    {
+        if(is_array($data)) $this->ParseData($data);
+    }
+
+    //Props
+    protected $props=array();
+    protected $bValid=false;
+
+    //Importa i dati
+    public function ParseData($data="")
+    {
+        if(is_array($data))
+        {
+            foreach($data as $key=>$val)
+            {
+                if($key=="id") $this->props['id']=$val;
+                if($key=="tipo") $this->props['tipo']=$val;
+                if($key=="id_organigramma") $this->props['id_organigramma']=$val;
+                if($key=="ras") $this->props['ras']=$val;
+                if($key=="ordine") $this->props['ordine']=$val;
+                if($key=="opzionale") $this->props['opzionale']=$val;
+            }
+
+            return true;
+        }
+        else return false;
+    }
+
+    //Restituisce una proprietà
+    public function SetProp($prop="",$val="")
+    {
+        if($prop != "") return $this->ParseData(array($prop=>$val));
+    }
+
+    //Imposta una proprietà
+    public function GetProp($prop="")
+    {
+        if($prop != "") return $this->props[$prop];
+    }
+
+    //Restituisce le proprietà
+    public function GetProps()
+    {
+        return $this->props;
+    }
+}
+
+//Classe organigramma
+Class AA_Organismi_Organigramma
+{
+    //Costruttore di default
+    public function __construct($data="")
+    {
+        if(is_array($data)) $this->ParseData($data);
+    }
+
+    //Props
+    protected $organigramma_props=array();
+    protected $organigramma_incarichi=array();
+    protected $bValid=false;
+
+    //Importa i dati
+    public function ParseData($data="")
+    {
+        if(is_array($data))
+        {
+            foreach($data as $key=>$val)
+            {
+                if($key=="id") $this->organigramma_props['id']=$val;
+                if($key=="tipo") $this->organigramma_props['tipo']=$val;
+                if($key=="id_organismo") $this->organigramma_props['id_organismo']=$val;
+                if($key=="enable_scadenzario") $this->organigramma_props['enable_scadenzario']=$val;
+                if($key=="dal") $this->organigramma_props['dal']=$val;
+                if($key=="al") $this->organigramma_props['al']=$val;
+                if($key="incarichi" && is_array($val))
+                {
+                    $this->organigramma_incarichi=array();
+                    foreach($val as $curIncarico)
+                    {
+                        if($curIncarico instanceof AA_Organismi_Organigramma_Incarico)
+                        {
+                            $this->organigramma_incarichi[]=$curIncarico;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+        else return false;
+    }
+
+    //Restituisce una proprietà
+    public function SetProp($prop="",$val="")
+    {
+        if($prop != "") return $this->ParseData(array($prop=>$val));
+    }
+
+    //Imposta una proprietà
+    public function GetProp($prop="")
+    {
+        if($prop != "") return $this->organigramma_props[$prop];
+    }
+
+    //Restituisce le proprietà
+    public function GetProps()
+    {
+        return $this->organigramma_props;
+    }
+
+    public function GetIncarichi()
+    {
+        return $this->organigramma_incarichi;
+    }
+
+    //Carica i dati dal database
+    static function LoadFromDb($id=0)
+    {
+        $organigramma=new AA_Organismi_Organigramma();
+
+        $db=new AA_Database();
+        $query="SELECT * from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." WHERE id ='".addslashes($id)."' LIMIT 1";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+            return $organigramma;
+        }
+         
+        if($db->GetAffectedRows() > 0)
+        {
+           $rs=$db->GetResultSet();
+
+           if($organigramma->ParseData($rs[0]))
+           {
+                $query="SELECT * from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI." WHERE id_organismo ='".addslashes($id)."'";
+                
+                if(!$db->Query($query))
+                {
+                    AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+                    return $organigramma;
+                }
+                
+                if($db->GetAffectedRows() > 0)
+                {
+                    $rs=$db->GetResultSet();
+                    foreach($rs as $curIncarico)
+                    {
+                        $organigramma_incarichi[]=new AA_Organismi_Organigramma_Incarico($curIncarico);
+                    }
+                }
+
+                $organigramma->bValid=true;
+           }
+        }
+
+        return $organigramma;
     }
 }
 
