@@ -7647,13 +7647,20 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
         //Imposta i limiti temporali
         if($parametri['in_scadenza'] != "1" || $parametri['in_corso'] != "1" || $parametri['scadute'] != "1" || $parametri['recenti'] != "1")
         {
-            if($parametri['in_scadenza'] == "1" && $parametri['scadute'] != "1") $params_nomine['scadenzario_dal']=$parametri['data_scadenzario'];
-            if($parametri['recenti'] == "1" && $parametri['in_corso'] !="1") $params_nomine['scadenzario_al']=$parametri['data_scadenzario'];
-            if($parametri['in_scadenza'] == "1" && $parametri['in_corso'] !="1") $params_nomine['scadenzario_al']=$meseProx->format("Y-m-d");
-            if($parametri['recenti'] == "1" && $parametri['scadute'] !="1") $params_nomine['scadenzario_dal']=$mesePrec->format("Y-m-d");
+           //limite superiore
+           if($parametri['scadute'] == "1") $params_nomine['scadenzario_al']=$mesePrec->format("Y-m-d");
+           if($parametri['recenti'] == "1") $params_nomine['scadenzario_al']=$parametri['data_scadenzario'];
+           if($parametri['in_scadenza'] == "1") $params_nomine['scadenzario_al']=$meseProx->format("Y-m-d");
+           if($parametri['in_corso'] == "1") $params_nomine['scadenzario_al']="";
+
+           //limite inferiore
+           if($parametri['in_corso'] == "1") $params_nomine['scadenzario_dal']=$meseProx->format("Y-m-d");
+           if($parametri['in_scadenza'] == "1") $params_nomine['scadenzario_dal']=$parametri['data_scadenzario'];
+           if($parametri['recenti'] == "1") $params_nomine['scadenzario_dal']=$mesePrec->format("Y-m-d");
+           if($parametri['scadute'] == "1") $params_nomine['scadenzario_dal']="";
         }
         
-        $nomine=$organismo->GetNomineGrouped($params_nomine);
+        $nomine=$organismo->GetNomineScadenzario($params_nomine);
         $nomine_list=array();
         
         foreach($nomine as $nomina)
