@@ -1689,31 +1689,31 @@ class AA_Organismi extends AA_Object
             $mesePrec->modify("-".$params['finestra_temporale']." month");
             
             //In corso
-            if($params['in_corso'] =="0")
+            if($params['in_corso'] =="1")
             {
-                $having.=" HAVING data_fine_incarico <= '".$meseProx->format("Y-m-d")."' ";
+                $having.=" HAVING data_fine_incarico >= '".$meseProx->format("Y-m-d")."' ";
             }
             
             //Scaduti
-            if($params['scadute'] =="0")
+            if($params['scadute'] =="1")
             {
                 
                 if($having =="") $having.=" HAVING data_fine_incarico >= '".$mesePrec->format("Y-m-d")."' ";
-                else $having.=" AND data_fine_incarico >= '".$mesePrec->format("Y-m-d")."' ";
+                else $having.=" OR data_fine_incarico <= '".$mesePrec->format("Y-m-d")."' ";
             }
             
             //Scadono entro un mese
-            if($params['in_scadenza'] == "0")
+            if($params['in_scadenza'] == "1")
             {                                
-                if($having =="") $having.=" HAVING (data_fine_incarico > '".$meseProx->format("Y-m-d")."' OR data_fine_incarico < '". addslashes($params['data_scadenzario'])."') ";
-                else $having.=" AND (data_fine_incarico > '".$meseProx->format("Y-m-d")."' OR data_fine_incarico < '".addslashes ($params['data_scadenzario'])."') ";
+                if($having =="") $having.=" HAVING (data_fine_incarico < '".$meseProx->format("Y-m-d")."' AND data_fine_incarico > '". addslashes($params['data_scadenzario'])."') ";
+                else $having.=" OR (data_fine_incarico < '".$meseProx->format("Y-m-d")."' AND data_fine_incarico > '".addslashes ($params['data_scadenzario'])."') ";
             }
 
-            //Scadute da meno di un mese
-            if($params['recenti'] == "0")
+            //Scadute da lungo termine
+            if($params['recenti'] == "1")
             {
-                if($having =="") $having.=" HAVING (data_fine_incarico < '".$mesePrec->format("Y-m-d")."' OR data_fine_incarico > '".addslashes($params['data_scadenzario'])."') ";
-                else $having.=" AND (data_fine_incarico < '".$mesePrec->format("Y-m-d")."' OR data_fine_incarico > '".addslashes($params['data_scadenzario'])."') "; 
+                if($having =="") $having.=" HAVING (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') ";
+                else $having.=" OR (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') "; 
             }
             
             if(strlen($where)>0) $where=" WHERE 1 ".$where;
@@ -1891,8 +1891,8 @@ class AA_Organismi extends AA_Object
         }
 
         //Impostazione dei parametri
-        $query="SELECT id from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
-        
+        $query="SELECT id, nome, cognome, data_fine from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
+
         //Nascondi le nomine scadute
         if($params['scadute']=="0") $query.=" AND (data_fine > NOW())";
         
@@ -1940,6 +1940,102 @@ class AA_Organismi extends AA_Object
         }
         
         //AA_Log::Log(__METHOD__."() - result: ".print_r(array_keys($result),true),100);
+        
+        return $result;
+    }
+
+    //Restituisce le nomine legati all'organismo raggruppate per nominato
+    public function GetNomineScadenzario($params=array())
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->IsValid())
+        {
+            AA_Log::Log(__METHOD__."() - oggetto non valido.");
+
+            return array();
+        }
+
+        //Impostazione dei parametri
+        $query="SELECT id, nome,cognome,codice_fiscale, data_fine from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
+        
+        //Nascondi nomine RAS
+        if($params['nomina_ras']=="0") $query.=" AND nomina_ras='0'";
+        
+        //Nascondi altre nomine
+        if($params['nomina_altri']=="0") $query.=" AND nomina_ras='1'";
+
+        //$query.= " GROUP by nome, cognome";
+
+        //Tipo incarico
+        if($params['tipo'] > 0) $query.=" AND tipo_incarico='".$params['tipo']."'";
+        
+        /*$query.= " HAVING id > 0 ";
+
+        //Nascondi le nomine scadute
+        if($params['scadute']=="0") $query.=" AND (data_fine > NOW())";
+        
+        //Nascondi quelle in corso
+        if($params['in_corso']=="0") $query.=" AND (data_fine < NOW())";
+        
+        //Parametri scadenzario
+        if($params['scadenzario_dal'] !="") $query.=" AND data_fine >= '".$params['scadenzario_dal']."'";
+        if($params['scadenzario_al'] !="") $query.=" AND data_fine <= '".$params['scadenzario_al']."'";*/
+
+
+        $query.=" ORDER by nome ,cognome, codice_fiscale, tipo_incarico, data_fine DESC, data_inizio DESC";
+
+        $db=new AA_Database();
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__."() - errore nella query: ".$query,100,false,true);
+            return array();
+        }
+
+        //AA_Log::Log(__METHOD__."() - query: ".$query,100);
+        
+        $result=array();
+
+        $rs=$db->GetResultSet();
+        
+        $curIndex="";
+        foreach($rs as $curNomina)
+        {
+            $insert=0;
+            $index=trim(strtolower($curNomina['nome'])."|".trim(strtolower($curNomina['cognome']))."|".trim(strtolower($curNomina['codice_fiscale'])));
+            if($curIndex != $index)
+            {
+                $insert++;
+                $curIndex=$index;
+            } 
+            if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
+            if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
+            if($params['scadenzario_dal'] == "") $insert++;
+            if($params['scadenzario_al'] == "") $insert++;
+
+            if($insert>=3)
+            {
+                //AA_Log::Log(__METHOD__."() - insert: ".$insert." - inserisco: ".print_r($curNomina,true),100);
+                if($params['raggruppamento'] == "0")
+                {
+                    $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
+                    if($nomina->IsValid())
+                    {
+                        $result[$nomina->GetTipologia(true)][$curNomina['id']]=$nomina;
+                    }    
+                }
+                else
+                {
+                    $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
+                    if($nomina->IsValid())
+                    {
+                        $result[base64_encode($index)][$curNomina['id']]=$nomina;
+                    }
+                }
+            }
+        }
+        
+        //AA_Log::Log(__METHOD__."() - result: ".print_r($result,true),100);
         
         return $result;
     }

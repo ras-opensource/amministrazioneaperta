@@ -486,7 +486,7 @@ Class AA_SinesModule extends AA_GenericModule
         $mesePrec->modify("-".$parametri['finestra_temporale']." month");
         $data_scadenzario=new DateTime($parametri['data_scadenzario']);
         
-        //Memorizza i paramettri dello scadenzario
+        //Memorizza i parametri dello scadenzario
         $_SESSION['AA_Organismi_Scadenzario_Filter_Params']=serialize($parametri);
 
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
@@ -550,13 +550,20 @@ Class AA_SinesModule extends AA_GenericModule
             //Imposta i limiti temporali
             if($parametri['in_scadenza'] != "1" || $parametri['in_corso'] != "1" || $parametri['scadute'] != "1" || $parametri['recenti'] != "1")
             {
-                if($parametri['in_scadenza'] == "1" && $parametri['scadute'] != "1") $params_nomine['scadenzario_dal']=$parametri['data_scadenzario'];
-                if($parametri['recenti'] == "1" && $parametri['in_corso'] !="1") $params_nomine['scadenzario_al']=$parametri['data_scadenzario'];
-                if($parametri['in_scadenza'] == "1" && $parametri['in_corso'] !="1") $params_nomine['scadenzario_al']=$meseProx->format("Y-m-d");
-                if($parametri['recenti'] == "1" && $parametri['scadute'] !="1") $params_nomine['scadenzario_dal']=$mesePrec->format("Y-m-d");
+                //limite superiore
+                if($parametri['scadute'] == "1") $params_nomine['scadenzario_al']=$mesePrec->format("Y-m-d");
+                if($parametri['recenti'] == "1") $params_nomine['scadenzario_al']=$parametri['data_scadenzario'];
+                if($parametri['in_scadenza'] == "1") $params_nomine['scadenzario_al']=$meseProx->format("Y-m-d");
+                if($parametri['in_corso'] == "1") $params_nomine['scadenzario_al']="";
+
+                //limite inferiore
+                if($parametri['in_corso'] == "1") $params_nomine['scadenzario_dal']=$meseProx->format("Y-m-d");
+                if($parametri['in_scadenza'] == "1") $params_nomine['scadenzario_dal']=$parametri['data_scadenzario'];
+                if($parametri['recenti'] == "1") $params_nomine['scadenzario_dal']=$mesePrec->format("Y-m-d");
+                if($parametri['scadute'] == "1") $params_nomine['scadenzario_dal']="";
             }
             
-            $nomine=$object->GetNomineGrouped($params_nomine);
+            $nomine=$object->GetNomineScadenzario($params_nomine);
             $nomine_list=array();
             
             foreach($nomine as $nomina)
