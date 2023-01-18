@@ -568,46 +568,49 @@ Class AA_SinesModule extends AA_GenericModule
             
             foreach($nomine as $nomina)
             {
-                $curNomina=current($nomina);
-                $datafine=new DateTime($curNomina->GetDataFine());
-                
-                $view=false;
-                if($parametri['in_corso']=="1" && $datafine > $meseProx)
+                foreach($nomina as $curNomina)
                 {
-                    $view=true;
-                    $label_class="AA_Label_LightGreen";
-                    $label_scadenza="Scade il: ";
-                }
+                    $datafine=new DateTime($curNomina->GetDataFine());
+                
+                    $view=false;
+                    if($parametri['in_corso']=="1" && $datafine > $meseProx)
+                    {
+                        $view=true;
+                        $label_class="AA_Label_LightGreen";
+                        $label_scadenza="Scade il: ";
+                    }
+                        
+                    if($parametri['in_scadenza']=="1" && $datafine >= $data_scadenzario && $datafine <= $meseProx)
+                    {
+                        $view=true;
+                        $label_class="AA_Label_LightYellow";
+                        $label_scadenza="Scade il: ";
+                    }
                     
-                if($parametri['in_scadenza']=="1" && $datafine >= $data_scadenzario && $datafine <= $meseProx)
-                {
-                    $view=true;
-                    $label_class="AA_Label_LightYellow";
-                    $label_scadenza="Scade il: ";
+                    if($parametri['recenti']=="1" && $datafine >= $mesePrec && $datafine <= $data_scadenzario)
+                    {
+                        $view=true;
+                        $label_class="AA_Label_LightOrange";
+                        $label_scadenza="Scaduta il: ";
+                    }
+                    
+                    if($parametri['scadute']=="1" && $datafine < $mesePrec)
+                    {
+                        $view=true;
+                        $label_class="AA_Label_LightRed";
+                        $label_scadenza="Scaduta il: ";
+                    }
+                    
+                    //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
+                    
+                    if($view)
+                    {
+                        $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
+                        if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" (".$curNomina->GetCodiceFiscale().")";
+                        $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em;'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza."<br/>".$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
+                    }
                 }
-                
-                if($parametri['recenti']=="1" && $datafine >= $mesePrec && $datafine <= $data_scadenzario)
-                {
-                    $view=true;
-                    $label_class="AA_Label_LightOrange";
-                    $label_scadenza="Scaduta il: ";
-                }
-                
-                if($parametri['scadute']=="1" && $datafine < $mesePrec)
-                {
-                    $view=true;
-                    $label_class="AA_Label_LightRed";
-                    $label_scadenza="Scaduta il: ";
-                }
-                
-                //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
-                
-                if($view)
-                {
-                    $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
-                    if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" (".$curNomina->GetCodiceFiscale().")";
-                    $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em;'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza."<br/>".$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
-                }
+                //$curNomina=current($nomina);
             }
             
             $result="";

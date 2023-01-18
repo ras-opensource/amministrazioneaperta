@@ -89,6 +89,8 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_DIRETTORE_GENERALE=16777216; //16769216;
     const AA_ORGANISMI_NOMINA_PRESIDENTE_ORGANO_INDIRIZZO=33554432;
     const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67108864; //67076864;
+    const AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=134217728; //67076864;
+
     
     //nomine da pubblicare
     const AA_NOMINE_NON_PUBBLICARE=12591616;
@@ -200,7 +202,8 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_OIV=>"Presidente OIV",
             self::AA_ORGANISMI_NOMINA_REVISORE_CONTI=>"Revisore dei conti",
             self::AA_ORGANISMI_NOMINA_REVISORE_UNICO=>"Revisore unico",
-            self::AA_ORGANISMI_NOMINA_SINDACO_COLLEGGIO=>"Sindaco collegio sindacale",
+            self::AA_ORGANISMI_NOMINA_SINDACO_COLLEGGIO=>"Componente collegio sindacale",
+            self::AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=>"Componente supplente collegio sindacale",
             self::AA_ORGANISMI_NOMINA_VICEPRESIDENTE=>"Vice Presidente"
             );
         }
@@ -1668,19 +1671,33 @@ class AA_Organismi extends AA_Object
         //Filtra in base alle nomine in corso
         if($params['in_corso'] !="" || $params['in_scadenza'] !="" || $params['scadute'] !="" || $params['recenti'] !="")
         {
+            //Non considerare gli organismi cessati
+            $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4 ";
+
             if($params['in_corso'] =="0" && $params['in_scadenza'] =="0" && $params['scadute'] =="0" && $params['recenti'] =="0")
             {
                 //Array vuoto
                 return array(0=>0,array());
             }
-                    
+            
+            //default
             if($params['data_scadenzario'] == "") $params['data_scadenzario']=Date("Y-m-d");
             if($params['finestra_temporale'] =="") $params['finestra_temporale']=1;
-            
-            $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".denominazione, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".aggiornamento, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome,".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome,".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale, MAX(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_fine) as data_fine_incarico FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
+            if($params['raggruppamento'] =="") $params['raggruppamento']=0; //ricerca in base all'incarico
+
+            if($params['raggruppamento']==1) 
+            {
+                $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".denominazione, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".aggiornamento, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome,".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome,".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale, MAX(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_fine) as data_fine_incarico FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
+                $group.=",".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome";
+            }
+            else
+            {
+                $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".denominazione, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".aggiornamento, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".tipo_incarico, MAX(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_fine) as data_fine_incarico FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
+                $group.=",".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".tipo_incarico";
+            }
             
             $join=" LEFT JOIN ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." on ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".id_organismo=".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id";
-            $group.=",".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome";
+            
             $where.= " AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_inizio <= '".$params['data_scadenzario']."' AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nomina_ras =1";
 
             $meseProx = new DateTime($params['data_scadenzario']);
@@ -1709,11 +1726,19 @@ class AA_Organismi extends AA_Object
                 else $having.=" OR (data_fine_incarico < '".$meseProx->format("Y-m-d")."' AND data_fine_incarico > '".addslashes ($params['data_scadenzario'])."') ";
             }
 
-            //Scadute da lungo termine
+            //Scadute da breve termine
             if($params['recenti'] == "1")
             {
-                if($having =="") $having.=" HAVING (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') ";
-                else $having.=" OR (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') "; 
+                if($params['raggruppamento']==0) //ricerca in base all'incarico
+                {
+                    if($having =="") $having.=" HAVING (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') ";
+                    else $having.=" OR (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') ";     
+                }
+                else
+                {
+                    if($having =="") $having.=" HAVING (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') ";
+                    else $having.=" OR (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') ";     
+                }
             }
             
             if(strlen($where)>0) $where=" WHERE 1 ".$where;
@@ -1957,7 +1982,7 @@ class AA_Organismi extends AA_Object
         }
 
         //Impostazione dei parametri
-        $query="SELECT id, nome,cognome,codice_fiscale, data_fine from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
+        $query="SELECT id, nome,cognome,codice_fiscale, data_fine, tipo_incarico from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
         
         //Nascondi nomine RAS
         if($params['nomina_ras']=="0") $query.=" AND nomina_ras='0'";
@@ -1965,10 +1990,11 @@ class AA_Organismi extends AA_Object
         //Nascondi altre nomine
         if($params['nomina_altri']=="0") $query.=" AND nomina_ras='1'";
 
-        //$query.= " GROUP by nome, cognome";
-
         //Tipo incarico
         if($params['tipo'] > 0) $query.=" AND tipo_incarico='".$params['tipo']."'";
+
+        //if($params['raggruppamento'] == "0") $query.= " GROUP by tipo_incarico, nome, cognome ";
+        //$query.= " GROUP by nome, cognome ";
         
         /*$query.= " HAVING id > 0 ";
 
@@ -1982,8 +2008,7 @@ class AA_Organismi extends AA_Object
         if($params['scadenzario_dal'] !="") $query.=" AND data_fine >= '".$params['scadenzario_dal']."'";
         if($params['scadenzario_al'] !="") $query.=" AND data_fine <= '".$params['scadenzario_al']."'";*/
 
-
-        $query.=" ORDER by nome ,cognome, codice_fiscale, tipo_incarico, data_fine DESC, data_inizio DESC";
+        $query.=" ORDER by nome, cognome, codice_fiscale, data_fine DESC, tipo_incarico, data_inizio DESC";
 
         $db=new AA_Database();
         if(!$db->Query($query))
@@ -1992,9 +2017,10 @@ class AA_Organismi extends AA_Object
             return array();
         }
 
-        //AA_Log::Log(__METHOD__."() - query: ".$query,100);
+        AA_Log::Log(__METHOD__."() - query: ".$query,100);
         
         $result=array();
+        $blacklist=array();
 
         $rs=$db->GetResultSet();
         
@@ -2005,23 +2031,37 @@ class AA_Organismi extends AA_Object
             $index=trim(strtolower($curNomina['nome'])."|".trim(strtolower($curNomina['cognome']))."|".trim(strtolower($curNomina['codice_fiscale'])));
             if($curIndex != $index)
             {
+                AA_Log::Log(__METHOD__."() - aggiorno index: ".print_r($curNomina,true),100);
                 $insert++;
                 $curIndex=$index;
+            }
+
+            //mette in black list gli eventuali altri incarichi precedenti riferiti alla stessa nomina
+            if($curNomina['data_fine'] > $params['scadenzario_al'] && $params['scadenzario_al'] != "")
+            {
+                AA_Log::Log(__METHOD__."() - blacklisto: ".print_r($curNomina,true),100);
+                $blacklist[$index]=1;
+                
+            }
+
+            if($blacklist[$index] != 1)
+            {
+                        if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
+                        if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
+                        if($params['scadenzario_dal'] == "") $insert++;
+                        if($params['scadenzario_al'] == "") $insert++;        
             } 
-            if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
-            if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
-            if($params['scadenzario_dal'] == "") $insert++;
-            if($params['scadenzario_al'] == "") $insert++;
 
             if($insert>=3)
             {
-                //AA_Log::Log(__METHOD__."() - insert: ".$insert." - inserisco: ".print_r($curNomina,true),100);
-                if($params['raggruppamento'] == "0")
+                AA_Log::Log(__METHOD__."() - insert: ".$insert." - inserisco: ".print_r($curNomina,true),100);
+                if($params['raggruppamento'] == "0" && !isset($result[$curNomina['tipo_incarico']][$index]))
                 {
                     $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
                     if($nomina->IsValid())
                     {
-                        $result[$nomina->GetTipologia(true)][$curNomina['id']]=$nomina;
+                        $result[$curNomina['tipo_incarico']][$index]=$nomina;
+                        $blacklist[$index]=1;
                     }    
                 }
                 else
@@ -2030,8 +2070,17 @@ class AA_Organismi extends AA_Object
                     if($nomina->IsValid())
                     {
                         $result[base64_encode($index)][$curNomina['id']]=$nomina;
+                        $blacklist[$index]=1;
                     }
                 }
+            }
+        }
+
+        if($params['raggruppamento'] == "0")
+        {
+            foreach(array_keys($result) as $curKey)
+            {
+                ksort($result[$curKey]);
             }
         }
         
