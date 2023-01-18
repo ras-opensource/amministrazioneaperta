@@ -2017,7 +2017,7 @@ class AA_Organismi extends AA_Object
             return array();
         }
 
-        AA_Log::Log(__METHOD__."() - query: ".$query,100);
+        //AA_Log::Log(__METHOD__."() - query: ".$query,100);
         
         $result=array();
         $blacklist=array();
@@ -2028,33 +2028,32 @@ class AA_Organismi extends AA_Object
         foreach($rs as $curNomina)
         {
             $insert=0;
-            $index=trim(strtolower($curNomina['nome'])."|".trim(strtolower($curNomina['cognome']))."|".trim(strtolower($curNomina['codice_fiscale'])));
+            $index = trim(strtolower($curNomina['nome']))."|".trim(strtolower($curNomina['cognome']))."|".trim(strtolower($curNomina['codice_fiscale']));
             if($curIndex != $index)
             {
-                AA_Log::Log(__METHOD__."() - aggiorno index: ".print_r($curNomina,true),100);
+                //AA_Log::Log(__METHOD__."() - aggiorno index: ".print_r($curNomina,true)." - oldIndex: ".$curIndex." - new index: ".$index ,100);
                 $insert++;
                 $curIndex=$index;
-            }
 
-            //mette in black list gli eventuali altri incarichi precedenti riferiti alla stessa nomina
-            if($curNomina['data_fine'] > $params['scadenzario_al'] && $params['scadenzario_al'] != "")
-            {
-                AA_Log::Log(__METHOD__."() - blacklisto: ".print_r($curNomina,true),100);
-                $blacklist[$index]=1;
-                
-            }
+                //mette in black list gli eventuali altri incarichi precedenti riferiti alla stessa nomina
+                if($curNomina['data_fine'] > $params['scadenzario_al'] && $params['scadenzario_al'] != "")
+                {
+                    //AA_Log::Log(__METHOD__."() - blacklisto: ".print_r($curNomina,true),100);
+                    $blacklist[$index]=1;
+                }
 
-            if($blacklist[$index] != 1)
-            {
-                        if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
-                        if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
-                        if($params['scadenzario_dal'] == "") $insert++;
-                        if($params['scadenzario_al'] == "") $insert++;        
-            } 
+                if($blacklist[$index] != 1)
+                {
+                            if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
+                            if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
+                            if($params['scadenzario_dal'] == "") $insert++;
+                            if($params['scadenzario_al'] == "") $insert++;        
+                } 
+            }
 
             if($insert>=3)
             {
-                AA_Log::Log(__METHOD__."() - insert: ".$insert." - inserisco: ".print_r($curNomina,true),100);
+                //AA_Log::Log(__METHOD__."() - insert: ".$insert." - inserisco: ".print_r($curNomina,true),100);
                 if($params['raggruppamento'] == "0" && !isset($result[$curNomina['tipo_incarico']][$index]))
                 {
                     $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
