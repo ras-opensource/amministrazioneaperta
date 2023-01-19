@@ -386,6 +386,12 @@ div.AA_Footer_Gradient {
     background: #ccebff;
 }
 
+.AA_Label_LightGray {
+    border: 1px solid #464646;
+    color: #464646;
+    background: #bdbdbd;
+}
+
 .AA_Label_LightYellow {
     border: 1px solid #666600;
     color: #666600;

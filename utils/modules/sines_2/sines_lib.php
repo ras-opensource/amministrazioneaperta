@@ -1783,7 +1783,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(720);
-        $wnd->SetHeight(600);
+        $wnd->SetHeight(640);
         
         //nomina Ras
         $wnd->AddSwitchBoxField("bNominaRas","Tipo nomina",array("onLabel"=>"RAS","offLabel"=>"non RAS","bottomLabel"=>"*Indica se la nomina è effettuata dalla RAS."));        
@@ -1802,6 +1802,9 @@ Class AA_SinesModule extends AA_GenericModule
         //Data fine
         $wnd->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
         
+        //Storico
+        $wnd->AddSwitchBoxField("nStorico","Storico",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Abilita per archiviare l'incarico come storico."));
+
         //Estremi del provvedimento
         $wnd->AddTextField("sEstremiProvvedimento","Estremi provvedimento",array("required"=>true,"bottomLabel"=>"*Riportare gli estremi del provvedimento di nomina.", "placeholder"=>"inserisci qui gli estremi del provvedimento di nomina."));
         
@@ -3191,16 +3194,25 @@ Class AA_SinesModule extends AA_GenericModule
             foreach($curNomina as $id_incarico=>$incarico)
             {
                 //dati incarico per riepilogo
-                if($incarico->GetDataFine() > $now) 
+                $riepilogo_incarico_label=$incarico->GetTipologia();
+                if($incarico->IsStorico())
                 {
-                    if($incarico->GetNominaRas() == "1") $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGreen'>".$incarico->GetTipologia()."</span>&nbsp;";
-                    else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightBlue'>".$incarico->GetTipologia()."</span>&nbsp;";
+                    $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGray'>".$riepilogo_incarico_label."</span>&nbsp;";
                 }
-                else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightRed'>".$incarico->GetTipologia()."</span>&nbsp;";
+                else
+                {
+                    if($incarico->GetDataFine() > $now) 
+                    {
+                        if($incarico->GetNominaRas() == "1") $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGreen'>".$riepilogo_incarico_label."</span>&nbsp;";
+                        else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightBlue'>".$riepilogo_incarico_label."</span>&nbsp;";
+                    }
+                    else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightRed'>".$riepilogo_incarico_label."</span>&nbsp;";    
+                }
                         
                 //Intestazione incarico            
-                $header="<span class='AA_Accordion_Item_Header_Selected'>".$incarico->GetTipologia()."</span>";
-                $headerAlt="<span class='AA_Accordion_Item_Header_Collapsed'>".$incarico->GetTipologia()."</span>";
+                $header="<span class='AA_Accordion_Item_Header_Selected'>".$riepilogo_incarico_label."</span>";
+                if($incarico->IsStorico()) $headerAlt="<span class='AA_Accordion_Item_Header_Collapsed'>".$riepilogo_incarico_label."</span>&nbsp;<span class='AA_Label AA_Label_LightGray'>storico</span>";
+                else $headerAlt="<span class='AA_Accordion_Item_Header_Collapsed'>".$riepilogo_incarico_label."</span>";
                 $curIncaricoAccordionItem=new AA_JSON_Template_Generic($id."_Incarico_".$id_intestazione_nomina."_".$id_incarico,array("view"=>"accordionitem", "css"=>"AA_AccordionHeaderItem","header"=>$header,"headerAlt"=>$headerAlt));
                 $curIncaricoAccordionItem->SetProp("collapsed",$collapsed);
                 
@@ -3212,7 +3224,8 @@ Class AA_SinesModule extends AA_GenericModule
 
                 //stato incarico
                 $incarico_label="<span class='AA_Label AA_Label_LightBlue'>in corso</span>&nbsp;";
-                if($incarico->GetDataFine() < $now) $incarico_label="<span class='AA_Label AA_Label_LightRed'>scaduto</span>&nbsp;";
+                if($incarico->GetDataFine() < $now && !$incarico->IsStorico()) $incarico_label="<span class='AA_Label AA_Label_LightRed'>scaduto</span>&nbsp;";
+                if($incarico->IsStorico()) $incarico_label="<span class='AA_Label AA_Label_LightGray'>storico</span>&nbsp;";
                 if($incarico->GetNominaRas()) $incarico_label.="<span class='AA_Label AA_Label_LightGreen'>nomina RAS</span>";
                 $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Nomina_Ras",array("type"=>"clean", "width"=>170,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Stato incarico: </span><br>$incarico_label</div>")));
                     
@@ -3585,6 +3598,9 @@ Class AA_SinesModule extends AA_GenericModule
             
             $values=(array)$filter->GetValue();
             
+            //Storiche
+            if($values['storico']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>archiviate</span>";
+
             //Scadute
             if($values['scadute']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>solo in corso</span>";
             //else $label.="<span class='AA_Label AA_Label_LightBlue'>mostra scadute</span>";
@@ -7185,9 +7201,11 @@ Class AA_SinesModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Scadenzario_Filter", "Parametri di ricerca per lo scadenzario nomine",$this->GetId(),$formData,$resetData,$applyActions);
         
-        $dlg->SetHeight(830);
+        $dlg->SetHeight(1080);
         $dlg->SetWidth(1080);
         $dlg->SetLabelAlign("right");
+        $dlg->SetLabelWidth(150);
+        $dlg->SetBottomPadding(32);
                         
         //Denominazione
         $dlg->AddTextField("denominazione","Denominazione/P.IVA",array("bottomLabel"=>"*Filtra in base alla denominazione o alla partita iva dell'organismo.", "placeholder"=>"Denominazione o piva..."));

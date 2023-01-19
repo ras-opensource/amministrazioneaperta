@@ -1672,7 +1672,7 @@ class AA_Organismi extends AA_Object
         if($params['in_corso'] !="" || $params['in_scadenza'] !="" || $params['scadute'] !="" || $params['recenti'] !="")
         {
             //Non considerare gli organismi cessati
-            $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4 ";
+            if($params['cessati'] != 1)$where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4 ";
 
             if($params['in_corso'] =="0" && $params['in_scadenza'] =="0" && $params['scadute'] =="0" && $params['recenti'] =="0")
             {
@@ -1740,6 +1740,9 @@ class AA_Organismi extends AA_Object
                     else $having.=" OR (data_fine_incarico > '".$mesePrec->format("Y-m-d")."' AND data_fine_incarico < '".addslashes($params['data_scadenzario'])."') ";     
                 }
             }
+
+            //Non considerare le nomine archiviate (storiche)
+            if($params['archivio'] != 1) $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".storico = 0 ";
             
             if(strlen($where)>0) $where=" WHERE 1 ".$where;
             $select="SELECT id,denominazione,aggiornamento FROM (".$select.$join.$where.$group.$having.") as organismi_scadenzario GROUP BY id";
@@ -1755,7 +1758,7 @@ class AA_Organismi extends AA_Object
         if(strlen($where) > 0) $query.=" WHERE 1 ".$where;
         $query.=$group.$having.") as organismi_filter";
 
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
         
         $db = new Database();
         $db->Query($query);
@@ -1992,6 +1995,9 @@ class AA_Organismi extends AA_Object
 
         //Tipo incarico
         if($params['tipo'] > 0) $query.=" AND tipo_incarico='".$params['tipo']."'";
+
+        //nomine storiche
+        if($params['archivio'] != 1) $query.=" AND storico = 0";
 
         //if($params['raggruppamento'] == "0") $query.= " GROUP by tipo_incarico, nome, cognome ";
         //$query.= " GROUP by nome, cognome ";
@@ -5046,6 +5052,7 @@ Class AA_OrganismiNomine extends AA_Object
         $this->oDbBind->AddBind("sNote","note");
         $this->oDbBind->AddBind("bNominaRas","nomina_ras");
         $this->oDbBind->AddBind("sEstremiProvvedimento","estremi_provvedimento");
+        $this->oDbBind->AddBind("nStorico","storico");
         
         if($parent instanceof AA_Organismi && $id==0)
         {
@@ -5334,6 +5341,19 @@ Class AA_OrganismiNomine extends AA_Object
     public function GetCompensoSpettante()
     {
         return $this->sCompensoSpettante;
+    }
+
+    //Flag di storicizzazione
+    protected $nStorico=0;
+    public function SetStorico($val=true)
+    {
+        $this->nStorico=0;
+        if($val==true) $this->nStorico=1;
+    }
+    public function IsStorico()
+    {
+        if($this->nStorico > 0) return true;
+        else return false;
     }
 
     //Compenso erogato
