@@ -1540,6 +1540,98 @@ class AA_Organismi extends AA_Object
         return true;
     }
 
+    //Funzione di recupero organismi per rappresentazione grafica
+    static public function GetOrganismiPerRappresentazioneGrafica($params,$user=null)
+    {
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();        
+        }
+
+        //Flag ricerca pubblica
+        $public=false;
+
+        if($user->IsGuest() || $params['public'] !="") $public=true;
+
+        //Imposta la query base
+        $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
+        $join="";
+        $where="";
+        $group="";
+        $having="";
+        $order=" ORDER BY id_assessorato,id_direzione, denominazione, aggiornamento DESC";
+        $group=" GROUP BY ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id ";
+
+        //Parametro status non impostato
+        if($params['status'] == "" || !isset($params['status']) || $public) $params['status']=AA_Const::AA_STATUS_PUBBLICATA;
+
+        if(!$public) $userStruct=$user->GetStruct();
+        else
+        {
+            if($params['id_assessorato']) $userStruct=AA_Struct::GetStruct($params['id_assessorato']);
+            else $userStruct=AA_Struct::GetStruct();
+        } 
+
+        //Includi l'assessorato
+        $join.=" LEFT JOIN assessorati on ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id_assessorato=assessorati.id ";
+
+        if($userStruct->GetAssessorato(true) > 0)
+        {   
+            if($userStruct->GetTipo() > 0) $where.=" AND id_assessorato='".$userStruct->GetAssessorato(true)."'";
+            else $where.=" AND assessorati.tipo='0'";
+        }
+        else
+        {
+            $where.=" AND assessorati.tipo='0' ";
+        }
+
+        if($userStruct->GetDirezione(true) > 0)
+        {   
+            $where.=" AND id_direzione='".$userStruct->GetDirezione(true)."'";
+        }
+
+        //Filtra in base allo stato della scheda
+        $where.=" AND status ='".$params['status']."' ";
+
+        //Nascondi gli organismi scaduti
+        $where.=" AND stato_organismo <> 4 ";
+
+        //Filtra in base al tipo di organismo
+        if($params['tipo']) $where.=" AND tipo & ".$params['tipo']." > 0 ";
+
+        $db=new AA_Database();
+
+        //Effettua la query
+        $query=$select.$join;
+        if(strlen($where) > 0) $query.=" WHERE 1 ".$where;
+        $query.=$group.$having.$order;
+        if(!$db->Query($query))
+        {
+            //Errore query
+            AA_Log::Log(__METHOD__."(".print_r($params,TRUE).") - Errore nella query: $query",100, true,true);
+            return array(0=>-1,array());
+        }
+
+        //Popola l'array dei risultati
+        $results=array();
+        $tot_count=0;
+        if($db->GetAffectedRows() > 0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $curResult=new AA_Organismi($curRow['id'],$user);
+                if($curResult != null) $curRow['id']=$curResult;
+                $tot_count++;
+            }
+        }
+
+        $result=array(0=>$tot_count,$results);
+
+        return $result;
+    }
+
     //Funzione di ricerca, restituisce un array, il primo elemento è un intero con il numero totale di voci, il secondo elemento è un array di oggetti AA_Processo.
     // $params: array dei parametri di ricerca, la chiave specifica il campo. valori speciali:
     // $params["from"], il record iniziale da cui partire.
@@ -1787,6 +1879,7 @@ class AA_Organismi extends AA_Object
         //Limita a 10 risultati di default
         if(!isset($params['from']) || $params['from'] < 0 || $params['from'] > $tot_count) $params['from'] = 0;
         if(!isset($params['count']) || $params['count'] < 0) $params['count'] = 10;
+        if($params['from'] == $tot_count && $tot_count >=10) $params['from']=$tot_count-10;
 
         //Effettua la query
         $query=$select.$join;
@@ -1994,7 +2087,7 @@ class AA_Organismi extends AA_Object
         if($params['nomina_altri']=="0") $query.=" AND nomina_ras='1'";
 
         //Tipo incarico
-        if($params['tipo'] > 0) $query.=" AND tipo_incarico='".$params['tipo']."'";
+        if($params['tipo_nomina'] > 0) $query.=" AND tipo_incarico='".$params['tipo_nomina']."'";
 
         //nomine storiche
         if($params['archivio'] != 1) $query.=" AND storico = 0";
@@ -7711,7 +7804,16 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
 
         //Raggruppa per incarico
         $params_nomine['raggruppamento']=$parametri['raggruppamento'];
-            
+
+        //Incarichi archiviati
+        $params_nomine['archivio']=$parametri['archivio'];
+
+        //nominativo
+        $params_nomine['incaricato']=$parametri['incaricato'];
+
+        //Tipo incarico
+        $params_nomine['tipo_nomina']=$parametri['tipo_nomina'];
+
         //Imposta i limiti temporali
         if($parametri['in_scadenza'] != "1" || $parametri['in_corso'] != "1" || $parametri['scadute'] != "1" || $parametri['recenti'] != "1")
         {
@@ -7733,49 +7835,53 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
         
         foreach($nomine as $nomina)
         {
-            $curNomina=current($nomina);
-            $datafine=new DateTime($curNomina->GetDataFine());
-            
-            $view=false;
-            if($parametri['in_corso']=="1" && $datafine > $meseProx)
+            foreach($nomina as $curNomina)
             {
-                $view=true;
-                $label_class="AA_Label_LightGreen";
-                $label_scadenza="Scade il: ";
-                $index="in_corso";
-            }
+                $datafine=new DateTime($curNomina->GetDataFine());
                 
-            if($parametri['in_scadenza']=="1" && $datafine >= $data_scadenzario && $datafine <= $meseProx)
-            {
-                $view=true;
-                $label_class="AA_Label_LightYellow";
-                $label_scadenza="Scade il: ";
-                $index="in_scadenza";
-            }
-            
-            if($parametri['recenti']=="1" && $datafine >= $mesePrec && $datafine <= $data_scadenzario)
-            {
-                $view=true;
-                $label_class="AA_Label_LightOrange";
-                $label_scadenza="Scaduta il: ";
-                $index="recenti";
-            }
-            
-            if($parametri['scadute']=="1" && $datafine < $mesePrec)
-            {
-                $view=true;
-                $label_class="AA_Label_LightRed";
-                $label_scadenza="Scaduta il: ";
-                $index="scadute";
-            }
-            
-            //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
-            
-            if($view)
-            {
-                $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
-                if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" (".$curNomina->GetCodiceFiscale().")";
-                $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza.$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
+                $view=false;
+                if($parametri['in_corso']=="1" && $datafine > $meseProx)
+                {
+                    $view=true;
+                    $label_class="AA_Label_LightGreen";
+                    $label_scadenza="Scade il: ";
+                    $index="in_corso";
+                }
+                    
+                if($parametri['in_scadenza']=="1" && $datafine >= $data_scadenzario && $datafine <= $meseProx)
+                {
+                    $view=true;
+                    $label_class="AA_Label_LightYellow";
+                    $label_scadenza="Scade il: ";
+                    $index="in_scadenza";
+                }
+                
+                if($parametri['recenti']=="1" && $datafine >= $mesePrec && $datafine <= $data_scadenzario)
+                {
+                    $view=true;
+                    $label_class="AA_Label_LightOrange";
+                    $label_scadenza="Scaduta il: ";
+                    $index="recenti";
+                }
+                
+                if($parametri['scadute']=="1" && $datafine < $mesePrec)
+                {
+                    $view=true;
+                    $label_class="AA_Label_LightRed";
+                    $label_scadenza="Scaduta il: ";
+                    $index="scadute";
+                }
+                
+                //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
+                
+                if($view)
+                {
+                    $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
+                    
+                    //AA_Log::Log(__METHOD__." - inserisco: ".$nomina_label,100);
+                    if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" (".$curNomina->GetCodiceFiscale().")";
+                    $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza.$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
+                }
             }
         }
 

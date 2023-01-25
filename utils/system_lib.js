@@ -1502,8 +1502,14 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (arguments[0] == "first") curPage = 1;
                         if (arguments[0] == "last") curPage = pager.data.limit;
 
+                        //Non va oltre l'ultima pagina
+                        if (curPage > pager.data.limit) return true;
+
+                        //non va prima della prima pagina
+                        if (curPage < 1) return true;
+
                         //Salva la pagina nel registro
-                        module.setRuntimeValue(pager.config.id, "curPage", curPage);
+                        module.setRuntimeValue(pager.config.id, "curPage", curPage)
 
                         pager_title.define("data", { "curPage": curPage, "totPages": pager.data.limit });
 
@@ -1511,12 +1517,20 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         let target = $$(pager.config.target);
 
                         if (target) {
+
                             let targetAction = pager.config.targetAction;
                             if (targetAction == "refreshData" || !AA_MainApp.utils.isDefined(targetAction)) {
+                                //Resetta la selezione quando si sposta di pagina
+                                target.unselectAll();
+
                                 console.log(this.name + "::pagerEventHandlerDefault() - aggiorno i dati del componente: " + pager.config.target, targetAction);
-                                module.refreshObjectData(pager.config.target);
+                                await module.refreshObjectData(pager.config.target);
+
+                                //resetta il valore di scrolling della view
+                                target.scrollTo(0, 0);
                             }
                         }
+                        return true;
                     } else {
                         console.error(module.name + "::pagerEventHandlerDefault() - pager_title non trovato", arguments, pager);
                         return false;
