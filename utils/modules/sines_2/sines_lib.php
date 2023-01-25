@@ -7176,7 +7176,7 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplateScadenzarioFilterDlg()
     {
         //Valori runtime
-        $formData=array("raggruppamento"=>$_REQUEST['raggruppamento'], "finestra_temporale"=>$_REQUEST['finestra_temporale'], "data_scadenzario"=>$_REQUEST['data_scadenzario'],"scadute"=>$_REQUEST['scadute'],"recenti"=>$_REQUEST['recenti'],"in_scadenza"=>$_REQUEST['in_scadenza'],"in_corso"=>$_REQUEST['in_corso'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'], "tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("archivio"=>$_REQUEST['archivio'],"cessati"=>$_REQUEST['cessati'],"raggruppamento"=>$_REQUEST['raggruppamento'], "finestra_temporale"=>$_REQUEST['finestra_temporale'], "data_scadenzario"=>$_REQUEST['data_scadenzario'],"scadute"=>$_REQUEST['scadute'],"recenti"=>$_REQUEST['recenti'],"in_scadenza"=>$_REQUEST['in_scadenza'],"in_corso"=>$_REQUEST['in_corso'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'], "tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"incaricato"=>$_REQUEST['incaricato']);
         
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
@@ -7192,9 +7192,11 @@ Class AA_SinesModule extends AA_GenericModule
         if($_REQUEST['data_scadenzario']=="") $formData['data_scadenzario'] = Date("Y-m-d");
         if($_REQUEST['finestra_temporale']=="") $formData['finestra_temporale'] = "1";
         if($_REQUEST['raggruppamento']=="") $formData['raggruppamento'] = "0";
+        if($_REQUEST['archivio']=="") $formData['archivio'] = "0";
+        if($_REQUEST['cessati']=="") $formData['cessati'] = "0";
         
         //Valori reset
-        $resetData=array("raggruppamento"=>"0","finestra_temporale"=>"1","in_corso"=>"0","in_scadenza"=>"1","recenti"=>"1","scadute"=>"0","data_scadenzario"=>Date("Y-m-d"),"id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","incaricato"=>"");
+        $resetData=array("archivio"=>"0","cessati"=>"0","tipo_nomina"=>"0","raggruppamento"=>"0","finestra_temporale"=>"1","in_corso"=>"0","in_scadenza"=>"1","recenti"=>"1","scadute"=>"0","data_scadenzario"=>Date("Y-m-d"),"id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","incaricato"=>"");
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -7244,11 +7246,14 @@ Class AA_SinesModule extends AA_GenericModule
         }
         $dlg->AddSelectField("tipo_nomina","Tipo nomina",array("bottomLabel"=>"*Filtra in base alla tipologia della nomina.","options"=>$options,"value"=>"0"));
         
-         //Data scadenzario
-        $dlg->AddDateField("data_scadenzario","Data scadenzario",array("editable"=>true,"bottomLabel"=>"*Seleziona la data di riferimento dello scadenzario."), false);
-        
         //Raggruppamento
-        $dlg->AddSwitchBoxField("raggruppamento","Raggruppamento",array("onLabel"=>"nominativi","offLabel"=>"incarico","bottomLabel"=>"*Imposta la modalità di raggruppamento delle nomine (in base alla tipologia di incarico o ai nominativi degli incaricati)."));
+        $dlg->AddSwitchBoxField("raggruppamento","Raggruppamento",array("onLabel"=>"nominativi","offLabel"=>"incarico","bottomLabel"=>"*Imposta la modalità di raggruppamento degli incarichi (in base alla tipologia di incarico o ai nominativi degli incaricati)."),false);
+
+        //Data scadenzario
+        $dlg->AddDateField("data_scadenzario","Data scadenzario",array("editable"=>true,"bottomLabel"=>"*Seleziona la data di riferimento dello scadenzario."));
+
+        //Organismi cessati
+        $dlg->AddSwitchBoxField("cessati","Organismi cessati",array("onLabel"=>"includi","offLabel"=>"escludi","bottomLabel"=>"*Includi/escludi nella ricerca gli organismi cessati."),false);
 
         //Finestra temporale
         $options_finestra=array(array("id"=>1,"value"=>"1 mese"));
@@ -7256,7 +7261,10 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $options_finestra[]=array("id"=>$i,"value"=>$i." mesi");
         }
-        $dlg->AddSelectField("finestra_temporale","Arco temporale",array("bottomLabel"=>"*Seleziona l'arco temporale relativo alla data di riferimento.","options"=>$options_finestra,"value"=>"1"),false);
+        $dlg->AddSelectField("finestra_temporale","Arco temporale",array("bottomLabel"=>"*Seleziona l'arco temporale relativo alla data di riferimento.","options"=>$options_finestra,"value"=>"1"));
+
+        //Nomine archiviate
+        $dlg->AddSwitchBoxField("archivio","Incarichi archiviati",array("onLabel"=>"includi","offLabel"=>"escludi","bottomLabel"=>"*Includi/escludi nella ricerca gli incarichi archiviati come storici."),false);
 
         $dlg->SetApplyButtonName("Filtra");
         

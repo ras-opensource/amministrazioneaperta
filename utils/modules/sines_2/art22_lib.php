@@ -1758,7 +1758,7 @@ class AA_Organismi extends AA_Object
         if(strlen($where) > 0) $query.=" WHERE 1 ".$where;
         $query.=$group.$having.") as organismi_filter";
 
-        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
         
         $db = new Database();
         $db->Query($query);
