@@ -375,6 +375,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['id_direzione']) $parametri['id_direzione']=$params['id_direzione'];
         if($params['incaricato']) $parametri['incaricato']=$params['incaricato'];
         if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
+        if($params['stato_organismo']) $parametri['stato_organismo']=$params['stato_organismo'];
         
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         
@@ -463,7 +464,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['id_assessorato']) $parametri['id_assessorato']=$params['id_assessorato'];
         if($params['id_direzione']) $parametri['id_direzione']=$params['id_direzione'];
         if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
-        $parametri['archivio']=$params['archivio'];
+        if($params['stato_organismo']) $parametri['stato_organismo']=$params['stato_organismo'];
 
         $parametri['in_scadenza']=$params['in_scadenza'];
         $parametri['in_corso']=$params['in_corso'];
@@ -473,6 +474,7 @@ Class AA_SinesModule extends AA_GenericModule
         $parametri['finestra_temporale']=$params['finestra_temporale'];
         $parametri['raggruppamento']=$params['raggruppamento'];
         $parametri['archivio']=$params['archivio'];
+        $parametri['cessati']=$params['cessati'];
         
         if($parametri['scadute'] == "") $parametri['scadute']="0";
         if($parametri['in_corso'] == "") $parametri['in_corso']="0";
@@ -482,6 +484,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($parametri['finestra_temporale'] == "") $parametri['finestra_temporale']="1";
         if($parametri['raggruppamento'] == "") $parametri['raggruppamento']="0";
         if($parametri['archivio'] == "") $parametri['archivio']="0";
+        if($parametri['cessati'] == "") $parametri['cessati']="0";
         
         $meseProx=new DateTime($parametri['data_scadenzario']);
         $meseProx->modify("+".$parametri['finestra_temporale']." month");
@@ -667,7 +670,8 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['id_direzione']) $parametri['id_direzione']=$params['id_direzione'];
         if($params['incaricato']) $parametri['incaricato']=$params['incaricato'];
         if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
-        
+        if($params['stato_organismo']) $parametri['stato_organismo']=$params['stato_organismo'];
+
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         
         foreach($organismi[1] as $id=>$object)
@@ -7665,7 +7669,7 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg()
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("stato_organismo"=>$_REQUEST['stato_organismo'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
         
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
@@ -7675,6 +7679,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($_REQUEST['id_direzione']=="") $formData['id_direzione']=0;
         if($_REQUEST['id_servizio']=="") $formData['id_servizio']=0;
         if($_REQUEST['cestinate']=="") $formData['cestinate']=0;
+        if($_REQUEST['stato_organismo']=="") $formData['stato_organismo']=0;
         
         //Valori reset
         $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0);
@@ -7703,6 +7708,14 @@ Class AA_SinesModule extends AA_GenericModule
         }
         $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
         
+        //stato organismo
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        foreach(AA_Organismi_Const::GetListaStatoOrganismi() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $dlg->AddSelectField("stato_organismo","Stato",array("bottomLabel"=>"*Filtra in base allo stato dell'organismo.","options"=>$options,"value"=>"0"));
+
         //Tipo nomina
         $options=array(array("id"=>"0","value"=>"Qualunque"));
         foreach(AA_Organismi_Const::GetTipoNomine() as $id=>$label)
@@ -7723,8 +7736,8 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg()
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'],"incaricato"=>$_REQUEST['incaricato']);
-        
+        $formData=array("stato_organismo"=>$_REQUEST['stato_organismo'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
+
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
         if($_REQUEST['tipo_nomina']=="") $formData['tipo_nomina']="0";
@@ -7733,7 +7746,8 @@ Class AA_SinesModule extends AA_GenericModule
         if($_REQUEST['id_direzione']=="") $formData['id_direzione']=0;
         if($_REQUEST['id_servizio']=="") $formData['id_servizio']=0;
         if($_REQUEST['cestinate']=="") $formData['cestinate']=0;
-        
+        if($_REQUEST['stato_organismo']=="") $formData['stato_organismo']=0;
+                
         //Valori reset
         $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0,"incaricato"=>"");
         
@@ -7761,6 +7775,14 @@ Class AA_SinesModule extends AA_GenericModule
         }
         $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
         
+        //stato organismo
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        foreach(AA_Organismi_Const::GetListaStatoOrganismi() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $dlg->AddSelectField("stato_organismo","Stato",array("bottomLabel"=>"*Filtra in base allo stato dell'organismo.","options"=>$options,"value"=>"0"));
+
         //Tipo nomina
         $options=array(array("id"=>"0","value"=>"Qualunque"));
         foreach(AA_Organismi_Const::GetTipoNomine() as $id=>$label)

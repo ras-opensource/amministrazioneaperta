@@ -1652,6 +1652,7 @@ class AA_Organismi extends AA_Object
     // $params['scadute']: Visualizza gli organismi che hanno nomine che scadute da più di un mese dalla data di scadenza impostata.
     // $params['recenti']: Visualizza solo i gli organismi che hanno nomine che sono scadute da meno di un mese dalla data di scadenza impostata.
     // $params['tipo_nomina']: Visualizza solo i gli organismi che hanno il tipo di nomina impostata.
+    // $params['stato_organismo']: Visualizza solo gli organismi con lo stato indicato.
     
     static public function Search($params,$bOnlyCount=false, $user=null)
     {
@@ -1765,9 +1766,6 @@ class AA_Organismi extends AA_Object
         //Filtra in base alle nomine in corso
         if($params['in_corso'] !="" || $params['in_scadenza'] !="" || $params['scadute'] !="" || $params['recenti'] !="")
         {
-            //Non considerare gli organismi cessati
-            if($params['cessati'] != 1)$where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4 ";
-
             if($params['in_corso'] =="0" && $params['in_scadenza'] =="0" && $params['scadute'] =="0" && $params['recenti'] =="0")
             {
                 //Array vuoto
@@ -1778,6 +1776,9 @@ class AA_Organismi extends AA_Object
             if($params['data_scadenzario'] == "") $params['data_scadenzario']=Date("Y-m-d");
             if($params['finestra_temporale'] =="") $params['finestra_temporale']=1;
             if($params['raggruppamento'] =="") $params['raggruppamento']=0; //ricerca in base all'incarico
+
+            //organismi cessati
+            if($params['cessati'] != 1) $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4)";
 
             if($params['raggruppamento']==1) 
             {
@@ -1846,6 +1847,14 @@ class AA_Organismi extends AA_Object
             $having="";
             //$order="";
         }
+        else
+        {
+            //Ricerca ordinaria (al di fuori dello scadenzario)
+            $now=date("Y-m-d");
+            if($params['stato_organismo'] != "" && $params['stato_organismo'] != 4 && $params['stato_organismo'] != 2) $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = '".$params['stato_organismo']."'";
+            if($params['stato_organismo'] == 4) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 4 OR ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0) AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno < '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno not like '0000-00-00%'))";
+            if($params['stato_organismo'] == 2) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 2 OR ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0) AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."' OR ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno like '0000-00-00%'))";
+        }     
         
         //Conta i risultati
         $query="SELECT COUNT(id) as tot FROM (".$select.$join;
@@ -1895,7 +1904,7 @@ class AA_Organismi extends AA_Object
             return array(0=>-1,array());
         }
 
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         $rs=$db->GetRecordSet();
         
@@ -2080,7 +2089,7 @@ class AA_Organismi extends AA_Object
         }
 
         return array();
-        
+
         //Impostazione dei parametri
         $query="SELECT id, nome, cognome, data_fine from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
 
@@ -4033,7 +4042,7 @@ Class AA_OrganismiTask_ReassignOrganismo extends AA_GenericTask
     {
         AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
 
-        $organismo=new AA_Organismi($_REQUEST['riassegna-id-object'],$this->OUser);
+        $organismo=new AA_Organismi($_REQUEST['riassegna-id-object'],$this->oUser);
         if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
         {
             $this->sTaskError=AA_Log::$lastErrorLog;
