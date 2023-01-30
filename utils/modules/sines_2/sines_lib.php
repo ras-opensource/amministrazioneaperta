@@ -2361,15 +2361,15 @@ Class AA_SinesModule extends AA_GenericModule
 
         if($this->oUser->IsSuperUser())
         {
-            $detail_options[]=array("id"=>$id."Organigramma_Tab"."_$id_org","value"=>"Organigramma");
+            $detail_options[]=array("id"=>$id."Organigramma_Tab"."_$id_org","value"=>"Organigrammi");
         }
-        
+
         $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
             "view"=>"tabbar",
             "borderless"=>true,
             "value"=>$id."Generale_Tab"."_$id_org",
             "css"=>"AA_Header_TabBar",
-            "width"=>400,
+            "width"=>500,
             "multiview"=>true,
             "view_id"=>$id."Multiview"."_$id_org",
             "options"=>$detail_options
@@ -2387,7 +2387,7 @@ Class AA_SinesModule extends AA_GenericModule
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar"."_$id_org",array(
             "type"=>"clean",
             "css"=>array("background"=>"#ebf0fa","border-color"=>"transparent"),
-            "width"=>400
+            "width"=>500
         ));
         
         //Inserisce il pulsante di pubblicazione
@@ -3575,7 +3575,7 @@ Class AA_SinesModule extends AA_GenericModule
         $layout->AddRow($multiview);
         $layout->addRow($footer);
         
-        //Recupera le nomine
+        //Recupera gli organigrammi
         $riepilogo_layout_id=$id."_Riepilogo_Layout";
         $filterNomine="";
         $filter= AA_SessionVar::Get($id);
@@ -3584,7 +3584,7 @@ Class AA_SinesModule extends AA_GenericModule
             $params=(array)$filter->GetValue();
             //AA_Log::Log(__METHOD__." - ".print_r($params,true),100);
         }
-        $nomine=$object->GetNomineGrouped($params);
+        $nomine=$object->GetOrganigrammi($params);
         #--------------------------------
         
         //AA_Log::Log(__METHOD__.print_r($nomine,true),100);
@@ -3615,8 +3615,8 @@ Class AA_SinesModule extends AA_GenericModule
                 $tab_label=$tab_result;
             }
             $ids=array_keys($curNomina);
-            if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina nomina' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashNominaDlg", params: [{ids: "'.json_encode($ids).'"},{id: "'.$object->GetID().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else$tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
+            if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina nomina' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashOrganigrammaDlg", params: [{ids: "'.json_encode($ids).'"},{id: "'.$object->GetID().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
            
             //Tab label
             $options[]=array("id"=>$id."_".$id_intestazione_nomina."_Tab", "value"=>$tab_label);
@@ -3957,7 +3957,7 @@ Class AA_SinesModule extends AA_GenericModule
         }
         
         //Riepilogo tab
-        $riepilogo_layout=$this->TemplateDettaglio_Nomine_Riepilogo_Tab($object,$id, $riepilogo_data, $id);
+        $riepilogo_layout=$this->TemplateDettaglio_Organigramma_Riepilogo_Tab($object,$id, $riepilogo_data, $id);
         
         array_unshift($options,array("id"=>$riepilogo_layout->GetId(), "value"=>"Riepilogo"));
         
@@ -4210,37 +4210,26 @@ Class AA_SinesModule extends AA_GenericModule
         $filter= AA_SessionVar::Get($filter_id);
         if($filter->isValid())
         {
-            $label="<div style='display: flex; height: 100%; justify-content: flex-start; align-items: center;'>Mostra:";
+            $label="";
             
             $values=(array)$filter->GetValue();
             
-            //Storiche
-            if($values['storico']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>archiviate</span>";
+            //mostra gli abilitati per lo scadenzario
+            if($values['scadenzario']=="1") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>scadenzario</span>";
 
-            //Scadute
-            if($values['scadute']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>solo in corso</span>";
-            //else $label.="<span class='AA_Label AA_Label_LightBlue'>mostra scadute</span>";
+            //mostra gli organigrammi di tipo ammiinistrativo
+            if($values['amministrazione']=="1") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>amministrazione</span>";
 
-            //in corso
-            if($values['in_corso']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>solo scadute</span>";
-            //else $label.="<span class='AA_Label AA_Label_LightBlue'>mostra in corso</span>";
+            //mostra gli organigrammi di controllo
+            if($values['controllo']=="1") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>controllo</span>";
             
-            //nomina ras
-            if($values['nomina_ras']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>solo nomine non RAS</span>";
-            //else $label.="<span class='AA_Label AA_Label_LightBlue'>mostra nomine RAS</span>";
-
-            //nomina altri
-            if($values['nomina_altri']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>solo nomine RAS</span>";
-            //else $label.="<span class='AA_Label AA_Label_LightBlue'>mostra nomine non RAS</span>";
-            
-            //Incarico
-            $incarichi= AA_Organismi_Const::GetTipoNomine();
-            if($values['tipo'] > 0) $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>".$incarichi[$values['tipo']]."</span>";
-            
+            //mostra gli organigrammi di governo
+            if($values['governo']=="1") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>governo</span>";
+                        
             //tutte
-            if(($values['scadute'] == "1" || !isset($values['scadute'])) && ($values['in_corso'] == "1" || !isset($values['in_corso'])) && ($values['nomina_ras'] =="1" || !isset($values['nomina_ras'])) && ($values['nomina_altri'] =="1" || !isset($values['nomina_altri'])) && ($values['tipo'] == 0 || !isset($values['tipo'])))
+            if(($values['scadenzario'] == "1" || !isset($values['amministrazione'])) && ($values['controllo'] == "1" || !isset($values['governo'])))
             {
-                $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>tutte</span>";
+                $label.="<div style='display: flex; height: 100%; justify-content: flex-start; align-items: center;'>Mostra:&nbsp;<span class='AA_Label AA_Label_LightBlue'>tutti</span>";
             }
             
             $label.="</div>";
@@ -4253,7 +4242,7 @@ Class AA_SinesModule extends AA_GenericModule
         }
         
         $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_Riepilogo_Intestazione",array("view"=>"label","label"=>"<span style='color:#003380'>Riepilogo nomine</span>", "align"=>"center","width"=>"180")));
+        $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_Riepilogo_Intestazione",array("view"=>"label","label"=>"<span style='color:#003380'>Lista organigrammi</span>", "align"=>"center","width"=>"180")));
         $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         if($canModify)
         {            
@@ -4265,14 +4254,14 @@ Class AA_SinesModule extends AA_GenericModule
                 "label"=>"Aggiungi",
                 "align"=>"right",
                 "width"=>120,
-                "tooltip"=>"Aggiungi nomina",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetOrganismoAddNewNominaDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+                "tooltip"=>"Aggiungi organigramma",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetOrganismoAddNewOrganigrammaDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
             ));
             
             //pulsante di filtraggio
             if($filter_id=="") $filter_id=$id;
             
-            $filterDlgTask="GetOrganismoNomineFilterDlg";
+            $filterDlgTask="GetOrganismoOrganigrammaFilterDlg";
             $filterClickAction="AA_MainApp.utils.callHandler('dlg',{task: '".$filterDlgTask."', params:[{filter_id: '".$filter_id."'}]},'".$this->id."')";
 
             $filter_btn = new AA_JSON_Template_Generic($id."_FilterUp_btn",array(
