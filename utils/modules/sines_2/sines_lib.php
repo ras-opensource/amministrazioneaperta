@@ -378,7 +378,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['stato_organismo']) $parametri['stato_organismo']=$params['stato_organismo'];
         
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
-        
+        $now=date("Y-m-d");
         foreach($organismi[1] as $id=>$object)
         {
             $userCaps=$object->GetUserCaps($this->oUser);
@@ -399,6 +399,12 @@ Class AA_SinesModule extends AA_GenericModule
                 
                 //stato società
                 if($object->GetStatoOrganismo(true) > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStatoOrganismo()."</span>";
+            }
+            else
+            {
+                $data_fine=trim($object->GetDataFineImpegno());
+                //Ente cessato
+                if(strcmp($data_fine,$now) <= 0 && strcmp($data_fine,"0000-00-00") != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>Cessata</span>";
             }
             #------------------------------------------
                            
