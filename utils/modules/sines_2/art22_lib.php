@@ -103,7 +103,8 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_DOC_DICH_INCOMPATIBILITA=8;
     const AA_ORGANISMI_DOC_ATTESTAZIONE_VERIFICA=16;
     const AA_ORGANISMI_DOC_PROVVEDIMENTO_NOMINA=32;
-    const AA_ORGANISMI_DOC_MASK=62;
+    const AA_ORGANISMI_DOC_PROVVEDIMENTO_PROROGA=64;
+    const AA_ORGANISMI_DOC_MASK=126;
     
     //Tipo di provvedimenti
     static private $TIPO_PROVV=null;
@@ -216,6 +217,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_DOC_DICH_INCONFERIBILITA=>"Dichiarazione di assenza di cause di inconferibilità",
             self::AA_ORGANISMI_DOC_DICH_INCOMPATIBILITA=>"Dichiarazione di assenza di cause di incompatibilità",
             self::AA_ORGANISMI_DOC_PROVVEDIMENTO_NOMINA=>"Provvedimento di nomina/designazione",
+            self::AA_ORGANISMI_DOC_PROVVEDIMENTO_PROROGA=>"Provvedimento di proroga",
             self::AA_ORGANISMI_DOC_ATTESTAZIONE_VERIFICA=>"Attestazione di verifica delle dichiarazioni (art.53 d.lgs 165/2001)"
             );
         }
