@@ -1426,7 +1426,7 @@ class AA_Organismi extends AA_Object
         if(isset($data["sPartecipazione"]))
         {
             $data["sPartecipazione"]=preg_replace("/[€|\ |A-Za-z_]/", "",$data["sPartecipazione"]);
-        }
+        }        
 
         if(!parent::ParseData($data,$user))
         {
@@ -1438,6 +1438,13 @@ class AA_Organismi extends AA_Object
         if(trim($this->GetDenominazione())=="")
         {
             AA_Log::Log(__METHOD__." - Occorre specificare la denominazione dell'organismo.", 100,false,true);
+            return false;
+        }
+
+        //Verifica che la data di fine impegno sia successiva alla data di inizio iumpegno
+        if(strcmp($this->GetDataInizioImpegno(),$this->GetDataFineImpegno()) >= 0)
+        {
+            AA_Log::Log(__METHOD__." - La data di fine impegno deve essere maggiore della data di inizio impegno.", 100,false,true);
             return false;
         }
 
