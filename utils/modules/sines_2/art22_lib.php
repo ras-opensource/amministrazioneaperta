@@ -1770,6 +1770,7 @@ class AA_Organismi extends AA_Object
         }
         
         //Filtra in base alle nomine in corso
+        $now=date("Y-m-d");
         if($params['in_corso'] !="" || $params['in_scadenza'] !="" || $params['scadute'] !="" || $params['recenti'] !="")
         {
             if($params['in_corso'] =="0" && $params['in_scadenza'] =="0" && $params['scadute'] =="0" && $params['recenti'] =="0")
@@ -1784,7 +1785,7 @@ class AA_Organismi extends AA_Object
             if($params['raggruppamento'] =="") $params['raggruppamento']=0; //ricerca in base all'incarico
 
             //organismi cessati
-            if($params['cessati'] != 1) $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4)";
+            if($params['cessati'] != 1) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 0 ) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."'))";
 
             if($params['raggruppamento']==1) 
             {
@@ -1856,10 +1857,9 @@ class AA_Organismi extends AA_Object
         else
         {
             //Ricerca ordinaria (al di fuori dello scadenzario)
-            $now=date("Y-m-d");
             if($params['stato_organismo'] != "" && $params['stato_organismo'] != 4 && $params['stato_organismo'] != 2) $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = '".$params['stato_organismo']."'";
-            if($params['stato_organismo'] == 4) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 4 OR ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0) AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno < '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno not like '0000-00-00%'))";
-            if($params['stato_organismo'] == 2) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 2 OR ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0) AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."' OR ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno like '0000-00-00%'))";
+            if($params['stato_organismo'] == 4) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 4) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno < '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0))";
+            if($params['stato_organismo'] == 2) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 2) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organìsmo = 0))";
         }     
         
         //Conta i risultati

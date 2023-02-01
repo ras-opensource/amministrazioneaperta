@@ -386,8 +386,9 @@ Class AA_SinesModule extends AA_GenericModule
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
             
-            #Società-----------
+            #Stato società-----------
             $soc_tags="";
+            $stato_org="";
             if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
             {
                 //forma giuridica
@@ -398,17 +399,19 @@ Class AA_SinesModule extends AA_GenericModule
                 if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
                 
                 //stato società
-                if($object->GetStatoOrganismo(true) > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStatoOrganismo()."</span>";
+                $stato=$object->GetStatoOrganismo(true);
+                if($stato > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO && $stato !=4) $stato_org.="&nbsp;<span style='font-weight: 100;font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightBlue'>".$object->GetStatoOrganismo()."</span>";
+                if($stato == 4) $stato_org.="&nbsp;<span style='font-weight: 100; font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightRed'>".$object->GetStatoOrganismo()."</span>";
             }
             else
             {
                 $data_fine=trim($object->GetDataFineImpegno());
                 //Ente cessato
-                if(strcmp($data_fine,$now) <= 0 && strcmp($data_fine,"0000-00-00") != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>Cessata</span>";
+                if(strcmp($data_fine,$now) <= 0 && strcmp($data_fine,"0000-00-00") != 0) $stato_org.="&nbsp;<span &nbsp;<span style='font-weight: 100;font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightRed'>Cessata</span>";
             }
             #------------------------------------------
                            
-            #Stato
+            #Stato scheda
             if($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status="bozza";
             if($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status="pubblicata";
             if($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status.=" revisionata";
@@ -443,7 +446,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "id"=>$object->GetId(),
                 "tags"=>$soc_tags,
                 "aggiornamento"=>$object->GetAggiornamento(),
-                "denominazione"=>$object->GetDenominazione(),
+                "denominazione"=>$object->GetDenominazione().$stato_org,
                 "pretitolo"=>$object->GetTipologia(),
                 "sottotitolo"=>$struttura_gest,
                 "stato"=>$status,
@@ -503,6 +506,7 @@ Class AA_SinesModule extends AA_GenericModule
 
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         
+        $now=date("Y-m-d");
         foreach($organismi[1] as $id=>$object)
         {
             $userCaps=$object->GetUserCaps($this->oUser);
@@ -510,7 +514,7 @@ Class AA_SinesModule extends AA_GenericModule
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
             
-            #Società-----------
+            #Stato-----------
             $soc_tags="";
             if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
             {
@@ -522,7 +526,15 @@ Class AA_SinesModule extends AA_GenericModule
                 if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
                 
                 //stato società
-                if($object->GetStatoOrganismo(true) > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStatoOrganismo()."</span>";
+                $stato=$object->GetStatoOrganismo(true);
+                if($stato > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO && $stato !=4) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_LightOrange'>".$object->GetStatoOrganismo()."</span>";
+                if($stato == 4) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_LightRed'>".$object->GetStatoOrganismo()."</span>";
+            }
+            else
+            {
+                $data_fine=trim($object->GetDataFineImpegno());
+                //Ente cessato
+                if(strcmp($data_fine,$now) <= 0 && strcmp($data_fine,"0000-00-00") != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_LightRed'>Cessata</span>";
             }
             #------------------------------------------
                            
@@ -679,7 +691,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['stato_organismo']) $parametri['stato_organismo']=$params['stato_organismo'];
 
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
-        
+        $now=date("Y-m-d");
         foreach($organismi[1] as $id=>$object)
         {
             $userCaps=$object->GetUserCaps($this->oUser);
@@ -687,19 +699,28 @@ Class AA_SinesModule extends AA_GenericModule
             $struttura_gest=$struct->GetAssessorato();
             if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
             
-            #Società-----------
+            #Stato società-----------
             $soc_tags="";
+            $stato_org="";
             if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
             {
                 //forma giuridica
                 $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetFormaSocietaria()."</span>";
-             
+                
                 if($object->IsInHouse() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>in house</span>";
                 if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>TUSP</span>";
                 if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
                 
                 //stato società
-                if($object->GetStatoOrganismo(true) > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStatoOrganismo()."</span>";
+                $stato=$object->GetStatoOrganismo(true);
+                if($stato > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO && $stato !=4) $stato_org.="&nbsp;<span style='font-weight: 100;font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightBlue'>".$object->GetStatoOrganismo()."</span>";
+                if($stato == 4) $stato_org.="&nbsp;<span style='font-weight: 100; font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightRed'>".$object->GetStatoOrganismo()."</span>";
+            }
+            else
+            {
+                $data_fine=trim($object->GetDataFineImpegno());
+                //Ente cessato
+                if(strcmp($data_fine,$now) <= 0 && strcmp($data_fine,"0000-00-00") != 0) $stato_org.="&nbsp;<span &nbsp;<span style='font-weight: 100;font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightRed'>Cessata</span>";
             }
             #------------------------------------------
           
@@ -734,7 +755,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "id"=>$object->GetId(),
                 "tags"=>$soc_tags,
                 "aggiornamento"=>$object->GetAggiornamento(),
-                "denominazione"=>$object->GetDenominazione(),
+                "denominazione"=>$object->GetDenominazione().$stato_org,
                 "pretitolo"=>$object->GetTipologia(),
                 "sottotitolo"=>$struttura_gest,
                 "stato"=>$status,
