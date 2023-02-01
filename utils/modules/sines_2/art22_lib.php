@@ -344,6 +344,12 @@ Class AA_Organismi_Organigramma_Incarico
         else return false;
     }
 
+    //Restituisce l'id
+    public function GetId()
+    {
+        return $this->props['id'];
+    }
+
     //Restituisce una proprietà
     public function SetProp($prop="",$val="")
     {
