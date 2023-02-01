@@ -2600,7 +2600,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
     }
     public function SetRisultatiBilancio($val="")
     {
-        $this->sRisultatibilancio=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+        $this->sRisultatiBilancio=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
     }
 
     public function UpdateDb($user=null,$data=null,$bLog=false)
@@ -6271,7 +6271,7 @@ Class AA_OrganismiBilanci
             return new AA_OrganismiDatiContabili($this->nIdDatiContabili,null,$user);
         }
 
-        AA_Log::Log(__METHOD__." - identificativo dati contabili non valido (".$this->nIdNomina.")",100,false,true);
+        AA_Log::Log(__METHOD__." - identificativo dati contabili non valido (".$this->nIdDatiContabili.")",100,false,true);
         return null;
     }
 
