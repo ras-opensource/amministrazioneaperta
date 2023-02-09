@@ -692,7 +692,7 @@ class AA_Organismi extends AA_Object
         $rs=$db->GetResultSet();
         foreach($rs as $curRec)
         {   
-            $provvedimento=new AA_OrganismiProvvedimenti($curRec['id'],$this->GetId(),$curRec['tipo'],$curRec['url'],$curRec['anno']);
+            $provvedimento=new AA_OrganismiProvvedimenti($curRec['id'],$this->GetId(),$curRec['tipo'],$curRec['url'],$curRec['anno'],$curRec['estremi']);
             $result[$curRec['id']]=$provvedimento;
         }
 
@@ -1097,6 +1097,7 @@ class AA_Organismi extends AA_Object
         $query.=", tipo='".$provvedimento->GetTipologia(true)."'";
         $query.=", url='".addslashes($provvedimento->GetUrl())."'";
         $query.=", anno='".addslashes($provvedimento->GetAnno())."'";
+        $query.=", estremi='".addslashes($provvedimento->GetEstremi())."'";
         $query.=" WHERE id='".$provvedimento->GetId()."' LIMIT 1";
         
         $db= new AA_Database();
@@ -1184,7 +1185,7 @@ class AA_Organismi extends AA_Object
         if($db->GetAffectedRows() > 0)
         {
             $rs=$db->GetResultSet();
-            $provvedimento=new AA_OrganismiProvvedimenti($rs[0]['id'],$this->GetID(),$rs[0]['tipo'],$rs[0]['url'],$rs[0]['anno']);
+            $provvedimento=new AA_OrganismiProvvedimenti($rs[0]['id'],$this->GetID(),$rs[0]['tipo'],$rs[0]['url'],$rs[0]['anno'],$rs[0]['estremi']);
             
             return $provvedimento;
         }
@@ -3164,6 +3165,16 @@ Class AA_OrganismiProvvedimenti
         $this->anno=$anno;
     }
     
+    protected $estremi="";
+    public function GetEstremi()
+    {
+        return $this->estremi;
+    }
+    public function SetEstremi($val="")
+    {
+        $this->estremi=$val;
+    }
+
     public function GetFilePath()
     {
         if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_PROVVEDIMENTI_PATH."/".$this->id.".pdf"))
@@ -3212,7 +3223,7 @@ Class AA_OrganismiProvvedimenti
         $this->id_organismo=$id;
     }
     
-    public function __construct($id=0,$id_organismo=0,$tipo=0,$url="",$anno="")
+    public function __construct($id=0,$id_organismo=0,$tipo=0,$url="",$anno="",$estremi="")
     {
         //AA_Log::Log(__METHOD__." id: $id, id_organismo: $id_organismo, tipo: $tipo, url: $url",100);
         
@@ -3222,6 +3233,7 @@ Class AA_OrganismiProvvedimenti
         $this->url=$url;
         $this->tipo=$tipo;
         $this->anno=$anno;
+        $this->estremi=$estremi;
     }
     
     //Download del documento

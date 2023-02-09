@@ -3833,13 +3833,15 @@ Class AA_SinesModule extends AA_GenericModule
         if($canModify)
         {
             $options_documenti[]=array("id"=>"anno", "header"=>"Anno", "width"=>"auto","css"=>array("text-align"=>"left"));
-            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>"auto","css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"estremi", "header"=>"Estremi", "fillspace"=>true,"css"=>array("text-align"=>"left"));
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
         else
         {
             $options_documenti[]=array("id"=>"anno", "header"=>"Anno", "width"=>"auto","css"=>array("text-align"=>"left"));
-            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>"auto","css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"estremi", "header"=>"Estremi", "fillspace"=>true,"css"=>array("text-align"=>"left"));
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
 
