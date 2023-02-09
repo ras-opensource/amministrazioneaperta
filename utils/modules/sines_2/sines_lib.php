@@ -1987,7 +1987,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(500);
+        $wnd->SetHeight(580);
 
         //Anno
         $anno_fine=Date('Y');
@@ -2005,9 +2005,12 @@ Class AA_SinesModule extends AA_GenericModule
             if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
         }
         $wnd->AddSelectField("tipo","Tipo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di documento.","bottomLabel"=>"*Seleziona il tipo di provvedimento.","options"=>$options,"value"=>"0"));
-        
+
+        //estremi
+        $wnd->AddTextField("estremi", "Estremi", array("bottomLabel" => "*Indicare gli estremi del documento o dell'atto", "placeholder" => "DGR ..."));
+
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
-         
+        
         //url
         $wnd->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
         
@@ -2031,7 +2034,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
-        $form_data=array("tipo"=>$provvedimento->GetTipologia(true),"url"=>$provvedimento->GetUrl(), "anno"=>$provvedimento->GetAnno());
+        $form_data=array("tipo"=>$provvedimento->GetTipologia(true),"url"=>$provvedimento->GetUrl(), "anno"=>$provvedimento->GetAnno(),"estremi"=>$provvedimento->GetEstremi());
         
         $wnd=new AA_GenericFormDlg($id, "Modifica provvedimento", $this->id,$form_data,$form_data);
         
@@ -2041,7 +2044,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(500);
+        $wnd->SetHeight(580);
         
         //Anno
         $anno_fine=Date('Y');
@@ -2059,6 +2062,9 @@ Class AA_SinesModule extends AA_GenericModule
             if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
         }
         $wnd->AddSelectField("tipo","Tipo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di documento.","bottomLabel"=>"*Seleziona il tipo di provvedimento.","options"=>$options,"value"=>"0"));
+
+        //estremi
+        $wnd->AddTextField("estremi", "Estremi", array("bottomLabel" => "*Indicare gli estremi del documento o dell'atto", "placeholder" => "DGR ..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
@@ -3833,14 +3839,14 @@ Class AA_SinesModule extends AA_GenericModule
         if($canModify)
         {
             $options_documenti[]=array("id"=>"anno", "header"=>"Anno", "width"=>"auto","css"=>array("text-align"=>"left"));
-            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>"auto","css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>200,"css"=>array("text-align"=>"center"));
             $options_documenti[]=array("id"=>"estremi", "header"=>"Estremi", "fillspace"=>true,"css"=>array("text-align"=>"left"));
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
         else
         {
             $options_documenti[]=array("id"=>"anno", "header"=>"Anno", "width"=>"auto","css"=>array("text-align"=>"left"));
-            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>"auto","css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>200,"css"=>array("text-align"=>"center"));
             $options_documenti[]=array("id"=>"estremi", "header"=>"Estremi", "fillspace"=>true,"css"=>array("text-align"=>"left"));
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
@@ -3866,7 +3872,7 @@ Class AA_SinesModule extends AA_GenericModule
             $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoModifyProvvedimentoDlg", params: [{id: "'.$object->GetId().'"},{id_provvedimento:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-            $documenti_data[]=array("id"=>$id_doc,"id_tipo"=>$curDoc->GetTipologia(true) ,"tipo"=>$curDoc->GetTipologia(),"anno"=>$curDoc->GetAnno(),"ops"=>$ops);
+            $documenti_data[]=array("id"=>$id_doc,"id_tipo"=>$curDoc->GetTipologia(true) ,"tipo"=>$curDoc->GetTipologia(),"anno"=>$curDoc->GetAnno(),"estremi"=>$curDoc->GetEstremi(),"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) $provvedimenti->AddRow($documenti);
@@ -5269,7 +5275,7 @@ Class AA_SinesModule extends AA_GenericModule
             return false;
         }
         
-        $provvedimento=new AA_OrganismiProvvedimenti(0,$organismo->GetID(),$_REQUEST['tipo'],$_REQUEST['url'],$_REQUEST['anno']);
+        $provvedimento=new AA_OrganismiProvvedimenti(0,$organismo->GetID(),$_REQUEST['tipo'],$_REQUEST['url'],$_REQUEST['anno'],$_REQUEST['estremi']);
         AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
         
         if($file->isValid()) $filespec=$file->GetValue();
@@ -5319,7 +5325,7 @@ Class AA_SinesModule extends AA_GenericModule
         }
         
         $file = AA_SessionFileUpload::Get("NewProvvedimentoDoc");
-        $provvedimento=new AA_OrganismiProvvedimenti($_REQUEST['id_provvedimento'],$organismo->GetID(),$_REQUEST['tipo'],$_REQUEST['url'],$_REQUEST['anno']);
+        $provvedimento=new AA_OrganismiProvvedimenti($_REQUEST['id_provvedimento'],$organismo->GetID(),$_REQUEST['tipo'],$_REQUEST['url'],$_REQUEST['anno'],$_REQUEST['estremi']);
         
         if(!$file->isValid() && $_REQUEST['url'] == "" && !is_file($provvedimento->GetFilePath()))
         {   

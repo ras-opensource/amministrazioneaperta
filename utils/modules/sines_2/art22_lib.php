@@ -91,9 +91,8 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67108864; //67076864;
     const AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=134217728; //67076864;
 
-    
     //nomine da pubblicare
-    const AA_NOMINE_NON_PUBBLICARE=12591616;
+    const AA_NOMINE_NON_PUBBLICARE=146826128;
 
     //Tipo di documenti
     static private $TIPO_DOCS=null;
@@ -8369,6 +8368,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
             {
                 if(($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE) == 0)
                 {
+                    //AA_Log::Log(__METHOD__." - pubblico: ".$curNomina->GetNome()." ".$curNomina->GetCognome()."  - tipologia: ".$curNomina->GetTipologia()." - verifica: ".($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE),100);
                     $color="";
                     $dataFine=$curNomina->GetDataFine();
                     if($curNomina->IsNominaRas())
