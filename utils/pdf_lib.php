@@ -280,6 +280,7 @@ Class AA_PDF_Document
 
     //Identificativo doc
     private $id="generic_doc";
+    private $fileName="generic_doc.pdf";
     public function GetId()
     {
         return $this->id;
@@ -714,7 +715,7 @@ Class AA_PDF_Document
     private $page_width="210"; //mm
     public function SetPageWidth($value="210")
     {
-        if($value != null) $this->page_weigth=$value;
+        if($value != null) $this->page_width=$value;
     }
 
     private $sDocumentStyle="";
@@ -944,6 +945,37 @@ Class AA_PDF_Document
 }
 
 Class AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE extends AA_PDF_Page
+{
+    public function __construct($doc=null)
+    {
+        parent::__construct($doc);
+
+        if($doc instanceof AA_PDF_Document)
+        {
+            $title=$doc->GetTitle();
+            $logoImg=$doc->GetLogoImage();
+        }
+        else
+        {
+            $title="";
+            $logoImg="";
+        }
+        
+        if($logoImg != "")
+        {
+            $header_content='<a href="https:///www.regione.sardegna.it"><img src="file:///home/sitod/web/amministrazione_aperta/immagini/'.$logoImg.'" style="height: 20mm;" title="logo" alt="logo"/></a><br/>';
+        }
+        $header_content.='<span style="font-size: 3mm; font-weight: bold;">'.$title.'</span>';
+        $this->SetHeaderContent($header_content);
+        $this->SetHeaderStyle("border-bottom: .2mm solid black; text-align: center");
+        $this->SetFooterStyle("display: flex; flex-direction: column-reverse; text-align: center");
+        $this->SetPageNumberBoxStyle("border-top:.2mm solid black; overflow: hidden; font-size: 3mm; padding-top: .5mm;");
+
+        //error_log(get_class()." - ".$this->sHeaderContent);
+    }
+}
+
+Class AA_PDF_PAGE_GENERIC_DEFAULT_TEMPLATE extends AA_PDF_Page
 {
     public function __construct($doc=null)
     {
