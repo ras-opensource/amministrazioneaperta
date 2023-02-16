@@ -982,23 +982,27 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
+        $wnd->SetBottomPadding(32);
         
         $wnd->SetWidth(920);
         $wnd->SetHeight(640);
         $wnd->EnableValidation();
               
         //tipologia
-        $options=array(
-            array("id"=>1,"value"=>"Attivo"),
-            array("id"=>2,"value"=>"Passivo")
-        );
+        $options=array();
+        foreach(AA_Patrimonio_Const::GetTipoCanoneList() as $key=>$value)
+        {
+            $options[]=array("id"=>$key,"value"=>$value);
+        }
+        
         $wnd->AddRadioField("tipologia","Tipo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di canone.","bottomLabel"=>"*Indicare il tipo di canone","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
         
         //data_inizio
         $wnd->AddDateField("data_inizio","Data inizio",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di decorrenza del canone", "placeholder"=>"inserisci qui la data di decorrenza."));
 
         //data_fine
-        $wnd->AddDateField("data_fine","Data fine",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di scadenza del canone", "placeholder"=>"inserisci qui la data di scadenza."),false);
+        //data_fine
+        $wnd->AddDateField("data_fine","Data fine",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di scadenza del canone o la dicitura 9999-12-31 se non è presente una data di scadenza.", "placeholder"=>"inserisci qui la data di scadenza."),false);
 
         //importo
         $label="Importo";
@@ -1006,7 +1010,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //repertorio
         $label="Repertorio";
-        $wnd->AddTextField("repertorio",$label,array("bottomLabel"=>"*Indica il numero di repertorio del contratto.", "required"=>true,"placeholder"=>"Inserisci qui il neumero di repertorio"),false);
+        $wnd->AddTextField("repertorio",$label,array("bottomLabel"=>"*Indica il numero di repertorio del contratto o la dicitura n.d. se non disponibile o non applicabile.", "required"=>true,"placeholder"=>"Inserisci qui il numero di repertorio"),false);
 
         //conduttore
         $label="Conduttore";
@@ -1047,23 +1051,25 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
+        $wnd->SetBottomPadding(32);
         
         $wnd->SetWidth(920);
         $wnd->SetHeight(640);
         $wnd->EnableValidation();
               
         //tipologia
-        $options=array(
-            array("id"=>1,"value"=>"Attivo"),
-            array("id"=>2,"value"=>"Passivo")
-        );
+        $options=array();
+        foreach(AA_Patrimonio_Const::GetTipoCanoneList() as $key=>$value)
+        {
+            $options[]=array("id"=>$key,"value"=>$value);
+        }
         $wnd->AddRadioField("tipologia","Tipo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di canone.","bottomLabel"=>"*Indicare il tipo di canone","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
         
         //data_inizio
         $wnd->AddDateField("data_inizio","Data inizio",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di decorrenza del canone", "placeholder"=>"inserisci qui la data di decorrenza."));
 
         //data_fine
-        $wnd->AddDateField("data_fine","Data fine",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di scadenza del canone", "placeholder"=>"inserisci qui la data di scadenza."),false);
+        $wnd->AddDateField("data_fine","Data fine",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di scadenza del canone o la dicitura 9999-12-31 se non c'è una data di scadenza.", "placeholder"=>"inserisci qui la data di scadenza."),false);
 
         //importo
         $label="Importo";
@@ -1071,7 +1077,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //repertorio
         $label="Repertorio";
-        $wnd->AddTextField("repertorio",$label,array("bottomLabel"=>"*Indica il numero di repertorio del contratto.", "required"=>true,"placeholder"=>"Inserisci qui il neumero di repertorio"),false);
+        $wnd->AddTextField("repertorio",$label,array("bottomLabel"=>"*Indica il numero di repertorio del contratto o la dicitura n.d. se non disponibile o non applicabile.", "required"=>true,"placeholder"=>"Inserisci qui il numero di repertorio"),false);
 
         //conduttore
         $label="Conduttore";
