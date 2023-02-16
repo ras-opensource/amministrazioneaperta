@@ -44,7 +44,8 @@ Class AA_Patrimonio_Const extends AA_Const
         {
             self::$tipoCanoneList=array(
                 self::AA_PATRIMONIO_CANONE_ATTIVO=>"Attivo",
-                self::AA_PATRIMONIO_CANONE_PASSIVO=>"Passivo"
+                self::AA_PATRIMONIO_CANONE_PASSIVO=>"Passivo",
+                self::AA_PATRIMONIO_CANONE_INDENNITA_OCCUPAZIONE=>"Indenità di occupazione"
             );    
         }
     }
@@ -68,6 +69,7 @@ Class AA_Patrimonio_Const extends AA_Const
     static $tipoCanoneList=null;
     const AA_PATRIMONIO_CANONE_ATTIVO=1;
     const AA_PATRIMONIO_CANONE_PASSIVO=2;
+    const AA_PATRIMONIO_CANONE_INDENNITA_OCCUPAZIONE=4;
     public static function GetTipoCanoneList()
     {
         self::Inizialize();
