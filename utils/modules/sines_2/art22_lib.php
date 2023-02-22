@@ -234,7 +234,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_PROVV_ALIENAZIONE=>"Alienazione",
             self::AA_ORGANISMI_PROVV_QUOTAZIONE=>"Quotazione in mercati regolamentati",
             self::AA_ORGANISMI_PROVV_RAZIONALIZZAZIONE=>"Razionalizzazione",
-            self::AA_ORGANISMI_PROVV_LIQUIDAZIONE=>"Liquidazione"
+            self::AA_ORGANISMI_PROVV_LIQUIDAZIONE=>"Liquidazione",
             self::AA_ORGANISMI_PROVV_NULLA_OSTA=>"Nulla osta"
             );
         }
