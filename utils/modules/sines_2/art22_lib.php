@@ -114,9 +114,10 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_PROVV_ALIENAZIONE=16;
     const AA_ORGANISMI_PROVV_QUOTAZIONE=32;
     const AA_ORGANISMI_PROVV_RAZIONALIZZAZIONE=64;
-    const AA_ORGANISMI_PROVV_LIQUIDAZIOINE=128;
+    const AA_ORGANISMI_PROVV_LIQUIDAZIONE=128;
     const AA_ORGANISMI_PROVV_ATTI_INDIRIZZO=256;
-    const AA_ORGANISMI_PROVV_MASK=254;
+    const AA_ORGANISMI_PROVV_NULLA_OSTA=512;
+    const AA_ORGANISMI_PROVV_MASK=510;
 
     //Inizializza gli array
     static private function Initialize()
@@ -233,7 +234,8 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_PROVV_ALIENAZIONE=>"Alienazione",
             self::AA_ORGANISMI_PROVV_QUOTAZIONE=>"Quotazione in mercati regolamentati",
             self::AA_ORGANISMI_PROVV_RAZIONALIZZAZIONE=>"Razionalizzazione",
-            self::AA_ORGANISMI_PROVV_LIQUIDAZIOINE=>"Liquidazione"
+            self::AA_ORGANISMI_PROVV_LIQUIDAZIONE=>"Liquidazione"
+            self::AA_ORGANISMI_PROVV_NULLA_OSTA=>"Nulla osta"
             );
         }
     }
