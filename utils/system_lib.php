@@ -10784,7 +10784,7 @@ class AA_Object_V2
         $query .= ", class='" . $object_class . "'";
         $query .= ", logs='" . addslashes($object->GetLog(false)) . "'";
 
-        AA_Log::Log(__METHOD__ . "query: " . $query, 100);
+        //AA_Log::Log(__METHOD__ . "query: " . $query, 100);
 
         if (!$db->Query($query . $where)) {
             AA_Log::Log(__METHOD__ . " - Errore nell'aggiornamento al db - " . $db->GetErrorMessage(), 100);
