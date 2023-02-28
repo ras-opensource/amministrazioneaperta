@@ -2094,7 +2094,7 @@ class AA_Organismi extends AA_Object
         return $result;
     }
 
-    //Restituisce le nomine legati all'organismo raggruppate per nominato
+    //Restituisce gli organigrammi dell'organismo
     public function GetOrganigrammi($params=array())
     {
         AA_Log::Log(__METHOD__."()");
