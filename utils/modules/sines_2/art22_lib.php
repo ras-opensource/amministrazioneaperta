@@ -1014,6 +1014,7 @@ class AA_Organismi extends AA_Object
         $query.=", tipo='".$provvedimento->GetTipologia(true)."'";
         $query.=", url='".addslashes($provvedimento->GetUrl())."'";
         $query.=", anno='".addslashes($provvedimento->GetAnno())."'";
+        $query.=", estremi='".addslashes($provvedimento->GetEstremi())."'";
         
         $db= new AA_Database();
         
