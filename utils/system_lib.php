@@ -1584,7 +1584,7 @@ class AA_User
 
         //Inserisce l'utente
         $db = new Database();
-        $sql = sprintf("INSERT INTO utenti SET ");
+        $sql = "INSERT INTO utenti SET ";
         $sql .= "id_assessorato='" . $params['assessorato'] . "'";
         $sql .= ",id_direzione='" . $params['direzione'] . "'";
         $sql .= ",id_servizio='" . $params['servizio'] . "'";
@@ -1746,7 +1746,7 @@ class AA_User
 
         //Aggiorna l'utente
         $db = new Database();
-        $sql = sprintf("UPDATE utenti SET user=user");
+        $sql = "UPDATE utenti SET user=user";
         if ($params['passwd'] != "") $sql .= ",passwd=MD5('" . $params['passwd'] . "')";
 
         //Dati aggionabili solo se utenti diversi

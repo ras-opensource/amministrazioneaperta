@@ -109,6 +109,21 @@ Class AA_SinesModule extends AA_GenericModule
         $taskManager->RegisterTask("GetOrganismoModifyIncaricoCompensoDlg");
         $taskManager->RegisterTask("UpdateOrganismoIncaricoCompenso");
         
+        //Organigrammi
+        $taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaDlg");
+        $taskManager->RegisterTask("AddNewOrganismoOrganigramma");
+        $taskManager->RegisterTask("GetOrganismoUpdateOrganigrammaDlg");
+        $taskManager->RegisterTask("UpdateOrganismoOrganigramma");
+        $taskManager->RegisterTask("GetOrganismoTrashOrganigrammaDlg");
+        $taskManager->RegisterTask("TrashOrganismoOrganigramma");
+
+        $taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaIncaricoDlg");
+        $taskManager->RegisterTask("AddNewOrganismoOrganigrammaIncarico");
+        $taskManager->RegisterTask("GetOrganismoUpdateOrganigrammaIncaricoDlg");
+        $taskManager->RegisterTask("UpdateOrganismoOrganigrammaIncarico");
+        $taskManager->RegisterTask("GetOrganismoTrashOrganigrammaIncaricoDlg");
+        $taskManager->RegisterTask("TrashOrganismoOrganigrammaIncarico");
+
         //Pdf export
         $taskManager->RegisterTask("PdfExport");
         
@@ -2023,6 +2038,47 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
         $wnd->SetSaveTask("AddNewOrganismoProvvedimento");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi organigramma
+    public function Template_GetOrganismoAddNewOrganigrammaDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetOrganismoAddNewOrganigrammaDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi organigramma", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(150);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(420);
+        
+        //Tipo
+        $options=array();
+        foreach(AA_Organismi_Const::GetListaTipoOrganigramma() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $wnd->AddSelectField("tipo","Tipo organo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di organo.","bottomLabel"=>"*Seleziona il tipo di organismo.","options"=>$options,"value"=>"0"));
+
+        //abilita scadenzario
+        $wnd->AddSwitchBoxField("enable_scadenzario","Scadenzario",array("onLabel"=>"includi","offLabel"=>"escludi","bottomLabel"=>"*Includi o escludi l'organigramma nel calcolo dello scadenzario."));
+
+        //note
+        $wnd->AddTextareaField("note", "Note", array("bottomLabel" => "", "placeholder" => "..."));
+                        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewOrganismoOrganigramma");
         
         return $wnd;
     }
@@ -6647,6 +6703,38 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
             $sTaskLog.= $this->Template_GetOrganismoAddNewIncaricoCompensoDlg($organismo, $incarico)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'organismo (".$organismo->GetDenominazione().").</error>";
+        }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task aggiungi organigramma dlg
+    public function Task_GetOrganismoAddNewOrganigrammaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo= new AA_Organismi($_REQUEST['id'],$this->oUser);
+        
+        if(!$organismo->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Organismo non valido o permessi insufficienti.</error>";
+        }
+                
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetOrganismoAddNewOrganigrammaDlg($organismo)->toBase64();
             $sTaskLog.="</content>";
         }
         else
