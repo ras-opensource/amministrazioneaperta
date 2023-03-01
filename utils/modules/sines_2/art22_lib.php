@@ -2161,6 +2161,21 @@ class AA_Organismi extends AA_Object
         return $result;
     }
 
+    //Restituisce la lista degli organigrammi associati all'organismo
+    public function GetListOrganigrammi()
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->IsValid())
+        {
+            AA_Log::Log(__METHOD__."() - oggetto non valido.");
+
+            return array();
+        }
+
+        
+    }
+
     //Restituisce le nomine legati all'organismo raggruppate per nominato
     public function GetNomineScadenzario($params=array())
     {
