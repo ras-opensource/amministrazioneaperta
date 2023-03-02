@@ -11,7 +11,7 @@ include_once "system_lib.php";
 #Costanti
 Class AA_Provvedimenti_Const extends AA_Const
 {
-    const AA_USER_FLAG_PROVVEDIMENTI="provvedimenti";
+    const AA_USER_FLAG_PROVVEDIMENTI="art23";
 
     //Tipo provvedimenti
     const AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE=1;
