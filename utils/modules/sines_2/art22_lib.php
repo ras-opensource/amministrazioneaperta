@@ -350,6 +350,20 @@ Class AA_Organismi_Organigramma_Incarico
         if(is_array($data)) $this->ParseData($data);
     }
 
+    public function IsNominaRas()
+    {
+        if($this->props['ras'] > 0) return true;
+        return false;
+    }
+
+    public function GetTipologia($bNumeric=False)
+    {
+        if($bNumeric) return $this->props['tipo'];
+        
+        $tipo=AA_Organismi_Const::GetTipoNomine();
+        return $tipo[$this->props['tipo']];
+    }
+
     //Props
     protected $props=array();
     protected $bValid=false;
@@ -408,6 +422,12 @@ Class AA_Organismi_Organigramma
         if(is_array($data)) $this->ParseData($data);
     }
 
+    public function IsScadenzarioEnabled()
+    {
+        if($this->organigramma_props['enable_scadenzario'] > 0) return true;
+        return false;
+    }
+
     //Props
     protected $organigramma_props=array();
     protected $organigramma_incarichi=array();
@@ -463,6 +483,11 @@ Class AA_Organismi_Organigramma
     public function GetProp($prop="")
     {
         if($prop != "") return $this->organigramma_props[$prop];
+    }
+
+    public function GetId()
+    {
+        return $this->GetProp("id");
     }
 
     //Restituisce le proprietà
@@ -1180,6 +1205,67 @@ class AA_Organismi extends AA_Object
 
         return $this->UpdateDb($user,null,false);
     }
+
+    //Aggiorna un provvedimento esistente
+    public function UpdateOrganigramma($organigramma=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - organismo non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'organismo.", 100,false,true);
+            return false;
+        }
+
+        if(!($organigramma instanceof AA_Organismi_Organigramma))
+        {
+            AA_Log::Log(__METHOD__." - Organigramma non valido.", 100,false,true);
+            return false;
+        }
+        
+        $query="UPDATE ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." SET id_organismo='".$this->GetID()."'";
+        $query.=", tipo='".$organigramma->GetProp("tipo")."'";
+        $query.=", note='".addslashes($organigramma->GetProp("note"))."'";
+        $query.=", enable_scadenzario='".addslashes($organigramma->GetProp("enable_scadenzario"))."'";
+        $query.=" WHERE id='".$organigramma->GetId()."' LIMIT 1";
+        
+        $db= new AA_Database();
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+                
+        $this->IsChanged();
+
+        //Aggiorna il db
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Aggiornato organigramma ".$organigramma->GetTipologia()."(id: ".$organigramma->GetId().")",AA_Const::AA_OPS_UPDATE,$user);
+        }
+
+        return $this->UpdateDb($user,null,false);
+    }
     
     //Restituisce un provvedimento esistente
     public function GetProvvedimento($id=null, $user=null)
@@ -1701,7 +1787,7 @@ class AA_Organismi extends AA_Object
         //Verifica permessi
         if(!$this->VerifyDbSync($this->oUser) || !$this->IsValid())
         {
-            return false;
+            return 0;
         }
         $perms=$this->GetUserCaps($this->oUser);
         if(($perms & AA_Const::AA_PERMS_WRITE) == 0)
@@ -2350,7 +2436,7 @@ class AA_Organismi extends AA_Object
 
         //Impostazione dei parametri
         $query="SELECT id,tipo,enable_scadenzario,note from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." where id_organismo='".$this->GetId()."'";
-        $query.= " ORDER by tipo";
+        $query.=" ORDER by tipo";
 
         $db=new AA_Database();
         if(!$db->Query($query))

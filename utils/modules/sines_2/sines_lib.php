@@ -112,17 +112,17 @@ Class AA_SinesModule extends AA_GenericModule
         //Organigrammi
         $taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaDlg");
         $taskManager->RegisterTask("AddNewOrganismoOrganigramma");
-        $taskManager->RegisterTask("GetOrganismoUpdateOrganigrammaDlg");
+        $taskManager->RegisterTask("GetOrganismoModifyOrganigrammaDlg");
         $taskManager->RegisterTask("UpdateOrganismoOrganigramma");
-        $taskManager->RegisterTask("GetOrganismoTrashOrganigrammaDlg");
-        $taskManager->RegisterTask("TrashOrganismoOrganigramma");
+        //$taskManager->RegisterTask("GetOrganismoTrashOrganigrammaDlg");
+        //$taskManager->RegisterTask("TrashOrganismoOrganigramma");
 
-        $taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaIncaricoDlg");
-        $taskManager->RegisterTask("AddNewOrganismoOrganigrammaIncarico");
-        $taskManager->RegisterTask("GetOrganismoUpdateOrganigrammaIncaricoDlg");
-        $taskManager->RegisterTask("UpdateOrganismoOrganigrammaIncarico");
-        $taskManager->RegisterTask("GetOrganismoTrashOrganigrammaIncaricoDlg");
-        $taskManager->RegisterTask("TrashOrganismoOrganigrammaIncarico");
+        //$taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaIncaricoDlg");
+        //$taskManager->RegisterTask("AddNewOrganismoOrganigrammaIncarico");
+        //$taskManager->RegisterTask("GetOrganismoUpdateOrganigrammaIncaricoDlg");
+        //$taskManager->RegisterTask("UpdateOrganismoOrganigrammaIncarico");
+        //$taskManager->RegisterTask("GetOrganismoTrashOrganigrammaIncaricoDlg");
+        //$taskManager->RegisterTask("TrashOrganismoOrganigrammaIncarico");
 
         //Pdf export
         $taskManager->RegisterTask("PdfExport");
@@ -2082,6 +2082,46 @@ Class AA_SinesModule extends AA_GenericModule
         
         return $wnd;
     }
+    //Template dlg aggiungi organigramma
+    public function Template_GetOrganismoModifyOrganigrammaDlg($object=null,$organigramma=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetOrganismoUpdateOrganigrammaDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("tipo"=>$organigramma->GetProp("tipo"),"enable_scadenzario"=>$organigramma->GetProp('enable_scadenzario'),"note"=>$organigramma->GetProp("note"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Modifica organigramma", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(150);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(420);
+        
+        //Tipo
+        $options=array();
+        foreach(AA_Organismi_Const::GetListaTipoOrganigramma() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $wnd->AddSelectField("tipo","Tipo organo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di organo.","bottomLabel"=>"*Seleziona il tipo di organismo.","options"=>$options,"value"=>"0"));
+
+        //abilita scadenzario
+        $wnd->AddSwitchBoxField("enable_scadenzario","Scadenzario",array("onLabel"=>"includi","offLabel"=>"escludi","bottomLabel"=>"*Includi o escludi l'organigramma nel calcolo dello scadenzario."));
+
+        //note
+        $wnd->AddTextareaField("note", "Note", array("bottomLabel" => "", "placeholder" => "..."));
+                        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_organigramma"=>$organigramma->GetId()));
+        $wnd->SetSaveTask("UpdateOrganismoOrganigramma");
+        
+        return $wnd;
+    }
     
     //Template dlg modifica provvedimento organismo
     public function Template_GetOrganismoModifyProvvedimentoDlg($object=null,$provvedimento=null)
@@ -3689,9 +3729,10 @@ Class AA_SinesModule extends AA_GenericModule
         foreach($organigrammi as $id_organigramma=>$curOrganigramma)
         {
             //Dati riepilogo
-            $riepilogo_data_item=array("tipo"=>$curOrganigramma->GetTipo(),"scadenzario"=>$curOrganigramma->IsScadenzarioEnabled());
-            
-            $tab_label=$curOrganigramma->GetTipo();
+            $riepilogo_data_item=array("tipo"=>$curOrganigramma->GetTipologia(),"scadenzario"=>"<span class='AA_DataView_ItemSubTitle AA_Label AA_Label_LightRed'>Escluso dallo scadenzario</span>");
+            if($curOrganigramma->IsScadenzarioEnabled()) $riepilogo_data_item['scadenzario']="<span class='AA_DataView_ItemSubTitle AA_Label AA_Label_LightGreen'>incluso nello scadenzario</span>";
+
+            $tab_label=$curOrganigramma->GetTipologia();
             if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina organigramma' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashOrganigrammaDlg", params: [{id_organigramma: "'.$curOrganigramma->GetProp("id").'"},{id: "'.$object->GetID().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
            
@@ -3714,10 +3755,10 @@ Class AA_SinesModule extends AA_GenericModule
                     "click"=>"$$('".$tabbar->GetId()."').setValue('".$riepilogo_layout_id."')"
                 )));
             
-            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+            //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
             
             //Organigramma label
-            $organigramma_label="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;'><span style='color:#003380; font-weight: 900; font-size: larger;'>".$curOrganigramma->GeTipo()."</span>";
+            $organigramma_label="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;'><span style='color:#003380; font-weight: 900; font-size: larger;'>".$curOrganigramma->GetTipologia()."</span>";
             $organigramma_label.="</div>";
             $toolbar->AddElement(new AA_JSON_Template_Template($id."_Toolbar_".$curOrganigramma->GetProp("id"),array("type"=>"clean","template"=>$organigramma_label)));
                 
@@ -3732,7 +3773,7 @@ Class AA_SinesModule extends AA_GenericModule
                     "align"=>"right",
                     "width"=>120,
                     "tooltip"=>"Aggiungi un nuovo incarico all'organigramma",
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetOrganismoOrganigrammaAddNewIncaricoDlg\", params: [{id: ".$object->GetId()."},{id_organigramma:\"".$curOrganigramma->GetProp("id")."\"}]},'$this->id')"
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetOrganismoAddNewOrganigrammaIncaricoDlg\", params: [{id: ".$object->GetId()."},{id_organigramma:\"".$curOrganigramma->GetProp("id")."\"}]},'$this->id')"
                 ));
                 
                 $modify_btn=new AA_JSON_Template_Generic($id."_Organigramma_Modify_".$curOrganigramma->GetProp("id")."_btn",array(
@@ -3743,25 +3784,39 @@ Class AA_SinesModule extends AA_GenericModule
                     "align"=>"right",
                     "width"=>120,
                     "tooltip"=>"Modifica i dati dell'organigramma",
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetOrganismoOrganigrammaModifyDlg\", params: [{id: ".$object->GetId()."},{id_organigramma:".$curOrganigramma->GetProp("id")."}]},'$this->id')"
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetOrganismoModifyOrganigrammaDlg\", params: [{id: ".$object->GetId()."},{id_organigramma:".$curOrganigramma->GetProp("id")."}]},'$this->id')"
                 ));
                 //$toolbar->AddElement($addnew_btn);
                 $toolbar->AddElement($modify_btn);
             }
             else
             {
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>240)));
+                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
             }
             
             $curOrganigrammaTab->AddRow($toolbar);
+
+            $content_layout=new AA_JSON_Template_Layout($id."_Box_layout",array());
+            $left=new AA_JSON_Template_Layout($id."_Box_layout_LeftPanel",array());
+            $toolbar_left=new AA_JSON_Template_Toolbar($id."_Toolbar_Left",array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
+
+            //scadenzario
+            $scadenzario_label="<span class='AA_Label AA_Label_LightGreen'>Si</span>&nbsp;";
+            if(!$curOrganigramma->IsScadenzarioEnabled())$scadenzario_label="<span class='AA_Label AA_Label_LightRed'>No</span>&nbsp;";
+            $toolbar_left->AddElement(new AA_JSON_Template_Template($id."_Enable_Scadenzario",array("type"=>"clean", "width"=>210,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Includi nello scadenzario: </span><br>$scadenzario_label</div>")));
+            $left->addRow($toolbar_left);
             
+            $left->addRow(new AA_JSON_Template_Template($id."_Note",array("template"=>"#note#","data"=>array("note"=>$curOrganigramma->GetProp("note")))));
+            
+            $content_layout->addCol($left);
+
             #incarichi----------------------------------
             $curId=$id."_Organigramma_".$curOrganigramma->GetId()."_Incarichi";
             $incarichi_box=new AA_JSON_Template_Layout($curId."_Box",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dedede !important;")));
 
-            $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_Compensi",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+            $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_Incarichi",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-            $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Compensi_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Trattamento economico</span>", "align"=>"center")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Incarichi_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Incarichi</span>", "align"=>"center")));
 
             if($canModify)
             {
@@ -3810,7 +3865,7 @@ Class AA_SinesModule extends AA_GenericModule
             {
                 //dati incarichi organigramma per riepilogo
                 $riepilogo_incarico_label=$incarico->GetTipologia();               
-                if($incarico->GetNominaRas() == "1") $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGreen'>".$riepilogo_incarico_label."</span>&nbsp;";
+                if($incarico->IsNominaRas()) $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGreen'>".$riepilogo_incarico_label."</span>&nbsp;";
                 else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightBlue'>".$riepilogo_incarico_label."</span>&nbsp;";                        
                 //-------------------------
 
@@ -3818,7 +3873,7 @@ Class AA_SinesModule extends AA_GenericModule
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoModifyOrganigrammaIncaricoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_organigramma:"'.$curOrganigramma->GetId().'"}]},"'.$this->id.'")';
                 $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashOrganigrammaIncaricoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_organigramma:"'.$curOrganigramma->GetId().'"}]},"'.$this->id.'")';
                 $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";                
-                $incarichi_data[]=array("id"=>$id_incarico,"tipo"=>$incarico->GetTipo(),"note"=>$incarico->GetProp('note'),"ras"=>$incarico->GetProp('ras'),"opzionale"=>$incarico->GetProp('opzionale'),"ops"=>$ops);
+                $incarichi_data[]=array("id"=>$id_incarico,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$incarico->GetProp('ras'),"opzionale"=>$incarico->GetProp('opzionale'),"ops"=>$ops);
                 #--------------------------------------
             }
 
@@ -3829,8 +3884,10 @@ Class AA_SinesModule extends AA_GenericModule
             } 
             else $incarichi_box->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
             
+            $content_layout->addCol($incarichi_box);
+
             //Aggiunge la lista incarichi alla pagina
-            $curOrganigrammaTab->AddRow($incarichi_box);
+            $curOrganigrammaTab->AddRow($content_layout);
             
             //Aggiunge una barra
             $curOrganigrammaTab->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer","height"=>3,"css"=>array("border-top"=>"1px solid #dedede !important;"))));
@@ -4075,9 +4132,9 @@ Class AA_SinesModule extends AA_GenericModule
         $riepilogo_layout=new AA_JSON_Template_Layout($id."_Riepilogo_Layout",array("type"=>"clean"));
         
         $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
-            . "<div><span class='AA_DataView_ItemTitle'>#nome# #cognome#</span><span style='font-size: smaller'>#cf#</span></div>"
-            . "<div><span class='AA_DataView_ItemSubTitle'>#incarichi#</span></div>"
-            . "</div><div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli degli incarichi' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
+            . "<div><span class='AA_DataView_ItemTitle'>#tipo#</span></div>"
+            . "<div>#scadenzario#</div>"
+            . "</div><div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli dell'organigramma' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
         $riepilogo_tab=new AA_JSON_Template_Generic($id."_Riepilogo_Tab",array(
             "view"=>"dataview",
             "filtered"=>true,
@@ -5237,6 +5294,52 @@ Class AA_SinesModule extends AA_GenericModule
     }
     
     //Task Aggiungi dato contabile
+    public function Task_AddNewOrganismoOrganigramma($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organismo non valido: ".$_REQUEST['id']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        //Salva i dati
+        $newOrganigramma=new AA_Organismi_Organigramma($_REQUEST);
+        $new_dato=$organismo->AddNewOrganigramma($newOrganigramma);
+        
+        if(!($new_dato==0))
+        {
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status' id_Rec='".$new_dato."'>0</status><content id='content'>";
+        $sTaskLog.= "Organigramma inserito con successo (identificativo: ".$new_dato.").";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task Aggiungi dato contabile
     public function Task_AddNewOrganismoIncaricoDoc($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -5632,6 +5735,62 @@ Class AA_SinesModule extends AA_GenericModule
         
         $sTaskLog="<status id='status' id_Rec='".$incarico->GetId()."'>0</status><content id='content'>";
         $sTaskLog.= "Incarico aggiornato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task aggiorna incarico
+    public function Task_UpdateOrganismoOrganigramma($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetError("Identificativo organismonon valido: ".$_REQUEST['id']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organismo non valido: ".$_REQUEST['id']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        $organigramma=$organismo->GetOrganigramma($_REQUEST['id_organigramma']);
+        if(!($organigramma instanceof AA_Organismi_Organigramma))
+        {
+            $task->SetError("Identificativo organigramma non valido: ".$_REQUEST['id_organigramma']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organigramma non valido: ".$_REQUEST['id_organigramma']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        //Aggiorna i dati
+        $organigramma->SetProp('tipo',$_REQUEST['tipo']);
+        $organigramma->SetProp('note',$_REQUEST['note']);
+        $organigramma->SetProp('enable_scadenzario',$_REQUEST['enable_scadenzario']);
+        if(!$organismo->UpdateOrganigramma($organigramma))
+        {
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $sTaskLog="<status id='status' id_Rec='".$organigramma->GetId()."'>0</status><content id='content'>";
+        $sTaskLog.= "Organigramma aggiornato con successo.";
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
@@ -6749,6 +6908,44 @@ Class AA_SinesModule extends AA_GenericModule
         return true;
     }
     
+    //Task modifica organigramma
+    public function Task_GetOrganismoModifyOrganigrammaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo= new AA_Organismi($_REQUEST['id'],$this->oUser);
+        if(!$organismo->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Organismo non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $organigramma=$organismo->GetOrganigramma($_REQUEST['id_organigramma']);
+        if(!($organigramma instanceof AA_Organismi_Organigramma))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo organigramma non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetOrganismoModifyOrganigrammaDlg($organismo,$organigramma)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
     //Task elimina bilancio dlg
     public function Task_GetOrganismoTrashDatoContabileDlg($task)
     {
