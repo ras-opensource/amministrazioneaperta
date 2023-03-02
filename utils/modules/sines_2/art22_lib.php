@@ -1650,7 +1650,7 @@ class AA_Organismi extends AA_Object
     public function DeleteOrganigramma($id=0)
     {
         //Verifica permessi
-        if(!$this->VerifyDbSync($this->oUser) || !$this->IsValid() || $id > 0)
+        if(!$this->VerifyDbSync($this->oUser) || !$this->IsValid() || $id <= 0)
         {
             return false;
         }
@@ -2492,7 +2492,7 @@ class AA_Organismi extends AA_Object
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__."() - errore nella query: ".$query,100,false,true);
-            return array();
+            return null;
         }
 
         //AA_Log::Log(__METHOD__."() - query: ".$query,100);

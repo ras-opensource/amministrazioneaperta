@@ -114,8 +114,8 @@ Class AA_SinesModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewOrganismoOrganigramma");
         $taskManager->RegisterTask("GetOrganismoModifyOrganigrammaDlg");
         $taskManager->RegisterTask("UpdateOrganismoOrganigramma");
-        //$taskManager->RegisterTask("GetOrganismoTrashOrganigrammaDlg");
-        //$taskManager->RegisterTask("TrashOrganismoOrganigramma");
+        $taskManager->RegisterTask("GetOrganismoDeleteOrganigrammaDlg");
+        $taskManager->RegisterTask("DeleteOrganismoOrganigramma");
 
         //$taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaIncaricoDlg");
         //$taskManager->RegisterTask("AddNewOrganismoOrganigrammaIncarico");
@@ -1279,6 +1279,55 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("TrashOrganismoIncarico");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_incarico"=>$incarico->GetId()));
+        
+        return $wnd;
+    }
+
+    //Template dlg trash organigramma
+    public function Template_GetOrganismoDeleteOrganigrammaDlg($object=null,$organigramma=null)
+    {
+        $id=$this->id."_TrashOrganigramma_Dlg";
+        
+        $form_data['id_organigramma']=$organigramma->GetId();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina organigramma", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("Id"=>$organigramma->GetId(), "Tipo"=>$organigramma->GetTipologia(),"Note"=>$organigramma->GetProp("note"));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente organigramma verrà eliminato, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+                array("id"=>"Id", "header"=>"id", "width"=>15),
+                array("id"=>"Tipo", "header"=>"Tipo", "fillspace"=>true),
+                array("id"=>"Note", "header"=>"Note", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteOrganismoOrganigramma");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_organigramma"=>$organigramma->GetId()));
         
         return $wnd;
     }
@@ -3733,7 +3782,7 @@ Class AA_SinesModule extends AA_GenericModule
             if($curOrganigramma->IsScadenzarioEnabled()) $riepilogo_data_item['scadenzario']="<span class='AA_DataView_ItemSubTitle AA_Label AA_Label_LightGreen'>incluso nello scadenzario</span>";
 
             $tab_label=$curOrganigramma->GetTipologia();
-            if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina organigramma' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashOrganigrammaDlg", params: [{id_organigramma: "'.$curOrganigramma->GetProp("id").'"},{id: "'.$object->GetID().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
+            if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina organigramma' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoDeleteOrganigrammaDlg", params: [{id_organigramma: "'.$curOrganigramma->GetProp("id").'"},{id: "'.$object->GetID().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
            
             //Tab label
@@ -6088,6 +6137,60 @@ Class AA_SinesModule extends AA_GenericModule
         
         return true;
     }
+
+    //Task trash organigramma
+    public function Task_DeleteOrganismoOrganigramma($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        
+        if(!$organismo->isValid())
+        {
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organismo non valido: ".$_REQUEST['id']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+                
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+
+        $dato=$organismo->GetOrganigramma($_REQUEST["id_organigramma"]);
+        if($dato == null)
+        {
+            $task->SetError("Identificativo organigramma non valido: ".$_REQUEST['id_incarico']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organigramma non valido: ".$_REQUEST['id_organigramma']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+       
+        //Elimina i dati
+        if(!$organismo->DeleteOrganigramma($_REQUEST['id_organigramma']))
+        {
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $sTaskLog="<status id='status' id_Rec='".$dato->GetId()."'>0</status><content id='content'>";
+        $sTaskLog.= "Organigramma eliminato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
     
     //Task aggiungi bilancio
     public function Task_AddNewOrganismoBilancio($task)
@@ -6421,6 +6524,47 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
             $sTaskLog.= $this->Template_GetOrganismoTrashIncaricoDlg($organismo, $incarico)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'organismo (".$organismo->GetDenominazione().").</error>";
+            
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task elimina incarico dlg
+    public function Task_GetOrganismoDeleteOrganigrammaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo= new AA_Organismi($_REQUEST['id'],$this->oUser);
+        
+        if(!$organismo->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Organismo o incarico non valido o permessi insufficienti.</error>";
+            
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $organigramma=$organismo->GetOrganigramma($_REQUEST['id_organigramma']);
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $organigramma instanceof AA_Organismi_Organigramma)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetOrganismoDeleteOrganigrammaDlg($organismo, $organigramma)->toBase64();
             $sTaskLog.="</content>";
         }
         else
