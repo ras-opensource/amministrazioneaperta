@@ -356,6 +356,12 @@ Class AA_Organismi_Organigramma_Incarico
         return false;
     }
 
+    public function IsOpzionale()
+    {
+        if($this->props['opzionale'] > 0) return true;
+        return false;
+    }
+
     public function GetTipologia($bNumeric=False)
     {
         if($bNumeric) return $this->props['tipo'];
@@ -380,6 +386,7 @@ Class AA_Organismi_Organigramma_Incarico
                 if($key=="id_organigramma") $this->props['id_organigramma']=$val;
                 if($key=="ras") $this->props['ras']=$val;
                 if($key=="ordine") $this->props['ordine']=$val;
+                if($key=="note") $this->props['note']=$val;
                 if($key=="opzionale") $this->props['opzionale']=$val;
             }
 
@@ -430,7 +437,7 @@ Class AA_Organismi_Organigramma
 
     //Props
     protected $organigramma_props=array();
-    protected $organigramma_incarichi=array();
+    protected $organigramma_incarichi=null;
     protected $bValid=false;
 
     public function GetTipologia($bNumeric=False)
@@ -498,6 +505,27 @@ Class AA_Organismi_Organigramma
 
     public function GetIncarichi()
     {
+        if($this->organigramma_incarichi==null && $this->organigramma_props['id'] > 0)
+        {
+            $db=new AA_Database();
+            $query="SELECT * from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI." WHERE id_organigramma ='".addslashes($this->organigramma_props['id'])."'";
+                
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+                $this->organigramma_incarichi=array();
+            }
+            
+            if($db->GetAffectedRows() > 0)
+            {
+                $rs=$db->GetResultSet();
+                $this->organigramma_incarichi=array();
+                foreach($rs as $curIncarico)
+                {
+                    $this->organigramma_incarichi[]=new AA_Organismi_Organigramma_Incarico($curIncarico);
+                }
+            }
+        }
         return $this->organigramma_incarichi;
     }
 
@@ -1859,7 +1887,7 @@ class AA_Organismi extends AA_Object
         }
 
         $db=new AA_Database();
-        $query="INSERT INTO ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." set id_organigramma='".$organigramma->GetProp("id")."'";
+        $query="INSERT INTO ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI." set id_organigramma='".$organigramma->GetProp("id")."'";
         $query.=", tipo='".addslashes($incarico->GetProp("tipo"))."'";
         $query.=", ras='".addslashes($incarico->GetProp("ras"))."'";
         $query.=", ordine='".addslashes($incarico->GetProp("ordine"))."'";

@@ -117,8 +117,8 @@ Class AA_SinesModule extends AA_GenericModule
         $taskManager->RegisterTask("GetOrganismoDeleteOrganigrammaDlg");
         $taskManager->RegisterTask("DeleteOrganismoOrganigramma");
 
-        //$taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaIncaricoDlg");
-        //$taskManager->RegisterTask("AddNewOrganismoOrganigrammaIncarico");
+        $taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaIncaricoDlg");
+        $taskManager->RegisterTask("AddNewOrganismoOrganigrammaIncarico");
         //$taskManager->RegisterTask("GetOrganismoUpdateOrganigrammaIncaricoDlg");
         //$taskManager->RegisterTask("UpdateOrganismoOrganigrammaIncarico");
         //$taskManager->RegisterTask("GetOrganismoTrashOrganigrammaIncaricoDlg");
@@ -1435,6 +1435,49 @@ Class AA_SinesModule extends AA_GenericModule
         return $wnd;
     }
     
+    //Template dlg aggiungi nuovo incarico all'organigramma
+    public function Template_GetOrganismoAddNewOrganigrammaIncaricoDlg($object=null,$organigramma=null)
+    {
+        $id=$this->id."_AddNewOrganigrammaIncarico_Dlg";
+
+        $form_data=array("tipo"=>0);
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi incarico per l'organigramma ".$organigramma->GetTipologia(), $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(520);
+        
+        //tipo
+        $options=array();
+
+        foreach(AA_Organismi_Const::GetTipoNomine() as $key=>$val)
+        {
+            if($key > 0) $options[]=array("id"=>$key, "value"=>$val);
+        }
+        $wnd->AddSelectField("tipo","Tipologia",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare la tipologia di incarico.", "placeholder"=>"Scegli il tipo di incarico...","options"=>$options));
+        
+        //nomina ras
+        $wnd->AddSwitchBoxField("ras","Nomina RAS",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è di nomina/designazione da parte della RAS."));
+        
+        //opzionale
+        $wnd->AddSwitchBoxField("opzionale","Opzionale",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è opzionale."));
+
+        //note
+        $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_organigramma"=>$organigramma->GetId()));
+        $wnd->SetSaveTask("AddNewOrganismoOrganigrammaIncarico");
+        
+        return $wnd;
+    }
+
     //Template dlg aggiungi nuovo compenso incarico
     public function Template_GetOrganismoAddNewIncaricoCompensoDlg($object=null,$incarico=null)
     {
@@ -3894,23 +3937,27 @@ Class AA_SinesModule extends AA_GenericModule
             $options_incarichi=array();
             if($canModify)
             {
-                $options_incarichi[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>60, "css"=>array("text-align"=>"left"));
-                $options_incarichi[]=array("id"=>"ras", "header"=>"Nomina ras", "width"=>150,"css"=>array("text-align"=>"center"));
-                $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>150,"css"=>array("text-align"=>"center"));
-                $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>250, "css"=>array("text-align"=>"left"));
+                $options_incarichi[]=array("id"=>"ras", "header"=>"Ras", "width"=>90,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>90,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
                 $options_incarichi[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
             }
             else
             {
-                $options_incarichi[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>60, "css"=>array("text-align"=>"left"));
-                $options_incarichi[]=array("id"=>"ras", "header"=>"Nomina ras", "width"=>150,"css"=>array("text-align"=>"center"));
-                $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>150,"css"=>array("text-align"=>"center"));
-                $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>250, "css"=>array("text-align"=>"left"));
+                $options_incarichi[]=array("id"=>"ras", "header"=>"Ras", "width"=>50,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>50,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
             }
 
             $incarichi_table=new AA_JSON_Template_Generic($curId."_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true, "scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_incarichi));
             $incarichi_data=array();
-            foreach($curOrganigramma->GetIncarichi() as $id_incarico=>$incarico)
+            $incarichi=$curOrganigramma->GetIncarichi();
+            
+            AA_Log::Log(__METHOD__." - ".print_r($incarichi,TRUE),100);
+
+            foreach($incarichi as $id_incarico=>$incarico)
             {
                 //dati incarichi organigramma per riepilogo
                 $riepilogo_incarico_label=$incarico->GetTipologia();               
@@ -3922,7 +3969,11 @@ Class AA_SinesModule extends AA_GenericModule
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoModifyOrganigrammaIncaricoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_organigramma:"'.$curOrganigramma->GetId().'"}]},"'.$this->id.'")';
                 $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashOrganigrammaIncaricoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_organigramma:"'.$curOrganigramma->GetId().'"}]},"'.$this->id.'")';
                 $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";                
-                $incarichi_data[]=array("id"=>$id_incarico,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$incarico->GetProp('ras'),"opzionale"=>$incarico->GetProp('opzionale'),"ops"=>$ops);
+                $ras="No";
+                if($incarico->IsNominaRas())$ras="Si";
+                $opzionale="No";
+                if($incarico->IsOpzionale())$opzionale="Si";
+                $incarichi_data[]=array("id"=>$id_incarico,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$ras,"opzionale"=>$opzionale,"ops"=>$ops);
                 #--------------------------------------
             }
 
@@ -5381,6 +5432,51 @@ Class AA_SinesModule extends AA_GenericModule
         
         $sTaskLog="<status id='status' id_Rec='".$new_dato."'>0</status><content id='content'>";
         $sTaskLog.= "Organigramma inserito con successo (identificativo: ".$new_dato.").";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task Aggiungi incarico all'organigramma
+    public function Task_AddNewOrganismoOrganigrammaIncarico($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organismo non valido: ".$_REQUEST['id']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        //Salva i dati        
+        $incarico=$incarico=new AA_Organismi_Organigramma_Incarico($_REQUEST);
+        $new_dato=$organismo->AddNewOrganigrammaIncarico($incarico,$_REQUEST['id_organigramma']);
+        if($new_dato==0)
+        {
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+
+        $sTaskLog="<status id='status' id_Rec='".$new_dato."'>0</status><content id='content'>";
+        $sTaskLog.= "Incarico inserito con successo (identificativo: ".$new_dato.").";
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
@@ -7241,6 +7337,49 @@ Class AA_SinesModule extends AA_GenericModule
         return true;
     }
     
+    //Task aggiungi dato contabile
+    public function Task_GetOrganismoAddNewOrganigrammaIncaricoDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo= new AA_Organismi($_REQUEST['id'],$this->oUser);
+        
+        if(!$organismo->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Organismo non valido o permessi insufficienti.</error>";
+        }
+        
+        $organigramma=$organismo->GetOrganigramma($_REQUEST['id_organigramma']);
+
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $organigramma != null) 
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetOrganismoAddNewOrganigrammaIncaricoDlg($organismo,$organigramma)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        else
+        {
+            if($organigramma ==null)
+            {
+                $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+                $sTaskLog.= "{}";
+                $sTaskLog.="</content><error id='error'>identificativo organigramma non valido (".$_REQUEST['id_organigramma'].").</error>";    
+            }
+            else
+            {
+                $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+                $sTaskLog.= "{}";
+                $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'organismo (".$organismo->GetDenominazione().").</error>";    
+            }
+        }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
     //Task aggiungi dato contabile
     public function Task_GetOrganismoAddNewProvvedimentoDlg($task)
     {
