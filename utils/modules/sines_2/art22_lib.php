@@ -373,6 +373,11 @@ Class AA_Organismi_Organigramma_Incarico
     //Props
     protected $props=array();
     protected $bValid=false;
+    public function IsValid()
+    {
+        if($this->bValid) return true;
+        else return false;
+    }
 
     //Importa i dati
     public function ParseData($data="")
@@ -382,6 +387,7 @@ Class AA_Organismi_Organigramma_Incarico
             foreach($data as $key=>$val)
             {
                 if($key=="id") $this->props['id']=$val;
+                if($key=="id_incarico") $this->props['id']=$val;
                 if($key=="tipo") $this->props['tipo']=$val;
                 if($key=="id_organigramma") $this->props['id_organigramma']=$val;
                 if($key=="ras") $this->props['ras']=$val;
@@ -417,6 +423,31 @@ Class AA_Organismi_Organigramma_Incarico
     public function GetProps()
     {
         return $this->props;
+    }
+
+    //Carica i dati dal database
+    static function LoadFromDb($id=0)
+    {
+        $incarico=new AA_Organismi_Organigramma_Incarico();
+
+        $db=new AA_Database();
+        $query="SELECT * from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI." WHERE id ='".addslashes($id)."' LIMIT 1";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+            return $incarico;
+        }
+         
+        if($db->GetAffectedRows() > 0)
+        {
+            $rs=$db->GetResultSet();
+
+            $incarico->ParseData($rs[0]);
+           
+            $incarico->bValid=true;
+        }
+
+        return $incarico;
     }
 }
 
@@ -456,6 +487,7 @@ Class AA_Organismi_Organigramma
             foreach($data as $key=>$val)
             {
                 if($key=="id") $this->organigramma_props['id']=$val;
+                if($key=="id_organigramma") $this->organigramma_props['id']=$val;
                 if($key=="tipo") $this->organigramma_props['tipo']=$val;
                 if($key=="id_organismo") $this->organigramma_props['id_organismo']=$val;
                 if($key=="enable_scadenzario") $this->organigramma_props['enable_scadenzario']=$val;
@@ -1720,6 +1752,52 @@ class AA_Organismi extends AA_Object
         return true;
     }
 
+    //Elimina un organigramma
+    public function DeleteOrganigrammaIncarico($id=0,$id_incarico=0)
+    {
+        //Verifica permessi
+        if(!$this->VerifyDbSync($this->oUser) || !$this->IsValid() || $id <= 0)
+        {
+            return false;
+        }
+        $perms=$this->GetUserCaps($this->oUser);
+        if(($perms & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            AA_Log::Log(__METHOD__." - L'utente: ".$this->oUser->GetNome()." non ha i permessi per cestinare/eliminare l'oggetto", 100,false,true);
+            return false;
+        }
+
+        //Verifica che l'organigramma sia dell'organismo corrente
+        $organigramma=$this->GetOrganigramma($id);
+        if($organigramma==null)
+        {
+            AA_Log::Log(__METHOD__." - Identificativo organigramma non valido.", 100,false,true);
+            return false;
+        }
+
+        $db=new AA_Database();
+        $query="DELETE FROM ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI." WHERE id_organigramma='".addslashes($id)."' AND id='".addslashes($id_incarico)."' LIMIT 1";
+
+        if(!$db->Query($query))
+        {
+            //Errore query
+            AA_Log::Log(__METHOD__."() - Errore nella query: $query",100);
+            return false;
+        }
+
+        $this->IsChanged();
+        
+        //log
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Rimosso incarico (id: ".$id_incarico.")",AA_Const::AA_OPS_UPDATE,$this->oUser);
+        }
+
+        $this->UpdateDb($this->oUser,null,false);
+
+        return true;
+    }
+
     //Elimina tutti gli organigrammi
     protected function DeleteAllOrganigrammi()
     {
@@ -1815,6 +1893,7 @@ class AA_Organismi extends AA_Object
         //Verifica permessi
         if(!$this->VerifyDbSync($this->oUser) || !$this->IsValid())
         {
+            AA_Log::Log(__METHOD__." - Oggetto non valido.", 100);
             return 0;
         }
         $perms=$this->GetUserCaps($this->oUser);
@@ -1909,6 +1988,65 @@ class AA_Organismi extends AA_Object
         if($this->bLogEnabled)
         {
             $this->AddLog("Aggiunto incarico (id: ".$newID.") all'organigramma ".$organigramma->GetTipologia()."(".$idOrganigramma.")",AA_Const::AA_OPS_UPDATE,$this->oUser);
+        }
+
+        $this->UpdateDb($this->oUser,null,false);
+
+        return $newID;
+    }
+
+    //Aggiorna un incarico ad un organigramma
+    public function UpdateOrganigrammaIncarico($incarico=null, $idOrganigramma=0)
+    {
+        //Verifica permessi
+        if(!$this->VerifyDbSync($this->oUser) || !$this->IsValid())
+        {
+            return 0;
+        }
+        $perms=$this->GetUserCaps($this->oUser);
+        if(($perms & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            AA_Log::Log(__METHOD__." - L'utente: ".$this->oUser->GetNome()." non ha i permessi per modificare l'oggetto", 100,false,true);
+            return 0;
+        }
+
+        if(!($incarico instanceof AA_Organismi_Organigramma_Incarico))
+        {
+            AA_Log::Log(__METHOD__." - Dati incarico errati.",100);
+            return 0;            
+        }
+
+        $organigramma=$this->GetOrganigramma($idOrganigramma);
+        if(!($organigramma instanceof AA_Organismi_Organigramma))
+        {
+            AA_Log::Log(__METHOD__." - Identificativo organigramma non valido (".$idOrganigramma.")",100);
+            return 0;                        
+        }
+
+        $db=new AA_Database();
+        $query="UPDATE ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI." SET ";
+        $query.=" tipo='".addslashes($incarico->GetProp("tipo"))."'";
+        $query.=", ras='".addslashes($incarico->GetProp("ras"))."'";
+        $query.=", ordine='".addslashes($incarico->GetProp("ordine"))."'";
+        $query.=", note='".addslashes($incarico->GetProp("note"))."'";
+        $query.=", opzionale='".addslashes($incarico->GetProp("opzionale"))."'";
+        $query.=" WHERE ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI.".id = '".addslashes($incarico->GetId())."' and ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI.".id_organigramma='".$organigramma->GetProp("id")."' LIMIT 1";
+        
+        if(!$db->Query($query))
+        {
+            //Errore query
+            AA_Log::Log(__METHOD__."() - Errore nella query: $query",100);
+            return 0;
+        }
+
+        $newID=$incarico->GetId();
+
+        $this->IsChanged();
+        
+        //log
+        if($this->bLogEnabled)
+        {
+            $this->AddLog("Aggiornato incarico (id: ".$newID.") dell'organigramma ".$organigramma->GetTipologia()."(".$idOrganigramma.")",AA_Const::AA_OPS_UPDATE,$this->oUser);
         }
 
         $this->UpdateDb($this->oUser,null,false);
