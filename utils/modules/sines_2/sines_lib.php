@@ -4074,9 +4074,14 @@ Class AA_SinesModule extends AA_GenericModule
                 $scaduto=false;
                 $vacante=true;
                 $opzionale=false;
+                $ras=false;
                 if($incarico->IsOpzionale()) 
                 {
                     $opzionale=true;
+                }
+                if($incarico->IsNominaRas())
+                {
+                    $ras=true;
                 }
                 if(is_array($nomine[$curTipoIncarico]) && sizeof($nomine[$curTipoIncarico]) > $nomine_index[$curTipoIncarico])
                 {
@@ -4094,19 +4099,19 @@ Class AA_SinesModule extends AA_GenericModule
                     }
                 }
                 if($vacante) $riepilogo_incarico_label.="<p>vacante</p>";
-                if($incarico->IsNominaRas()) $riepilogo_incarico_label.="<span style='font-size: smaller;'>Nomina ras</span>&nbsp;";
+                if($incarico->IsNominaRas()) $riepilogo_incarico_label.="<span style='font-size: smaller;'>nomina RAS</span>&nbsp;";
                 if($opzionale) 
                 {
                     $riepilogo_incarico_label.="<span style='font-size: smaller;'>(opzionale)</span>&nbsp;";
                 }
 
                 if($scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scaduto il: ".$dataScadenza."</span>";
-                if(!$scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scade il: ".$dataScadenza.")</span>";
+                if(!$scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scade il: ".$dataScadenza."</span>";
                 
-                $labelTheme="AA_Label_LightGreen";
-                if($vacante) $labelTheme="AA_Label_LightOrange";
+                if($ras) $labelTheme="AA_Label_LightGreen";
+                else $labelTheme="AA_Label_LightBlue";
+                if($vacante) $labelTheme="AA_Label_LightYellow";
                 if($opzionale && $vacante) $labelTheme="AA_Label_LightOrange";
-                if($opzionale && $scaduto) $labelTheme="AA_Label_LightYellow";
                 if($scaduto && !$opzionale) $labelTheme="AA_Label_LightRed";
                 $riepilogo_data_item['incarichi'].="<div class='AA_Label $labelTheme' style='text-align: center; margin-right: 5px;'>".$riepilogo_incarico_label."</div>";
                 //-------------------------

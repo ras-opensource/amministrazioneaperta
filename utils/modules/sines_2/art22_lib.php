@@ -90,6 +90,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_PRESIDENTE_ORGANO_INDIRIZZO=33554432;
     const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67108864; //67076864;
     const AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=134217728; //67076864;
+    const AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO_CDA=268435456;
 
     //nomine da pubblicare
     const AA_NOMINE_NON_PUBBLICARE=146826128;
@@ -190,6 +191,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NONE=>"n.d.",
             self::AA_ORGANISMI_NOMINA_AMMINISTRATORE_UNICO=>"Amministratore unico",
             self::AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO=>"Amministratore delegato",
+            self::AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO_CDA=>"Consigliere CDA e Amministratore delegato",
             self::AA_ORGANISMI_NOMINA_COMMISSARIO_STRAORDINARIO=>"Commissario straordinario",
             self::AA_ORGANISMI_NOMINA_CONSIGLIERE=>"Consigliere CDA",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_DIRETTIVO=>"Componente consiglio direttivo",
