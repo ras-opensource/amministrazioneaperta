@@ -251,9 +251,9 @@ class AA_Organismi_Const extends AA_Const
         {
             self::$TIPO_ORGANIGRAMMA=array(
                 self::AA_ORGANISMI_ORGANIGRAMMA_NONE=>"Nessuno",
-                self::AA_ORGANISMI_ORGANIGRAMMA_AMMINISTRATIVO=>"Amministrativo",
-                self::AA_ORGANISMI_ORGANIGRAMMA_CONTROLLO=>"Controllo",
-                self::AA_ORGANISMI_ORGANIGRAMMA_DIREZIONALE=>"Direzionale",            
+                self::AA_ORGANISMI_ORGANIGRAMMA_AMMINISTRATIVO=>"Organo di indirizzo",
+                self::AA_ORGANISMI_ORGANIGRAMMA_CONTROLLO=>"Organo di controllo",
+                self::AA_ORGANISMI_ORGANIGRAMMA_DIREZIONALE=>"Organo di amministrazione",
             );
         }
     }
@@ -2580,6 +2580,72 @@ class AA_Organismi extends AA_Object
                 if($params['raggruppamento'] == "0")  $index=$nomina->GetTipologia(true);
                 
                 $result[$index][$curNomina['id']]=$nomina;
+            }
+        }
+        
+        //AA_Log::Log(__METHOD__."() - result: ".print_r(array_keys($result),true),100);
+        
+        return $result;
+    }
+
+    //Restituisce le nomine raggruppate per tipologia di incarico
+    public function GetNomineGroupedForOrganigramma($params=array())
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->IsValid())
+        {
+            AA_Log::Log(__METHOD__."() - oggetto non valido.");
+
+            return array();
+        }
+
+        //Impostazione dei parametri
+        $query="SELECT id, nome, cognome, data_fine, tipo_incarico from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
+
+        //Nascondi le nomine scadute
+        if($params['scadute']=="0") $query.=" AND (data_fine > NOW())";
+        
+        //Nascondi quelle in corso
+        if($params['in_corso']=="0") $query.=" AND (data_fine < NOW())";
+        
+        //Nascondi nomine RAS
+        if($params['nomina_ras']=="0") $query.=" AND nomina_ras='0'";
+        
+        //Nascondi altre nomine
+        if($params['nomina_altri']=="0") $query.=" AND nomina_ras='1'";
+        
+        //Parametri scadenzario
+        if($params['scadenzario_dal'] !="") $query.=" AND data_fine >= '".$params['scadenzario_dal']."'";
+        if($params['scadenzario_al'] !="") $query.=" AND data_fine <= '".$params['scadenzario_al']."'";
+        
+        //Tipo incarico
+        if($params['tipo'] > 0) $query.=" AND tipo_incarico='".$params['tipo']."'";
+        
+        $query.= " ORDER by tipo_incarico, data_fine DESC, data_inizio DESC, nome ,cognome, codice_fiscale";
+
+        $db=new AA_Database();
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__."() - errore nella query: ".$query,100,false,true);
+            return array();
+        }
+
+        //AA_Log::Log(__METHOD__."() - query: ".$query,100);
+        
+        $result=array();
+
+        $rs=$db->GetResultSet();
+        
+        foreach($rs as $curNomina)
+        {
+            //$nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
+            //if($nomina->IsValid())
+            {
+                //$index=base64_encode(trim(strtolower($nomina->GetNome()))."|".trim(strtolower($nomina->GetCognome()))."|".trim(strtolower($nomina->GetCodiceFiscale())));
+                //if($params['raggruppamento'] == "0")  $index=$nomina->GetTipologia(true);
+                
+                $result[$curNomina['tipo_incarico']][]=$curNomina;
             }
         }
         

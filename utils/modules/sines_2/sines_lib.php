@@ -3590,14 +3590,14 @@ Class AA_SinesModule extends AA_GenericModule
                 //estremi provvedimento
                 $value=$incarico->GetEstremiProvvedimento();
                 if($value=="") $value="n.d.";
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Estremi_Provvedimento",array("type"=>"clean","width"=>220, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Estremi del provvedimento: </span><br>".$value."</div>")));
+                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Estremi_Provvedimento",array("type"=>"clean","width"=>"auto", "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Estremi del provvedimento: </span><br>".$value."</div>")));
                 
                 //Trattamento economico complessivo
                 $value=$incarico->GetCompensoSpettante();
                 if($value=="") $value="n.d.";
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Compenso_Spettante",array("type"=>"clean","width"=>300, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Trattamento economico complessivo in €: </span><br>".$value."</div>")));
+                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Compenso_Spettante",array("type"=>"clean","width"=>300, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede; border-right: 1px solid #dedede'><span style='font-weight: 700;'>Trattamento economico complessivo in €: </span><br>".$value."</div>")));
                     
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>50)));
                 
                 if($canModify)
                 {
@@ -3882,7 +3882,7 @@ Class AA_SinesModule extends AA_GenericModule
             "borderless"=>true,
             "css"=>"AA_Bottom_TabBar",
             "multiview"=>true,
-            "optionWidth"=>130,
+            "optionWidth"=>150,
             "view_id"=>$id."_Multiview",
             "type"=>"bottom"
         ));
@@ -3916,8 +3916,19 @@ Class AA_SinesModule extends AA_GenericModule
         //Data odierna
         $now = Date("Y-m-d");
         
+        //nomine
+        if(sizeof($organigrammi) > 0)
+        {
+            $nomine=$object->GetNomineGroupedForOrganigramma();
+            $nomine_index=array();
+            //AA_Log::Log(__METHOD__.print_r($nomine,true),100);    
+        }
+
         foreach($organigrammi as $id_organigramma=>$curOrganigramma)
         {
+            //Resetta l'idice dell'assegnazione delle nomine
+            $nomine_index=array();
+
             //Dati riepilogo
             $riepilogo_data_item=array("tipo"=>$curOrganigramma->GetTipologia(),"scadenzario"=>"<span class='AA_DataView_ItemSubTitle AA_Label AA_Label_LightRed'>Escluso dallo scadenzario</span>");
             if($curOrganigramma->IsScadenzarioEnabled()) $riepilogo_data_item['scadenzario']="<span class='AA_DataView_ItemSubTitle AA_Label AA_Label_LightGreen'>incluso nello scadenzario</span>";
@@ -3996,7 +4007,7 @@ Class AA_SinesModule extends AA_GenericModule
             $toolbar_left->AddElement(new AA_JSON_Template_Template($id."_Enable_Scadenzario",array("type"=>"clean", "width"=>210,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Includi nello scadenzario: </span><br>$scadenzario_label</div>")));
             $left->addRow($toolbar_left);
             
-            $left->addRow(new AA_JSON_Template_Template($id."_Note",array("template"=>"#note#","data"=>array("note"=>$curOrganigramma->GetProp("note")))));
+            $left->addRow(new AA_JSON_Template_Template($id."_Note",array("template"=>"#note#","data"=>array("note"=>nl2br($curOrganigramma->GetProp("note"))))));
             
             $content_layout->addCol($left);
 
@@ -4054,13 +4065,50 @@ Class AA_SinesModule extends AA_GenericModule
             $incarichi=$curOrganigramma->GetIncarichi();
             
             //AA_Log::Log(__METHOD__." - ".print_r($incarichi,TRUE),100);
-
+            $riepilogo_data_item['incarichi']="";
             foreach($incarichi as $id_incarico=>$incarico)
             {
                 //dati incarichi organigramma per riepilogo
-                $riepilogo_incarico_label=$incarico->GetTipologia();               
-                if($incarico->IsNominaRas()) $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGreen'>".$riepilogo_incarico_label."</span>&nbsp;";
-                else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightBlue'>".$riepilogo_incarico_label."</span>&nbsp;";                        
+                $riepilogo_incarico_label="<b>".$incarico->GetTipologia()."</b><br/>";
+                $curTipoIncarico=$incarico->GetTipologia(true);
+                $scaduto=false;
+                $vacante=true;
+                $opzionale=false;
+                if($incarico->IsOpzionale()) 
+                {
+                    $opzionale=true;
+                }
+                if(is_array($nomine[$curTipoIncarico]) && sizeof($nomine[$curTipoIncarico]) > $nomine_index[$curTipoIncarico])
+                {
+                    $curNominaIndex=0+$nomine_index[$curTipoIncarico];
+                    if($nomine[$curTipoIncarico][$curNominaIndex]['data_fine'] < $now) 
+                    {
+                        $scaduto=true;
+                    }
+                    $dataScadenza=$nomine[$curTipoIncarico][$curNominaIndex]['data_fine'];
+                    if(!$opzionale || ($opzionale && !$scaduto))
+                    {
+                        $riepilogo_incarico_label.="<p>".$nomine[$curTipoIncarico][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$curNominaIndex]['cognome']."</p>";
+                        $vacante=false;
+                        $nomine_index[$curTipoIncarico]+=1;
+                    }
+                }
+                if($vacante) $riepilogo_incarico_label.="<p>vacante</p>";
+                if($incarico->IsNominaRas()) $riepilogo_incarico_label.="<span style='font-size: smaller;'>Nomina ras</span>&nbsp;";
+                if($opzionale) 
+                {
+                    $riepilogo_incarico_label.="<span style='font-size: smaller;'>(opzionale)</span>&nbsp;";
+                }
+
+                if($scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scaduto il: ".$dataScadenza."</span>";
+                if(!$scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scade il: ".$dataScadenza.")</span>";
+                
+                $labelTheme="AA_Label_LightGreen";
+                if($vacante) $labelTheme="AA_Label_LightOrange";
+                if($opzionale && $vacante) $labelTheme="AA_Label_LightOrange";
+                if($opzionale && $scaduto) $labelTheme="AA_Label_LightYellow";
+                if($scaduto && !$opzionale) $labelTheme="AA_Label_LightRed";
+                $riepilogo_data_item['incarichi'].="<div class='AA_Label $labelTheme' style='text-align: center; margin-right: 5px;'>".$riepilogo_incarico_label."</div>";
                 //-------------------------
 
                 //Dati tabella
@@ -4329,10 +4377,10 @@ Class AA_SinesModule extends AA_GenericModule
         
         $riepilogo_layout=new AA_JSON_Template_Layout($id."_Riepilogo_Layout",array("type"=>"clean"));
         
-        $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
+        $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%;'><div class='AA_DataView_ItemContent' style='width:18%'>"
             . "<div><span class='AA_DataView_ItemTitle'>#tipo#</span></div>"
             . "<div>#scadenzario#</div>"
-            . "</div><div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli dell'organigramma' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
+            . "</div><div style='display: flex; flex-direction: row; justify-content: left; align-items: stretch; height: 95%; width: 70%;'>#incarichi#</div><div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli dell'organigramma' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
         $riepilogo_tab=new AA_JSON_Template_Generic($id."_Riepilogo_Tab",array(
             "view"=>"dataview",
             "filtered"=>true,
@@ -4340,7 +4388,7 @@ Class AA_SinesModule extends AA_GenericModule
             "module_id"=>$this->id,
             "type"=>array(
                 "type"=>"tiles",
-                "height"=>60,
+                "height"=>120,
                 "width"=>"auto",
                 "css"=>"AA_DataView_Nomine_item",
             ),
