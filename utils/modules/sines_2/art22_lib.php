@@ -8679,6 +8679,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             //Oneri totali
             $val=$curDatocontabile->GetOneriTotali();
             if($val=="") $val="n.d.";
+            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
             $piva=new AA_XML_Div_Element($this_id."_oneri",$left_panel);
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
             $piva->SetText('<span style="font-weight:bold">Oneri totali:</span><br/>€ '.$val);
@@ -8686,6 +8687,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             //spesa lavoro flessibile
             $val=$curDatocontabile->GetSpesaLavoroFlessibile();
             if($val=="") $val="n.d.";
+            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
             $piva=new AA_XML_Div_Element($this_id."_lavoroflessibile",$left_panel);
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
             $piva->SetText('<span style="font-weight:bold">Spesa lavoro flessibile:</span><br/>€ '.$val);
@@ -8693,6 +8695,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             //spesa incarichi
             $val=$curDatocontabile->GetSpesaIncarichi();
             if($val=="") $val="n.d.";
+            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
             $piva=new AA_XML_Div_Element($this_id."_spesaincarichi",$left_panel);
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
             $piva->SetText('<span style="font-weight:bold">Spesa incarichi:</span><br/>€ '.$val);
@@ -8745,6 +8748,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             //spesa dotazione organica
             $val=$curDatocontabile->GetSpesaDotazioneOrganica();
             if($val=="") $val="n.d.";
+            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
             $piva=new AA_XML_Div_Element($this_id."_spesa_dotazione_organica",$right_panel);
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
             $piva->SetText('<span style="font-weight:bold">Spesa dotazione organica:</span><br/>€ '.$val);
@@ -8762,7 +8766,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
                     $bilanci_table->SetCellText($curRow,0,$curBilancio->GetTipo(), "center");
 
                     //risultati
-                    $bilanci_table->SetCellText($curRow,1,$curBilancio->GetRisultati(), "center");
+                    $bilanci_table->SetCellText($curRow,1,number_format(floatVal(str_replace(array(".",","),array("","."),$curBilancio->GetRisultati())),2,",","."), "center");
 
                     //note
                     $bilanci_table->SetCellText($curRow,2,$curBilancio->GetNote(), "left");
