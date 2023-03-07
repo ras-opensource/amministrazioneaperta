@@ -8514,6 +8514,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
                 $this->layout->AddRow($this->curRow);
             }
             if ($type == "text") $this->curRow->AddCol(new AA_JSON_Template_Text($this->id . "_Field_" . $name, $props));
+            if ($type == "richtext") $this->curRow->AddCol(new AA_JSON_Template_Richtext($this->id . "_Field_" . $name, $props));
             if ($type == "textarea") $this->curRow->AddCol(new AA_JSON_Template_Textarea($this->id . "_Field_" . $name, $props));
             if ($type == "checkbox") $this->curRow->AddCol(new AA_JSON_Template_Checkbox($this->id . "_Field_" . $name, $props));
             if ($type == "select") $this->curRow->AddCol(new AA_JSON_Template_Select($this->id . "_Field_" . $name, $props));
@@ -8561,6 +8562,12 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     public function AddTextareaField($name = "", $label = "", $props = array(), $newRow = true)
     {
         return $this->AddField($name, $label, "textarea", $props, $newRow);
+    }
+
+    //Aggiungi un campo richtext
+    public function AddRichtextField($name = "", $label = "", $props = array(), $newRow = true)
+    {
+        return $this->AddField($name, $label, "richtext", $props, $newRow);
     }
 
     //Aggiungi un checkbox
@@ -10210,6 +10217,18 @@ class AA_JSON_Template_Text extends AA_JSON_Template_Generic
 }
 
 //Classe per la gestione dei campi di testo
+class AA_JSON_Template_Richtext extends AA_JSON_Template_Generic
+{
+    public function __construct($id = "", $props = null)
+    {
+        $this->props["view"] = "richtext";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_RICHTEXT";
+
+        parent::__construct($id, $props);
+    }
+}
+
+//Classe per la gestione dei campi di testo
 class AA_JSON_Template_Select extends AA_JSON_Template_Generic
 {
     public function __construct($id = "", $props = null)
@@ -10220,6 +10239,8 @@ class AA_JSON_Template_Select extends AA_JSON_Template_Generic
         parent::__construct($id, $props);
     }
 }
+
+
 
 //Classe per la gestione dei campi radio
 class AA_JSON_Template_Radio extends AA_JSON_Template_Generic
