@@ -8934,7 +8934,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Template pdf export generic
     public function Template_OrganismiPdfExportFull($organismi=array(), $bToBrowser=true,$tipo_organismo="")
     {
-        AA_Log::Log(__METHOD__." starting building pdf: ".time(),100);
+        //AA_Log::Log(__METHOD__." starting building pdf: ".time(),100);
 
         if(!is_array($organismi)) return "";
         if(sizeof($organismi)==0) return "";
@@ -9100,8 +9100,8 @@ Class AA_SinesModule extends AA_GenericModule
             }            
         }
 
-        AA_Log::Log(__METHOD__." done building pdf: ".time(),100);
-        AA_Log::Log(__METHOD__." start rendering pdf: ".time(),100);
+        //AA_Log::Log(__METHOD__." done building pdf: ".time(),100);
+        //AA_Log::Log(__METHOD__." start rendering pdf: ".time(),100);
         if($bToBrowser) $doc->Render();
         else
         {
