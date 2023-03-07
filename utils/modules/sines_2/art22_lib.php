@@ -91,6 +91,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67108864; //67076864;
     const AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=134217728; //67076864;
     const AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO_CDA=268435456;
+    const AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE=536870912; //2^29
 
     //nomine da pubblicare
     const AA_NOMINE_NON_PUBBLICARE=146826128;
@@ -206,6 +207,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_LIQUIDATORE_GIUDIZIARIO=>"Liquidatore giudiziario",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_NON_CDA=>"Presidente",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE=>"Presidente CDA",
+            self::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE=>"Presidente colleggio revisori dei conti",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO=>"Presidente collegio sindacale",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_DIRETTIVO=>"Presidente consiglio direttivo",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_INDIRIZZO=>"Presidente consiglio di indirizzo",
@@ -8537,16 +8539,16 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
         }
 
         //Funzioni attribuite
-        $val=$organismo->GetFunzioni();
+        $val=nl2br($organismo->GetFunzioni());
         if($val=="") $val="n.d.";
         $funzioni = new AA_XML_Div_Element("funzioni",$left_panel);
         $funzioni->SetStyle("width: 100%; margin-bottom: .8em; border-top: 1px solid gray; text-align: left;");
-        $funzioni->SetText('<span style="font-weight:bold">Funzioni attribuite:</span><br>'.$val);
+        $funzioni->SetText('<span style="font-weight:bold">Funzioni attribuite2:</span><br>'.$val);
 
         //note
-        $note=new AA_XML_Div_Element("generale-tab-note",$left_panel);
-        $note->SetStyle('width:100%; border-top: 1px solid gray; margin-bottom: .8em;text-align: left;');
-        $note->SetText(nl2br($organismo->GetNote()));
+        $note=new AA_XML_Div_Element("generale-tab-note",$right_panel);
+        $note->SetStyle("width: 100%; margin-bottom: .8em; border-top: 1px solid gray; text-align: left;");
+        $note->SetText('<span style="font-weight:bold">Note:</span><br>'.nl2br($organismo->GetNote()));
         #-------------------
 
         //Aggiunge i dati contabili
