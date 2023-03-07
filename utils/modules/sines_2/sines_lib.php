@@ -5000,7 +5000,7 @@ Class AA_SinesModule extends AA_GenericModule
                 else
                 {
                     if($_REQUEST['section'] == "Scadenzario") $this->Template_OrganismiScadenzarioPdfExport($objects[1]);
-                    else $this->Template_OrganismiPdfExport($objects[1]);
+                    else $this->Template_OrganismiPdfExportFull($objects[1]);
                 }
             }
         } 
@@ -8954,6 +8954,7 @@ Class AA_SinesModule extends AA_GenericModule
         }
         $filename.="-".date("YmdHis");
         $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
+        $doc->EnableCache(false);
         
         $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
         $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
@@ -9021,20 +9022,21 @@ Class AA_SinesModule extends AA_GenericModule
             $curPage->SetContent($curPage_row);
 
             //seconda pagina - dati contabili
-            $curPage=$doc->AddPage();
-            $curNumPage++;
-            $curPage_row="";
-            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
-            $curPage_row.=new AA_OrganismiFullReportTemplateDatiContabiliPageView("report_organismo_pdf_dati_contabili_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
-            $curPage_row.="</div>";
-            $curPage->SetContent($curPage_row);
+            //$curPage=$doc->AddPage();
+            //$curNumPage++;
+            //$curPage_row="";
+            //$curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+            $curNumPage+=new AA_OrganismiFullReportTemplateDatiContabiliPageView("report_organismo_pdf_dati_contabili_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser,$doc);
+            //$curPage_row.="</div>";
+            //$curPage->SetContent($curPage_row);
+            
 
             //terza pagina
             $curPage=$doc->AddPage();
             $curNumPage++;
             $curPage_row="";
             $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
-            $curPage_row.=new AA_OrganismiPublicReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+            $curPage_row.=new AA_OrganismiFullReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
             $curPage_row.="</div>";
             $curPage->SetContent($curPage_row);
 
