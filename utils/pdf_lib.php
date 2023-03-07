@@ -968,7 +968,7 @@ Class AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE extends AA_PDF_Page
         $header_content.='<span style="font-size: 3mm; font-weight: bold;">'.$title.'</span>';
         $this->SetHeaderContent($header_content);
         $this->SetHeaderStyle("border-bottom: .2mm solid black; text-align: center");
-        $this->SetFooterStyle("display: flex; flex-direction: column; text-align: center");
+        $this->SetFooterStyle("display: flex; flex-direction: column; justify-content: flex-end; text-align: center");
         $this->SetPageNumberBoxStyle("border-top:.2mm solid black; overflow: hidden; font-size: 3mm; padding-top: .5mm;");
 
         //error_log(get_class()." - ".$this->sHeaderContent);
@@ -999,7 +999,7 @@ Class AA_PDF_PAGE_GENERIC_DEFAULT_TEMPLATE extends AA_PDF_Page
         $header_content.='<span style="font-size: 3mm; font-weight: bold;">'.$title.'</span>';
         $this->SetHeaderContent($header_content);
         $this->SetHeaderStyle("border-bottom: .2mm solid black; text-align: center");
-        $this->SetFooterStyle("display: flex; flex-direction: column-reverse; text-align: center");
+        $this->SetFooterStyle("display: flex; flex-direction: column; justify-content: flex-end; text-align: center");
         $this->SetPageNumberBoxStyle("border-top:.2mm solid black; overflow: hidden; font-size: 3mm; padding-top: .5mm;");
 
         //error_log(get_class()." - ".$this->sHeaderContent);
@@ -1050,6 +1050,32 @@ Class AA_PDF_ASPAL_TEMPLATE_A4_PORTRAIT extends AA_PDF_Document
         parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_PORTRAIT);
         $this->SetHeaderHeight(23);
         $this->SetLogoImage("27_logo.jpg");
+        $this->SetDocumentStyle("font-family: sans-serif;");
+        $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
+    }
+}
+//-------------------------
+
+//Modelli AREA
+Class AA_PDF_AREA_TEMPLATE_A4_LANDSCAPE extends AA_PDF_Document
+{
+    public function __construct($id="generic_area_doc")
+    {
+        parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_LANDSCAPE);
+        $this->SetHeaderHeight(23);
+        $this->SetLogoImage("22_logo.jpg");
+        $this->SetDocumentStyle("font-family: sans-serif;");
+        $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
+    }
+}
+
+Class AA_PDF_AREA_TEMPLATE_A4_PORTRAIT extends AA_PDF_Document
+{
+    public function __construct($id="generic_area_doc")
+    {
+        parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_PORTRAIT);
+        $this->SetHeaderHeight(23);
+        $this->SetLogoImage("22_logo.jpg");
         $this->SetDocumentStyle("font-family: sans-serif;");
         $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
     }
