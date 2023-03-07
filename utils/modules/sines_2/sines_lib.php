@@ -8999,7 +8999,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //Imposta il titolo per le pagine successive
         $doc->SetTitle("Esportazione organismi censiti sul SINES - report generato il ".date("Y-m-d"));
-  
+        
         $indice=array();
         $lastPage=$count/$rowForPage+$curNumPage;
         $curPage_row="";
@@ -9014,13 +9014,14 @@ Class AA_SinesModule extends AA_GenericModule
 
             //Aggiorna l'indice
             $indice[$curOrganismo->GetID()]=$curNumPage."|".$curOrganismo->GetDescrizione();
-            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm; height: 100%;'>";
             
             //Prima pagina -  dati generali
             $curPage_row.=new AA_OrganismiFullReportTemplateGeneralPageView("report_organismo_pdf_general_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+            //$curPage_row.="<div style='font-style: italic; font-size: smaller; text-align: center; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>";
             $curPage_row.="</div>";
+            $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>");
             $curPage->SetContent($curPage_row);
-
             //seconda pagina - dati contabili
             //$curPage=$doc->AddPage();
             //$curNumPage++;
@@ -9038,6 +9039,7 @@ Class AA_SinesModule extends AA_GenericModule
             $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
             $curPage_row.=new AA_OrganismiFullReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
             $curPage_row.="</div>";
+            $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>");
             $curPage->SetContent($curPage_row);
 
             //AA_Log::Log($template,100,false,true);

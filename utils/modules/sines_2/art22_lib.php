@@ -8591,8 +8591,8 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
         }
 
         //legenda
-        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; border-top: 1px solid gray; '>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
-        $this->SetText($footer,false);
+        //$footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; border-top: 1px solid gray; '>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+        //$this->SetText($footer,false);
     }
 }
 
@@ -8643,6 +8643,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             if($curAnniRow >= $anniForPage)
             {
                 $curPage->SetContent($corpo_page->__toString());
+                $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>");
                 $curRelNumPage++;
                 $curPage=$doc->AddPage();
                 $curAnniRow=0;
@@ -8752,12 +8753,11 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             if(sizeof($bilanci) > 0)
             {
                 $curRow=1;
+                $bilanci_table= new AA_GenericTableTemplateView($this_id."_bilanci_table",$generale,$organismo,array("evidentiate-rows"=>true,"border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+                $bilanci_table->SetColSizes(array("30","20","45"));
+                $bilanci_table->SetHeaderLabels(array("Tipo di bilancio","Risultati in €", "Note"));
                 foreach($bilanci as $curBilancio)
                 {
-                    $bilanci_table= new AA_GenericTableTemplateView($this_id."_bilanci_table",$generale,$organismo,array("evidentiate-rows"=>true,"border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
-                    $bilanci_table->SetColSizes(array("30","20","45"));
-                    $bilanci_table->SetHeaderLabels(array("Tipo di bilancio","Risultati in €", "Note"));
-                    
                     //tipo
                     $bilanci_table->SetCellText($curRow,0,$curBilancio->GetTipo(), "center");
 
@@ -8783,8 +8783,8 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             #-------------------
 
             //legenda
-            $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
-            $corpo_page->SetText($footer,false);
+            //$footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+            //$corpo_page->SetText($footer,false);
 
             $curAnniRow++;
         }
@@ -8792,6 +8792,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
         if($curAnniRow > 0)
         {
             $curPage->SetContent($corpo_page->__toString());
+            $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>");
         }
 
         return $curRelNumPage;
@@ -8891,7 +8892,7 @@ Class AA_OrganismiFullReportTemplateNominePageView extends AA_GenericObjectTempl
 
         //legenda
         $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-bottom: 2em'>Nel presente prospetto sono esposti i dati dei rappresentanti designati dall'Amministrazione regionale negli organi di governo dell’ente e quelli relativi ai titolari di incarichi di amministratore dell'ente, siano essi nominati dalla Regione o meno.</span></div>";
-        $footer.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+        //$footer.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
         $this->SetText($footer,false);
     }
 }
@@ -9471,6 +9472,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                     //Note
                     $note=$curNomina->GetNote();
                     $ratio=5*strlen($note)/$num_nomine;
+                    if($ratio < 80) $ratio=80;
                     if(strlen($note) > $ratio) $note=substr($note,0,$ratio)."...";
                     $note_box=$this->GetCell($curRow,7);
                     $note_box->SetStyle("font-size: smaller;", true);

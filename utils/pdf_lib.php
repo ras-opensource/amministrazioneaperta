@@ -75,7 +75,7 @@ Class AA_PDF_Page
     //----------------------------
 
     //Gestione del pie di pagina
-    private $sFooter='<div class="AA_PDF_Page_footer_box %footerClass%" style="overflow: hidden;%footerStyle%">%content%<div class="AA_PDF_Page_number_box %page_number_box_class%" style="%page_number_box_style%">%page_number%</div></div>';
+    private $sFooter='<div class="AA_PDF_Page_footer_box %footerClass%" style="overflow: hidden;%footerStyle%"><div>%content%</div><div class="AA_PDF_Page_number_box %page_number_box_class%" style="%page_number_box_style%">%page_number%</div></div>';
     private $sFooterClass="";
     public function SetFooterClass($var="")
     {
@@ -968,7 +968,7 @@ Class AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE extends AA_PDF_Page
         $header_content.='<span style="font-size: 3mm; font-weight: bold;">'.$title.'</span>';
         $this->SetHeaderContent($header_content);
         $this->SetHeaderStyle("border-bottom: .2mm solid black; text-align: center");
-        $this->SetFooterStyle("display: flex; flex-direction: column-reverse; text-align: center");
+        $this->SetFooterStyle("display: flex; flex-direction: column; text-align: center");
         $this->SetPageNumberBoxStyle("border-top:.2mm solid black; overflow: hidden; font-size: 3mm; padding-top: .5mm;");
 
         //error_log(get_class()." - ".$this->sHeaderContent);
