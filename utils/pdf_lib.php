@@ -75,7 +75,7 @@ Class AA_PDF_Page
     //----------------------------
 
     //Gestione del pie di pagina
-    private $sFooter='<div class="AA_PDF_Page_footer_box %footerClass%" style="overflow: hidden;%footerStyle%"><div>%content%</div><div class="AA_PDF_Page_number_box %page_number_box_class%" style="%page_number_box_style%">%page_number%</div></div>';
+    private $sFooter='<div class="AA_PDF_Page_footer_box %footerClass%" style="overflow: hidden;%footerStyle%">%content%<div class="AA_PDF_Page_number_box %page_number_box_class%" style="%page_number_box_style%">%page_number%</div></div>';
     private $sFooterClass="";
     public function SetFooterClass($var="")
     {
