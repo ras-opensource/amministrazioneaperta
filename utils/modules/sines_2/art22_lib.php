@@ -2624,7 +2624,7 @@ class AA_Organismi extends AA_Object
         //Tipo incarico
         if($params['tipo'] > 0) $query.=" AND tipo_incarico='".$params['tipo']."'";
         
-        $query.= " ORDER by tipo_incarico, data_fine DESC, data_inizio DESC, nome ,cognome, codice_fiscale";
+        $query.= " ORDER by tipo_incarico, data_fine DESC, data_inizio DESC, cognome, nome, codice_fiscale";
 
         $db=new AA_Database();
         if(!$db->Query($query))
