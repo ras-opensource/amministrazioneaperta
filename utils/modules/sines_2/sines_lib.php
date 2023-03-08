@@ -4106,11 +4106,7 @@ Class AA_SinesModule extends AA_GenericModule
                 }
 
                 if($scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scaduto il: ".$dataScadenza."</span>";
-                if(!$scaduto && !$vacante) 
-                {
-                    if(strpos($dataScadenza,"9999-") !== false) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>a tempo identerminato</span>";
-                    else $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scade il: ".$dataScadenza."</span>";
-                }
+                if(!$scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scade il: ".$dataScadenza."</span>";
                 
                 if($ras) $labelTheme="AA_Label_LightGreen";
                 else $labelTheme="AA_Label_LightBlue";
