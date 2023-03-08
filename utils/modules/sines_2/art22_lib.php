@@ -91,6 +91,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=67108864; //67076864;
     const AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=134217728; //67076864;
     const AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO_CDA=268435456;
+    const AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE=536870912; //2^29
 
     //nomine da pubblicare
     const AA_NOMINE_NON_PUBBLICARE=146826128;
@@ -206,6 +207,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_LIQUIDATORE_GIUDIZIARIO=>"Liquidatore giudiziario",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_NON_CDA=>"Presidente",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE=>"Presidente CDA",
+            self::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE=>"Presidente colleggio revisori dei conti",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO=>"Presidente collegio sindacale",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_DIRETTIVO=>"Presidente consiglio direttivo",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_INDIRIZZO=>"Presidente consiglio di indirizzo",
@@ -8414,6 +8416,393 @@ Class AA_OrganismiPublicReportTemplateGeneralPageView extends AA_GenericObjectTe
     }
 }
 
+#Classe template per la gestione del report pdf dell'organismo (pagina generale)
+Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemplateView
+{
+    public function __construct($id="AA_OrganismiFullReportTemplateGeneralPageView",$parent=null,$organismo=null, $user=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return;
+            }
+        }
+
+        if(!($organismo instanceof AA_Organismi))
+        {
+            AA_Log::Log(__METHOD__." - organismo non valido.", 100,false,true);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$organismo);
+        
+        $this->SetStyle("width: 99%; display:flex; flex-direction: column; align-items: center;");
+
+        #Parte generale---------------------------------
+        $generale=new AA_XML_Div_Element("AA_OrganismiPublicReportTemplateView-generale",$this);
+        $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: top; flex-wrap: wrap; width: 100%");
+
+        #Denominazione----------------------------------
+        $denominazione=new AA_XML_Div_Element("generale-tab-denominazione",$generale);
+        $denominazione->SetStyle('width:100%; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .2em; font-size: 20px; font-weight: bold');
+        $denominazione->SetText($organismo->GetDenominazione()."<br><span style='font-size: x-small; font-weight: normal'>".$organismo->GetTipologia()."</span>");
+        #-----------------------------------------------
+
+        //left panel-------
+        $left_panel= new AA_XML_Div_Element("generale-tab-left-panel",$generale);
+        $left_panel->SetStyle("display:flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; width:49.9%");
+
+        //Piva
+        $val=$organismo->GetPivaCf();
+        if($val=="") $val="n.d.";
+        $piva=new AA_XML_Div_Element("piva",$left_panel);
+        $piva->SetStyle("width: 100%; margin-bottom: .8em");
+        $piva->SetText('<span style="font-weight:bold">Partita Iva/Codice fiscale:</span><br/>'.$val);
+
+        //Sede legale
+        $val=$organismo->GetSedeLegale();
+        if($val=="") $val="n.d.";
+        $sede_legale = new AA_XML_Div_Element("sede",$left_panel);
+        $sede_legale->SetStyle("width: 100%; margin-bottom: .8em");
+        $sede_legale->SetText('<span style="font-weight:bold">Sede legale:</span>'."<br/>".$val);
+        
+        //Pec
+        $val=$organismo->GetPec();
+        if($val=="") $val="n.d.";
+        $pec = new AA_XML_Div_Element("pec",$left_panel);
+        $pec->SetStyle("width: 100%; margin-bottom: .8em");
+        $pec->SetText('<span style="font-weight:bold">PEC:</span>'."<br/>".$val); 
+
+        //Sito web
+        $val=$organismo->GetSitoWeb();
+        if($val=="") $val="n.d.";
+        $sito_web = new AA_XML_Div_Element("sito_web",$left_panel);
+        $sito_web->SetStyle("width: 100%; margin-bottom: .8em");
+        $sito_web->SetText('<span style="font-weight:bold">Sito web:</span><br/><a href="'.$val.'" target="_blank">'.$val."</a>");
+        #-------------------
+
+        //right panel ------
+        $right_panel= new AA_XML_Div_Element("generale-tab-right-panel",$generale);
+        $right_panel->SetStyle("display:flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; width:48%;");
+        
+        if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
+        {
+            //Data inizio impegno
+            $val=$organismo->GetDataInizioImpegno();
+            if($val=="0000-00-00") $val="n.d.";
+            $data_inizio = new AA_XML_Div_Element("generale-tab-right-panel-data_inizio",$right_panel);
+            $data_inizio->SetStyle("width:100%; margin-bottom: .8em");
+            $data_inizio->SetText('<span style="font-weight:bold">Data inizio impegno:</span><br/>'.$val);
+
+            //Data fine impegno
+            $val=$organismo->GetDataFineImpegno();
+            if($val=="0000-00-00") $val="n.d.";
+            if(trim($val)=="9999-12-31") $val="a tempo indeterminato";
+            $data_fine = new AA_XML_Div_Element("generale-tab-right-panel-data_fine",$right_panel);
+            $data_fine->SetStyle("width:100%; margin-bottom: .8em");
+            $data_fine->SetText('<span style="font-weight:bold">Data fine impegno:</span><br/>'.$val);
+
+            //partecipazione
+            $val=$organismo->GetPartecipazione();
+            if($val=="" || $val=="0") $val="indiretta";
+            else
+            {
+                $part=explode("/",$val);
+                $val="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
+            }
+            $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
+            $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
+            $partecipazione->SetText('<span style="font-weight:bold">Partecipazione:</span><br/>'.$val);
+        }
+        else
+        {
+            //Data inizio impegno
+            $val=$organismo->GetDataInizioImpegno();
+            if($val=="0000-00-00") $val="n.d.";
+            $data_inizio = new AA_XML_Div_Element("generale-tab-right-panel-data_inizio",$right_panel);
+            $data_inizio->SetStyle("width:100%; margin-bottom: .8em");
+            $data_inizio->SetText('<span style="font-weight:bold">Data costituzione:</span><br/>'.$val);
+
+            //Data fine impegno
+            $val=$organismo->GetDataFineImpegno();
+            if($val=="0000-00-00") $val="n.d.";
+            if(trim($val)=="9999-12-31") $val="a tempo indeterminato";
+            $data_fine = new AA_XML_Div_Element("generale-tab-right-panel-data_fine",$right_panel);
+            $data_fine->SetStyle("width:100%; margin-bottom: .8em");
+            $data_fine->SetText('<span style="font-weight:bold">Data cessazione:</span><br/>'.$val);
+        }
+
+        //Funzioni attribuite
+        $val=nl2br($organismo->GetFunzioni());
+        if($val=="") $val="n.d.";
+        $funzioni = new AA_XML_Div_Element("funzioni",$generale);
+        $funzioni->SetStyle("width: 100%; margin-bottom: .8em; border-top: 1px solid gray; text-align: left;");
+        $funzioni->SetText('<span style="font-weight:bold">Funzioni attribuite:</span><br>'.$val);
+
+        //note
+        $val=nl2br($organismo->GetNote());
+        if($val!="")
+        {
+        $note=new AA_XML_Div_Element("generale-tab-note",$generale);
+        $note->SetStyle("width: 100%; margin-bottom: .8em; border-top: 1px solid gray; text-align: left;");
+        $note->SetText('<span style="font-weight:bold">Note:</span><br>'.$val);   
+        }
+        #-------------------
+
+        //Provvedimenti
+        $provvedimenti=$organismo->GetProvvedimenti();
+
+        if(sizeof($provvedimenti) > 0)
+        {
+            //Chiama il costruttore della classe base
+            $provvedimenti_table= new AA_GenericTableTemplateView($id."_provvedimenti_table",$generale,$organismo,array("evidentiate-rows"=>true,"title"=>"Provvedimenti","border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+
+            $provvedimenti_table->SetColSizes(array("5","30","50","10"));
+            $provvedimenti_table->SetHeaderLabels(array("Anno","Tipo","Estremi","Url"));    
+
+            $curRow=1;
+            foreach($provvedimenti as $id=>$curProvvedimento)
+            {
+                //Anno
+                $provvedimenti_table->SetCellText($curRow,0,$curProvvedimento->GetAnno(), "center");
+
+                //tipo provvedimento
+                $curval=$curProvvedimento->GetTipologia();
+                if($curval=="" || $curval=="n.d.") $curval="n.d.";
+                $provvedimenti_table->SetCellText($curRow,1,$curval,"center");
+
+                //estremi
+                $note=$curProvvedimento->GetEstremi();
+                $text_align="left";
+                $provvedimenti_table->SetCellText($curRow,2,$note, $text_align);
+
+                //url
+                $url="<a href='".$curProvvedimento->GetUrl()."' target='_blank'>consulta</a>";
+                $provvedimenti_table->SetCellText($curRow,3,$url, "center");
+
+                $curRow++;
+            }
+        }
+
+        //legenda
+        //$footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; border-top: 1px solid gray; '>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+        //$this->SetText($footer,false);
+    }
+}
+
+#Classe template per la gestione del report pdf dell'organismo (pagina generale)
+Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObjectTemplateView
+{
+    public function __construct($id="AA_OrganismiFullReportTemplateDaticontabiliPageView",$parent=null,$organismo=null, $user=null, $doc=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return;
+            }
+        }
+
+        if(!($organismo instanceof AA_Organismi))
+        {
+            AA_Log::Log(__METHOD__." - organismo non valido.", 100,false,true);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        //parent::__construct($id,$parent,$organismo);
+
+        $daticontabili=$organismo->GetDatiContabili();
+        $anniForPage=3;
+        $curAnniRow=0;
+        $curRelNumPage=0;
+        
+        $curPage=$doc->AddPage();
+
+        $corpo_page=new AA_GenericObjectTemplateView($id."_corpo_page_".$curRelNumPage,null,$organismo);
+        $corpo_page->SetStyle('display:flex;  flex-direction: column; width: 100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;');
+
+        #Denominazione----------------------------------
+        $denominazione=new AA_XML_Div_Element($id."_generale-tab-denominazione",$corpo_page);
+        $denominazione->SetStyle('width:100%; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .2em; font-size: 20px; font-weight: bold');
+        $denominazione->SetText($organismo->GetDenominazione()."<br><span style='font-size: x-small; font-weight: normal'>".$organismo->GetTipologia()."</span>");
+        #-----------------------------------------------     
+
+        foreach($daticontabili as $curDatocontabile)
+        {    
+            if($curAnniRow >= $anniForPage)
+            {
+                $curPage->SetContent($corpo_page->__toString());
+                $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>");
+                $curRelNumPage++;
+                $curPage=$doc->AddPage();
+                $curAnniRow=0;
+
+                $corpo_page=new AA_GenericObjectTemplateView($id."_corpo_page_".$curRelNumPage,null,$organismo);
+                $corpo_page->SetStyle('display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;');
+        
+                #Denominazione----------------------------------
+                $denominazione=new AA_XML_Div_Element($id."_generale-tab-denominazione",$corpo_page);
+                $denominazione->SetStyle('width:100%; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .2em; font-size: 20px; font-weight: bold');
+                $denominazione->SetText($organismo->GetDenominazione()."<br><span style='font-size: x-small; font-weight: normal'>".$organismo->GetTipologia()."</span>");
+                #-----------------------------------------------        
+            }
+
+            $this_id=$id."_".$curDatocontabile->GetID();
+
+            //intestazione anno
+            $intestazione=new AA_XML_Div_Element($this_id."_generale-tab-intestazione",$corpo_page);
+            $intestazione->SetStyle('width:97.6%; border-top: 1px solid gray; border-left: 1px solid gray; border-right: 1px solid gray; background-color: #dedede; text-align: center; font-weight: bold; font-size: larger;padding: .5em');
+            $intestazione->SetText("Dati contabili per l'anno ".$curDatocontabile->GetAnno());
+            
+            #Parte generale---------------------------------
+            $generale=new AA_XML_Div_Element($this_id."_Generale",$corpo_page);
+            $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 98%; border: 1px solid gray; margin-bottom: .5em; padding: .5em;");
+            //left panel-------
+            $left_panel= new AA_XML_Div_Element($this_id."_generale-tab-left-panel",$generale);
+            $left_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; width:48.9%");
+
+            //right panel ------
+            $right_panel= new AA_XML_Div_Element($this_id."_generale-tab-right-panel",$generale);
+            $right_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; width:48.9%");
+
+            //Oneri totali
+            $val=$curDatocontabile->GetOneriTotali();
+            if($val=="") $val="n.d.";
+            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
+            $piva=new AA_XML_Div_Element($this_id."_oneri",$left_panel);
+            $piva->SetStyle("width: 100%; margin-bottom: .8em");
+            $piva->SetText('<span style="font-weight:bold">Oneri totali:</span><br/>€ '.$val);
+
+            //spesa lavoro flessibile
+            $val=$curDatocontabile->GetSpesaLavoroFlessibile();
+            if($val=="") $val="n.d.";
+            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
+            $piva=new AA_XML_Div_Element($this_id."_lavoroflessibile",$left_panel);
+            $piva->SetStyle("width: 100%; margin-bottom: .8em");
+            $piva->SetText('<span style="font-weight:bold">Spesa lavoro flessibile:</span><br/>€ '.$val);
+
+            //spesa incarichi
+            $val=$curDatocontabile->GetSpesaIncarichi();
+            if($val=="") $val="n.d.";
+            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
+            $piva=new AA_XML_Div_Element($this_id."_spesaincarichi",$left_panel);
+            $piva->SetStyle("width: 100%; margin-bottom: .8em");
+            $piva->SetText('<span style="font-weight:bold">Spesa incarichi:</span><br/>€ '.$val);
+
+            if($organismo->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
+            {
+                //fatturato
+                $val=$curDatocontabile->GetFatturato();
+                if($val=="") $val="n.d.";
+                $piva=new AA_XML_Div_Element($this_id."_fatturato",$left_panel);
+                $piva->SetStyle("width: 100%; margin-bottom: .8em");
+                $piva->SetText('<span style="font-weight:bold">Fatturato:</span><br/>€ '.$val);
+            }
+
+            //dotazione organica
+            $val=$curDatocontabile->GetDotazioneOrganica();
+            if($val=="") $val="n.d.";
+            $piva=new AA_XML_Div_Element($this_id."_dotazione_organica",$right_panel);
+            $piva->SetStyle("width: 100%; margin-bottom: .8em");
+            $piva->SetText('<span style="font-weight:bold">Dotazione organica:</span><br/>'.$val);
+
+            //personale assunto a tempo indeterminato
+            $val=$curDatocontabile->GetDipendenti()+$curDatocontabile->GetDipendentiDir();
+            if($val!="")
+            {
+                if($curDatocontabile->GetDipendentiDir() > 0)
+                {
+                    $val.=" di cui ".$curDatocontabile->GetDipendentiDir()." dirigenti";
+                }
+            } 
+            else $val="n.d.";
+            $piva=new AA_XML_Div_Element($this_id."_dipendenti",$right_panel);
+            $piva->SetStyle("width: 100%; margin-bottom: .8em");
+            $piva->SetText('<span style="font-weight:bold">Personale assunto a tempo indeterminato:</span><br/>'.$val);
+
+            //personale assunto a tempo determinato
+            $val=$curDatocontabile->GetDipendentiDet()+$curDatocontabile->GetDipendentiDetDir();
+            if($val!="")
+            {
+                if($curDatocontabile->GetDipendentiDetDir() > 0)
+                {
+                    $val.=" di cui ".$curDatocontabile->GetDipendentiDetDir()." dirigenti";
+                }
+            } 
+            else $val="n.d.";
+            $piva=new AA_XML_Div_Element($this_id."_dipendenti_det",$right_panel);
+            $piva->SetStyle("width: 100%; margin-bottom: .8em");
+            $piva->SetText('<span style="font-weight:bold">Personale assunto a tempo determinato:</span><br/>'.$val);
+            
+            //spesa dotazione organica
+            $val=$curDatocontabile->GetSpesaDotazioneOrganica();
+            if($val=="") $val="n.d.";
+            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
+            $piva=new AA_XML_Div_Element($this_id."_spesa_dotazione_organica",$right_panel);
+            $piva->SetStyle("width: 100%; margin-bottom: .8em");
+            $piva->SetText('<span style="font-weight:bold">Spesa dotazione organica:</span><br/>€ '.$val);
+
+            $bilanci=$curDatocontabile->GetBilanci();
+            if(sizeof($bilanci) > 0)
+            {
+                $curRow=1;
+                $bilanci_table= new AA_GenericTableTemplateView($this_id."_bilanci_table",$generale,$organismo,array("evidentiate-rows"=>true,"border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+                $bilanci_table->SetColSizes(array("30","20","45"));
+                $bilanci_table->SetHeaderLabels(array("Tipo di bilancio","Risultati in €", "Note"));
+                foreach($bilanci as $curBilancio)
+                {
+                    //tipo
+                    $bilanci_table->SetCellText($curRow,0,$curBilancio->GetTipo(), "center");
+
+                    //risultati
+                    $bilanci_table->SetCellText($curRow,1,number_format(floatVal(str_replace(array(".",","),array("","."),$curBilancio->GetRisultati())),2,",","."), "center");
+
+                    //note
+                    $bilanci_table->SetCellText($curRow,2,$curBilancio->GetNote(), "left");
+
+                    $curRow++;
+                }
+            }
+
+
+            //note
+            $val=nl2br($curDatocontabile->GetNote());
+            if($val !="")
+            {
+                $note=new AA_XML_Div_Element($this_id."_generale-tab-note",$generale);
+                $note->SetStyle('width:100%; border-top: 1px solid gray; margin-bottom: .8em;text-align: left;');
+                $note->SetText($val);    
+            }
+            #-------------------
+
+            //legenda
+            //$footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+            //$corpo_page->SetText($footer,false);
+
+            $curAnniRow++;
+        }
+
+        if($curAnniRow > 0)
+        {
+            $curPage->SetContent($corpo_page->__toString());
+            $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>");
+        }
+
+        return $curRelNumPage;
+    }
+}
+
 #Classe template per la gestione del report pdf dell'organismo (pagina nomine)
 Class AA_OrganismiPublicReportTemplateNominePageView extends AA_GenericObjectTemplateView
 {
@@ -8463,6 +8852,54 @@ Class AA_OrganismiPublicReportTemplateNominePageView extends AA_GenericObjectTem
     }
 }
 
+#Classe template per la gestione del report pdf dell'organismo (pagina nomine)
+Class AA_OrganismiFullReportTemplateNominePageView extends AA_GenericObjectTemplateView
+{
+    public function __construct($id="AA_OrganismiFullReportTemplateNominePageView",$parent=null,$organismo=null, $user=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return;
+            }
+        }
+
+        if(!($organismo instanceof AA_Organismi))
+        {
+            AA_Log::Log(__METHOD__." - organismo non valido.", 100,false,true);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$organismo);
+        
+        $this->SetStyle("width: 99%; display:flex; flex-direction: column; align-items: center;");
+
+        #Parte generale---------------------------------
+        $generale=new AA_XML_Div_Element("AA_OrganismiFullReportTemplateView-generale",$this);
+        $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%");
+
+        #Denominazione----------------------------------
+        $denominazione=new AA_XML_Div_Element("generale-tab-denominazione",$generale);
+        $denominazione->SetStyle('width:100%; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .2em; font-size: 20px; font-weight: bold');
+        $denominazione->SetText($organismo->GetDenominazione()."<br><span style='font-size: x-small; font-weight: normal'>".$organismo->GetTipologia()."</span>");
+        #-----------------------------------------------
+
+        //Aggiunge le nomine
+        $nomine=new AA_OrganismiReportNomineListTemplateView("AA_OrganismiFullReportTemplateView-nomine",null,$organismo, $user, true);        
+        $this->AppendChild($nomine);
+
+        //legenda
+        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-bottom: 2em'>Nel presente prospetto sono esposti i dati dei rappresentanti designati dall'Amministrazione regionale negli organi di governo dell’ente e quelli relativi ai titolari di incarichi di amministratore dell'ente, siano essi nominati dalla Regione o meno.</span></div>";
+        //$footer.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+        $this->SetText($footer,false);
+    }
+}
 
 #Classe template per la gestione del report pdf dello scadenzario (pagina nomine)
 Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTemplateView
@@ -8928,10 +9365,13 @@ Class AA_OrganismiReportDatiContabiliListTemplateView extends AA_GenericTableTem
     }
 }
 
+
+
+
 #Classe template per la visualizzazione della lista delle nomine sul report
 Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateView
 {
-    public function __construct($id="AA_OrganismiReportNomineListTemplateView",$parent=null,$organismo=null, $user=null)
+    public function __construct($id="AA_OrganismiReportNomineListTemplateView",$parent=null,$organismo=null, $user=null,$full=false)
     {
         //Verifica utente
         if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
@@ -8971,7 +9411,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
 
             foreach($nomine as $id=>$curNomina)
             {
-                if(($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE) == 0)
+                if(($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE) == 0 || $full)
                 {
                     //AA_Log::Log(__METHOD__." - pubblico: ".$curNomina->GetNome()." ".$curNomina->GetCognome()."  - tipologia: ".$curNomina->GetTipologia()." - verifica: ".($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE),100);
                     $color="";
@@ -9036,6 +9476,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                     //Note
                     $note=$curNomina->GetNote();
                     $ratio=5*strlen($note)/$num_nomine;
+                    if($ratio < 80) $ratio=80;
                     if(strlen($note) > $ratio) $note=substr($note,0,$ratio)."...";
                     $note_box=$this->GetCell($curRow,7);
                     $note_box->SetStyle("font-size: smaller;", true);

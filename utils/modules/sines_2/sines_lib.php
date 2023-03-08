@@ -4954,7 +4954,7 @@ Class AA_SinesModule extends AA_GenericModule
             if(sizeof($ids_final)>0)
             {
                 if($_REQUEST['section'] == "Scadenzario") $this->Template_OrganismiScadenzarioPdfExport($ids_final);
-                else $this->Template_OrganismiPdfExport($ids_final);
+                else $this->Template_OrganismiPdfExportFull($ids_final);
             }
             else
             {
@@ -5004,7 +5004,7 @@ Class AA_SinesModule extends AA_GenericModule
                 else
                 {
                     if($_REQUEST['section'] == "Scadenzario") $this->Template_OrganismiScadenzarioPdfExport($objects[1]);
-                    else $this->Template_OrganismiPdfExport($objects[1]);
+                    else $this->Template_OrganismiPdfExportFull($objects[1]);
                 }
             }
         } 
@@ -8927,6 +8927,187 @@ Class AA_SinesModule extends AA_GenericModule
 
         AA_Log::Log(__METHOD__." done building pdf: ".time(),100);
         AA_Log::Log(__METHOD__." start rendering pdf: ".time(),100);
+        if($bToBrowser) $doc->Render();
+        else
+        {
+            $doc->Render(false);
+            return $doc->GetFilePath();
+        }
+    }
+
+    //Template pdf export generic
+    public function Template_OrganismiPdfExportFull($organismi=array(), $bToBrowser=true,$tipo_organismo="")
+    {
+        //AA_Log::Log(__METHOD__." starting building pdf: ".time(),100);
+
+        if(!is_array($organismi)) return "";
+        if(sizeof($organismi)==0) return "";
+        
+        //recupero organismi
+        
+        //$organismi=AA_Organismi::Search(array("ids"=>$ids),false,$this->oUser);
+        $count = sizeof($organismi);
+        #--------------------------------------------
+            
+        //nome file
+        $filename="organismi_export_full";
+        if($tipo_organismo !="")
+        {
+          $tipo=AA_Organismi_Const::GetTipoOrganismi(true);
+          $filename.="-".str_replace(" ","_",$tipo[$tipo_organismo]);
+        }
+        $filename.="-".date("YmdHis");
+        $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
+        $doc->EnableCache(false);
+        
+        $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
+        $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
+        $curRow=0;
+        $rowForPage=1;
+        $lastRow=$rowForPage-1;
+        $curPage=null;
+        $curNumPage=0;
+        //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
+        //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
+        $rowContentWidth="width: 99.8%;";
+
+        if($count >1)
+        {
+            //pagina di intestazione (senza titolo)
+            $curPage=$doc->AddPage();
+            $curPage->SetCorpoStyle("display: flex; flex-direction: column; justify-content: center; align-items: center; padding:0;");
+            $curPage->SetFooterStyle("border-top:.2mm solid black");
+            $curPage->ShowPageNumber(false);
+
+            //Intestazione
+            $intestazione="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Esportazione organismi censiti sul SINES</div>";
+            if($tipo_organismo !="") 
+            {
+              $intestazione.="<div style='width: 100%; text-align: center; font-size: 18; font-weight: bold;'>".$tipo[$tipo_organismo]."</div>";
+            }
+            $intestazione.="<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il ".date("Y-m-d")."</div>";
+
+            $curPage->SetContent($intestazione);
+            $curNumPage++;
+
+            //pagine indice (50 nominativi per pagina)
+            $indiceNumVociPerPagina=50;
+            for($i=0; $i<$count/$indiceNumVociPerPagina; $i++)
+            {
+              $curPage=$doc->AddPage();
+              $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
+              $curNumPage++;
+            }
+            #---------------------------------------
+        }
+        
+        //Imposta il titolo per le pagine successive
+        $doc->SetTitle("Esportazione organismi censiti sul SINES - report generato il ".date("Y-m-d"));
+        
+        $indice=array();
+        $lastPage=$count/$rowForPage+$curNumPage;
+        $curPage_row="";
+
+        //Rendering pagine
+        foreach($organismi as $id=>$curOrganismo)
+        {
+            //Aggiunge una pagina
+            $curPage=$doc->AddPage();
+            $curNumPage++;
+            $curPage_row="";
+
+            //Aggiorna l'indice
+            $indice[$curOrganismo->GetID()]=$curNumPage."|".$curOrganismo->GetDescrizione();
+            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm; height: 100%;'>";
+            
+            //Prima pagina -  dati generali
+            $curPage_row.=new AA_OrganismiFullReportTemplateGeneralPageView("report_organismo_pdf_general_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+            //$curPage_row.="<div style='font-style: italic; font-size: smaller; text-align: center; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>";
+            $curPage_row.="</div>";
+            $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>");
+            $curPage->SetContent($curPage_row);
+            //seconda pagina - dati contabili
+            //$curPage=$doc->AddPage();
+            //$curNumPage++;
+            //$curPage_row="";
+            //$curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+            $curNumPage+=new AA_OrganismiFullReportTemplateDatiContabiliPageView("report_organismo_pdf_dati_contabili_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser,$doc);
+            //$curPage_row.="</div>";
+            //$curPage->SetContent($curPage_row);
+            
+
+            //terza pagina
+            $curPage=$doc->AddPage();
+            $curNumPage++;
+            $curPage_row="";
+            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+            $curPage_row.=new AA_OrganismiFullReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+            $curPage_row.="</div>";
+            $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>");
+            $curPage->SetContent($curPage_row);
+
+            //AA_Log::Log($template,100,false,true);
+        }
+        //if($curPage != null) $curPage->SetContent($curPage_row);
+        #-----------------------------------------
+        
+        if($count > 1)
+        {
+            //Aggiornamento indice
+            $curNumPage=1;
+            $curPage=$doc->GetPage($curNumPage);
+            $vociCount=0;
+            $curRow=0;
+            $bgColor="";
+            $curPage_row="";
+
+            foreach($indice as $id=>$data)
+            {
+              if($curNumPage != (int)($vociCount/$indiceNumVociPerPagina)+1)
+              {
+                $curPage->SetContent($curPage_row);
+                $curNumPage=(int)($vociCount/$indiceNumVociPerPagina)+1;
+                $curPage=$doc->GetPage($curNumPage);
+                $curRow=0;
+                $bgColor="";
+              }
+
+              if($curPage instanceof AA_PDF_Page)
+              {
+                if($vociCount%2 > 0)
+                {
+                  $dati=explode("|",$data);
+                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+                  $curPage_row.="</div>";
+                  if($vociCount == (sizeof($indice)-1)) $curPage->SetContent($curPage_row);
+                  $curRow++;
+                }
+                else
+                {
+                  //Intestazione
+                  if($curRow==0) $curPage_row="<div style='width:100%;text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+
+                  if($curRow%2) $bgColor="background-color: #f5f5f5;";
+                  else $bgColor="";
+                  $curPage_row.="<div style='display:flex; ".$rowContentWidth." align-items: center; justify-content: space-between; text-align: center; padding: .3mm; min-height: 9mm;".$bgColor."'>";
+                  $dati=explode("|",$data);
+                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+
+                  //ultima voce
+                  if($vociCount == (sizeof($indice)-1))
+                  {
+                    $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'>&nbsp; </div><div style='width:9%;text-align: right;padding-left: 10mm'>&nbsp; </div></div>";
+                    $curPage->SetContent($curPage_row);
+                  } 
+                }
+              }
+
+              $vociCount++;
+            }            
+        }
+
+        //AA_Log::Log(__METHOD__." done building pdf: ".time(),100);
+        //AA_Log::Log(__METHOD__." start rendering pdf: ".time(),100);
         if($bToBrowser) $doc->Render();
         else
         {
