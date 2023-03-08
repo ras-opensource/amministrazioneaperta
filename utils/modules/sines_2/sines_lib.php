@@ -4292,8 +4292,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "css"=>"AA_DataView_Nomine_item",
             ),
             "template"=>$riepilogo_template,
-            "data"=>$riepilogo_data,
-            //"on"=>array("onItemDblClick" => $onDblClickEvent)
+            "data"=>$riepilogo_data
         ));
         
         $toolbar_riepilogo=new AA_JSON_Template_Toolbar($id."_Toolbar_Riepilogo",array("height"=>38,"borderless"=>true));
