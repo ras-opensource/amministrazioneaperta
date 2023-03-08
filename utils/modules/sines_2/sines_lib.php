@@ -625,30 +625,37 @@ Class AA_SinesModule extends AA_GenericModule
                     {
                         $view=true;
                         $label_class="AA_Label_LightGreen";
-                        $label_scadenza="Scade il: ";
+                        $label_scadenza="Cessa il: ";
                     }
                         
                     if($parametri['in_scadenza']=="1" && $datafine >= $data_scadenzario && $datafine <= $meseProx)
                     {
                         $view=true;
                         $label_class="AA_Label_LightYellow";
-                        $label_scadenza="Scade il: ";
+                        $label_scadenza="Cessa il: ";
                     }
                     
                     if($parametri['recenti']=="1" && $datafine >= $mesePrec && $datafine <= $data_scadenzario)
                     {
                         $view=true;
                         $label_class="AA_Label_LightOrange";
-                        $label_scadenza="Scaduta il: ";
+                        $label_scadenza="Cessata il: ";
                     }
                     
                     if($parametri['scadute']=="1" && $datafine < $mesePrec)
                     {
                         $view=true;
                         $label_class="AA_Label_LightRed";
-                        $label_scadenza="Scaduta il: ";
+                        $label_scadenza="Cessata il: ";
                     }
-                    
+
+                    if($parametri['in_corso']=="1" && strpos($curNomina->GetDataFine(),"9999") !== false)
+                    {
+                        $view=true;
+                        $label_class="AA_Label_LightGreen";
+                        $label_scadenza="a tempo indeterminato";
+                    }
+
                     //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
                     
                     if($view)
@@ -3174,6 +3181,7 @@ Class AA_SinesModule extends AA_GenericModule
             //Oneri totali
             $value=$curDato->GetOneriTotali();
             if($value=="")$value="n.d.";
+            else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
             $val1=new AA_JSON_Template_Template($id."_OneriTotali_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
                 "data"=>array("title"=>"Oneri totali:","value"=>$value)
@@ -3195,6 +3203,7 @@ Class AA_SinesModule extends AA_GenericModule
             //Spesa lavoro flessibile
             $value=$curDato->GetSpesaLavoroFlessibile();
             if($value=="")$value="n.d.";
+            else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
             $val1=new AA_JSON_Template_Template($id."_SpesaLavoroFlessibile_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
                 "data"=>array("title"=>"Spesa lavoro flessibile:","value"=>$value)
@@ -3222,6 +3231,7 @@ Class AA_SinesModule extends AA_GenericModule
             //spesa incarichi
             $value=$curDato->GetSpesaIncarichi();
             if($value=="")$value="n.d.";
+            else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
             $val1=new AA_JSON_Template_Template($id."_SpesaIncarichi_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
                 "data"=>array("title"=>"Spesa incarichi:","value"=>$value)
@@ -3250,6 +3260,7 @@ Class AA_SinesModule extends AA_GenericModule
             {
                 $value=$curDato->GetFatturato();
                 if($value=="")$value="n.d.";
+                else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
                 $val1=new AA_JSON_Template_Template($id."_Fatturato_".$curDato->GetID(),array(
                     "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
                     "data"=>array("title"=>"Fatturato:","value"=>$value)
@@ -3263,6 +3274,7 @@ Class AA_SinesModule extends AA_GenericModule
             //Spesa dotazione 
             $value=$curDato->GetSpesaDotazioneOrganica();
             if($value=="")$value="n.d.";
+            else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
             $val2=new AA_JSON_Template_Template($id."_SpesaDotazione_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
                 "data"=>array("title"=>"Spesa dotazione organica:","value"=>$value)
@@ -3585,7 +3597,12 @@ Class AA_SinesModule extends AA_GenericModule
                 $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Data_Inizio",array("type"=>"clean", "width"=>150,"template"=>"<div style='padding-left: .7em;margin-top: 2px;'><span style='font-weight: 700;'>Data inizio incarico: </span><br>".$incarico->GetDataInizio()."</div>")));
                     
                 //data fine
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Data_Fine",array("type"=>"clean","width"=>150, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Data fine incarico: </span><br>".$incarico->GetDataFine()."</div>")));
+                $val=$incarico->GetDataFine();
+                if(strpos($val,"9999") !== false)
+                {
+                    $val="a tempo indeterminato";
+                }
+                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Data_Fine",array("type"=>"clean","width"=>160, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Data fine incarico: </span><br>".$val."</div>")));
 
                 //estremi provvedimento
                 $value=$incarico->GetEstremiProvvedimento();
@@ -4075,6 +4092,7 @@ Class AA_SinesModule extends AA_GenericModule
                 $vacante=true;
                 $opzionale=false;
                 $ras=false;
+                $tempo_indeterminato=false;
                 if($incarico->IsOpzionale()) 
                 {
                     $opzionale=true;
@@ -4091,6 +4109,7 @@ Class AA_SinesModule extends AA_GenericModule
                         $scaduto=true;
                     }
                     $dataScadenza=$nomine[$curTipoIncarico][$curNominaIndex]['data_fine'];
+                    if($dataScadenza == "9999-12-31") $tempo_ineterminato=true;
                     if(!$opzionale || ($opzionale && !$scaduto))
                     {
                         $riepilogo_incarico_label.="<p>".$nomine[$curTipoIncarico][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$curNominaIndex]['cognome']."</p>";
@@ -4105,8 +4124,9 @@ Class AA_SinesModule extends AA_GenericModule
                     $riepilogo_incarico_label.="<span style='font-size: smaller;'>(opzionale)</span>&nbsp;";
                 }
 
-                if($scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scaduto il: ".$dataScadenza."</span>";
-                if(!$scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>scade il: ".$dataScadenza."</span>";
+                if($scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>cessato il: ".$dataScadenza."</span>";
+                if(!$scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>cessa il: ".$dataScadenza."</span>";
+                if($tempo_indeterminato) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>a tempo indeterminato</span>";
                 
                 if($ras) $labelTheme="AA_Label_LightGreen";
                 else $labelTheme="AA_Label_LightBlue";
@@ -4255,7 +4275,7 @@ Class AA_SinesModule extends AA_GenericModule
         if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
         
         $riepilogo_layout=new AA_JSON_Template_Layout($id."_Riepilogo_Layout",array("type"=>"clean"));
-        
+        //$onDblClickEvent="try{console.log('_TabBar')}catch(msg){console.error(msg)}";
         $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
             . "<div><span class='AA_DataView_ItemTitle'>#nome# #cognome#</span><span style='font-size: smaller'>#cf#</span></div>"
             . "<div><span class='AA_DataView_ItemSubTitle'>#incarichi#</span></div>"
@@ -4272,7 +4292,8 @@ Class AA_SinesModule extends AA_GenericModule
                 "css"=>"AA_DataView_Nomine_item",
             ),
             "template"=>$riepilogo_template,
-            "data"=>$riepilogo_data
+            "data"=>$riepilogo_data,
+            //"on"=>array("onItemDblClick" => $onDblClickEvent)
         ));
         
         $toolbar_riepilogo=new AA_JSON_Template_Toolbar($id."_Toolbar_Riepilogo",array("height"=>38,"borderless"=>true));
@@ -4293,7 +4314,7 @@ Class AA_SinesModule extends AA_GenericModule
             //else $label.="<span class='AA_Label AA_Label_LightBlue'>mostra scadute</span>";
 
             //in corso
-            if($values['in_corso']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>solo scadute</span>";
+            if($values['in_corso']=="0") $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>solo cessate</span>";
             //else $label.="<span class='AA_Label AA_Label_LightBlue'>mostra in corso</span>";
             
             //nomina ras

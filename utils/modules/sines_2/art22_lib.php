@@ -8705,6 +8705,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
                 //fatturato
                 $val=$curDatocontabile->GetFatturato();
                 if($val=="") $val="n.d.";
+                else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
                 $piva=new AA_XML_Div_Element($this_id."_fatturato",$left_panel);
                 $piva->SetStyle("width: 100%; margin-bottom: .8em");
                 $piva->SetText('<span style="font-weight:bold">Fatturato:</span><br/>€ '.$val);
