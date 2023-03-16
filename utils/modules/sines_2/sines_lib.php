@@ -3583,7 +3583,7 @@ Class AA_SinesModule extends AA_GenericModule
 
                 //stato incarico
                 $incarico_label="<span class='AA_Label AA_Label_LightBlue'>in corso</span>&nbsp;";
-                if($incarico->GetDataFine() < $now && !$incarico->IsStorico()) $incarico_label="<span class='AA_Label AA_Label_LightRed'>scaduto</span>&nbsp;";
+                if($incarico->GetDataFine() < $now && !$incarico->IsStorico()) $incarico_label="<span class='AA_Label AA_Label_LightRed'>cessato</span>&nbsp;";
                 if($incarico->IsStorico()) $incarico_label="<span class='AA_Label AA_Label_LightGray'>storico</span>&nbsp;";
                 if($incarico->GetNominaRas()) $incarico_label.="<span class='AA_Label AA_Label_LightGreen'>nomina RAS</span>";
                 $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Nomina_Ras",array("type"=>"clean", "width"=>170,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Stato incarico: </span><br>$incarico_label</div>")));
@@ -4109,7 +4109,7 @@ Class AA_SinesModule extends AA_GenericModule
                         $scaduto=true;
                     }
                     $dataScadenza=$nomine[$curTipoIncarico][$curNominaIndex]['data_fine'];
-                    if($dataScadenza == "9999-12-31") $tempo_ineterminato=true;
+                    if($dataScadenza == "9999-12-31") $tempo_indeterminato=true;
                     if(!$opzionale || ($opzionale && !$scaduto))
                     {
                         $riepilogo_incarico_label.="<p>".$nomine[$curTipoIncarico][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$curNominaIndex]['cognome']."</p>";
@@ -4125,7 +4125,7 @@ Class AA_SinesModule extends AA_GenericModule
                 }
 
                 if($scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>cessato il: ".$dataScadenza."</span>";
-                if(!$scaduto && !$vacante) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>cessa il: ".$dataScadenza."</span>";
+                if(!$scaduto && !$vacante && !$tempo_indeterminato) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>cessa il: ".$dataScadenza."</span>";
                 if($tempo_indeterminato) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>a tempo indeterminato</span>";
                 
                 if($ras) $labelTheme="AA_Label_LightGreen";

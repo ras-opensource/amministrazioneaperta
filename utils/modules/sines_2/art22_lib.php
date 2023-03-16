@@ -49,6 +49,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_STATO_SOCIETA_IN_CONCORDATO_LIQUIDAZIONE=32;
     const AA_ORGANISMI_STATO_SOCIETA_IN_LIQUIDAZIONE_COATTA=64;
     const AA_ORGANISMI_STATO_SOCIETA_IN_FALLIMENTO=128;
+    const AA_ORGANISMI_STATO_SOCIETA_INATTIVA=256;
     
     //Tipo di bilancio
     static private $TIPO_BILANCIO=null;
@@ -92,6 +93,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=134217728; //67076864;
     const AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO_CDA=268435456;
     const AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE=536870912; //2^29
+    const AA_ORGANISMI_NOMINA_VICEPRESIDENTE_CDA=1073741824; //2^30
 
     //nomine da pubblicare
     const AA_NOMINE_NON_PUBBLICARE=146826128;
@@ -163,8 +165,9 @@ class AA_Organismi_Const extends AA_Const
         {
         self::$STATO_SOCIETA=array(
             self::AA_ORGANISMI_STATO_SOCIETA_NONE=>"n.d.",
-            self::AA_ORGANISMI_STATO_SOCIETA_ATTIVO=>"Attiva",
-            self::AA_ORGANISMI_STATO_SOCIETA_CESSATO=>"Cessata",
+            self::AA_ORGANISMI_STATO_SOCIETA_ATTIVO=>"attiva",
+            self::AA_ORGANISMI_STATO_SOCIETA_CESSATO=>"cessata",
+            self::AA_ORGANISMI_STATO_SOCIETA_INATTIVA=>"inattiva",
             self::AA_ORGANISMI_STATO_SOCIETA_IN_LIQUIDAZIONE=>"in liquidazione",
             self::AA_ORGANISMI_STATO_SOCIETA_IN_LIQUIDAZIONE_COATTA=>"in liquidazione coatta amministrativa",
             self::AA_ORGANISMI_STATO_SOCIETA_IN_CONCORDATO=>"in concordato",
@@ -218,7 +221,8 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_REVISORE_UNICO=>"Revisore unico",
             self::AA_ORGANISMI_NOMINA_SINDACO_COLLEGGIO=>"Componente collegio sindacale",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=>"Componente supplente collegio sindacale",
-            self::AA_ORGANISMI_NOMINA_VICEPRESIDENTE=>"Vice Presidente"
+            self::AA_ORGANISMI_NOMINA_VICEPRESIDENTE=>"Vice Presidente",
+            self::AA_ORGANISMI_NOMINA_VICEPRESIDENTE_CDA=>"Vice Presidente CDA"
             );
         }
 
