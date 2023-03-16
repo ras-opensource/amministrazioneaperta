@@ -661,6 +661,7 @@ class AA_Organismi extends AA_Object
         $this->oDbBind->AddBind("nStatoOrganismo","stato_organismo");
         
         if($id > 0) $this->LoadFromDb($id,$user);
+        else $this->SetId(0);
     }
 
     //Denominazione
@@ -1633,9 +1634,22 @@ class AA_Organismi extends AA_Object
         }
 
         //Verifica che la data di fine impegno sia successiva alla data di inizio iumpegno
+        if($this->GetId() == 0)
+        {
+            if($this->GetDataInizioImpegno() == "")
+            {
+                $this->SetDataInizioImpegno(Date("Y-m-d"));
+            }
+
+            if($this->GetDataFineImpegno() == "")
+            {
+                $this->SetDataFineImpegno("9999-12-31");
+            }
+        }
+
         if(strcmp($this->GetDataInizioImpegno(),$this->GetDataFineImpegno()) >= 0)
         {
-            AA_Log::Log(__METHOD__." - La data di fine impegno deve essere maggiore della data di inizio impegno.", 100,false,true);
+            AA_Log::Log(__METHOD__." - La data di fine impegno deve essere maggiore della data di inizio impegno (data inizio: ".$this->GetDataInizioImpegno()." - data fine: ".$this->GetDataFineImpegno().").", 100,false,true);
             return false;
         }
 
@@ -1818,7 +1832,7 @@ class AA_Organismi extends AA_Object
         }
 
         $db=new AA_Database();
-        $query="SELECT id FROM ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." WHERE id_organigramma='".$this->GetID()."'";
+        $query="SELECT id FROM ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." WHERE id_organismo='".$this->GetID()."'";
         if(!$db->Query($query))
         {
             //Errore query
