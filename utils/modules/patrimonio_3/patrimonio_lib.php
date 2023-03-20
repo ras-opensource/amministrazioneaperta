@@ -764,11 +764,12 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         $content=$this->TemplateGenericSection_Bozze($params,false);
         
-        //solo per super user
+        //solo per super user -beta testing-
         if($this->oUser->IsSuperUser())
         {
             $content->EnableAddNewMulti();
         }
+        //-----------------------------------
 
         return $content->toObject();
     }
