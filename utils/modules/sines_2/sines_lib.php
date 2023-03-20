@@ -1530,7 +1530,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddSwitchBoxField("opzionale","Opzionale",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è opzionale."));
 
         //forza scadenzario
-        $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomina/desiganzione/indicazione da parte della RAS."));
+        $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomina/designazione/indicazione da parte della RAS."));
 
         //note
         $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
@@ -1576,7 +1576,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddSwitchBoxField("opzionale","Opzionale",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è opzionale."));
 
         //forza scadenzario
-        $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomina/desiganzione/indicazione da parte della RAS."));
+        $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomina/designazione/indicazione da parte della RAS."));
 
         //note
         $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
