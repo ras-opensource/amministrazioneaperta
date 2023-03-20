@@ -115,6 +115,86 @@ Class AA_Patrimonio extends AA_Object_V2
         }
     }
 
+    //Caricamento massivo
+    static public function AddNewMulti($objects=null,$user=null,$bSaveData=true,$struct=null)
+    {
+        //Verifica utente
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser())
+            {
+               $user=AA_User::GetCurrentUser();
+            }
+        }
+        else $user=AA_User::GetCurrentUser();
+
+        //-------------local checks---------------------
+        $bStandardCheck=false; //disable standard checks
+        $bSaveData=true; //enable save data
+
+        //Chi non ha il flag non può inserire nuovi elementi
+        if(!$user->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUserName()." non ha i permessi per inserire nuovi elementi.",100);
+            return false;
+        }
+        
+        //Verifica validità oggetto
+        if(!(is_array($objects)))
+        {
+            AA_Log::Log(__METHOD__." - Errore: array non valido (".print_r($objects,true).").",100);
+            return false;
+        }
+        //----------------------------------------------
+
+        //Solo il super amministratore può inserire massivamente su una struttura qualunque
+        if(!$user->IsSuperUser() || $struct==null)
+        {
+            $struct=$user->GetStruct();
+        }
+
+        $caricati=0;
+        $scartati=0;
+        foreach($objects as $newObject)
+        {
+            if(is_array($newObject))
+            {
+                $newPatrimonio=new AA_Patrimonio(0,$user);
+                if($newPatrimonio->Parse($newObject))
+                {
+                    //Imposta la struttura qualora si tratti del super user
+                    if($struct instanceof AA_Struct)
+                    {
+                        $newPatrimonio->SetStruct($struct);
+                    }
+
+                    if(!AA_Patrimonio::AddNew($newPatrimonio,$user,$bSaveData))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nell'inserimento del nuovo immobile: (".print_r($newPatrimonio,true).").",100);
+                        $scartati++;
+                    }
+                    else
+                    {
+                        $caricati++;
+                    }
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Errore nel parsing dell'array: (".print_r($newObject,true).").",100);
+                    $scartati++;
+                }
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore: array non valido (".print_r($newObject,true).").",100);
+                $scartati++;
+            }
+        }
+
+        return array($caricati,$scartati);
+    }
+
+
     //lista canoni
     protected $aCanoni=null;
     protected function LoadCanoni($idData=0)
@@ -396,7 +476,9 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetBind("RenditaCatasto","rendita_catasto");
         $this->SetBind("ConsistenzaCatasto","consistenza_catasto");
         $this->SetBind("ClasseCatasto","classe_catasto");
-        $this->SetBind("Titolo","titolo"); 
+        $this->SetBind("Titolo","titolo");
+        $this->SetBind("Cespite","cespite");
+        $this->SetBind("Subalterno","subalterno");
 
         //Valori iniziali
         $this->SetProp("IdData",0);
