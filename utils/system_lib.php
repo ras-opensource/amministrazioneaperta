@@ -8480,7 +8480,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         }
 
         //Apply button
-        $this->applyButton = new AA_JSON_Template_Generic($this->id . "_Button_Bar_Apply", array("view" => "button", "width" => 80, "label" => $this->applyButtonName));
+        $this->applyButton = new AA_JSON_Template_Generic($this->id . "_Button_Bar_Apply", array("view" => "button", "width" => 80, "css"=>"webix_primary","label" => $this->applyButtonName));
 
         //Toolbar
         $toolbar = new AA_JSON_Template_Layout($this->id . "_Button_Bar", array("height" => 38));
