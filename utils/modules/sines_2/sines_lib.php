@@ -1524,10 +1524,13 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddSelectField("tipo","Tipologia",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare la tipologia di incarico.", "placeholder"=>"Scegli il tipo di incarico...","options"=>$options));
         
         //nomina ras
-        $wnd->AddSwitchBoxField("ras","Nomina RAS",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è di nomina/designazione da parte della RAS."));
+        $wnd->AddSwitchBoxField("ras","RAS",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è di nomina/designazione/indicazione da parte della RAS."));
         
         //opzionale
         $wnd->AddSwitchBoxField("opzionale","Opzionale",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è opzionale."));
+
+        //forza scadenzario
+        $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomin/desiganzione/indicazione da parte della RAS."));
 
         //note
         $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
@@ -1545,7 +1548,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $id=$this->id."_ModifyOrganigrammaIncarico_Dlg";
 
-        $form_data=array("tipo"=>$incarico->GetProp("tipo"),"ras"=>$incarico->GetProp("ras"),"opzionale"=>$incarico->GetProp("opzionale"),"note"=>$incarico->GetProp("note"));
+        $form_data=array("forza_scadenzario"=>$incarico->GetProp("forza_scadenzario"),"tipo"=>$incarico->GetProp("tipo"),"ras"=>$incarico->GetProp("ras"),"opzionale"=>$incarico->GetProp("opzionale"),"note"=>$incarico->GetProp("note"));
 
         $wnd=new AA_GenericFormDlg($id, "Modifica incarico ", $this->id,$form_data,$form_data);
         
@@ -1567,10 +1570,13 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddSelectField("tipo","Tipologia",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare la tipologia di incarico.", "placeholder"=>"Scegli il tipo di incarico...","options"=>$options));
         
         //nomina ras
-        $wnd->AddSwitchBoxField("ras","Nomina RAS",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è di nomina/designazione da parte della RAS."));
+        $wnd->AddSwitchBoxField("ras","RAS",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è di nomina/designazione/indicazione da parte della RAS."));
         
         //opzionale
         $wnd->AddSwitchBoxField("opzionale","Opzionale",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico è opzionale."));
+
+        //forza scadenzario
+        $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomin/desiganzione/indicazione da parte della RAS."));
 
         //note
         $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
@@ -2041,7 +2047,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->SetHeight(640);
         
         //nomina Ras
-        $wnd->AddSwitchBoxField("bNominaRas","Tipo nomina",array("onLabel"=>"RAS","offLabel"=>"non RAS","bottomLabel"=>"*Indica se la nomina è effettuata dalla RAS."));        
+        $wnd->AddSwitchBoxField("bNominaRas","Tipo nomina",array("onLabel"=>"RAS","offLabel"=>"non RAS","bottomLabel"=>"*Indica se la nomina/designazione/indicazione è effettuata dalla RAS."));        
         
         //Tipologia
         $options=array(array("id"=>"0","value"=>"Qualunque"));
@@ -2099,7 +2105,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->SetHeight(600);
         
         //nomina Ras
-        $wnd->AddSwitchBoxField("bNominaRas","Tipo nomina",array("onLabel"=>"RAS","offLabel"=>"non RAS","bottomLabel"=>"*Indica se la nomina è effettuata dalla RAS."));        
+        $wnd->AddSwitchBoxField("bNominaRas","Tipo nomina",array("onLabel"=>"RAS","offLabel"=>"non RAS","bottomLabel"=>"*Indica se la nomina/designazione/indicazione è effettuata dalla RAS."));        
         
         //Tipologia
         $options=array(array("id"=>"0","value"=>"Qualunque"));
@@ -4066,6 +4072,7 @@ Class AA_SinesModule extends AA_GenericModule
                 $options_incarichi[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>250, "css"=>array("text-align"=>"left"));
                 $options_incarichi[]=array("id"=>"ras", "header"=>"Ras", "width"=>90,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>90,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"forza_scadenzario", "header"=>"Scadenzario", "width"=>100,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
                 $options_incarichi[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
             }
@@ -4074,6 +4081,7 @@ Class AA_SinesModule extends AA_GenericModule
                 $options_incarichi[]=array("id"=>"tipo", "header"=>"Tipo", "width"=>250, "css"=>array("text-align"=>"left"));
                 $options_incarichi[]=array("id"=>"ras", "header"=>"Ras", "width"=>50,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>50,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"forza_scadenzario", "header"=>"Scadenzario", "width"=>100,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
             }
 
@@ -4101,20 +4109,24 @@ Class AA_SinesModule extends AA_GenericModule
                 {
                     $ras=true;
                 }
-                if(is_array($nomine[$curTipoIncarico]) && sizeof($nomine[$curTipoIncarico]) > $nomine_index[$curTipoIncarico])
+                if(!is_array($nomine_index[$curTipoIncarico])) $nomine_index[$curTipoIncarico]=array($incarico->getProp('ras')=>0);
+                
+                //AA_Log::Log(__METHOD__." - curTipoIncarico: $curTipoIncarico - NominaRas: ".$incarico->getProp('ras')." - ".print_r($nomine[$curTipoIncarico][$incarico->getProp('ras')],TRUE),100);
+
+                if(is_array($nomine[$curTipoIncarico][$incarico->getProp('ras')]) && sizeof($nomine[$curTipoIncarico][$incarico->getProp('ras')]) > $nomine_index[$curTipoIncarico][$incarico->getProp('ras')])
                 {
-                    $curNominaIndex=0+$nomine_index[$curTipoIncarico];
-                    if($nomine[$curTipoIncarico][$curNominaIndex]['data_fine'] < $now) 
+                    $curNominaIndex=0+$nomine_index[$curTipoIncarico][$incarico->getProp('ras')];
+                    if($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] < $now) 
                     {
                         $scaduto=true;
                     }
-                    $dataScadenza=$nomine[$curTipoIncarico][$curNominaIndex]['data_fine'];
+                    $dataScadenza=$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'];
                     if($dataScadenza == "9999-12-31") $tempo_indeterminato=true;
                     if(!$opzionale || ($opzionale && !$scaduto))
                     {
-                        $riepilogo_incarico_label.="<p>".$nomine[$curTipoIncarico][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$curNominaIndex]['cognome']."</p>";
+                        $riepilogo_incarico_label.="<p>".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']."</p>";
                         $vacante=false;
-                        $nomine_index[$curTipoIncarico]+=1;
+                        $nomine_index[$curTipoIncarico][$incarico->getProp('ras')]+=1;
                     }
                 }
                 if($vacante) $riepilogo_incarico_label.="<p>vacante</p>";
@@ -4143,8 +4155,12 @@ Class AA_SinesModule extends AA_GenericModule
                 $ras="No";
                 if($incarico->IsNominaRas())$ras="Si";
                 $opzionale="No";
+                $forza_scadenzario="No";
+                if($incarico->IsScadenzarioEnabled() > 0) $forza_scadenzario="Si";
+                $opzionale="No";
+
                 if($incarico->IsOpzionale())$opzionale="Si";
-                $incarichi_data[]=array("id"=>$id_incarico,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$ras,"opzionale"=>$opzionale,"ops"=>$ops);
+                $incarichi_data[]=array("id"=>$id_incarico,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$ras,"opzionale"=>$opzionale,"forza_scadenzario"=>$forza_scadenzario,"ops"=>$ops);
                 #--------------------------------------
             }
 

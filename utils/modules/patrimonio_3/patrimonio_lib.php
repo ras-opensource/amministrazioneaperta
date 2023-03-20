@@ -479,6 +479,7 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetBind("Titolo","titolo");
         $this->SetBind("Cespite","cespite");
         $this->SetBind("Subalterno","subalterno");
+        $this->SetBind("Sub cespite","subcespite");
 
         //Valori iniziali
         $this->SetProp("IdData",0);
@@ -618,6 +619,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     const AA_UI_TASK_RESUME_DLG="GetPatrimonioResumeDlg";
     const AA_UI_TASK_DELETE_DLG="GetPatrimonioDeleteDlg";
     const AA_UI_TASK_ADDNEW_DLG="GetPatrimonioAddNewDlg";
+    const AA_UI_TASK_ADDNEWMULTI_DLG="GetPatrimonioAddNewMultiDlg";
     const AA_UI_TASK_MODIFY_DLG="GetPatrimonioModifyDlg";
     //------------------------------------
 
@@ -761,6 +763,13 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
 
         $content=$this->TemplateGenericSection_Bozze($params,false);
+        
+        //solo per super user
+        if($this->oUser->IsSuperUser())
+        {
+            $content->EnableAddNewMulti();
+        }
+
         return $content->toObject();
     }
     

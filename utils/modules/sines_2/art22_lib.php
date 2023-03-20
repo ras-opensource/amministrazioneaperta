@@ -370,6 +370,12 @@ Class AA_Organismi_Organigramma_Incarico
         return false;
     }
 
+    public function IsScadenzarioEnabled()
+    {
+        if($this->props['ras'] > 0 || $this->props['forza_scadenzario'] > 0) return true;
+        return false;
+    }
+
     public function GetTipologia($bNumeric=False)
     {
         if($bNumeric) return $this->props['tipo'];
@@ -402,6 +408,7 @@ Class AA_Organismi_Organigramma_Incarico
                 if($key=="ordine") $this->props['ordine']=$val;
                 if($key=="note") $this->props['note']=$val;
                 if($key=="opzionale") $this->props['opzionale']=$val;
+                if($key=="forza_scadenzario") $this->props['forza_scadenzario']=$val;
             }
 
             return true;
@@ -1994,6 +2001,8 @@ class AA_Organismi extends AA_Object
         $query.=", ordine='".addslashes($incarico->GetProp("ordine"))."'";
         $query.=", note='".addslashes($incarico->GetProp("note"))."'";
         $query.=", opzionale='".addslashes($incarico->GetProp("opzionale"))."'";
+        if($incarico->GetProp("forza_scadenzario") > 0) $query.=", forza_scadenzario='1'";
+        else $query.=", forza_scadenzario='1'";
         
         if(!$db->Query($query))
         {
@@ -2052,6 +2061,8 @@ class AA_Organismi extends AA_Object
         $query.=", ordine='".addslashes($incarico->GetProp("ordine"))."'";
         $query.=", note='".addslashes($incarico->GetProp("note"))."'";
         $query.=", opzionale='".addslashes($incarico->GetProp("opzionale"))."'";
+        if($incarico->GetProp("forza_scadenzario") > 0) $query.=", forza_scadenzario='1'";
+        else $query.=", forza_scadenzario='1'";
         $query.=" WHERE ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI.".id = '".addslashes($incarico->GetId())."' and ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI.".id_organigramma='".$organigramma->GetProp("id")."' LIMIT 1";
         
         if(!$db->Query($query))
@@ -2623,7 +2634,7 @@ class AA_Organismi extends AA_Object
         }
 
         //Impostazione dei parametri
-        $query="SELECT id, nome, cognome, data_fine, tipo_incarico from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
+        $query="SELECT id, nome, cognome, data_fine, tipo_incarico, nomina_ras from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
 
         //Nascondi le nomine scadute
         if($params['scadute']=="0") $query.=" AND (data_fine > NOW())";
@@ -2667,11 +2678,12 @@ class AA_Organismi extends AA_Object
                 //$index=base64_encode(trim(strtolower($nomina->GetNome()))."|".trim(strtolower($nomina->GetCognome()))."|".trim(strtolower($nomina->GetCodiceFiscale())));
                 //if($params['raggruppamento'] == "0")  $index=$nomina->GetTipologia(true);
                 
-                $result[$curNomina['tipo_incarico']][]=$curNomina;
+                if(is_array($result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']])) $result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']][]=$curNomina;
+                else $result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']]=array($curNomina);
             }
         }
         
-        //AA_Log::Log(__METHOD__."() - result: ".print_r(array_keys($result),true),100);
+        //AA_Log::Log(__METHOD__."() - result: ".print_r($result,true),100);
         
         return $result;
     }

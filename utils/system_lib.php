@@ -5405,6 +5405,10 @@ class AA_GenericModule
     const AA_UI_TASK_SAVEASCSV_DLG = "GetGenericSaveAsCsvDlg";
     //------------------------------------
 
+    //Caricamento multiplo
+    const AA_UI_TASK_ADDNEWMULTI_DLG = "GetGenericAddNewMultiDlg";
+    //--------------------------------------
+
     //---------Task azioni standard-------
     const AA_UI_TASK_TRASH = "GenericTrashObject";
     const AA_UI_TASK_RESUME = "GenericResumeObject";
@@ -7486,6 +7490,20 @@ class AA_GenericModule
         $content->SetPagerItemForPage(10);
         $content->EnableFiltering();
         $content->EnableAddNew();
+        if($params['enableAddNewMultiFromCsv'] == true)
+        {
+            $content->EnableAddNewMulti();
+        }
+        if($params['enableAddNewMultiFromCsvDlgTask'] != "")
+        {
+            $content->SetAddNewMultiDlgTask($params['enableAddNewMultiFromCsvDlgTask']);
+        }
+        else
+        {
+            $content->SetAddNewMultiDlgTask(static::AA_UI_TASK_ADDNEWMULTI_DLG);
+        }
+        
+
         $content->SetAddNewDlgTask(static::AA_UI_TASK_ADDNEW_DLG);
         $content->SetFilterDlgTask(static::AA_UI_TASK_BOZZE_FILTER_DLG);
         $content->ViewExportFunctions();
@@ -9341,11 +9359,34 @@ class AA_GenericPagedSectionTemplate
                         "icon" => "mdi mdi-pencil-plus",
                         "label" => "Aggiungi",
                         "width" => 110,
+                        "css"=>"webix_primary",
                         "tooltip" => "Aggiungi una nuova bozza",
                         "click" => $addnewClickAction
                     ));
 
                     $toolbar->addElement($addnew_btn);
+                    $toolbar_spacer = true;
+                }
+
+                //Aggiunta elementi da csv
+                if ($this->enableAddNewMulti && $this->addNewMultiDlgTask != "") {
+                    if ($toolbar_spacer) $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 10)));
+                    $toolbar_spacer = true;
+
+                    $addnewMultiClickAction = "try{module=AA_MainApp.getModule('" . $this->module . "'); if(module.isValid()){module.dlg({task:'" . $this->addNewMultiDlgTask . "',module:'" . $this->module . "'})}}catch(msg){console.error(msg)}";
+
+                    $addnewmulti_btn = new AA_JSON_Template_Generic($this->id . "_AddNew_btn", array(
+                        "view" => "button",
+                        "align" => "right",
+                        "type" => "icon",
+                        "icon" => "mdi mdi-plus-box-multiple",
+                        "label" => "da CSV",
+                        "width" => 110,
+                        "tooltip" => "Caricamento multiplo da file CSV",
+                        "click" => $addnewMultiClickAction
+                    ));
+
+                    $toolbar->addElement($addnewmulti_btn);
                     $toolbar_spacer = true;
                 }
 
@@ -9654,6 +9695,20 @@ class AA_GenericPagedSectionTemplate
     public function SetAddNewDlgTask($task = "")
     {
         $this->addNewDlgTask = $task;
+    }
+    #----------------------------
+
+    //Gestione aggiunta multipla
+    protected $enableAddNewMulti = false;
+    public function EnableAddNewMulti($bVal = true)
+    {
+        $this->enableAddNewMulti = $bVal;
+    }
+    
+    protected $addNewMultiDlgTask = "";
+    public function SetAddNewMultiDlgTask($task = "")
+    {
+        $this->addNewMultiDlgTask = $task;
     }
     #----------------------------
 
