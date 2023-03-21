@@ -9311,7 +9311,7 @@ class AA_GenericPagedSectionTemplate
                 $header_box->AddCol(new AA_JSON_Template_Generic());
             }
 
-            if ($this->filtered || $this->enableAddNew || $this->saveAsPdfView || $this->saveAsCsvView || $this->trashView || $this->reassignView || $this->publishView || $this->resumeView || $this->detailView) {
+            if ($this->filtered || $this->enableAddNewMulti || $this->enableAddNew || $this->saveAsPdfView || $this->saveAsCsvView || $this->trashView || $this->reassignView || $this->publishView || $this->resumeView || $this->detailView) {
                 $toolbar = new AA_JSON_Template_Generic($this->id . "_Toolbar", array(
                     "view" => "toolbar",
                     "type" => "clean",
@@ -9375,7 +9375,7 @@ class AA_GenericPagedSectionTemplate
 
                     $addnewMultiClickAction = "try{module=AA_MainApp.getModule('" . $this->module . "'); if(module.isValid()){module.dlg({task:'" . $this->addNewMultiDlgTask . "',module:'" . $this->module . "'})}}catch(msg){console.error(msg)}";
 
-                    $addnewmulti_btn = new AA_JSON_Template_Generic($this->id . "_AddNew_btn", array(
+                    $addnewmulti_btn = new AA_JSON_Template_Generic($this->id . "_AddNewMulti_btn", array(
                         "view" => "button",
                         "align" => "right",
                         "type" => "icon",

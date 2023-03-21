@@ -479,7 +479,7 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetBind("Titolo","titolo");
         $this->SetBind("Cespite","cespite");
         $this->SetBind("Subalterno","subalterno");
-        $this->SetBind("Sub cespite","subcespite");
+        $this->SetBind("SubCespite","subcespite");
 
         //Valori iniziali
         $this->SetProp("IdData",0);
@@ -898,8 +898,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(920);
-        $wnd->SetHeight(640);
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(720);
+        $wnd->SetBottomPadding(24);
         $wnd->EnableValidation();
               
         //titolo di possesso
@@ -930,11 +931,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento","required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
+        $catasto->AddTextField("CodiceComune",$label,array("width"=>308,"bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento.","required"=>true,"placeholder"=>"es. cagliari","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
 
+        //Cespite
+        $label="Cespite";
+        $catasto->AddTextField("Cespite",$label,array("width"=>308,"bottomLabel"=>"*Inserisci il numero del cespite.", "tooltip"=>"Inserisci il numero del cespite","required"=>true,"placeholder"=>"..."), false);
+
+        //SubCespite
+        $label="Sub cespite";
+        $catasto->AddTextField("SubCespite",$label,array("tooltip"=>"Inserisci il numero del sub cespite se presente.","placeholder"=>"..."),false);
+        
         //classe
         $label="Classe";
-        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile"), false); 
+        $catasto->AddTextField("ClasseCatasto",$label,array("tooltip"=>"Inserisci qui la classe dell'immobile se presente.", "placeholder"=>"..."), false); 
         
         //foglio catasto
         $label="Foglio";
@@ -943,6 +952,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //particella catasto
         $label="Particella";
         $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."),false);
+
+        //subalterno
+        $label="Subalterno";
+        $catasto->AddTextField("Subalterno",$label,array("tooltip"=>"*Inserire il numero del sublaternose presente.", "placeholder"=>"..."),false);
 
         //rendita catasto
         $label="Rendita";
@@ -986,8 +999,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetLabelWidth(120);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(920);
-        $wnd->SetHeight(640);
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(720);
+        $wnd->SetBottomPadding(24);
         
         //titolo di possesso
         $options=array(
@@ -1017,11 +1031,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //codice comune
         $label="Cod. Comune";
-        $catasto->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento","required"=>true,"placeholder"=>"Inserisci qui il codice o il nome del comune...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
+        $catasto->AddTextField("CodiceComune",$label,array("width"=>308,"bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento","required"=>true,"placeholder"=>"es. cagliari...","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
 
+        //Cespite
+        $label="Cespite";
+        $catasto->AddTextField("Cespite",$label,array("width"=>308, "bottomLabel"=>"*Inserisci il numero del cespite.", "required"=>true,"tooltip"=>"Inserisci il numero del cespite","placeholder"=>"..."), false); 
+
+        //Sub cespite
+        $label="Sub Cespite";
+        $catasto->AddTextField("SubCespite",$label,array("placeholder"=>"...","tooltip"=>"Inserisci il numero del cespite se presente."), false); 
+                
         //classe
         $label="Classe";
-        $catasto->AddTextField("ClasseCatasto",$label,array("bottomLabel"=>"*Inserisci la classe dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la classe dell'immobile"), false); 
+        $catasto->AddTextField("ClasseCatasto",$label,array("placeholder"=>"...","tooltip"=>"Inserisci la classe dell'immobile, se presente."), false); 
 
         //foglio catasto
         $label="Foglio";
@@ -1031,6 +1053,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $label="Particella";
         $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."),false);
 
+        //subalterno
+        $label="Subalterno";
+        $catasto->AddTextField("Subalterno",$label,array("tooltip"=>"Inserire il numero del subalterno, se presente.", "placeholder"=>"..."),false);
+        
         //rendita catasto
         $label="Rendita";
         $catasto->AddTextField("RenditaCatasto",$label,array("tooltip"=>"*Inserire la rendita catatastale dell'immobile.", "required"=>true,"placeholder"=>"..."),false);
@@ -1325,6 +1351,30 @@ Class AA_PatrimonioModule extends AA_GenericModule
             "data"=>array("title"=>"Particella:","value"=>$value)
         ));
 
+        //Cespite
+        $value= $object->GetProp("Cespite");
+        if($value=="") $value="n.d.";
+        $cespite=new AA_JSON_Template_Template($id."_Cespite",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Cespite:","value"=>$value)
+        ));
+
+        //Subcespite
+        $value= $object->GetProp("SubCespite");
+        if($value=="") $value="n.d.";
+        $subcespite=new AA_JSON_Template_Template($id."_Subcespite",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Sub Cespite:","value"=>$value)
+        ));
+
+         //Subalterno
+         $value= $object->GetProp("Subalterno");
+         if($value=="") $value="n.d.";
+         $subalterno=new AA_JSON_Template_Template($id."_Subalterno",array(
+             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+             "data"=>array("title"=>"Subalterno:","value"=>$value)
+         ));
+
         //Rendita
         $value= $object->GetProp("RenditaCatasto");
         if($value=="") $value="n.d.";
@@ -1375,6 +1425,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $riga=new AA_JSON_Template_Layout($id."_FourRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddCol($sezione);
         $riga->AddCol($comune);
+        $riga->AddCol($cespite);
+        $riga->AddCol($subcespite);
         $riga->AddCol($classe);
         $layout->AddRow($riga);
 
@@ -1382,6 +1434,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $riga=new AA_JSON_Template_Layout($id."_FiveRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddCol($foglio);
         $riga->AddCol($particella);
+        $riga->AddCol($subalterno);
         $riga->AddCol($rendita);
         $riga->AddCol($consistenza);
         $layout->AddRow($riga);
