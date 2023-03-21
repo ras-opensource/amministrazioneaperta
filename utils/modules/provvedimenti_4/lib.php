@@ -13,6 +13,10 @@ Class AA_Provvedimenti_Const extends AA_Const
 {
     const AA_USER_FLAG_PROVVEDIMENTI="art23";
 
+    //percorso pubblicazione provvedimenti
+    const AA_PROVVEDIMENTI_ALLEGATI_PATH="/amministrazione_trasparente/art23/provvedimenti";
+    const AA_PROVVEDIMENTI_ALLEGATI_PUBLIC_PATH="/pubblicazioni/art23/provvedimenti/docs.php";
+
     //Tipo provvedimenti
     const AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE=1;
     const AA_TIPO_PROVVEDIMENTO_ACCORDO=2;
@@ -84,6 +88,7 @@ Class AA_Provvedimenti extends AA_Object_V2
 {
     //tabella dati db
     const AA_DBTABLE_DATA="aa_provvedimenti_data";
+    const AA_ALLEGATI_DB_TABLE="aa_provvedimenti_allegati";
 
     //Funzione di cancellazione
     protected function DeleteData($idData = 0, $user = null)
@@ -91,6 +96,15 @@ Class AA_Provvedimenti extends AA_Object_V2
         if(!$this->IsValid() || $this->IsReadOnly() || $idData == 0) return false;
 
         if($idData != $this->nId_Data && $idData != $this->nId_Data_Rev) return false;
+
+        //Cancella tutti gli allegati
+        foreach($this->GetAllegati($idData) as $curAllegato)
+        {
+            if(!$this->DeleteAllegato($curAllegato,$user))
+            {
+                return false;
+            }
+        }
 
         return parent::DeleteData($idData,$user);
     }
@@ -121,6 +135,9 @@ Class AA_Provvedimenti extends AA_Object_V2
         //Valori iniziali
         $this->SetProp("IdData",0);
         $this->SetProp("Modalita",0);
+
+        //disabilita la revisione
+        $this->EnableRevision(false);
 
         //chiama il costruttore genitore
         parent::__construct($id,$user,false);
@@ -239,6 +256,318 @@ Class AA_Provvedimenti extends AA_Object_V2
         //----------------------------------------------
 
         return parent::AddNew($object,$user,$bSaveData);
+    }
+
+    //Aggiunge un nuovo allegato
+    public function AddNewAllegato($allegato=null, $file="", $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - provvedimento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare il provvedimento.", 100,false,true);
+            return false;
+        }
+
+        if(!($allegato instanceof AA_ProvvedimentiAllegati))
+        {
+            AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
+            return false;
+        }
+        
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Aggiunta nuovo allegato: ".$allegato->GetEstremi()))
+        {
+            return false;
+        }
+
+        $allegato->SetIdProvvedimento($this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $allegato->SetIdProvvedimento($this->nId_Data_Rev);
+        }
+
+        $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_provvedimento='".$this->GetID()."'";
+        $query.=", url='".addslashes($allegato->GetUrl())."'";
+        $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
+        
+        $db= new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        $new_id=$db->GetLastInsertId();
+        
+        if($file !="")
+        {
+            if(is_uploaded_file($file))
+            {
+                if(!move_uploaded_file($file,AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf"))
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file: ".AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf", 100,false,true);
+                    return false;
+                }
+            }
+            else 
+            {   
+                if(!rename($file,AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf"))
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file", 100);
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    //Aggiorna un allegato esistente
+    public function UpdateAllegato($allegato=null, $file="", $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - provvedimento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare il provvedimento.", 100,false,true);
+            return false;
+        }
+
+        if(!($allegato instanceof AA_ProvvedimentiAllegati))
+        {
+            AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
+            return false;
+        }
+
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Aggiornamento allegato: ".$allegato->GetEstremi()))
+        {
+            return false;
+        }
+
+        $allegato->SetIdProvvedimento($this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $allegato->SetIdProvvedimento($this->nId_Data_Rev);
+        }
+        
+        $query="UPDATE ".static::AA_ALLEGATI_DB_TABLE." SET id_provvedimento='".$allegato->GetIdProvvedimento()."'";
+        $query.=", url='".addslashes($allegato->GetUrl())."'";
+        $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
+        $query.=" WHERE id='".addslashes($allegato->GetId())."' LIMIT 1";
+        
+        $db= new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        $new_id=$allegato->GetId();
+        
+        if($file !="")
+        {
+            if(is_uploaded_file($file))
+            {
+                if(!move_uploaded_file($file,AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf"))
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file: ".AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf", 100,false,true);
+                    return false;
+                }
+            }
+            else 
+            {   
+                if(!rename($file,AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf"))
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file", 100);
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    //Elimina un allegato esistente
+    public function DeleteAllegato($allegato=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - provvedimento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare il provvedimento.", 100,false,true);
+            return false;
+        }
+
+        if(!($allegato instanceof AA_ProvvedimentiAllegati))
+        {
+            AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
+            return false;
+        }
+
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Rimozione allegato: ".$allegato->GetEstremi()))
+        {
+            return false;
+        }
+
+        $allegato->SetIdProvvedimento($this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $allegato->SetIdProvvedimento($this->nId_Data_Rev);
+        }
+        
+        $query="DELETE FROM ".static::AA_ALLEGATI_DB_TABLE;
+        $query.=" WHERE id='".addslashes($allegato->GetId())."'";
+        if($this->nId_Data_Rev > 0)
+        {
+            $query.=" AND id_provvedimento = in (".$this->nId_Data_Rev.",".$this->nId_Data."')";
+        }
+        else $query.=" AND id_provvedimento = '".$this->nId_Data."'";
+        
+        $query.="LIMIT 1";
+        
+        $db= new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        $file=$allegato->GetFilePath();
+        
+        if(is_file($file))
+        {
+            if(!unlink($file))
+            {
+                AA_Log::Log(__METHOD__." - Errore durante la rimozione del file: ".$file, 100,false,true);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    //Restituisce gli allegati
+    public function GetAllegati($idData=0)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->IsValid())
+        {
+            AA_Log::Log(__METHOD__."() - oggetto non valido.");
+
+            return array();
+        }
+
+        if($idData==0 || $idData == "") $idData=$this->nId_Data;
+
+        if($idData != $this->nId_Data && $idData !=$this->nId_Data_Rev && $idData > 0)
+        {
+            $idData=$this->nId_Data;
+            if($this->nId_Data_Rev > 0)
+            {
+                $idData=$this->nId_Data_Rev;
+            }
+        }
+
+        //Impostazione dei parametri
+        $query="SELECT * from ".AA_Provvedimenti::AA_ALLEGATI_DB_TABLE." WHERE";
+
+        $query.=" id_provvedimento='".$idData."'";
+        
+        $query.= " ORDER by id DESC";
+
+        $db=new AA_Database();
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore nella query: ".$query,100);
+            return array();
+        }
+
+        $result=array();
+
+        $rs=$db->GetResultSet();
+        foreach($rs as $curRec)
+        {   
+            $allegato=new AA_ProvvedimentiAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url']);
+            $result[$curRec['id']]=$allegato;
+        }
+
+        return $result;
     }
 }
 
@@ -770,6 +1099,12 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         //terza riga
         $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
         $riga->addCol($descr);
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
+        }
+        else $riga->addCol($this->TemplateDettaglio_Allegati($object,$id));
+
         $layout->AddRow($riga);
 
         return $layout;
@@ -1272,6 +1607,85 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         return new AA_ProvvedimentiPublicReportTemplateView($id,$parent,$object,$user);
     }
+
+    //Template dettaglio allegati
+    public function TemplateDettaglio_Allegati($object=null,$id="", $canModify=false)
+    {
+        #documenti----------------------------------
+        $curId=$id."_Layout_Allegati";
+        $provvedimenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-left"=>"1px solid #dedede !important;")));
+
+        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Allegati_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Allegati e link</span>", "align"=>"center")));
+
+        if($canModify)
+        {
+            //Pulsante di aggiunta documento
+            $add_documento_btn=new AA_JSON_Template_Generic($curId."_AddAllegato_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-file-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi allegato o link",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetProvvedimentiAddNewAllegatoDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+            ));
+
+            $toolbar->AddElement($add_documento_btn);
+        }
+        else 
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+
+        $provvedimenti->AddRow($toolbar);
+
+        $options_documenti=array();
+
+        if($canModify)
+        {
+            $options_documenti[]=array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+        else
+        {
+            $options_documenti[]=array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+
+        $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
+
+        $documenti_data=array();
+        foreach($object->GetAllegati() as $id_doc=>$curDoc)
+        {
+            if($curDoc->GetUrl() == "")
+            {
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetFilePublicPath().'&embed=1"},"'.$this->id.'")';
+                $view_icon="mdi-floppy";
+            }
+            else 
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetUrl().'"},"'.$this->id.'")';
+                $view_icon="mdi-eye";
+            }
+            
+            
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetProvvedimentiTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetProvvedimentiModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+            $documenti_data[]=array("id"=>$id_doc,"estremi"=>$curDoc->GetEstremi(),"ops"=>$ops);
+        }
+        $documenti->SetProp("data",$documenti_data);
+        if(sizeof($documenti_data) > 0) $provvedimenti->AddRow($documenti);
+        else $provvedimenti->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        #--------------------------------------
+        
+        return $provvedimenti;
+    }
 }
 
 #Classe template per la gestione del report pdf dell'oggetto
@@ -1387,5 +1801,107 @@ Class AA_ProvvedimentiPublicReportTemplateView extends AA_GenericObjectTemplateV
         //legenda
         $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-top: 1em;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente prospetto sono state aggiornate l'ultima volta il ".$object->GetAggiornamento()."</span></div>";
         $this->SetText($footer,false);
+    }
+}
+
+//Classe per la gestione dei provvedimenti
+Class AA_ProvvedimentiAllegati
+{
+    protected $id=0;
+    public function GetId()
+    {
+        return $this->id;
+    }
+    public function SetId($id=0)
+    {
+        $this->id=$id;
+    }
+    
+    protected $url="";
+    public function GetUrl()
+    {
+        return $this->url;
+    }
+    public function SetUrl($url="")
+    {
+        $this->url=$url;
+    }
+    
+    protected $estremi="";
+    public function GetEstremi()
+    {
+        return $this->estremi;
+    }
+    public function SetEstremi($val="")
+    {
+        $this->estremi=$val;
+    }
+
+    public function GetFilePath()
+    {
+        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$this->id.".pdf"))
+        {
+            return AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$this->id.".pdf";
+        }
+        
+        return "";
+    }
+
+    public function GetFileLocalPath()
+    {        
+        return $this->GetFilePath();
+    }
+    
+    public function GetFilePublicPath()
+    {
+        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$this->id.".pdf"))
+        {
+            return AA_Provvedimenti_Const::AA_WWW_ROOT.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PUBLIC_PATH."?id=".$this->id."&id_provvedimento=".$this->id_provvedimento;
+        }
+        
+        return "";
+    }
+    
+    protected $id_provvedimento=0;
+    public function GetIdProvvedimento()
+    {
+        return $this->id_provvedimento;
+    }
+    public function SetIdProvvedimento($id=0)
+    {
+        $this->id_provvedimento=$id;
+    }
+    
+    public function __construct($id=0,$id_provvedimento=0,$estremi="",$url="")
+    {
+        //AA_Log::Log(__METHOD__." id: $id, id_organismo: $id_organismo, tipo: $tipo, url: $url",100);
+        
+        $this->id=$id;
+        $this->id_provvedimento=$id_provvedimento;
+        $this->url=$url;
+        $this->estremi=$estremi;
+    }
+    
+    //Download del documento
+    public function Download($embed=false)
+    {
+        $filename=$this->GetFilePath();
+
+        if(is_file($filename))
+        {
+            header("Cache-control: private");
+            header("Content-type: application/pdf");
+            header("Content-Length: ".filesize($filename));
+            if(!$embed) header('Content-Disposition: attachment; filename="'.$this->id.'.pdf"');
+
+            $fd = fopen ($filename, "rb");
+            echo fread ($fd, filesize ($filename));
+            fclose ($fd);
+            die();
+        }
+        else
+        {
+            die("file non trovato");
+        }
     }
 }

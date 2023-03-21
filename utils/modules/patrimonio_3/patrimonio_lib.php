@@ -466,6 +466,8 @@ Class AA_Patrimonio extends AA_Object_V2
         //data table
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
+        $this->EnableRevision(false);
+
         //Db data binding
         $this->SetBind("Descrizione","descrizione");
         $this->SetBind("CodiceComune","codice_comune");
@@ -2513,7 +2515,6 @@ Class AA_Patrimonio_Canone
         }
     }
 }
-
 
 #Classe template per la visualizzazione della lista dei canoni sul report
 Class AA_PatrimonioReportCanoniListTemplateView extends AA_GenericTableTemplateView
