@@ -14,8 +14,8 @@ Class AA_Provvedimenti_Const extends AA_Const
     const AA_USER_FLAG_PROVVEDIMENTI="art23";
 
     //percorso pubblicazione provvedimenti
-    const AA_PROVVEDIMENTI_ALLEGATI_PATH="/amministrazione_trasparente/art23/provvedimenti";
-    const AA_PROVVEDIMENTI_ALLEGATI_PUBLIC_PATH="/pubblicazioni/art23/provvedimenti/docs.php";
+    const AA_PROVVEDIMENTI_ALLEGATI_PATH="/amministrazione_trasparente/gespa/allegati";
+    const AA_PROVVEDIMENTI_ALLEGATI_PUBLIC_PATH="/pubblicazioni/art23/docs.php";
 
     //Tipo provvedimenti
     const AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE=1;
@@ -258,6 +258,65 @@ Class AA_Provvedimenti extends AA_Object_V2
         return parent::AddNew($object,$user,$bSaveData);
     }
 
+    //Restituisce un allegato esistente
+    public function GetAllegato($id=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - provvedimento non valido.", 100,false,true);
+                return null;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return null;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_READ)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non ha accesso al provvedimento.", 100,false,true);
+            return null;
+        }
+        
+        $id_provvedimento=$this->nId_Data;
+        if($this->nId_Data_Rev > 0)
+        {
+            $id_provvedimento=$this->nId_Data_Rev;
+        }
+
+        $query="SELECT * FROM ".AA_Provvedimenti::AA_ALLEGATI_DB_TABLE." WHERE id_provvedimento='".$id_provvedimento."'";
+        $query.=" AND id='".addslashes($id)."' LIMIT 1";
+        
+        $db= new AA_Database();
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return null;            
+        }
+        
+        if($db->GetAffectedRows() > 0)
+        {
+            $rs=$db->GetResultSet();
+            $object=new AA_ProvvedimentiAllegati($rs[0]['id'],$id_provvedimento,$rs[0]['estremi'],$rs[0]['url']);
+            
+            return $object;
+        }
+        
+        return null;
+    }
+    
+
     //Aggiunge un nuovo allegato
     public function AddNewAllegato($allegato=null, $file="", $user=null)
     {
@@ -308,7 +367,7 @@ Class AA_Provvedimenti extends AA_Object_V2
             $allegato->SetIdProvvedimento($this->nId_Data_Rev);
         }
 
-        $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_provvedimento='".$this->GetID()."'";
+        $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_provvedimento='".$allegato->GetId()."'";
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
         
@@ -430,6 +489,17 @@ Class AA_Provvedimenti extends AA_Object_V2
                 {
                     AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file", 100);
                     return false;
+                }
+            }
+        }
+        else
+        {
+            //Rimuove il file precedentemente caricato
+            if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf"))
+            {
+                if(!unlink(AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf"))
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante l'eliminazione del file precedente: ".AA_Const::AA_UPLOADS_PATH.AA_Provvedimenti_Const::AA_PROVVEDIMENTI_ALLEGATI_PATH."/".$new_id.".pdf", 100);
                 }
             }
         }
@@ -618,6 +688,13 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewProvvedimenti");
         $taskManager->RegisterTask("UpdateProvvedimenti");
         $taskManager->RegisterTask("PublishProvvedimenti");
+
+        //Allegati
+        $taskManager->RegisterTask("GetProvvedimentiAddNewAllegatoDlg");
+        $taskManager->RegisterTask("AddNewProvvedimentiAllegato");
+        $taskManager->RegisterTask("GetProvvedimentiModifyAllegatoDlg");
+        $taskManager->RegisterTask("UpdateProvvedimentiAllegato");
+
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -926,7 +1003,171 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         return $wnd;
     }
     
-    //Template dlg modify immobile
+    //Template dlg aggiungi allegato/link
+    public function Template_GetProvvedimentiAddNewAllegatoDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetProvvedimentiAddNewAllegatoDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi allegato/link", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        //descrizione
+        $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+        
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewProvvedimentiAllegato");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi allegato/link
+    public function Template_GetProvvedimentiModifyAllegatoDlg($object=null,$allegato=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetProvvedimentiModifyAllegatoDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array();
+        $form_data["estremi"]=$allegato->GetEstremi();
+        $form_data["url"]=$allegato->GetUrl();
+        
+        $wnd=new AA_GenericFormDlg($id, "Modifica allegato/link", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        //descrizione
+        $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato->GetId()));
+        $wnd->SetSaveTask("UpdateProvvedimentiAllegato");
+        
+        return $wnd;
+    }
+
+    //Task Aggiungi allegato
+    public function Task_AddNewProvvedimentiAllegato($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Provvedimenti($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo provvedimento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo provvedimento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare il provvedimento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare il provvedimento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $file = AA_SessionFileUpload::Get("NewAllegatoDoc");
+        
+        if(!$file->isValid() && $_REQUEST['url'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($file,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetError("Parametri non validi occorre indicare un url o un file.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare un url o un file.</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+        
+        $id_provvedimento=$object->GetIdData();
+        if($object->GetIdDataRev() > 0)
+        {
+            $id_provvedimento=$object->GetIdDataRev();
+        }
+        
+        //Se c'è un file uploadato l'url non viene salvata.
+        if($file->isValid()) $_REQUEST['url']="";
+
+        $allegato=new AA_ProvvedimentiAllegati(0,$id_provvedimento,$_REQUEST['estremi'],$_REQUEST['url']);
+        
+        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
+        
+        if($file->isValid()) $filespec=$file->GetValue();
+        else $filespec=array();
+        
+        if(!$object->AddNewAllegato($allegato, $filespec['tmp_name'], $this->oUser))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dell'allegato provvedimento. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Allegato caricato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Template dlg modify provvedimento
     public function Template_GetProvvedimentiModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg";
@@ -1109,7 +1350,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         return $layout;
     }
-     
+    
     //Task Update Provvedimenti
     public function Task_UpdateProvvedimenti($task)
     {
@@ -1436,6 +1677,164 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiungi allegato
+    public function Task_GetProvvedimentiAddNewAllegatoDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Provvedimenti($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetProvvedimentiAddNewAllegatoDlg($object)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task aggiorna allegato
+    public function Task_UpdateProvvedimentiAllegato($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Provvedimenti($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+
+        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
+        if($allegato==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $file = AA_SessionFileUpload::Get("NewAllegatoDoc");
+        
+        if(!$file->isValid() && $_REQUEST['url'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($file,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetError("Parametri non validi occorre indicare un url o un file.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare un url o un file.</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+        
+        $allegato->SetEstremi($_REQUEST['estremi']);
+        $allegato->SetUrl($_REQUEST['url']);
+        
+        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
+        
+        if($file->isValid()) $filespec=$file->GetValue();
+        else $filespec=array();
+        
+        if(!$object->UpdateAllegato($allegato, $filespec['tmp_name'], $this->oUser))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Allegato aggiornato con successo.";
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    //Task aggiungi dato contabile
+    public function Task_GetProvvedimentiModifyAllegatoDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Provvedimenti($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
+        if($allegato==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetProvvedimentiModifyAllegatoDlg($object,$allegato)->toBase64();
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
     //Task filter dlg
     public function Task_GetProvvedimentiPubblicateFilterDlg($task)
     {
@@ -1663,7 +2062,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         {
             if($curDoc->GetUrl() == "")
             {
-                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetFilePublicPath().'&embed=1"},"'.$this->id.'")';
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetFilePublicPath().'&embed=1&id_object='.$object->GetId().'"},"'.$this->id.'")';
                 $view_icon="mdi-floppy";
             }
             else 

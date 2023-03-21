@@ -8445,6 +8445,10 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
 
     //File upload id
     protected $fileUploader_id = "";
+    public function SetFileUploaderId($id="")
+    {
+        $this->fileUploader_id=$id;
+    }
 
     #Gestione salvataggio dati
     protected $refresh = true; //Rinfresca la view in caso di salvataggio 
@@ -8699,6 +8703,7 @@ class AA_FieldSet extends AA_JSON_Template_Generic
     {
         $this->props['view'] = "fieldset";
         $this->props['label'] = $label;
+        $this->props['id']=$id;
         $this->layout = new AA_JSON_Template_Layout($id . "_FieldSet_Layout", array("type" => "clean"));
         $this->addRowToBody($this->layout);
     }
