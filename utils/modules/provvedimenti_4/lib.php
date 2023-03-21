@@ -367,7 +367,7 @@ Class AA_Provvedimenti extends AA_Object_V2
             $allegato->SetIdProvvedimento($this->nId_Data_Rev);
         }
 
-        $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_provvedimento='".$allegato->GetId()."'";
+        $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_provvedimento='".$allegato->GetIdProvvedimento()."'";
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
         
@@ -694,7 +694,8 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewProvvedimentiAllegato");
         $taskManager->RegisterTask("GetProvvedimentiModifyAllegatoDlg");
         $taskManager->RegisterTask("UpdateProvvedimentiAllegato");
-
+        $taskManager->RegisterTask("GetProvvedimentiTrashAllegatoDlg");
+        $taskManager->RegisterTask("DeleteProvvedimentiAllegato");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -1027,9 +1028,9 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
-        
         $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
-        
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
         //url
         $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
         
@@ -1092,6 +1093,56 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato->GetId()));
         $wnd->SetSaveTask("UpdateProvvedimentiAllegato");
+        
+        return $wnd;
+    }
+
+    //Template dlg trash allegato
+    public function Template_GetProvvedimentiTrashAllegatoDlg($object=null,$allegato=null)
+    {
+        $id=$this->id."_TrashProvvedimentoAllegato_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina allegato", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $url=$allegato->GetUrl();
+        if($url =="") $url="file locale";
+        $tabledata[]=array("estremi"=>$allegato->GetEstremi(),"url"=>$url);
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente allegato verrà eliminato, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true),
+              array("id"=>"url", "header"=>"Url", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteProvvedimentiAllegato");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato->GetId()));
         
         return $wnd;
     }
@@ -1789,6 +1840,61 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiorna allegato
+    public function Task_DeleteProvvedimentiAllegato($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Provvedimenti($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid() || $object->GetId()<=0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+
+        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
+        if($allegato==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(!$object->DeleteAllegato($allegato))
+        {   
+            $task->SetError("Errore durante l'eliminazione dell'allegato: ".$allegato->GetEstremi());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore durante l'eliminazione dell'allegato: ".$allegato->GetEstremi()."</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Allegato eliminato con successo.";
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
     //Task aggiungi dato contabile
     public function Task_GetProvvedimentiModifyAllegatoDlg($task)
     {
@@ -1829,6 +1935,52 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         $sTaskLog.= $this->Template_GetProvvedimentiModifyAllegatoDlg($object,$allegato)->toBase64();
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    //Task aggiungi dato contabile
+    public function Task_GetProvvedimentiTrashAllegatoDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Provvedimenti($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid() || $object->GetId()<= 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
+        if($allegato==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetProvvedimentiTrashAllegatoDlg($object,$allegato)->toBase64();
         $sTaskLog.="</content>";
         $task->SetLog($sTaskLog);
 
