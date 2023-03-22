@@ -482,6 +482,7 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetBind("Cespite","cespite");
         $this->SetBind("Subalterno","subalterno");
         $this->SetBind("SubCespite","subcespite");
+        $this->SetBind("Note","note");
 
         //Valori iniziali
         $this->SetProp("IdData",0);
@@ -653,6 +654,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewPatrimonio");
         $taskManager->RegisterTask("UpdatePatrimonio");
         $taskManager->RegisterTask("PublishPatrimonio");
+
+        //caricamento multiplo
+        $taskManager->RegisterTask("GetPatrimonioAddNewMultiDlg");
+        $taskManager->RegisterTask("GetPatrimonioAddNewMultiPreviewCalc");
+        $taskManager->RegisterTask("GetPatrimonioAddNewMultiPreviewDlg");
 
         //Canoni
         $taskManager->RegisterTask("GetPatrimonioAddNewCanoneDlg");
@@ -920,6 +926,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $label="Descrizione";
         $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile"));
 
+        //Note
+        $label="Note";
+        $wnd->AddTextareaField("Note",$label,array("placeholder"=>"..."));
+        
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
 
@@ -979,7 +989,126 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         return $wnd;
     }
+
+    //Template dlg addnew patrimonio
+    public function Template_GetPatrimonioAddNewMultiDlg()
+    {
+        $id=$this->GetId()."_AddNewMulti_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(600);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+
+        $descr="<ul>Il file csv deve avere le seguenti caratteristiche:";
+        $descr.="<li>la prima riga deve contenere i nomi dei campi;</li>";
+        $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8;</li>";
+        $descr.="<li>usare il carattere \"|\" (pipe) come separatore dei campi;</li>";
+        $descr.="</ul>";
+        $descr.="<p>Tramite il seguente <a href='docs/art30_multi.ods' target='_blank'>link</a> è possibile scaricare un foglio elettronico da utilizzarsi come base per la predisposizione del file csv.</p>";
+        $descr.="<p>Per la generazione del file csv si consiglia l'utilizzo del software opensource <a href='https://www.libreoffice.org' target='_blank'>Libreoffice</a> in quanto consente di impostare il carattere di delimitazione dei campi e la codifica dei caratteri in fase di esportazione senza dover apportare modifiche al sistema.</p>";
+        $descr.="<hr/>";
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di caricare più immobili/cespiti tramite importazione da file csv.".$descr."</div>")));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
+
+        if($this->oUser->IsSuperUser())
+        {
+            //Struttura
+            $wnd->AddStructField(array("targetForm"=>$wnd->GetFormId()), array("select"=>true),array("required"=>true,"bottomLabel"=>"*Imposta la struttura presso la quale verranno incardinate le nuove bozze."));
+        }
+
+        //$wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
+
+        //csv
+        $wnd->AddFileUploadField("PatrimonioMultiCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 2Mb).","accept"=>"application/csv"));
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        $wnd->enableRefreshOnSuccessfulSave(false);
+
+        $wnd->SetApplyButtonName("Preview");
+
+        $wnd->SetSaveTask("GetPatrimonioAddNewMultiPreviewCalc");
+        
+        return $wnd;
+    }
     
+    //Template dlg addnew patrimonio
+    public function Template_GetPatrimonioAddNewMultiPreviewDlg()
+    {
+        $id=$this->GetId()."_AddNewMultiPreview_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(600);
+        $wnd->SetBottomPadding(36);
+        //$wnd->EnableValidation();
+
+        $columns=array(
+            array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"titolo","header"=>array("<div style='text-align: center'>Titolo</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"cespite","header"=>array("<div style='text-align: center'>Cespite</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"subcespite","header"=>array("<div style='text-align: center'>Sub cespite</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"codice_comune","header"=>array("<div style='text-align: center'>Cod. Comune</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"indirizzo","header"=>array("<div style='text-align: center'>Indirizzo</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"int"),
+            array("id"=>"sezione_catasto","header"=>array("<div style='text-align: center'>Sezione catasto</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"int"),
+            array("id"=>"foglio_catasto","header"=>array("<div style='text-align: center'>Foglio</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"particella_catasto","header"=>array("<div style='text-align: center'>Conduttore</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"subalterno","header"=>array("<div style='text-align: center'>Subalterno</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"rendita_catasto","header"=>array("<div style='text-align: center'>Rendita</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"classe_catasto","header"=>array("<div style='text-align: center'>Classe</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"consistenza_catasto","header"=>array("<div style='text-align: center'>Consistenza</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text")
+        );
+
+        $data=AA_SessionVar::Get("PatrimonioMultiFromCSV_ParsedData")->GetValue();
+
+        $wnd->AddStructField(array("targetForm"=>$wnd->GetFormId()), array("select"=>true),array("required"=>true,"bottomLabel"=>"*Imposta la struttura presso la quale verranno incardinate le nuove bozze."));
+
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array();
+        }
+
+        $data=array(array("descrizione"=>"","titolo"=>""));
+
+        $table=new AA_JSON_Template_Generic($id."_CsvImportPreviewTable", array(
+            "view"=>"datatable",
+            "css"=>"AA_Header_DataTable",
+            "hover"=>"AA_DataTable_Row_Hover",
+            //"columns"=>$columns,
+            "autoConfig"=>true,
+            "scrollX"=>true,
+            "scrollY"=>true,
+            "data"=>$data
+        ));
+    
+        //$wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        $wnd->SetApplyButtonName("Procedi");
+
+        $wnd->SetSaveTask("GetPatrimonioAddNewMultiResultDlg");
+        
+        return $wnd;
+    }
+
     //Template dlg modify immobile
     public function Template_GetPatrimonioModifyDlg($object=null)
     {
@@ -1019,6 +1148,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Descrizione
         $label="Descrizione";
         $wnd->AddTextareaField("Descrizione",$label,array("bottomLabel"=>"*Breve descrizione dell'immobile.", "required"=>true,"placeholder"=>"Inserisci qui la descrizione dell'immobile"));
+
+        //Descrizione
+        $label="Note";
+        $wnd->AddTextareaField("Note",$label,array("placeholder"=>"..."));
 
         //Dati catastali
         $catasto = new AA_FieldSet("AA_PATRIMONIO_CATASTO","Dati catastali");
@@ -1408,6 +1541,13 @@ Class AA_PatrimonioModule extends AA_GenericModule
             "data"=>array("title"=>"Indirizzo:","value"=>$value)
         ));
         
+        //Note
+        $value=$object->GetProp("Note");
+        $note=new AA_JSON_Template_Template($id."_Note",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Note:","value"=>$value)
+        ));
+
         //Prima riga
         $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height));
         $riga->AddCol($titolo);
@@ -1444,7 +1584,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //layout ultima riga
         $last_row=new AA_JSON_Template_Layout($id."_LastRow");
         $last_row->addCol($indirizzo);
-        
+        $last_row->addCol($note);
         $layout->AddRow($last_row);
         
         return $layout;
@@ -2033,6 +2173,187 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiunta patrimonio
+    public function Task_GetPatrimonioAddNewMultiDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per istanziare nuovi elementi.</error>";
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetPatrimonioAddNewMultiDlg()->toBase64();
+            $sTaskLog.="</content>";
+        }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task aggiunta patrimonio da csv, passo 2 di 3
+    public function Task_GetPatrimonioAddNewMultiPreviewCalc($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per istanziare nuovi elementi.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $csvFile=AA_SessionFileUpload::Get("PatrimonioMultiCSV");
+        if(!$csvFile->IsValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>File csv non trovato.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $csv=$csvFile->GetValue();
+        if(!is_file($csv["tmp_name"]))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>File csv non valido.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        //Elimina il file temporaneo
+        if(is_file($csv["tmp_name"]))
+        {
+            unlink($csv["tmp_name"]);
+        }
+
+        //Parsing della posizione dei campi
+        $fieldPos=array(
+            "descrizione"=>-1,
+            "codice_comune"=>-1,
+            "sezione_catasto"=>-1,
+            "foglio_catasto"=>-1,
+            "particella_catasto"=>-1,
+            "indirizzo"=>-1,
+            "rendita_catasto"=>-1,
+            "consistenza_catasto"=>-1,
+            "classe_catasto"=>-1,
+            "titolo"=>-1,
+            "cespite"=>-1,
+            "subalterno"=>-1,
+            "subcespite"=>-1,
+            "note"=>-1
+        );
+        
+        foreach(explode("|",$csvRows[0]) as $pos=>$curFieldName)
+        {
+            if($fieldPos[trim($curFieldName)] == -1)
+            {
+                $fieldPos[trim($curFieldName)] = $pos;
+            }
+        }
+        //----------------------------------------
+
+        if($fieldPos['cespite'] ==-1 || $fieldPos['codice_comune'] ==-1 || $fieldPos['titolo'] ==-1 || $fieldPos['sezione_catasto'] ==-1)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Non sono stati trovati tutti i campi relativi a: cespite,codice_comune,titolo,sezione_catasto. Verificare che il file csv sia strutturato correttamente e riprovare.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        //parsing dei dati
+        $data=array();
+        $curRowNum=0;
+        foreach($csvRows as $curCsvRow)
+        {
+            //salta la prima riga
+            if($curRowNum > 0)
+            {
+                $csvValues=explode("|",$curCsvRow);
+                $curDataValues=array();
+
+                $cespite=$csvValues[$fieldPos["cespite"]];
+                foreach($fieldPos as $fieldName=>$pos)
+                {
+                    if($pos>=0)
+                    {
+                        $curDataValues[$fieldName]=$csvValues[$pos];
+                    }
+                }
+                if(!is_array($data[$cespite]))
+                {
+                    $data[$cespite]=$curDataValues;
+                }
+                else
+                {
+                    //merge sub cespite
+                    if($data[$cespite]['subcespite'] != "" && $curDataValues['subcespite'] > 0) $data[$cespite]['subcespite'].=",".$curDataValues['subcespite'];
+                    if($data[$cespite]['subcespite'] == "" && $curDataValues['subcespite'] > 0) $data[$cespite]['subcespite'] = $curDataValues['subcespite'];
+
+                    //merge foglio
+                    if($data[$cespite]['foglio_catasto'] != "" && $curDataValues['foglio_catasto'] > 0 && strpos($curDataValues['foglio_catasto'],$data[$cespite]['foglio_catasto']) == false) $data[$cespite]['foglio_catasto'].=",".$curDataValues['foglio_catasto'];
+                    if($data[$cespite]['foglio_catasto'] == "" && $curDataValues['foglio_catasto'] > 0) $data[$cespite]['foglio_catasto'] = $curDataValues['foglio_catasto'];
+
+                    //merge particella
+                    if($data[$cespite]['particella_catasto'] != "" && $curDataValues['particella_catasto'] > 0 && strpos($curDataValues['particella_catasto'],$data[$cespite]['particella_catasto']) == false) $data[$cespite]['particella_catasto'].=",".$curDataValues['particella_catasto'];
+                    if($data[$cespite]['particella_catasto'] == "" && $curDataValues['particella_catasto'] > 0) $data[$cespite]['particella_catasto'] = $curDataValues['particella_catasto'];
+
+                    //merge subalterno
+                    if($data[$cespite]['subalterno'] != "" && $curDataValues['subalterno'] > 0 && strpos($curDataValues['subalterno'],$data[$cespite]['subalterno']) == false) $data[$cespite]['subalterno'].=",".$curDataValues['subalterno'];
+                    if($data[$cespite]['subalterno'] == "" && $curDataValues['subalterno'] > 0) $data[$cespite]['subalterno'] = $curDataValues['subalterno'];
+
+                }
+            }
+            $curRowNum++;
+        }
+
+        AA_SessionVar::Set("PatrimonioMultiFromCSV_ParsedData",$data,false);
+        
+        $sTaskLog="<status id='status' action='dlg' action_params='".json_encode(array("task"=>"GetPatrimonioAddNewMultiPreviewDlg"))."'>0</status><content id='content'>";
+        $sTaskLog.="csv elaborato.</content>";
+        $task->SetLog($sTaskLog);
+                
+        return true;
+    }
+
+    //Task aggiunta patrimonio da csv, passo 2 di 3
+    public function Task_GetPatrimonioAddNewMultiPreviewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per istanziare nuovi elementi.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetPatrimonioAddNewMultiPreviewDlg()->toBase64();
+        $sTaskLog.="</content>";
+                
+        return true;
+    }
+    
     //Task aggiunta organismo
     public function Task_GetPatrimonioListaCodiciIstat($task)
     {

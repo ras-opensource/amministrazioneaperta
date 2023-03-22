@@ -94,6 +94,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO_CDA=268435456;
     const AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE=536870912; //2^29
     const AA_ORGANISMI_NOMINA_VICEPRESIDENTE_CDA=1073741824; //2^30
+    const AA_ORGANISMI_NOMINA_COMMISSARIO_LIQUIDATORE=20; //16+4
 
     //nomine da pubblicare
     const AA_NOMINE_NON_PUBBLICARE=146826128;
@@ -107,6 +108,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_DOC_ATTESTAZIONE_VERIFICA=16;
     const AA_ORGANISMI_DOC_PROVVEDIMENTO_NOMINA=32;
     const AA_ORGANISMI_DOC_PROVVEDIMENTO_PROROGA=64;
+    const AA_ORGANISMI_DOC_PROVVEDIMENTO_REVOCA=128;
     const AA_ORGANISMI_DOC_MASK=126;
     
     //Tipo di provvedimenti
@@ -196,6 +198,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_AMMINISTRATORE_UNICO=>"Amministratore unico",
             self::AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO=>"Amministratore delegato",
             self::AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO_CDA=>"Consigliere CDA e Amministratore delegato",
+            self::AA_ORGANISMI_NOMINA_COMMISSARIO_LIQUIDATORE=>"Commissario liquidatore",
             self::AA_ORGANISMI_NOMINA_COMMISSARIO_STRAORDINARIO=>"Commissario straordinario",
             self::AA_ORGANISMI_NOMINA_CONSIGLIERE=>"Consigliere CDA",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_DIRETTIVO=>"Componente consiglio direttivo",
@@ -235,6 +238,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_DOC_DICH_INCOMPATIBILITA=>"Dichiarazione di assenza di cause di incompatibilità",
             self::AA_ORGANISMI_DOC_PROVVEDIMENTO_NOMINA=>"Provvedimento di nomina/designazione",
             self::AA_ORGANISMI_DOC_PROVVEDIMENTO_PROROGA=>"Provvedimento di proroga",
+            self::AA_ORGANISMI_DOC_PROVVEDIMENTO_REVOCA=>"Provvedimento di revoca",
             self::AA_ORGANISMI_DOC_ATTESTAZIONE_VERIFICA=>"Attestazione di verifica delle dichiarazioni (art.53 d.lgs 165/2001)"
             );
         }

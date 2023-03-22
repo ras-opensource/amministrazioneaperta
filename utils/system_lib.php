@@ -10377,12 +10377,13 @@ class AA_SessionVar
         } else return new AA_SessionVar();
     }
 
-    static public function Set($name = "varName", $value = "")
+    static public function Set($name = "varName", $value = "", $parse=true)
     {
         if ($name != "" && $value != "") {
-            $var = json_decode($value);
+            if($parse) $var = json_decode($value);
+            else $var=$value;
             if (is_string($value)) {
-                if (json_last_error() === JSON_ERROR_NONE) {
+                if (json_last_error() === JSON_ERROR_NONE && $parse) {
                     $_SESSION['SessionVars'][$name] = serialize($var);
 
                     //AA_Log::Log(__METHOD__." - name:".$name." - value: ".print_r($var,true),100);
