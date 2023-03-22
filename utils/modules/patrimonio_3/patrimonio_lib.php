@@ -1050,34 +1050,34 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
         
-        $wnd->SetLabelAlign("right");
-        $wnd->SetLabelWidth(120);
+        //$wnd->SetLabelAlign("right");
+        //$wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(720);
-        $wnd->SetHeight(600);
-        $wnd->SetBottomPadding(36);
+        $wnd->SetWidth(1280);
+        $wnd->SetHeight(720);
+        //$wnd->SetBottomPadding(36);
         //$wnd->EnableValidation();
 
         $columns=array(
-            array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"titolo","header"=>array("<div style='text-align: center'>Titolo</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"titolo_desc","header"=>array("<div style='text-align: center'>Titolo</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"cespite","header"=>array("<div style='text-align: center'>Cespite</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"subcespite","header"=>array("<div style='text-align: center'>Sub cespite</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"subcespite","header"=>array("<div style='text-align: center'>Sub cespite</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
             array("id"=>"codice_comune","header"=>array("<div style='text-align: center'>Cod. Comune</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"indirizzo","header"=>array("<div style='text-align: center'>Indirizzo</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"int"),
-            array("id"=>"sezione_catasto","header"=>array("<div style='text-align: center'>Sezione catasto</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"int"),
-            array("id"=>"foglio_catasto","header"=>array("<div style='text-align: center'>Foglio</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"particella_catasto","header"=>array("<div style='text-align: center'>Conduttore</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"subalterno","header"=>array("<div style='text-align: center'>Subalterno</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"rendita_catasto","header"=>array("<div style='text-align: center'>Rendita</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"classe_catasto","header"=>array("<div style='text-align: center'>Classe</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"indirizzo","header"=>array("<div style='text-align: center'>Indirizzo</div>",array("content"=>"textFilter")),"width"=>200, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"sezione_catasto_desc","header"=>array("<div style='text-align: center'>Sezione catasto</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"foglio_catasto","header"=>array("<div style='text-align: center'>Foglio</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"particella_catasto","header"=>array("<div style='text-align: center'>Particella</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"subalterno","header"=>array("<div style='text-align: center'>Subalterno</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"rendita_catasto","header"=>array("<div style='text-align: center'>Rendita</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"classe_catasto","header"=>array("<div style='text-align: center'>Classe</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
             array("id"=>"consistenza_catasto","header"=>array("<div style='text-align: center'>Consistenza</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text")
+            array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"width"=>350, "css"=>array("text-align"=>"left"),"sort"=>"text")
         );
 
         $data=AA_SessionVar::Get("PatrimonioMultiFromCSV_ParsedData")->GetValue();
-
-        $wnd->AddStructField(array("targetForm"=>$wnd->GetFormId()), array("select"=>true),array("required"=>true,"bottomLabel"=>"*Imposta la struttura presso la quale verranno incardinate le nuove bozze."));
+        $struct=AA_SessionVar::Get("PatrimonioMultiFromCSV_Struct")->GetValue();
+        //$wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
 
         if(!is_array($data))
         {
@@ -1085,20 +1085,31 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $data=array();
         }
 
-        $data=array(array("descrizione"=>"","titolo"=>""));
+        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
+        $struct_desc=$struct->GetAssessorato();
+        if($struct->GetDirezione(true) > 0) $struct_desc.="->".$struct->GetDirezione();
+        if($struct->GetServizio(true) > 0) $struct_desc.="->".$struct->GetServizio();
 
+        $desc="<p>Sono stati riconosciuti <b>".sizeof((array)$data)." cespiti</b> differenti.</p>";
+        $desc.="<p>Verranno attestati alla struttura:<br/><b>".$struct_desc."</b></p>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+
+        $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
+            "type"=>"clean",
+            "view"=>"scrollview",
+            "scroll"=>"x"
+        ));
         $table=new AA_JSON_Template_Generic($id."_CsvImportPreviewTable", array(
             "view"=>"datatable",
             "css"=>"AA_Header_DataTable",
             "hover"=>"AA_DataTable_Row_Hover",
-            //"columns"=>$columns,
-            "autoConfig"=>true,
-            "scrollX"=>true,
-            "scrollY"=>true,
-            "data"=>$data
+            "columns"=>$columns,
+            "autowidth"=>true,
+            "data"=>array_values($data)
         ));
-    
-        //$wnd->AddGenericObject($table);
+        $scrollview->addRowToBody($table);
+
+        $wnd->AddGenericObject($scrollview);
 
         $wnd->EnableCloseWndOnSuccessfulSave();
 
@@ -2222,6 +2233,15 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return false;
         }
 
+        //Struttura di assegnazione
+        $struct=AA_Struct::GetStruct($_REQUEST['id_assessorato'],$_REQUEST['id_direzione'],$_REQUEST['id_servizio']);
+        if($_REQUEST['id_assessorato'] == "" || !$this->oUser->isSuperUser() || $_REQUEST['id_assessorato'] == 0)
+        {
+            $struct=$this->oUser->GetStruct();
+        }
+
+        AA_SessionVar::Set("PatrimonioMultiFromCSV_Struct",$struct,false);
+
         $csv=$csvFile->GetValue();
         if(!is_file($csv["tmp_name"]))
         {
@@ -2239,6 +2259,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             unlink($csv["tmp_name"]);
         }
+
+        $tipo_catasto=AA_Patrimonio_Const::GetSezioneList();
+        $titolo_list=AA_Patrimonio_Const::GetTitoloList();
 
         //Parsing della posizione dei campi
         $fieldPos=array(
@@ -2258,11 +2281,13 @@ Class AA_PatrimonioModule extends AA_GenericModule
             "note"=>-1
         );
         
+        $recognizedFields=0;
         foreach(explode("|",$csvRows[0]) as $pos=>$curFieldName)
         {
             if($fieldPos[trim($curFieldName)] == -1)
             {
                 $fieldPos[trim($curFieldName)] = $pos;
+                $recognizedFields++;
             }
         }
         //----------------------------------------
@@ -2283,41 +2308,52 @@ Class AA_PatrimonioModule extends AA_GenericModule
         foreach($csvRows as $curCsvRow)
         {
             //salta la prima riga
-            if($curRowNum > 0)
+            if($curRowNum > 0 && $curCsvRow !="")
             {
                 $csvValues=explode("|",$curCsvRow);
-                $curDataValues=array();
-
-                $cespite=$csvValues[$fieldPos["cespite"]];
-                foreach($fieldPos as $fieldName=>$pos)
+                if(sizeof($csvValues) == $recognizedFields)
                 {
-                    if($pos>=0)
+                    $curDataValues=array();
+
+                    $cespite=$csvValues[$fieldPos["cespite"]];
+                    foreach($fieldPos as $fieldName=>$pos)
                     {
-                        $curDataValues[$fieldName]=$csvValues[$pos];
+                        if($pos>=0)
+                        {
+                            $curDataValues[$fieldName]=$csvValues[$pos];
+                            if($fieldName=="titolo")
+                            {
+                                $curDataValues["titolo_desc"]=$titolo_list[$csvValues[$pos]];
+                            }
+                            if($fieldName=="sezione_catasto")
+                            {
+                                $curDataValues["sezione_catasto_desc"]=$tipo_catasto[$csvValues[$pos]];
+                            }
+                        }
                     }
-                }
-                if(!is_array($data[$cespite]))
-                {
-                    $data[$cespite]=$curDataValues;
-                }
-                else
-                {
-                    //merge sub cespite
-                    if($data[$cespite]['subcespite'] != "" && $curDataValues['subcespite'] > 0) $data[$cespite]['subcespite'].=",".$curDataValues['subcespite'];
-                    if($data[$cespite]['subcespite'] == "" && $curDataValues['subcespite'] > 0) $data[$cespite]['subcespite'] = $curDataValues['subcespite'];
-
-                    //merge foglio
-                    if($data[$cespite]['foglio_catasto'] != "" && $curDataValues['foglio_catasto'] > 0 && strpos($curDataValues['foglio_catasto'],$data[$cespite]['foglio_catasto']) == false) $data[$cespite]['foglio_catasto'].=",".$curDataValues['foglio_catasto'];
-                    if($data[$cespite]['foglio_catasto'] == "" && $curDataValues['foglio_catasto'] > 0) $data[$cespite]['foglio_catasto'] = $curDataValues['foglio_catasto'];
-
-                    //merge particella
-                    if($data[$cespite]['particella_catasto'] != "" && $curDataValues['particella_catasto'] > 0 && strpos($curDataValues['particella_catasto'],$data[$cespite]['particella_catasto']) == false) $data[$cespite]['particella_catasto'].=",".$curDataValues['particella_catasto'];
-                    if($data[$cespite]['particella_catasto'] == "" && $curDataValues['particella_catasto'] > 0) $data[$cespite]['particella_catasto'] = $curDataValues['particella_catasto'];
-
-                    //merge subalterno
-                    if($data[$cespite]['subalterno'] != "" && $curDataValues['subalterno'] > 0 && strpos($curDataValues['subalterno'],$data[$cespite]['subalterno']) == false) $data[$cespite]['subalterno'].=",".$curDataValues['subalterno'];
-                    if($data[$cespite]['subalterno'] == "" && $curDataValues['subalterno'] > 0) $data[$cespite]['subalterno'] = $curDataValues['subalterno'];
-
+                    if(!is_array($data[$cespite]))
+                    {
+                        $data[$cespite]=$curDataValues;
+                    }
+                    else
+                    {
+                        //merge sub cespite
+                        if($data[$cespite]['subcespite'] != "" && $curDataValues['subcespite'] > 0) $data[$cespite]['subcespite'].=",".$curDataValues['subcespite'];
+                        if($data[$cespite]['subcespite'] == "" && $curDataValues['subcespite'] > 0) $data[$cespite]['subcespite'] = $curDataValues['subcespite'];
+    
+                        //merge foglio
+                        if($data[$cespite]['foglio_catasto'] != "" && $curDataValues['foglio_catasto'] > 0 && strpos($data[$cespite]['foglio_catasto'],$curDataValues['foglio_catasto']) === false) $data[$cespite]['foglio_catasto'].=",".$curDataValues['foglio_catasto'];
+                        if($data[$cespite]['foglio_catasto'] == "" && $curDataValues['foglio_catasto'] > 0) $data[$cespite]['foglio_catasto'] = $curDataValues['foglio_catasto'];
+    
+                        //merge particella
+                        if($data[$cespite]['particella_catasto'] != "" && $curDataValues['particella_catasto'] > 0 && strpos($data[$cespite]['particella_catasto'],$curDataValues['particella_catasto']) === false) $data[$cespite]['particella_catasto'].=",".$curDataValues['particella_catasto'];
+                        if($data[$cespite]['particella_catasto'] == "" && $curDataValues['particella_catasto'] > 0) $data[$cespite]['particella_catasto'] = $curDataValues['particella_catasto'];
+    
+                        //merge subalterno
+                        if($data[$cespite]['subalterno'] != "" && $curDataValues['subalterno'] > 0 && strpos($data[$cespite]['subalterno'],$curDataValues['subalterno']) === false) $data[$cespite]['subalterno'].=",".$curDataValues['subalterno'];
+                        if($data[$cespite]['subalterno'] == "" && $curDataValues['subalterno'] > 0) $data[$cespite]['subalterno'] = $curDataValues['subalterno'];
+    
+                    }
                 }
             }
             $curRowNum++;
@@ -2350,7 +2386,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         $sTaskLog.= $this->Template_GetPatrimonioAddNewMultiPreviewDlg()->toBase64();
         $sTaskLog.="</content>";
-                
+        $task->SetLog($sTaskLog);
+
         return true;
     }
     
