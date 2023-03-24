@@ -10855,6 +10855,9 @@ class AA_Object_V2
 
         $struct = $object->GetStruct();
 
+        //Imposta un nome di default se non ce l'ha
+        if($object->GetName() =="") $object->SetName("Nuovo oggetto da rinominare");
+
         $query .= " id_data='" . $object->GetIdData() . "'";
         $query .= ", id_data_rev='" . $object->GetIdDataRev() . "'";
         $query .= ", status='" . $object->GetStatus() . "'";

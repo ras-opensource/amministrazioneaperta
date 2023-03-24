@@ -1059,6 +1059,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //$wnd->EnableValidation();
 
         $columns=array(
+            array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"titolo_desc","header"=>array("<div style='text-align: center'>Titolo</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"cespite","header"=>array("<div style='text-align: center'>Cespite</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
@@ -2265,6 +2266,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //Parsing della posizione dei campi
         $fieldPos=array(
+            "nome"=>-1,
             "descrizione"=>-1,
             "codice_comune"=>-1,
             "sezione_catasto"=>-1,
@@ -2292,11 +2294,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
         //----------------------------------------
 
-        if($fieldPos['cespite'] ==-1 || $fieldPos['codice_comune'] ==-1 || $fieldPos['titolo'] ==-1 || $fieldPos['sezione_catasto'] ==-1)
+        if($fieldPos['nome']==-1 || $fieldPos['cespite'] ==-1 || $fieldPos['codice_comune'] ==-1 || $fieldPos['titolo'] ==-1 || $fieldPos['sezione_catasto'] ==-1)
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Non sono stati trovati tutti i campi relativi a: cespite,codice_comune,titolo,sezione_catasto. Verificare che il file csv sia strutturato correttamente e riprovare.</error>";
+            $sTaskLog.="</content><error id='error'>Non sono stati trovati tutti i campi relativi a: nome,cespite,codice_comune,titolo,sezione_catasto. Verificare che il file csv sia strutturato correttamente e riprovare.</error>";
             $task->SetLog($sTaskLog);
 
             return false;
@@ -2320,7 +2322,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                     {
                         if($pos>=0)
                         {
-                            $curDataValues[$fieldName]=$csvValues[$pos];
+                            $curDataValues[$fieldName]=trim($csvValues[$pos]);
                             if($fieldName=="titolo")
                             {
                                 $curDataValues["titolo_desc"]=$titolo_list[$csvValues[$pos]];
