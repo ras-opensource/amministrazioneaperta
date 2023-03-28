@@ -1,6 +1,6 @@
 /**
  * @license
- * webix UI v.9.2.1
+ * webix UI v.10.0.1
  * This software is allowed to use under GPL or you need to obtain Commercial License
  * to use it in non-GPL project. Please contact sales@webix.com for details
  */
@@ -12,33 +12,25 @@
 }(this, (function (exports) { 'use strict';
 
   function _typeof(obj) {
-    if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-      _typeof = function (obj) {
-        return typeof obj;
-      };
-    } else {
-      _typeof = function (obj) {
-        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-      };
-    }
+    "@babel/helpers - typeof";
 
-    return _typeof(obj);
+    return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
+      return typeof obj;
+    } : function (obj) {
+      return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    }, _typeof(obj);
   }
 
   function _slicedToArray(arr, i) {
-    return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
+    return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest();
   }
 
   function _toConsumableArray(arr) {
-    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
   }
 
   function _arrayWithoutHoles(arr) {
-    if (Array.isArray(arr)) {
-      for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-      return arr2;
-    }
+    if (Array.isArray(arr)) return _arrayLikeToArray(arr);
   }
 
   function _arrayWithHoles(arr) {
@@ -46,17 +38,21 @@
   }
 
   function _iterableToArray(iter) {
-    if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+    if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
   }
 
   function _iterableToArrayLimit(arr, i) {
+    var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"];
+
+    if (_i == null) return;
     var _arr = [];
     var _n = true;
     var _d = false;
-    var _e = undefined;
+
+    var _s, _e;
 
     try {
-      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+      for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
         _arr.push(_s.value);
 
         if (i && _arr.length === i) break;
@@ -75,12 +71,29 @@
     return _arr;
   }
 
+  function _unsupportedIterableToArray(o, minLen) {
+    if (!o) return;
+    if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+    var n = Object.prototype.toString.call(o).slice(8, -1);
+    if (n === "Object" && o.constructor) n = o.constructor.name;
+    if (n === "Map" || n === "Set") return Array.from(o);
+    if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+  }
+
+  function _arrayLikeToArray(arr, len) {
+    if (len == null || len > arr.length) len = arr.length;
+
+    for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+    return arr2;
+  }
+
   function _nonIterableSpread() {
-    throw new TypeError("Invalid attempt to spread non-iterable instance");
+    throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
   function _nonIterableRest() {
-    throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
   var global = window;
@@ -93,7 +106,7 @@
         isRunningTask = true;
 
         try {
-          queue[e.data]();
+          if (typeof queue[e.data] === "function") queue[e.data]();
         } catch (e) {// eslint-disable-line
         }
 
@@ -106,10 +119,10 @@
   function nextTick(fn) {
     if (global.setImmediate) global.setImmediate(fn); // if inside of web worker
     else if (global.importScripts || !global.addEventListener) setTimeout(fn);else {
-        queueId++;
-        queue[queueId] = fn;
-        global.postMessage(queueId, "*");
-      }
+      queueId++;
+      queue[queueId] = fn;
+      global.postMessage(queueId, "*");
+    }
   }
 
   Deferred.resolve = function (value) {
@@ -496,11 +509,11 @@
         if (isDate(from)) target[method] = new Date(from);
         /* jshint ignore:start */
         else if (esModern && (from instanceof Map || from instanceof Set || from instanceof WeakMap || from instanceof WeakSet)) target[method] = from;
-          /* jshint ignore:end */
-          else {
-              target[method] = isArray(from) ? [] : {};
-              copy(target[method], from);
-            }
+        /* jshint ignore:end */
+        else {
+          target[method] = isArray(from) ? [] : {};
+          copy(target[method], from);
+        }
       } else {
         target[method] = from;
       }
@@ -868,9 +881,9 @@
 
         try {
           if (typeof xml.selectNodes == "undefined") test = false;
-        } catch (e) {}
-        /*IE7 and below can't operate with xml object*/
-        //IE
+        } catch (e) {
+          /*IE7 and below can't operate with xml object*/
+        } //IE
 
 
         if (test) return xml.selectNodes(path);else {
@@ -1094,7 +1107,7 @@
             var value = params[a];
             if (value === null || value === undefined) value = "";
             if (_typeof(value) === "object") value = this.stringify(value);
-            t.push(a + "=" + encodeURIComponent(value)); // utf-8 escaping
+            t.push(encodeURIComponent(a) + "=" + encodeURIComponent(value)); // utf-8 escaping
           }
 
           params = t.join("&");
@@ -1744,10 +1757,13 @@
     return className;
   }
   function setSelectionRange(node, start, end) {
-    start = start || 0;
-    end = end || start;
     node.focus();
-    node.setSelectionRange(start, end);
+
+    if (node.setSelectionRange) {
+      start = start || 0;
+      end = end || start;
+      node.setSelectionRange(start, end);
+    }
   }
   function getSelectionRange(node) {
     return {
@@ -1881,15 +1897,43 @@
   env.scrollSize = 17;
   env.strict = !!window.webix_strict;
   env.https = document.location.protocol === "https:";
-  var agent = navigator.userAgent;
-  env.isMac = agent.indexOf("Mac") != -1;
-  if (/iPad|iPhone|iPod/.test(agent)) env.isIOS = true;
-  if (agent.indexOf("Android") != -1) env.isAndroid = true;
-  if (env.isIOS || env.isAndroid || agent.indexOf("Mobile") != -1 || agent.indexOf("Windows Phone") != -1) env.mobile = true;
-  if (env.mobile || navigator.maxTouchPoints > 1) env.touch = true;
-  env.fastClick = !env.touch; //very rough detection, but it is enough for current goals
+  var agent = navigator.userAgentData;
+  var deprecatedAgent = agent ? null : navigator.userAgent;
+  var browsers = {
+    Chromium: "Chrom",
+    //in userAgent - Chrome, in userAgentData.brands - Chromium
+    IE: "Trident",
+    Edge: "Edg",
+    // in userAgent - Edg, in userAgentData.brands - Microsoft Edge
+    FF: "Firefox",
+    Safari: "Safari"
+  };
 
-  if (agent.indexOf("Trident") !== -1) env.isIE = true;else if (agent.indexOf("Edge") !== -1) env.isEdge = true;else if (agent.indexOf("Firefox") !== -1) env.isFF = true;else if (agent.indexOf("Chrome") !== -1) env.isChromium = true;else if (agent.indexOf("Safari") !== -1) env.isSafari = true; //maximum height/width for HTML elements in pixels (rough), bigger values will be ignored by browser
+  var _loop = function (browser) {
+    var checkBrowser = agent ? agent.brands.find(function (v) {
+      return v.brand.indexOf(browsers[browser]) != -1;
+    }) : deprecatedAgent.indexOf(browsers[browser]) != -1;
+
+    if (checkBrowser) {
+      env["is" + browser] = true; //Edge is a chromium-based browser (so we set isChromium:true and isEdge:true)
+
+      if (browser != "Chromium") return "break";
+    }
+  };
+
+  for (var browser in browsers) {
+    var _ret = _loop(browser);
+
+    if (_ret === "break") break;
+  }
+
+  var platform = agent ? agent.platform : deprecatedAgent;
+  env.isMac = platform.toLowerCase().indexOf("mac") != -1;
+  if (/iPad|iPhone|iPod/.test(platform)) env.isIOS = true;
+  if (platform.indexOf("Android") != -1) env.isAndroid = true;
+  if (agent) env.mobile = agent.mobile;else if (env.isIOS || env.isAndroid || deprecatedAgent.indexOf("Mobile") != -1 || deprecatedAgent.indexOf("Windows Phone") != -1) env.mobile = true;
+  if (env.mobile || navigator.maxTouchPoints > 1) env.touch = true;
+  env.fastClick = !env.touch; //maximum height/width for HTML elements in pixels (rough), bigger values will be ignored by browser
 
   if (env.isIE || env.isEdge || env.isFF) env.maxHTMLElementSize = 10000000;
   if (env.isSafari) env.maxHTMLElementSize = 100000000;
@@ -2087,7 +2131,10 @@
           sheets: wb.Sheets,
           names: wb.SheetNames,
           options: options,
-          ranges: wb.Workbook ? wb.Workbook.Names || [] : []
+          ranges: wb.Workbook ? wb.Workbook.Names || [] : [],
+          states: wb.Workbook.Sheets.map(function (s) {
+            return ["visible", "hidden", "veryHidden"][s.Hidden];
+          })
         };
         return exports.extend(this.getSheet(res, options), res);
       }, this));
@@ -2284,11 +2331,11 @@
         result = url.load(this, details);
       } //promize
       else if (typeof url === "function") {
-          result = url.call(this, details);
-        } //normal url
-        else {
-            result = ajax().bind(this).get(url);
-          } //we wrap plain data in promise to keep the same processing for it
+        result = url.call(this, details);
+      } //normal url
+      else {
+        result = ajax().bind(this).get(url);
+      } //we wrap plain data in promise to keep the same processing for it
 
 
       if (result && !result.then) {
@@ -2344,7 +2391,7 @@
           record,
           driver = this.data.driver;
       record = driver.getRecords(data)[0];
-      parsed = record ? driver.getDetails(record) : {};
+      parsed = record ? copy(driver.getDetails(record)) : {};
       if (this.setValues) this.setValues(parsed, false, "auto");else this.data = parsed;
     },
     _onLoadContinue: function (data, clear) {
@@ -2788,7 +2835,8 @@
         this.scrollTo(x, y);
         this.callEvent("onAfterAutoScroll", []);
         var scroll = this.getScrollState();
-        return Math.abs((mode === "x" ? x : y) - scroll[mode]) < 1;
+        var diff = this._render_scroll_shift ? 0 : this._render_scroll_diff || 0;
+        return Math.abs((mode === "x" ? x : y) - scroll[mode] + diff) < 1;
       }
 
       return false;
@@ -2941,7 +2989,7 @@
       top_node = _view(config);
     }
 
-    if (body_child && !top_node.setPosition && !top_node.$apiOnly) use("_fixHeight")();
+    if (body_child && !top_node.setPosition && !top_node.$apiOnly) use("fixHeight")();
 
     if (top_node._settings && top_node._settings._hidden && !node.$view) {
       top_node._settings._container = node;
@@ -2998,15 +3046,15 @@
 
     if (multiset) views = target.getChildViews(); //replace content of window
     else if (target._body_cell) views = [target._body_cell]; //add cell in layout by number
-      else if (typeof id == "number") {
-          return id; //replace cell in layout by id
-        } else if (id) {
-          views = [$$(id)];
+    else if (typeof id == "number") {
+      return id; //replace cell in layout by id
+    } else if (id) {
+      views = [$$(id)];
 
-          _deleteIds(views);
+      _deleteIds(views);
 
-          return views[0].config.id;
-        }
+      return views[0].config.id;
+    }
 
     _deleteIds(views);
 
@@ -4099,9 +4147,17 @@
       "select": 1
     },
     _enable: function () {
+      var _this = this;
+
       // attaching events here
       event$1(document, "keydown", this._keypress, {
         bind: this
+      });
+      event$1(document, "compositionstart", function () {
+        return _this._startComposition();
+      });
+      event$1(document, "compositionend", function () {
+        return _this._endComposition();
       });
       event$1(document.body, "click", this._focus_click, {
         capture: true,
@@ -4113,6 +4169,18 @@
       });
       state.destructors.push({
         obj: this
+      });
+    },
+    _startComposition: function () {
+      clearTimeout(this._composition);
+      this._composition = true;
+    },
+    _endComposition: function () {
+      var _this2 = this;
+
+      //in some browsers compositionEnd fires before the keyDown event
+      this._composition = delay(function () {
+        return delete _this2._composition;
       });
     },
     destructor: function () {
@@ -4200,10 +4268,19 @@
     _top_modal: function (view) {
       var modality = state._modality;
       if (!modality.length) return true;
-      var top = view.queryView(function (a) {
-        return !a.getParentView();
-      }, "parent") || view;
+
+      var top = this._getTop(view);
+
       return (top.$view.style.zIndex || 0) >= Math.max.apply(Math, _toConsumableArray(modality));
+    },
+    _getTop: function (view) {
+      var top = view.queryView(function (view) {
+        return !view.getParentView();
+      }, "parent") || view;
+      var insideContainer = $$(top.$view.parentNode); //container inside view (like filter in query view list)
+
+      if (insideContainer) top = this._getTop(insideContainer);
+      return top;
     },
     canFocus: function (view) {
       if (document.body.modality || view.$view.modality || view.queryView(function (view) {
@@ -4473,6 +4550,7 @@
     UIManager._enable();
 
     UIManager.addHotKey("enter", function (view, ev) {
+      if (UIManager._composition) return false;
       if (view && view.callEvent) view.callEvent("onEnter", [ev]);
 
       if (view && view.editStop && view._in_edit_mode) {
@@ -4494,6 +4572,11 @@
 
         if (top && top.setPosition) {
           if (fullscreen._fullscreen == top) fullscreen.exit();
+
+          if (top._editorMaster) {
+            var master = $$(top._editorMaster);
+            if (master.editCancel && master._in_edit_mode) master.editCancel();
+          }
 
           top._hide();
         }
@@ -5004,15 +5087,14 @@
     disable: function () {
       remove(this._disable_cover);
       this._settings.disabled = true;
+      var container = this._viewobj;
       this._disable_cover = create("div", {
-        "class": "webix_disabled"
+        "class": "webix_disabled",
+        "style": "left:".concat(container.scrollLeft, "px; top:").concat(container.scrollTop, "px;")
       });
-
-      this._viewobj.appendChild(this._disable_cover);
-
-      this._viewobj.setAttribute("aria-disabled", "true");
-
-      addCss(this._viewobj, "webix_disabled_view", true);
+      container.appendChild(this._disable_cover);
+      container.setAttribute("aria-disabled", "true");
+      addCss(container, "webix_disabled_view", true);
 
       UIManager._moveChildFocus(this);
     },
@@ -5536,12 +5618,33 @@
       var text = this.renderText.call(this, x, y, t, c, w);
 
       if (text) {
+        var size;
+        if (document.body.contains(text)) size = {
+          width: text.offsetWidth,
+          height: text.offsetHeight
+        };else {
+          // inside window
+          var d = create("DIV", {
+            "class": "webix_chart",
+            style: "visibility:hidden; position:absolute; top:0px; left:0px;"
+          }, "");
+          var parentNode = text.parentNode;
+          document.body.appendChild(d);
+          d.appendChild(text);
+          size = {
+            width: text.offsetWidth,
+            height: text.offsetHeight
+          };
+          parentNode.appendChild(text);
+          remove(d);
+        }
+
         if (valign) {
-          if (valign == "middle") text.style.top = parseInt(y - text.offsetHeight / 2, 10) + "px";else text.style.top = y - text.offsetHeight + "px";
+          if (valign == "middle") text.style.top = parseInt(y - size.height / 2, 10) + "px";else text.style.top = y - size.height + "px";
         }
 
         if (align) {
-          if (align == "left") text.style.left = x - text.offsetWidth + "px";else text.style.left = parseInt(x - text.offsetWidth / 2, 10) + "px";
+          if (align == "left") text.style.left = x - size.width + "px";else text.style.left = parseInt(x - size.width / 2, 10) + "px";
         }
       }
 
@@ -5875,7 +5978,7 @@
     sliderBorder: 1,
     vSliderPadding: 15,
     vSliderHeight: 100,
-    switchHeight: 22,
+    switchHeight: 24,
     switchWidth: 50,
     //margin - distance between cells
     layoutMargin: {
@@ -5917,7 +6020,8 @@
     accordionType: "accordion",
     optionHeight: 32,
     timelineColor: "#1CA1C1",
-    backColor: "#ffffff",
+    backColor: "#FFFFFF",
+    dataBorderColor: "#EDEFF0",
     //colorboard
     colorPadding: 4
   };
@@ -5948,7 +6052,7 @@
     sliderBorder: 1,
     vSliderPadding: 13,
     vSliderHeight: 100,
-    switchHeight: 20,
+    switchHeight: 22,
     switchWidth: 40,
     //margin - distance between cells
     layoutMargin: {
@@ -5990,7 +6094,8 @@
     accordionType: "accordion",
     optionHeight: 24,
     timelineColor: "#1CA1C1",
-    backColor: "#ffffff",
+    backColor: "#FFFFFF",
+    dataBorderColor: "#EDEFF0",
     //colorboard
     colorPadding: 4
   };
@@ -6060,6 +6165,7 @@
     optionHeight: 32,
     timelineColor: "#3498db",
     backColor: "#ffffff",
+    dataBorderColor: "#ebebeb",
     //colorboard
     colorPadding: 4
   };
@@ -6129,6 +6235,7 @@
     optionHeight: 23,
     timelineColor: "#3498db",
     backColor: "#ffffff",
+    dataBorderColor: "#ebebeb",
     //colorboard
     colorPadding: 4
   };
@@ -6198,16 +6305,165 @@
     optionHeight: 32,
     timelineColor: "#b300b3",
     backColor: "#393939",
+    dataBorderColor: "#4d4d4d",
+    //colorboard
+    colorPadding: 4
+  };
+
+  var skin$5 = {
+    topLayout: "space",
+    //bar in accordion
+    barHeight: 46,
+    //!!!Set the same in skin.less!!!
+    tabbarHeight: 44,
+    sidebarTitleHeight: 46,
+    rowHeight: 36,
+    toolbarHeight: 46,
+    listItemHeight: 36,
+    //list, grouplist, dataview, etc.
+    inputHeight: 38,
+    buttonHeight: 38,
+    inputPadding: 3,
+    menuHeight: 36,
+    labelTopHeight: 22,
+    propertyItemHeight: 28,
+    timelineItemHeight: 64,
+    unitHeaderHeight: 36,
+    inputSpacing: 4,
+    borderWidth: 1,
+    sliderHandleWidth: 14,
+    sliderPadding: 10,
+    sliderBorder: 1,
+    vSliderPadding: 15,
+    vSliderHeight: 100,
+    switchHeight: 24,
+    switchWidth: 50,
+    //margin - distance between cells
+    layoutMargin: {
+      space: 10,
+      wide: 10,
+      clean: 0,
+      head: 4,
+      line: -1,
+      toolbar: 4,
+      form: 8,
+      accordion: 2
+    },
+    //padding - distance inside cell between cell border and cell content
+    layoutPadding: {
+      space: 10,
+      wide: 0,
+      clean: 0,
+      head: 0,
+      line: 0,
+      toolbar: 3,
+      form: 17,
+      accordion: 0
+    },
+    //space between tabs in tabbar
+    tabMargin: 0,
+    tabOffset: 0,
+    tabBottomOffset: 0,
+    tabTopOffset: 0,
+    tabBorder: true,
+    customCheckbox: true,
+    customRadio: true,
+    sidebarMarkAll: true,
+    popupNoPoint: true,
+    borderlessPopup: true,
+    popupPadding: 0,
+    dataPadding: 12,
+    calendarWeekHeaderHeight: 18,
+    padding: 0,
+    accordionType: "accordion",
+    optionHeight: 32,
+    timelineColor: "#37A9EF",
+    backColor: "#FFFFFF",
+    dataBorderColor: "#E6E6E6",
+    //colorboard
+    colorPadding: 4
+  };
+
+  var skin$6 = {
+    topLayout: "space",
+    //bar in accordion
+    barHeight: 46,
+    //!!!Set the same in skin.less!!!
+    tabbarHeight: 44,
+    sidebarTitleHeight: 46,
+    rowHeight: 36,
+    toolbarHeight: 46,
+    listItemHeight: 36,
+    //list, grouplist, dataview, etc.
+    inputHeight: 38,
+    buttonHeight: 38,
+    inputPadding: 3,
+    menuHeight: 36,
+    labelTopHeight: 22,
+    propertyItemHeight: 28,
+    timelineItemHeight: 64,
+    unitHeaderHeight: 36,
+    inputSpacing: 4,
+    borderWidth: 1,
+    sliderHandleWidth: 14,
+    sliderPadding: 10,
+    sliderBorder: 1,
+    vSliderPadding: 15,
+    vSliderHeight: 100,
+    switchHeight: 24,
+    switchWidth: 50,
+    //margin - distance between cells
+    layoutMargin: {
+      space: 10,
+      wide: 10,
+      clean: 0,
+      head: 4,
+      line: -1,
+      toolbar: 4,
+      form: 8,
+      accordion: 2
+    },
+    //padding - distance inside cell between cell border and cell content
+    layoutPadding: {
+      space: 10,
+      wide: 0,
+      clean: 0,
+      head: 0,
+      line: 0,
+      toolbar: 3,
+      form: 17,
+      accordion: 0
+    },
+    //space between tabs in tabbar
+    tabMargin: 0,
+    tabOffset: 0,
+    tabBottomOffset: 0,
+    tabTopOffset: 0,
+    tabBorder: true,
+    customCheckbox: true,
+    customRadio: true,
+    sidebarMarkAll: true,
+    popupNoPoint: true,
+    borderlessPopup: false,
+    popupPadding: 0,
+    dataPadding: 12,
+    calendarWeekHeaderHeight: 18,
+    padding: 0,
+    accordionType: "accordion",
+    optionHeight: 32,
+    timelineColor: "#7A67EB",
+    backColor: "#2A2B2D",
+    dataBorderColor: "#384047",
     //colorboard
     colorPadding: 4
   };
 
   var $active, $name;
   function set$1(name) {
-    assert(skin$5[name], "Incorrect skin name: " + name);
+    assert(skin$7[name], "Incorrect skin name: " + name);
     if ($name === name) return;
-    skin$5.$active = $active = skin$5[name];
-    skin$5.$name = $name = name;
+    skin$7.$active = $active = skin$7[name];
+    skin$7.$name = $name = name;
 
     if (ui) {
       for (var key in ui) {
@@ -6216,13 +6472,15 @@
       }
     }
   }
-  var skin$5 = {
+  var skin$7 = {
     set: set$1,
     material: skin,
     mini: skin$1,
     flat: skin$2,
     compact: skin$3,
-    contrast: skin$4
+    contrast: skin$4,
+    willow: skin$5,
+    dark: skin$6
   };
   set$1(window.webix_skin || "material"); //necessary for skin builder
 
@@ -6802,8 +7060,10 @@
     },
     //mouse was moved without button released - dnd started, update event handlers
     _startDrag: function (e, pointer) {
-      // check touch scroll animation
-      var touch = pointer === "touch";
+      var touch = pointer === "touch"; // mouse: allow dnd only on left click
+
+      if (!touch && DragControl._saved_event.button) return; // check touch scroll animation
+
       DragControl._touch_animation = !e.cancelable;
 
       if (touch && DragControl._touch_animation) {
@@ -7713,7 +7973,12 @@
 
           this._settings.position.call(this, _state);
 
-          if (_state.width != width || _state.height != height) this.$setSize(_state.width, _state.height);
+          if (_state.width != width || _state.height != height) {
+            this._settings.width = _state.width;
+            this._settings.height = _state.height;
+            this.$setSize(_state.width, _state.height);
+          }
+
           this.setPosition(_state.left, _state.top);
         } else {
           if (this._settings.position == "top") {
@@ -9586,6 +9851,7 @@
     		dir - "asc" or "desc"
     		as - type of sortings
     		Sorting function will accept 2 parameters and must return 1,0,-1, based on desired order
+    		returns true if sorting was successful, false otherwise
     */
     sort: function (by, dir, as) {
       var _this = this;
@@ -9603,13 +9869,14 @@
         parameters = [sort.by, sort.dir, sort.as, sort];
       }
 
-      if (!this.callEvent("onBeforeSort", parameters)) return;
+      if (!this.callEvent("onBeforeSort", parameters)) return false;
       var sorter = this.sorting.create(sort);
       this.order = this._sort_core(sorter, this.order);
       if (this._filter_order) this._filter_order = this._sort_core(sorter, this._filter_order); //repaint self
 
       this.refresh();
       this.callEvent("onAfterSort", parameters);
+      return true;
     },
     _sort_init: function (by, dir, as) {
       var sort = by;
@@ -9896,6 +10163,20 @@
           b = b.toString().toLowerCase();
           return a > b ? 1 : a < b ? -1 : 0;
         },
+        "string_locale_strict": function (a, b) {
+          if (!b) return 1;
+          if (!a) return -1;
+          a = a.toString();
+          b = b.toString();
+          return a.localeCompare(b, i18n.locale);
+        },
+        "string_locale": function (a, b) {
+          if (!b) return 1;
+          if (!a) return -1;
+          a = a.toString().toLowerCase();
+          b = b.toString().toLowerCase();
+          return a.localeCompare(b, i18n.locale);
+        },
         "raw": function (a, b) {
           return a > b ? 1 : a < b ? -1 : 0;
         }
@@ -9918,11 +10199,16 @@
         };
       },
       _by: function (prop, method) {
-        if (!prop) return method;
-        if (typeof method != "function") method = this.as[method || "string"];
+        var customMethod;
+        if (typeof method != "function") method = this.as[method || "string"];else customMethod = true;
         assert(method, "Invalid sorting method");
         return function (a, b) {
-          return method(a[prop], b[prop]);
+          if (!customMethod) {
+            a = a[prop];
+            b = b[prop];
+          }
+
+          return method(a, b, prop);
         };
       },
       _dir: function (prop, method) {
@@ -10134,17 +10420,17 @@
             result = this._fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + urldata, this._settings.datatype);
           } //js data feed
           else {
-              var filter = {};
-              filter[text] = filtervalue;
+            var filter = {};
+            filter[text] = filtervalue;
 
-              if (typeof url == "function") {
-                result = url.call(this, filtervalue, filter);
-              } else if (url.$proxy && url.load) {
-                result = url.load(this, {
-                  filter: filter
-                });
-              }
+            if (typeof url == "function") {
+              result = url.call(this, filtervalue, filter);
+            } else if (url.$proxy && url.load) {
+              result = url.load(this, {
+                filter: filter
+              });
             }
+          }
 
           if (result) {
             if (!result.then) result = Deferred.resolve(result);
@@ -10826,7 +11112,8 @@
           data: data
         });
 
-        if (this._undoHistory.length == 20) this._undoHistory.splice(0, 1);
+        var undoLimit = this._settings.undoLimit || 20;
+        if (this._undoHistory.length > undoLimit) this._undoHistory.splice(0, 1);
         if (!this._skipCursorInc) this._undoCursor = this._undoHistory.length - 1;
       }
     },
@@ -10935,7 +11222,7 @@
       suggest._editor_initialized = true;
       suggest.attachEvent("onValueSuggest", function () {
         delay(function () {
-          callEvent("onEditEnd", []);
+          return callEvent("onEditEnd", []);
         });
       });
     }
@@ -11097,8 +11384,9 @@
         return this.getPopup().getChildViews()[0];
       },
       getPopup: function () {
-        if (!this.config.$popup) this.config.$popup = this.createPopup();
-        return $$(this.config.$popup);
+        var id = this.config.$popup;
+        if (!(id && $$(id))) id = this.config.$popup = this.createPopup();
+        return $$(id);
       },
       createPopup: function () {
         var popup = this.config.popup || this.config.suggest;
@@ -11121,38 +11409,38 @@
           return pobj;
         }
 
-        var type = editors.$popup[this.popupType];
+        var editor = editors.$popup[this.popupType];
+        var popupId = editor.$popup;
 
-        if (typeof type != "string" && !type.name) {
-          type = editors.$popup[this.popupType] = ui(type);
-          this.popupInit(type);
-          if (!type.linkInput) this.linkInput(document.body);
+        if (!(popupId && $$(popupId))) {
+          var _popup = ui(copy(editor));
+
+          if (!_popup.linkInput && !popupId) this.linkInput(document.body);
+          editor.$popup = popupId = _popup._settings.id;
+          this.popupInit(_popup);
         }
 
-        return type._settings.id;
+        return popupId;
       },
       linkInput: function (node) {
-        _event(toNode(node), "keydown", bind(function (e) {
+        var _this = this;
+
+        _event(toNode(node), "keydown", function (e) {
           //abort, when editor was not initialized yet
-          if (!this.config.$popup) return;
+          if (!_this.config.$popup) return;
+
           var code = e.which || e.keyCode,
-              list = this.getInputNode();
+              list = _this.getInputNode();
+
           if (!list.isVisible()) return;
 
           if (list.moveSelection && code < 41 && code > 32) {
             var dir;
-            if (code == 33) dir = "pgup";
-            if (code == 34) dir = "pgdown";
-            if (code == 35) dir = "bottom";
-            if (code == 36) dir = "top";
-            if (code == 37) dir = "left";
-            if (code == 38) dir = "up";
-            if (code == 39) dir = "right";
-            if (code == 40) dir = "down";
+            if (code == 33) dir = "pgup";else if (code == 34) dir = "pgdown";else if (code == 35) dir = "bottom";else if (code == 36) dir = "top";else if (code == 37) dir = "left";else if (code == 38) dir = "up";else if (code == 39) dir = "right";else if (code == 40) dir = "down";
             list.moveSelection(dir);
           } // shift+enter support for 'popup' editor
           else if (code === 13 && (e.target.nodeName !== "TEXTAREA" || !e.shiftKey)) callEvent("onEditEnd", []);
-        }, this));
+        });
       },
       popupInit: function () {},
       popupType: "text",
@@ -11204,9 +11492,12 @@
     },
     _shared_suggest: function () {
       var e = editors.combo;
-      return e._suggest = e._suggest || this._create_suggest(true);
+      if (e._suggest && $$(e._suggest)) return e._suggest;
+      return e._suggest = this._create_suggest(true);
     },
     render: function () {
+      var _this2 = this;
+
       var node = create("div", {
         "class": "webix_dt_editor"
       }, "<input type='text' role='combobox' aria-label='" + getLabel(this.config) + "'>"); //save suggest id for future reference		
@@ -11216,7 +11507,9 @@
       if (suggest) {
         $$(suggest).linkInput(node.firstChild, true);
 
-        _event(node.firstChild, "click", bind(this.showPopup, this));
+        _event(node.firstChild, "click", function () {
+          return _this2.showPopup();
+        });
       }
 
       return node;
@@ -11294,7 +11587,7 @@
   }, editors.popup);
   editors.password = exports.extend({
     render: function () {
-      var _this = this;
+      var _this3 = this;
 
       var node = create("div", {
         "class": "webix_dt_editor webix_password_editor"
@@ -11302,9 +11595,9 @@
       var icon = node.querySelector(".webix_icon");
 
       _event(icon, "click", function () {
-        _this.toggleInput();
+        _this3.toggleInput();
 
-        _this.getInputNode(_this.node).focus();
+        _this3.getInputNode(_this3.node).focus();
       });
 
       return node;
@@ -11545,8 +11838,9 @@
       type.setValue(value, item);
       type.value = value;
 
-      this._addEditor(id, type); //show it over cell
+      this._addEditor(id, type);
 
+      if (type.getPopup) type.getPopup()._editorMaster = this._settings.id; //show it over cell
 
       if (show !== false) this.showItem(id);
       if (!type.$inline) this._sizeToCell(id, node, true);
@@ -12307,11 +12601,11 @@
       if (index$$1 !== -1) {
         var options = this._settings.options;
 
-        _power_array.removeAt.call(options, index$$1);
+        _power_array.removeAt.call(options, index$$1); // if we remove a selected option
 
-        this.refresh(); // if we remove a selected option
 
         if (this._settings.value == id) this._setNextVisible(options, index$$1);
+        this.refresh();
         this.callEvent("onOptionRemove", [id, this._settings.value]);
       }
     },
@@ -12406,21 +12700,47 @@
         points: coords
       });
     },
-    addSector: function (id, alpha0, alpha1, x, y, R, ky, userdata) {
+    addSector: function (id, alpha0, alpha1, x, y, r, ky, userdata, dr, height) {
       var points = [];
-      points.push(x);
-      points.push(Math.floor(y * ky));
+      if (dr) points = points.concat(this._getArcPoints(x, y, dr, alpha1, alpha0, ky, -1));else {
+        points.push(x);
+        points.push(Math.floor(y));
+      }
+      if (!height) points = points.concat(this._getArcPoints(x, y, r, alpha0, alpha1, ky));else {
+        if (alpha0 < 0 && alpha1 >= 0) {
+          points = points.concat(this._getArcPoints(x, y, r, alpha0, 0, ky));
+          points = points.concat(this._getArcPoints(x, y + height, r, 0, alpha1, ky));
+          points = points.concat(this._getPointByAngle(x, y, r, alpha1, ky));
+        } else if (alpha0 < Math.PI && alpha1 >= Math.PI) {
+          points = points.concat(this._getPointByAngle(x, y, r, alpha0, ky));
+          points = points.concat(this._getArcPoints(x, y + height, r, alpha0, Math.PI, ky));
+          points = points.concat(this._getArcPoints(x, y, r, Math.PI, alpha1, ky));
+        } else {
+          points = points.concat(this._getPointByAngle(x, y, r, alpha0, ky));
+          points = points.concat(this._getArcPoints(x, y + height, r, alpha0, alpha1, ky));
+          points = points.concat(this._getPointByAngle(x, y, r, alpha1, ky));
+        }
+      }
+      points.push(points[0]);
+      points.push(points[1]);
+      return this.addPoly(id, points, userdata);
+    },
+    _getArcPoints: function (x, y, r, a0, a1, ky, dir) {
+      var points = [];
+      dir = dir || 1;
 
-      for (var i = alpha0; i < alpha1; i += Math.PI / 18) {
-        points.push(Math.floor(x + R * Math.cos(i)));
-        points.push(Math.floor((y + R * Math.sin(i)) * ky));
+      for (var i = a0; dir > 0 && i < a1 || dir < 0 && i > a1; i += dir * Math.PI / 18) {
+        points = points.concat(this._getPointByAngle(x, y, r, i, ky));
       }
 
-      points.push(Math.floor(x + R * Math.cos(alpha1)));
-      points.push(Math.floor((y + R * Math.sin(alpha1)) * ky));
-      points.push(x);
-      points.push(Math.floor(y * ky));
-      return this.addPoly(id, points, userdata);
+      points = points.concat(this._getPointByAngle(x, y, r, a1, ky));
+      return points;
+    },
+    _getPointByAngle: function (x, y, r, a, ky) {
+      var point = [];
+      point.push(Math.floor(x + r * Math.cos(a)));
+      point.push(Math.floor(y + r * Math.sin(a) * ky));
+      return point;
     },
     hide: function (obj, data, mode) {
       if (obj.querySelectorAll) {
@@ -12451,8 +12771,7 @@
       var d = create("DIV");
       d.style.cssText = "position:absolute; width:100%; height:100%; top:0px; left:0px;";
       obj.appendChild(d);
-      var src = env.isIE ? "" : "src='data:image/gif;base64,R0lGODlhEgASAIAAAP///////yH5BAUUAAEALAAAAAASABIAAAIPjI+py+0Po5y02ouz3pwXADs='";
-      d.innerHTML = "<map id='" + this._id + "' name='" + this._id + "'>" + this._map.join("\n") + "</map><img " + src + " class='webix_map_img' usemap='#" + this._id + "'>";
+      d.innerHTML = "\n\t\t\t<map id=\"".concat(this._id, "\" name=\"").concat(this._id, "\">").concat(this._map.join("\n"), "</map>\n\t\t\t<img class=\"webix_map_img\" usemap=\"#").concat(this._id, "\">");
       obj._htmlmap = d; //for clearing routine
 
       this._map = [];
@@ -13674,7 +13993,11 @@
         if (this.loadBranch) {
           //hierarchy, need to check all
           this._select_check();
-        } else this._selected.remove(id);
+        } else {
+          this._selected.remove(id);
+
+          this.callEvent("onSelectChange", [this._selected]);
+        }
       } else if (!id && !this.data.count() && !this.data._filter_order && !this.data._filter_branch) {
         //remove selection for clearAll
         this._selected = _to_array();
@@ -13686,9 +14009,17 @@
       }, this);
     },
     _select_check: function () {
+      var selectionChanged;
+
       for (var i = this._selected.length - 1; i >= 0; i--) {
-        if (!this.exists(this._selected[i])) this._selected.splice(i, 1);
+        if (!this.exists(this._selected[i])) {
+          selectionChanged = true;
+
+          this._selected.splice(i, 1);
+        }
       }
+
+      if (selectionChanged) this.callEvent("onSelectChange", [this._selected]);
     },
     //helper - changes state of selection for some item
     _select_mark: function (id, state$$1, refresh, need_unselect) {
@@ -13704,12 +14035,12 @@
       if (state$$1) this.addCss(id, "webix_selected", true);else this.removeCss(id, "webix_selected", true);
       if (refresh) refresh.push(id); //if we in the mass-select mode - collect all changed IDs
       else {
-          if (state$$1) this._selected.push(id); //then add to list of selected items
-          else this._selected.remove(id);
+        if (state$$1) this._selected.push(id); //then add to list of selected items
+        else this._selected.remove(id);
 
-          this._refresh_selection(id); //othervise trigger repainting
+        this._refresh_selection(id); //othervise trigger repainting
 
-        }
+      }
       var ename = state$$1 ? "onAfterSelect" : "onAfterUnSelect";
       this.callEvent(ename, [id]);
       return true;
@@ -13830,9 +14161,9 @@
 
       if (this._is_mass_selection(refresh)) this.data.refresh(); //many items was selected - repaint whole view
       else for (var i = 0; i < refresh.length; i++) {
-          //repaint only selected
-          this.render(refresh[i], this.data.getItem(refresh[i]), "update");
-        }
+        //repaint only selected
+        this.render(refresh[i], this.data.getItem(refresh[i]), "update");
+      }
       if (!this._silent_selection) this.callEvent("onSelectChange", [refresh]);
     }
   };
@@ -13888,14 +14219,25 @@
         r = rgbArr[0];
         g = rgbArr[1];
         b = rgbArr[2];
-      } else {
-        if (rgb.substr(0, 1) == "#") {
-          rgb = rgb.substr(1);
-        }
-
+      } else if (rgb.substr(0, 1) == "#") {
+        rgb = rgb.substr(1);
         r = this.hexToDec(rgb.substr(0, 2));
         g = this.hexToDec(rgb.substr(2, 2));
         b = this.hexToDec(rgb.substr(4, 2));
+      } else {
+        var div = create("div", {
+          style: "color:".concat(rgb)
+        });
+        document.body.appendChild(div);
+        var _color = window.getComputedStyle(div).color; //getComputedStyle returns color as rgb/rgba
+
+        remove(div);
+
+        var arr = _color.slice(_color.indexOf("(") + 1, _color.indexOf(")")).split(", ");
+
+        r = arr[0];
+        g = arr[1];
+        b = arr[2];
       }
 
       r = parseInt(r, 10) || 0;
@@ -14337,44 +14679,47 @@
   }
 
   Bar.prototype.draw = function (data, width, height) {
-    var i,
-        css,
-        p,
-        y,
-        padding,
-        config = this.config,
-        graph = "",
-        items = [],
-        points = this.getPoints(data, width, height),
-        renderer = SVG; // draw bars
+    var graph = "";
+    var config = this.config;
+    var renderer = SVG;
+    var horizontal = config.horizontal;
+    var items = [];
+    var origin = parseInt(this._getOrigin(data, width, height), 10) + 0.5;
+    var points = this.getPoints(data, width, height, origin); // draw bars
 
-    for (i = 0; i < points.length; i++) {
+    for (var i = 0; i < points.length; i++) {
+      var css = void 0;
       css = typeof config.itemCss == "function" ? config.itemCss.call(this, data[i]) : config.itemCss || "";
       if (config.negativeColor && data[i] < config.origin) css += " " + this._applyColor(renderer, config.negativeColor);else if (config.color) css += " " + this._applyColor(renderer, config.color);
-      p = points[i];
+      var p = points[i];
       items.push(renderer.getRect(p.x, p.y, p.width, p.height, "webix_sparklines_bar " + css));
     }
 
-    graph += renderer.group(items.join("")); // origin)
+    graph += renderer.group(items.join("")); // origin
 
-    y = parseInt(this._getOrigin(data, width, height), 10) + 0.5;
-    padding = config.paddingX || 0;
-    graph += renderer.group(renderer.getLine({
+    var padding = horizontal ? config.paddingY : config.paddingX;
+    if (horizontal) graph += renderer.group(renderer.getLine({
+      x: origin,
+      y: padding
+    }, {
+      x: origin,
+      y: height - padding
+    }, "webix_sparklines_origin"));else graph += renderer.group(renderer.getLine({
       x: padding,
-      y: y
+      y: origin
     }, {
       x: width - padding,
-      y: y
+      y: origin
     }, "webix_sparklines_origin")); // event areas
 
-    var evPoints = this._getEventPoints(data, width, height);
+    var evPoints = this._getEventPoints(data, width, height, origin);
 
     var evItems = [];
 
-    for (i = 0; i < evPoints.length; i++) {
-      p = evPoints[i];
-      evItems.push(renderer.getRect(p.x, p.y, p.width, p.height, "webix_sparklines_event_area ", {
-        "webix_area": i
+    for (var _i = 0; _i < evPoints.length; _i++) {
+      var _p = evPoints[_i];
+      evItems.push(renderer.getRect(_p.x, _p.y, _p.width, _p.height, "webix_sparklines_event_area ", {
+        "webix_area": _i
       }));
     }
 
@@ -14391,20 +14736,24 @@
 
   Bar.prototype._getOrigin = function (data, width, height) {
     var config = this.config;
-    var y = config.paddingY || 0;
-    height = (height || 100) - y * 2;
-    var pos$$1 = y + height;
+    var horizontal = config.horizontal;
+    var padding = horizontal ? config.paddingX : config.paddingY;
+    var size = ((horizontal ? width : height) || 100) - padding * 2;
+    var pos$$1;
+    if (horizontal) pos$$1 = padding;else {
+      pos$$1 = padding + size;
+    }
 
     if (config.origin !== false) {
-      var minValue = Math.min.apply(null, data);
-      var maxValue = Math.max.apply(null, data);
+      var minValue = Math.min.apply(Math, _toConsumableArray(data));
+      var maxValue = Math.max.apply(Math, _toConsumableArray(data));
       var origin = config.origin || -0.000001;
 
       if (origin >= maxValue) {
-        pos$$1 = y;
+        pos$$1 = padding;
       } else if (origin > minValue) {
-        var unitY = height / (maxValue - minValue);
-        pos$$1 -= unitY * (origin - minValue);
+        var unit = size / (maxValue - minValue);
+        pos$$1 += (horizontal ? 1 : -1) * unit * (origin - minValue);
       }
     }
 
@@ -14413,20 +14762,26 @@
 
   Bar.prototype._getEventPoints = function (data, width, height) {
     var result = [];
-    var x = this.config.paddingX || 0;
-    var y = this.config.paddingY || 0;
+    var horizontal = this.config.horizontal;
+    var x = this.config.paddingX;
+    var y = this.config.paddingY;
     width = (width || 100) - x * 2;
     height = (height || 100) - y * 2;
 
     if (data.length) {
-      var unitX = width / data.length;
+      var unit = (horizontal ? height : width) / data.length;
 
       for (var i = 0; i < data.length; i++) {
-        result.push({
-          x: Math.ceil(unitX * i) + x,
+        if (horizontal) result.push({
+          x: x,
+          y: Math.ceil(unit * i) + y,
+          height: unit,
+          width: width
+        });else result.push({
+          x: Math.ceil(unit * i) + x,
           y: y,
           height: height,
-          width: unitX
+          width: unit
         });
       }
     }
@@ -14434,38 +14789,41 @@
     return result;
   };
 
-  Bar.prototype.getPoints = function (data, width, height) {
+  Bar.prototype.getPoints = function (data, width, height, originPos) {
     var config = this.config;
-    var minValue = Math.min.apply(null, data);
+    var horizontal = config.horizontal;
+    var minValue = Math.min.apply(Math, _toConsumableArray(data));
     if (config.origin < minValue) minValue = config.origin;
-    var maxValue = Math.max.apply(null, data);
+    var maxValue = Math.max.apply(Math, _toConsumableArray(data));
     var result = [];
     var x = config.paddingX;
     var y = config.paddingY;
     var margin = config.margin;
     var barWidth = config.width || 20;
-
-    var originY = this._getOrigin(data, width, height);
-
     width = (width || 100) - x * 2;
     height = (height || 100) - y * 2;
 
     if (data.length) {
-      var unitX = width / data.length;
-      var yNum = config.scale || maxValue - minValue;
-      barWidth = Math.min(unitX - margin, barWidth);
-      margin = unitX - barWidth;
-      var minHeight = 0;
+      var unit = (horizontal ? height : width) / data.length;
+      var scale = config.scale || maxValue - minValue;
+      barWidth = Math.min(unit - margin, barWidth);
+      margin = unit - barWidth;
       var origin = minValue;
-      if (config.origin !== false && config.origin > minValue) origin = config.origin || 0;else minHeight = config.minHeight;
-      var unitY = (height - minHeight) / (yNum ? yNum : 1);
+      if (config.origin !== false && config.origin > minValue) origin = config.origin || 0;
+      var itemHeight = (horizontal ? width : height) / (scale || 1);
 
       for (var i = 0; i < data.length; i++) {
-        var h = Math.ceil(unitY * (data[i] - origin));
-        result.push({
-          x: Math.ceil(unitX * i) + x + margin / 2,
-          y: originY - (data[i] >= origin ? h : 0) - minHeight,
-          height: Math.abs(h) + minHeight,
+        var h = Math.abs(Math.ceil(itemHeight * (data[i] - origin)));
+        if (data[i] && h < config.minHeight) h += config.minHeight;
+        if (horizontal) result.push({
+          x: originPos - (data[i] >= origin ? 0 : h),
+          y: Math.ceil(unit * i) + y + margin / 2,
+          height: barWidth,
+          width: h
+        });else result.push({
+          x: Math.ceil(unit * i) + x + margin / 2,
+          y: originPos - (data[i] >= origin ? h : 0),
+          height: h,
           width: barWidth
         });
       }
@@ -14479,7 +14837,7 @@
   };
 
   function Pie(config) {
-    this.config = exports.extend(defaults$3, config || {}, true);
+    this.config = exports.extend(copy(defaults$3), config || {}, true);
   }
 
   Pie.prototype._defColorsCursor = 0;
@@ -14544,6 +14902,10 @@
     }
 
     graph += renderer.group(sectors);
+    if (config.donut) graph += SVG.getCircle({
+      x: x0,
+      y: y0
+    }, config.innerRadius || r * 0.5, "webix_sparklines_donut_hole");
     return renderer.draw(graph, width, height, "webix_sparklines_pie_chart" + (config.css ? " " + config.css : ""));
   };
 
@@ -14767,13 +15129,11 @@
       "area": {},
       "line": {},
       "item": {}
-    },
-        map = renderer.styleMap;
+    };
+    var map = renderer.styleMap;
 
     if (color) {
-      config.area[map.color] = renderer.setOpacity(color, 0.2);
-      config.line[map.lineColor] = color;
-      config.item[map.color] = color;
+      config.area[map.color] = config.line[map.lineColor] = config.item[map.color] = color;
 
       for (var name in config) {
         config[name] = createCss(config[name]);
@@ -14798,6 +15158,99 @@
       y: points[0][0].y
     });
     return points;
+  };
+
+  var defaults$5 = {
+    padding: 6,
+    radius: 2,
+    eventRadius: 8
+  };
+
+  function Radar(config) {
+    this.config = exports.extend(copy(defaults$5), config || {}, true);
+  }
+
+  Radar.prototype.draw = function (data, width, height) {
+    var line = Line.prototype;
+    var area = Area.prototype;
+    var config = this.config;
+    var renderer = SVG;
+    var x0 = width / 2;
+    var y0 = height / 2;
+    var radius = Math.min(x0, y0) - config.padding;
+    var origin = "";
+    var points = [];
+    var originPoints = [];
+
+    var ratios = this._getRatios(data.length);
+
+    data = data.map(function (v) {
+      return isNaN(v) ? 0 : v;
+    });
+    var max = Math.max.apply(Math, _toConsumableArray(data));
+    var min = Math.min.apply(Math, _toConsumableArray(data));
+    if (min > 0) min = 0;
+
+    for (var i = 0; i < data.length; i++) {
+      var angle = -Math.PI / 2 + ratios[i];
+      originPoints.push(this._getPositionByAngle(angle, x0, y0, radius));
+      var x1 = originPoints[i].x;
+      var y1 = originPoints[i].y;
+      origin += renderer.getLine({
+        x: x0,
+        y: y0
+      }, {
+        x: x1,
+        y: y1
+      }, "webix_sparklines_origin");
+      var x = void 0,
+          y = void 0;
+
+      if (data[i] == min) {
+        x = x0;
+        y = y0;
+      } else if (data[i] == max) {
+        x = x1;
+        y = y1;
+      } else {
+        var ratio = Math.abs(data[i] - min) / Math.abs(max - data[i]);
+        x = (x0 + x1 * ratio) / (1 + ratio);
+        y = (y0 + y1 * ratio) / (1 + ratio);
+      }
+
+      points.push({
+        x: x,
+        y: y
+      });
+    }
+
+    var styles = config.color ? area._applyColor(renderer, config.color) : null;
+    var originPath = renderer.definePath(line._getLinePoints(originPoints), true);
+    var path = renderer.definePath(line._getLinePoints(points), true);
+
+    var graph = renderer.group(origin + renderer.getPath(originPath, "webix_sparklines_origin")) + renderer.group(renderer.getPath(path, "webix_sparklines_area" + (styles ? " " + styles.area : ""))) + renderer.group(renderer.getPath(path, "webix_sparklines_line" + (styles ? " " + styles.line : ""))) + line._drawItems(renderer, points, config.radius, "webix_sparklines_item" + (styles ? " " + styles.item : "")) + line._drawEventItems(renderer, points, config.eventRadius);
+
+    return renderer.draw(graph, width, height, "webix_sparklines_radar_chart" + (config.css ? " " + config.css : ""));
+  };
+
+  Radar.prototype._getPositionByAngle = function (a, x, y, r) {
+    a *= -1;
+    x = x + Math.cos(a) * r;
+    y = y - Math.sin(a) * r;
+    return {
+      x: x,
+      y: y
+    };
+  };
+
+  Radar.prototype._getRatios = function (count) {
+    var ratios = [];
+
+    for (var i = 0; i < count; i++) {
+      ratios[i] = Math.PI * 2 * (i / count);
+    }
+
+    return ratios;
   };
 
   function Sparklines() {}
@@ -14842,6 +15295,7 @@
   Sparklines.types["pie"] = Pie;
   Sparklines.types["spline"] = Spline;
   Sparklines.types["splineArea"] = SplineArea;
+  Sparklines.types["radar"] = Radar;
 
   var TablePaste = {
     clipboard_setter: function (value) {
@@ -16514,8 +16968,8 @@
     _inner_getValues: function (filter) {
       //get original data		
       var success,
-          elem = null,
-          data = this._values ? copy(this._values) : {}; //update properties from linked controls
+          elem = null;
+      var data = this._values ? copy(this._values) : {}; //update properties from linked controls
 
       for (var name in this.elements) {
         elem = this.elements[name];
@@ -16549,26 +17003,39 @@
         this._clear_invalid(name);
       } // add 'invalid' mark
       else {
-          // set invalidMessage
-          if (typeof state == "string") {
-            var input = this.elements[name];
-            if (input) input._settings.invalidMessage = state;
-          } //add mark to current validation process
+        var messageChanged; // set invalidMessage
+
+        if (typeof state == "string") {
+          var input = this.elements[name];
+
+          if (input && input._settings.invalidMessage != state) {
+            input._settings.invalidMessage = state;
+            messageChanged = true;
+          }
+        } //add mark to current validation process
 
 
-          if (this._validate_details) this._validate_details[name] = true;
+        if (this._validate_details) this._validate_details[name] = true;
 
-          this._mark_invalid(name);
-        }
+        this._mark_invalid(name, messageChanged);
+      }
     },
-    _mark_invalid: function (id) {
+    _mark_invalid: function (id, messageChanged) {
       var input = this.elements[id];
 
-      if (input && !input._settings.invalid) {
-        addCss(input._viewobj, "webix_invalid", true);
-        input._settings.invalid = true;
-        var message = input._settings.invalidMessage;
-        if (typeof message === "string" && input.setBottomText) input.setBottomText();
+      if (input) {
+        var config = input._settings;
+        var valid = !config.invalid;
+
+        if (valid || messageChanged) {
+          if (valid) {
+            addCss(input._viewobj, "webix_invalid", true);
+            config.invalid = true;
+          }
+
+          var message = config.invalidMessage;
+          if (typeof message === "string" && input.setBottomText) input.setBottomText();
+        }
       }
     },
     _clear_invalid: function (id) {
@@ -17019,7 +17486,7 @@
     }
   };
 
-  var version = "9.2.1";
+  var version = "10.0.1";
   var name = "core";
 
   var errorMessage = "non-existing view for export";
@@ -17162,6 +17629,7 @@
         width: (column.width || 200) * (options.export_mode === "excel" ? 8.43 / 70 : 1),
         header: column.header !== false ? column.header || _key2 : ""
       };
+      if (column.collection) record.collection = column.collection;
       if (isTree && _key2 === treeLines) record.isTree = treeColumn = true;
 
       if (options.export_mode === "excel") {
@@ -17281,35 +17749,45 @@
           var column = scheme[_i7],
               cell = null; //spreadsheet use muon to store data, get value via $getExportValue
 
-          if (view.$getExportValue) cell = view.$getExportValue(item.id, column.id, options); //datatable math
-          else if (options.math && item["$" + column.id] && item["$" + column.id].charAt(0) == "=") cell = item["$" + column.id];
+          if (view.$getExportValue) cell = view.$getExportValue(item.id, column.id, options);else {
+            //datatable math
+            var formula = void 0;
 
-          if (this._spans_pull) {
-            var span = this.getSpan(item.id, column.id);
-
-            if (span && span[4] && span[0] == item.id && span[1] == column.id) {
-              cell = span[4];
-              if (filterHTML && typeof cell === "string") cell = cell.replace(htmlFilter, "");
+            if (options.math && item["$" + column.id] && item["$" + column.id].charAt(0) == "=") {
+              if (mode == "excel") formula = item["$" + column.id];else cell = item["$" + column.id];
             }
-          }
 
-          if (!cell) {
-            cell = column.template(item, view.type, item[column.id], column, _i7);
-            if (!cell && cell !== 0) cell = "";
-            if (column.isTree && treeline) cell = " " + Array(item.$level).join(treeline) + " " + cell;
+            if (this._spans_pull) {
+              var span = this.getSpan(item.id, column.id);
 
-            if (filterHTML && typeof cell === "string") {
-              cell = cell.replace(htmlFilter, "");
-            } //remove end/start spaces(ex.hierarchy data)
-
-
-            if (typeof cell === "string" && mode === "csv") cell = cell.trim(); //for multiline data
-
-            if (typeof cell === "string" && (mode === "excel" || mode === "csv")) {
-              cell = cell.replace(/<br\s*\/?>/mg, "\n");
+              if (span && span[4] && span[0] == item.id && span[1] == column.id) {
+                cell = span[4];
+                if (filterHTML && typeof cell === "string") cell = cell.replace(htmlFilter, "");
+              }
             }
-          }
 
+            if (!cell) {
+              cell = column.template(item, view.type, item[column.id], column, _i7);
+              if (!cell && cell !== 0) cell = "";
+              if (column.isTree && treeline) cell = " " + Array(item.$level).join(treeline) + " " + cell;
+
+              if (filterHTML && typeof cell === "string") {
+                cell = cell.replace(htmlFilter, "");
+              } //remove end/start spaces(ex.hierarchy data)
+
+
+              if (typeof cell === "string" && mode === "csv") cell = cell.trim(); //for multiline data
+
+              if (typeof cell === "string" && (mode === "excel" || mode === "csv")) {
+                cell = cell.replace(/<br\s*\/?>/mg, "\n");
+              }
+            }
+
+            if (formula) cell = {
+              formula: formula,
+              value: cell
+            };
+          }
           line.push(cell);
         }
 
@@ -17403,10 +17881,13 @@
   var toPDF = function (id, options) {
     options = options || {};
     options.export_mode = "pdf";
-    exports.extend(options, {
+    var fontFiles = {
       fontName: "pt-sans.regular",
-      boldFontName: "pt-sans.bold"
-    });
+      boldFontName: "pt-sans.bold",
+      italicFontName: "pt-sans.italic",
+      italicBoldFontName: "pt-sans.italic-bold"
+    };
+    exports.extend(options, fontFiles);
     id = isArray(id) ? id : [id];
     var views = [];
 
@@ -17456,10 +17937,16 @@
     if (options.dataOnly) return views;
     return require([env.cdn + "/extras/pdfjs.js", env.cdn + "/extras/html2canvas-1.0.min.js"]).then(function () {
       if (views.length == 0) return Deferred.reject(errorMessage);
+      var allFontsLoaded = true;
 
-      if (font[options.fontName] && font[options.boldFontName]) {
-        options._export_font = font[options.fontName];
-        options._export_font_bold = font[options.boldFontName];
+      for (var name in fontFiles) {
+        if (!font[name]) {
+          allFontsLoaded = false;
+          break;
+        }
+      }
+
+      if (allFontsLoaded) {
         return getPdfData(views, options).then(function (pdf) {
           return getBlob(pdf, options);
         });
@@ -17469,12 +17956,18 @@
 
         pdfjs.load(options.fontURL || env.cdn + "/extras/" + options.fontName + ".ttf", function (err, regular) {
           if (err) return defer.reject(err);
-          pdfjs.load(options.boldFontURL || env.cdn + "/extras/" + options.boldFontName + ".ttf", function (err, bold) {
-            options._export_font = font[options.fontName] = new pdfjs.TTFFont(regular);
-            options._export_font_bold = font[options.boldFontName] = err ? null : new pdfjs.TTFFont(bold);
-            defer.resolve(getPdfData(views, options).then(function (pdf) {
-              return getBlob(pdf, options);
-            }));
+          pdfjs.load(options.italicBoldFontURL || env.cdn + "/extras/" + options.italicBoldFontName + ".ttf", function (errIB, ib) {
+            pdfjs.load(options.italicFontURL || env.cdn + "/extras/" + options.italicFontName + ".ttf", function (errI, i) {
+              pdfjs.load(options.boldFontURL || env.cdn + "/extras/" + options.boldFontName + ".ttf", function (errB, b) {
+                font[options.fontName] = new pdfjs.TTFFont(regular);
+                font[options.boldFontName] = errB ? null : new pdfjs.TTFFont(b);
+                font[options.italicFontName] = errI ? null : new pdfjs.TTFFont(i);
+                font[options.italicBoldFontName] = errIB ? null : new pdfjs.TTFFont(ib);
+                defer.resolve(getPdfData(views, options).then(function (pdf) {
+                  return getBlob(pdf, options);
+                }));
+              });
+            });
           });
         });
         return defer;
@@ -17505,10 +17998,7 @@
         if (viewOptions.textBefore) addText(doc, "before", viewOptions.textBefore);
         if (images[_i]) doc.image(images[_i], {
           align: "center"
-        });else {
-          viewOptions._export_font_bold = options._export_font_bold;
-          addPDFTable(views[_i], doc);
-        }
+        });else addPDFTable(views[_i], doc);
         if (viewOptions.textAfter) addText(doc, "after", viewOptions.textAfter);
         if (_i != views.length - 1) doc.pageBreak();
       }
@@ -17551,7 +18041,7 @@
       }
 
       return new pdfjs.Image(bytes.buffer);
-    }).finally(function () {
+    })["finally"](function () {
       if (hidden) document.body.removeChild(node);
     });
   }
@@ -17579,7 +18069,7 @@
     if (options.orientation && options.orientation === "landscape") height = [width, width = height][0];
     return new pdfjs.Document({
       padding: 40,
-      font: options._export_font,
+      font: font[options.fontName],
       threshold: 256,
       width: width,
       height: height
@@ -17616,8 +18106,7 @@
       headerRows: h_count,
       widths: colWidths.length ? colWidths : ["100%"]
     });
-    var table = doc.table(tableOps);
-    var boldFont = options._export_font_bold; //render table header
+    var table = doc.table(tableOps); //render table header
 
     if (h_count) {
       var headerOps = exports.extend(options.header, {
@@ -17634,7 +18123,7 @@
 
         for (var s = 0; s < scheme.length; s++) {
           var cellStyle = styles ? getStyles(_i2, s, styles) : {};
-          if (boldFont && cellStyle.bold) cellStyle.font = boldFont;
+          setFont(cellStyle, options);
           header.td(scheme[s].header[_i2].toString(), cellStyle);
         }
       }
@@ -17647,7 +18136,7 @@
       for (var c = 0; c < data[r].length; c++) {
         var _cellStyle = styles ? getStyles(r + h_count, c, styles) : {};
 
-        if (boldFont && _cellStyle.bold) _cellStyle.font = boldFont;
+        setFont(_cellStyle, options);
         row.td(data[r][c], _cellStyle);
       }
     } //render table footer
@@ -17670,11 +18159,21 @@
         for (var _s = 0; _s < scheme.length; _s++) {
           var _cellStyle2 = styles ? getStyles(_i3 + beforeCount, _s, styles) : {};
 
-          if (boldFont && _cellStyle2.bold) _cellStyle2.font = boldFont;
+          setFont(_cellStyle2, options);
           footer.td(scheme[_s].footer[_i3].toString(), _cellStyle2);
         }
       }
     }
+  }
+
+  function setFont(cellStyle, options) {
+    var boldFont = font[options.boldFontName];
+    var italicFont = font[options.italicFontName];
+    var italicBoldFont = font[options.italicBoldFontName];
+
+    if (cellStyle.bold && boldFont) {
+      if (cellStyle.italic && italicBoldFont) cellStyle.font = italicBoldFont;else cellStyle.font = boldFont;
+    } else if (cellStyle.italic && italicFont) cellStyle.font = italicFont;
   }
 
   function addPDFHeader(doc, options) {
@@ -17790,7 +18289,8 @@
         Sheets: {},
         Workbook: {
           WBProps: {},
-          Names: []
+          Names: [],
+          Sheets: []
         }
       };
 
@@ -17815,6 +18315,9 @@
         wb.SheetNames.push(sname);
         wb.Sheets[sname] = data;
         wb.Workbook.Names = wb.Workbook.Names.concat(ranges);
+        wb.Workbook.Sheets.push({
+          state: views[_i].state || "visible"
+        });
       }
       /* global XLSX */
 
@@ -17849,7 +18352,7 @@
     number: "n",
     date: "n",
     string: "s",
-    boolean: "b"
+    "boolean": "b"
   };
   var table = "_table";
 
@@ -17880,8 +18383,8 @@
           c: C,
           r: R
         });
-        var stringValue = cell.v.toString();
-        var isFormula = stringValue.charAt(0) === "=";
+        var isFormula = _typeof(cell.v) == "object" && cell.v.formula;
+        var stringValue = (isFormula ? cell.v.value : cell.v).toString();
 
         if (styles) {
           var cellStyle = getStyles(R, C, styles);
@@ -17915,9 +18418,9 @@
           cell.z = cell.z || XLSX.SSF[table][14];
           cell.v = excelDate(cell.v);
         } else if (isFormula) {
-          cell.t = cell.t || "n";
-          cell.f = cell.v.substring(1);
-          delete cell.v;
+          if (!cell.t) cell.t = isNaN(stringValue) ? "s" : "n";
+          cell.f = cell.v.formula.substring(1);
+          cell.v = stringValue;
         } else if (!cell.t) {
           if (typeof cell.v === "boolean") cell.t = "b";else if (typeof cell.v === "number" || parseFloat(cell.v) == cell.v) {
             cell.v = cell.v * 1;
@@ -18070,6 +18573,8 @@
     groupSize: 3,
     decimalDelimiter: ".",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%m/%d/%Y",
     timeFormat: "%h:%i %A",
     longDateFormat: "%d %F %Y",
@@ -18081,7 +18586,9 @@
       groupDelimiter: ",",
       groupSize: 3,
       decimalDelimiter: ".",
-      decimalSize: 2
+      decimalSize: 2,
+      minusPosition: "before",
+      minusSign: "-"
     },
     fileSize: ["b", "Kb", "Mb", "Gb", "Tb", "Pb", "Eb"],
     calendar: {
@@ -18663,25 +19170,60 @@
     },
     parse: function (value, config) {
       if (!value || typeof value !== "string") return value;
-      if (config.prefix) value = value.toLowerCase().replace(config.prefix.toLowerCase() || "", "");
-      if (config.sufix) value = value.toLowerCase().replace(config.sufix.toLowerCase() || "", "");
+      config = config || i18n;
+      var initialValue = value;
+      if (config.prefix) value = value.replace(config.prefix, "");
+      if (config.sufix) value = value.replace(config.sufix, "");
+      var sign = 1;
+
+      switch (config.minusPosition) {
+        case "before":
+        case "after":
+          if (value.indexOf(config.minusSign) != -1) {
+            sign = -1;
+            value = value.replace(config.minusSign, "");
+          }
+
+          break;
+
+        case "parentheses":
+          if (value.indexOf(config.minusSign[0]) != -1 && value.indexOf(config.minusSign[1]) != -1) {
+            sign = -1;
+            value = value.replace(config.minusSign[0], "").replace(config.minusSign[1], "");
+          }
+
+          break;
+      }
+
+      value = value.trim();
       var decimal = "";
 
       if (config.decimalDelimiter) {
         var ind = value.indexOf(config.decimalDelimiter);
 
         if (ind > -1) {
-          decimal = value.substr(ind + 1).replace(/[^0-9]/g, "");
-          decimal = decimal.substr(0, Math.min(decimal.length, config.decimalSize));
+          decimal = value.substr(ind + 1);
+          if (!rules.isNumber(decimal)) return initialValue;
+          var count = config.decimalOptional ? Infinity : config.decimalSize;
+          decimal = decimal.substr(0, Math.min(decimal.length, count));
           value = value.substr(0, ind);
         }
       }
 
-      var sign = value[0] === "-" ? -1 : 1;
-      value = value.replace(/[^0-9]/g, "");
+      if (config.groupSize) {
+        var groups = value.split(config.groupDelimiter); //validate groups
+
+        for (var i = 0; i < groups.length; i++) {
+          var correctSize = !i && groups[i].length <= config.groupSize || groups[i].length == config.groupSize;
+          if (!correctSize || !rules.isNumber(groups[i])) return initialValue;
+        }
+
+        value = groups.join("");
+      }
+
       if (!value) value = "0";
       if (decimal) value += "." + decimal;
-      return parseFloat(value) * sign;
+      return rules.isNumber(value) ? value * sign : initialValue;
     },
     format: function (value, config) {
       if (value === "" || typeof value === "undefined") return value;
@@ -18705,11 +19247,27 @@
         } while (i > 0);
       } else int_value = str[0];
 
-      if (config.decimalSize) str = sign + int_value + (str[1] ? config.decimalDelimiter + str[1] : "");else str = sign + int_value;
+      if (config.decimalSize || config.decimalOptional) str = int_value + (str[1] ? config.decimalDelimiter + str[1] : "");else str = int_value;
 
-      if (config.prefix || config.sufix) {
-        return config.prefix + str + config.sufix;
-      } else return str;
+      if (sign) {
+        switch (config.minusPosition) {
+          case "before":
+            str = config.minusSign + str;
+            break;
+
+          case "after":
+            str += config.minusSign;
+            break;
+
+          case "parentheses":
+            str = config.minusSign[0] + str + config.minusSign[1];
+            break;
+        }
+      }
+
+      if (config.prefix) str = config.prefix + str;
+      if (config.sufix) str += config.sufix;
+      return str;
     },
     numToStr: function (config) {
       return function (value) {
@@ -18733,7 +19291,10 @@
   var helpers = ["fullDateFormat", "timeFormat", "dateFormat", "longDateFormat", "parseFormat", "parseTimeFormat"];
 
   i18n.setLocale = function (locale) {
-    if (typeof locale == "string") locale = i18n.locales[locale];
+    if (typeof locale == "string") {
+      i18n.locale = locale;
+      locale = i18n.locales[locale];
+    }
 
     if (locale) {
       var origin = copy(en);
@@ -18762,7 +19323,29 @@
     });
 
     i18n.priceFormat = function (value) {
-      return _price_format(Number$1.format(value, _price_settings));
+      var sign = value < 0;
+      if (sign) value = Math.abs(value);
+      value = Number$1.format(value, _price_settings);
+
+      if (sign) {
+        switch (_price_settings.minusPosition) {
+          case "before":
+            return _price_settings.minusSign + _price_format(value);
+
+          case "parentheses":
+            return _price_settings.minusSign[0] + _price_format(value) + _price_settings.minusSign[1];
+
+          case "after":
+            value += _price_settings.minusSign;
+            break;
+
+          case "inside":
+            value = _price_settings.minusSign + value;
+            break;
+        }
+      }
+
+      return _price_format(value);
     };
 
     i18n.numberFormat = Number$1.format;
@@ -18934,10 +19517,22 @@
     if (view.callEvent) view.callEvent("onBeforePrint", [options]);
     options = _checkOptions(options);
 
-    _beforePrint(options); //try widget's custom logic first, sometimes it may deny 
+    _beforePrint(options); //try widget's custom logic first, sometimes it may deny
 
 
-    if (!view.$customPrint || view.$customPrint(options) === true) _print(view, options);
+    var customPrint;
+
+    if (view.$customPrint) {
+      customPrint = view.$customPrint(options);
+
+      if (customPrint) {
+        if (customPrint.then) return customPrint.then(function () {
+          return _afterPrint(options);
+        });
+
+        _print(view, options);
+      }
+    } else _print(view, options);
 
     _afterPrint(options);
   };
@@ -19708,9 +20303,11 @@
     var name = {
       200: "flat",
       210: "compact",
-      230: "contrast",
-      240: "material",
-      250: "mini"
+      220: "contrast",
+      230: "material",
+      240: "mini",
+      250: "willow",
+      260: "dark"
     }[Math.floor(div.offsetHeight / 10) * 10];
     document.body.removeChild(div);
     if (name) set$1(name);
@@ -19728,7 +20325,7 @@
     fixed = true;
   }
 
-  define("_fixHeight", _fixHeight);
+  define("fixHeight", _fixHeight);
 
   ui.animate = animate$1;
   ui.animateView = animateView;
@@ -19744,6 +20341,8 @@
     groupSize: 3,
     decimalDelimiter: ",",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%d.%n.%Y",
     timeFormat: "%H:%i",
     longDateFormat: "%j. %F %Y",
@@ -19755,7 +20354,9 @@
       groupDelimiter: ".",
       groupSize: 3,
       decimalDelimiter: ",",
-      decimalSize: 2
+      decimalSize: 2,
+      minusPosition: "before",
+      minusSign: "-"
     },
     calendar: {
       monthFull: ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
@@ -19861,6 +20462,8 @@
     groupSize: 3,
     decimalDelimiter: ",",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%d/%n/%Y",
     timeFormat: "%G:%i",
     longDateFormat: "%d %F %Y",
@@ -19872,7 +20475,9 @@
       groupDelimiter: ".",
       groupSize: 3,
       decimalDelimiter: ",",
-      decimalSize: 2
+      decimalSize: 2,
+      minusPosition: "before",
+      minusSign: "-"
     },
     calendar: {
       monthFull: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
@@ -19977,6 +20582,8 @@
     groupSize: 3,
     decimalDelimiter: ",",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%d/%m/%Y",
     timeFormat: "%H:%i",
     longDateFormat: "%d %F %Y",
@@ -20088,6 +20695,8 @@
     groupSize: 3,
     decimalDelimiter: ",",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%d/%m/%Y",
     timeFormat: "%H:%i",
     longDateFormat: "%j %F %Y",
@@ -20099,7 +20708,9 @@
       groupDelimiter: ".",
       groupSize: 3,
       decimalDelimiter: ",",
-      decimalSize: 2
+      decimalSize: 2,
+      minusPosition: "before",
+      minusSign: "-"
     },
     calendar: {
       monthFull: ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"],
@@ -20204,6 +20815,8 @@
     groupSize: 3,
     decimalDelimiter: ".",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%Y.%m.%d",
     timeFormat: "%H:%i",
     longDateFormat: "%Y年%m月%d日",
@@ -20213,7 +20826,9 @@
       groupSize: 3,
       groupDelimiter: ",",
       decimalDelimiter: "",
-      decimalSize: 0
+      decimalSize: 0,
+      minusPosition: "before",
+      minusSign: "-"
     },
     calendar: {
       monthFull: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
@@ -20318,6 +20933,8 @@
     groupSize: 3,
     decimalDelimiter: ",",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%d/%m/%Y",
     timeFormat: "%G:%i",
     longDateFormat: "%d de %F de %Y",
@@ -20329,7 +20946,9 @@
       groupDelimiter: ".",
       groupSize: 3,
       decimalDelimiter: ",",
-      decimalSize: 2
+      decimalSize: 2,
+      minusPosition: "before",
+      minusSign: "-"
     },
     fileSize: ["b", "Kb", "Mb", "Gb", "Tb", "Pb", "Eb"],
     calendar: {
@@ -20436,6 +21055,8 @@
     groupSize: 3,
     decimalDelimiter: ".",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%Y/%m/%j",
     timeFormat: "%G:%i",
     longDateFormat: "%Y'年'%m'月'%j'日'",
@@ -20447,7 +21068,9 @@
       groupDelimiter: ",",
       groupSize: 3,
       decimalDelimiter: ".",
-      decimalSize: 2
+      decimalSize: 2,
+      minusPosition: "inside",
+      minusSign: "-"
     },
     calendar: {
       monthFull: ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"],
@@ -20552,13 +21175,21 @@
     groupSize: 3,
     decimalDelimiter: ",",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%d.%m.%Y",
     timeFormat: "%H:%i",
     longDateFormat: "%d %F %Y",
     fullDateFormat: "%d.%m.%Y %H:%i",
     price: "{obj} руб.",
-    priceSettings: null,
-    //use number defaults
+    priceSettings: {
+      groupDelimiter: " ",
+      groupSize: 3,
+      decimalDelimiter: ",",
+      decimalSize: 2,
+      minusPosition: "before",
+      minusSign: "-"
+    },
     calendar: {
       monthFull: ["Январь", "Февраль", "Март", "Апрель", "Maй", "Июнь", "Июль", "Август", "Сентябрь", "Oктябрь", "Ноябрь", "Декабрь"],
       monthShort: ["Янв", "Фев", "Maр", "Aпр", "Maй", "Июн", "Июл", "Aвг", "Сен", "Окт", "Ноя", "Дек"],
@@ -20662,6 +21293,8 @@
     groupSize: 3,
     decimalDelimiter: ",",
     decimalSize: 2,
+    minusPosition: "before",
+    minusSign: "-",
     dateFormat: "%d.%m.%Y",
     timeFormat: "%H:%i",
     longDateFormat: "%d %F %Y",
@@ -20670,8 +21303,10 @@
     priceSettings: {
       groupSize: 3,
       groupDelimiter: " ",
-      decimalDelimiter: "",
-      decimalSize: 0
+      decimalDelimiter: ",",
+      decimalSize: 0,
+      minusPosition: "before",
+      minusSign: "-"
     },
     calendar: {
       monthFull: ["Студзень", "Люты", "Сакавік", "Красавік", "Травень", "Чэрвень", "Ліпень", "Жнівень", "Верасень", "Кастрычнік", "Лістапад", "Снежань"],
@@ -21132,12 +21767,18 @@
       var fixed_count = 0;
       var gravity = 0;
       this._sizes = [];
+      var hiddenCount = 0;
 
       for (var i = 0; i < this._cells.length; i++) {
         //ignore hidden cells
-        if (this._cells[i]._settings.hidden) continue;
+        if (this._cells[i]._settings.hidden) {
+          hiddenCount++;
+          continue;
+        }
 
         var sizes = this._sizes[i] = this._cells[i].$getSize(0, 0);
+
+        if (this._cells[i]._hiddenByCells) hiddenCount++;
 
         if (this._cells[i].$nospace) {
           fixed_count++;
@@ -21170,6 +21811,21 @@
           } else gravity += sizes[4];
         }
       }
+
+      if (hiddenCount == this._cells.length) {
+        this._hiddenByCells = true;
+        var pView = this.getParentView();
+
+        if (pView && pView._collection) {
+          if (pView._vertical_orientation) {
+            maxHeight = 0;
+            maxWidth = 100000;
+          } else {
+            maxHeight = 100000;
+            maxWidth = 0;
+          }
+        }
+      } else delete this._hiddenByCells;
 
       if (minHeight > maxHeight) maxHeight = minHeight;
       if (minWidth > maxWidth) maxWidth = minWidth;
@@ -22147,6 +22803,18 @@
       removeCss(this._headobj, "collapsed");
 
       this._headobj.setAttribute("aria-expanded", "true");
+
+      this._childRefresh(this._body_cell);
+    },
+    _childRefresh: function (view) {
+      var _this = this;
+
+      if (view.refresh) view.refresh();else if (view.getChildViews) {
+        var views = view.getChildViews();
+        views.forEach(function (v) {
+          return _this._childRefresh(v);
+        });
+      }
     },
     _collapse: function () {
       if (this._settings.headerAlt) this._headlabel.innerHTML = this._settings.headerAlt();
@@ -22825,8 +23493,8 @@
       return next < active ? vx ? "bottom" : "right" : vx ? "top" : "left";
     },
     _show: function (obj, animation_options) {
-      var _this = this,
-          _arguments = arguments;
+      var _arguments = arguments,
+          _this = this;
 
       var parent = this.getParentView();
 
@@ -23676,7 +24344,7 @@
         var config = this._settings;
 
         if (config.labelPosition != "top") {
-          config.labelWidth = config.label ? this._getLabelWidth(config.labelWidth, config.label) : 0;
+          config.labelWidth = config.label ? this._getLabelWidth(config.labelWidth, config.label, config.required) : 0;
           config.paddingX = config.labelWidth + this._inputSpacing;
         } else {
           config.paddingY = this._labelTopHeight;
@@ -23701,8 +24369,8 @@
         if (config.value) this.setValue(config.value, "auto");
       });
     },
-    _getLabelWidth: function (width, label) {
-      if (width == "auto") width = getTextSize(label, "webix_inp_label").width;
+    _getLabelWidth: function (width, label, required) {
+      if (width == "auto") width = getTextSize(label, "webix_inp_label" + (required ? " webix_required" : "")).width;
       return width ? Math.max(width, $active.dataPadding) : 0;
     },
     setBottomText: function (text) {
@@ -24131,7 +24799,8 @@
         return d.getDate();
       },
       width: 260,
-      height: 250
+      height: 250,
+      separator: ", "
     },
     dayTemplate_setter: template,
     calendarHeader_setter: wDate.dateToStr,
@@ -24304,7 +24973,6 @@
       var s = this._settings;
       var _columnsHeight = [];
       var _columnsWidth = [];
-      var min = Infinity;
       var containerWidth = this._content_width - (this._content_padding + $active.borderWidth) * 2;
       var containerHeight = this._content_height - (s.monthHeader ? s.headerHeight : 0) - (s.weekHeader ? $active.calendarWeekHeaderHeight : 0) - (s.timepicker || this._icons ? s.timepickerHeight : 0) - (this._content_padding + $active.borderWidth) * 2;
       var columnsNumber = s.weekNumber ? 8 : 7;
@@ -24312,7 +24980,6 @@
       for (var i = 0; i < columnsNumber; i++) {
         _columnsWidth[i] = Math.ceil(containerWidth / (columnsNumber - i));
         containerWidth -= _columnsWidth[i];
-        min = Math.min(min, _columnsWidth[i]);
       }
 
       var rowsNumber = bounds._rows;
@@ -24320,10 +24987,9 @@
       for (var k = 0; k < rowsNumber; k++) {
         _columnsHeight[k] = Math.ceil(containerHeight / (rowsNumber - k));
         containerHeight -= _columnsHeight[k];
-        min = Math.min(min, _columnsHeight[k]);
       }
 
-      return [_columnsWidth, _columnsHeight, min];
+      return [_columnsWidth, _columnsHeight];
     },
     icons_setter: function (value) {
       if (!value) this._icons = null;else if (_typeof(value) == "object") this._icons = value;else this._icons = this._icons2;
@@ -24381,7 +25047,7 @@
       }
 
       if (s.weekHeader) html += "<div class='webix_cal_header' style='margin:0 " + cpad + "' aria-hidden='true'>" + this._week_template(width) + "</div>";
-      html += "<div class='webix_cal_body' role='grid' style='margin:0 " + cpad + "'>" + this._body_template(width, height, bounds, sizes[2]) + "</div>";
+      html += "<div class='webix_cal_body' role='grid' style='margin:0 " + cpad + "'>" + this._body_template(width, height, bounds) + "</div>";
 
       if (s.timepicker || this._icons) {
         html += "<div class='webix_cal_footer' style='margin:0 " + cpad + "'>";
@@ -24480,13 +25146,14 @@
       css += " webix_cal_day";
       return css;
     },
-    _body_template: function (widths, heights, bounds, sqSize) {
+    _body_template: function (widths, heights, bounds) {
       var s = this._settings;
       var start = s.weekNumber ? 1 : 0;
       var day = wDate.datePart(wDate.copy(bounds._start));
       var weekNumber = wDate.getISOWeek(wDate.add(day, 2, "day", true));
       var html = "",
-          focusable;
+          focusable,
+          sqSize;
 
       for (var y = 0; y < heights.length; y++) {
         html += "<div class='webix_cal_row' role='row' style='height:" + heights[y] + "px;line-height:" + heights[y] + "px'>";
@@ -24515,6 +25182,7 @@
           var tabindex = sel && !isOutside ? "0" : "-1";
           if (day.getDate() == 1 && !isOutside) tabindex = "$webix_tabindex";
           if (tabindex == "0") focusable = true;
+          sqSize = Math.min(heights[y], widths[x]);
           html += "<div day='" + x + "' role='gridcell' " + (isOutside ? "aria-hidden='true'" : "") + " aria-label='" + alabel + "' tabindex='" + tabindex + "' aria-selected='" + (sel && !isOutside ? "true" : "false") + "' class='" + css + "' style='text-align:center; width:" + widths[x] + "px'><span aria-hidden='true' class='webix_cal_day_inner' style='display:inline-block; " + this._getCalSizesString(sqSize, sqSize) + "'>" + d + "</span></div>";
           day = wDate.add(day, 1, "day");
           if (day.getHours()) day = wDate.datePart(day);
@@ -25130,15 +25798,30 @@
       this.selectDate(date, true, false, config);
     },
     getValue: function (format) {
+      var _this2 = this;
+
       var date = this.getSelectedDate();
-      if (format) date = wDate.dateToStr(format)(date);
+
+      if (isArray(date)) {
+        date = date.map(function (date) {
+          return _this2._formatValue(date, format);
+        });
+        if (this._settings.stringResult) date = date.join(this._settings.separator);
+      } else date = this._formatValue(date, format);
+
+      return date;
+    },
+    _formatValue: function (date, format) {
+      if (format) date = wDate.dateToStr(format)(date);else if (this._settings.stringResult) {
+        if (this._settings.type == "time") date = i18n.parseTimeFormatStr(date);else date = i18n.parseFormatStr(date);
+      }
       return date;
     },
     selectDate: function (date, show, add, config) {
       if (!date || !add || !this.config.multiselect) this._selected_days = {};
 
       if (date) {
-        if (!isArray(date)) date = [date];
+        if (typeof date == "string") date = date.split(this._settings.separator);else if (!isArray(date)) date = [date];
 
         for (var i = 0; i < date.length; i++) {
           var days = this._string_to_date(date[i]);
@@ -25573,7 +26256,7 @@
       });
     },
     $skin: function () {
-      if ($name == "compact" || $name == "mini") this._inpHeight = 24;else this._inpHeight = 32;
+      this._inpHeight = $active.inputHeight - 2 * $active.inputPadding;
     },
     $setSize: function (x, y) {
       if (base$1.api.$setSize.call(this, x, y)) {
@@ -25785,9 +26468,9 @@
     render: function () {
       if (!this.isVisible(this._settings.id)) return;
       this.callEvent("onBeforeRender", []);
-      var inpWidth = (this.$width - $active.dataPadding * 3) / 2; //24 paddings, 32 color line, 12 padding
+      var inpWidth = (this.$width - $active.dataPadding * 3) / 2; //8+14 color line, 3(or 4) data paddings 
 
-      var bHeight = this.$height - 24 - 32 - this._inpHeight - (this._settings.button ? this._inpHeight + 12 : 0);
+      var bHeight = this.$height - 3 * $active.dataPadding - 22 - this._inpHeight - (this._settings.button ? this._inpHeight + $active.dataPadding : 0);
       var html = "<div class=\"webix_color_area\">";
       html += "\n\t\t\t<div ".concat(
       /*@attr*/
@@ -26402,14 +27085,16 @@
       var pos$$1 = getSelectionRange(node);
       var chr = "";
 
-      if (code == 8 || code == 46) {
-        if (pos$$1.start == pos$$1.end) {
-          if (code == 8) pos$$1.start--;else pos$$1.end++;
+      if (code) {
+        if (code == 8 || code == 46) {
+          if (pos$$1.start == pos$$1.end) {
+            if (code == 8) pos$$1.start--;else pos$$1.end++;
+          }
+        } else {
+          chr = String.fromCharCode(code);
+          var isCapsLock = e.getModifierState("CapsLock");
+          if (!e.shiftKey && !isCapsLock || e.shiftKey && isCapsLock) chr = chr.toLowerCase();
         }
-      } else {
-        chr = String.fromCharCode(code);
-        var isCapsLock = e.getModifierState("CapsLock");
-        if (!e.shiftKey && !isCapsLock || e.shiftKey && isCapsLock) chr = chr.toLowerCase();
       }
 
       value = value.substr(0, pos$$1.start) + chr + value.substr(pos$$1.end);
@@ -26529,10 +27214,10 @@
     },
     _toggleClearIcon: function (value) {
       var c = this._settings;
-      if (!c.clear || !this._clear_icon) return;
+      if (c.readonly || !c.clear || !this._clear_icon) return;
 
-      if (c.clear === "hover" || c.clear === "replace") {
-        var css = value ? "webix_clear_icon " + (c.clear === "hover" ? c.icon : "wxi-close") : c.icon;
+      if (c.clear == "hover" || c.clear == "replace") {
+        var css = value ? "webix_clear_icon " + (c.clear == "hover" ? c.icon : "wxi-close") : c.icon;
         this._clear_icon.className = "webix_input_icon " + css;
       } else {
         var state = value ? "" : "hidden";
@@ -26578,7 +27263,7 @@
         html += "<span style='right:" + right + "px;height:" + (height - padding) + "px;padding-top:" + padding + "px;' class='webix_input_icon " + c.icon + "'></span>";
       }
 
-      if (c.clear === true) {
+      if (!c.readonly && c.clear === true) {
         right += 24;
         html += "<span style='right:" + right + "px;height:" + (height - padding) + "px;padding-top:" + padding + "px;' class='webix_input_icon webix_clear_icon webix_icon_transparent wxi-close'></span>";
       }
@@ -26625,10 +27310,6 @@
       if (rule && !form._validate(rule, value, data, name)) return false;
       return true;
     },
-    bottomLabel_setter: function (value) {
-      if (!this._settings.bottomPadding) this._settings.bottomPadding = 18;
-      return value;
-    },
     _getInvalidText: function () {
       var text = this._settings.invalidMessage;
 
@@ -26638,7 +27319,16 @@
 
       return text;
     },
-    setBottomText: function (text, height) {
+    bottomLabel_setter: function (text) {
+      var _this2 = this;
+
+      // this._get_input_width returns 0
+      // use delay to wait for the end of the render
+      delay(function () {
+        if (!_this2.$destructed) _this2.setBottomText(text);
+      });
+    },
+    setBottomText: function (text) {
       var config = this._settings;
 
       if (!isUndefined(text)) {
@@ -26658,9 +27348,9 @@
       var message = (config.invalid ? config.invalidMessage : "") || config.bottomLabel;
       if (!message && !config.bottomPadding) config.inputHeight = 0;
 
-      if (message && !config.bottomPadding) {
+      if (message && (!config.bottomPadding || this._restorePadding)) {
         this._restorePadding = 1;
-        config.bottomPadding = config.bottomPadding || height || 18;
+        config.bottomPadding = getTextSize(message, "webix_inp_bottom_label", this._get_input_width(config)).height;
         this.render();
         this.adjust();
         this.resize();
@@ -26696,7 +27386,7 @@
 
           if (!config.inputHeight) this._inputHeight = this._content_height - (config.label ? this._labelTopHeight : 0) - (this.config.bottomPadding || 0);
         } else {
-          if (config.label) config.labelWidth = this._getLabelWidth(config.labelWidth, config.label);
+          if (config.label) config.labelWidth = this._getLabelWidth(config.labelWidth, config.label, config.required);
           if (config.bottomPadding) config.inputHeight = this._content_height - this.config.bottomPadding;
         }
 
@@ -26775,12 +27465,15 @@
       html += this.$renderIcon ? this.$renderIcon(config) : "";
       var result = ""; //label position, top or left
 
-      if (top) result = label + "<div class='webix_el_box' style='width:" + config.awidth + "px; height:" + config.aheight + "px'>" + html + "</div>";else result = "<div class='webix_el_box' style='width:" + config.awidth + "px; height:" + config.aheight + "px'>" + label + html + "</div>"; //bottom message width
-
-      var padding = config.awidth - inputWidth - $active.inputPadding * 2; //bottom message text
+      if (top) result = label + "<div class='webix_el_box' style='width:" + config.awidth + "px; height:" + config.aheight + "px'>" + html + "</div>";else result = "<div class='webix_el_box' style='width:" + config.awidth + "px; height:" + config.aheight + "px'>" + label + html + "</div>"; //bottom message text
 
       var message = (config.invalid ? config.invalidMessage : "") || config.bottomLabel;
-      if (message) result += "<div class='webix_inp_bottom_label'" + (config.invalid ? "role='alert' aria-relevant='all'" : "") + " style='width:" + (inputWidth || config.awidth) + "px;margin-left:" + Math.max(padding, $active.inputPadding) + "px;'>" + message + "</div>";
+
+      if (message) {
+        var padding = config.awidth - inputWidth - $active.inputPadding;
+        result += "<div class='webix_inp_bottom_label'" + (config.invalid ? "role='alert' aria-relevant='all'" : "") + " style='width:" + (inputWidth || config.awidth) + "px;margin-left:" + Math.max(padding, $active.inputPadding) + "px;'>" + message + "</div>";
+      }
+
       return result;
     },
     defaults: {
@@ -26790,8 +27483,8 @@
       label: "",
       labelWidth: 80
     },
-    _getLabelWidth: function (width, label) {
-      if (width == "auto") width = getTextSize(label, "webix_inp_label").width;
+    _getLabelWidth: function (width, label, required) {
+      if (width == "auto") width = getTextSize(label, "webix_inp_label" + (required ? " webix_required" : "")).width;
       return width ? Math.max(width, $active.dataPadding) : 0;
     },
     type_setter: function (value) {
@@ -26804,7 +27497,7 @@
     },
     $setValue: function (value) {
       value = this._pattern(value);
-      this.getInputNode().value = value;
+      if (this.getInputNode()) this.getInputNode().value = value;
 
       this._toggleClearIcon(value);
     },
@@ -26823,7 +27516,7 @@
       } else this.setValue(v, details && details.config);
     },
     suggest_setter: function (value) {
-      var _this2 = this;
+      var _this3 = this;
 
       if (value) {
         assert(value !== true, "suggest options can't be set as true, data need to be provided instead");
@@ -26856,7 +27549,7 @@
         this._destroy_with_me.push(_view);
 
         this.$ready.push(function () {
-          return _view._settings.master = _this2._settings.id;
+          return _view._settings.master = _this3._settings.id;
         });
         return _view._settings.id;
       }
@@ -26914,6 +27607,28 @@
         html += "</select>";
         return common.$renderInput(obj, html, id);
       }
+    },
+    $init: function () {
+      this.attachEvent("onAfterRender", function () {
+        var _this = this;
+
+        var input = this.getInputNode();
+
+        _event(input, env.mouse.down, function (e) {
+          return _this._checkReadOnly(e);
+        });
+
+        _event(input, "keydown", function (e) {
+          return _this._checkReadOnly(e, (e.which || e.keyCode) == 9);
+        });
+
+        if (env.touch) _event(input, env.touch.down, function (e) {
+          return _this._checkReadOnly(e);
+        });
+      });
+    },
+    _checkReadOnly: function (e, tab) {
+      if (!tab && this._settings.readonly) preventEvent(e);
     },
     options_setter: function (value) {
       if (value) {
@@ -27060,7 +27775,7 @@
           /*@attr*/
           "radio_id" + "='" + options[i].id + "' class='webix_inp_radio_border webix_radio_" + (isChecked ? "1" : "0") + "' role='presentation'>" + rd + customRadio + "</div>";
           if (label) label = "<label for='" + eachid + "' class='webix_label_right'>" + label + "</label>";
-          html.push("<div class='webix_radio_option" + (isDisabled ? " webix_disabled" : "") + "' role='presentation'" + tooltip + ">" + input + label + "</div>");
+          html.push("<div style=\"height:".concat(config.optionHeight, "px;\" class=\"webix_radio_option").concat(isDisabled ? " webix_disabled" : "", "\" role=\"presentation\"").concat(tooltip, ">").concat(input + label, "</div>"));
         }
 
         html = "<div class='webix_el_group' role='radiogroup' style='margin-left:" + (config.label ? config.labelWidth : 0) + "px;'>" + html.join("") + "</div>";
@@ -27332,21 +28047,21 @@
 
       if (!this._rendered_input) value = this.$prepareValue(value) || null; //rendere and in edit mode
       else if (this._settings.editable) {
-          var formatDate = this._formatDate;
+        var formatDate = this._formatDate;
 
-          if (!formatDate) {
-            if (timeMode) formatDate = i18n.timeFormatDate;else if (this.config.timepicker) formatDate = i18n.fullDateFormatDate;else formatDate = i18n.dateFormatDate;
-          }
+        if (!formatDate) {
+          if (timeMode) formatDate = i18n.timeFormatDate;else if (this.config.timepicker) formatDate = i18n.fullDateFormatDate;else formatDate = i18n.dateFormatDate;
+        }
 
-          var time = formatDate(this.getInputNode().value);
+        var time = formatDate(this.getInputNode().value);
 
-          if (timeMode && value != "") {
-            value.setHours(time.getHours());
-            value.setMinutes(time.getMinutes());
-            value.setSeconds(time.getSeconds());
-            value.setMilliseconds(time.getMilliseconds());
-          } else value = time;
-        } //return string from getValue
+        if (timeMode && value != "") {
+          value.setHours(time.getHours());
+          value.setMinutes(time.getMinutes());
+          value.setSeconds(time.getSeconds());
+          value.setMilliseconds(time.getMilliseconds());
+        } else value = time;
+      } //return string from getValue
 
       if (this._settings.stringResult) {
         var formatStr = i18n.parseFormatStr;
@@ -27431,11 +28146,11 @@
       var right = this._inputSpacing / 2 + 5;
       var html = "<div class='webix_input_icon' style='top:" + (c.inputPadding + 4) + "px;right:" + right + "px;background-color:" + c.value + ";'></div>";
 
-      if (c.clear) {
+      if (!c.readonly && c.clear) {
         var height = c.aheight - 2 * c.inputPadding;
         var padding = (height - 18) / 2 - 1;
         right += 24;
-        html += "<span style='right:" + right + "px;height:" + (height - padding) + "px;padding-top:" + padding + "px;' class='webix_input_icon webix_clear_icon wxi-close'></span>";
+        html += "<span style='right:" + right + "px;height:" + (height - padding) + "px;padding-top:" + padding + "px;' class='webix_input_icon webix_clear_icon webix_icon_transparent wxi-close'></span>";
       }
 
       return html;
@@ -27815,27 +28530,46 @@
 
   var autoheight = {
     $init: function () {
+      var _this = this;
+
+      _event(this.$view, "keydown", function (e) {
+        return _this._checkPageUp(e);
+      });
+
       this.$ready.push(function () {
-        var _this = this;
+        var _this2 = this;
 
         if (this._settings.autoheight) {
           addCss(this.$view, "webix_noscroll");
           if (!this._settings.maxHeight) this._settings.maxHeight = 100;
 
           _event(this.$view, "input", function () {
-            _this._sizeToContent(true);
+            _this2._sizeToContent(true);
           }, {
             capture: true
           });
 
           this.attachEvent("onAfterRender", function () {
-            _this._sizeToContent();
+            _this2._sizeToContent();
           });
         }
       });
     },
+    _checkPageUp: function (e) {
+      //chrome bug: textarea with typed text is not correctly resized when pushing PageUp/PageDown key
+      var pageUp = e.key == "PageUp";
+
+      if (env.isChromium && (pageUp || e.key == "PageDown")) {
+        var input = this.getInputNode();
+        var cursorPos = pageUp ? 0 : input.value.length;
+        var scrollPos = pageUp ? 0 : input.scrollHeight;
+        preventEvent(e);
+        input.setSelectionRange(cursorPos, cursorPos);
+        input.scrollTo(0, scrollPos);
+      }
+    },
     _sizeToContent: function (focus) {
-      var _this2 = this;
+      var _this3 = this;
 
       if (this._skipSizing) return this._skipSizing = false;
       var txt = this.getInputNode();
@@ -27853,20 +28587,20 @@
       var topView = this.getTopParentView();
       clearTimeout(topView._template_resize_timer);
       topView._template_resize_timer = delay(function () {
-        if (_this2.config.height != height) {
-          _this2.config.height = height;
+        if (_this3.config.height != height) {
+          _this3.config.height = height;
           var caretPos = txt.selectionEnd;
-          _this2._skipSizing = true;
-          var value = text.api.getValue.call(_this2);
+          _this3._skipSizing = true;
+          var value = text.api.getValue.call(_this3);
 
-          _this2.resize();
+          _this3.resize();
 
-          _this2.callEvent("onInputResize", []);
+          _this3.callEvent("onInputResize", []);
 
           if (focus) {
-            txt = _this2.getInputNode(); // needed to restore "\n" value after resize
+            txt = _this3.getInputNode(); // needed to restore "\n" value after resize
 
-            text.api.$setValue.call(_this2, value);
+            text.api.$setValue.call(_this3, value);
             txt.setSelectionRange(caretPos, caretPos);
             txt.focus();
           }
@@ -28271,9 +29005,9 @@
       this._sliderBorder = $active.sliderBorder; //1px border
     },
     _handle_move_keyboard: function (e) {
-      var code = e.which || e.keyCode,
-          c = this._settings,
-          value = c.value;
+      var code = e.which || e.keyCode;
+      var c = this._settings;
+      var value = c.value;
 
       if (code > 32 && code < 41) {
         preventEvent(e);
@@ -28312,12 +29046,14 @@
     _on_mouse_down_start: function (e, pointer) {
       var _this2 = this;
 
+      var config = this._settings;
+      if (config.disabled || config.readonly) return;
       var trg = e.target;
       if (this._mouse_down_process) this._mouse_down_process(e);
-      var value = this._settings.value;
+      var value = config.value;
       if (isArray(value)) value = copy(value);
       this._start_value = value;
-      if (trg.className.indexOf("webix_slider") !== -1) this._settings.value = this._get_value_from_event(e);
+      if (trg.className.indexOf("webix_slider") !== -1) config.value = this._get_value_from_event(e);
       var passive = pointer === "touch" ? {
         passive: false
       } : null;
@@ -28461,33 +29197,29 @@
       defaults.tabMoreWidth = skin.tabMoreWidth || 40;
       defaults.borderless = !skin.tabBorder;
     },
-    _getTabbarSizes: function () {
-      var config = this._settings,
-          i,
-          len,
-          tabs = this._filterOptions(config.options),
-          totalWidth = this._input_width - config.tabOffset * 2,
-          limitWidth = config.optionWidth || config.tabMinWidth;
+    _getTabbarSizes: function (selected) {
+      var config = this._settings;
+      var inputWidth = this._input_width - config.tabOffset * 2;
 
-      len = tabs.length;
+      var tabs = this._filterOptions(config.options);
 
-      if (config.tabMinWidth && totalWidth / len < limitWidth) {
-        return {
-          max: parseInt(totalWidth / limitWidth, 10) || 1
+      var width = config.optionWidth || config.tabMinWidth; //the selected tab will be rendered anyway
+
+      var totalWidth = tabs.find(function (tab) {
+        return tab.id == selected;
+      }).width || width;
+      var max = 1;
+
+      for (var i = 0; i < tabs.length; i++) {
+        if (tabs[i].id == selected) continue;
+        if ((totalWidth += tabs[i].width || width) > inputWidth) return {
+          max: max
         };
-      }
-
-      if (!config.optionWidth) {
-        for (i = 0; i < len; i++) {
-          if (tabs[i].width) {
-            totalWidth -= tabs[i].width + (!i && !config.type ? config.tabMargin : 0);
-            len--;
-          }
-        }
+        max++;
       }
 
       return {
-        width: len ? totalWidth / len : config.tabMinWidth
+        width: inputWidth / tabs.length
       };
     },
     _init_popup: function () {
@@ -28574,7 +29306,7 @@
           contentWidth = common._input_width - obj.tabOffset * 2 - (!obj.type ? obj.tabMargin * (tabs.length - 1) : 0);
           verticalOffset = obj.topOffset + obj.bottomOffset;
 
-          var sizes = common._getTabbarSizes();
+          var sizes = common._getTabbarSizes(obj.value);
 
           if (sizes.max && sizes.max < tabs.length) {
             //we need popup
@@ -28778,7 +29510,7 @@
         }]);
         this.rows_setter(rows);
       } else {
-        config.labelWidth = config.label ? this._getLabelWidth(config.labelWidth, config.label) : 0;
+        config.labelWidth = config.label ? this._getLabelWidth(config.labelWidth, config.label, config.required) : 0;
 
         if (config.labelWidth) {
           config.margin = 0;
@@ -28793,8 +29525,8 @@
         } else this.rows_setter(rows);
       }
     },
-    _getLabelWidth: function (width, label) {
-      if (width == "auto") width = getTextSize(label, "webix_inp_label").width;
+    _getLabelWidth: function (width, label, required) {
+      if (width == "auto") width = getTextSize(label, "webix_inp_label" + (required ? " webix_required" : "")).width;
       return width ? Math.max(width, $active.dataPadding) : 0;
     },
     _getselection: function (config) {
@@ -28995,14 +29727,16 @@
     },
     _auto_height_calc: function (count) {
       var value = this.data.$pagesize || this.count();
-
-      this._onoff_scroll(count && count < value, "y");
-
       if (this._settings.autoheight && value < (count || Infinity)) count = value;
       var height = this._one_height() * count + (this.type.margin || 0); //unitlist
 
       if (this.getUnits) height += this.getUnits().length * this.type.headerHeight;
-      return Math.max(height, this._settings.minHeight || 0);
+      var maxHeight = this._settings.maxHeight || Infinity;
+      height = Math.max(height, this._settings.minHeight || 0);
+
+      this._onoff_scroll(count && count < value || height > maxHeight, "y");
+
+      return Math.min(height, maxHeight);
     },
     _one_height: function () {
       return this.type.height + (this.type.margin || 0);
@@ -29109,10 +29843,10 @@
     template: "{common.removeIcon()}{common.percent()}<div style='float:right'>#sizetext#</div>{common.fileName()}",
     percent: function (obj) {
       if (obj.status == "transfer") return "<div style='width:60px; text-align:center; float:right'>" + obj.percent + "%</div>";
-      return "<div class='webix_upload_" + obj.status + "'><span class='" + (obj.status == "error" ? "error_icon" : "webix_icon wxi-check") + "'></span></div>";
+      return "<div class='webix_upload_" + obj.status + "'><span class='" + (obj.status == "error" ? "webix_error_icon" : "webix_icon wxi-check") + "'></span></div>";
     },
     removeIcon: function () {
-      return "<div class='webix_remove_upload'><span class='cancel_icon'></span></div>";
+      return "<div class='webix_remove_upload'><span class='webix_cancel_icon'></span></div>";
     },
     fileName: function (obj) {
       return "<div style='text-overflow:ellipsis; white-space:nowrap; overflow:hidden; padding-right:8px;'>" + obj.name + "</div>";
@@ -29744,7 +30478,8 @@
       };
     },
     _set_input_value: function (text) {
-      this._last_input_target.value = text;
+      var trg = this._last_input_target;
+      if (trg.getAttribute("contentEditable") == "true" || trg.getAttribute("contentEditable") == "") trg.innerText = text;else trg.value = text;
     },
     _preselectMasterOption: function (data) {
       var text = data.id ? this.getItemText(data.id) : data.text || data.value;
@@ -29893,7 +30628,7 @@
       } else node = toNode(input);
 
       _event(node, "keydown", function (e) {
-        if ((node != document.body || this.isVisible()) && (input.config ? !input.config.readonly : !node.getAttribute("readonly"))) this._suggestions(e);
+        if ((node != document.body || this.isVisible()) && (input.config ? !input.config.readonly : !node.getAttribute("readonly"))) this._suggestions(e, node);
       }, {
         bind: this
       });
@@ -29909,17 +30644,40 @@
 
       this._non_ui_mode = true;
     },
-    _suggestions: function (e) {
+    _suggestions: function (e, node) {
       //should be before tab and arrows handlers: IME can call keydown twice
       if (this._last_delay) this._last_delay = clearTimeout(this._last_delay);
       var list = this.getList();
       var trg = e.target;
       if (trg == document.body && !this.isVisible() || trg.className == "webix_clipbuffer") return;
-      this._last_input_target = trg;
       this._settings.master = trg.webix_master_id;
-      var code = e.which || e.keyCode; //shift and ctrl
+      if (node != document.body) this._last_input_target = trg;
+      var code = e.which || e.keyCode; //shift, ctrl, alt, meta
 
-      if (code == 16 || code == 17) return; // tab - hide popup and do nothing
+      if (code == 16 || code == 17 || code == 18 || code == 91) return; //move cursor via arrow
+
+      if (code > 32 && code < 40 && code != 38) return;
+      var ctrl = e.ctrlKey || e.metaKey;
+
+      var _map = [8, 46, 86, 88, 89, 90].map(function (v) {
+        return code == v;
+      }),
+          _map2 = _slicedToArray(_map, 6),
+          backspace = _map2[0],
+          del = _map2[1],
+          v = _map2[2],
+          x = _map2[3],
+          y = _map2[4],
+          z = _map2[5];
+
+      if (ctrl && !(backspace || del || v || x || y || z)) return;
+
+      if (backspace || del || ctrl && x) {
+        var selStart = trg.selectionStart;
+        var selEnd = trg.selectionEnd;
+        if (backspace && selStart == 0 || x && selStart == selEnd || del && selStart == (trg.value || trg.innerText).length) return;
+      } // tab - hide popup and do nothing
+
 
       if (code == 9) return this._tab_key(e, list); // escape - hide popup
 
@@ -29937,8 +30695,7 @@
       this._last_delay = delay(function () {
         //focus moved to the different control, suggest is not necessary
         if (!this._non_ui_mode && UIManager.getFocus() != $$(this._settings.master)) return;
-        this._resolve_popup = true; //spreadsheet use contentEditable div for cell highlighting
-
+        this._resolve_popup = true;
         var val = contentEditable ? trg.innerText : trg.value;
         if (this._before_filtering) this._before_filtering(); // used to prevent showing popup when it was initialized
 
@@ -29960,7 +30717,7 @@
         if (!this.isVisible()) this._dont_unfilter = true;
         this.show(this._last_input_target, null, true);
         this._dont_unfilter = false;
-      } else {
+      } else if (this._last_input_target) {
         this.hide();
         this._last_input_target = null;
       }
@@ -29972,6 +30729,17 @@
         var list = this.getList();
 
         if (list.filter && !this._dont_unfilter) {
+          // clear gridsuggest filters
+          if (list.eachColumn) {
+            list.eachColumn(function (id) {
+              var filter = list.getFilter(id);
+
+              if (filter) {
+                if (filter.setValue) filter.setValue("");else filter.value = "";
+              }
+            });
+          }
+
           list.filter("");
         }
 
@@ -30051,18 +30819,18 @@
           list.moveSelection(dir, false, false);
         } // other arrows
         else {
-            if (list.count || !list.count && !list.isVisible()) return false;
+          if (list.count || !list.count && !list.isVisible()) return false;
 
-            var _dir;
+          var _dir;
 
-            if (code == 33) _dir = "pgup";
-            if (code == 34) _dir = "pgdown";
-            if (code == 35) _dir = "bottom";
-            if (code == 36) _dir = "top";
-            if (code == 37) _dir = "left";
-            if (code == 39) _dir = "right";
-            list.moveSelection(_dir, false, false);
-          }
+          if (code == 33) _dir = "pgup";
+          if (code == 34) _dir = "pgdown";
+          if (code == 35) _dir = "bottom";
+          if (code == 36) _dir = "top";
+          if (code == 37) _dir = "left";
+          if (code == 39) _dir = "right";
+          list.moveSelection(_dir, false, false);
+        }
 
         if (list.count) data = list.getSelectedItem(false);else {
           if (list.getSelectedDate) data = list.getSelectedDate();else if (list.getValue) data = list.getValue();
@@ -30363,8 +31131,14 @@
       config.chart = exports.extend(config.chart || {}, this.defaults.chart);
       this.data.provideApi(this, true);
       this.$ready.push(this.render);
+
+      this._drawData();
+
       this.data.attachEvent("onClearAll", bind(this._refreshColumns, this));
       this.data.attachEvent("onStoreUpdated", bind(this._drawData, this));
+    },
+    $skin: function () {
+      this.defaults.chart.backgroundColor = $active.backColor;
     },
     getMap: function (waitMap) {
       return waitMap ? this._waitMap : this._map;
@@ -30487,7 +31261,7 @@
       this._drawData();
     },
     _getColumnType: function (item, key) {
-      if (!item || isUndefined(item[key])) return "string";
+      if (isUndefined(item[key])) return "string";
 
       var type = _typeof(item[key]);
 
@@ -30498,15 +31272,19 @@
       var columns = this._settings.columns || [];
       var item = this.data.pull[this.data.order[0]]; //auto columns
 
-      if (!columns.length && item) {
-        for (var key in item) {
-          if (key !== "id") columns.push(key);
-        }
+      if (!columns.length) {
+        if (item) {
+          for (var key in item) {
+            if (key !== "id") columns.push(key);
+          }
+        } else return []; // wait any data
+
       } //["title", "area"]
 
 
       for (var i = 0; i < columns.length; i++) {
         if (_typeof(columns[i]) !== "object") {
+          if (!item) return [];
           columns[i] = {
             type: this._getColumnType(item, columns[i]),
             label: columns[i]
@@ -30535,15 +31313,9 @@
         this.callEvent("onRegionClick", arguments);
       }, this));
       google.visualization.events.addListener(this._map, "select", bind(function () {
-        var selnow = this._map.getSelection()[0];
+        var sel = this._map.getSelection()[0];
 
-        var sel = selnow || this._selprev;
-
-        if (sel) {
-          var id = this.data.order[sel.row];
-          this._selprev = sel;
-          this.callEvent("onItemClick", [id, !!selnow]);
-        }
+        if (sel) this.callEvent("onItemClick", [this.data.order[sel.row]]);
       }, this));
     }
   };
@@ -30778,8 +31550,12 @@
   var view$_ = exports.protoUI(api$_, DataLoader, EventSystem, base$1.view);
 
   var Pie$1 = {
-    $render_pie: function (ctx, data, x, y, sIndex, map) {
-      this._renderPie(ctx, data, x, y, 1, map, sIndex);
+    $render_pie: function (ctx, data, point0, point1, sIndex, map) {
+      this._renderPie(ctx, data, point0, point1, 1, map, sIndex);
+    },
+    multilevel_setter: function (value) {
+      if (value) exports.extend(this.data, TreeStore, true);
+      return value;
     },
 
     /**
@@ -30798,110 +31574,166 @@
 
 
       var radius = this._settings.radius ? this._settings.radius : coord.radius;
-      if (radius < 0) return;
-      /*real values*/
+      if (radius < 0) return; //pie center
+
+      var x = this._settings.x ? this._settings.x : coord.x;
+      var y = this._settings.y ? this._settings.y : coord.y;
+      this._lineWidth = isUndefined(this._settings.borderWidth) ? 2 : this._settings.borderWidth;
+      var angleBounds = [-Math.PI / 2, Math.PI * 3 / 2];
+      var seriesCount = this._series.length;
+      var dr = this._innerRadius || 0;
+      var len = (radius - dr) / seriesCount;
+      this._levelCount = this._settings.multilevel ? this._getLevelCount(data) : 1;
+      this._linePoints = [];
+      this._pieHeight = (this._settings.pieHeight || Math.floor(radius / 3)) * (1 - this._settings.cant) * 3;
+      this._sectorLen = this._series.length > 1 ? len : Math.round((radius - dr) / this._levelCount); //adds shadow to the 2D pie
+
+      if (ky == 1 && this._settings.shadow && !sIndex) this._addShadow(ctx, x, y, radius); //changes vertical position of the center according to 3Dpie cant
+
+      y = y / ky; // changes Canvas vertical scale
+
+      ctx.scale(1, ky);
+      this._defColorsCursor = 0;
+      if (dr && ky != 1 && !sIndex) this._createFirstLowerSectors(ctx, data, x, y, dr); // adds radial gradient to a pie
+
+      if (this._settings.gradient) {
+        var x1 = ky != 1 ? x + radius / 3 : x;
+        var y1 = ky != 1 ? y + radius / 3 : y;
+
+        this._showRadialGradient(ctx, x, y, radius, x1, y1, dr + this._sectorLen * sIndex);
+      }
+
+      this._renderLevel(ctx, data, {
+        x: x,
+        y: y
+      }, len * (sIndex + 1) + dr, point0, map, ky, angleBounds, dr + len * sIndex, 0, sIndex); //renders radius lines
+
+
+      if (this._lineWidth) {
+        ctx.globalAlpha = 0.8;
+
+        for (var i = 0; i < this._linePoints.length; i++) {
+          var points = this._linePoints[i];
+          var p0 = points[0],
+              p1 = points[1];
+
+          this._drawLine(ctx, p0.x, p0.y, p1.x, p1.y, this._settings.lineColor.call(this, data[i]), this._lineWidth);
+        }
+
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.scale(1, 1 / ky);
+      if (ky != 1 && this._settings.legend) this._settings.legend.toggle = false;
+    },
+    _getLevelCount: function (data, count) {
+      var _this = this;
+
+      count = count || 1;
+      var result = [];
+      data.forEach(function (item) {
+        return result.push(item.data ? _this._getLevelCount(item.data, count + 1) : count);
+      });
+      return Math.max.apply(null, result);
+    },
+    _renderLevel: function (ctx, data, center, radius, point0, map, ky, angleBounds, dr, levelIndex, sIndex, groupColor) {
+      var alpha0 = angleBounds[0];
 
       var values = this._getValues(data);
 
       var totalValue = this._getTotalValue(values);
-      /*weighed values (the ratio of object value to total value)*/
 
+      var x = center.x,
+          y = center.y; //weighed values (the ratio of object value to total value)
 
-      var ratios = this._getRatios(values, totalValue);
-      /*pie center*/
+      var ratios = this._getRatios(values, totalValue, alpha0, angleBounds[1]);
 
-
-      var x0 = this._settings.x ? this._settings.x : coord.x;
-      var y0 = this._settings.y ? this._settings.y : coord.y;
-      /*adds shadow to the 2D pie*/
-
-      if (ky == 1 && this._settings.shadow) this._addShadow(ctx, x0, y0, radius);
-      /*changes vertical position of the center according to 3Dpie cant*/
-
-      y0 = y0 / ky;
-      /*the angle defines the 1st edge of the sector*/
-
-      var alpha0 = -Math.PI / 2;
-      var angles = [];
-      /*changes Canvas vertical scale*/
-
-      ctx.scale(1, ky);
-      /*adds radial gradient to a pie*/
-
-      if (this._settings.gradient) {
-        var x1 = ky != 1 ? x0 + radius / 3 : x0;
-        var y1 = ky != 1 ? y0 + radius / 3 : y0;
-
-        this._showRadialGradient(ctx, x0, y0, radius, x1, y1);
-      }
+      var innerRadius = this._innerRadius || 0;
 
       for (var i = 0; i < data.length; i++) {
-        if (!values[i]) continue;
-        /*drawing sector*/
-        //ctx.lineWidth = 2;
+        var r = data[i].data ? this._sectorLen * (levelIndex + 1) + innerRadius : radius;
+        if (!values[i] && totalValue) continue; //drawing sector
 
+        ctx.lineWidth = this._lineWidth;
         ctx.strokeStyle = this._settings.lineColor.call(this, data[i]);
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        angles.push(alpha0);
-        /*the angle defines the 2nd edge of the sector*/
+        ctx.beginPath(); //the angle defines the 2nd edge of the sector
 
-        var alpha1 = -Math.PI / 2 + ratios[i] - 0.0001;
-        ctx.arc(x0, y0, radius, alpha0, alpha1, false);
-        ctx.lineTo(x0, y0);
+        var alpha1 = ratios[i] - 0.0001;
+        var p0 = void 0,
+            p1 = void 0;
 
-        var color = this._settings.color.call(this, data[i]);
+        if (!dr) {
+          ctx.moveTo(x, y);
+          ctx.arc(x, y, r, alpha0, alpha1, false);
+          ctx.lineTo(x, y);
+        } else {
+          p0 = this._getPositionByAngle(alpha0, x, y, dr);
+          p1 = this._getPositionByAngle(alpha1, x, y, dr);
+          ctx.moveTo(p0.x, p0.y);
+          ctx.arc(x, y, r, alpha0, alpha1, false);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.arc(x, y, dr, alpha1, alpha0, true);
+          ctx.moveTo(p0.x, p0.y);
+        }
 
-        ctx.fillStyle = color;
+        var color$$1 = this._getColor(data[i], i, groupColor, levelIndex);
+
+        ctx.fillStyle = color$$1;
         ctx.fill();
         /*text that needs being displayed inside the sector*/
 
-        if (this._settings.pieInnerText) this._drawSectorLabel(x0, y0, 5 * radius / 6, alpha0, alpha1, ky, this._settings.pieInnerText(data[i], totalValue), true);
-        /*label outside the sector*/
+        if (this._settings.pieInnerText) {
+          var label = this._settings.pieInnerText(data[i], totalValue, levelIndex);
 
-        if (this._settings.label) this._drawSectorLabel(x0, y0, radius + this._settings.labelOffset, alpha0, alpha1, ky, this._settings.label(data[i]));
-        /*drawing lower part for 3D pie*/
+          var r0 = this._series.length > 1 || this._levelCount > 1 ? r - 0.5 * this._sectorLen : 0.8 * r;
 
-        if (ky != 1) {
-          this._createLowerSector(ctx, x0, y0, alpha0, alpha1, radius, true);
-
-          ctx.fillStyle = "#000000";
-          ctx.globalAlpha = 0.2;
-
-          this._createLowerSector(ctx, x0, y0, alpha0, alpha1, radius, false);
-
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = color;
+          this._drawSectorLabel(x, y, r0, alpha0, alpha1, ky, label, true, sIndex, color$$1);
         }
-        /*creats map area (needed for events)*/
 
+        var isLastLevel = !data[i].data && sIndex == this._series.length - 1; //label outside the sector
 
-        map.addSector(data[i].id, alpha0, alpha1, x0 - point0.x, y0 - point0.y / ky, radius, ky, sIndex);
+        if (this._settings.label && isLastLevel) {
+          var text = this._settings.label(data[i], totalValue, sIndex);
+
+          this._drawSectorLabel(x, y, r + this._settings.labelOffset, alpha0, alpha1, ky, text, false, sIndex);
+        }
+
+        var isSectorFront = ky != 1 && isLastLevel ? this._applyPieHeight(ctx, x, y, alpha0, alpha1, r, false, data[i], i, color$$1) : null; // creates map area (needed for events)
+
+        var pHeight = isSectorFront ? this._pieHeight * ky : 0;
+        map.addSector(data[i].id, alpha0, alpha1, x - point0.x, y * ky - point0.y, r, ky, sIndex, dr, pHeight); // add child sectors
+
+        if (data[i].data) this._renderLevel(ctx, data[i].data, center, radius, point0, map, ky, [alpha0, alpha1], r, levelIndex + 1, sIndex, color$$1); // borders
+
+        var p = this._getPositionByAngle(alpha0, x, y, r);
+
+        this._linePoints.push([{
+          x: p0 ? p0.x : x,
+          y: p0 ? p0.y : y
+        }, p]);
+
+        if (this._lineWidth) this._drawArcBorder(ctx, x, y, r, alpha0, alpha1, isLastLevel);
         alpha0 = alpha1;
       }
-      /*renders radius lines and labels*/
+    },
+    _getColor: function (item, i, groupColor, levelIndex) {
+      var color$$1 = this._settings.color.call(this, item, i, levelIndex || 0, groupColor || null);
 
-
-      ctx.globalAlpha = 0.8;
-      var p;
-
-      for (i = 0; i < angles.length; i++) {
-        p = this._getPositionByAngle(angles[i], x0, y0, radius);
-
-        this._drawLine(ctx, x0, y0, p.x, p.y, this._settings.lineColor.call(this, data[i]), 2);
-      }
-
-      ctx.globalAlpha = 1;
-
-      if (ky == 1 && this._settings.border) {
-        ctx.lineWidth = this._settings.borderWidth || 2;
-        ctx.strokeStyle = this._settings.borderColor ? this._settings.borderColor.call(this) : "#ffffff";
-        ctx.beginPath();
-        ctx.arc(x0, y0, radius + 1, 0, 2 * Math.PI, false);
-        ctx.stroke();
-      }
-
-      ctx.scale(1, 1 / ky);
+      if (!color$$1 && groupColor) color$$1 = this._getLighterColor(groupColor, 0.15 * (i + 1));
+      return color$$1;
+    },
+    _getLighterColor: function (c, f) {
+      var rgb = color.toRgb(c);
+      var hsv = color.rgbToHsv(rgb[0], rgb[1], rgb[2]);
+      hsv[1] -= hsv[1] * (f || 0.5);
+      return "#" + color.rgbToHex("rgb(" + color.hsvToRgb(hsv[0], hsv[1], hsv[2]) + ")");
+    },
+    _drawArcBorder: function (ctx, x, y, r, startAngle, endAngle, isLastLevel) {
+      var w = ctx.lineWidth = this._lineWidth;
+      ctx.strokeStyle = this._settings.borderColor ? this._settings.borderColor.call(this) : "#ffffff";
+      ctx.beginPath();
+      ctx.arc(x, y, r - (isLastLevel ? 0 : w / 2), startAngle, endAngle, false);
+      ctx.stroke();
     },
 
     /**
@@ -30912,10 +31744,31 @@
       var v = [];
 
       for (var i = 0; i < data.length; i++) {
-        v.push(Math.abs(parseFloat(this._settings.value(data[i])) || 0));
+        var item = data[i];
+        var value = parseFloat(this._settings.value(item));
+        if (isNaN(value) && item.data) value = this._getChildSum(item.id, item.data);
+        item.$value = value;
+        v.push(Math.abs(value || 0));
       }
 
       return v;
+    },
+
+    /**
+     * Get total value by child branches
+     * @param id {string} a branch id
+     * @param data {array} child branches
+     */
+    _getChildSum: function (id, data) {
+      var sum = 0;
+
+      for (var i = 0; i < data.length; i++) {
+        var value = parseFloat(this._settings.value(data[i]));
+        if (isNaN(value) && data[i].data) sum += this._getChildSum(data[i].id, data[i].data);else sum += Math.abs(value || 0);
+      }
+
+      this.getItem(id).$value = sum;
+      return sum;
     },
 
     /**
@@ -30937,15 +31790,16 @@
      *   @param: the array of values
      *   @param: total value (optional)
      */
-    _getRatios: function (values, totalValue) {
-      var value;
-      var ratios = [];
-      var prevSum = 0;
-      totalValue = totalValue || this._getTotalValue(values);
+    _getRatios: function (values, totalValue, angleStart, angleEnd) {
+      var i,
+          value,
+          ratios = [],
+          prevSum = 0,
+          totalAngleValue = typeof angleStart != "undefined" ? angleEnd - angleStart : Math.PI * 2;
 
-      for (var i = 0; i < values.length; i++) {
-        value = values[i];
-        ratios[i] = Math.PI * 2 * (totalValue ? (value + prevSum) / totalValue : 1 / values.length);
+      for (i = 0; i < values.length; i++) {
+        value = totalValue ? values[i] : 1 / values.length;
+        ratios[i] = (angleStart || 0) + totalAngleValue * (value + prevSum) / (totalValue || 1);
         prevSum += value;
       }
 
@@ -30958,14 +31812,6 @@
      *   @param: y - the height of a container
      */
     _getPieParameters: function (point0, point1) {
-      /*var offsetX = 0;
-       var offsetY = 0;
-       if(this._settings.legend &&this._settings.legend.layout!="x")
-       offsetX = this._settings.legend.width*(this._settings.legend.align=="right"?-1:1);
-       var x0 = (x + offsetX)/2;
-       if(this._settings.legend &&this._settings.legend.layout=="x")
-       offsetY = this._settings.legend.height*(this._settings.legend.valign=="bottom"?-1:1);
-       var y0 = (y+offsetY)/2;*/
       var width = point1.x - point0.x;
       var height = point1.y - point0.y;
       var x0 = point0.x + width / 2;
@@ -30988,41 +31834,86 @@
      *   @param: R - pie radius
      *   @param: line (boolean) - if the sector needs a border
      */
-    _createLowerSector: function (ctx, x0, y0, a1, a2, R, line) {
-      ctx.lineWidth = 1;
-      /*checks if the lower sector needs being displayed*/
+    _createFirstLowerSectors: function (ctx, data, x, y, r) {
+      var values = this._getValues(data);
 
-      if (!(a1 <= 0 && a2 >= 0 || a1 >= 0 && a2 <= Math.PI || Math.abs(a1 - Math.PI) > 0.003 && a1 <= Math.PI && a2 >= Math.PI)) return;
+      var totalValue = this._getTotalValue(values);
 
-      if (a1 <= 0 && a2 >= 0) {
-        a1 = 0;
-        line = false;
+      var a1 = -Math.PI / 2;
 
-        this._drawSectorLine(ctx, x0, y0, R, a1, a2);
+      var ratios = this._getRatios(values, totalValue, a1, 3 * Math.PI / 2);
+
+      for (var i = 0; i < data.length; i++) {
+        var a2 = ratios[i] - 0.0001;
+
+        var color$$1 = this._getColor(data[i], i);
+
+        this._applyPieHeight(ctx, x, y, a1, a2, r, true, data[i], i, color$$1);
+
+        a1 = a2;
       }
 
-      if (a1 <= Math.PI && a2 >= Math.PI) {
-        a2 = Math.PI;
-        line = false;
+      this._defColorsCursor = 0;
+    },
+    _applyPieHeight: function (ctx, x, y, a1, a2, r, all, item, i, color$$1) {
+      // checks if the lower sector needs being displayed
+      if (!all && !(a1 <= 0 && a2 >= 0 || a1 >= 0 && a2 <= Math.PI || Math.abs(a1 - Math.PI) > 0.003 && a1 <= Math.PI && a2 >= Math.PI)) return false;
+      ctx.fillStyle = color$$1;
+      ctx.strokeStyle = this._settings.lineColor.call(this, item, i);
 
-        this._drawSectorLine(ctx, x0, y0, R, a1, a2);
-      }
-      /*the height of 3D pie*/
+      this._createLowerSector(ctx, x, y, a1, a2, r, true, all);
 
+      ctx.fillStyle = "#000000";
+      ctx.globalAlpha = 0.2;
 
-      var offset = (this._settings.pieHeight || Math.floor(R / 4)) / this._settings.cant;
+      this._createLowerSector(ctx, x, y, a1, a2, r, false, all);
 
-      ctx.beginPath();
-      ctx.arc(x0, y0, R, a1, a2, false);
-      ctx.lineTo(x0 + R * Math.cos(a2), y0 + R * Math.sin(a2) + offset);
-      ctx.arc(x0, y0 + offset, R, a2, a1, true);
-      ctx.lineTo(x0 + R * Math.cos(a1), y0 + R * Math.sin(a1));
-      ctx.fill();
-      if (line) ctx.stroke();
+      ctx.globalAlpha = 1;
+      return true;
     },
 
     /**
-     *   draws a serctor arc
+     *   creates lower part of sector in 3Dpie
+     *   @param: ctx - canvas object
+     *   @param: x - the horizontal position of the pie center
+     *   @param: y - the vertical position of the pie center
+     *   @param: a0 - the angle that defines the first edge of a sector
+     *   @param: a1 - the angle that defines the second edge of a sector
+     *   @param: r - pie radius
+     *   @param: line (boolean) - if the sector needs a border
+     */
+    _createLowerSector: function (ctx, x, y, a1, a2, r, line, all) {
+      ctx.lineWidth = this._lineWidth;
+
+      if (!all) {
+        if (a1 <= 0 && a2 >= 0) {
+          a1 = 0;
+          line = false;
+
+          this._drawSectorLine(ctx, x, y, r, a1, a2);
+        }
+
+        if (a1 <= Math.PI && a2 >= Math.PI) {
+          a2 = Math.PI;
+          line = false;
+
+          this._drawSectorLine(ctx, x, y, r, a1, a2);
+        }
+      } // the height of 3D pie
+
+
+      ctx.beginPath();
+      ctx.arc(x, y, r, a1, a2, false);
+      ctx.lineTo(x + r * Math.cos(a2), y + r * Math.sin(a2) + this._pieHeight);
+      ctx.arc(x, y + this._pieHeight, r, a2, a1, true);
+      ctx.lineTo(x + r * Math.cos(a1), y + r * Math.sin(a1));
+      ctx.fill();
+      if (line && this._lineWidth) ctx.stroke();
+      return true;
+    },
+
+    /**
+     *   draws a sector arc
      */
     _drawSectorLine: function (ctx, x0, y0, R, a1, a2) {
       ctx.beginPath();
@@ -31035,16 +31926,17 @@
      *   @param: ctx - canvas object
      *   @param: x - the horizontal position of the pie center
      *   @param: y - the vertical position of the pie center
-     *   @param: R - pie radius
+     *   @param: r - pie radius
      */
-    _addShadow: function (ctx, x, y, R) {
+    _addShadow: function (ctx, x, y, r) {
       ctx.globalAlpha = 0.5;
       var shadows = ["#c4c4c4", "#c6c6c6", "#cacaca", "#dcdcdc", "#dddddd", "#e0e0e0", "#eeeeee", "#f5f5f5", "#f8f8f8"];
 
       for (var i = shadows.length - 1; i > -1; i--) {
         ctx.beginPath();
         ctx.fillStyle = shadows[i];
-        ctx.arc(x + 1, y + 1, R + i, 0, Math.PI * 2, true);
+        ctx.arc(x + 1, y + 1, r + i, 0, Math.PI * 2, true);
+        ctx.arc(x + 1, y + 1, r - 2, Math.PI * 2, 0, false);
         ctx.fill();
       }
 
@@ -31070,8 +31962,9 @@
      *   @param: radius - pie radius
      *   @param: x0 - the horizontal position of a gradient center
      *   @param: y0 - the vertical position of a gradient center
+     *   @param: dr - the inner radius (for donut or series)
      */
-    _showRadialGradient: function (ctx, x, y, radius, x0, y0) {
+    _showRadialGradient: function (ctx, x, y, radius, x0, y0, dr) {
       //ctx.globalAlpha = 0.3;
       ctx.beginPath();
       var gradient;
@@ -31083,9 +31976,9 @@
 
       ctx.fillStyle = gradient;
       ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-      ctx.fill(); //ctx.globalAlpha = 1;
-
-      ctx.globalAlpha = 0.7;
+      if (dr) ctx.arc(x, y, dr, Math.PI * 2, 0, false);
+      ctx.fill();
+      ctx.globalAlpha = 0.75;
     },
 
     /**
@@ -31093,18 +31986,20 @@
      *   @param: ctx - canvas object
      *   @param: x0 - the horizontal position of the pie center
      *   @param: y0 - the vertical position of the pie center
-     *   @param: R - pie radius
+     *   @param: r - pie radius
      *   @param: alpha1 - the angle that defines the 1st edge of a sector
      *   @param: alpha2 - the angle that defines the 2nd edge of a sector
      *   @param: ky - the value that defines an angle of inclination
      *   @param: text - label text
-     *   @param: in_width (boolean) - if label needs being displayed inside a pie
+     *   @param: in_width {boolean} - if label needs being displayed inside a pie
+     *   @param: sIndex {number} - series index
      */
-    _drawSectorLabel: function (x0, y0, R, alpha1, alpha2, ky, text, in_width) {
-      var t = this.canvases[0].renderText(0, 0, text, 0, 1);
-      if (!t) return; //get existing width of text
+    _drawSectorLabel: function (x0, y0, r, alpha1, alpha2, ky, text, in_width, sIndex, bgColor) {
+      var css = !in_width || this._getFontCss(bgColor);
 
-      var labelWidth = t.scrollWidth;
+      var t = this.canvases[sIndex].renderText(0, 0, text, css, 1);
+      if (!t) return;
+      var labelWidth = getTextSize(text, css).width;
       t.style.width = labelWidth + "px"; //adjust text label to fit all text
 
       if (labelWidth > x0) labelWidth = x0; //the text can't be greater than half of view
@@ -31114,44 +32009,33 @@
       if (in_width) width = labelWidth / 1.8;
       var alpha = alpha1 + (alpha2 - alpha1) / 2; //position and its correction
 
-      R = R - (width - 8) / 2;
+      r = r - (width - 8) / 2;
       var corr_x = -width;
       var corr_y = -8;
       var align = "right"; //for items in left upper and lower sector
 
       if (alpha >= Math.PI / 2 && alpha < Math.PI || alpha <= 3 * Math.PI / 2 && alpha >= Math.PI) {
-        corr_x = -labelWidth - corr_x + 1;
-        /*correction for label width*/
+        corr_x = -labelWidth - corr_x + 1; // correction for label width
 
         align = "left";
-      }
-      /*
-         calculate position of text
-         basically get point at center of pie sector
-      */
+      } // calculate position of text basically get point at center of pie sector
 
 
-      var offset = 0;
-      if (!in_width && ky < 1 && alpha > 0 && alpha < Math.PI) offset = (this._settings.height || Math.floor(R / 4)) / ky;
-      var y = (y0 + Math.floor((R + offset) * Math.sin(alpha))) * ky + corr_y;
-      var x = x0 + Math.floor((R + width / 2) * Math.cos(alpha)) + corr_x;
-      /*
-         if pie sector starts in left of right part pie,
-         related text	must be placed to the left of to the right of pie as well
-      */
+      var offset$$1 = 0;
+      if (!in_width && ky < 1 && alpha > 0 && alpha < Math.PI) offset$$1 = (this._settings.height || Math.floor(r / 4)) / ky;
+      var y = (y0 + Math.floor((r + offset$$1) * Math.sin(alpha))) * ky + corr_y;
+      var x = x0 + Math.floor((r + width / 2) * Math.cos(alpha)) + corr_x; // if pie sector starts in left of right part pie,
+      // related text	must be placed to the left of to the right of pie as well
 
       var left_end = alpha2 < Math.PI / 2 + 0.01;
       var left_start = alpha1 < Math.PI / 2;
 
       if (left_start && left_end) {
         x = Math.max(x, x0 + 3); //right part of pie
-
-        /*if(alpha2-alpha1<0.2)
-        	x = x0;*/
       } else if (!left_start && !left_end) x = Math.min(x, x0 - labelWidth); //left part of pie
       else if (!in_width && (alpha >= Math.PI / 2 && alpha < Math.PI || alpha <= 3 * Math.PI / 2 && alpha >= Math.PI)) {
-          x += labelWidth / 3;
-        } //we need to set position of text manually, based on above calculations
+        x += labelWidth / 3;
+      } //we need to set position of text manually, based on above calculations
 
 
       t.style.top = y + "px";
@@ -31160,27 +32044,36 @@
       t.style.textAlign = align;
       t.style.whiteSpace = "nowrap";
     },
-    $render_pie3D: function (ctx, data, x, y, sIndex, map) {
-      this._renderPie(ctx, data, x, y, this._settings.cant, map);
+    _getFontCss: function (bgColor) {
+      var rgb = color.toRgb(bgColor);
+      var brightness = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]; // webix_inner_text_dark/light adds 4px to the width (padding)
+
+      return "webix_chart_pie_label webix_inner_text_" + (brightness > 180 ? "dark" : "light");
+    },
+    $render_pie3D: function (ctx, data, point0, point1, sIndex, map) {
+      this._renderPie(ctx, data, point0, point1, this._settings.cant, map, sIndex);
     },
     $render_donut: function (ctx, data, point0, point1, sIndex, map) {
+      this._renderDonut(ctx, data, point0, point1, map, sIndex);
+    },
+    $render_donut3D: function (ctx, data, point0, point1, sIndex, map) {
+      this._renderDonut(ctx, data, point0, point1, map, sIndex, this._settings.cant);
+    },
+    _renderDonut: function (ctx, data, point0, point1, map, sIndex, ky) {
       if (!data.length) return;
-
-      this._renderPie(ctx, data, point0, point1, 1, map, sIndex);
-
       var config = this._settings;
 
       var coord = this._getPieParameters(point0, point1);
 
       var pieRadius = config.radius ? config.radius : coord.radius;
       if (pieRadius <= 0) return;
-      var innerRadius = config.innerRadius && config.innerRadius < pieRadius ? config.innerRadius : pieRadius / 3;
       var x0 = config.x ? config.x : coord.x;
       var y0 = config.y ? config.y : coord.y;
-      ctx.fillStyle = $active.backColor;
-      ctx.beginPath();
-      ctx.arc(x0, y0, innerRadius, 0, Math.PI * 2, true);
-      ctx.fill();
+      var innerRadius = config.innerRadius;
+      if (!innerRadius || innerRadius > pieRadius) innerRadius = pieRadius / 3;
+      this._innerRadius = innerRadius;
+
+      this._renderPie(ctx, data, point0, point1, ky || 1, map, sIndex);
 
       if (this._settings.donutInnerText) {
         var values = this._getValues(data);
@@ -31295,8 +32188,7 @@
 
 
       if (!xax) {
-        this._drawLine(ctx, point0.x, point1.y + 0.5, point1.x, point1.y + 0.5, "#edeff0", 1); //hardcoded color!
-
+        this._drawLine(ctx, point0.x, point1.y + 0.5, point1.x, point1.y + 0.5, $active.dataBorderColor, 1);
       }
 
       for (i = 0; i < data.length; i++) {
@@ -31311,7 +32203,7 @@
         var x0 = point0.x + barOffset + i * cellWidth + (barWidth + 1) * seriesIndex;
         var y0 = point1.y;
 
-        var color$$1 = gradient || this._settings.color.call(this, data[i]);
+        var color$$1 = gradient || this._settings.color.call(this, data[i], i);
 
         var border = this._settings.border ? 1 : 0;
 
@@ -31322,12 +32214,12 @@
         if (!yax && !(this._settings.origin != "auto" && xax)) value += startValue / unit;
         /* don't draw borders and labels for not painted values (on y-Axis or lower) */
         else if (value == this._settings.origin || this._settings.origin == "auto" && this._settings.value(data[i]) == minValue) {
-            border = 0;
-            label = "";
-          } else if (value < 0 || this._settings.yAxis && value === 0 && !(this._settings.origin != "auto" && this._settings.origin > minValue)) {
-            value = border = 0;
-            label = "";
-          }
+          border = 0;
+          label = "";
+        } else if (value < 0 || this._settings.yAxis && value === 0 && !(this._settings.origin != "auto" && this._settings.origin > minValue)) {
+          value = border = 0;
+          label = "";
+        }
         /*drawing bar body*/
 
         ctx.globalAlpha = this._settings.alpha.call(this, data[i]);
@@ -31573,7 +32465,7 @@
 
 
             if (config.line && config.line.shadow) {
-              ctx.globalAlpha = 0.3;
+              ctx.globalAlpha = $name == "contrast" || $name == "dark" ? 0.1 : 0.3;
 
               this._drawLine(ctx, x1 + 2, y1 + config.line.width + 8, x2 + 2, y2 + config.line.width + 8, "#eeeeee", config.line.width + 3);
 
@@ -31836,8 +32728,7 @@
 
 
       if (!xax) {
-        this._drawLine(ctx, point0.x - 0.5, point0.y, point0.x - 0.5, point1.y, "#edeff0", 1); //hardcoded color!
-
+        this._drawLine(ctx, point0.x - 0.5, point0.y, point0.x - 0.5, point1.y, $active.dataBorderColor, 1);
       }
 
       for (i = 0; i < data.length; i++) {
@@ -31864,7 +32755,7 @@
 
 
         if (!xax) value += startValue / unit;
-        color = gradient || this._settings.color.call(this, data[i]);
+        color = gradient || this._settings.color.call(this, data[i], i);
         /*drawing the gradient border of a bar*/
 
         if (this._settings.border) {
@@ -32178,8 +33069,7 @@
 
       if (!xax) {
         //scaleY = y-bottomPadding;
-        this._drawLine(ctx, point0.x, point1.y + 0.5, point1.x, point1.y + 0.5, "#edeff0", 1); //hardcoded color!
-
+        this._drawLine(ctx, point0.x, point1.y + 0.5, point1.x, point1.y + 0.5, $active.dataBorderColor, 1);
       }
 
       for (var i = 0; i < data.length; i++) {
@@ -32212,14 +33102,12 @@
         /*the max height limit*/
 
         if (y0 < point0.y + 1) continue;
-
-        var color = this._settings.color.call(this, data[i]);
-
+        var color = config.color.call(this, data[i], i);
         var firstSector = Math.abs(y0 - (origin ? point1.y + minValue * unit : point1.y)) < 3;
         /*drawing bar body*/
 
         ctx.globalAlpha = config.alpha.call(this, data[i]);
-        ctx.fillStyle = ctx.strokeStyle = config.color.call(this, data[i]);
+        ctx.fillStyle = ctx.strokeStyle = color;
         ctx.beginPath();
         var y1 = y0 - unit * value + (firstSector ? negValue ? -1 : 1 : 0);
 
@@ -32384,8 +33272,7 @@
 
 
       if (!yax) {
-        this._drawLine(ctx, point0.x - 0.5, point0.y, point0.x - 0.5, point1.y, "#edeff0", 1); //hardcoded color!
-
+        this._drawLine(ctx, point0.x - 0.5, point0.y, point0.x - 0.5, point1.y, $active.dataBorderColor, 1);
       }
 
       var seriesNumber = 0;
@@ -32415,12 +33302,12 @@
 
         if (!yax) value += startValue / unit;
 
-        var color = this._settings.color.call(this, data[i]);
+        var color = this._settings.color.call(this, data[i], i);
         /*drawing bar body*/
 
 
         ctx.globalAlpha = this._settings.alpha.call(this, data[i]);
-        ctx.fillStyle = this._settings.color.call(this, data[i]);
+        ctx.fillStyle = color;
         ctx.beginPath();
 
         var points = this._setBarHPoints(ctx, x0, y0, barWidth, radius, unit, value, 0);
@@ -32812,7 +33699,7 @@
     }
   };
 
-  var Radar = {
+  var Radar$1 = {
     $render_radar: function (ctx, data, x, y, sIndex, map) {
       this._renderRadarChart(ctx, data, x, y, sIndex, map);
     },
@@ -33413,7 +34300,7 @@
 
       if (data.length) {
         /*getting all points*/
-        x0 = point0.x;
+        x0 = config.offset ? point0.x + params.cellWidth * 0.5 : point0.x;
 
         for (i = 0; i < data.length; i++) {
           y = this._getPointY(data[i], point0, point1, params);
@@ -33596,9 +34483,9 @@
         }
       } // animation for the right part (added item)
       else {
-          elem.style.left = "0px";
-          if (!skipRight && offset$$1 != cellWidth) ctx.clearRect(x0 + (data.length - 1) * cellWidth - cellWidth + offset$$1, 0, elem.offsetWidth, elem.offsetHeight);
-        } // show label for the last label after finishing animation
+        elem.style.left = "0px";
+        if (!skipRight && offset$$1 != cellWidth) ctx.clearRect(x0 + (data.length - 1) * cellWidth - cellWidth + offset$$1, 0, elem.offsetWidth, elem.offsetHeight);
+      } // show label for the last label after finishing animation
 
 
       if (labels.length > 1 && offset$$1 && offset$$1 != cellWidth) {
@@ -33787,22 +34674,22 @@
     /*@attr*/
     "webix_area_id",
     on_click: {
-      webix_chart_legend_item: function (e, id, obj) {
-        var series = obj.getAttribute(
+      webix_chart_legend_item: function (e, itemId, obj) {
+        var id = obj.getAttribute(
         /*@attr*/
         "series_id");
 
-        if (this.callEvent("onLegendClick", [e, series, obj])) {
-          if (typeof series != "undefined" && this._series.length > 1) {
+        if (this.callEvent("onLegendClick", [e, id, obj])) {
+          if (!isUndefined(id) && this._series.length > 1 && this._series[id]) {
             var config = this._settings;
             var values = config.legend.values;
-            var toggle = values && values[series].toggle || config.legend.toggle; // hide action
+            var toggle = values && values[id].toggle || config.legend.toggle; // hide action
 
-            if (toggle) {
+            if (values && toggle) {
               if (obj.className.indexOf("hidden") != -1) {
-                this.showSeries(series);
+                this.showSeries(id);
               } else {
-                this.hideSeries(series);
+                this.hideSeries(id);
               }
             }
           }
@@ -33885,7 +34772,7 @@
       if (this._settings.legend) {
         if (!this.canvases["legend"]) this.canvases["legend"] = this._createCanvas("legend");
 
-        this._drawLegend(this.data.getRange(), this._content_width, this._content_height);
+        this._drawLegend(this._getDataRange(), this._content_width, this._content_height);
       }
 
       this._map = map = new HtmlMap(this._id);
@@ -33928,9 +34815,12 @@
         elem.style[prop] = style[prop] + "px";
       }
     },
+    _getDataRange: function () {
+      return this.data.branch ? this._getChartTreeData() : this.data.getRange();
+    },
     _getChartData: function () {
       var axis, axisConfig, config, data, i, newData, start, units, value, valuesHash;
-      data = this.data.getRange();
+      data = this._getDataRange();
       axis = this._settings.type.toLowerCase().indexOf("barh") != -1 ? "yAxis" : "xAxis";
       axisConfig = this._settings[axis];
 
@@ -33976,6 +34866,23 @@
 
       return data;
     },
+    _getChartTreeData: function (id) {
+      var _this = this;
+
+      var data = [];
+      var ids = this.data.branch[id || 0];
+
+      if (ids) {
+        ids.forEach(function (childId) {
+          var item = _this.data.getItem(childId);
+
+          data.push(item);
+          if (_this.data.branch[childId]) item.data = _this._getChartTreeData(childId);
+        });
+      }
+
+      return data;
+    },
     series_setter: function (config) {
       if (!config || _typeof(config) != "object") {
         assert(config, "Chart :: Series must be an array or object");
@@ -34015,11 +34922,11 @@
       "default": function (obj) {
         var count = this.count();
         var colorsCount = this._defColors.length;
-        var i = this.getIndexById(obj.id);
+        var i = this.data.getBranchIndex ? this.data.getBranchIndex(obj.id) : this.getIndexById(obj.id);
 
         if (colorsCount > count) {
           if (i) {
-            if (i < colorsCount - count) i = this._defColorsCursor + 2;else i = this._defColorsCursor + 1;
+            if (i > 0 && i < colorsCount - count) i = this._defColorsCursor + 2;else i = this._defColorsCursor + 1;
           }
 
           this._defColorsCursor = i;
@@ -34030,6 +34937,9 @@
     },
     color_setter: function (value) {
       return this.colormap[value] || template(value);
+    },
+    childColor_setter: function (value) {
+      return template(value);
     },
     fill_setter: function (value) {
       return !value || value == "0" ? false : template(value);
@@ -34148,8 +35058,8 @@
 
       this._mergeSettings(config, {
         title: "",
-        color: "#edeff0",
-        lineColor: "#edeff0",
+        color: $active.dataBorderColor,
+        lineColor: $active.dataBorderColor,
         template: "{obj}",
         lines: true
       });
@@ -34164,8 +35074,8 @@
     yAxis_setter: function (config) {
       this._mergeSettings(config, {
         title: "",
-        color: "#edeff0",
-        lineColor: "#edeff0",
+        color: $active.dataBorderColor,
+        lineColor: $active.dataBorderColor,
         template: "{obj}",
         lines: true,
         bg: $active.backColor
@@ -34492,15 +35402,17 @@
       return this.getItem(id);
     },
     _getActiveSeries: function (e) {
-      var a, areas, i, offset$$1, pos$$1, selection, x, y;
-      areas = this._map._areas;
-      offset$$1 = offset(this._contentobj._htmlmap);
-      pos$$1 = pos(e);
-      x = pos$$1.x - offset$$1.x;
-      y = pos$$1.y - offset$$1.y;
+      var type = this._settings.type;
+      if (type.indexOf("pie") > -1 || type.indexOf("donut") > -1) return e.target.getAttribute("userdata") * 1;
+      var areas = this._map._areas,
+          offset$$1 = offset(this._contentobj._htmlmap),
+          pos$$1 = pos(e),
+          x = pos$$1.x - offset$$1.x,
+          y = pos$$1.y - offset$$1.y;
+      var selection;
 
-      for (i = 0; i < areas.length; i++) {
-        a = areas[i].points;
+      for (var i = 0; i < areas.length; i++) {
+        var a = areas[i].points;
 
         if (x <= a[2] && x >= a[0] && y <= a[3] && y >= a[1]) {
           if (selection) {
@@ -34544,7 +35456,6 @@
     *   @param: height - the height of the container
     */
     _drawLegend: function (data, width) {
-      /*position of the legend block*/
       var i,
           legend,
           legendContainer,
@@ -34556,18 +35467,12 @@
           y = 0,
           ctx,
           itemColor,
-          disabled,
-          item;
+          disabled;
       data = data || [];
       width = width || this._content_width;
       ctx = this.canvases["legend"].getCanvas();
-      /*legend config*/
-
       legend = this._settings.legend;
-      /*the legend sizes*/
-
-      style = this._settings.legend.layout != "x" ? "width:" + legend.width + "px" : "";
-      /*creation of legend container*/
+      style = this._settings.legend.layout != "x" ? "width:" + legend.width + "px" : ""; // legend container
 
       if (this._legendObj) {
         this._legendObj.innerHTML = "";
@@ -34587,15 +35492,18 @@
 
       this._legendObj = legendContainer;
 
-      this._contentobj.appendChild(legendContainer);
-      /*rendering legend text items*/
+      this._contentobj.appendChild(legendContainer); // rendering legend text items
 
 
       legendItems = [];
       if (!legend.values) for (i = 0; i < data.length; i++) {
         legendItems.push(this._drawLegendText(legendContainer, legend.template(data[i]), data[i].id));
       } else for (i = 0; i < legend.values.length; i++) {
-        legendItems.push(this._drawLegendText(legendContainer, legend.values[i].text, typeof legend.values[i].id != "undefined" ? _typeof(legend.values[i].id) : i, legend.values[i].$hidden));
+        var seriesId = isUndefined(legend.values[i].id) ? i : legend.values[i].id;
+
+        var item = this._drawLegendText(legendContainer, legend.values[i].text, seriesId, legend.values[i].$hidden);
+
+        legendItems.push(item);
       }
       var rendered = document.body.contains(this._contentobj);
       var parentNode, d; // inside window
@@ -34613,21 +35521,11 @@
       legendHeight = legendContainer.offsetHeight;
       /*this._settings.legend.width = legendWidth;
       this._settings.legend.height = legendHeight;*/
-
-      /*setting legend position*/
+      //setting legend position
 
       if (legendWidth < width) {
-        if (legend.layout == "x" && legend.align == "center") {
-          x = (width - legendWidth) / 2;
-        }
-
-        if (legend.align == "right") {
-          x = width - legendWidth;
-        }
-
-        if (legend.margin && legend.align != "center") {
-          x += (legend.align == "left" ? 1 : -1) * legend.margin;
-        }
+        if (legend.layout == "x" && legend.align == "center") x = (width - legendWidth) / 2;else if (legend.align == "right") x = width - legendWidth;
+        if (legend.margin && legend.align != "center") x += (legend.align == "left" ? 1 : -1) * legend.margin;
       }
 
       if (legendHeight < this._content_height) {
@@ -34639,23 +35537,22 @@
       }
 
       legendContainer.style.left = x + "px";
-      legendContainer.style.top = y + "px";
-      /*drawing colorful markers*/
+      legendContainer.style.top = y + "px"; // drawing markers
 
       ctx.save();
 
       for (i = 0; i < legendItems.length; i++) {
-        item = legendItems[i];
+        var _item = legendItems[i];
 
         if (legend.values && legend.values[i].$hidden) {
           disabled = true;
-          itemColor = legend.values[i].disableColor ? legend.values[i].disableColor : "#edeff0";
+          itemColor = legend.values[i].disableColor || $active.dataBorderColor;
         } else {
           disabled = false;
-          itemColor = legend.values ? legend.values[i].color : this._settings.color.call(this, data[i]);
+          itemColor = legend.values ? legend.values[i].color : this._settings.color.call(this, data[i], i);
         }
 
-        this._drawLegendMarker(ctx, item.offsetLeft + x, item.offsetTop + y, itemColor, item.offsetHeight, disabled, i);
+        this._drawLegendMarker(ctx, _item.offsetLeft + x, _item.offsetTop + y, itemColor, _item.offsetHeight, disabled, i);
       }
 
       ctx.restore();
@@ -34675,8 +35572,7 @@
     */
     _drawLegendText: function (cont, value, series, disabled) {
       var style = "";
-      if (this._settings.legend.layout == "x") style = "float:left;";
-      /*the text of the legend item*/
+      if (this._settings.legend.layout == "x") style = "float:left;"; // the text of the legend item
 
       var text = create("DIV", {
         "style": style + "padding-left:" + (10 + this._settings.legend.marker.width) + "px",
@@ -34704,18 +35600,13 @@
       var marker = this._settings.legend.marker;
       var values = this._settings.legend.values;
       var type = values && values[i].markerType ? values[i].markerType : marker.type;
-
-      if (color$$1) {
-        ctx.strokeStyle = ctx.fillStyle = color$$1;
-      }
-
-      if (type == "round" || !marker.radius) {
+      if (color$$1) ctx.strokeStyle = ctx.fillStyle = color$$1;
+      if (type == "none") return false;else if (type == "round" || !marker.radius) {
         ctx.beginPath();
         var r = marker.height / 2;
         ctx.arc(x + r + 5, y + height / 2, r, 0, 2 * Math.PI);
         ctx.fill();
       } else if (type == "item") {
-        /*copy of line*/
         if (this._settings.line && this._settings.type != "scatter" && !this._settings.disableLines) {
           ctx.beginPath();
           ctx.lineWidth = this._series[i].line.width;
@@ -34727,8 +35618,6 @@
           ctx.lineTo(x1, y0);
           ctx.stroke();
         }
-        /*item copy*/
-
 
         var config = this._series[i].item;
         var radius = parseInt(config.radius.call(this, {}), 10) || 0;
@@ -34779,43 +35668,35 @@
     *   @param: height - the height of the chart container
     */
     _getChartBounds: function (width, height) {
-      var chartX0, chartY0, chartX1, chartY1;
-      chartX0 = this._settings.padding.left;
-      chartY0 = this._settings.padding.top;
-      chartX1 = width - this._settings.padding.right;
-      chartY1 = height - this._settings.padding.bottom;
+      var padding = this._settings.padding;
+      var x = padding.left,
+          y = padding.top,
+          x1 = width - padding.right,
+          y1 = height - padding.bottom;
 
       if (this._settings.legend) {
-        var legend = this._settings.legend;
-        /*legend size*/
-
-        var legendWidth = this._settings.legend.width;
-        var legendHeight = this._settings.legend.height;
-        /*if legend is horizontal*/
+        var legend = this._settings.legend,
+            legendWidth = legend.width,
+            legendHeight = legend.height; // if legend is horizontal
 
         if (legend.layout == "x") {
           if (legend.valign == "center") {
-            if (legend.align == "right") chartX1 -= legendWidth;else if (legend.align == "left") chartX0 += legendWidth;
-          } else if (legend.valign == "bottom") {
-            chartY1 -= legendHeight;
-          } else {
-            chartY0 += legendHeight;
-          }
-        }
-        /*vertical scale*/
+            if (legend.align == "right") x1 -= legendWidth;else if (legend.align == "left") x += legendWidth;
+          } else if (legend.valign == "bottom") y1 -= legendHeight;else y += legendHeight;
+        } // vertical scale
         else {
-            if (legend.align == "right") chartX1 -= legendWidth;else if (legend.align == "left") chartX0 += legendWidth;
-          }
+          if (legend.align == "right") x1 -= legendWidth;else if (legend.align == "left") x += legendWidth;
+        }
       }
 
       return {
         start: {
-          x: chartX0,
-          y: chartY0
+          x: x,
+          y: y
         },
         end: {
-          x: chartX1,
-          y: chartY1
+          x: x1,
+          y: y1
         }
       };
     },
@@ -34931,7 +35812,7 @@
       map.addRect(id, [points[0].x - bounds.x, points[0].y - bounds.y, points[1].x - bounds.x, points[1].y - bounds.y], sIndex);
     }
   };
-  var view$10 = exports.protoUI(api$10, Pie$1, BarChart, LineChart, BarHChart, StackedBarChart, StackedBarHChart, Spline$1, AreaChart, Radar, Scatter, Presets, SplineArea$1, DynamicChart, Group, AutoTooltip, DataLoader, MouseEvents, EventSystem, base$1.view);
+  var view$10 = exports.protoUI(api$10, Pie$1, BarChart, LineChart, BarHChart, StackedBarChart, StackedBarHChart, Spline$1, AreaChart, Radar$1, Scatter, Presets, SplineArea$1, DynamicChart, Group, AutoTooltip, DataLoader, MouseEvents, EventSystem, base$1.view);
 
   exports.protoUI({
     name: "rangechart",
@@ -35045,8 +35926,8 @@
       this._no_animation = false;
     },
     render: function (id, data, type$$1) {
-      var _this = this,
-          _arguments = arguments;
+      var _arguments = arguments,
+          _this = this;
 
       var i, lastChain; //start filtering processing=>
 
@@ -36087,7 +36968,7 @@
 
       if (type && type.type == "tiles") {
         this._tilesPadding = type.padding || this.type.padding;
-        this._viewobj.firstChild.style.float = "left";
+        this._viewobj.firstChild.style["float"] = "left";
         this._viewobj.firstChild.style.padding = this._tilesPadding / 2 + "px";
       }
 
@@ -36617,24 +37498,24 @@
         });
       } //normal parse
       else {
-          if (more && !list$$1.exists("$more")) {
-            more = {
-              id: "$more",
-              value: more,
-              $css: "webix_comments_more_item"
-            };
-            if (this._settings.mode == "chat") data.unshift(more);else data.push(more);
-          }
-
-          list$$1.parse(data);
-
-          if (this._settings.mode == "chat") {
-            //wait until rendered
-            list$$1.waitData.then(function () {
-              return list$$1.showItem(list$$1.getLastId());
-            });
-          }
+        if (more && !list$$1.exists("$more")) {
+          more = {
+            id: "$more",
+            value: more,
+            $css: "webix_comments_more_item"
+          };
+          if (this._settings.mode == "chat") data.unshift(more);else data.push(more);
         }
+
+        list$$1.parse(data);
+
+        if (this._settings.mode == "chat") {
+          //wait until rendered
+          list$$1.waitData.then(function () {
+            return list$$1.showItem(list$$1.getLastId());
+          });
+        }
+      }
 
       return true;
     },
@@ -37575,18 +38456,17 @@
         this.resize();
       }
     },
-    hideItem: function (id) {
+    hideMenuItem: function (id) {
       var menu = this.getMenu(id);
       if (menu) menu._set_item_hidden(id, true);
     },
+    showMenuItem: function (id) {
+      var menu = this.getMenu(id);
+      if (menu) menu._set_item_hidden(id, false);
+    },
     showItem: function (id) {
       var menu = this.getMenu(id);
-
-      if (menu) {
-        menu._set_item_hidden(id, false);
-
-        return list.api.showItem.call(menu, id);
-      }
+      if (menu) return list.api.showItem.call(menu, id);
     },
     _hide_sub_menu: function (mode) {
       if (this._open_sub_menu) {
@@ -37681,11 +38561,20 @@
       $getSize: function (dx, dy) {
         //we saving height and width, as list can hardcode new values
         var h = this._view._settings.height * 1;
-        var w = this._view._settings.width * 1;
+        var w = this._view._settings.width * 1; //to avoid duplicate borders, use "borderless" for inner size
+
+        var inner = this._view._settings._inner;
+        this._view._settings._inner = {
+          top: true,
+          left: true,
+          right: true,
+          bottom: true
+        };
         var size = menu.api.$getSize.call(this._view, dx, dy); //restoring
 
         this._view._settings.height = h;
         this._view._settings.width = w;
+        this._view._settings._inner = inner;
         return size;
       },
       $setSize: function (x, y) {
@@ -38174,7 +39063,7 @@
 
         if (!popup.config.hidden && !popup.$view.contains(trg) && !this.$view.firstChild.contains(trg) && !popup.queryView({
           view: "menu"
-        })._open_sub_menu) {
+        })._open_sub_menu && !(this.$view._custom_scroll_size && this.$view._custom_scroll_size._scroll_y_node)) {
           popup.hide();
         }
       }, {
@@ -38426,8 +39315,6 @@
         this._viewobj[config.scroll == "x" ? "scrollLeft" : "scrollTop"] = value;
 
         this._onscroll_inner(value, true);
-
-        return true;
       }
     },
     _onscroll_delay: function (time) {
@@ -38465,24 +39352,27 @@
       });
     },
     _on_wheel: function (e) {
+      if (e.ctrlKey) return false;
       var dir = 0;
       var step = e.deltaMode === 0 ? 30 : 1;
-      if (e.ctrlKey) return false;
 
-      if (e.deltaX && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      if (e.deltaX && Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
         //x-scroll
-        if (this._x_scroll_mode && this._settings.scrollVisible) dir = e.deltaX / step;
+        if (this._x_scroll_mode && this._settings.scrollVisible) dir = (e.shiftKey ? e.deltaY : e.deltaX) / step;
       } else {
         //y-scroll
-        if (!this._x_scroll_mode && this._settings.scrollVisible) {
-          if (isUndefined(e.deltaY)) dir = e.detail;else dir = e.deltaY / step;
-        }
+        if (!this._x_scroll_mode && this._settings.scrollVisible) dir = e.deltaY / step;
       } // Safari requires target preserving
       // (used in _check_rendered_cols of DataTable)
 
 
       if (env.isSafari) this._scroll_trg = e.target;
-      if (dir && this.scrollTo(this.getScroll() + dir * this._settings.scrollStep)) return preventEvent(e);
+
+      if (dir) {
+        var old = this.getScroll();
+        this.scrollTo(old + dir * this._settings.scrollStep);
+        if (old !== this.getScroll()) preventEvent(e);
+      }
     }
   };
   var view$1g = exports.protoUI(api$1g, EventSystem, Settings);
@@ -39307,11 +40197,14 @@
       if (this._bs_progress) delay(this._bs_select, this, [false, false]);
     },
     _bs_select: function (mode, theend, e) {
-      var start = null;
-      if (!this._bs_ready[2]) this._bs_ready[2] = this._locate_cell_xy.apply(this, this._bs_ready);
-      start = this._bs_ready[2];
+      if (!this._bs_ready[2]) this._bs_ready[2] = this._locate_cell_xy(this._bs_ready[0], this._bs_ready[1]);
+      var cell = this._bs_ready[2];
 
-      var end = this._locate_cell_xy.apply(this, this._bs_progress);
+      var start = {
+        row: cell.row,
+        column: cell.column
+      },
+          end = this._locate_cell_xy(this._bs_progress[0], this._bs_progress[1], true);
 
       if (!this.callEvent("onBeforeBlockSelect", [start, end, theend, e])) return;
 
@@ -39369,8 +40262,11 @@
             starty = Math.min(startn.top, endn.top);
             endy = Math.max(startn.top + startn.height, endn.top + endn.height);
             if (this._settings.topSplit) starty += this._getTopSplitOffset(start);
-            if (this._auto_scroll_delay) this._auto_scroll_delay = window.clearTimeout(this._auto_scroll_delay);
-            if (e && (!this._touch_scroll || this._settings.prerender)) this._auto_scroll_delay = delay(this._auto_scroll, this, [pos(e)], 250);
+
+            if (e) {
+              if (this._auto_scroll_delay) this._auto_scroll_delay = window.clearTimeout(this._auto_scroll_delay);
+              if (!this._touch_scroll || this._settings.prerender) this._auto_scroll_delay = delay(this._auto_scroll, this, [pos(e)], 250);
+            }
           }
 
           var style = this._block_panel.style;
@@ -39383,12 +40279,14 @@
 
       if (theend) this.callEvent("onAfterBlockSelect", [start, end]);
     },
-    _bs_start: function () {
+    _bs_start: function (handleStart) {
       this._block_panel = create("div", {
         "class": "webix_block_selection"
       }, "");
 
       this._body.appendChild(this._block_panel);
+
+      this.$handleStart = !!handleStart;
     },
     _bs_move: function (e, pointer) {
       if (this._rs_progress) return;
@@ -39399,7 +40297,7 @@
         var progress = [pos$$1.x - this._bs_position.x, pos$$1.y - this._bs_position.y]; //prevent unnecessary block selection while dbl-clicking
 
         if (Math.abs(this._bs_ready[0] - progress[0]) < 5 && Math.abs(this._bs_ready[1] - progress[1]) < 5) return;
-        if (this._bs_progress === false) this._bs_start(e);
+        if (this._bs_progress === false) this._bs_start();
         this._bs_progress = progress;
 
         this._bs_select(this.config.blockselect, false, e);
@@ -39407,7 +40305,7 @@
         if (pointer === "touch") preventEvent(e);
       }
     },
-    _locate_cell_xy: function (x, y) {
+    _locate_cell_xy: function (x, y, isEndPoint) {
       var inTopSplit = false,
           row = null,
           column = null;
@@ -39426,9 +40324,10 @@
       if (y < 0) y = 0;
       var cols = this._settings.columns;
       var rows = this.data.order;
+      var handle = isEndPoint && this.$handleStart;
+      var dir = handle ? this._getHandleMoveDirection(x, y) : null;
       var summ = 0;
-
-      for (var i = 0; i < cols.length; i++) {
+      if (!handle || dir == "x") for (var i = 0; i < cols.length; i++) {
         summ += cols[i].width;
 
         if (summ >= x) {
@@ -39436,23 +40335,25 @@
           break;
         }
       }
-
-      if (!column) column = cols[cols.length - 1].id;
+      if (!column) column = handle ? this._bs_ready[5].column : cols[cols.length - 1].id;
       summ = 0;
-      var start = this.data.$min || 0;
 
-      if (this._settings.fixedRowHeight) {
-        row = rows[start + Math.floor(y / this._settings.rowHeight)];
-      } else for (var _i = start; _i < rows.length; _i++) {
-        summ += this._getHeightByIndex(_i);
+      if (!handle || dir == "y") {
+        var start = this.data.$min || 0;
 
-        if (summ >= y) {
-          row = rows[_i];
-          break;
+        if (this._settings.fixedRowHeight) {
+          row = rows[start + Math.floor(y / this._settings.rowHeight)];
+        } else for (var _i = start; _i < rows.length; _i++) {
+          summ += this._getHeightByIndex(_i);
+
+          if (summ >= y) {
+            row = rows[_i];
+            break;
+          }
         }
       }
 
-      if (!row) row = rows[rows.length - 1];
+      if (!row) row = handle ? this._bs_ready[5].row : rows[rows.length - 1];
       return {
         row: row,
         column: column
@@ -39471,6 +40372,25 @@
       }
 
       return y;
+    },
+    _getHandleMoveDirection: function (x, y) {
+      var dir;
+      var p0 = [this._bs_ready[0], this._bs_ready[1]];
+      var p1 = [this._bs_ready[3], this._bs_ready[4]];
+      var xMax = p1[0] + this._columns_pull[this._bs_ready[5].column].width;
+
+      var yMax = p1[1] + this._getRowHeight(this._bs_ready[5].row);
+
+      if (x <= xMax && x >= p0[0]) {
+        if (y <= yMax && y >= p0[1]) dir = x < p1[0] ? "x" : "y";else dir = "y";
+      } else {
+        var x0 = x > p1[0] ? xMax : p0[0];
+        var y0 = y > p1[1] ? yMax : p0[1];
+        dir = Math.abs(x - x0) > Math.abs(y - y0) ? "x" : "y";
+        if (dir == "y" && x < p0[0] && y <= yMax && y >= p0[1]) dir = null;
+      }
+
+      return dir;
     }
   };
 
@@ -39980,7 +40900,9 @@
       this.data.each(function (obj) {
         var height;
         d.innerHTML = this._getValue(obj, config, 0);
-        height = Math.max(d.scrollHeight, this._settings.rowHeight, this._settings.minRowHeight || 0);
+        var spans = this._spans_pull;
+        if (spans && spans[obj.id] && spans[obj.id][id]) height = this._calcSpanAutoHeight(obj.id, id, d);else height = d.scrollHeight;
+        height = Math.max(height, this._settings.rowHeight, this._settings.minRowHeight || 0);
         height = Math.min(height, this._settings.maxRowHeight || 100000);
         if (size) size[obj.id] = Math.max(height, size[obj.id] || 0);else obj.$height = height;
       }, this);
@@ -40350,6 +41272,7 @@
 
       this._addEditor(id, type);
 
+      if (type.getPopup) type.getPopup()._editorMaster = this._settings.id;
       if (!type.$inline) type._editor_pos = this._sizeToCell(id, node, true);
       if (type.afterRender) type.afterRender();
 
@@ -40700,13 +41623,85 @@
       }
     },
     moveColumn: function (id, index) {
+      this._moveColumn(id, index);
+    },
+    _moveColumn: function (id, index, hrIndex) {
       var cindex = this.getColumnIndex(id);
       if (cindex == index || cindex == -1) return false; //already in place
 
-      var horder = this._hidden_column_order;
-      var columns = this._settings.columns; // remove from the previous place
+      var cols;
 
-      var hindex;
+      if (!isUndefined(hrIndex)) {
+        if (!this._check_source_span(cindex, index, hrIndex)) return false;
+        cols = this._get_span_columns(cindex, hrIndex, index);
+        index += this._get_target_span_shift(cindex, index);
+
+        if (cols) {
+          for (var i = 0; i < cols.length; i++) {
+            var inc = cindex > index ? i : 0;
+            var sId = cols[i];
+
+            if (this.getColumnIndex(sId) < 0 && i > 0) {
+              this._moveHiddenSpanColumn(sId, cols[0], i);
+            } else this._changeColumnIndex(cols[i], index + inc, hrIndex);
+          }
+        }
+      }
+
+      if (!cols) this._changeColumnIndex(id, index, hrIndex);
+
+      this._refresh_columns();
+    },
+    _changeColumnIndex: function (id, index, hrIndex) {
+      var cindex = this.getColumnIndex(id);
+      var horder = this._hidden_column_order;
+      var columns = this._settings.columns;
+      var hindex; // handle colspan in another header line
+
+      var header = columns[cindex].header;
+
+      if (!isUndefined(hrIndex) && header && header[hrIndex]) {
+        var sourceSpan = header[hrIndex].colspan || 1;
+        var batchChanged = false;
+
+        for (var i = 0; i < header.length; i++) {
+          if (i != hrIndex && header[i] && header[i].colspan) {
+            var hI = header[i];
+            var span = hI.colspan;
+
+            if (span > sourceSpan) {
+              var nextCol = columns[cindex + sourceSpan];
+
+              if (nextCol.batch && !columns[cindex].batch) {
+                batchChanged = true;
+                columns[cindex].batch = nextCol.batch;
+                delete nextCol.batch;
+              }
+
+              nextCol.header[i] = hI;
+            }
+          }
+        } // drop to column with colspan settings
+
+
+        var tIndex = index == columns.length ? index - 1 : index;
+        var tHeader = columns[tIndex].header;
+
+        for (var _i2 = 0; _i2 < tHeader.length; _i2++) {
+          var _span = tHeader[_i2] ? tHeader[_i2].colspan : 1;
+
+          if (_i2 != hrIndex && _span > 1 && cindex > tIndex && cindex < tIndex + _span) {
+            if (!batchChanged && columns[cindex].batch && !columns[tIndex].batch) {
+              columns[tIndex].batch = columns[cindex].batch;
+              delete columns[cindex].batch;
+            }
+
+            header[_i2] = tHeader[_i2];
+          }
+        }
+      } // remove from the previous place
+
+
       var col = columns.splice(cindex, 1)[0];
 
       if (horder.length) {
@@ -40724,14 +41719,100 @@
       var pos;
 
       if (horder.length) {
+        pos = 0;
         var prev = columns[nindex - 1];
-        pos = prev && prev.id ? horder.find(prev.id) + 1 : 0;
+
+        if (prev && prev.id) {
+          var pId = prev.id;
+          pos = this._getHiddenColumnIndex(pId);
+
+          do {
+            pos += 1;
+            pId = horder[pos];
+          } while (this.getColumnIndex(pId) < 0 && pos < horder.length);
+        }
+
         horder.insertAt(col.id, pos);
       }
 
       this._updateSplit(nindex, pos, 1);
+    },
+    _moveHiddenSpanColumn: function (id, prevId, inc) {
+      var horder = this._hidden_column_order; // remove from the previous place
 
-      this._refresh_columns();
+      var hindex = this._getHiddenColumnIndex(id);
+
+      horder.removeAt(hindex);
+
+      this._updateSplit(-1, hindex, -1); // paste into new
+
+
+      var index = this._getHiddenColumnIndex(prevId) + inc;
+      horder.insertAt(id, index);
+
+      this._updateSplit(-1, index, 1);
+    },
+    _check_source_span: function (indexFrom, indexTo, hrIndex) {
+      if (indexTo > indexFrom) indexTo--;
+      var fromSpan = (this._columns[indexFrom].header[hrIndex].colspan || 1) - 1;
+
+      for (var i = 0; i < this._columns.length; i++) {
+        var header = this._columns[i].header;
+
+        for (var j = 0; j < header.length; j++) {
+          if (i != indexFrom || j != hrIndex) {
+            var span = header[j] && header[j].colspan || 1;
+            var i1 = i + span - 1;
+            if (span > 1 && i <= indexFrom && i1 >= indexFrom + fromSpan && (i > indexTo || i1 < indexTo)) return false;
+          }
+        }
+      }
+
+      return true;
+    },
+    _get_target_span_shift: function (indexFrom, indexTo) {
+      for (var i = 0; i < this._columns.length; i++) {
+        var header = this._columns[i].header;
+
+        for (var j = 0; j < header.length; j++) {
+          if (i != indexFrom) {
+            var span = header[j] && header[j].colspan;
+
+            if (span) {
+              var i1 = i + span - 1;
+
+              if (i < indexTo && i1 >= indexTo && (i > indexFrom || i1 < indexFrom)) {
+                var newIndexTo = indexFrom > indexTo ? i : i1 + 1;
+                return newIndexTo - indexTo;
+              }
+            }
+          }
+        }
+      }
+
+      return 0;
+    },
+    _get_span_columns: function (cIndex, hrIndex) {
+      var columns,
+          h = this._columns[cIndex].header;
+      var span = h[hrIndex].colspan || 1;
+
+      for (var i = 0; i < h.length; i++) {
+        if (h[i] && h[i].$colspan && h[i].$colspan > h[i].colspan) span = Math.max(span, h[i].$colspan);
+      }
+
+      if (span > 1) {
+        var id = this.columnId(cIndex);
+        columns = [id];
+
+        var hIndex = this._getHiddenColumnIndex(id);
+
+        for (var _i3 = hIndex + 1; _i3 < hIndex + span; _i3++) {
+          columns.push(this._getHiddenColumnId(_i3));
+        }
+      }
+
+      return columns;
     },
     _init_horder: function (horder, cols) {
       if (!horder.length) {
@@ -40771,7 +41852,7 @@
 
         this._fixSplit(index, span, -1);
 
-        for (var _i2 = index + span - 1; _i2 >= index; _i2--) {
+        for (var _i4 = index + span - 1; _i4 >= index; _i4--) {
           this._hideColumn(index);
 
           column = cols.splice(index, 1)[0];
@@ -40790,30 +41871,30 @@
         var prev = null;
         var hindex = 0;
 
-        for (var _i3 = 0; _i3 < horder.length; _i3++) {
-          if (horder[_i3] == id) {
-            hindex = _i3;
+        for (var _i5 = 0; _i5 < horder.length; _i5++) {
+          if (horder[_i5] == id) {
+            hindex = _i5;
             break;
           }
 
-          if (!hhash[horder[_i3]]) prev = horder[_i3];
+          if (!hhash[horder[_i5]]) prev = horder[_i5];
         }
 
         if (opts.spans) {
           var _header = column.header;
 
-          for (var _i4 = 0; _i4 < _header.length; _i4++) {
-            if (_header[_i4]) {
-              _header[_i4].colspan = _header[_i4].$colspan || _header[_i4].colspan;
-              span = Math.max(span, _header[_i4].colspan || 1);
+          for (var _i6 = 0; _i6 < _header.length; _i6++) {
+            if (_header[_i6]) {
+              _header[_i6].colspan = _header[_i6].$colspan || _header[_i6].colspan;
+              span = Math.max(span, _header[_i6].colspan || 1);
             }
           }
         }
 
         var _index = prev ? this.getColumnIndex(prev) + 1 : 0;
 
-        for (var _i5 = hindex + span - 1; _i5 >= hindex; _i5--) {
-          var col = hhash[horder[_i5]];
+        for (var _i7 = hindex + span - 1; _i7 >= hindex; _i7--) {
+          var col = hhash[horder[_i7]];
 
           if (col) {
             //can be already shown by another action
@@ -40919,9 +42000,9 @@
         col.attached = col.node = null;
       }
 
-      for (var _i6 = 0; _i6 < 3; _i6++) {
-        this._header.childNodes[_i6].innerHTML = "";
-        this._body.childNodes[_i6].firstChild.innerHTML = "";
+      for (var _i8 = 0; _i8 < 3; _i8++) {
+        this._header.childNodes[_i8].innerHTML = "";
+        this._body.childNodes[_i8].firstChild.innerHTML = "";
       } //render new structure
 
 
@@ -40946,7 +42027,7 @@
       this.render();
     },
     showColumnBatch: function (batch, mode, silent) {
-      var preserve = typeof mode != "undefined";
+      var preserve = !isUndefined(mode);
       mode = mode !== false;
       var sub = [];
       this.eachColumn(function (id, col) {
@@ -41318,6 +42399,16 @@
       var nodeName = e.target.nodeName;
       return nodeName != "INPUT" && nodeName != "TEXTAREA";
     },
+    _getColumnDragText: function (id, rind) {
+      var header = this.getColumnConfig(id).header;
+      var text = header[rind] ? header[rind].text : null;
+
+      for (var i = 0; !text && i < header.length; i++) {
+        if (header[i] && header[i].text) text = header[i].text;
+      }
+
+      return text || "&nbsp;";
+    },
     dragColumn_setter: function (value) {
       var control; //will be defined below
 
@@ -41343,7 +42434,7 @@
 
             this._limit_column_drag = column.width;
             this._auto_scroll_force = true;
-            return "<div class='webix_dd_drag_column' style='width:" + column.width + "px'>" + (column.header[0].text || "&nbsp;") + "</div>";
+            return "<div class='webix_dd_drag_column' style='width:" + column.width + "px'>" + this._getColumnDragText(id.column, id.rind) + "</div>";
           }, this),
           $dragPos: bind(function (pos$$1, e, node) {
             var _this = this;
@@ -41368,7 +42459,8 @@
                   this.$view.parentNode.appendChild(this._dragTarget);
                 }
 
-                this.moveColumn(start, end_index + (start_index < end_index ? 1 : 0));
+                this._moveColumn(start, end_index + (start_index < end_index ? 1 : 0), context.start.rind);
+
                 this._last_sort_dnd_node = id.column;
                 this._column_dnd_temp_block = true;
               }
@@ -41415,18 +42507,8 @@
               start: id,
               custom: "column_dnd"
             };
-            var header = this.getColumnConfig(id.column).header;
-            var text = "&nbsp;";
-
-            for (var i = 0; i < header.length; i++) {
-              if (header[i]) {
-                text = header[i].text;
-                break;
-              }
-            }
-
             this._auto_scroll_force = true;
-            return "<div class='webix_dd_drag_column'>" + text + "</div>";
+            return "<div class='webix_dd_drag_column'>" + this._getColumnDragText(id.column, id.rind) + "</div>";
           }, this),
           $drop: bind(function (s, t, e) {
             var target = e; //on touch devices event doesn't point to the actual drop target
@@ -41434,14 +42516,17 @@
             if (e.touches && this._drag_column_last) target = this._drag_column_last;
             var id = this.locate(target);
             if (!id) return false;
-            var start = DragControl.getContext().start.column;
+            var start = DragControl.getContext().start;
+            var startId = start.column;
 
-            if (start != id.column) {
-              if (!this.callEvent("onBeforeColumnDrop", [start, id.column, e])) return;
-              var start_index = this.getColumnIndex(start);
+            if (startId != id.column) {
+              if (!this.callEvent("onBeforeColumnDrop", [startId, id.column, e])) return;
+              var start_index = this.getColumnIndex(startId);
               var end_index = this.getColumnIndex(id.column);
-              this.moveColumn(start, end_index + (start_index < end_index ? 1 : 0));
-              this.callEvent("onAfterColumnDrop", [start, id.column, e]);
+
+              this._moveColumn(startId, end_index + (start_index < end_index ? 1 : 0), start.rind);
+
+              this.callEvent("onAfterColumnDrop", [startId, id.column, e]);
             }
           }, this),
           $dragIn: bind(function (s, t, e) {
@@ -41593,7 +42678,7 @@
               header.colspan = colspan;
             }
 
-            if (header.rowspan && length === 1) {
+            if (header.rowspan) {
               header.height = (header.height || this.config.headerRowHeight) * header.rowspan;
               header.rowspan = null;
             }
@@ -41630,6 +42715,7 @@
       var widths = [];
       start = start || 0 + options.xCorrection;
       base = base || [];
+      var readySpans = {};
       this.eachRow(bind(function (row) {
         var width = 0;
         var rowItem = this.getItem(row);
@@ -41654,50 +42740,59 @@
             if (options.data !== "selection" || options.data == "selection" && this._findIndex(sel, function (obj) {
               return obj.column == column && obj.row == row;
             }) !== -1) {
-              var span;
-              if (this.getSpan) span = this.getSpan(row, column); //check span from previous table
+              var span = void 0;
+              if (this.getSpan) span = this.getSpan(row, column);
 
-              if (span && this.getColumnIndex(column) === start) {
-                var spanStart = this.getColumnIndex(span[1]);
-
-                if (spanStart < start) {
-                  span[2] = span[2] - (start - spanStart);
-                  span[4] = span[4] ? span[4] : rowItem[span[1]] ? this.getText(row, span[1]) : null;
-                  span[1] = column;
-                }
-              }
-
-              if (!span || span && span[0] == row && span[1] == column) {
-                var cellValue = span && span[4] ? span[4] : this._columns_pull[column] ? this.getText(row, column) : "";
-                var className = this.getCss(row, column) + " " + (columns[c].css || "") + (span ? " webix_dtable_span " + (span[5] || "") : "");
-                var style = {
-                  height: span && span[3] > 1 ? "auto" : (rowItem.$height || this.config.rowHeight) + "px",
-                  width: span && span[2] > 1 ? "auto" : columns[c].width + "px"
-                };
-                colrow.push({
-                  txt: cellValue,
-                  className: className,
-                  style: style,
-                  span: span ? {
-                    colspan: span[2],
-                    spanStart: this.getColumnIndex(span[1]),
-                    rowspan: span[3]
-                  } : null
-                });
-
-                if (cellValue || cellValue === 0) {
+              if (span) {
+                if (readySpans[span[0]] && readySpans[span[0]][span[1]]) {
+                  colrow.push({
+                    $inspan: true
+                  });
                   rightRestriction = Math.max(colIndex + 1, rightRestriction);
                   bottomRestriction = Math.max(rowIndex + 1, bottomRestriction);
+                  continue;
                 }
 
-                datarow = datarow || !!cellValue;
-              } else if (span) {
-                colrow.push({
-                  $inspan: true
-                });
+                if (this.data._filter_order) for (var r = span[0] * 1 + span[3] - 1; r >= span[0]; r--) {
+                  if (this.data.order.indexOf(r) == -1) span[3]--;
+                }
+                var hiddenColumnOrder = this._hidden_column_order;
+
+                if (hiddenColumnOrder.length) {
+                  var ci = hiddenColumnOrder.find(span[1]);
+
+                  for (var _c = ci + span[2]; _c >= ci; _c--) {
+                    if (!this.isColumnVisible(hiddenColumnOrder[_c])) span[2]--;
+                  }
+                }
+
+                if (!readySpans[span[0]]) readySpans[span[0]] = {};
+                readySpans[span[0]][span[1]] = 1;
+              }
+
+              var cellValue = span && span[4] ? span[4] : this._columns_pull[column] ? this.getText(row, column) : "";
+              var className = this.getCss(row, column) + " " + (columns[c].css || "") + (span ? " webix_dtable_span " + (span[5] || "") : "");
+              var style = {
+                height: span && span[3] > 1 ? "auto" : (rowItem.$height || this.config.rowHeight) + "px",
+                width: span && span[2] > 1 ? "auto" : columns[c].width + "px"
+              };
+              colrow.push({
+                txt: cellValue,
+                className: className,
+                style: style,
+                span: span ? {
+                  colspan: span[2],
+                  spanStart: this.getColumnIndex(span[1]),
+                  rowspan: span[3]
+                } : null
+              });
+
+              if (cellValue || cellValue === 0) {
                 rightRestriction = Math.max(colIndex + 1, rightRestriction);
                 bottomRestriction = Math.max(rowIndex + 1, bottomRestriction);
               }
+
+              datarow = datarow || !!cellValue;
             }
           }
         }
@@ -41741,29 +42836,42 @@
         rwidth += widths[i];
       }
 
-      if (rwidth > this._getPageWidth(options)) {
-        base[0].forEach(function (item) {
-          for (var _i = 0; _i < item.length; _i++) {
-            if (item[_i] && item[_i].style && item[_i].style.width) item[_i].style.width = "auto";
-          }
-        });
-      }
+      if (rwidth > this._getPageWidth(options)) if (base[0]) base[0].forEach(function (item) {
+        for (var _i = 0; _i < item.length; _i++) {
+          if (item[_i] && item[_i].style && item[_i].style.width) item[_i].style.width = "auto";
+        }
+      });
     },
     _getTableHTML: function (tableData, options) {
+      var _this = this;
+
       var container = create("div");
-      tableData.forEach(bind(function (table, i) {
+      var sCount = this.config.topSplit || 0;
+      var hCount = options.header ? this.config.columns[0].header.length : 0;
+      var fCount = options.footer ? this.config.columns[0].footer.length : 0; //rows are not repeated on every page if header > 6
+
+      var topSplitIndex = hCount + sCount;
+      var headerCount = topSplitIndex > 6 ? hCount : topSplitIndex;
+      tableData.forEach(function (table, i) {
         var tableHTML = create("table", {
-          "class": "webix_table_print " + this.$view.className + (options.borderless ? " borderless" : ""),
-          "style": "border-collapse:collapse",
-          "id": this.$view.getAttribute("id")
-        });
-        table.forEach(function (row) {
+          "class": "webix_table_print " + _this.$view.className + (options.borderless ? " borderless" : ""),
+          style: "border-collapse:collapse",
+          id: _this.$view.getAttribute("id")
+        }, "<thead></thead><tbody></tbody><tfoot></tfoot>");
+        container.appendChild(tableHTML);
+
+        var _tableHTML$children = _slicedToArray(tableHTML.children, 3),
+            header = _tableHTML$children[0],
+            body = _tableHTML$children[1],
+            footer = _tableHTML$children[2];
+
+        table.forEach(function (row, rowIndex) {
           var tr = create("tr");
           row.forEach(function (cell) {
             if (!cell.$inspan) {
-              var td = create("td");
-              td.innerHTML = cell.txt;
-              td.className = cell.className;
+              var td = create("td", {
+                "class": cell.className
+              }, cell.txt);
 
               for (var key in cell.style) {
                 td.style[key] = cell.style[key];
@@ -41777,9 +42885,9 @@
               tr.appendChild(td);
             }
           });
-          tableHTML.appendChild(tr);
+          if (sCount && rowIndex + 1 == topSplitIndex) tr.className = "webix_print_top_split";
+          if (rowIndex < headerCount) header.appendChild(tr);else if (table.length - fCount > rowIndex) body.appendChild(tr);else footer.appendChild(tr);
         });
-        container.appendChild(tableHTML);
 
         if (i + 1 < tableData.length) {
           var br = create("DIV", {
@@ -41787,7 +42895,7 @@
           });
           container.appendChild(br);
         }
-      }, this));
+      });
       return container;
     }
   };
@@ -41822,6 +42930,7 @@
       }];
       if (options.header !== false) styles = this._getExportHStyles(options, "header", styles, type);
       this.data.each(function (obj) {
+        if (options.filter && !options.filter(obj)) return false;
         var row = {};
 
         for (var i = 0; i < columns.length; i++) {
@@ -41892,17 +43001,34 @@
             if (node) {
               var name = [node.className, header.css || "", group];
               hrow[i] = this._getExportCellStyle(node, name.join(":"), type);
-              if (header.colspan || header.rowspan) hs.push([h, i, {
-                colspan: header.colspan - 1 || 0,
-                rowspan: header.rowspan - 1 || 0
-              }, hrow[i]]);
+
+              if (header.colspan || header.rowspan) {
+                //add border only to the last cell of the rowspan/colspan
+                var _styles = copy(hrow[i]);
+
+                if (header.rowspan > 1) this._clearBorder(type, "bottom", hrow[i]);
+                if (header.colspan > 1) this._clearBorder(type, "right", hrow[i]);
+                hs.push([h, i, {
+                  colspan: header.colspan - 1 || 0,
+                  rowspan: header.rowspan - 1 || 0
+                }, _styles]);
+              }
             }
           } else {
             for (var s = 0; s < hs.length; s++) {
               var st = hs[s][2],
                   hsc = hs[s][1],
                   hsr = hs[s][0];
-              if (hsc + st.colspan >= i && hsr + st.rowspan >= h) hrow[i] = hs[s][3];
+
+              if (hsc + st.colspan >= i && hsr + st.rowspan >= h) {
+                //add border only to the last cell of the rowspan/colspan
+                var _styles2 = copy(hs[s][3]);
+
+                if (hsr + st.rowspan != h) this._clearBorder(type, "bottom", _styles2);
+                if (hsc + st.colspan != i) this._clearBorder(type, "right", _styles2);
+                hrow[i] = _styles2;
+                break;
+              }
             }
           }
         }
@@ -41911,6 +43037,9 @@
       }
 
       return styles;
+    },
+    _clearBorder: function (type, pos$$1, obj) {
+      if (type == "pdf") obj["border" + pos$$1[0].toUpperCase() + pos$$1.substring(1) + "Color"] = obj.backgroundColor;else delete obj.border[pos$$1];
     },
     _getBorderColor: function (styles, defaultColor, type) {
       return styles["border-".concat(type, "-width")] == "0px" ? null : color.rgbToHex(styles["border-".concat(type, "-color")]) || defaultColor;
@@ -41924,8 +43053,13 @@
           backgroundColor: bg,
           fontSize: cellStyle["font-size"].replace("px", "") * 0.75,
           //px to pt conversion
+          bold: cellStyle["font-weight"] != "normal" && cellStyle["font-weight"] != 400,
+          italic: cellStyle["font-style"] == "italic",
+          underline: cellStyle["text-decoration-line"] == "line-through",
+          strikethrough: cellStyle["text-decoration-line"] == "underline",
           color: color.rgbToHex(cellStyle["color"]),
           textAlign: cellStyle["text-align"],
+          whiteSpace: cellStyle["white-space"] == "normal",
           borderRightColor: this._getBorderColor(cellStyle, bg, "right"),
           borderLeftColor: this._getBorderColor(cellStyle, bg, "left"),
           borderBottomColor: this._getBorderColor(cellStyle, bg, "bottom"),
@@ -41960,60 +43094,58 @@
       return style;
     },
     _getExcelCellRules: function (cellStyle, node, common) {
-      var rules = {
-        font: {},
-        alignment: {},
-        border: {}
-      }; //font
-
-      rules.font.name = cellStyle["font-family"].replace(/,.*$/, ""); // cut off fallback font;
-
-      rules.font.sz = common.fontSize;
-      rules.font.color = {
-        rgb: common.color
-      };
-      if (cellStyle["font-weight"] !== "normal" && cellStyle["font-weight"] != 400) rules.font.bold = true;
-      if (cellStyle["text-decoration-line"] === "underline") rules.font.underline = true;
-      if (cellStyle["font-style"] === "italic") rules.font.italic = true;
-      if (cellStyle["text-decoration-line"] === "line-through") rules.font.strike = true; //alignment
-
-      rules.alignment.horizontal = common.textAlign;
-      rules.alignment.vertical = cellStyle["height"] == cellStyle["line-height"] ? "center" : "top";
-      if (cellStyle["white-space"] == "normal") rules.alignment.wrapText = true; //rotated header
-
-      if (node.firstChild && node.firstChild.className && node.firstChild.className.indexOf("webix_rotate") !== -1) rules.alignment.textRotation = 90; //background
-
-      rules.fill = {
-        fgColor: {
-          rgb: common.backgroundColor
+      var textRotation = node.firstChild && node.firstChild.className && node.firstChild.className.indexOf("webix_rotate") !== -1;
+      return {
+        font: {
+          name: cellStyle["font-family"].replace(/,.*$/, ""),
+          // cut off fallback font;
+          sz: common.fontSize,
+          color: {
+            rgb: common.color
+          },
+          bold: common.bold,
+          underline: common.underline,
+          italic: common.italic,
+          strike: common.strikethrough
+        },
+        alignment: {
+          horizontal: common.textAlign,
+          vertical: cellStyle["height"] == cellStyle["line-height"] ? "center" : "top",
+          wrapText: common.wrapText,
+          textRotation: textRotation ? 90 : null
+        },
+        fill: {
+          fgColor: {
+            rgb: common.backgroundColor
+          }
+        },
+        border: {
+          right: common.borderRightColor ? {
+            style: "thin",
+            color: {
+              rgb: common.borderRightColor
+            }
+          } : null,
+          bottom: common.borderBottomColor ? {
+            style: "thin",
+            color: {
+              rgb: common.borderBottomColor
+            }
+          } : null,
+          left: common.borderLeftColor ? {
+            style: "thin",
+            color: {
+              rgb: common.borderLeftColor
+            }
+          } : null,
+          top: common.borderTopColor ? {
+            style: "thin",
+            color: {
+              rgb: common.borderTopColor
+            }
+          } : null
         }
-      }; //borders
-
-      if (common.borderRightColor) rules.border.right = {
-        style: "thin",
-        color: {
-          rgb: common.borderRightColor
-        }
       };
-      if (common.borderBottomColor) rules.border.bottom = {
-        style: "thin",
-        color: {
-          rgb: common.borderBottomColor
-        }
-      };
-      if (common.borderLeftColor) rules.border.left = {
-        style: "thin",
-        color: {
-          rgb: common.borderLeftColor
-        }
-      };
-      if (common.borderTopColor) rules.border.top = {
-        style: "thin",
-        color: {
-          rgb: common.borderTopColor
-        }
-      };
-      return rules;
     },
     _getRules: function (node) {
       var style = {};
@@ -42156,8 +43288,14 @@
       this._render_initial = function () {};
     },
     _first_render: function () {
-      this.data.attachEvent("onStoreLoad", bind(this._refresh_any_header_content, this));
-      this.data.attachEvent("onSyncApply", bind(this._refresh_any_header_content, this));
+      var _this = this;
+
+      this.data.attachEvent("onStoreLoad", function () {
+        return _this._refresh_any_header_content(true);
+      });
+      this.data.attachEvent("onSyncApply", function () {
+        return _this._refresh_any_header_content(true);
+      });
       this.data.attachEvent("onStoreUpdated", bind(function () {
         return this.render.apply(this, arguments);
       }, this));
@@ -42168,19 +43306,19 @@
       this.render();
     },
     _delayRender: function () {
-      var _this = this;
+      var _this2 = this;
 
       clearTimeout(this._renderDelay);
       this._renderDelay = delay(function () {
-        _this._renderDelay = 0;
+        _this2._renderDelay = 0;
 
-        if (!isUndefined(_this._delayedLeftScroll)) {
-          _this._setLeftScroll(_this._delayedLeftScroll);
+        if (!isUndefined(_this2._delayedLeftScroll)) {
+          _this2._setLeftScroll(_this2._delayedLeftScroll);
 
-          delete _this._delayedLeftScroll;
+          delete _this2._delayedLeftScroll;
         }
 
-        _this.render();
+        _this2.render();
       });
     },
     render: function (id, data, mode) {
@@ -42759,7 +43897,7 @@
       this.showItemByIndex(this.getIndexById(id), -1);
     },
     _render_header_section: function (sec, name, heights) {
-      var _this2 = this;
+      var _this3 = this;
 
       var header = sec.childNodes;
       header[0].innerHTML = this._render_subheader(0, this._settings.leftSplit, this._left_width, name, heights);
@@ -42769,7 +43907,7 @@
       if (env.touch) Touch._set_matrix(header[1].firstChild, -x, 0, "0ms");else header[1].scrollLeft = x;
 
       header[1].onscroll = function () {
-        return _this2._scroll_with_header();
+        return _this3._scroll_with_header();
       };
     },
     _scroll_with_header: function () {
@@ -42786,27 +43924,27 @@
     _refresh_tracking_header_content: function () {
       this.refreshHeaderContent(true, true);
     },
-    _refresh_any_header_content: function () {
-      this.refreshHeaderContent(false, true);
+    _refresh_any_header_content: function (loading) {
+      this.refreshHeaderContent(false, true, null, loading);
     },
     //[DEPRECATE] - v3.0, move to private
-    refreshHeaderContent: function (trackedOnly, preserve, id) {
+    refreshHeaderContent: function (trackedOnly, preserve, id, loading) {
       if (this._settings.header) {
-        if (preserve) this._refreshHeaderContent(this._header, trackedOnly, 1, id);
+        if (preserve) this._refreshHeaderContent(this._header, trackedOnly, 1, id, loading);
 
-        this._refreshHeaderContent(this._header, trackedOnly, 0, id);
+        this._refreshHeaderContent(this._header, trackedOnly, 0, id, loading);
       }
 
       if (this._settings.footer) {
-        if (preserve) this._refreshHeaderContent(this._footer, trackedOnly, 1, id);
+        if (preserve) this._refreshHeaderContent(this._footer, trackedOnly, 1, id, loading);
 
-        this._refreshHeaderContent(this._footer, trackedOnly, 0, id);
+        this._refreshHeaderContent(this._footer, trackedOnly, 0, id, loading);
       }
     },
     refreshFilter: function (id) {
       this.refreshHeaderContent(false, true, id);
     },
-    _refreshHeaderContent: function (sec, cellTrackOnly, getOnly, byId) {
+    _refreshHeaderContent: function (sec, cellTrackOnly, getOnly, byId, loading) {
       if (this._has_active_headers && sec) {
         var tag = "DIV";
         var attr =
@@ -42829,7 +43967,7 @@
                 obj.value = content.getValue(cells[i]);
               }
             } else if (!cellTrackOnly || content.trackCells) {
-              content.refresh(this, cells[i], obj);
+              if (!loading || !this.getColumnConfig(obj.columnId).collection) content.refresh(this, cells[i], obj);
             }
           }
         }
@@ -42968,7 +44106,11 @@
 
         if (cs.indexOf("webix_hcell") != -1) {
           pos$$1 = this._locate(node);
-          if (pos$$1) pos$$1.header = true;
+
+          if (pos$$1) {
+            pos$$1.header = true;
+            if (pos$$1.span) pos$$1.cind -= pos$$1.span - 1;
+          }
         }
 
         if (cs.indexOf("webix_drop_area") != -1) {
@@ -42996,7 +44138,7 @@
       "column") || cdiv.getAttribute(
       /*@attr*/
       "column")) * 1;
-      var rind = node.getAttribute("aria-rowindex");
+      var rind = node.getAttribute("aria-rowindex") * 1;
       var row = node.getAttribute(
       /*@attr*/
       "row") || (rind ? rind - 1 : 0);
@@ -43892,7 +45034,7 @@
       } else {
         var sign = create("div", {
           webix_sort_dir: direction,
-          class: "webix_ss_sort_".concat(direction)
+          "class": "webix_ss_sort_".concat(direction)
         }, "<div class=\"webix_ss_sort_num\">".concat(this._sort_signs_order.length + 1, "</div>"));
 
         this._render_single_mark(column, sign, direction);
@@ -43956,8 +45098,9 @@
     _last_order: [],
     _last_sorted: {},
     _sort: function (col_id, direction, type$$1, preserve) {
-      var _this3 = this;
+      var _this4 = this;
 
+      var sortSign = true;
       preserve = this._settings.sort === "multi" && preserve;
       direction = direction || "asc";
 
@@ -43967,10 +45110,7 @@
       }
 
       var col = this.getColumnConfig(col_id);
-      var config = typeof col.sort == "function" ? {
-        as: col.sort,
-        dir: direction
-      } : {
+      var config = {
         by: col.id,
         dir: direction,
         as: col.sort
@@ -43981,28 +45121,32 @@
       if (type$$1 == "server") {
         var params = [col.id, direction, type$$1];
         if (this._last_order.length > 1) params = [this._last_order.map(function (id) {
-          return _this3._last_sorted[id];
+          return _this4._last_sorted[id];
         })];
-        this.callEvent("onBeforeSort", params);
-        if (!this._skip_server_op) this.loadNext(0, 0, 0, 0, true, true).then(function () {
-          return _this3._on_after_sort(params);
-        });else this._skip_server_op.$params = params; // save last parameters
-      } else {
-        if (type$$1 == "text") {
-          var new_id = "$text_" + col.id;
-          this.data.each(function (obj) {
-            obj[new_id] = this.getText(obj.id, col.id);
-          }, this);
-          config.as = "string";
-          config.by = new_id;
-        }
 
-        if (this._last_order.length > 1) this.data.sort(this._last_order.map(function (id) {
-          return _this3._last_sorted[id];
-        }));else this.data.sort(config);
+        if (this.callEvent("onBeforeSort", params)) {
+          if (!this._skip_server_op) this.loadNext(0, 0, 0, 0, true, true).then(function () {
+            return _this4._on_after_sort(params);
+          });else this._skip_server_op.$params = params; // save last parameters
+        } else sortSign = false;
+      } else {
+        if (type$$1 == "text" || type$$1 == "text_locale") this._sort_text(config, col.id, type$$1);
+        if (this._last_order.length > 1) sortSign = this.data.sort(this._last_order.map(function (id) {
+          return _this4._last_sorted[id];
+        }));else sortSign = this.data.sort(config);
       }
 
-      this.markSorting(col.id, config.dir, preserve);
+      if (sortSign) this.markSorting(col.id, config.dir, preserve);
+    },
+    _sort_text: function (config, id, type$$1) {
+      var _this5 = this;
+
+      var new_id = "$".concat(type$$1, "_").concat(id);
+      this.data.each(function (obj) {
+        return obj[new_id] = _this5.getText(obj.id, id);
+      });
+      config.as = "string" + (type$$1.indexOf("locale") != -1 ? "_locale" : "");
+      config.by = new_id;
     },
     _on_after_sort: function (params) {
       this.callEvent("onAfterSort", params);
@@ -44029,7 +45173,7 @@
           id = null,
           res; //loop through all parents
 
-      while (trg && trg.parentNode && trg != this._viewobj.parentNode) {
+      while (trg && trg.parentNode && this._viewobj && trg != this._viewobj.parentNode) {
         var trgCss = _getClassName(trg);
 
         if ((css = trgCss) && hash) {
@@ -44086,7 +45230,9 @@
 
 
             res = this._mouseEventCall(css_call, e, id, trg);
-            if (res === false) return; //call inner handler
+            if (res === false) return; //selection removes trg
+
+            if (isBody && !this._body.contains(trg)) trg = this.getItemNode(id); //call inner handler
 
             if (isBody) {
               if (this.callEvent("on" + name, [id, e, trg]) && pair) {
@@ -44119,7 +45265,6 @@
         var node = e.target;
         var section = node;
         var pos$$1;
-        var cind = id.cind - (id.span ? id.span - 1 : 0);
         var rind = -1;
 
         while (section && !pos$$1) {
@@ -44133,7 +45278,7 @@
           node = node.parentNode;
         }
 
-        var config = this._columns[cind][pos$$1][rind];
+        var config = this._columns[id.cind][pos$$1][rind];
         if (config.tooltip) tooltip.type.template = template(config.tooltip === true ? "#text#" : config.tooltip);else return null;
         data = config;
       } else {
@@ -44735,7 +45880,7 @@
   exports.VirtualRenderStack = VirtualRenderStack;
   exports.VRenderStack = VRenderStack;
   exports.html = html$1;
-  exports.skin = skin$5;
+  exports.skin = skin$7;
   exports.debug = debug;
   exports.i18n = i18n;
   exports.ready = ready;
