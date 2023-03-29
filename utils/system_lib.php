@@ -1163,9 +1163,9 @@ class AA_User
 
         $query = "INSERT INTO tokens set token='" . $token . "', id_utente='" . $id_user . "',ip_src='" . $_SERVER['REMOTE_ADDR'] . "'";
 
-        if($remember_me)
+        if($remember_me === true || $remember_me > 0)
         {
-            $query.", remember_me='1'";
+            $query.=", remember_me='1'";
         }
 
         $db->Query($query);
