@@ -4076,6 +4076,7 @@ async function AA_UserAuth(params = null) {
 
                                 if (result.status.value == 0) {
                                     $$("AA_UserAuthDlg").close();
+
                                     //ricarica la pagina
                                     window.location.reload();
 
@@ -4116,6 +4117,7 @@ async function AA_UserAuth(params = null) {
                             {
                                 view: "checkbox",
                                 id: "remember_me",
+                                name: "remember_me",
                                 label: "Ricordami",
                                 labelWidth: 175,
                                 align: "center",

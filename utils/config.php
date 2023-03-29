@@ -22,6 +22,9 @@ Class AA_Config
     const AA_EMAIL_REPLYTO="you@example.org";
     const AA_EMAIL_FRONT="Your organization";
 
+    //nome di dominio
+    const AA_DOMAIN_NAME="your.domain.name";
+
     //Cartella di archiviazione uploads (percorso assoluto)
     const AA_UPLOADS_PATH="/home/sitod/uploads";
 

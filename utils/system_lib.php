@@ -843,8 +843,8 @@ class AA_User
 
                     if($remember_me)
                     {
-                        //token di autenticazione valido per 30 giorni.
-                        setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+606024*30);
+                        //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
+                        setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
                     }
 
                     $user = AA_User::LoadUser($rs['id']);
@@ -865,6 +865,7 @@ class AA_User
             if($sToken == "")
             {   
                 $sToken=$_COOKIE["AA_AUTH_TOKEN"];
+                AA_Log::Log(__METHOD__." - auth token login.",100);
             }
         }
 
