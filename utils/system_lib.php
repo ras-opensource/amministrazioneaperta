@@ -777,7 +777,7 @@ class AA_User
     }
 
     //Autenticazione
-    static public function UserAuth($sToken = "", $sUserName = "", $sUserPwd = "")
+    static public function UserAuth($sToken = "", $sUserName = "", $sUserPwd = "", $remember_me=false)
     {
         //AA_Log::Log(get_class()."->UserAuth($sToken,$sUserName, $sUserPwd)");
 
@@ -839,7 +839,13 @@ class AA_User
 
                     //New stuff
                     AA_Log::Log(get_class() . "->UserAuth($sToken,$sUserName, $sUserPwd) - Autenticazione avvenuta con successo (credenziali corrette).", 50);
-                    $_SESSION['token'] = AA_User::GenerateToken($rs['id']);
+                    $_SESSION['token'] = AA_User::GenerateToken($rs['id'],$remember_me);
+
+                    if($remember_me)
+                    {
+                        //token di autenticazione valido per 30 giorni.
+                        setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+606024*30);
+                    }
 
                     $user = AA_User::LoadUser($rs['id']);
                     $user->bCurrentUser = true;
@@ -853,13 +859,20 @@ class AA_User
             return AA_User::Guest();
         }
 
-        if ($sToken == null || $sToken == "") $sToken = $_SESSION['token'];
+        if ($sToken == null || $sToken == "") 
+        {
+            $sToken = $_SESSION['token'];
+            if($sToken == "")
+            {   
+                $sToken=$_COOKIE["AA_AUTH_TOKEN"];
+            }
+        }
 
         if ($sToken != null) {
             //AA_Log::Log(get_class()."->UserAuth($sToken) - autenticazione in base al token.");
 
             $token_timeout_m = 30;
-            $query_token = sprintf("SELECT * FROM tokens where TIMESTAMPDIFF(MINUTE,data_rilascio, NOW()) < '%s' and ip_src = '%s' and token ='%s'", $token_timeout_m, $_SERVER['REMOTE_ADDR'], $sToken);
+            $query_token = sprintf("SELECT * FROM tokens where (TIMESTAMPDIFF(MINUTE,data_rilascio, NOW()) < '%s' OR remember_me='1') and ip_src = '%s' and token ='%s'", $token_timeout_m, $_SERVER['REMOTE_ADDR'], $sToken);
 
             if ($db->Query($query_token)) {
                 $result = $db->GetResult();
@@ -883,10 +896,6 @@ class AA_User
                     //Rinfresco della durata del token
                     AA_User::RefreshToken($sToken);
                     $_SESSION['token'] = $sToken;
-
-                    //Old stuff
-                    //AA_Log::LogAction($rs->Get('id_utente'),0,"Authenticate token ($sToken) - success");
-                    //*
 
                     $user->bCurrentUser = true;
                     return $user;
@@ -1130,13 +1139,15 @@ class AA_User
             $db->Query($query);
 
             $_SESSION['token'] = null;
+            setcookie("AA_AUTH_TOKEN","");
+
             unset($_SESSION);
             session_destroy();
         }
     }
 
     //Genera il token di autenticazione
-    static private function GenerateToken($id_user)
+    static private function GenerateToken($id_user, $remember_me=false)
     {
         AA_Log::Log(get_class() . "->GenerateToken($id_user)");
 
@@ -1150,6 +1161,11 @@ class AA_User
         $db->Query($query);
 
         $query = "INSERT INTO tokens set token='" . $token . "', id_utente='" . $id_user . "',ip_src='" . $_SERVER['REMOTE_ADDR'] . "'";
+
+        if($remember_me)
+        {
+            $query.", remember_me='1'";
+        }
 
         $db->Query($query);
 
@@ -1896,7 +1912,7 @@ class AA_User
                             <div>Presidentzia</div>
                             <div>Presidenza</div>
                             <div>V.le Trento, 69 - 09123 Cagliari</div>
-                            <img src="http://sitod.regione.sardegna.it/web/logo.jpg" data-mce-src="http://sitod.regione.sardegna.it/web/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>';
+                            <img src="https://sitod.regione.sardegna.it/web/logo.jpg" data-mce-src="https://sitod.regione.sardegna.it/web/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>';
 
                 if ($bSendEmail) {
                     if (!SendMail(array($email), array(), $oggetto, nl2br($corpo) . $firma, array(), 1)) {

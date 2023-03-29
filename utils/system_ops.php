@@ -23,7 +23,7 @@ if($task == "")
 //auth
 if($task=="UserAuth")
 {
-    $user=AA_User::UserAuth("", $_REQUEST['user'],$_REQUEST['pwd']);
+    $user=AA_User::UserAuth("", $_REQUEST['user'],$_REQUEST['pwd'],$_REQUEST['remember_me']);
     if($user->IsGuest())
     {
         die("<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>");

@@ -4112,6 +4112,14 @@ async function AA_UserAuth(params = null) {
                                 type: "password",
                                 name: "pwd",
                                 label: "password"
+                            },
+                            {
+                                view: "checkbox",
+                                id: "remember_me",
+                                label: "Ricordami",
+                                labelWidth: 175,
+                                align: "center",
+                                value: 0,
                             }
                         ]
                     },
