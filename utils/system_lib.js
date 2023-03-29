@@ -4012,7 +4012,7 @@ async function AA_UserAuth(params = null) {
                 id: "AA_UserAuthDlg",
                 view: "window",
                 height: 400,
-                width: 350,
+                width: 300,
                 position: "center",
                 modal: true,
                 css: "AA_Wnd"
@@ -4030,14 +4030,16 @@ async function AA_UserAuth(params = null) {
 
             let apply_btn = {
                 view: "layout",
-                height: 48,
+                height: 38,
                 cols: [
                     {},
                     {
                         id: "AA_UserAuth_Apply_btn",
                         view: "button",
                         label: "Accedi",
+                        hotkey: "enter",
                         type: "icon",
+                        css: "webix_primary",
                         icon: "mdi mdi-login",
                         width: 100,
                         align: "center",
@@ -4099,33 +4101,63 @@ async function AA_UserAuth(params = null) {
 
             let body = {
                 view: "layout",
+                type: "clean",
                 rows: [{
                         id: "AA_UserAuth_Form",
                         view: "form",
-                        elementsConfig: { labelWidth: 90, labelAlign: "right" },
+                        borderless: true,
+                        elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
                         elements: [{
                                 view: "text",
+                                icon:"mdi mdi-account",
                                 name: "user",
+                                bottomLabel:"Inserisci il tuo nome utente o la tua email.",
+                                required: true,
                                 label: "utente"
                             },
                             {
                                 view: "text",
                                 type: "password",
+                                icon: "mdi mdi-key",
                                 name: "pwd",
+                                bottomLabel:"Inserisci la tua password.",
+                                required: true,
                                 label: "password"
                             },
                             {
-                                view: "checkbox",
-                                id: "remember_me",
-                                name: "remember_me",
-                                label: "Ricordami",
-                                labelWidth: 175,
-                                align: "center",
-                                value: 0,
-                            }
+                                type:"space",
+                                css:{"background-color":"transparent"},
+                                rows:
+                                [
+                                    apply_btn
+                                ]
+                            },
+                            {
+                                type:"clean",
+                                borderless:true,
+                                cols:
+                                [
+                                    {
+                                        template: "<div style='display:flex;justify-content:center;align-items:center;height:100%; font-size: smaller'><a href='#'>recupero credenziali</a></div>", tooltip:"Fai click qui se hai dimenticato il nome utente, la password o entrambi."
+                                    },
+                                    {
+                                        view: "checkbox",
+                                        id: "remember_me",
+                                        name: "remember_me",
+                                        label: "Ricordami",
+                                        //labelRight:"Ricordami",
+                                        labelAlign: "right",
+                                        labelPosition: "right",
+                                        labelWidth: 95,
+                                        align:"right",
+                                        bottomPadding: 0,
+                                        tooltip:"Se abilitato, ricorda l'utente (su questo browser) per 30 giorni.",
+                                        value: 0,
+                                    }
+                                ]
+                            }   
                         ]
-                    },
-                    apply_btn
+                    }
                 ]
             }
 
