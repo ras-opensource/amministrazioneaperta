@@ -8072,6 +8072,185 @@ class AA_SystemTask_AMAAI_Start extends AA_GenericTask
 }
 #--------------------------------------------
 
+//Template generico JSON webix
+class AA_JSON_Template_Generic
+{
+    //Restituisce la reppresentazione dell'oggetto come una una stringa
+    public function __toString()
+    {
+        //Restituisce l'oggetto come stringa
+        return json_encode($this->toArray());
+    }
+
+    public function toString()
+    {
+        return $this->__toString();
+    }
+
+    public function toBase64()
+    {
+        return base64_encode($this->__toString());
+    }
+
+    public function toArray()
+    {
+        $result = array();
+
+        //Proprietà
+        foreach ($this->props as $key => $prop) {
+            if ($prop instanceof AA_JSON_Template_Generic) $result[$key] = $prop->toArray();
+            else $result[$key] = $prop;
+        }
+
+        //rows
+        if (is_array($this->rows)) {
+            $result['rows'] = array();
+            foreach ($this->rows as $curRow) {
+                $result['rows'][] = $curRow->toArray();
+            }
+        }
+
+        //cols
+        if (is_array($this->cols)) {
+            $result['cols'] = array();
+            foreach ($this->cols as $curCol) {
+                $result['cols'][] = $curCol->toArray();
+            }
+        }
+        if ($result['view'] == "layout" && !is_array($result['rows']) && !is_array($result['cols'])) $result['rows'] = array(array("view" => "spacer"));
+
+        //cells
+        if (is_array($this->cells)) {
+            $result['cells'] = array();
+            foreach ($this->cells as $curCell) {
+                $result['cells'][] = $curCell->toArray();
+            }
+        }
+        if ($result['view'] == "multiview" && !is_array($result['cells'])) $result['cells'] = array(array("view" => "spacer"));
+
+        //elements
+        if (is_array($this->elements)) {
+            $result['elements'] = array();
+            foreach ($this->elements as $curCell) {
+                $result['elements'][] = $curCell->toArray();
+            }
+        }
+        if ($result['view'] == "toolbar" && !is_array($result['elements'])) $result['elements'] = array(array("view" => "spacer"));
+
+        //bodyRows
+        if (is_array($this->bodyRows) || is_array($this->bodyCols)) {
+            $result['body'] = array();
+            if (is_array($this->bodyRows)) {
+                foreach ($this->bodyRows as $curBodyRow) {
+                    if (!is_array($result['body']['rows'])) $result['body']['rows'] = array();
+                    $result['body']['rows'][] = $curBodyRow->toArray();
+                }
+            }
+
+            if (is_array($this->bodyCols)) {
+                foreach ($this->bodyCols as $curBodyCol) {
+                    if (!is_array($result['body']['cols'])) $result['body']['cols'] = array();
+                    $result['body']['cols'][] = $curBodyCol->toArray();
+                }
+            }
+        }
+
+        //Restituisce l'oggetto come array
+        return $result;
+    }
+
+    protected $props = array();
+    public function SetProp($prop = "", $value = "")
+    {
+        $this->props[$prop] = $value;
+    }
+    public function GetProp($prop)
+    {
+        return $this->props[$prop];
+    }
+
+    //Aggiunta righe
+    protected $rows = null;
+    public function addRow($row = null)
+    {
+        if ($row instanceof AA_JSON_Template_Generic) {
+            //AA_Log::Log(__METHOD__." ".$row->toString(),100);
+
+            if (!is_array($this->rows)) $this->rows = array();
+            $this->rows[] = $row;
+        }
+    }
+
+    //Aggiunta row al body
+    protected $bodyRows = null;
+    public function addRowToBody($row = null)
+    {
+        if ($row instanceof AA_JSON_Template_Generic) {
+            //AA_Log::Log(__METHOD__." ".$row->toString(),100);
+
+            if (!is_array($this->bodyRows)) $this->bodyRows = array();
+            $this->bodyRows[] = $row;
+        }
+    }
+
+    //Aggiunta col al body
+    protected $bodyCols = null;
+    public function addColToBody($col = null)
+    {
+        if ($col instanceof AA_JSON_Template_Generic) {
+            //AA_Log::Log(__METHOD__." ".$row->toString(),100);
+
+            if (!is_array($this->bodyCols)) $this->bodyCols = array();
+            $this->bodyCols[] = $col;
+        }
+    }
+
+    //Aggiunta colonne
+    protected $cols = null;
+    public function addCol($col = null)
+    {
+        if ($col instanceof AA_JSON_Template_Generic) {
+            if (!is_array($this->cols)) $this->cols = array();
+            $this->cols[] = $col;
+        }
+    }
+
+    //Aggiunta celle
+    protected $cells = null;
+    public function addCell($cell = null, $bFromHead = false)
+    {
+        if ($cell instanceof AA_JSON_Template_Generic) {
+            if (!is_array($this->cells)) $this->cells = array();
+            if (!$bFromHead) $this->cells[] = $cell;
+            else array_unshift($this->cells, $cell);
+        }
+    }
+
+    //Aggiunta elementi
+    protected $elements = null;
+    public function addElement($obj = null)
+    {
+        if ($obj instanceof AA_JSON_Template_Generic) {
+            if (!is_array($this->elements)) $this->elements = array();
+            $this->elements[] = $obj;
+        }
+    }
+    public function __construct($id = "", $props = null)
+    {
+        if ($id != "") $this->props["id"] = $id;
+        if (is_array($props)) {
+            foreach ($props as $key => $value) {
+                $this->props[$key] = $value;
+            }
+        }
+    }
+
+    public function GetId()
+    {
+        return $this->props['id'];
+    }
+}
+
 //Classe per la gestione del layout delle finestre
 class AA_GenericWindowTemplate
 {
@@ -8204,142 +8383,6 @@ class AA_GenericWindowTemplate
 
         return $this->wnd->toBase64();
     }
-}
-
-//Template generic filter box
-class AA_GenericFilterDlg extends AA_GenericFormDlg
-{
-    protected $saveFilterId = "";
-    public function SetSaveFilterId($id = "")
-    {
-        $this->saveFilterId = $id;
-    }
-    public function GetSaveFilterId()
-    {
-        return $this->saveFilterId;
-    }
-
-    protected $enableSessionSave = false;
-    public function EnableSessionSave($bVal = true)
-    {
-        $this->enableSessionSave = $bVal;
-    }
-
-    public function __construct($id = "", $title = "", $module = "", $formData = array(), $resetData = array(), $applyActions = "", $save_filter_id = "")
-    {
-        parent::__construct($id, $title, $module, $formData, $resetData, $applyActions, $save_filter_id);
-
-        $this->SetWidth("700");
-        $this->SetHeight("400");
-
-        $this->applyActions = $applyActions;
-        $this->saveFilterId = $save_filter_id;
-
-        /*$this->form=new AA_JSON_Template_Form($this->id."_Form",array(
-            "data"=>$formData,
-            "elementsConfig"=>array("labelWidth"=>180)
-        ));
-        
-        $this->body->AddRow($this->form);
-        
-        $this->body->AddRow(new AA_JSON_Template_Generic("", array("view"=>"spacer", "height"=>10, "css"=>array("border-top"=>"1px solid #e6f2ff !important;"))));
-        
-        //Apply button
-        $this->applyButton = new AA_JSON_Template_Generic($this->id."_Button_Bar_Apply",array("view"=>"button","width"=>80, "label"=>"Applica"));
-        
-        //Toolbar
-        $toolbar=new AA_JSON_Template_Layout($this->id."_Button_Bar",array("height"=>38));
-        $toolbar->addCol(new AA_JSON_Template_Generic("spacer",array("view"=>"spacer","width"=>15)));
-        
-        //reset form button
-        if(is_array($resetData))$resetAction="if($$('".$this->id."_Form')) $$('".$this->id."_Form').setValues(".json_encode($resetData).")";
-        else $resetAction="";
-        $toolbar->addCol(new AA_JSON_Template_Generic($this->id."_Button_Bar_Reset",array("view"=>"button","width"=>80,"label"=>"Reset", "tooltip"=>"Reimposta i valori di default", "click"=>$resetAction)));
-        
-        $toolbar->addCol(new AA_JSON_Template_Generic());
-        
-        $toolbar->addCol($this->applyButton);
-        $toolbar->addCol(new AA_JSON_Template_Generic("spacer",array("view"=>"spacer","width"=>15)));
-        $this->body->AddRow($toolbar);
-        $this->body->AddRow(new AA_JSON_Template_Generic("spacer",array("view"=>"spacer","height"=>10)));*/
-    }
-
-    protected function Update()
-    {
-        parent::Update();
-
-        if ($this->module == "") $module = "module=AA_MainApp.curModule";
-        else $module = "module=AA_MainApp.getModule('" . $this->module . "')";
-
-        if ($this->saveFilterId == "") $filter_id = "module.getActiveView()";
-        else $filter_id = "'" . $this->saveFilterId . "'";
-
-        if ($this->enableSessionSave) {
-            $sessionSave = "AA_MainApp.setSessionVar(" . $filter_id . ", $$('" . $this->id . "_Form').getValues());";
-        }
-
-        $this->applyButton->SetProp("click", "try{" . $module . "; if(module.isValid()) {" . $sessionSave . "module.setRuntimeValue(" . $filter_id . ",'filter_data',$$('" . $this->id . "_Form').getValues());" . $this->applyActions . ";}$$('" . $this->id . "_Wnd').close()}catch(msg){console.error(msg)}");
-    }
-
-    /*
-    //Aggiungi un campo al form
-    public function AddField($name="", $label="", $type="text", $props=array())
-    {
-        if($name !="" && $label !="")
-        {
-            $props['name']=$name;
-            $props['label']=$label;
-            
-            if($type=="text") $this->form->AddElement(new AA_JSON_Template_Text($this->id."_Field_".$name,$props));
-            if($type=="textarea") $this->form->AddElement(new AA_JSON_Template_Textarea($this->id."_Field_".$name,$props));
-            if($type=="checkbox") $this->form->AddElement(new AA_JSON_Template_Checkbox($this->id."_Field_".$name,$props));
-            if($type=="select") $this->form->AddElement(new AA_JSON_Template_Select($this->id."_Field_".$name,$props));
-            if($type=="switch") $this->form->AddElement(new AA_JSON_Template_Switch($this->id."_Field_".$name,$props));
-        }
-    }
-    
-    //Aggiungi un campo di testo
-    public function AddTextField($name="", $label="", $props=array())
-    {
-        return $this->AddField($name,$label,"text",$props);
-    }
-    
-    //Aggiungi un campo di area di testo
-    public function AddTextareaField($name="", $label="", $props=array())
-    {
-        return $this->AddField($name,$label,"textarea",$props);
-    }
-    
-    //Aggiungi un checkbox
-    public function AddCheckBoxField($name="", $label="", $props=array())
-    {
-        return $this->AddField($name,$label,"checkbox",$props);
-    }
-    
-    //Aggiungi un switchbox
-    public function AddSwitchBoxField($name="", $label="", $props=array())
-    {
-        return $this->AddField($name,$label,"switch",$props);
-    }
-    
-    //Aggiungi una select
-    public function AddSelectField($name="", $label="", $props=array())
-    {
-        return $this->AddField($name,$label,"select",$props);
-    }
-    
-    //Aggiungi un campo per la scelta delle strutture
-    public function AddStructField($taskParams=array(),$params=array(), $fieldParams=array())
-    {
-        $onSearchScript="try{ if($$('".$this->id."_Form').getValues().id_struct_tree_select) AA_MainApp.ui.MainUI.structDlg.lastSelectedItem={id: $$('".$this->id."_Form').getValues().id_struct_tree_select}; AA_MainApp.ui.MainUI.structDlg.show(". json_encode($taskParams).",".json_encode($params).");}catch(msg){console.error(msg)}";
-        
-        if($fieldParams['name']== "") $fieldParams['name']="struct_desc";
-        if($fieldParams['label']== "") $fieldParams['label']="Struttura";
-        if($fieldParams['readonly']== "") $fieldParams['readonly']=true;
-        if($fieldParams['click']== "") $fieldParams['click']=$onSearchScript;
-        
-        $this->form->AddElement(new AA_JSON_Template_Search($this->id."_Field_Struct_Search",$fieldParams));
-    }*/
 }
 
 //Template generic filter box
@@ -8711,6 +8754,142 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
             $this->curRow->AddCol($obj);
         }
     }
+}
+
+//Template generic filter box
+class AA_GenericFilterDlg extends AA_GenericFormDlg
+{
+    protected $saveFilterId = "";
+    public function SetSaveFilterId($id = "")
+    {
+        $this->saveFilterId = $id;
+    }
+    public function GetSaveFilterId()
+    {
+        return $this->saveFilterId;
+    }
+
+    protected $enableSessionSave = false;
+    public function EnableSessionSave($bVal = true)
+    {
+        $this->enableSessionSave = $bVal;
+    }
+
+    public function __construct($id = "", $title = "", $module = "", $formData = array(), $resetData = array(), $applyActions = "", $save_filter_id = "")
+    {
+        parent::__construct($id, $title, $module, $formData, $resetData, $applyActions, $save_filter_id);
+
+        $this->SetWidth("700");
+        $this->SetHeight("400");
+
+        $this->applyActions = $applyActions;
+        $this->saveFilterId = $save_filter_id;
+
+        /*$this->form=new AA_JSON_Template_Form($this->id."_Form",array(
+            "data"=>$formData,
+            "elementsConfig"=>array("labelWidth"=>180)
+        ));
+        
+        $this->body->AddRow($this->form);
+        
+        $this->body->AddRow(new AA_JSON_Template_Generic("", array("view"=>"spacer", "height"=>10, "css"=>array("border-top"=>"1px solid #e6f2ff !important;"))));
+        
+        //Apply button
+        $this->applyButton = new AA_JSON_Template_Generic($this->id."_Button_Bar_Apply",array("view"=>"button","width"=>80, "label"=>"Applica"));
+        
+        //Toolbar
+        $toolbar=new AA_JSON_Template_Layout($this->id."_Button_Bar",array("height"=>38));
+        $toolbar->addCol(new AA_JSON_Template_Generic("spacer",array("view"=>"spacer","width"=>15)));
+        
+        //reset form button
+        if(is_array($resetData))$resetAction="if($$('".$this->id."_Form')) $$('".$this->id."_Form').setValues(".json_encode($resetData).")";
+        else $resetAction="";
+        $toolbar->addCol(new AA_JSON_Template_Generic($this->id."_Button_Bar_Reset",array("view"=>"button","width"=>80,"label"=>"Reset", "tooltip"=>"Reimposta i valori di default", "click"=>$resetAction)));
+        
+        $toolbar->addCol(new AA_JSON_Template_Generic());
+        
+        $toolbar->addCol($this->applyButton);
+        $toolbar->addCol(new AA_JSON_Template_Generic("spacer",array("view"=>"spacer","width"=>15)));
+        $this->body->AddRow($toolbar);
+        $this->body->AddRow(new AA_JSON_Template_Generic("spacer",array("view"=>"spacer","height"=>10)));*/
+    }
+
+    protected function Update()
+    {
+        parent::Update();
+
+        if ($this->module == "") $module = "module=AA_MainApp.curModule";
+        else $module = "module=AA_MainApp.getModule('" . $this->module . "')";
+
+        if ($this->saveFilterId == "") $filter_id = "module.getActiveView()";
+        else $filter_id = "'" . $this->saveFilterId . "'";
+
+        if ($this->enableSessionSave) {
+            $sessionSave = "AA_MainApp.setSessionVar(" . $filter_id . ", $$('" . $this->id . "_Form').getValues());";
+        }
+
+        $this->applyButton->SetProp("click", "try{" . $module . "; if(module.isValid()) {" . $sessionSave . "module.setRuntimeValue(" . $filter_id . ",'filter_data',$$('" . $this->id . "_Form').getValues());" . $this->applyActions . ";}$$('" . $this->id . "_Wnd').close()}catch(msg){console.error(msg)}");
+    }
+
+    /*
+    //Aggiungi un campo al form
+    public function AddField($name="", $label="", $type="text", $props=array())
+    {
+        if($name !="" && $label !="")
+        {
+            $props['name']=$name;
+            $props['label']=$label;
+            
+            if($type=="text") $this->form->AddElement(new AA_JSON_Template_Text($this->id."_Field_".$name,$props));
+            if($type=="textarea") $this->form->AddElement(new AA_JSON_Template_Textarea($this->id."_Field_".$name,$props));
+            if($type=="checkbox") $this->form->AddElement(new AA_JSON_Template_Checkbox($this->id."_Field_".$name,$props));
+            if($type=="select") $this->form->AddElement(new AA_JSON_Template_Select($this->id."_Field_".$name,$props));
+            if($type=="switch") $this->form->AddElement(new AA_JSON_Template_Switch($this->id."_Field_".$name,$props));
+        }
+    }
+    
+    //Aggiungi un campo di testo
+    public function AddTextField($name="", $label="", $props=array())
+    {
+        return $this->AddField($name,$label,"text",$props);
+    }
+    
+    //Aggiungi un campo di area di testo
+    public function AddTextareaField($name="", $label="", $props=array())
+    {
+        return $this->AddField($name,$label,"textarea",$props);
+    }
+    
+    //Aggiungi un checkbox
+    public function AddCheckBoxField($name="", $label="", $props=array())
+    {
+        return $this->AddField($name,$label,"checkbox",$props);
+    }
+    
+    //Aggiungi un switchbox
+    public function AddSwitchBoxField($name="", $label="", $props=array())
+    {
+        return $this->AddField($name,$label,"switch",$props);
+    }
+    
+    //Aggiungi una select
+    public function AddSelectField($name="", $label="", $props=array())
+    {
+        return $this->AddField($name,$label,"select",$props);
+    }
+    
+    //Aggiungi un campo per la scelta delle strutture
+    public function AddStructField($taskParams=array(),$params=array(), $fieldParams=array())
+    {
+        $onSearchScript="try{ if($$('".$this->id."_Form').getValues().id_struct_tree_select) AA_MainApp.ui.MainUI.structDlg.lastSelectedItem={id: $$('".$this->id."_Form').getValues().id_struct_tree_select}; AA_MainApp.ui.MainUI.structDlg.show(". json_encode($taskParams).",".json_encode($params).");}catch(msg){console.error(msg)}";
+        
+        if($fieldParams['name']== "") $fieldParams['name']="struct_desc";
+        if($fieldParams['label']== "") $fieldParams['label']="Struttura";
+        if($fieldParams['readonly']== "") $fieldParams['readonly']=true;
+        if($fieldParams['click']== "") $fieldParams['click']=$onSearchScript;
+        
+        $this->form->AddElement(new AA_JSON_Template_Search($this->id."_Field_Struct_Search",$fieldParams));
+    }*/
 }
 
 //Classe gestione set di campi 
@@ -9994,185 +10173,6 @@ class AA_GenericPagedSectionTemplate
     #-------------------------------
 }
 
-//Template generico JSON webix
-class AA_JSON_Template_Generic
-{
-    //Restituisce la reppresentazione dell'oggetto come una una stringa
-    public function __toString()
-    {
-        //Restituisce l'oggetto come stringa
-        return json_encode($this->toArray());
-    }
-
-    public function toString()
-    {
-        return $this->__toString();
-    }
-
-    public function toBase64()
-    {
-        return base64_encode($this->__toString());
-    }
-
-    public function toArray()
-    {
-        $result = array();
-
-        //Proprietà
-        foreach ($this->props as $key => $prop) {
-            if ($prop instanceof AA_JSON_Template_Generic) $result[$key] = $prop->toArray();
-            else $result[$key] = $prop;
-        }
-
-        //rows
-        if (is_array($this->rows)) {
-            $result['rows'] = array();
-            foreach ($this->rows as $curRow) {
-                $result['rows'][] = $curRow->toArray();
-            }
-        }
-
-        //cols
-        if (is_array($this->cols)) {
-            $result['cols'] = array();
-            foreach ($this->cols as $curCol) {
-                $result['cols'][] = $curCol->toArray();
-            }
-        }
-        if ($result['view'] == "layout" && !is_array($result['rows']) && !is_array($result['cols'])) $result['rows'] = array(array("view" => "spacer"));
-
-        //cells
-        if (is_array($this->cells)) {
-            $result['cells'] = array();
-            foreach ($this->cells as $curCell) {
-                $result['cells'][] = $curCell->toArray();
-            }
-        }
-        if ($result['view'] == "multiview" && !is_array($result['cells'])) $result['cells'] = array(array("view" => "spacer"));
-
-        //elements
-        if (is_array($this->elements)) {
-            $result['elements'] = array();
-            foreach ($this->elements as $curCell) {
-                $result['elements'][] = $curCell->toArray();
-            }
-        }
-        if ($result['view'] == "toolbar" && !is_array($result['elements'])) $result['elements'] = array(array("view" => "spacer"));
-
-        //bodyRows
-        if (is_array($this->bodyRows) || is_array($this->bodyCols)) {
-            $result['body'] = array();
-            if (is_array($this->bodyRows)) {
-                foreach ($this->bodyRows as $curBodyRow) {
-                    if (!is_array($result['body']['rows'])) $result['body']['rows'] = array();
-                    $result['body']['rows'][] = $curBodyRow->toArray();
-                }
-            }
-
-            if (is_array($this->bodyCols)) {
-                foreach ($this->bodyCols as $curBodyCol) {
-                    if (!is_array($result['body']['cols'])) $result['body']['cols'] = array();
-                    $result['body']['cols'][] = $curBodyCol->toArray();
-                }
-            }
-        }
-
-        //Restituisce l'oggetto come array
-        return $result;
-    }
-
-    protected $props = array();
-    public function SetProp($prop = "", $value = "")
-    {
-        $this->props[$prop] = $value;
-    }
-    public function GetProp($prop)
-    {
-        return $this->props[$prop];
-    }
-
-    //Aggiunta righe
-    protected $rows = null;
-    public function addRow($row = null)
-    {
-        if ($row instanceof AA_JSON_Template_Generic) {
-            //AA_Log::Log(__METHOD__." ".$row->toString(),100);
-
-            if (!is_array($this->rows)) $this->rows = array();
-            $this->rows[] = $row;
-        }
-    }
-
-    //Aggiunta row al body
-    protected $bodyRows = null;
-    public function addRowToBody($row = null)
-    {
-        if ($row instanceof AA_JSON_Template_Generic) {
-            //AA_Log::Log(__METHOD__." ".$row->toString(),100);
-
-            if (!is_array($this->bodyRows)) $this->bodyRows = array();
-            $this->bodyRows[] = $row;
-        }
-    }
-
-    //Aggiunta col al body
-    protected $bodyCols = null;
-    public function addColToBody($col = null)
-    {
-        if ($col instanceof AA_JSON_Template_Generic) {
-            //AA_Log::Log(__METHOD__." ".$row->toString(),100);
-
-            if (!is_array($this->bodyCols)) $this->bodyCols = array();
-            $this->bodyCols[] = $col;
-        }
-    }
-
-    //Aggiunta colonne
-    protected $cols = null;
-    public function addCol($col = null)
-    {
-        if ($col instanceof AA_JSON_Template_Generic) {
-            if (!is_array($this->cols)) $this->cols = array();
-            $this->cols[] = $col;
-        }
-    }
-
-    //Aggiunta celle
-    protected $cells = null;
-    public function addCell($cell = null, $bFromHead = false)
-    {
-        if ($cell instanceof AA_JSON_Template_Generic) {
-            if (!is_array($this->cells)) $this->cells = array();
-            if (!$bFromHead) $this->cells[] = $cell;
-            else array_unshift($this->cells, $cell);
-        }
-    }
-
-    //Aggiunta elementi
-    protected $elements = null;
-    public function addElement($obj = null)
-    {
-        if ($obj instanceof AA_JSON_Template_Generic) {
-            if (!is_array($this->elements)) $this->elements = array();
-            $this->elements[] = $obj;
-        }
-    }
-    public function __construct($id = "", $props = null)
-    {
-        if ($id != "") $this->props["id"] = $id;
-        if (is_array($props)) {
-            foreach ($props as $key => $value) {
-                $this->props[$key] = $value;
-            }
-        }
-    }
-
-    public function GetId()
-    {
-        return $this->props['id'];
-    }
-}
-
 //Classe per la gestione delle multiviste
 class AA_JSON_Template_Multiview extends AA_JSON_Template_Generic
 {
@@ -10194,6 +10194,61 @@ class AA_JSON_Template_Layout extends AA_JSON_Template_Generic
         if ($id == "") $id = "AA_JSON_TEMPLATE_LAYOUT";
 
         parent::__construct($id, $props);
+    }
+}
+
+//Classe per la gestione dei caroselli
+class AA_JSON_Template_Carousel extends AA_JSON_Template_Generic
+{
+    public function __construct($id = "", $props = null)
+    {
+        $this->props["navigation"]=array();
+        $this->props["view"] = "carousel";
+        $this->props["navigation"]["type"] = "side";
+        $this->props["navigation"]["items"]=true;
+        $this->props["scrollSpeed"]="800ms";
+
+        if ($id == "") $id = "AA_JSON_TEMPLATE_CAROUSEL";
+
+        parent::__construct($id, $props);
+    }
+
+    protected $slides=array();
+    public function AddSlide($slide=null)
+    {
+        if($slide instanceof AA_JSON_Template_Generic)
+        {
+            $this->slides[]=$slide;
+        }
+    }
+
+    public function SetScrollSpeed($speed=500)
+    {
+        if($speed > 0) $this->props["scrollSpeed"]=$speed."ms";
+    }
+
+    public function GetSlides()
+    {
+        return $this->slides;
+    }
+
+    public function SetTipe($newType="side")
+    {
+        $this->props["navigation"]["type"]=$newType;
+    }
+
+    public function ShowItems($show=true)
+    {
+        $this->props["navigation"]["items"]=$show;
+    }
+
+    public function toArray()
+    {
+        foreach ($this->slides as $curSlide)
+        {
+            $this->AddCol($curSlide);
+        }
+        return parent::toArray();
     }
 }
 
