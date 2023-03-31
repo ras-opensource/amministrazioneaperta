@@ -10222,6 +10222,25 @@ class AA_JSON_Template_Carousel extends AA_JSON_Template_Generic
         }
     }
 
+    protected $autoScroll=false;
+    protected $autoScrollSlideTime=5000;
+    public function EnableAutoScroll($bVal=true)
+    {
+        $this->autoScroll=$bVal;
+    }
+    public function SetAutoScrollSlideTime($val=5000)
+    {
+        if($val > 1000)
+        {
+            $this->autoScrollSlideTime=$val;
+        }
+    }
+
+    public function ShowNavigationButtons($bVal=true)
+    {
+        $this->props['navigation']['buttons']=$bVal;
+    }
+
     public function SetScrollSpeed($speed=500)
     {
         if($speed > 0) $this->props["scrollSpeed"]=$speed."ms";
@@ -10248,6 +10267,11 @@ class AA_JSON_Template_Carousel extends AA_JSON_Template_Generic
         {
             $this->AddCol($curSlide);
         }
+
+        $this->props['autoScroll']=$this->autoScroll;
+        $this->props['autoScrollSlideTime']=$this->autoScrollSlideTime;
+        $this->props['slidesCount']=sizeof($this->slides);
+
         return parent::toArray();
     }
 }

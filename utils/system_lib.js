@@ -1178,6 +1178,46 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         //Aggiorna il titolo della sezione.
                         if (this.getActiveView() == newObj.id) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: newObj.name });
 
+                        //Abilita l'auto animazione dei caroselli
+                        let carouselObjs = obj.queryView({ view: "carousel" }, "all");
+                        if (Array.isArray(carouselObjs) && carouselObjs.length > 0) {
+                            for (item of carouselObjs) {
+                            
+                                if(item.config.autoScroll == true && item.config.autoScrollSlideTime > 1000 && item.config.slidesCount > 1)
+                                {
+                                    let autoScroll=function(objId) 
+                                    {
+                                        let carousel=$$(objId);
+                                        if(carousel)
+                                        {
+                                            if(carousel.isVisible())
+                                            {
+                                                let index=carousel.getActiveIndex();
+                                                //console.log(this.name + "::refreshUiObjectDefault - cambio slide ("+index+" of "+carousel.config.slidesCount+").");
+                                                if(index == (carousel.config.slidesCount-1))
+                                                {
+                                                    carousel.setActiveIndex(0);
+                                                }
+                                                else
+                                                {
+                                                    carousel.showNext();
+                                                }    
+                                            }
+                                        }
+                                    };
+
+                                    //console.log(this.name + "::refreshUiObjectDefault - imposto la funzione di autoscroll sul carosello.");
+                                    //rimuove le precedenti funzioni di impostazione di intervallo
+                                    if(this.getRuntimeValue(item.config.id,"autoScrollIntervalFunction"))
+                                    {
+                                        //console.log(this.name + "::refreshUiObjectDefault - Rimuovo la precedente funzione di autoScroll");
+                                        window.clearInterval(this.getRuntimeValue(item.config.id,"autoScrollIntervalFunction"));
+                                    }
+                                    this.setRuntimeValue(item.config.id, "autoScrollIntervalFunction", window.setInterval(autoScroll,item.config.autoScrollSlideTime,item.config.id));
+                                }
+                            }
+                        }
+
                         //Se la sezione è paginata visualizza la pagina visualizzata precedentemente
                         if (obj.config.paged == true) {
                             let pager = $$(obj.config.pager_id);
