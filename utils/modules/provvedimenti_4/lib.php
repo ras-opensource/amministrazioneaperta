@@ -646,6 +646,12 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 {
     const AA_UI_PREFIX="AA_Provvedimenti";
 
+    //Id modulo
+    const AA_ID_MODULE="AA_MODULE_PROVVEDIMENTI";
+
+    //main ui layout box
+    const AA_UI_MODULE_MAIN_BOX="AA_Provvedimenti_module_layout";
+
     const AA_MODULE_OBJECTS_CLASS="AA_Provvedimenti";
 
     //Task per la gestione dei dialoghi standard
