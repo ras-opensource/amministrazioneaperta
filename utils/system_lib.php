@@ -905,8 +905,8 @@ class AA_User
                      $struct=$user->GetStruct();
                      $_SESSION['id_assessorato'] = $struct->GetAssessorato(true);
                      $_SESSION['tipo_struct'] = $struct->GetTipo();
-                     $_SESSION['id_direzione'] = $struct->GetDirezione();
-                     $_SESSION['id_servizio'] = $struct->GetServizio();
+                     $_SESSION['id_direzione'] = $struct->GetDirezione(true);
+                     $_SESSION['id_servizio'] = $struct->GetServizio(true);
                      $_SESSION['id_settore'] = 0;
                      $_SESSION['livello'] = $user->GetLevel();
                      $_SESSION['level'] = $user->GetLevel();

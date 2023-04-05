@@ -1182,38 +1182,30 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         let carouselObjs = obj.queryView({ view: "carousel" }, "all");
                         if (Array.isArray(carouselObjs) && carouselObjs.length > 0) {
                             for (item of carouselObjs) {
-                            
-                                if(item.config.autoScroll == true && item.config.autoScrollSlideTime > 1000 && item.config.slidesCount > 1)
-                                {
-                                    let autoScroll=function(objId) 
-                                    {
-                                        let carousel=$$(objId);
-                                        if(carousel)
-                                        {
-                                            if(carousel.isVisible())
-                                            {
-                                                let index=carousel.getActiveIndex();
+
+                                if (item.config.autoScroll == true && item.config.autoScrollSlideTime > 1000 && item.config.slidesCount > 1) {
+                                    let autoScroll = function(objId) {
+                                        let carousel = $$(objId);
+                                        if (carousel) {
+                                            if (carousel.isVisible()) {
+                                                let index = carousel.getActiveIndex();
                                                 //console.log(this.name + "::refreshUiObjectDefault - cambio slide ("+index+" of "+carousel.config.slidesCount+").");
-                                                if(index == (carousel.config.slidesCount-1))
-                                                {
+                                                if (index == (carousel.config.slidesCount - 1)) {
                                                     carousel.setActiveIndex(0);
-                                                }
-                                                else
-                                                {
+                                                } else {
                                                     carousel.showNext();
-                                                }    
+                                                }
                                             }
                                         }
                                     };
 
                                     //console.log(this.name + "::refreshUiObjectDefault - imposto la funzione di autoscroll sul carosello.");
                                     //rimuove le precedenti funzioni di impostazione di intervallo
-                                    if(this.getRuntimeValue(item.config.id,"autoScrollIntervalFunction"))
-                                    {
+                                    if (this.getRuntimeValue(item.config.id, "autoScrollIntervalFunction")) {
                                         //console.log(this.name + "::refreshUiObjectDefault - Rimuovo la precedente funzione di autoScroll");
-                                        window.clearInterval(this.getRuntimeValue(item.config.id,"autoScrollIntervalFunction"));
+                                        window.clearInterval(this.getRuntimeValue(item.config.id, "autoScrollIntervalFunction"));
                                     }
-                                    this.setRuntimeValue(item.config.id, "autoScrollIntervalFunction", window.setInterval(autoScroll,item.config.autoScrollSlideTime,item.config.id));
+                                    this.setRuntimeValue(item.config.id, "autoScrollIntervalFunction", window.setInterval(autoScroll, item.config.autoScrollSlideTime, item.config.id));
                                 }
                             }
                         }
@@ -4088,6 +4080,10 @@ async function AA_UserAuth(params = null) {
                             try {
                                 //console.log("AA_UserAuth", arguments);
 
+                                if (!$$("AA_UserAuth_Form").validate()) {
+                                    return;
+                                }
+
                                 let button = $$(arguments[0]);
                                 let lastTask = "";
                                 if (button) {
@@ -4143,62 +4139,59 @@ async function AA_UserAuth(params = null) {
                 view: "layout",
                 type: "clean",
                 rows: [{
-                        id: "AA_UserAuth_Form",
-                        view: "form",
-                        borderless: true,
-                        elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
-                        elements: [{
-                                view: "text",
-                                icon:"mdi mdi-account",
-                                name: "user",
-                                bottomLabel:"Inserisci il tuo nome utente o la tua email.",
-                                required: true,
-                                label: "utente"
-                            },
-                            {
-                                view: "text",
-                                type: "password",
-                                icon: "mdi mdi-key",
-                                name: "pwd",
-                                bottomLabel:"Inserisci la tua password.",
-                                required: true,
-                                label: "password"
-                            },
-                            {
-                                type:"space",
-                                css:{"background-color":"transparent"},
-                                rows:
-                                [
-                                    apply_btn
-                                ]
-                            },
-                            {
-                                type:"clean",
-                                borderless:true,
-                                cols:
-                                [
-                                    {
-                                        template: "<div style='display:flex;justify-content:center;align-items:center;height:100%; font-size: smaller'><a href='#'>recupero credenziali</a></div>", tooltip:"Fai click qui se hai dimenticato il nome utente, la password o entrambi."
-                                    },
-                                    {
-                                        view: "checkbox",
-                                        id: "remember_me",
-                                        name: "remember_me",
-                                        label: "Ricordami",
-                                        //labelRight:"Ricordami",
-                                        labelAlign: "right",
-                                        labelPosition: "right",
-                                        labelWidth: 95,
-                                        align:"right",
-                                        bottomPadding: 0,
-                                        tooltip:"Se abilitato, ricorda l'utente (su questo browser) per 30 giorni.",
-                                        value: 0,
-                                    }
-                                ]
-                            }   
-                        ]
-                    }
-                ]
+                    id: "AA_UserAuth_Form",
+                    view: "form",
+                    borderless: true,
+                    elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
+                    elements: [{
+                            view: "text",
+                            icon: "mdi mdi-account",
+                            name: "user",
+                            bottomLabel: "Inserisci il tuo nome utente o la tua email.",
+                            required: true,
+                            label: "utente"
+                        },
+                        {
+                            view: "text",
+                            type: "password",
+                            icon: "mdi mdi-key",
+                            name: "pwd",
+                            bottomLabel: "Inserisci la tua password.",
+                            required: true,
+                            label: "password"
+                        },
+                        {
+                            type: "space",
+                            css: { "background-color": "transparent" },
+                            rows: [
+                                apply_btn
+                            ]
+                        },
+                        {
+                            type: "clean",
+                            borderless: true,
+                            cols: [{
+                                    template: "<div style='display:flex;justify-content:center;align-items:center;height:100%; font-size: smaller'><a onClick='AA_UserResetPwd()'>recupero credenziali</a></div>",
+                                    tooltip: "Fai click qui se hai dimenticato il nome utente, la password o entrambi."
+                                },
+                                {
+                                    view: "checkbox",
+                                    id: "remember_me",
+                                    name: "remember_me",
+                                    label: "Ricordami",
+                                    //labelRight:"Ricordami",
+                                    labelAlign: "right",
+                                    labelPosition: "right",
+                                    labelWidth: 95,
+                                    align: "right",
+                                    bottomPadding: 0,
+                                    tooltip: "Se abilitato, ricorda l'utente (su questo browser) per 30 giorni.",
+                                    value: 0,
+                                }
+                            ]
+                        }
+                    ]
+                }]
             }
 
             login_dlg['head'] = header_box;
@@ -4208,6 +4201,141 @@ async function AA_UserAuth(params = null) {
         }
     } catch (msg) {
         console.error("AA_UserAuth() - " + msg);
+        AA_MainApp.ui.alert(msg);
+        return Promise.reject(msg);
+    }
+}
+
+//Recupero credenziali
+async function AA_UserResetPwd(params = null) {
+    try {
+        if ($$("AA_UserResetPwdDlg")) {
+            $$("AA_UserResetPwdDlg").show();
+        } else {
+            let resetpwd_dlg = {
+                id: "AA_UserResetPwdDlg",
+                view: "window",
+                height: 310,
+                width: 400,
+                position: "center",
+                modal: true,
+                css: "AA_Wnd"
+            }
+
+            let header_box = {
+                css: "AA_Wnd_header_box",
+                view: "toolbar",
+                height: 38,
+                elements: [{
+                    css: "AA_Wnd_title",
+                    template: "Recupero credenziali"
+                }]
+            }
+
+            let apply_btn = {
+                view: "layout",
+                height: 38,
+                cols: [{
+                        view: "button",
+                        label: "Annulla",
+                        hotkey: "enter",
+                        type: "icon",
+                        icon: "mdi mdi-close",
+                        hotkey: "esc",
+                        width: 100,
+                        align: "left",
+                        click: function() { $$("AA_UserResetPwdDlg").close() }
+                    },
+                    {},
+                    {
+                        id: "AA_UserResetPwd_Apply_btn",
+                        view: "button",
+                        label: "Invia",
+                        hotkey: "enter",
+                        type: "icon",
+                        css: "webix_primary",
+                        icon: "mdi mdi-email-send",
+                        width: 100,
+                        align: "center",
+                        params: params,
+                        click: async function() {
+                            try {
+                                //console.log("AA_UserAuth", arguments);
+                                if (!$$("AA_UserResetPwd_Form").validate()) {
+                                    return;
+                                }
+
+                                let form_data = $$("AA_UserResetPwd_Form").getValues();
+
+                                if (form_data['email'].length < 1) {
+                                    AA_MainApp.ui.alert("Occorre inserire una mail valida.");
+                                    return;
+                                }
+
+                                //console.log("AA_UserAuth",form_data);
+
+                                let result = await AA_VerboseTask("ResetPassword", AA_MainApp.taskManager, "", form_data);
+
+                                //console.log("AA_UserAuth", result);
+                                if (result.status.value == 0) {
+                                    $$("AA_UserResetPwdDlg").close();
+                                    AA_MainApp.ui.alert(result.content.value);
+                                    return true;
+                                } else {
+                                    AA_MainApp.ui.alert(result.error.value);
+                                    return true;
+                                }
+                            } catch (msg) {
+                                console.error("AA_MainApp.AA_UserResetPwdDlg", msg);
+                                AA_MainApp.ui.alert(msg);
+                                return Promise.reject(msg);
+                            }
+                        }
+                    }
+                ]
+            }
+
+            let body = {
+                view: "layout",
+                type: "clean",
+                rows: [{
+                    id: "AA_UserResetPwd_Form",
+                    view: "form",
+                    borderless: true,
+                    rules: {
+                        "email": webix.rules.isEmail
+                    },
+                    elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
+                    elements: [{
+                            view: "template",
+                            template: "<p>Inserisci l'indirizzo email associato al tuo account.<br>il sistema ti invierà delle nuove credenziali per l'accesso alla piattaforma.</p>"
+                        },
+                        {
+                            view: "text",
+                            icon: "mdi mdi-email",
+                            name: "email",
+                            bottomLabel: "Inserisci l'indirizzo email associato all'account.",
+                            required: true,
+                            label: "email"
+                        },
+                        {
+                            type: "space",
+                            css: { "background-color": "transparent" },
+                            rows: [
+                                apply_btn
+                            ]
+                        }
+                    ]
+                }]
+            }
+
+            resetpwd_dlg['head'] = header_box;
+            resetpwd_dlg['body'] = body;
+
+            webix.ui(resetpwd_dlg).show();
+        }
+    } catch (msg) {
+        console.error("AA_UserResetPwdDlg() - " + msg);
         AA_MainApp.ui.alert(msg);
         return Promise.reject(msg);
     }
