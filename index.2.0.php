@@ -38,7 +38,7 @@ $lib_path=AA_Const::AA_PUBLIC_LIB_PATH;
 
 foreach($platform->GetModules() as $curMod)
 {
-    foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'].DIRECTORY_SEPARATOR."*.js") as $curScript)
+    foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'].DIRECTORY_SEPARATOR."*.js*") as $curScript)
     {
         echo '<script src="'.AA_Const::AA_WWW_ROOT.'/'.$curScript.'"></script>';
     }

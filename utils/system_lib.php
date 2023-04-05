@@ -894,6 +894,30 @@ class AA_User
                         return AA_User::Guest();
                     }
 
+                     //Old stuff compatibility
+                     $_SESSION['user'] = $user->GetUsername();
+                     $_SESSION['nome'] = $user->GetNome();
+                     $_SESSION['cognome'] = $user->GetCognome();
+                     $_SESSION['email'] = $user->GetEmail();
+                     $_SESSION['user_home'] = "admin/index.php";
+                     $_SESSION['id_user'] = $user->GetId();
+                     $_SESSION['id_utente'] = $user->GetId();
+                     $struct=$user->GetStruct();
+                     $_SESSION['id_assessorato'] = $struct->GetAssessorato(true);
+                     $_SESSION['tipo_struct'] = $struct->GetTipo();
+                     $_SESSION['id_direzione'] = $struct->GetDirezione();
+                     $_SESSION['id_servizio'] = $struct->GetServizio();
+                     $_SESSION['id_settore'] = 0;
+                     $_SESSION['livello'] = $user->GetLevel();
+                     $_SESSION['level'] = $user->GetLevel();
+                     $_SESSION['assessorato'] = $struct->GetAssessorato();
+                     $_SESSION['direzione'] = $struct->GetDirezione();
+                     $_SESSION['servizio'] = $struct->GetServizio();
+                     $_SESSION['settore'] = "";
+                     $_SESSION['user_flags'] = $user->GetFlags();
+                     $_SESSION['flags'] = $user->GetFlags();
+                    //AA_Log::LogAction($rs['id'], 0, "Log In"); //old stuff
+
                     //Rinfresco della durata del token
                     AA_User::RefreshToken($sToken);
                     $_SESSION['token'] = $sToken;
