@@ -461,6 +461,7 @@ Class AA_Patrimonio extends AA_Object_V2
         //data table
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
+        //disabilita la revisione
         $this->EnableRevision(false);
 
         //Db data binding
@@ -799,6 +800,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".titolo = '".addslashes($params['Titolo'])."'";
         }
+
+        //Comune
+        if($params['CodiceComune'] !="")
+        {
+            $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".codice_comune = '".addslashes($params['CodiceComune'])."'";
+        }
+
+        //Cespite
+        if($params['Cespite'] !="")
+        {
+            $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".cespite like '".addslashes($params['Cespite'])."'";
+        }
+
         return $params;
     }
 
@@ -2685,7 +2699,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"revisionate"=>$params['revisionate'], "Titolo"=>$params['Titolo']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'], "Titolo"=>$params['Titolo']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -2693,7 +2707,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($params['id_direzione']=="") $formData['id_direzione']=0;
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
-        if($params['revisionate']=="") $formData['revisionate']=0;
+        //if($params['revisionate']=="") $formData['revisionate']=0;
         if($params['Titolo']=="") $formData['Titolo']=0;
 
         //Valori reset
@@ -2710,7 +2724,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
 
         //Revisionate
-        $dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
+        //$dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
         
         //Denominazione
         $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'immobile.", "placeholder"=>"Denominazione..."));
@@ -2736,7 +2750,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"Titolo"=>$params['Titolo'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"Titolo"=>$params['Titolo'],"CodiceComune"=>$params['CodiceComune'],"Cespite"=>$params['Cespite'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -2774,6 +2788,14 @@ Class AA_PatrimonioModule extends AA_GenericModule
         );
         $dlg->AddSelectField("Titolo","Titolo",array("bottomLabel"=>"*Indicare il titolo di possesso","options"=>$options));
         
+        //codice comune
+        $label="Cod. Comune";
+        $dlg->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento.","placeholder"=>"es. cagliari","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
+
+        //Cespite
+        $label="Cespite";
+        $dlg->AddTextField("Cespite",$label,array("bottomLabel"=>"*Inserisci il numero del cespite.", "tooltip"=>"Inserisci il numero del cespite","placeholder"=>"..."));
+
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();

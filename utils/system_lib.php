@@ -7528,6 +7528,7 @@ class AA_GenericModule
         }
 
         $content->EnablePager();
+        $content->EnablePaging();
         $content->SetPagerItemForPage(10);
         $content->EnableFiltering();
         $content->EnableAddNew();
@@ -11790,7 +11791,8 @@ class AA_Object_V2
 
         //Collegamento tabella dati
         if ($params['class']::AA_DBTABLE_DATA != "") {
-            $join .= " INNER JOIN " . $params['class']::AA_DBTABLE_DATA . " ON " . $params['class']::AA_DBTABLE_DATA . ".id in (" . AA_Const::AA_DBTABLE_OBJECTS . ".id_data," . AA_Const::AA_DBTABLE_OBJECTS . ".id_data_rev)";
+            //$join .= " INNER JOIN " . $params['class']::AA_DBTABLE_DATA . " ON " . $params['class']::AA_DBTABLE_DATA . ".id in (" . AA_Const::AA_DBTABLE_OBJECTS . ".id_data," . AA_Const::AA_DBTABLE_OBJECTS . ".id_data_rev)";
+            $join .= " INNER JOIN " . $params['class']::AA_DBTABLE_DATA . " ON " . $params['class']::AA_DBTABLE_DATA . ".id = ". AA_Const::AA_DBTABLE_OBJECTS . ".id_data ";
         }
 
         //Parametro status non impostato o non valido
@@ -11955,7 +11957,7 @@ class AA_Object_V2
             return array(0 => -1, array());
         }
 
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         //Popola l'array dei risultati
         $results = array();
