@@ -730,6 +730,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".titolo = '".addslashes($params['Titolo'])."'";
         }
+
+        //Comune
+        if($params['CodiceComune'] !="")
+        {
+            $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".codice_comune = '".addslashes($params['CodiceComune'])."'";
+        }
+
+        //Cespite
+        if($params['Cespite'] !="")
+        {
+            $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".cespite like '".addslashes($params['Cespite'])."'";
+        }
+  
         return $params;
     }
 
@@ -2699,7 +2712,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'], "Titolo"=>$params['Titolo']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"CodiceComune"=>$params['CodiceComune'],"Cespite"=>$params['Cespite'],"cestinate"=>$params['cestinate'], "Titolo"=>$params['Titolo']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -2741,6 +2754,14 @@ Class AA_PatrimonioModule extends AA_GenericModule
         );
         $dlg->AddSelectField("Titolo","Titolo",array("bottomLabel"=>"*Indicare il titolo di possesso","options"=>$options));
         
+        //codice comune
+        $label="Cod. Comune";
+        $dlg->AddTextField("CodiceComune",$label,array("bottomLabel"=>"*Codice istat del comune.", "tooltip"=>"Inserisci il nome del comune per attivare l'autocompletamento.","placeholder"=>"es. cagliari","suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetPatrimonioListaCodiciIstat")));
+
+        //Cespite
+        $label="Cespite";
+        $dlg->AddTextField("Cespite",$label,array("bottomLabel"=>"*Inserisci il numero del cespite.", "tooltip"=>"Inserisci il numero del cespite","placeholder"=>"..."));
+  
         $dlg->SetApplyButtonName("Filtra");
         
         return $dlg->GetObject();
