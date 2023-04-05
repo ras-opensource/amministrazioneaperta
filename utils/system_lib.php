@@ -7577,7 +7577,7 @@ class AA_GenericModule
             $contentData = $this->GetDataSectionBozze_List($params);
         }
 
-        AA_Log::Log(__METHOD__ . " - oggetti trovati: ".$contentData[0]." - oggetti nell'array: ".sizeof($contentData[1]), 100);
+        //AA_Log::Log(__METHOD__ . " - oggetti trovati: ".$contentData[0]." - oggetti nell'array: ".sizeof($contentData[1]), 100);
 
         $content->SetContentBoxData($contentData[1]);
         $content->SetPagerItemCount($contentData[0]);
@@ -11921,7 +11921,7 @@ class AA_Object_V2
         //Conta i risultati
         $query = "SELECT COUNT(id) as tot FROM (" . $select . $join . $where . $group . $having . ") as count_filter";
 
-        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         if (!$db->Query($query)) {
             //Imposta lo stato di errore
@@ -11957,7 +11957,7 @@ class AA_Object_V2
             return array(0 => -1, array());
         }
 
-        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         //Popola l'array dei risultati
         $results = array();
