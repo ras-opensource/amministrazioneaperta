@@ -7169,12 +7169,12 @@ class AA_GenericModule
 
         switch ($params['object']) {
             case static::AA_UI_PREFIX . "_" . static::AA_UI_PUBBLICATE_LISTBOX:
-                $_REQUEST['count'] = 10;
+                $params['count'] = 10;
                 $data = $this->GetDataSectionPubblicate_List($params);
                 if ($data[0] > 0) $objectData = $data[1];
                 break;
             case static::AA_UI_PREFIX . "_" . static::AA_UI_BOZZE_LISTBOX:
-                $_REQUEST['count'] = 10;
+                $params['count'] = 10;
                 $data = $this->GetDataSectionBozze_List($params);
                 if ($data[0] > 0) $objectData = $data[1];
                 break;
@@ -7461,7 +7461,7 @@ class AA_GenericModule
 
             if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
 
-            $data = array(
+            $newData = array(
                 "id" => $object->GetId(),
                 "tags" => "",
                 "aggiornamento" => $object->GetAggiornamento(),
@@ -7474,11 +7474,11 @@ class AA_GenericModule
             );
 
             if (method_exists($this, $customTemplateDataFunction)) {
-                $templateData[] = $this->$customTemplateDataFunction($data, $object);
+                $templateData[] = $this->$customTemplateDataFunction($newData, $object);
             } else if (function_exists($customTemplateDataFunction)) {
-                $templateData[] = $customTemplateDataFunction($data, $object);
+                $templateData[] = $customTemplateDataFunction($newData, $object);
             } else {
-                $templateData[] = $data;
+                $templateData[] = $newData;
             }
         }
 
@@ -7488,7 +7488,7 @@ class AA_GenericModule
     //Restituisce la lista delle bozze (dati - da specializzare)
     public function GetDataSectionBozze_List($params = array())
     {
-        return $this->GetDataGenericSectionPubblicate_List($params);
+        return $this->GetDataGenericSectionBozze_List($params);
     }
 
     //Template section bozze content
@@ -7551,6 +7551,9 @@ class AA_GenericModule
             $params['count'] = 10;
             $contentData = $this->GetDataSectionBozze_List($params);
         }
+
+        AA_Log::Log(__METHOD__ . " - oggetti trovati: ".$contentData[0]." - oggetti nell'array: ".sizeof($contentData[1]), 100);
+
         $content->SetContentBoxData($contentData[1]);
         $content->SetPagerItemCount($contentData[0]);
         $content->EnableMultiSelect();
@@ -7562,7 +7565,7 @@ class AA_GenericModule
     //Template sezione bozze (da specializzare)
     public function TemplateSection_Bozze($params = array())
     {
-        $content = $this->TemplateGenericSection_Bozze($params, false);
+        $content = $this->TemplateGenericSection_Bozze($params);
         return $content->toObject();
     }
 
@@ -10434,6 +10437,39 @@ class AA_JSON_Template_Form extends AA_JSON_Template_Generic
     }
 }
 
+//template reset pwd
+class AA_GenericResetPwdDlg extends AA_GenericFormDlg
+{
+    public function ___construct($id = "", $title = "", $formData = array(), $resetData = array(), $applyActions = "", $save_formdata_id = "")
+    {
+        parent::__construct($id, $title);
+
+        //AA_Log::Log(__METHOD__." - ".$module,100);
+
+        $this->SetWidth("700");
+        $this->SetHeight("400");
+
+        $this->applyActions = $applyActions;
+        $this->saveFormDataId = $save_formdata_id;
+        $this->formData = $formData;
+        if (sizeof($resetData) == 0) $resetData = $formData;
+        $this->resetData = $resetData;
+
+        $this->form = new AA_JSON_Template_Form($this->id . "_Form", array(
+            "data" => $formData,
+        ));
+
+        $this->body->AddRow($this->form);
+        $this->layout = new AA_JSON_Template_Layout($id . "_Form_Layout", array("type" => "clean"));
+        $this->form->AddRow($this->layout);
+
+        $this->body->AddRow(new AA_JSON_Template_Generic("", array("view" => "spacer", "height" => 10, "css" => array("border-top" => "1px solid #e6f2ff !important;"))));
+
+        $this->AddTextField("email_verification_code","OTP",array("required"=>true,"bottomLabel"=>"Inserisci il codice OTP ricevut via email."));
+        $this->SetSaveTask("User");
+    }
+}
+
 //Classe per la gestione delle variabili di sessione
 class AA_SessionVar
 {
@@ -10453,6 +10489,14 @@ class AA_SessionVar
     public function IsValid()
     {
         return $this->bValid;
+    }
+
+    public function UnsetVar($name="")
+    {
+        if (isset($_SESSION['SessionVars'][$name]) && $name != "") 
+        {
+            unset($_SESSION['SessionVars'][$name]);
+        }
     }
 
     //Costruttore
@@ -11851,7 +11895,7 @@ class AA_Object_V2
         //Conta i risultati
         $query = "SELECT COUNT(id) as tot FROM (" . $select . $join . $where . $group . $having . ") as count_filter";
 
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         if (!$db->Query($query)) {
             //Imposta lo stato di errore

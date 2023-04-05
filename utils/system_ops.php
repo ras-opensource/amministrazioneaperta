@@ -31,6 +31,33 @@ if($task=="UserAuth")
     else die("<status id='status'>0</status><error id='error'>Autenticazione effettuata con successo.</error>");
 }
 
+//recupero credenziali dlg
+if($task=="ResetPasswordVerifyDlg")
+{
+  if(!isset($_REQUEST['email']))
+  {
+    die("<status id='status'>-1</status><error id='error'>email di recupero non impostata o non valida.</error>");
+  }
+  if(!AA_User::ResetPassword($_REQUEST['email']))
+  {
+    die("<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>");
+  }  
+}
+
+//recupero credenziali verify
+if($task=="ResetPasswordVerify")
+{
+  if(!isset($_REQUEST['email_otp']) || !isset($_REQUEST['email']))
+  {
+    die("<status id='status'>-1</status><error id='error'>email di recupero non impostata o non valida.</error>");
+  }
+  
+  {
+    die("<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>");
+  }  
+}
+
+
 //log out
 if($task=="UserLogOut")
 {

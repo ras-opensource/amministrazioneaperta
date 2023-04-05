@@ -160,7 +160,7 @@ Class AA_Patrimonio extends AA_Object_V2
             if(is_array($newObject))
             {
                 $newPatrimonio=new AA_Patrimonio(0,$user);
-                if($newPatrimonio->Parse($newObject))
+                $newPatrimonio->Parse($newObject);
                 {
                     //Imposta la struttura qualora si tratti del super user
                     if($struct instanceof AA_Struct)
@@ -177,11 +177,6 @@ Class AA_Patrimonio extends AA_Object_V2
                     {
                         $caricati++;
                     }
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - Errore nel parsing dell'array: (".print_r($newObject,true).").",100);
-                    $scartati++;
                 }
             }
             else
@@ -481,7 +476,7 @@ Class AA_Patrimonio extends AA_Object_V2
         $this->SetBind("Titolo","titolo");
         $this->SetBind("Cespite","cespite");
         $this->SetBind("Subalterno","subalterno");
-        $this->SetBind("SubCespite","subcespite");
+        $this->SetBind("Subcespite","subcespite");
         $this->SetBind("Note","note");
 
         //Valori iniziali
@@ -659,6 +654,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("GetPatrimonioAddNewMultiDlg");
         $taskManager->RegisterTask("GetPatrimonioAddNewMultiPreviewCalc");
         $taskManager->RegisterTask("GetPatrimonioAddNewMultiPreviewDlg");
+        $taskManager->RegisterTask("GetPatrimonioAddNewMulti");
+        $taskManager->RegisterTask("GetPatrimonioAddNewMultiResultDlg");
 
         //Canoni
         $taskManager->RegisterTask("GetPatrimonioAddNewCanoneDlg");
@@ -951,7 +948,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //SubCespite
         $label="Sub cespite";
-        $catasto->AddTextField("SubCespite",$label,array("tooltip"=>"Inserisci il numero del sub cespite se presente.","placeholder"=>"..."),false);
+        $catasto->AddTextField("Subcespite",$label,array("tooltip"=>"Inserisci il numero del sub cespite se presente.","placeholder"=>"..."),false);
         
         //classe
         $label="Classe";
@@ -1060,20 +1057,20 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         $columns=array(
             array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"Descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"titolo_desc","header"=>array("<div style='text-align: center'>Titolo</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"cespite","header"=>array("<div style='text-align: center'>Cespite</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"subcespite","header"=>array("<div style='text-align: center'>Sub cespite</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"codice_comune","header"=>array("<div style='text-align: center'>Cod. Comune</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"indirizzo","header"=>array("<div style='text-align: center'>Indirizzo</div>",array("content"=>"textFilter")),"width"=>200, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"Cespite","header"=>array("<div style='text-align: center'>Cespite</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"Subcespite","header"=>array("<div style='text-align: center'>Sub cespite</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"CodiceComune","header"=>array("<div style='text-align: center'>Cod. Comune</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"Indirizzo","header"=>array("<div style='text-align: center'>Indirizzo</div>",array("content"=>"textFilter")),"width"=>200, "css"=>array("text-align"=>"right"),"sort"=>"text"),
             array("id"=>"sezione_catasto_desc","header"=>array("<div style='text-align: center'>Sezione catasto</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"foglio_catasto","header"=>array("<div style='text-align: center'>Foglio</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"particella_catasto","header"=>array("<div style='text-align: center'>Particella</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"subalterno","header"=>array("<div style='text-align: center'>Subalterno</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"rendita_catasto","header"=>array("<div style='text-align: center'>Rendita</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"classe_catasto","header"=>array("<div style='text-align: center'>Classe</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"consistenza_catasto","header"=>array("<div style='text-align: center'>Consistenza</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"width"=>350, "css"=>array("text-align"=>"left"),"sort"=>"text")
+            array("id"=>"FoglioCatasto","header"=>array("<div style='text-align: center'>Foglio</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"ParticellaCatasto","header"=>array("<div style='text-align: center'>Particella</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"Subalterno","header"=>array("<div style='text-align: center'>Subalterno</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"RenditaCatasto","header"=>array("<div style='text-align: center'>Rendita</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"ClasseCatasto","header"=>array("<div style='text-align: center'>Classe</div>",array("content"=>"selectFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"ConsistenzaCatasto","header"=>array("<div style='text-align: center'>Consistenza</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
+            array("id"=>"Note","header"=>array("Note",array("content"=>"textFilter")),"width"=>350, "css"=>array("text-align"=>"left"),"sort"=>"text")
         );
 
         $data=AA_SessionVar::Get("PatrimonioMultiFromCSV_ParsedData")->GetValue();
@@ -1114,9 +1111,74 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
 
+        //$wnd->enableRefreshOnSuccessfulSave();
+
         $wnd->SetApplyButtonName("Procedi");
 
-        $wnd->SetSaveTask("GetPatrimonioAddNewMultiResultDlg");
+        $wnd->SetSaveTask("GetPatrimonioAddNewMulti");
+        
+        return $wnd;
+    }
+
+    //Template dlg addnew patrimonio multi result
+    public function Template_GetPatrimonioAddNewMultiResultDlg()
+    {
+        $id=$this->GetId()."_AddNewMultiResult_Dlg";
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 3 di 3");
+        
+        //$wnd->SetLabelAlign("right");
+        //$wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(350);
+        //$wnd->SetBottomPadding(36);
+        //$wnd->EnableValidation();
+
+        $data=AA_SessionVar::Get("PatrimonioMultiFromCSV_ParsedData")->GetValue();
+        $struct=AA_SessionVar::Get("PatrimonioMultiFromCSV_Struct")->GetValue();
+        //$wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
+
+        if(!($struct instanceof AA_Struct))
+        {
+            $desc="Struttura non trovata o non valida.";
+            $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+            return $wnd;
+        }
+
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array();
+            $desc="Non sono stati trovati dati da inserire.";
+            $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+            return $wnd;
+        }
+
+        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
+        $struct_desc=$struct->GetAssessorato();
+        if($struct->GetDirezione(true) > 0) $struct_desc.="->".$struct->GetDirezione();
+        if($struct->GetServizio(true) > 0) $struct_desc.="->".$struct->GetServizio();
+
+        $count=AA_Patrimonio::AddNewMulti($data,$this->oUser,true,$struct);
+
+        if(!is_array($count))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array();
+            $desc=AA_Log::$lastErrorLog;
+            $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+            return $wnd;
+        }
+
+        //elimina le variabili di sessione
+        AA_SessionVar::UnsetVar("PatrimonioMultiFromCSV_ParsedData");
+        AA_SessionVar::UnsetVar("PatrimonioMultiFromCSV_Struct");
+
+        $desc="<p>Sono state inserite <b>".$count[0]." bozze</b>.</p>";
+        if($count[1] > 0) $desc.="<p>Sono state scartate <b>".$count[1]." bozze</b>.</p>";
+        $desc.="<p>Attestate alla struttura:<br/><b>".$struct_desc."</b></p>";
+        $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
         
         return $wnd;
     }
@@ -1186,7 +1248,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
         //Sub cespite
         $label="Sub Cespite";
-        $catasto->AddTextField("SubCespite",$label,array("placeholder"=>"...","tooltip"=>"Inserisci il numero del cespite se presente."), false); 
+        $catasto->AddTextField("Subcespite",$label,array("placeholder"=>"...","tooltip"=>"Inserisci il numero del cespite se presente."), false); 
                 
         //classe
         $label="Classe";
@@ -1507,7 +1569,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         ));
 
         //Subcespite
-        $value= $object->GetProp("SubCespite");
+        $value= $object->GetProp("Subcespite");
         if($value=="") $value="n.d.";
         $subcespite=new AA_JSON_Template_Template($id."_Subcespite",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
@@ -2208,6 +2270,48 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiunta patrimonio
+    public function Task_GetPatrimonioAddNewMulti($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per istanziare nuovi elementi.</error>";
+        }
+       
+        $sTaskLog="<status id='status' action='dlg' action_params='".json_encode(array("task"=>"GetPatrimonioAddNewMultiResultDlg"))."'>0</status><content id='content'>";
+        $sTaskLog.="Caricamento da file CSV (fase 2).</content>";
+        $task->SetLog($sTaskLog);
+                
+        return true;
+    }
+
+    //Task aggiunta patrimonio
+    public function Task_GetPatrimonioAddNewMultiResultDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per istanziare nuovi elementi.</error>";
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetPatrimonioAddNewMultiResultDlg()->toBase64();
+            $sTaskLog.="</content>";
+        }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
     //Task aggiunta patrimonio da csv, passo 2 di 3
     public function Task_GetPatrimonioAddNewMultiPreviewCalc($task)
     {
@@ -2267,20 +2371,20 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Parsing della posizione dei campi
         $fieldPos=array(
             "nome"=>-1,
-            "descrizione"=>-1,
-            "codice_comune"=>-1,
-            "sezione_catasto"=>-1,
-            "foglio_catasto"=>-1,
-            "particella_catasto"=>-1,
-            "indirizzo"=>-1,
-            "rendita_catasto"=>-1,
-            "consistenza_catasto"=>-1,
-            "classe_catasto"=>-1,
-            "titolo"=>-1,
-            "cespite"=>-1,
-            "subalterno"=>-1,
-            "subcespite"=>-1,
-            "note"=>-1
+            "Descrizione"=>-1,
+            "CodiceComune"=>-1,
+            "SezioneCatasto"=>-1,
+            "FoglioCatasto"=>-1,
+            "ParticellaCatasto"=>-1,
+            "Indirizzo"=>-1,
+            "RenditaCatasto"=>-1,
+            "ConsistenzaCatasto"=>-1,
+            "ClasseCatasto"=>-1,
+            "Titolo"=>-1,
+            "Cespite"=>-1,
+            "Subalterno"=>-1,
+            "Subcespite"=>-1,
+            "Note"=>-1
         );
         
         $recognizedFields=0;
@@ -2294,11 +2398,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
         //----------------------------------------
 
-        if($fieldPos['nome']==-1 || $fieldPos['cespite'] ==-1 || $fieldPos['codice_comune'] ==-1 || $fieldPos['titolo'] ==-1 || $fieldPos['sezione_catasto'] ==-1)
+        if($fieldPos['nome']==-1 || $fieldPos['Cespite'] ==-1 || $fieldPos['CodiceComune'] ==-1 || $fieldPos['Titolo'] ==-1 || $fieldPos['SezioneCatasto'] ==-1)
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Non sono stati trovati tutti i campi relativi a: nome,cespite,codice_comune,titolo,sezione_catasto. Verificare che il file csv sia strutturato correttamente e riprovare.</error>";
+            $sTaskLog.="</content><error id='error'>Non sono stati trovati tutti i campi relativi a: nome,Cespite,CodiceComune,Titolo,SezioneCatasto. Verificare che il file csv sia strutturato correttamente e riprovare.</error>";
             $task->SetLog($sTaskLog);
 
             return false;
@@ -2317,17 +2421,17 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 {
                     $curDataValues=array();
 
-                    $cespite=$csvValues[$fieldPos["cespite"]];
+                    $cespite=$csvValues[$fieldPos["Cespite"]];
                     foreach($fieldPos as $fieldName=>$pos)
                     {
                         if($pos>=0)
                         {
                             $curDataValues[$fieldName]=trim($csvValues[$pos]);
-                            if($fieldName=="titolo")
+                            if($fieldName=="Titolo")
                             {
                                 $curDataValues["titolo_desc"]=$titolo_list[$csvValues[$pos]];
                             }
-                            if($fieldName=="sezione_catasto")
+                            if($fieldName=="SezioneCatasto")
                             {
                                 $curDataValues["sezione_catasto_desc"]=$tipo_catasto[$csvValues[$pos]];
                             }
@@ -2340,20 +2444,20 @@ Class AA_PatrimonioModule extends AA_GenericModule
                     else
                     {
                         //merge sub cespite
-                        if($data[$cespite]['subcespite'] != "" && $curDataValues['subcespite'] > 0) $data[$cespite]['subcespite'].=",".$curDataValues['subcespite'];
-                        if($data[$cespite]['subcespite'] == "" && $curDataValues['subcespite'] > 0) $data[$cespite]['subcespite'] = $curDataValues['subcespite'];
+                        if($data[$cespite]['Subcespite'] != "" && $curDataValues['Subcespite'] > 0) $data[$cespite]['Subcespite'].=",".$curDataValues['Subcespite'];
+                        if($data[$cespite]['Subcespite'] == "" && $curDataValues['Subcespite'] > 0) $data[$cespite]['Subcespite'] = $curDataValues['Subcespite'];
     
                         //merge foglio
-                        if($data[$cespite]['foglio_catasto'] != "" && $curDataValues['foglio_catasto'] > 0 && strpos($data[$cespite]['foglio_catasto'],$curDataValues['foglio_catasto']) === false) $data[$cespite]['foglio_catasto'].=",".$curDataValues['foglio_catasto'];
-                        if($data[$cespite]['foglio_catasto'] == "" && $curDataValues['foglio_catasto'] > 0) $data[$cespite]['foglio_catasto'] = $curDataValues['foglio_catasto'];
+                        if($data[$cespite]['FoglioCatasto'] != "" && $curDataValues['FoglioCatasto'] > 0 && strpos($data[$cespite]['FoglioCatasto'],$curDataValues['FoglioCatasto']) === false) $data[$cespite]['FoglioCatasto'].=",".$curDataValues['FoglioCatasto'];
+                        if($data[$cespite]['FoglioCatasto'] == "" && $curDataValues['FoglioCatasto'] > 0) $data[$cespite]['FoglioCatasto'] = $curDataValues['FoglioCatasto'];
     
                         //merge particella
-                        if($data[$cespite]['particella_catasto'] != "" && $curDataValues['particella_catasto'] > 0 && strpos($data[$cespite]['particella_catasto'],$curDataValues['particella_catasto']) === false) $data[$cespite]['particella_catasto'].=",".$curDataValues['particella_catasto'];
-                        if($data[$cespite]['particella_catasto'] == "" && $curDataValues['particella_catasto'] > 0) $data[$cespite]['particella_catasto'] = $curDataValues['particella_catasto'];
+                        if($data[$cespite]['ParticellaCatasto'] != "" && $curDataValues['ParticellaCatasto'] > 0 && strpos($data[$cespite]['ParticellaCatasto'],$curDataValues['ParticellaCatasto']) === false) $data[$cespite]['ParticellaCatasto'].=",".$curDataValues['ParticellaCatasto'];
+                        if($data[$cespite]['ParticellaCatasto'] == "" && $curDataValues['ParticellaCatasto'] > 0) $data[$cespite]['ParticellaCatasto'] = $curDataValues['ParticellaCatasto'];
     
                         //merge subalterno
-                        if($data[$cespite]['subalterno'] != "" && $curDataValues['subalterno'] > 0 && strpos($data[$cespite]['subalterno'],$curDataValues['subalterno']) === false) $data[$cespite]['subalterno'].=",".$curDataValues['subalterno'];
-                        if($data[$cespite]['subalterno'] == "" && $curDataValues['subalterno'] > 0) $data[$cespite]['subalterno'] = $curDataValues['subalterno'];
+                        if($data[$cespite]['Subalterno'] != "" && $curDataValues['Subalterno'] > 0 && strpos($data[$cespite]['Subalterno'],$curDataValues['Subalterno']) === false) $data[$cespite]['Subalterno'].=",".$curDataValues['Subalterno'];
+                        if($data[$cespite]['Subalterno'] == "" && $curDataValues['Subalterno'] > 0) $data[$cespite]['Subalterno'] = $curDataValues['Subalterno'];
     
                     }
                 }
