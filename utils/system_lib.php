@@ -119,13 +119,13 @@ class AA_Log
         if ($level >= AA_Log::$nLogLevel || $bWithbacktrace) {
             $time = date("Y-M-d H:i");
 
-            self::$oLog[] = $time . "*" . $level . "*" . $msg . "\n";
+            //self::$oLog[] = $time . "*" . $level . "*" . $msg . "\n";
 
-            if ($level == 100 || $bWithbacktrace) {
-                $array = array_keys(self::$oLog);
-                $id = end($array);
+            //if ($level == 100 || $bWithbacktrace) {
+            //    $array = array_keys(self::$oLog);
+            //    $id = end($array);
                 //if($bWithbacktrace) self::$oBackTrace[$id]=debug_backtrace();
-            }
+            //}
 
             if ($level == 100) {
                 self::$lastErrorLog = $msg;
@@ -135,14 +135,22 @@ class AA_Log
                 $session_log = array();
                 if (isset($_SESSION['log'])) $session_log = unserialize($_SESSION['log']);
 
-                $session_log[] = new AA_Log($level, $msg, $time, debug_backtrace());
-
                 //rimuove gli elementi più vecchi
                 while (sizeof($session_log) > AA_Log::AA_LOG_MAX_ENTRIES) {
                     array_shift($session_log);
                 }
 
-                $_SESSION['log'] = serialize($session_log);
+                $newlog = new AA_Log($level, $msg, $time, debug_backtrace(0));
+
+                try
+                {
+                    $session_log[]=serialize($newlog);
+                    $_SESSION['log'] = serialize($session_log);
+                }
+                catch( Exception $e ) {
+                    $session_log[]= new AA_Log($level, $msg, $time);
+                    $_SESSION['log'] = serialize($session_log);
+                }
             }
         }
     }
@@ -1998,14 +2006,14 @@ class AA_Utils
         return substr(bin2hex($bytes), 0, $lenght);
     }
 
-    //Restituisce il log di sessione in formato html
     static public function GetSessionLog()
     {
         $return = "";
 
         $session_log = array_reverse(unserialize($_SESSION['log']));
 
-        foreach ($session_log as $key => $curLog) {
+        foreach ($session_log as $key => $curLogString) {
+            $curLog=unserialize($curLogString);
             $return .= '<div style="display:flex; flex-direction: row; justify-content: space-between; align-items: stretch; flex-wrap: wrap; width: 100%; border: 1px solid black; margin-bottom: 1em; font-size: smaller">';
             $return .= '<div style="width: 8%; border: 1px solid black; text-align: center; font-weight: bold; background-color: #DBDBDB; padding: .1em;">Data</div>';
             $return .= '<div style="display: flex; align-items: flex-start; width: 4%; border: 1px solid black; text-align: center; font-weight: bold; background-color: #DBDBDB; padding: .1em;"><div style="width: 100%">Livello</div></div>';
@@ -2013,21 +2021,44 @@ class AA_Utils
             $return .= '<div style="width: 45%; border: 1px solid black;text-align: center; font-weight: bold; background-color: #DBDBDB;padding: .1em;">backtrace</div>';
             $return .= '<div style="width: 8%; border: 1px solid black;text-align: center; padding: .1em;"><span>' . $curLog->GetTime() . '</span></div>';
             $return .= '<div style="display: flex; align-items: flex-start; width: 4%; border: 1px solid black; text-align: center; padding: .1em;"><div style="width: 100%">' . $curLog->GetLevel() . '</div></div>';
-            $return .= '<div style="width: 42%; border: 1px solid black; padding: .1em; overflow: auto; word-break: break-all;">' . htmlentities($curLog->GetMsg()) . '</div>';
+            
+            $msg=$curLog->GetMsg();
+            if(is_array($msg))
+            {
+                $result="";
+                foreach($msg as $curMsg)
+                {
+                    $result.=htmlentities($curMsg)."<br>";
+                }
+
+                $msg=$result;
+            }
+            else
+            {
+                $msg=htmlentities($msg);
+            }
+            $return .= '<div style="width: 42%; border: 1px solid black; padding: .1em; overflow: auto; word-break: break-all;">' .$msg. '</div>';
             $return .= '<div style="width: 45%; border: 1px solid black; padding: .1em; font-size: smaller">';
             $html = "";
             $i = 0;
             foreach ($curLog->GetBackTrace() as $key => $value) {
                 if ($i > 0) {
                     $html .= "<p>#" . $key . " - " . $value['file'] . " (line: " . $value['line'] . ")";
-                    $html .= "<br/>" . $value['class'] . $value['type'] . $value['function'] . "(";
-                    $separatore = "";
-                    foreach ($value['args'] as $curArg) {
-                        if ($curArg == "") $html .= $separatore . '""';
-                        else if (!is_array($curArg)) $html .= $separatore . htmlentities($curArg);
-                        $separatore = ",";
+                    $html .= "<br/>";
+                    if(isset($value['class'])) $html.=$value['class'];
+                    if(isset($value['type']))  $html.=$value['type'];
+                    if(isset($value['function'])) 
+                    {
+                        $html.=$value['function'] . "(";
+                        $separatore = "";
+                        foreach ($value['args'] as $curArg) {
+                            if ($curArg == "") $html .= $separatore . '""';
+                            else if (!is_array($curArg)) $html .= $separatore . htmlentities($curArg);
+                            $separatore = ",";
+                        }
+                        $html .= ")";
                     }
-                    $html .= ")</p>";
+                    $html.="</p>";
                 }
                 $i++;
             }
