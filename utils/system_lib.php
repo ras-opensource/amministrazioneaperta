@@ -148,7 +148,7 @@ class AA_Log
                     $_SESSION['log'] = serialize($session_log);
                 }
                 catch( Exception $e ) {
-                    $session_log[]= new AA_Log($level, $msg, $time);
+                    $session_log[]= serialize(new AA_Log($level, $msg, $time));
                     $_SESSION['log'] = serialize($session_log);
                 }
             }
@@ -2013,7 +2013,8 @@ class AA_Utils
         $session_log = array_reverse(unserialize($_SESSION['log']));
 
         foreach ($session_log as $key => $curLogString) {
-            $curLog=unserialize($curLogString);
+            if(is_string($curLogString)) $curLog=unserialize($curLogString);
+            else $curLog=$curLogString;
             $return .= '<div style="display:flex; flex-direction: row; justify-content: space-between; align-items: stretch; flex-wrap: wrap; width: 100%; border: 1px solid black; margin-bottom: 1em; font-size: smaller">';
             $return .= '<div style="width: 8%; border: 1px solid black; text-align: center; font-weight: bold; background-color: #DBDBDB; padding: .1em;">Data</div>';
             $return .= '<div style="display: flex; align-items: flex-start; width: 4%; border: 1px solid black; text-align: center; font-weight: bold; background-color: #DBDBDB; padding: .1em;"><div style="width: 100%">Livello</div></div>';
