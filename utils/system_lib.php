@@ -634,6 +634,28 @@ class AA_User
         return $this->bIsValid;
     }
 
+    //restituisce l'immagine associata all'utente (percorso pubblico)
+    public function GetProfileImagePublicPath()
+    {
+        $imgFile=$imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetID();
+        if(is_file($imgFile))
+        {
+            return AA_Const::AA_WWW_ROOT."/immagini/profili/".$this->GetId();
+        }
+        else
+        {
+            return AA_Const::AA_WWW_ROOT."/immagini/profili/generic.png";
+        }
+    }
+    
+    //restituisce l'immagine associata all'utente (percorso locale)
+    public function GetProfileImageLocalPath()
+    {
+        $imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetID();
+        if(is_file($imgfile)) return $imgfile;
+        else return AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/generic.png";
+    }
+
     //Verifica se l'utente è disabilitato
     public function IsDisabled()
     {
@@ -2054,7 +2076,11 @@ class AA_Utils
                         $separatore = "";
                         foreach ($value['args'] as $curArg) {
                             if ($curArg == "") $html .= $separatore . '""';
-                            else if (!is_array($curArg)) $html .= $separatore . htmlentities($curArg);
+                            else if (!is_array($curArg))
+                            {
+                                if(is_string($curArg)) $html .= $separatore . htmlentities($curArg);
+                                else $html .= $separatore . htmlentities(print_r($curArg, true));
+                            } 
                             $separatore = ",";
                         }
                         $html .= ")";
@@ -4370,7 +4396,7 @@ class AA_SystemTask_TreeStruct extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__ . "() - task: " + $this->GetName());
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
         $userStruct = $this->oUser->GetStruct();
         if ($this->oUser->isGuest()) $userStruct = AA_Struct::GetStruct(1, 0, 0, 0);
 
@@ -4397,7 +4423,7 @@ class AA_SystemTask_GetStructDlg extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__ . "() - task: " + $this->GetName());
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
         $wnd = new AA_GenericStructDlg("AA_SystemStructDlg", "Organigramma", $_REQUEST, "", $_REQUEST['module'], $this->oUser);
 
         //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
@@ -4418,7 +4444,7 @@ class AA_SystemTask_GetLogDlg extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__ . "() - task: " + $this->GetName());
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
         $wnd = new AA_GenericLogDlg("AA_SystemLogDlg_" . $_REQUEST['id'], "Logs", $this->oUser);
 
         $this->sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>" . $wnd->toBase64() . "</content><error id='error'></error>";
@@ -4437,7 +4463,7 @@ class AA_SystemTask_GetPdfPreviewDlg extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__ . "() - task: " + $this->GetName());
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
         $wnd = new AA_GenericPdfPreviewDlg();
 
         //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
@@ -4458,7 +4484,7 @@ class AA_SystemTask_SetSessionVar extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__ . "() - task: " + $this->GetName());
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
 
         $name = $_REQUEST['name'];
         if ($name != "") {
@@ -4483,7 +4509,7 @@ class AA_SystemTask_UploadSessionFile extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__ . "() - task: " + $this->GetName());
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
 
         $value = false;
         foreach ($_FILES as $id => $curFile) {
@@ -8112,7 +8138,7 @@ class AA_SystemTask_AMAAI_Start extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__ . "() - task: " + $this->GetName());
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
 
         $module = AA_AMAAI::GetInstance();
 
@@ -8774,17 +8800,20 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
 
         $this->fileUploader_id = $this->id . "_FileUpload_Field";
 
-        $template = new AA_JSON_Template_Layout($this->id . "_FileUpload_Layout", array("type" => "clean", "borderless" => true));
+        $template = new AA_JSON_Template_Layout($this->id . "_FileUpload_Layout", array("type" => "clean", "borderless" => true,"autoheight"=>true,));
         $template->AddRow(new AA_JSON_Template_Generic($this->id . "_FileUpload_Field", $props));
         $template->AddRow(new AA_JSON_Template_Generic($this->id . "_FileUpload_List", array(
             "view" => "list",
             "scroll" => false,
+            "autoheight"=>true,
+            "autoHeight"=>32,
             "type" => "uploader",
             "css" => array("background" => "transparent")
         )));
 
         if ($props['bottomLabel']) {
             $template->AddRow(new AA_JSON_Template_Template($this->id . "_FileUpload_BottomLabel", array(
+                "autoheight"=>true,
                 "template" => "<span style='font-size: smaller; font-style:italic'>" . $props['bottomLabel'] . "</span>",
                 "css" => array("background" => "transparent")
             )));
@@ -9101,17 +9130,20 @@ class AA_FieldSet extends AA_JSON_Template_Generic
 
         $this->fileUploader_id = $this->GetId() . "_FileUpload_Field";
 
-        $template = new AA_JSON_Template_Layout($this->GetId() . "_FileUpload_Layout", array("type" => "clean", "borderless" => true));
+        $template = new AA_JSON_Template_Layout($this->GetId() . "_FileUpload_Layout", array("type" => "clean", "borderless" => true,"autoheight"=>true));
         $template->AddRow(new AA_JSON_Template_Generic($this->GetId() . "_FileUpload_Field", $props));
         $template->AddRow(new AA_JSON_Template_Generic($this->GetId() . "_FileUpload_List", array(
             "view" => "list",
             "scroll" => false,
+            "autoheight"=>true,
+            "minHeight"=>32,
             "type" => "uploader",
             "css" => array("background" => "transparent")
         )));
 
         if ($props['bottomLabel']) {
             $template->AddRow(new AA_JSON_Template_Template($this->GetId() . "_FileUpload_BottomLabel", array(
+                "autoheight"=>true,
                 "template" => "<span style='font-size: smaller; font-style:italic'>" . $props['bottomLabel'] . "</span>",
                 "css" => array("background" => "transparent")
             )));
@@ -10254,6 +10286,44 @@ class AA_JSON_Template_Layout extends AA_JSON_Template_Generic
         if ($id == "") $id = "AA_JSON_TEMPLATE_LAYOUT";
 
         parent::__construct($id, $props);
+    }
+}
+
+//Classe per la gestione dell'upload dei file nei form
+class AA_JSON_Template_Fileupload extends AA_JSON_Template_Layout
+{
+    public function __construct($id = "", $props = null)
+    {
+        if ($id == "") $id = "AA_JSON_TEMPLATE_FILEUPLOAD";
+        $props['name'] = "AA_FileUploader";
+
+        if (!isset($props['value'])) $props['value'] = "Sfoglia...";
+        $props['autosend'] = false;
+        if ($props['multiple'] == "") $props['multiple'] = false;
+        $props['view'] = "uploader";
+        $props['link'] = $id . "_FileUpload_List";
+        $props['layout_id'] = $id . "_FileUpload_Layout";
+        $props['formData'] = array("file_id" => $props['name']);
+
+        parent::__construct($id . "_FileUpload_Layout", array("type" => "clean", "borderless" => true,"autoheight"=>true));
+
+        $this->AddRow(new AA_JSON_Template_Generic($id . "_FileUpload_Field", $props));
+        $this->AddRow(new AA_JSON_Template_Generic($id . "_FileUpload_List", array(
+            "view" => "list",
+            "scroll" => false,
+            "autoheight"=>true,
+            "minHeight"=>32,
+            "type" => "uploader",
+            "css" => array("background" => "transparent")
+        )));
+
+        if ($props['bottomLabel']) {
+            $this->AddRow(new AA_JSON_Template_Template($id . "_FileUpload_BottomLabel", array(
+                "autoheight"=>true,
+                "template" => "<span style='font-size: smaller; font-style:italic'>" . $props['bottomLabel'] . "</span>",
+                "css" => array("background" => "transparent")
+            )));
+        }
     }
 }
 
