@@ -10292,7 +10292,7 @@ class AA_JSON_Template_Layout extends AA_JSON_Template_Generic
 //Classe per la gestione dell'upload dei file nei form
 class AA_JSON_Template_Fileupload extends AA_JSON_Template_Layout
 {
-    public function __construct($id = "", $props = null)
+    public function __construct($id = "", $props = null, $sessionFileName="AA_SessionFileUploader")
     {
         if ($id == "") $id = "AA_JSON_TEMPLATE_FILEUPLOAD";
         $props['name'] = "AA_FileUploader";
@@ -10303,7 +10303,7 @@ class AA_JSON_Template_Fileupload extends AA_JSON_Template_Layout
         $props['view'] = "uploader";
         $props['link'] = $id . "_FileUpload_List";
         $props['layout_id'] = $id . "_FileUpload_Layout";
-        $props['formData'] = array("file_id" => $props['name']);
+        $props['formData'] = array("file_id" => $sessionFileName);
 
         parent::__construct($id . "_FileUpload_Layout", array("type" => "clean", "borderless" => true,"autoheight"=>true));
 
