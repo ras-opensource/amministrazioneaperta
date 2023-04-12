@@ -1210,6 +1210,17 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             }
                         }
 
+                        //imposta la validazione per i form presenti
+                        let forms = obj.queryView("form", "all");
+                        for (form of forms) {
+                            let oldValues = form.getValues();
+                            if (AA_MainApp.utils.isDefined(form.config.validation)) {
+                                form.config.rules = { $all: AA_MainApp.utils.getEventHandler(form.config.validation, this.id) };
+                            }
+                            form.reconstruct();
+                            form.setValues(oldValues);
+                        }
+
                         //Se la sezione è paginata visualizza la pagina visualizzata precedentemente
                         if (obj.config.paged == true) {
                             let pager = $$(obj.config.pager_id);
@@ -1998,6 +2009,25 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             var dNum = d.getTime();
                             if (!dNum && dNum !== 0) val = false;
                         }
+                    }
+
+                    if (valFunc == "IsSecurePwd") {
+                        if (!AA_MainApp.utils.isDefined(this.elements[arguments[2]].config.customInvalidMessage)) {
+                            let invalidMessage = "*La password deve avere min. 8 car., almeno una lettera minuscola, almeno una lettera maiuscola, almeno un numero.";
+                            if (!this.elements[arguments[2]].config.required) invalidMessage += " o lasciare vuoto";
+                            this.elements[arguments[2]].config.invalidMessage = invalidMessage;
+                        } else {
+                            this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
+                        }
+
+                        if (arguments[0] != "" || this.elements[arguments[2]].config.required) {
+                            let found = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/.test(arguments[0]);
+                            if (!found) {
+                                val = false;
+                            }
+                        }
+                        
+                        //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
                 }
             }
