@@ -3555,6 +3555,30 @@ async function AA_RefreshMainUi(params) {
 function AA_SetupMainUi() {
     console.log("System::AA_SetupMainUi()");
 
+    //Verifica se si sta visualizzando da un cellulare
+    if(webix.env.mobile)
+    {
+        AA_MainApp.device.isMobile=1;
+        AA_MainApp.ui.viewport.width = document.documentElement.clientWidth;
+        AA_MainApp.ui.viewport.height = document.documentElement.clientHeight;
+
+        //Cambia il tema css
+        if($("#webix_style"))
+        {
+            let old_style=$("#webix_style").attr("href");
+            let new_style=old_style.replace("webix.min.css","skins/mini.min.css");
+            $("#webix_style").attr("href",new_style);
+        }
+    }
+    else
+    {
+        AA_MainApp.device.isMobile=0;
+        AA_MainApp.ui.viewport.width = document.documentElement.clientWidth;
+        AA_MainApp.ui.viewport.height = document.documentElement.clientHeight;
+    }
+
+    let minWidth=AA_MainApp.ui.viewport.width;
+    
     //Imposta la posìzione dei messaggi
     webix.message.position = "bottom";
 

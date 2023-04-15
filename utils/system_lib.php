@@ -9017,7 +9017,8 @@ class AA_FieldSet extends AA_JSON_Template_Generic
             $props['label'] = $label;
 
             if ($newRow || !($this->curRow instanceof AA_JSON_Template_Layout)) {
-                $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row");
+                $unique=uniqid(time());
+                $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row_".$unique);
                 $this->layout->AddRow($this->curRow);
             }
 
@@ -9035,7 +9036,8 @@ class AA_FieldSet extends AA_JSON_Template_Generic
     public function AddSection($name = "New Section", $newRow = true)
     {
         if ($newRow) {
-            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row");
+            $unique=uniqid(time());
+            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row_".$unique);
             $this->layout->AddRow($this->curRow);
             $this->curRow->AddCol(new AA_JSON_Template_Generic($this->GetId() . "_Section_", array("type" => "section", "template" => $name)));
         } else {
@@ -9046,12 +9048,13 @@ class AA_FieldSet extends AA_JSON_Template_Generic
     //Aggiungi uno spazio
     public function AddSpacer($newRow = true)
     {
+        $unique=uniqid(time());
         if ($newRow || !($this->curRow instanceof AA_JSON_Template_Layout)) {
-            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row");
+            
+            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row_".$unique);
             $this->layout->AddRow($this->curRow);
         }
-
-        $this->curRow->AddCol(new AA_JSON_Template_Generic($this->GetId() . "_Field_Spacer", array("view" => "spacer")));
+        $this->curRow->AddCol(new AA_JSON_Template_Generic($this->GetId() . "_Field_Spacer_".$unique, array("view" => "spacer")));
     }
 
     //Aggiungi un campo di testo
@@ -9166,7 +9169,8 @@ class AA_FieldSet extends AA_JSON_Template_Generic
     {
         if ($obj instanceof AA_JSON_Template_Generic) {
             if ($newRow) {
-                $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row");
+                $unique=uniqid(time());
+                $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row_".$unique);
                 $this->layout->AddRow($this->curRow);
             }
 
