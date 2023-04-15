@@ -14,6 +14,7 @@ $lib_path=AA_Const::AA_PUBLIC_LIB_PATH;
 <head>
 <title>Amministrazione Aperta</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="stylesheet" href="<?php echo $lib_path;?>/jquery/jquery-ui.css" />
 <link rel="stylesheet" href="<?php echo $lib_path;?>/jointjs/joint.min.css" />
 <link rel="stylesheet" type="text/css" href="<?php echo $lib_path;?>/webix/codebase/webix.min.css" />
