@@ -219,11 +219,11 @@ Class AA_Patrimonio extends AA_Object_V2
         {
             $db=new AA_Database();
 
-            $query="SELECT * from ".static::AA_DBTABLE_CANONI." WHERE id_patrimonio=".$idData." ORDER BY tipologia,data_inizio DESC, data_fine";
+            $query="SELECT * from ".static::AA_DBTABLE_CANONI." WHERE '".$idData."' in (id_patrimonio) ORDER BY tipologia,data_inizio DESC, data_fine";
 
             if(!$db->Query($query))
             {
-                AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+                AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage()." - ".$query,100);
                 $this->aCanoni=array();
                 return false;
             }
@@ -395,11 +395,11 @@ Class AA_Patrimonio extends AA_Object_V2
         //Aggiorna l'elemento e lo versiona se necessario
         if(!$this->Update($user,true, "Modifica canone: ".$canone->GetProp("serial"))) return false;
 
-        $canone->SetProp('id_patrimonio', $this->nId_Data);
+        /*$canone->SetProp('id_patrimonio', $this->nId_Data);
         if($this->nId_Data_Rev > 0)
         {
             $canone->SetProp('id_patrimonio',$this->nId_Data_Rev);
-        }
+        }*/
 
         $query="UPDATE ".static::AA_DBTABLE_CANONI." SET ";
         $sep="";
@@ -412,7 +412,7 @@ Class AA_Patrimonio extends AA_Object_V2
             }
         }
 
-        $query.=" WHERE id_patrimonio='".$canone->GetProp('id_patrimonio')."' AND serial = '".$canone->GetProp('serial')."' LIMIT 1";
+        $query.=" WHERE '".$this->nId_Data."' in (id_patrimonio) AND serial = '".$canone->GetProp('serial')."' LIMIT 1";
 
         $db=new AA_Database();
         if(!$db->Query($query))
@@ -441,7 +441,22 @@ Class AA_Patrimonio extends AA_Object_V2
             $canone->SetProp('id_patrimonio',$this->nId_Data_Rev);
         }
 
-        $query="DELETE FROM ".static::AA_DBTABLE_CANONI." WHERE id_patrimonio='".$canone->GetProp('id_patrimonio')."' AND serial = '".$canone->GetProp('serial')."' LIMIT 1";
+        $immobili_collegati=explode(",",$canone->GetProp("id_patrimonio"));
+        if(sizeof($immobili_collegati) == 1)
+        {
+            $query="DELETE FROM ".static::AA_DBTABLE_CANONI." WHERE serial = '".$canone->GetProp('serial')."' LIMIT 1";
+        }
+        else
+        {
+            $new_immobili_collegati=array();
+            foreach($immobili_collegati as $curIdImmobile)
+            {
+                if($curIdImmobile != $this->nId_Data) $new_immobili_collegati[]=$curIdImmobile;
+            }
+
+            $immobili_collegati=implode(",",$new_immobili_collegati);
+            $query="UPDATE ".static::AA_DBTABLE_CANONI." SET id_patrimonio='".$immobili_collegati."' WHERE serial = '".$canone->GetProp('serial')."' LIMIT 1";
+        }
 
         $db=new AA_Database();
         if(!$db->Query($query))
@@ -1965,7 +1980,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         else
         {
             $sTaskLog="<status id='status' id_Rec='".$object->GetId()."'>0</status><content id='content'>";
-            $sTaskLog.= "Canone aggiunto con successo";
+            $sTaskLog.= "Canone aggiornato con successo";
             $sTaskLog.="</content>";
             
             $task->SetLog($sTaskLog);
