@@ -676,6 +676,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Canoni
         $taskManager->RegisterTask("GetPatrimonioAddNewCanoneDlg");
         $taskManager->RegisterTask("AddNewCanone");
+        $taskManager->RegisterTask("GetPatrimonioLinkCanoneDlg");
         $taskManager->RegisterTask("GetPatrimonioModifyCanoneDlg");
         $taskManager->RegisterTask("UpdateCanone");
         $taskManager->RegisterTask("GetPatrimonioTrashCanoneDlg");
@@ -1397,6 +1398,86 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return $wnd;
     }
 
+    static function GetCanoniList($bAll=true)
+    {
+        AA_Log::Log(__METHOD__."()");
+        
+        $user=AA_User::GetCurrentUser();
+        if(!$user->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente non ha i permessi per accedere al modulo GESPI.",100);        
+            return array();
+        }
+
+        $db=new AA_Database();
+        $query="SELECT serial,repertorio,data_inizio,data_fine,tipologia FROM ".AA_PATRIMONIO::AA_DBTABLE_CANONI;
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".AA_Database::GetLastErrorMessage()." query: ".$query,100);
+            return array();
+        }
+
+        $data=array();
+        $tipo_canoni=AA_Patrimonio_Const::GetTipoCanoneList();
+        if($db->GetAffectedRows() > 0)
+        {
+            foreach($db->GetResultSet() as $curRow)
+            {
+                $data[]=array("id"=>$curRow['id'],"serial"=>$curRow['serial'],"repertorio"=>$curRow['repertorio'],"data_inizio"=>$curRow['data_inizio'],"data_fine"=>$curRow['data_fine'],"tipo"=>$tipo_canoni[$curRow['tipologia']]);
+            }
+        }
+
+        return $data;
+    }
+
+    //Template dlg link canone
+    public function Template_GetPatrimonioLinkCanoneDlg($object=null)
+    {
+        if(!($object instanceof AA_Patrimonio) || !$object->isValid())
+        {
+            $wnd=new AA_GenericWindowTemplate($this->GetId()."_FakeDlg", "Collega ad un canone esistente",$this->GetId());
+            $wnd->AddView(new AA_JSON_Template_Template($this->GetId()."_Fakecontent",array("template"=>"oggetto non valido")));
+
+            return $wnd;
+        }
+
+        $id=$this->GetId()."_LinkCanone_Dlg";
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Collega ad un canone esistente", $this->id);
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(640);
+
+        $wnd->AddView(new AA_JSON_Template_Template($id."_Descr",array("autoheight"=>true,"template"=>"<p>Seleziona un canone dalla lista e <b>fai click sul pulsante '<span class='mdi mdi-link'></span>' per associarlo</b> all'immobile corrente.</p>")));
+
+        $data=AA_PatrimonioModule::GetCanoniList();
+
+        //recupera la lista dei canoni esistenti
+        $table = new AA_JSON_Template_Generic($id . "_Table", array(
+            "view" => "datatable",
+            "scrollX" => false,
+            "scrollY" => true,
+            "select" => false,
+            "css"=>"AA_Header_DataTable",
+            "hover"=>"AA_DataTable_Row_Hover",
+            "columns" => array(
+                array("id" => "tipo", "header" => array("<div style='text-align: center'>Tipologia</div>", array("content" => "selectFilter")), "width" => 180, "css" => array("text-align" => "left")),
+                array("id" => "serial", "header" => array("<div style='text-align: center'>Seriale</div>", array("content" => "textFilter")), "width" => 130, "css" => array("text-align" => "left")),
+                array("id" => "repertorio", "header" => array("<div style='text-align: center'>Repertorio</div>", array("content" => "textFilter")),"fillspace" => true, "css" => array("text-align" => "center")),
+                array("id" => "data_inizio", "header" => array("Data inizio", array("content" => "textFilter")), "width" => 100,"css" => array("text-align" => "left")),
+                array("id" => "data_inizio", "header" => array("Data fine", array("content" => "textFilter")), "width" => 100, "css" => array("text-align" => "left")),
+                array("id" => "ops", "header" => array("<div style='text-align: center'>Ops</div>"), "width" => 80, "css" => array("text-align" => "center"))
+            ),
+            "data" => $data
+        ));
+
+        $wnd->AddView($table);        
+        
+        $wnd->AddView(new AA_JSON_Template_Generic("",array("height"=>10)));
+
+        return $wnd;
+    }
+
     //Template dlg addnew patrimonio
     public function Template_GetPatrimonioModifyCanoneDlg($object=null,$canone=null)
     {
@@ -1738,6 +1819,18 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
         if($canModify)
         {            
+            $collega_btn=new AA_JSON_Template_Generic($id."_Link_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-link",
+                 "label"=>"Collega",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Aggiungi un nuovo canone",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioLinkCanoneDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+             ));
+             $toolbar->AddElement($collega_btn);
+
             $modify_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
                "view"=>"button",
                 "type"=>"icon",
@@ -2289,6 +2382,8 @@ Class AA_PatrimonioModule extends AA_GenericModule
         return true;
     }
 
+    
+
     //Task aggiunta patrimonio
     public function Task_GetPatrimonioAddNewMultiDlg($task)
     {
@@ -2602,6 +2697,40 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
             $sTaskLog.= $this->Template_GetPatrimonioAddNewCanoneDlg($object)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task link Canone
+    public function Task_GetPatrimonioLinkCanoneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi sufficienti per l'operazione richiesta.</error>";
+        }
+        
+        $object=new AA_Patrimonio($_REQUEST['id'],$this->oUser);
+        //AA_Log::Log(__METHOD__." - object: ".print_r($object,TRUE),100);
+
+        if(!$object->IsValid() || $object->IsReadOnly() || $_REQUEST['id']=="")
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi sufficienti per l'operazione richiesta.</error>";
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetPatrimonioLinkCanoneDlg($object)->toBase64();
             $sTaskLog.="</content>";
         }
         
