@@ -1410,7 +1410,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
 
         $db=new AA_Database();
-        $query="SELECT serial,repertorio,data_inizio,data_fine,tipologia FROM ".AA_PATRIMONIO::AA_DBTABLE_CANONI;
+        $query="SELECT id,serial,repertorio,data_inizio,data_fine,tipologia FROM ".AA_PATRIMONIO::AA_DBTABLE_CANONI;
 
         if(!$db->Query($query))
         {
@@ -1451,7 +1451,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->AddView(new AA_JSON_Template_Template($id."_Descr",array("autoheight"=>true,"template"=>"<p>Seleziona un canone dalla lista e <b>fai click sul pulsante '<span class='mdi mdi-link'></span>' per associarlo</b> all'immobile corrente.</p>")));
 
         $data=AA_PatrimonioModule::GetCanoniList();
-
+        foreach($data as $curData)
+        {
+            $curData['ops']="<a href='#' onClick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"PatrimonioLinkCanone\", params: [{id: ".$object->GetId()."},{id_canone:".$curData['id']."},{serial_canone:\"".$curData['serial']."\"}]},\"".$this->id."\")'><span class='mdi mdi-link'></span></a>";
+            $table_data[]=$curData;
+        }
         //recupera la lista dei canoni esistenti
         $table = new AA_JSON_Template_Generic($id . "_Table", array(
             "view" => "datatable",
@@ -1468,7 +1472,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 array("id" => "data_inizio", "header" => array("Data fine", array("content" => "textFilter")), "width" => 100, "css" => array("text-align" => "left")),
                 array("id" => "ops", "header" => array("<div style='text-align: center'>Ops</div>"), "width" => 80, "css" => array("text-align" => "center"))
             ),
-            "data" => $data
+            "data" => $table_data
         ));
 
         $wnd->AddView($table);        
@@ -1826,7 +1830,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                  "label"=>"Collega",
                  "align"=>"right",
                  "width"=>120,
-                 "tooltip"=>"Aggiungi un nuovo canone",
+                 "tooltip"=>"Collega ad un canone esistente",
                  "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetPatrimonioLinkCanoneDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
              ));
              $toolbar->AddElement($collega_btn);
@@ -1836,6 +1840,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 "type"=>"icon",
                 "icon"=>"mdi mdi-pencil-plus",
                 "label"=>"Aggiungi",
+                "css"=>"webix_primary",
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi un nuovo canone",
