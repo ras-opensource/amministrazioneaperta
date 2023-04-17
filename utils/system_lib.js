@@ -1108,6 +1108,17 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                 //Verifica se ci sono oggetti con dei tab e ne salva lo stato
                 if (!bResetView) {
+                    let multiObjs = obj.queryView({ view: "multiview" }, "all");
+                    if (Array.isArray(multiObjs) && multiObjs.length > 0) {
+                        for (item of multiObjs) {
+                            let status = item.getValue();
+                            if (AA_MainApp.utils.isDefined(status)) {
+                                console.log(this.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                                module.setRuntimeValue("multiviewStatus", item.config.id, status);
+                            }
+                        }
+                    }
+
                     let tabbarObjs = obj.queryView({ view: "tabbar" }, "all");
                     if (Array.isArray(tabbarObjs) && tabbarObjs.length > 0) {
                         for (item of tabbarObjs) {
@@ -1265,6 +1276,25 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                         item.expand();
                                         module.unsetRuntimeValue("accordionItemStatus", item.config.id);
                                         console.log(this.name + "::refreshUiObjectDefault - ripristino lo status dell'accordion item (" + item.config.id + ")", status);
+                                    }
+                                }
+                            }
+                        }
+
+                        //Ripristine lo stato dei multiview se ci sono
+                        let multiObjs = obj.queryView({ view: "multiview" }, "all");
+                        if (Array.isArray(multiObjs) && multiObjs.length > 0) {
+                            for (item of multiObjs) {
+                                let status = module.getRuntimeValue("multiviewStatus", item.config.id);
+                                if (AA_MainApp.utils.isDefined(status) && $$(status)) {
+                                    let view = $$(item.config.id);
+                                    if (view) {
+                                        let animate = view.config.animate;
+                                        view.define('animate', false);
+                                        item.setValue(status);
+                                        view.config.animate = animate;
+                                        module.unsetRuntimeValue("multiviewStatus", item.config.id);
+                                        console.log(this.name + "::refreshUiObjectDefault - ripristino lo status del multiview (" + item.config.id + ")", status);
                                     }
                                 }
                             }
