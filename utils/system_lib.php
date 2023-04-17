@@ -5860,7 +5860,7 @@ class AA_GenericModule
 
             if (($userCaps & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
 
-            $data = array(
+            $result = array(
                 "id" => $object->GetId(),
                 "tags" => "",
                 "aggiornamento" => $object->GetAggiornamento(),
@@ -5873,14 +5873,15 @@ class AA_GenericModule
             );
 
             if (method_exists($this, $customTemplateDataFunction)) {
-                $templateData[] = $this->$customTemplateDataFunction($data, $object);
+                $templateData[] = $this->$customTemplateDataFunction($result, $object);
             } else if (function_exists($customTemplateDataFunction)) {
-                $templateData[] = $customTemplateDataFunction($data, $object);
+                $templateData[] = $customTemplateDataFunction($result, $object);
             } else {
-                $templateData[] = $data;
+                $templateData[] = $result;
             }
         }
 
+        //AA_Log::Log(__METHOD__." - numcount: ".$data[0],100);
         return array($data[0], $templateData);
     }
 
