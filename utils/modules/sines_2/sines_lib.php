@@ -1502,7 +1502,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $id=$this->id."_AddNewOrganigrammaIncarico_Dlg";
 
-        $form_data=array("tipo"=>0);
+        $form_data=array("tipo"=>0,"compenso_spettante"=>0);
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi incarico per l'organigramma ".$organigramma->GetTipologia(), $this->id,$form_data,$form_data);
         
@@ -1532,6 +1532,9 @@ Class AA_SinesModule extends AA_GenericModule
         //forza scadenzario
         $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomina/designazione/indicazione da parte della RAS."));
 
+        //compenso spettante
+        $wnd->AddTextField("compenso_spettante","Compenso spettante",array("required"=>"true","validateFunction"=>"IsNumber","placeholder"=>"inserisci qui il compenso spettante.","bottomLabel"=>"*Indicare il compenso spettante oppure il valore '0'(zero) se il dato non è disponibile."));
+
         //note
         $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
         
@@ -1548,7 +1551,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $id=$this->id."_ModifyOrganigrammaIncarico_Dlg";
 
-        $form_data=array("forza_scadenzario"=>$incarico->GetProp("forza_scadenzario"),"tipo"=>$incarico->GetProp("tipo"),"ras"=>$incarico->GetProp("ras"),"opzionale"=>$incarico->GetProp("opzionale"),"note"=>$incarico->GetProp("note"));
+        $form_data=array("compenso_spettante"=>$incarico->GetProp("compenso_spettante"),"forza_scadenzario"=>$incarico->GetProp("forza_scadenzario"),"tipo"=>$incarico->GetProp("tipo"),"ras"=>$incarico->GetProp("ras"),"opzionale"=>$incarico->GetProp("opzionale"),"note"=>$incarico->GetProp("note"));
 
         $wnd=new AA_GenericFormDlg($id, "Modifica incarico ", $this->id,$form_data,$form_data);
         
@@ -1558,7 +1561,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(520);
+        $wnd->SetHeight(580);
         
         //tipo
         $options=array();
@@ -1577,6 +1580,9 @@ Class AA_SinesModule extends AA_GenericModule
 
         //forza scadenzario
         $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomina/designazione/indicazione da parte della RAS."));
+
+        //compenso spettante
+        $wnd->AddTextField("compenso_spettante","Compenso spettante",array("required"=>"true","validateFunction"=>"IsNumber","placeholder"=>"inserisci qui il compenso spettante.","bottomLabel"=>"*Indicare il compenso spettante oppure il valore '0'(zero) se il dato non è disponibile."));
 
         //note
         $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
@@ -4073,6 +4079,7 @@ Class AA_SinesModule extends AA_GenericModule
                 $options_incarichi[]=array("id"=>"ras", "header"=>"Ras", "width"=>90,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>90,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"forza_scadenzario", "header"=>"Scadenzario", "width"=>100,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"compenso_spettante", "header"=>"Compenso s.", "width"=>100,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
                 $options_incarichi[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
             }
@@ -4082,6 +4089,7 @@ Class AA_SinesModule extends AA_GenericModule
                 $options_incarichi[]=array("id"=>"ras", "header"=>"Ras", "width"=>50,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>50,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"forza_scadenzario", "header"=>"Scadenzario", "width"=>100,"css"=>array("text-align"=>"center"));
+                $options_incarichi[]=array("id"=>"compenso_spettante", "header"=>"Compenso s.", "width"=>100,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
             }
 
@@ -4158,9 +4166,12 @@ Class AA_SinesModule extends AA_GenericModule
                 $forza_scadenzario="No";
                 if($incarico->IsScadenzarioEnabled() > 0) $forza_scadenzario="Si";
                 $opzionale="No";
+                $compenso_spettante=$incarico->GetProp("compenso_spettante");
+                if($compenso_spettante=="0,00" || $compenso_spettante=="0,0" || $compenso_spettante=="0") $compenso_spettante="n.d.";
+                else $compenso_spettante=$incarico->GetProp("compenso_spettante");
 
                 if($incarico->IsOpzionale())$opzionale="Si";
-                $incarichi_data[]=array("id"=>$id_incarico,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$ras,"opzionale"=>$opzionale,"forza_scadenzario"=>$forza_scadenzario,"ops"=>$ops);
+                $incarichi_data[]=array("id"=>$id_incarico,"compenso_spettante"=>$compenso_spettante,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$ras,"opzionale"=>$opzionale,"forza_scadenzario"=>$forza_scadenzario,"ops"=>$ops);
                 #--------------------------------------
             }
 

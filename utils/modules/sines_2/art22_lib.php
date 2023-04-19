@@ -413,6 +413,7 @@ Class AA_Organismi_Organigramma_Incarico
                 if($key=="note") $this->props['note']=$val;
                 if($key=="opzionale") $this->props['opzionale']=$val;
                 if($key=="forza_scadenzario") $this->props['forza_scadenzario']=$val;
+                if($key=="compenso_spettante") $this->props['compenso_spettante']=$val;
             }
 
             return true;
@@ -2005,6 +2006,7 @@ class AA_Organismi extends AA_Object
         $query.=", ordine='".addslashes($incarico->GetProp("ordine"))."'";
         $query.=", note='".addslashes($incarico->GetProp("note"))."'";
         $query.=", opzionale='".addslashes($incarico->GetProp("opzionale"))."'";
+        $query.=", compenso_spettante='".addslashes($incarico->GetProp("compenso_spettante"))."'";
         if($incarico->GetProp("forza_scadenzario") > 0) $query.=", forza_scadenzario='1'";
         else $query.=", forza_scadenzario='1'";
         
@@ -2065,6 +2067,7 @@ class AA_Organismi extends AA_Object
         $query.=", ordine='".addslashes($incarico->GetProp("ordine"))."'";
         $query.=", note='".addslashes($incarico->GetProp("note"))."'";
         $query.=", opzionale='".addslashes($incarico->GetProp("opzionale"))."'";
+        $query.=", compenso_spettante='".addslashes($incarico->GetProp("compenso_spettante"))."'";
         if($incarico->GetProp("forza_scadenzario") > 0) $query.=", forza_scadenzario='1'";
         else $query.=", forza_scadenzario='1'";
         $query.=" WHERE ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI.".id = '".addslashes($incarico->GetId())."' and ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI.".id_organigramma='".$organigramma->GetProp("id")."' LIMIT 1";
