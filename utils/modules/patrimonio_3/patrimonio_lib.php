@@ -219,7 +219,7 @@ Class AA_Patrimonio extends AA_Object_V2
         {
             $db=new AA_Database();
 
-            $query="SELECT * from ".static::AA_DBTABLE_CANONI." WHERE '".$idData."' in (id_patrimonio) ORDER BY tipologia,data_inizio DESC, data_fine";
+            $query="SELECT * from ".static::AA_DBTABLE_CANONI." WHERE FIND_IN_SET('".$idData."',id_patrimonio) > 0 ORDER BY tipologia,data_inizio DESC, data_fine";
 
             if(!$db->Query($query))
             {
@@ -261,6 +261,8 @@ Class AA_Patrimonio extends AA_Object_V2
         
         if($this->aCanoni == null) $this->LoadCanoni();
 
+        //AA_Log::Log(__METHOD__." - canoni: ".print_r($this->aCanoni,true),100);
+
         foreach($this->aCanoni as $curCanone)
         {
             if($curCanone->GetProp("serial")==$serial) return $curCanone;
@@ -278,13 +280,16 @@ Class AA_Patrimonio extends AA_Object_V2
 
         if(parent::DeleteData($idData,$user))
         {
-            $db=new AA_Database();
-            if(!$db->Query("DELETE FROM ".static::AA_DBTABLE_CANONI." WHERE id_patrimonio = '".addslashes($idData)."'"))
+            $this->LoadCanoni($idData);
+            foreach($this->aCanoni as $curCanone)
             {
-                AA_Log::Log(__METHOD__." - ERRORE -".$db->GetErrorMessage(),100);
-                return false;
+                if($this->DeleteCanone($curCanone))
+                {
+                    AA_Log::Log(__METHOD__." - ERRORE durante l'eliminazione del canone: ".print_r($curCanone,true),100);
+                    return false;                        
+                }
             }
-            else return true;
+            return true;
         }
         else return false;
     }
@@ -426,25 +431,66 @@ Class AA_Patrimonio extends AA_Object_V2
         return true;
     }
 
+    //Aggiornamento di un canone
+    public function LinkCanone($canone=null, $user=null)
+    {
+        if(!$this->IsValid() || !($canone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
+        if($canone->GetProp('id') == 0 && $canone->GetProp('serial') == "") return false;
+
+        //Verifica che il canone non sia già collegato
+        $id_patrimonio=$canone->GetProp("id_patrimonio");
+
+        foreach(explode(",",$id_patrimonio) as $curId)
+        {
+            if($curId==$this->nId_Data) return true;
+        }
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Collega canone: ".$canone->GetProp("serial"))) return false;
+
+        /*$canone->SetProp('id_patrimonio', $this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $canone->SetProp('id_patrimonio',$this->nId_Data_Rev);
+        }*/
+
+        $query="UPDATE ".static::AA_DBTABLE_CANONI." SET id_patrimonio='".$id_patrimonio.",".$this->nId_Data."'";
+
+        $query.=" WHERE serial = '".$canone->GetProp('serial')."' LIMIT 1";
+
+        $db=new AA_Database();
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - ERRORE - ".$db->GetErrorMessage(),100);
+            return false;
+        }
+
+        $this->aCanoni=null;
+
+        return true;
+    }
+
     //Elimina un canone
     public function DeleteCanone($canone=null,$user=null)
     {
         if(!$this->IsValid() || !($canone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
         if($canone->GetProp('id') == 0 && $canone->GetProp('serial') == "") return false;
 
-        //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true,"Eliminazione canone: ".$canone->GetProp("serial"))) return false;
-
-        $canone->SetProp('id_patrimonio',$this->nId_Data);
+        /*$canone->SetProp('id_patrimonio',$this->nId_Data);
         if($this->nId_Data_Rev > 0)
         {
             $canone->SetProp('id_patrimonio',$this->nId_Data_Rev);
-        }
+        }*/
 
         $immobili_collegati=explode(",",$canone->GetProp("id_patrimonio"));
+        //AA_Log::Log(__METHOD__." - ERRORE - immobili collegati: ".print_r($immobili_collegati,true)." - canone: ".print_r($canone,true),100);
+
         if(sizeof($immobili_collegati) == 1)
         {
             $query="DELETE FROM ".static::AA_DBTABLE_CANONI." WHERE serial = '".$canone->GetProp('serial')."' LIMIT 1";
+            
+            //Aggiorna l'elemento e lo versiona se necessario
+            if(!$this->Update($user,true,"Eliminazione canone: ".$canone->GetProp("serial"))) return false;
         }
         else
         {
@@ -454,9 +500,15 @@ Class AA_Patrimonio extends AA_Object_V2
                 if($curIdImmobile != $this->nId_Data) $new_immobili_collegati[]=$curIdImmobile;
             }
 
+            //Aggiorna l'elemento e lo versiona se necessario
+            if(!$this->Update($user,true,"Disassociazione canone: ".$canone->GetProp("serial"))) return false;
+
             $immobili_collegati=implode(",",$new_immobili_collegati);
             $query="UPDATE ".static::AA_DBTABLE_CANONI." SET id_patrimonio='".$immobili_collegati."' WHERE serial = '".$canone->GetProp('serial')."' LIMIT 1";
         }
+
+        //AA_Log::Log(__METHOD__." - ERRORE - query: ".$query,100);
+        //return true;
 
         $db=new AA_Database();
         if(!$db->Query($query))
@@ -677,6 +729,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $taskManager->RegisterTask("GetPatrimonioAddNewCanoneDlg");
         $taskManager->RegisterTask("AddNewCanone");
         $taskManager->RegisterTask("GetPatrimonioLinkCanoneDlg");
+        $taskManager->RegisterTask("PatrimonioLinkCanone");
         $taskManager->RegisterTask("GetPatrimonioModifyCanoneDlg");
         $taskManager->RegisterTask("UpdateCanone");
         $taskManager->RegisterTask("GetPatrimonioTrashCanoneDlg");
@@ -1453,7 +1506,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $data=AA_PatrimonioModule::GetCanoniList();
         foreach($data as $curData)
         {
-            $curData['ops']="<a href='#' onClick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"PatrimonioLinkCanone\", params: [{id: ".$object->GetId()."},{id_canone:".$curData['id']."},{serial_canone:\"".$curData['serial']."\"}]},\"".$this->id."\")'><span class='mdi mdi-link'></span></a>";
+            $curData['ops']="<a href='#' onClick='AA_MainApp.utils.callHandler(\"doTask\", {task:\"PatrimonioLinkCanone\", params: [{id: ".$object->GetId()."},{id_canone:".$curData['id']."},{serial_canone:\"".$curData['serial']."\"}],refresh: true,wnd_id:\"".$wnd->GetWndId()."\"},\"".$this->id."\")'><span class='mdi mdi-link'></span></a>";
             $table_data[]=$curData;
         }
         //recupera la lista dei canoni esistenti
@@ -1554,7 +1607,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     {
         if(!($object instanceof AA_Patrimonio) || !$object->isValid() || !($canone instanceof AA_Patrimonio_Canone) || $object->IsReadOnly())
         {
-            $wnd=new AA_GenericWindowTemplate($this->GetId()."_FakeDlg", "Elimina canone",$this->GetId());
+            $wnd=new AA_GenericWindowTemplate($this->GetId()."_FakeDlg", "Elimina/disassocia canone",$this->GetId());
             $wnd->AddView(new AA_JSON_Template_Template($this->GetId()."_Fakecontent",array("template"=>"oggetto o canone non valido")));
 
             return $wnd;
@@ -1564,7 +1617,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $forms_data['id']=$object->GetId();
         $forms_data['serial']=$canone->GetProp("serial");
         
-        $wnd=new AA_GenericFormDlg($id, "Elimina canone ".$canone->GetProp("serial"), $this->id, $forms_data,$forms_data);
+        $wnd=new AA_GenericFormDlg($id, "Elimina/disassocia canone ".$canone->GetProp("serial"), $this->id, $forms_data,$forms_data);
         
         //Disattiva il pulsante di reset
         $wnd->EnableResetButton(false);
@@ -1582,7 +1635,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
             array("id"=>"canone","header"=>"id Canone","fillspace"=>true)
         );
 
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente canone verrà eliminato, vuoi procedere?")));
+        $linked=false;
+        if(sizeof(explode(",",$canone->GetProp("id_patrimonio"))) > 1) $linked = true;
+
+        if(!$linked) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente canone verrà eliminato, vuoi procedere?")));
+        else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente canone verrà disassociato, vuoi procedere?")));
 
         $table=new AA_JSON_Template_Generic($id."_Table", array(
             "view"=>"datatable",
@@ -2087,6 +2144,60 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
     }
 
+    //Task aggio0rna un canone
+    public function Task_PatrimonioLinkCanone($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Patrimonio_Const::AA_USER_FLAG_PATRIMONIO))
+        {
+            $task->SetError("L'utente corrente non ha i permessi per modifcare elementi di questo tipo.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per modifcare elementi di questo tipo.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        $object= new AA_Patrimonio($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid() || $object->IsReadOnly() || $_REQUEST['id_canone']=="")
+        {
+            $task->SetError("Oggetto non valido o permessi insufficienti.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Oggetto non valido o permessi/parametri insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $canone=AA_Patrimonio_Canone::LoadCanone($_REQUEST['id_canone']);
+        if(!($canone->IsValid()))
+        {
+            $task->SetError("Canone non valido.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Canone non valido.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        if(!$object->LinkCanone($canone,$this->oUser))
+        {
+            $task->SetError("Errore durante l'aggiornamento del canone: ".$canone->GetProp("serial"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        else
+        {
+            $sTaskLog="<status id='status' id_Rec='".$object->GetId()."'>0</status><error id='error'>";
+            $sTaskLog.= "Canone collegato con successo";
+            $sTaskLog.="</error>";
+            
+            $task->SetLog($sTaskLog);
+            
+            return true;
+        }
+    }
+
     //Task elimina un canone
     public function Task_TrashCanone($task)
     {
@@ -2121,7 +2232,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
             return false;
         }
 
-        if(!$object->DeleteCanone(new AA_Patrimonio_Canone($_REQUEST),$this->oUser))
+        if(!$object->DeleteCanone($canone,$this->oUser))
         {
             $task->SetError("Errore durante la rimozione del canone: ".$canone->GetProp("serial"));
             $sTaskLog="<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";
@@ -2132,7 +2243,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         else
         {
             $sTaskLog="<status id='status' id_Rec='".$object->GetId()."'>0</status><content id='content'>";
-            $sTaskLog.= "Canone rimosso con successo";
+            $sTaskLog.= "Canone rimosso/disassociato con successo";
             $sTaskLog.="</content>";
             
             $task->SetLog($sTaskLog);
@@ -3146,6 +3257,44 @@ Class AA_Patrimonio_Canone
         return "";
     }
 
+    static public function LoadCanone($id="")
+    {
+        if($id=="")
+        {
+            AA_Log::Log(__METHOD__." - id canone non valido (vuoto)",100);
+            return new AA_Patrimonio_Canone();
+        }
+
+        $db = new AA_Database();
+        $query="SELECT * from ".AA_Patrimonio::AA_DBTABLE_CANONI." WHERE id='".addslashes($id)."' LIMIT 1";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore: ".$db->GetLastErrorMessage()." - query: " .$query,100);
+            return new AA_Patrimonio_Canone();
+        }
+
+        if($db->GetAffectedRows()==0)
+        {
+            AA_Log::Log(__METHOD__." - errore: canone non trovato.",100);
+            return new AA_Patrimonio_Canone();
+        }
+
+        $rs=$db->GetResultSet();
+        foreach($rs as $curRow)
+        {
+            $canone=new AA_Patrimonio_Canone($curRow);
+        }
+
+        return $canone;
+    }
+
+    protected $bValid=false;
+    public function IsValid()
+    {
+        return $this->bValid;
+    }
+
     public function __construct($props=null)
     {
         //proprietà
@@ -3162,13 +3311,19 @@ Class AA_Patrimonio_Canone
             "tipologia"=>0
         );
 
+        $parsed=0;
         if(is_array($props))
         {
             foreach($props as $key=>$value)
             {
-                $this->SetProp($key,$value);
+                if(isset($this->aProps[$key])) 
+                {
+                    $this->SetProp($key,$value);
+                    $parsed++;
+                }
             }
         }
+        if($parsed == 10) $this->bValid=true;
     }
 }
 

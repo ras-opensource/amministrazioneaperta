@@ -935,6 +935,29 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 console.error(this.name + ".doTask - task non impostato", params);
                 return false;
             }
+            let taskManager = params.taskManager;
+            if (taskManager == null) taskManager = this.taskManager;
+
+            let result = await AA_VerboseTask(params.task, taskManager, params.params, params.postParams);
+            if (result.status.value == 0) {
+                if (result.content.value != "") {
+                    AA_MainApp.ui.message(result.content.value);
+                } else {
+                    if (result.error.value != "") {
+                        AA_MainApp.ui.message(result.error.value);
+                    }
+                }
+                if (AA_MainApp.utils.isDefined(params.wnd_id)) $$(params.wnd_id).close();
+                if (AA_MainApp.utils.isDefined(params.refresh)) {
+                    if (AA_MainApp.utils.isDefined(params.refresh_obj_id)) this.refreshUiObject(params.refresh_obj_id, true);
+                    else this.refreshCurSection();
+                }
+                return true;
+            } else {
+                console.error(this.name + ".doTask", result.error.value);
+                if (result.status.value > -2) AA_MainApp.ui.alert(result.error.value);
+                return false;
+            }
         } catch (msg) {
             console.error(this.name + ".doTask", msg, params);
             return false;
@@ -977,13 +1000,15 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 return true;
             } else {
                 console.error(this.name + ".dlg", result.error.value);
-                AA_MainApp.ui.alert(result.error.value);
-                return Promise.reject(result.error.value);
+                if (result.status.value > -2) AA_MainApp.ui.alert(result.error.value);
+                return false;
+                //return Promise.reject(result.error.value);
             }
         } catch (msg) {
             console.error(this.name + ".dlg", msg);
             AA_MainApp.ui.alert(msg);
-            return Promise.reject(msg);
+            return false;
+            //return Promise.reject(msg);
         }
     };
 
@@ -2056,7 +2081,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                 val = false;
                             }
                         }
-                        
+
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
                 }
@@ -2481,6 +2506,12 @@ var AA_dummy_module = new AA_Module();
 
 //Variabile applicazione principale
 var AA_MainApp = {
+
+    //Device
+    device: {
+        isMobile: false
+    },
+
     //Funzione di inizializzazione del sistema
     bootUpFunction: AA_DefaultSystemInitialization,
 
@@ -2653,6 +2684,11 @@ var AA_MainApp = {
     logOut: AA_LogOut,
 
     ui: {
+        viewport: {
+            width: 0,
+            height: 0
+        },
+
         enableGui: false,
         alert: AA_AlertModalDlg,
         message: AA_Message,
@@ -3586,29 +3622,25 @@ function AA_SetupMainUi() {
     console.log("System::AA_SetupMainUi()");
 
     //Verifica se si sta visualizzando da un cellulare
-    if(webix.env.mobile)
-    {
-        AA_MainApp.device.isMobile=1;
+    if (webix.env.mobile) {
+        AA_MainApp.device.isMobile = 1;
         AA_MainApp.ui.viewport.width = document.documentElement.clientWidth;
         AA_MainApp.ui.viewport.height = document.documentElement.clientHeight;
 
         //Cambia il tema css
-        if($("#webix_style"))
-        {
-            let old_style=$("#webix_style").attr("href");
-            let new_style=old_style.replace("webix.min.css","skins/mini.min.css");
-            $("#webix_style").attr("href",new_style);
+        if ($("#webix_style")) {
+            let old_style = $("#webix_style").attr("href");
+            let new_style = old_style.replace("webix.min.css", "skins/mini.min.css");
+            $("#webix_style").attr("href", new_style);
         }
-    }
-    else
-    {
-        AA_MainApp.device.isMobile=0;
+    } else {
+        AA_MainApp.device.isMobile = 0;
         AA_MainApp.ui.viewport.width = document.documentElement.clientWidth;
         AA_MainApp.ui.viewport.height = document.documentElement.clientHeight;
     }
 
-    let minWidth=AA_MainApp.ui.viewport.width;
-    
+    let minWidth = AA_MainApp.ui.viewport.width;
+
     //Imposta la posìzione dei messaggi
     webix.message.position = "bottom";
 

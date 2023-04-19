@@ -8352,6 +8352,11 @@ class AA_GenericWindowTemplate
         return $this->id;
     }
 
+    public function GetWndId()
+    {
+        return $this->id."_Wnd";
+    }
+
     protected $body = "";
     protected $head = "";
     protected $wnd = "";
