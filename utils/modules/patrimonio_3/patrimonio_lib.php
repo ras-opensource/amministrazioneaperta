@@ -2904,7 +2904,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         }
         
         $object=new AA_Patrimonio($_REQUEST['id'],$this->oUser);
-        AA_Log::Log(__METHOD__." - object: ".print_r($object,TRUE),100);
+        //AA_Log::Log(__METHOD__." - object: ".print_r($object,TRUE),100);
 
         $canone=$object->GetCanone($_REQUEST['serial']);
 

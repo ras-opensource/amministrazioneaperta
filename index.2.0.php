@@ -10,6 +10,7 @@ $platform = AA_Platform::GetInstance($user);
 
 $lib_path=AA_Const::AA_PUBLIC_LIB_PATH;
 ?>
+<!DOCTYPE html>
 <html>
 <head>
 <title>Amministrazione Aperta</title>
