@@ -1533,7 +1533,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomina/designazione/indicazione da parte della RAS."));
 
         //compenso spettante
-        $wnd->AddTextField("compenso_spettante","Compenso spettante",array("required"=>"true","validateFunction"=>"IsNumber","placeholder"=>"inserisci qui il compenso spettante.","bottomLabel"=>"*Indicare il compenso spettante oppure il valore '0'(zero) se il dato non è disponibile."));
+        $wnd->AddTextField("compenso_spettante","Compenso spettante",array("required"=>"true","validateFunction"=>"IsPositive","placeholder"=>"inserisci qui il compenso spettante.","bottomLabel"=>"*Indicare il compenso spettante oppure il valore '0'(zero) se il dato non è disponibile."));
 
         //note
         $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
@@ -1582,7 +1582,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddSwitchBoxField("forza_scadenzario","Scadenzario",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Indica se l'incarico deve essere considerato ai fini dell'elaborazione dello scadenzario anche se non si tratta di nomina/designazione/indicazione da parte della RAS."));
 
         //compenso spettante
-        $wnd->AddTextField("compenso_spettante","Compenso spettante",array("required"=>"true","validateFunction"=>"IsNumber","placeholder"=>"inserisci qui il compenso spettante.","bottomLabel"=>"*Indicare il compenso spettante oppure il valore '0'(zero) se il dato non è disponibile."));
+        $wnd->AddTextField("compenso_spettante","Compenso spettante",array("required"=>"true","validateFunction"=>"IsPositive","placeholder"=>"inserisci qui il compenso spettante.","bottomLabel"=>"*Indicare il compenso spettante oppure il valore '0'(zero) se il dato non è disponibile."));
 
         //note
         $wnd->AddTextareaField("note","Note",array("placeholder"=>"inserisci qui la note."));
