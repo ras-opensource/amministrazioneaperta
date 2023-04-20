@@ -48,5 +48,6 @@ foreach($platform->GetModules() as $curMod)
 ?>
 </head>
 <body>
+    <script>document.body.style.visibility=`hidden`;</script>
 </body>
 </html>

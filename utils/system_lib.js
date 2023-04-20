@@ -2911,7 +2911,7 @@ var AA_MainApp = {
 }
 
 //Default system initialization
-function AA_DefaultSystemInitialization(params) {
+async function AA_DefaultSystemInitialization(params) {
     console.log("Amministrazione Aperta - Inizializzazione di sistema...");
 
     //valori iniziali di ricerca
@@ -2976,7 +2976,7 @@ function AA_DefaultSystemInitialization(params) {
         //inizializza l'interfaccia principale
         AA_MainApp.ui.MainUI.setup();
 
-        AA_MainApp.ui.MainUI.refresh();
+        await AA_MainApp.ui.MainUI.refresh();
 
         console.log("Amministrazione Aperta - Inizializzazione di sistema conclusa.");
         return;
@@ -3532,8 +3532,10 @@ async function AA_SetCurrentModule(id) {
 }
 
 //Default system initialization
-$(function() {
-    AA_MainApp.bootUpFunction();
+webix.ready(async function() {
+    await AA_MainApp.bootUpFunction();
+    console.log("Startup Function - rendo visibile il body");
+    document.body.style.visibility = 'visible';
 });
 
 //Carica le informazioni per l'interfaccia principale

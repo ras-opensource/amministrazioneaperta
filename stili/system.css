@@ -441,7 +441,7 @@ div.AA_Footer_Gradient {
     border-color: #5ccce7 !important;
     border-radius: 5px;
     padding: 0px;
-    min-height: 120px;
+    min-height: 130px !important;
 }
 
 .AA_DataView_Nomine_item {

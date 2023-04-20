@@ -1512,7 +1512,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(520);
+        $wnd->SetHeight(580);
         
         //tipo
         $options=array();

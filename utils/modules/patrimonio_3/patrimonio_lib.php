@@ -75,7 +75,6 @@ Class AA_Patrimonio_Const extends AA_Const
         self::Inizialize();
         return self::$tipoCanoneList;
     }
-
 }
 
 #Classe oggetto patrimonio
