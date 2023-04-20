@@ -4693,13 +4693,14 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $class="n".$level;
         if($last) $class.=" AA_navbar_terminator_left";
-        $navbar =  new AA_JSON_Template_Template(static::AA_UI_PREFIX."_Navbar_Link_Back_Content_Box",array(
+        $id=static::AA_UI_PREFIX."_Navbar_Link_Back_Content_Box_".uniqid(time());
+        $navbar =  new AA_JSON_Template_Template($id,array(
                 "type"=>"clean",
                 "css"=>"AA_NavbarEventListener",
                 "module_id"=>"AA_MODULE_SINES",
                 "refresh_view"=>$refresh_view,
                 "tooltip"=>"Fai click per tornare alla lista",
-                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='AA_Sines_Navbar_Link_Back_Content_Box' onClick='AA_MainApp.utils.callHandler(\"goBack\",null,\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='".$id."' onClick='AA_MainApp.utils.callHandler(\"goBack\",null,\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
                 "data"=>array("label"=>"Indietro","icon"=>"mdi mdi-keyboard-backspace","class"=>$class))
             );
         return $navbar;  

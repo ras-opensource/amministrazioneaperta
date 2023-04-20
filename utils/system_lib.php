@@ -7322,15 +7322,16 @@ class AA_GenericModule
     {
         $class = "n" . $level;
         if ($last) $class .= " AA_navbar_terminator_left";
+        $id=static::AA_UI_PREFIX . "_Navbar_Link_Back_Content_Box_".uniqid(time());
         $navbar =  new AA_JSON_Template_Template(
-            static::AA_UI_PREFIX . "_Navbar_Link_Back_Content_Box",
+            $id,
             array(
                 "type" => "clean",
                 "css" => "AA_NavbarEventListener",
                 "module_id" => $this->GetId(),
                 "refresh_view" => $refresh_view,
                 "tooltip" => "Fai click per tornare alla lista",
-                "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" . static::AA_UI_PREFIX . "_Navbar_Link_Back_Content_Box' onClick='AA_MainApp.utils.callHandler(\"goBack\",null,\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" .$id."' onClick='AA_MainApp.utils.callHandler(\"goBack\",null,\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
                 "data" => array("label" => "Indietro", "icon" => "mdi mdi-keyboard-backspace", "class" => $class)
             )
         );
