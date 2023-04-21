@@ -4155,6 +4155,10 @@ async function AA_StartAMAAI() {
 
 async function AA_UserAuth(params = null) {
     try {
+        
+        console.log("Startup Function - rendo visibile il body");
+        document.body.style.visibility = 'visible';
+
         if ($$("AA_UserAuthDlg")) {
             $$("AA_UserAuthDlg").show();
         } else {
