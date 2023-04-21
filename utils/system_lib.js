@@ -1063,8 +1063,9 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 }
             } else {
                 console.error(this.name + "::initializeDefault() - errore nel recupero delle sezioni: ", sections.error.value);
-                AA_MainApp.ui.alert(sections.error.value);
-                return Promise.reject(sections.error.value);
+                if(sections.status.value > -2) AA_MainApp.ui.alert(sections.error.value);
+                //return Promise.reject(sections.error.value);
+                return false;
             }
 
             var layout = await AA_VerboseTask("GetLayout", this.taskManager);
@@ -1072,8 +1073,9 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 this.ui.layout = layout.content.value;
             } else {
                 console.error(this.name + "::initializeDefault() - errore nel recupero del layout: ", layout.error.value);
-                AA_MainApp.ui.alert(layout.error.value);
-                return Promise.reject(layout.error.value);
+                if(sections.status.value > -2) AA_MainApp.ui.alert(layout.error.value);
+                //return Promise.reject(layout.error.value);
+                return false;
             }
 
             return true;
@@ -3507,7 +3509,8 @@ async function AA_SetCurrentModule(id) {
             AA_MainApp.ui.message("Il modulo: " + id + " è stato inizializzato correttamente.", "success");
         } catch (msg) {
             console.error("System::AA_SetCurrentModule(" + id + ") - errore: ", msg);
-            return Promise.reject(msg);
+            //return Promise.reject(msg);
+            return false;
         }
 
         if (result === true) {
