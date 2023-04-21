@@ -8184,6 +8184,14 @@ class AA_JSON_Template_Generic
     {
         $result = array();
 
+        //Infopopup
+        if((isset($this->props['label']) || isset($this->props['bottomLabel']))&& isset($this->props['infoPopup']) && is_array($this->props['infoPopup']))
+        {
+            $script="AA_MainApp.utils.callHandler(\"dlg\", {task:\"infoPopup\", params: [{id: \"".$this->props['infoPopup']['id']."\"}]},\"".$this->props['infoPopup']['id_module']."\")";
+            if(isset($this->props['bottomLabel'])) $this->props['bottomLabel'].="<a href='#' onclick='".$script."'><span class='mdi mdi-help-circle'></span></a>";
+            else $this->props['label'].="&nbsp;<a href='#' onclick='".$script."' title='fai click per ricevere ulteriori informazioni.'><span class='mdi mdi-help-circle'></span></a>";
+        }
+
         //Proprietà
         foreach ($this->props as $key => $prop) {
             if ($prop instanceof AA_JSON_Template_Generic) $result[$key] = $prop->toArray();

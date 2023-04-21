@@ -1012,6 +1012,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->AddSelectField("Titolo","Titolo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il titolo.","bottomLabel"=>"*Indicare il titolo di possesso","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
         
         //Nome
+        //"infoPopup"=>array("id"=>"immobile_name_info","id_module"=>$this->GetId())
         $wnd->AddTextField("nome","Denominazione",array("required"=>true, "bottomLabel"=>"*Inserisci la denominazione dell'immobile.", "placeholder"=>"inserisci qui la denominazione dell'immobile"));
         
         //Descrizione
