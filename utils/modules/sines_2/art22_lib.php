@@ -131,6 +131,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_ORGANIGRAMMA_AMMINISTRATIVO=1;
     const AA_ORGANISMI_ORGANIGRAMMA_CONTROLLO=2;
     const AA_ORGANISMI_ORGANIGRAMMA_DIREZIONALE=4;
+    const AA_ORGANISMI_ORGANIGRAMMA_CONSULTIVO=8; //2^3
     const AA_ORGANISMI_ORGANIGRAMMA_MASK=7;
 
     //Inizializza gli array
@@ -266,6 +267,7 @@ class AA_Organismi_Const extends AA_Const
                 self::AA_ORGANISMI_ORGANIGRAMMA_AMMINISTRATIVO=>"Organo di indirizzo",
                 self::AA_ORGANISMI_ORGANIGRAMMA_CONTROLLO=>"Organo di controllo",
                 self::AA_ORGANISMI_ORGANIGRAMMA_DIREZIONALE=>"Organo di amministrazione",
+                self::AA_ORGANISMI_ORGANIGRAMMA_CONSULTIVO=>"Organo consultivo",
             );
         }
     }
