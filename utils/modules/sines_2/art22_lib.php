@@ -2830,6 +2830,9 @@ class AA_Organismi extends AA_Object
         //nomine storiche
         if($params['archivio'] != 1) $query.=" AND storico = 0";
 
+        //incaricato
+        if($params['incaricato'] != "") $query.=" AND (nome like '%".addslashes($params['incaricato'])."%' OR cognome like '%".addslashes($params['incaricato'])."%' OR codice_fiscale like '%".addslashes($params['incaricato'])."%') ";
+
         //if($params['raggruppamento'] == "0") $query.= " GROUP by tipo_incarico, nome, cognome ";
         //$query.= " GROUP by nome, cognome ";
         

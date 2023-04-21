@@ -595,6 +595,9 @@ Class AA_SinesModule extends AA_GenericModule
             //incarichi archiviati
             $params_nomine['archivio']=$parametri['archivio'];
 
+            //incaricato
+            $params_nomine['incaricato']=$parametri['incaricato'];
+
             //Imposta i limiti temporali
             if($parametri['in_scadenza'] != "1" || $parametri['in_corso'] != "1" || $parametri['scadute'] != "1" || $parametri['recenti'] != "1")
             {
