@@ -1542,6 +1542,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_organigramma"=>$organigramma->GetId()));
         $wnd->SetSaveTask("AddNewOrganismoOrganigrammaIncarico");
+        $wnd->EnableApplyHotkey(false);
         
         return $wnd;
     }
@@ -1591,6 +1592,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_organigramma"=>$organigramma->GetId(),"id_incarico"=>$incarico->GetProp("id")));
         $wnd->SetSaveTask("UpdateOrganismoOrganigrammaIncarico");
+        $wnd->EnableApplyHotkey(false);
         
         return $wnd;
     }

@@ -8519,6 +8519,18 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         $this->validation = $bVal;
     }
 
+    protected $bEnableApplyHotkey = true;
+    public function EnableApplyHotkey($bVal = true)
+    {
+        $this->bEnableApplyHotkey = $bVal;
+    }
+
+    protected $sApplyHotkey = "enter";
+    public function SetApplyHotkey($val = "enter")
+    {
+        $this->sApplyHotkey = $val;
+    }
+
     protected $applyActions = "";
     public function SetApplyActions($actions = "")
     {
@@ -8655,7 +8667,8 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         }
 
         //Apply button
-        $this->applyButton = new AA_JSON_Template_Generic($this->id . "_Button_Bar_Apply", array("view" => "button", "width" => 80, "css"=>"webix_primary","hotkey"=>"enter","label" => $this->applyButtonName));
+        if($this->bEnableApplyHotkey) $this->applyButton = new AA_JSON_Template_Generic($this->id . "_Button_Bar_Apply", array("view" => "button", "width" => 80, "css"=>"webix_primary","hotkey"=>$this->sApplyHotkey,"label" => $this->applyButtonName));
+        else $this->applyButton = new AA_JSON_Template_Generic($this->id . "_Button_Bar_Apply", array("view" => "button", "width" => 80, "css"=>"webix_primary","label" => $this->applyButtonName));
 
         //Toolbar
         $toolbar = new AA_JSON_Template_Layout($this->id . "_Button_Bar", array("height" => 38));
