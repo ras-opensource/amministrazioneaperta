@@ -3898,12 +3898,15 @@ function AA_ShowWaitMessage(msg = "Attendere prego...", type = "info") {
         return;
     }
 
-    AA_MainApp.ui.waitMessage = webix.message({
-        text: "<span class='lds-dual-ring'></span><span style='margin-left: .5em'>" + msg + "</span>",
-        type: type,
-        expire: -1,
-        id: "AA_WaitMessage"
-    });
+    if(!AA_MainApp.ui.overlay.isVisible())
+    {
+        AA_MainApp.ui.waitMessage = webix.message({
+            text: "<span class='lds-dual-ring'></span><span style='margin-left: .5em'>" + msg + "</span>",
+            type: type,
+            expire: -1,
+            id: "AA_WaitMessage"
+        });
+    }
 }
 
 function AA_HideWaitMessage() {
