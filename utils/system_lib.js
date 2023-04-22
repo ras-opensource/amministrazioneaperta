@@ -4080,6 +4080,8 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
         }
 
         if (res.status.value == -2) {
+            AA_MainApp.ui.hideWaitMessage();
+            AA_MainApp.ui.overlay.show();
             //await AA_MainApp.alert(res.error.value);
             AA_MainApp.userAuth(arguments);
         }
@@ -4236,7 +4238,6 @@ async function AA_StartAMAAI() {
 
 async function AA_UserAuth(params = null) {
     try {
-        AA_MainApp.ui.overlay.show();
         if ($$("AA_UserAuthDlg")) {
             $$("AA_UserAuthDlg").show();
         } else {
