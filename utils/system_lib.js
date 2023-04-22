@@ -2686,9 +2686,68 @@ var AA_MainApp = {
     logOut: AA_LogOut,
 
     ui: {
+        overlay:{
+            content:
+            {
+                view:"popup",
+                id:"AA_MainOverlay",
+                width: document.documentElement.clientWidth,
+                height: document.documentElement.clientHeight,
+                body:{
+                    template:"<div style='width: 100%; height:100%'>&nbsp;</div>"
+                }
+            },
+            isVisible: function()
+            {
+                try
+                {
+                    if($$("AA_MainOverlay")) return $("AA_MainOverlay").isVisible();
+
+                    return false;    
+                }
+                catch(msg)
+                {
+                    console.error(msg);
+                    if($$("AA_MainOverlay")) return $("AA_MainOverlay").isVisible();
+
+                    return false;
+                }
+            },
+            show: function()
+            {
+                try
+                {
+                    console.log("AA_MainApp.ui.overlay.show");
+                    if(!$$("AA_MainOverlay"))
+                    {
+                        webix.ui(AA_MainApp.ui.overlay.content).show();
+                    }
+                    else $$("AA_MainOverlay").show();
+                }
+                catch(msg)
+                {
+                    console.error("AA_MainApp.ui.overlay.show",msg);
+                }
+            },
+            hide: function()
+            {
+                try
+                {
+                    console.log("AA_MainApp.ui.overlay.hide");
+                    if($$("AA_MainOverlay"))
+                    {
+                        $$("AA_MainOverlay").hide();
+                    }
+                }
+                catch(msg)
+                {
+                    console.error("AA_MainApp.ui.overlay.hide",msg);
+                }
+            }
+        },
         viewport: {
-            width: 0,
-            height: 0
+            width: document.documentElement.clientWidth,
+            height: document.documentElement.clientHeight
         },
 
         enableGui: false,
@@ -2969,6 +3028,8 @@ async function AA_DefaultSystemInitialization(params) {
     //nuova interfaccia
     if (AA_MainApp.ui.enableGui) {
 
+        AA_MainApp.ui.overlay.show();
+
         //titolo dell'App
         AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
 
@@ -2979,6 +3040,8 @@ async function AA_DefaultSystemInitialization(params) {
         AA_MainApp.ui.MainUI.setup();
 
         await AA_MainApp.ui.MainUI.refresh();
+
+        AA_MainApp.ui.overlay.hide();
 
         console.log("Amministrazione Aperta - Inizializzazione di sistema conclusa.");
         return;
@@ -3536,9 +3599,14 @@ async function AA_SetCurrentModule(id) {
 
 //Default system initialization
 webix.ready(async function() {
-    await AA_MainApp.bootUpFunction();
-    console.log("Startup Function - rendo visibile il body");
-    document.body.style.visibility = 'visible';
+    try
+    {
+        await AA_MainApp.bootUpFunction();
+    }
+    catch(msg)
+    {
+        console.error(msg);
+    }
 });
 
 //Carica le informazioni per l'interfaccia principale
