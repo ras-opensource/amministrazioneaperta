@@ -9,6 +9,9 @@ $user=AA_User::GetCurrentUser();
 $platform = AA_Platform::GetInstance($user);
 
 $lib_path=AA_Const::AA_PUBLIC_LIB_PATH;
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 ?>
 <!DOCTYPE html>
 <html>

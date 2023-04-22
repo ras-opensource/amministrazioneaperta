@@ -2691,24 +2691,23 @@ var AA_MainApp = {
             {
                 view:"popup",
                 id:"AA_MainOverlay",
-                width: document.documentElement.clientWidth,
-                height: document.documentElement.clientHeight,
+                fullscreen: true,
                 body:{
-                    template:"<div style='width: 100%; height:100%'>&nbsp;</div>"
+                    template:"<div class='AA_MainOverlay'>&nbsp;</div>"
                 }
             },
             isVisible: function()
             {
                 try
                 {
-                    if($$("AA_MainOverlay")) return $("AA_MainOverlay").isVisible();
+                    if($$("AA_MainOverlay")) return $$("AA_MainOverlay").isVisible();
 
                     return false;    
                 }
                 catch(msg)
                 {
                     console.error(msg);
-                    if($$("AA_MainOverlay")) return $("AA_MainOverlay").isVisible();
+                    if($$("AA_MainOverlay")) return $$("AA_MainOverlay").isVisible();
 
                     return false;
                 }
@@ -3584,7 +3583,7 @@ async function AA_SetCurrentModule(id) {
             AA_MainApp.ui.MainUI.setModuleContentBox(module.ui.layout);
 
             //Aggiorna la visualizzazione del contenuto del modulo
-            AA_MainApp.ui.MainUI.refreshModuleContentBox(false);
+            await AA_MainApp.ui.MainUI.refreshModuleContentBox(false);
 
             return true;
         }
@@ -3882,11 +3881,14 @@ function AA_AlertModalDlg(msg = "", title = "ERRORE", type = "alert-error") {
 
 //Funzione per le notifiche
 function AA_Message(msg = "", type = "success", timeout = 4000) {
-    webix.message({
-        text: msg,
-        type: type,
-        expire: timeout
-    });
+    if(!AA_MainApp.ui.overlay.isVisible())
+    {
+        webix.message({
+            text: msg,
+            type: type,
+            expire: timeout
+        });    
+    }
 }
 
 //Funzione per la visualizzazione del messaggio di attesa
@@ -4026,7 +4028,7 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
 
         if (verbose) AA_MainApp.ui.showWaitMessage("Caricamento in corso...");
         var result = await AA_Get(url, postParams);
-        AA_MainApp.ui.hideWaitMessage();
+        if (verbose) AA_MainApp.ui.hideWaitMessage();
 
         //Restituisce il risultato grezzo
         if (raw) {
@@ -4094,7 +4096,15 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
 //Esegue un task con notifica grafica
 async function AA_VerboseTask(task, taskManagerURL = "", params = "", postParams = "", raw = false) {
     try {
-        return await AA_Task(task, taskManagerURL, params, postParams, true, raw);
+        //Se è visibile l'overlay non scrive nulla
+        if(AA_MainApp.ui.overlay.isVisible())
+        {
+            return await AA_Task(task, taskManagerURL, params, postParams, false, raw);
+        } 
+        else 
+        {
+            return await AA_Task(task, taskManagerURL, params, postParams, true, raw);
+        }
     } catch (msg) {
         return Promise.reject(msg);
     }
@@ -4226,10 +4236,7 @@ async function AA_StartAMAAI() {
 
 async function AA_UserAuth(params = null) {
     try {
-        
-        console.log("Startup Function - rendo visibile il body");
-        document.body.style.visibility = 'visible';
-
+        AA_MainApp.ui.overlay.show();
         if ($$("AA_UserAuthDlg")) {
             $$("AA_UserAuthDlg").show();
         } else {
