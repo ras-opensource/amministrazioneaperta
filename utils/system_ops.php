@@ -60,6 +60,8 @@ if($task=="UserLogOut")
     {
       $user->LogOut();
     }
+    
+    die("<status id='status'>0</status><error id='error'>Logout effettuato con successo.</error>");
 }
 
 $taskManager = new AA_SystemTaskManager($user);
