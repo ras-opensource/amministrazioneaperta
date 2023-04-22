@@ -2825,7 +2825,7 @@ var AA_MainApp = {
                     }
 
                     //Aggiorna l'interfaccia grafica del modulo
-                    AA_MainApp.curModule.refreshSectionUi();
+                    await AA_MainApp.curModule.refreshSectionUi();
 
                     //Visualizza un messaggio di successo
                     console.log("MainUI::refreshModuleContentBox(" + bRefreshModuleContent + ") - La visualizzazione del modulo: " + AA_MainApp.curModule.id + " è stata aggiornata.");
