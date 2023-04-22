@@ -8584,6 +8584,16 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         $this->enableReset = $bVal;
     }
+    protected $applyButtonStyle="";
+    public function SetApplybuttonStyle($sStyle="")
+    {
+        $this->applyButtonStyle = $sStyle;
+    }
+    protected $applyButtonPosition="right";
+    public function SetApplybuttonPosition($sVal="right")
+    {
+        $this->applyButtonPosition = $sVal;
+    }
     #----------------------------------------------------
 
     //Valori form
@@ -8687,9 +8697,11 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
             $resetAction = "if($$('" . $this->id . "_Form')) $$('" . $this->id . "_Form').setValues(" . json_encode($this->resetData) . ")";
             $toolbar->addCol(new AA_JSON_Template_Generic($this->id . "_Button_Bar_Reset", array("view" => "button", "width" => 80, "label" => $this->resetButtonName, "tooltip" => "Reimposta i valori di default", "click" => $resetAction)));
         }
-        $toolbar->addCol(new AA_JSON_Template_Generic());
 
+        if($this->applyButtonPosition != "left") $toolbar->addCol(new AA_JSON_Template_Generic());
         $toolbar->addCol($this->applyButton);
+        if($this->applyButtonPosition != "right") $toolbar->addCol(new AA_JSON_Template_Generic());
+        
         $toolbar->addCol(new AA_JSON_Template_Generic("spacer", array("view" => "spacer", "width" => 15)));
         $this->body->AddRow($toolbar);
         $this->body->AddRow(new AA_JSON_Template_Generic("spacer", array("view" => "spacer", "height" => 10)));
