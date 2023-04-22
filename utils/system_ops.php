@@ -50,17 +50,16 @@ if($task=="ResetPassword")
 //log out
 if($task=="UserLogOut")
 {
-    $user=AA_User::UserAuth("", $_REQUEST['user'],$_REQUEST['pwd']);
+    //$user=AA_User::UserAuth("", $_REQUEST['user'],$_REQUEST['pwd']);
     if($user->IsGuest())
     {
-        die("<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>");
+      die("<status id='status'>0</status><error id='error'>Logout effettuato con successo.</error>");
     }
+
     if($user->IsValid() && $user->isCurrentUser())
     {
       $user->LogOut();
     }
-    
-    die("<status id='status'>0</status><error id='error'>Logout effettuato con successo.</error>");
 }
 
 $taskManager = new AA_SystemTaskManager($user);
