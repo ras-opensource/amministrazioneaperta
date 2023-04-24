@@ -1664,7 +1664,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 }
 
 //Prototipo di modulo
-var AA_dummy_module = new AA_Module();
+//var AA_dummy_module = new AA_Module();
 
 //Variabile applicazione principale
 var AA_MainApp = {
@@ -1823,7 +1823,10 @@ var AA_MainApp = {
     },
 
     //modulo corrente
-    curModule: AA_dummy_module,
+    curModule: null,
+
+    //modulo di default (sidebar id)
+    defaultModule: "home",
 
     searchBoxParams: {
         id: "AA_MainSearchBox",
@@ -2282,7 +2285,7 @@ function AA_GetModule(id) {
         }
     }
 
-    return AA_dummy_module;
+    return null;
 }
 
 //Imposta il modulo corrente
@@ -2397,8 +2400,8 @@ async function AA_RefreshMainUi(params) {
                     //Seleziona l'item corrente
                     AA_MainApp.ui.sidebar.select(AA_MainApp.ui.sidebar.itemSelected);
                 } else {
-                    //Seleziona l'item home
-                    AA_MainApp.ui.sidebar.select("home");
+                    //Seleziona il modulo di default
+                    AA_MainApp.defaultModuleAA_MainApp.ui.sidebar.select(AA_MainApp.defaultModule);
                 }
             }
 
