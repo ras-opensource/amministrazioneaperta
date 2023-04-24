@@ -1891,6 +1891,7 @@ var AA_MainApp = {
                     {
                         if(!$$("AA_MainOverlay").isVisible())
                         {
+                            $$("AA_MainOverlay").define("css", "AA_MainOverlayFadeIn");
                             $$("AA_MainOverlay").show();
                         } 
                     }
@@ -1905,7 +1906,7 @@ var AA_MainApp = {
                 try
                 {
                     console.log("AA_MainApp.ui.overlay.hide");
-                    if($$("AA_MainOverlay"))
+                    if($$("AA_MainOverlay") && $$("AA_MainOverlay").isVisible())
                     {
                         if(delay > 0)
                         {

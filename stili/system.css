@@ -688,3 +688,9 @@ div.AA_Footer_Gradient {
     opacity: 0;
 }
 
+.AA_MainOverlayFadeIn
+{
+    animation: AA_OverlayFadeIn 1s;
+    opacity: 1;
+}
+

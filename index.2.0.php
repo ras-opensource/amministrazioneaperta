@@ -35,9 +35,15 @@ header("Pragma: no-cache");
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_legacy.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_lib.js"></script>
 <?php
-
 foreach($platform->GetModules() as $curMod)
 {
+    //css
+    foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'].DIRECTORY_SEPARATOR."*.css*") as $curLink)
+    {
+        echo '<link href="'.AA_Const::AA_WWW_ROOT.'/'.$curLink.'" rel="stylesheet" type="text/css"/></link>';
+    }
+
+    //javascript
     foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'].DIRECTORY_SEPARATOR."*.js*") as $curScript)
     {
         echo '<script defer src="'.AA_Const::AA_WWW_ROOT.'/'.$curScript.'"></script>';
