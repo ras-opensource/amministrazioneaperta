@@ -2293,7 +2293,7 @@ async function AA_SetCurrentModule(id) {
     //console.log("System::AA_SetCurrentModule("+id+")");
     var module = AA_MainApp.getModule(id);
     //console.log("AA_SetCurrentModule",module);
-    if (module.isValid()) {
+    if (module !=null && module.isValid()) {
         //console.log("System::AA_SetCurrentModule("+id+")")
         //inizializza il modulo
         var result = false;
