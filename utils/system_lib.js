@@ -1685,6 +1685,14 @@ var AA_MainApp = {
 
     //utility functions
     utils: {
+        getMaxZindex: function () {
+            return Math.max(
+              ...Array.from(document.querySelectorAll('body *'), el =>
+                parseFloat(window.getComputedStyle(el).zIndex),
+              ).filter(zIndex => !Number.isNaN(zIndex)),
+              0,
+            );
+        },          
         isDefined: function(obj) {
             if (obj === true) return true;
             if (typeof(obj) !== "undefined" && obj !== null && obj != "") return true;
@@ -1867,15 +1875,20 @@ var AA_MainApp = {
             {
                 try
                 {
-                    if($$("AA_MainOverlay")) return $$("AA_MainOverlay").isVisible();
-
-                    return false;    
+                    let overlay=document.getElementById("AA_MainOverlay");
+                    if(overlay)
+                    {
+                        if(overlay.style.display == "block")
+                        {
+                            return true;
+                        }
+                    }
+                    
+                    return false;
                 }
                 catch(msg)
                 {
                     console.error(msg);
-                    if($$("AA_MainOverlay")) return $$("AA_MainOverlay").isVisible();
-
                     return false;
                 }
             },
@@ -1883,7 +1896,19 @@ var AA_MainApp = {
             {
                 try
                 {
-                    console.log("AA_MainApp.ui.overlay.show");
+                    let overlay=document.getElementById("AA_MainOverlay");
+                    if(overlay)
+                    {
+                        if(overlay.style.display == "none")
+                        {
+                            console.log("AA_MainApp.ui.overlay.show - mostro l'overlay");
+                            overlay.classList.remove('AA_MainOverlayFadeOff');
+                            overlay.classList.add('AA_MainOverlayFadeIn');
+                            overlay.style.display="block";
+                        }
+                    }
+
+                    /*
                     if(!$$("AA_MainOverlay"))
                     {
                         AA_MainApp.ui.overlay.content.width=document.documentElement.clientWidth,
@@ -1897,7 +1922,7 @@ var AA_MainApp = {
                             $$("AA_MainOverlay").define("css", "AA_MainOverlayFadeIn");
                             $$("AA_MainOverlay").show();
                         } 
-                    }
+                    }*/
                 }
                 catch(msg)
                 {
@@ -1908,7 +1933,34 @@ var AA_MainApp = {
             {
                 try
                 {
-                    console.log("AA_MainApp.ui.overlay.hide");
+                    let overlay=document.getElementById("AA_MainOverlay");
+                    //console.log("AA_MainApp.ui.overlay.hide", overlay);
+                    if(overlay)
+                    {
+                        if(overlay.style.display == "block")
+                        {
+                            console.log("AA_MainApp.ui.overlay.hide");
+
+                            if(delay > 0)
+                            {
+                                setTimeout(function (){
+                                    overlay.classList.remove('AA_MainOverlayFadeIn');
+                                    overlay.classList.add('AA_MainOverlayFadeOff');
+                                },delay)
+                            }
+                            else
+                            {
+                                overlay.classList.remove('AA_MainOverlayFadeIn');
+                                overlay.classList.add('AA_MainOverlayFadeOff');
+                            }
+
+                            setTimeout(function (){
+                                overlay.style.display="none";
+                            },2100+delay);
+                        }
+                    }
+
+                    /*
                     if($$("AA_MainOverlay") && $$("AA_MainOverlay").isVisible())
                     {
                         if(delay > 0)
@@ -1918,7 +1970,7 @@ var AA_MainApp = {
                         else $$("AA_MainOverlay").define("css", "AA_MainOverlayFadeOff");
                         
                         setTimeout(function (){$$("AA_MainOverlay").hide();},2100+delay);
-                    }
+                    }*/
                 }
                 catch(msg)
                 {

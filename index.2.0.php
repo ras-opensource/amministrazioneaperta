@@ -51,7 +51,7 @@ foreach($platform->GetModules() as $curMod)
 }
 ?>
 </head>
-<body class="AA_MainOverlay">
-    <div id="AA_MainOverlayBg" class='AA_MainOverlayContent'><img class="AA_Header_Logo" src="immagini/logo_ras.svg" alt="logo RAS" title="www.regione.sardegna.it"><h1><span>A</span>mministrazione <span>A</span>perta</h1></div>
+<body>
+    <div id="AA_MainOverlay" class='AA_MainOverlay' style="display: block;"><div class='AA_MainOverlayContent'><img class="AA_Header_Logo" src="immagini/logo_ras.svg" alt="logo RAS" title="www.regione.sardegna.it"><h1><span>A</span>mministrazione <span>A</span>perta</h1></div></div>
 </body>
 </html>

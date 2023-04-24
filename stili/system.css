@@ -639,13 +639,17 @@ div.AA_Footer_Gradient {
 {
     width: 100vw; 
     height:100vh;
-    background-color:rgb(23, 130, 207);
+    position: absolute;
+    z-index: 100;
 }
 
 .AA_MainOverlayContent
 {
     width: 100%; 
     height:100%;
+    background-color:rgb(23, 130, 207);
+    top: 0;
+    left: 0;
     display: flex;
     justify-content: flex-start;
     flex-direction: column;
@@ -690,7 +694,7 @@ div.AA_Footer_Gradient {
 
 .AA_MainOverlayFadeIn
 {
-    animation: AA_OverlayFadeIn 1s;
+    animation: AA_OverlayFadeIn 2s;
     opacity: 1;
 }
 
