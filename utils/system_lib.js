@@ -1900,7 +1900,7 @@ var AA_MainApp = {
                     console.error("AA_MainApp.ui.overlay.show",msg);
                 }
             },
-            hide: function(delay=0)
+            hide: function(delay=1000)
             {
                 try
                 {
