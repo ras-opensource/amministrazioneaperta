@@ -1856,7 +1856,8 @@ var AA_MainApp = {
                 id:"AA_MainOverlay",
                 fullscreen: true,
                 body:{
-                    template:"<div class='AA_MainOverlay'><canvas id='AA_OverlayCanvas'></canvas><canvas id='AA_OverlayCanvas2'></canvas></div>"
+                    type: "clean",
+                    template:"<div class='AA_MainOverlay'><div class='AA_MainOverlayContent'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'><h1><span>A</span>mministrazione <span>A</span>perta</h1></div></div>"
                 }
             },
             isVisible: function()
@@ -1899,15 +1900,20 @@ var AA_MainApp = {
                     console.error("AA_MainApp.ui.overlay.show",msg);
                 }
             },
-            hide: function()
+            hide: function(delay=0)
             {
                 try
                 {
                     console.log("AA_MainApp.ui.overlay.hide");
                     if($$("AA_MainOverlay"))
                     {
-                        $$("AA_MainOverlay").define("css", "AA_MainOverlayFadeOff");
-                        setTimeout(function (){$$("AA_MainOverlay").hide();},2100);
+                        if(delay > 0)
+                        {
+                            setTimeout(function (){$$("AA_MainOverlay").define("css", "AA_MainOverlayFadeOff");},delay);
+                        }
+                        else $$("AA_MainOverlay").define("css", "AA_MainOverlayFadeOff");
+                        
+                        setTimeout(function (){$$("AA_MainOverlay").hide();},2100+delay);
                     }
                 }
                 catch(msg)
@@ -2150,6 +2156,13 @@ async function AA_DefaultSystemInitialization(params) {
     if (AA_MainApp.ui.enableGui && !AA_MainApp.bEnableLegacy) {
 
         AA_MainApp.ui.overlay.show();
+
+        //Nasconde lo sfondo di default del body
+        let bodyBg= document.getElementById("AA_MainOverlayBg");
+        if(bodyBg)
+        {
+            bodyBg.style.display="none";
+        }
 
         //titolo dell'App
         AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
@@ -3288,86 +3301,4 @@ async function AA_LogOut(params = null) {
         AA_MainApp.ui.alert(msg);
         return Promise.reject(msg);
     }
-}
-
-//matrix effect
-function AA_MatrixEffect()
-{
-    var canvas = document.getElementById( 'AA_OverlayCanvas' ),
-		ctx = canvas.getContext( '2d' ),
-    canvas2 = document.getElementById( 'AA_OverlayCanvas2' ),
-    ctx2 = canvas2.getContext( '2d' ),
-		// full screen dimensions
-		cw = window.innerWidth,
-		ch = window.innerHeight,
-    charArr = ['A','M','I','N','S','T','R','Z','P','E','I','O'],
-    maxCharCount = 100,
-    fallingCharArr = [],
-    fontSize = 10,
-    maxColums = cw/(fontSize);
-    canvas.width = canvas2.width = cw;
-    canvas.height = canvas2.height = ch;
-
-    function randomInt( min, max ) {
-    	return Math.floor(Math.random() * ( max - min ) + min);
-    }
-
-    function randomFloat( min, max ) {
-    	return Math.random() * ( max - min ) + min;
-    }
-
-    function Point(x,y)
-    {
-      this.x = x;
-      this.y = y;
-    }
-
-    Point.prototype.draw = function(ctx){
-
-      this.value = charArr[randomInt(0,charArr.length-1)].toUpperCase();
-      this.speed = randomFloat(1,5);
-
-
-      ctx2.fillStyle = "rgba(255,255,255,0.8)";
-      ctx2.font = fontSize+"px san-serif";
-      ctx2.fillText(this.value,this.x,this.y);
-
-        ctx.fillStyle = "#3cF";
-        ctx.font = fontSize+"px san-serif";
-        ctx.fillText(this.value,this.x,this.y);
-
-
-
-        this.y += this.speed;
-        if(this.y > ch)
-        {
-          this.y = randomFloat(-100,0);
-          this.speed = randomFloat(2,5);
-        }
-    }
-
-    for(var i = 0; i < maxColums ; i++) {
-      fallingCharArr.push(new Point(i*fontSize,randomFloat(-500,0)));
-    }
-
-
-    var update = function()
-    {
-
-    ctx.fillStyle = "rgba(0,0,0,0.05)";
-    ctx.fillRect(0,0,cw,ch);
-
-    ctx2.clearRect(0,0,cw,ch);
-
-      var i = fallingCharArr.length;
-
-      while (i--) {
-        fallingCharArr[i].draw(ctx);
-        var v = fallingCharArr[i];
-      }
-
-      requestAnimationFrame(update);
-    }
-
-  update();
 }
