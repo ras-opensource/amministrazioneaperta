@@ -252,10 +252,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             activeView = $$(this.curSection.view_id);
 
             //Aggiorna il titolo del modulo
-            if(AA_MainApp.enableModuleHeader) AA_MainApp.ui.MainUI.setModuleHeaderContent({ icon: this.ui.icon, title: this.ui.name });
+            if(AA_MainApp.ui.enableModuleHeader) AA_MainApp.ui.MainUI.setModuleHeaderContent({ icon: this.ui.icon, title: this.ui.name });
 
             //Aggiorna il titolo della sezione
-            if(AA_MainApp.enableSectionHeader) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: this.curSection.name });
+            if(AA_MainApp.ui.enableSectionHeader) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: this.curSection.name });
 
 
             if (activeView) {
@@ -264,7 +264,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             }
 
             //aggiorno la navbar
-            if(AA_MainApp.enableNavbar)
+            if(AA_MainApp.ui.enableNavbar)
             {
                 await AA_MainApp.ui.navbar.refresh();
                 
@@ -2286,7 +2286,7 @@ var AA_MainApp = {
                     await AA_MainApp.curModule.refreshSectionUi();
 
                     //Aggiorna il contenuto del sidemenù
-                    if(AA_MainApp.enableSidemenu) await AA_MainApp.ui.sidemenu.refresh();
+                    if(AA_MainApp.ui.enableSidemenu) await AA_MainApp.ui.sidemenu.refresh();
 
                     //Visualizza un messaggio di successo
                     console.log("MainUI::refreshModuleContentBox(" + bRefreshModuleContent + ") - La visualizzazione del modulo: " + AA_MainApp.curModule.id + " è stata aggiornata.");
@@ -2659,7 +2659,7 @@ async function AA_RefreshMainUi(params) {
             //--------------------------------------------------------
 
             //Aggiorna la sidebar
-            if(AA_MainApp.enableSidebar)
+            if(AA_MainApp.ui.enableSidebar)
             {
                 var sidebar = JSON.parse($(getAppStatus.content.value)[1].innerText);
 

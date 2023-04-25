@@ -18,10 +18,10 @@ let <?php echo AA_PublicModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Pu
 <?php echo AA_PublicModule::AA_ID_MODULE?>.ui.module_content_id = "<?php echo AA_PublicModule::AA_UI_MAIN_MODULE_BOX?>"; //L'identificativo deve essere uguale a quello impostato nel layout principale del modulo nella relativa classe di gestione php
 
 //disattivazione sezioni interfaccia standard
-AA_MainApp.enableSidebar=false;
-AA_MainApp.enableSidemenu=false;
-AA_MainApp.enableModuleHeader=false;
-AA_MainApp.enableSectionHeader=false;
+AA_MainApp.ui.enableSidebar=false;
+AA_MainApp.ui.enableSidemenu=false;
+AA_MainApp.ui.enableModuleHeader=false;
+AA_MainApp.ui.enableSectionHeader=false;
 //-----------------------------------
 
 //Registrazione modulo
