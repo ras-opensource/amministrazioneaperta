@@ -40,13 +40,28 @@ foreach($platform->GetModules() as $curMod)
     //css
     foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'].DIRECTORY_SEPARATOR."*.css*") as $curLink)
     {
-        echo '<link href="'.AA_Const::AA_WWW_ROOT.'/'.$curLink.'" rel="stylesheet" type="text/css"/></link>';
+        echo '<link href="'.AA_Const::AA_WWW_ROOT.'/'.$curLink.'" rel="stylesheet" type="text/css"></link>';
     }
 
     //javascript
     foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR.$curMod['id_sidebar']."_".$curMod['id'].DIRECTORY_SEPARATOR."*.js*") as $curScript)
     {
         echo '<script defer src="'.AA_Const::AA_WWW_ROOT.'/'.$curScript.'"></script>';
+    }
+}
+
+if(AA_Const::AA_ENABLE_PUBLIC_MODULE && !isset($_REQUEST['reserved']))
+{
+    //css
+    foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."*.js*") as $curScript)
+    {
+        echo '<link href="'.AA_Const::AA_WWW_ROOT.'/'.$curScript.' rel="stylesheet" type="text/css"></link>';
+    }
+
+    //js
+    foreach(glob(AA_Const::AA_MODULES_PATH.DIRECTORY_SEPARATOR."public".DIRECTORY_SEPARATOR."*.js*") as $curScript)
+    {
+        echo '<script defer type="text/javascript" src="'.AA_Const::AA_WWW_ROOT.'/'.$curScript.'"></script>';
     }
 }
 ?>

@@ -37,6 +37,9 @@ Class AA_Config
 
     //Percorso root applicazione
     const AA_WWW_ROOT="/web/amministrazione_aperta";
+
+    //Abilita disabilita il modulo pubblico
+    const AA_ENABLE_PUBLIC_MODULE=false;
 }
 
 //percorso librerie
