@@ -84,7 +84,7 @@ AA_MainApp.ui.MainUI.setup=function()
                         body:
                         {
                             view: "flexlayout",
-                            type: "clean",
+                            type:"wide"
                             borderless: true,
                             cols: 
                             [

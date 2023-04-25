@@ -2713,6 +2713,8 @@ async function AA_RefreshMainUi(params) {
 function AA_SetupMainUi() {
     console.log("System::AA_SetupMainUi()");
 
+    if (webix.CustomScroll && !webix.env.touch) webix.CustomScroll.init();
+    
     //Verifica se si sta visualizzando da un cellulare
     if (webix.env.mobile) {
         AA_MainApp.device.isMobile = 1;
