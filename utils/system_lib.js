@@ -2714,7 +2714,7 @@ function AA_SetupMainUi() {
     console.log("System::AA_SetupMainUi()");
 
     if (webix.CustomScroll && !webix.env.touch) webix.CustomScroll.init();
-    
+
     //Verifica se si sta visualizzando da un cellulare
     if (webix.env.mobile) {
         AA_MainApp.device.isMobile = 1;
@@ -3037,6 +3037,10 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
         let url = taskManagerURL + "?task=" + task;
         if (typeof params == "string" && params != "") url += "&" + params;
 
+        //passa la dimensione della viewport
+        url+="&vw="+document.documentElement.clientWidth;
+        url+="&vh="+document.documentElement.clientHeight;
+        
         if (typeof params == "object") {
             if (Array.isArray(params)) {
                 for (let param of params) {
