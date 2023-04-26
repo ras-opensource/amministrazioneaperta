@@ -223,7 +223,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 }
             } else {
                 console.error(this.name + "::initializeDefault() - errore nel recupero delle sezioni: ", sections.error.value);
-                if(sections.status.value > -2) AA_MainApp.ui.alert(sections.error.value);
+                if (sections.status.value > -2) AA_MainApp.ui.alert(sections.error.value);
                 //return Promise.reject(sections.error.value);
                 return false;
             }
@@ -233,7 +233,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 this.ui.layout = layout.content.value;
             } else {
                 console.error(this.name + "::initializeDefault() - errore nel recupero del layout: ", layout.error.value);
-                if(sections.status.value > -2) AA_MainApp.ui.alert(layout.error.value);
+                if (sections.status.value > -2) AA_MainApp.ui.alert(layout.error.value);
                 //return Promise.reject(layout.error.value);
                 return false;
             }
@@ -252,10 +252,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             activeView = $$(this.curSection.view_id);
 
             //Aggiorna il titolo del modulo
-            if(AA_MainApp.ui.enableModuleHeader) AA_MainApp.ui.MainUI.setModuleHeaderContent({ icon: this.ui.icon, title: this.ui.name });
+            if (AA_MainApp.ui.enableModuleHeader) AA_MainApp.ui.MainUI.setModuleHeaderContent({ icon: this.ui.icon, title: this.ui.name });
 
             //Aggiorna il titolo della sezione
-            if(AA_MainApp.ui.enableSectionHeader) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: this.curSection.name });
+            if (AA_MainApp.ui.enableSectionHeader) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: this.curSection.name });
 
 
             if (activeView) {
@@ -264,13 +264,12 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             }
 
             //aggiorno la navbar
-            if(AA_MainApp.ui.enableNavbar)
-            {
+            if (AA_MainApp.ui.enableNavbar) {
                 await AA_MainApp.ui.navbar.refresh();
-                
+
                 //Aggiorno il contenuto del menu contestuale
                 await this.refreshActionMenuContent();
-            } 
+            }
 
             return 1;
         } catch (msg) {
@@ -1673,7 +1672,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 var AA_MainApp = {
 
     //enable legacy
-    bEnableLegacy:false,
+    bEnableLegacy: false,
 
     //Device
     device: {
@@ -1688,14 +1687,14 @@ var AA_MainApp = {
 
     //utility functions
     utils: {
-        getMaxZindex: function () {
+        getMaxZindex: function() {
             return Math.max(
-              ...Array.from(document.querySelectorAll('body *'), el =>
-                parseFloat(window.getComputedStyle(el).zIndex),
-              ).filter(zIndex => !Number.isNaN(zIndex)),
-              0,
+                ...Array.from(document.querySelectorAll('body *'), el =>
+                    parseFloat(window.getComputedStyle(el).zIndex),
+                ).filter(zIndex => !Number.isNaN(zIndex)),
+                0,
             );
-        },          
+        },
         isDefined: function(obj) {
             if (obj === true) return true;
             if (typeof(obj) !== "undefined" && obj !== null && obj != "") return true;
@@ -1863,51 +1862,40 @@ var AA_MainApp = {
     logOut: AA_LogOut,
 
     ui: {
-        overlay:{
-            content:
-            {
-                view:"popup",
-                id:"AA_MainOverlay",
+        overlay: {
+            content: {
+                view: "popup",
+                id: "AA_MainOverlay",
                 fullscreen: true,
-                body:{
+                body: {
                     type: "clean",
-                    template:"<div class='AA_MainOverlay'><div class='AA_MainOverlayContent'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'><h1><span>A</span>mministrazione <span>A</span>perta</h1></div></div>"
+                    template: "<div class='AA_MainOverlay'><div class='AA_MainOverlayContent'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'><h1><span>A</span>mministrazione <span>A</span>perta</h1></div></div>"
                 }
             },
-            isVisible: function()
-            {
-                try
-                {
-                    let overlay=document.getElementById("AA_MainOverlay");
-                    if(overlay)
-                    {
-                        if(overlay.style.display == "block")
-                        {
+            isVisible: function() {
+                try {
+                    let overlay = document.getElementById("AA_MainOverlay");
+                    if (overlay) {
+                        if (overlay.style.display == "block") {
                             return true;
                         }
                     }
-                    
+
                     return false;
-                }
-                catch(msg)
-                {
+                } catch (msg) {
                     console.error(msg);
                     return false;
                 }
             },
-            show: function()
-            {
-                try
-                {
-                    let overlay=document.getElementById("AA_MainOverlay");
-                    if(overlay)
-                    {
-                        if(overlay.style.display == "none")
-                        {
+            show: function() {
+                try {
+                    let overlay = document.getElementById("AA_MainOverlay");
+                    if (overlay) {
+                        if (overlay.style.display == "none") {
                             console.log("AA_MainApp.ui.overlay.show - mostro l'overlay");
                             overlay.classList.remove('AA_MainOverlayFadeOff');
                             overlay.classList.add('AA_MainOverlayFadeIn');
-                            overlay.style.display="block";
+                            overlay.style.display = "block";
                         }
                     }
 
@@ -1926,40 +1914,31 @@ var AA_MainApp = {
                             $$("AA_MainOverlay").show();
                         } 
                     }*/
-                }
-                catch(msg)
-                {
-                    console.error("AA_MainApp.ui.overlay.show",msg);
+                } catch (msg) {
+                    console.error("AA_MainApp.ui.overlay.show", msg);
                 }
             },
-            hide: function(delay=1000)
-            {
-                try
-                {
-                    let overlay=document.getElementById("AA_MainOverlay");
+            hide: function(delay = 1000) {
+                try {
+                    let overlay = document.getElementById("AA_MainOverlay");
                     //console.log("AA_MainApp.ui.overlay.hide", overlay);
-                    if(overlay)
-                    {
-                        if(overlay.style.display == "block")
-                        {
+                    if (overlay) {
+                        if (overlay.style.display == "block") {
                             console.log("AA_MainApp.ui.overlay.hide");
 
-                            if(delay > 0)
-                            {
-                                setTimeout(function (){
+                            if (delay > 0) {
+                                setTimeout(function() {
                                     overlay.classList.remove('AA_MainOverlayFadeIn');
                                     overlay.classList.add('AA_MainOverlayFadeOff');
-                                },delay)
-                            }
-                            else
-                            {
+                                }, delay)
+                            } else {
                                 overlay.classList.remove('AA_MainOverlayFadeIn');
                                 overlay.classList.add('AA_MainOverlayFadeOff');
                             }
 
-                            setTimeout(function (){
-                                overlay.style.display="none";
-                            },2100+delay);
+                            setTimeout(function() {
+                                overlay.style.display = "none";
+                            }, 2100 + delay);
                         }
                     }
 
@@ -1974,10 +1953,8 @@ var AA_MainApp = {
                         
                         setTimeout(function (){$$("AA_MainOverlay").hide();},2100+delay);
                     }*/
-                }
-                catch(msg)
-                {
-                    console.error("AA_MainApp.ui.overlay.hide",msg);
+                } catch (msg) {
+                    console.error("AA_MainApp.ui.overlay.hide", msg);
                 }
             }
         },
@@ -2001,97 +1978,85 @@ var AA_MainApp = {
             console.log("closeWnd", arguments);
             if ($$(id)) $$(id).close();
         },
-        sidemenu:
-        {
+        sidemenu: {
             bInitialized: false,
-            initialize: function(){
+            initialize: function() {
                 console.log("AA_MainApp.ui.sidemenu.initialize - Inizializzazione sidemenu");
 
-                if(!AA_MainApp.ui.sidemenu.bInitialized) webix.ui(AA_MainApp.ui.sidemenu.content);
-                
-                for(i=0;i<AA_MainApp.ui.sidemenu.content.body.data.length;i++)
-                {
-                    if(AA_MainApp.ui.sidemenu.content.body.data[i].section == AA_MainApp.curModule.curSection.id)
-                    {
-                        AA_MainApp.ui.sidemenu.itemSelected=AA_MainApp.ui.sidemenu.content.body.data[i].id;
+                if (!AA_MainApp.ui.sidemenu.bInitialized) webix.ui(AA_MainApp.ui.sidemenu.content);
+
+                for (i = 0; i < AA_MainApp.ui.sidemenu.content.body.data.length; i++) {
+                    if (AA_MainApp.ui.sidemenu.content.body.data[i].section == AA_MainApp.curModule.curSection.id) {
+                        AA_MainApp.ui.sidemenu.itemSelected = AA_MainApp.ui.sidemenu.content.body.data[i].id;
                     }
                 }
 
-                if(AA_MainApp.ui.sidemenu.itemSelected > 0 && $$("AA_MainSidemenu"))
-                {
+                if (AA_MainApp.ui.sidemenu.itemSelected > 0 && $$("AA_MainSidemenu")) {
                     $$("AA_MainSidemenu").select(AA_MainApp.ui.sidemenu.itemSelected);
                 }
-                this.bInitialized=true;
+                this.bInitialized = true;
             },
             itemSelected: null,
-            content:
-            {
+            content: {
                 id: "AA_MainSidemenuBox",
                 view: "sidemenu",
                 width: "300",
-                state:function(state){
+                state: function(state) {
                     state.top = 60;
                     state.height -= 60;
-                  },
-                body:
-                {
-                    view:"list",
+                },
+                body: {
+                    view: "list",
                     id: "AA_MainSidemenu",
                     css: "AA_SidemenuList",
-                    borderless:true,
+                    borderless: true,
                     scroll: false,
                     template: "<span class='webix_icon mdi mdi-#icon#'></span> #value#",
-                    data:[
-                      {id: 1, value: "Home", icon: "home", section: "SERVIZI_HOME"},
-                      {id: 2, value: "Servizi fiscali", icon: "account", section: "SERVIZI_FISCALI"},
+                    data: [
+                        { id: 1, value: "Home", icon: "home", section: "SERVIZI_HOME" },
+                        { id: 2, value: "Servizi fiscali", icon: "account", section: "SERVIZI_FISCALI" },
                     ],
-                    select:true,
-                    type:{
-                      height: 40
+                    select: true,
+                    type: {
+                        height: 40
                     },
                     on: {
                         onAfterSelect: async function(id) {
                             try {
-                                let sidemenu=$$("AA_MainSidemenu");
+                                let sidemenu = $$("AA_MainSidemenu");
 
                                 item = sidemenu.getItem(id);
-                                
+
                                 //Nascondi il pulsante torna alla home se siamo già nella home
-                                if(id==1)
-                                {
-                                    if($$("AA_GoBack_Home")) $$("AA_GoBack_Home") .hide();
-                                }
-                                else
-                                {
-                                    if($$("AA_GoBack_Home") && !$$("AA_GoBack_Home").isVisible()) $$("AA_GoBack_Home").show();
+                                if (id == 1) {
+                                    if ($$("AA_GoBack_Home")) $$("AA_GoBack_Home").hide();
+                                } else {
+                                    if ($$("AA_GoBack_Home") && !$$("AA_GoBack_Home").isVisible()) $$("AA_GoBack_Home").show();
                                 }
 
                                 //console.log("AA_MainApp.sidebar.onAfterSelect("+id+")",item,AA_MainApp.ui.sidemenu.itemSelected);
-                                
-                                if(AA_MainApp.ui.sidemenu.itemSelected==null) AA_MainApp.ui.sidemenu.itemSelected=item.id;
 
-                                if(AA_MainApp.ui.sidemenu.itemSelected != item.id && AA_MainApp.ui.sidemenu.itemSelected !=null && item.type=="section" && item.section != AA_MainApp.curModule.curSection.id)
-                                {
-                                    AA_MainApp.ui.sidemenu.itemSelected=item.id;
+                                if (AA_MainApp.ui.sidemenu.itemSelected == null) AA_MainApp.ui.sidemenu.itemSelected = item.id;
+
+                                if (AA_MainApp.ui.sidemenu.itemSelected != item.id && AA_MainApp.ui.sidemenu.itemSelected != null && item.type == "section" && item.section != AA_MainApp.curModule.curSection.id) {
+                                    AA_MainApp.ui.sidemenu.itemSelected = item.id;
                                     let result = await AA_MainApp.curModule.setCurrentSection(item.section);
-                                    
-                                    if(sidemenu.isVisible()) AA_MainApp.ui.sidemenu.toggle();
+
+                                    if (sidemenu.isVisible()) AA_MainApp.ui.sidemenu.toggle();
                                 }
-                                
-                                if(AA_MainApp.ui.sidemenu.itemSelected!=item.id && AA_MainApp.ui.sidemenu.itemSelected !=null && item.type=="task")
-                                {
+
+                                if (AA_MainApp.ui.sidemenu.itemSelected != item.id && AA_MainApp.ui.sidemenu.itemSelected != null && item.type == "task") {
                                     //let result = await AA_MainApp.curModule.setCurrentSection(item.section);
                                     //this.itemSelected=item.id;
                                     //console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - task: "+item.task);
-                                    
+
                                     //logout
-                                    if( item.task=="logout")
-                                    {
+                                    if (item.task == "logout") {
                                         AA_MainApp.logOut();
                                     }
-                                    if(sidemenu.isVisible()) AA_MainApp.ui.sidemenu.toggle();
+                                    if (sidemenu.isVisible()) AA_MainApp.ui.sidemenu.toggle();
                                 }
-                                
+
                                 //console.log("AA_MainApp.sidebar.onAfterSelect("+id+")",item, AA_MainApp.ui.sidemenu.itemSelected);
 
                                 return true;
@@ -2104,13 +2069,13 @@ var AA_MainApp = {
                     }
                 }
             },
-            selectItem: function (id){
+            selectItem: function(id) {
                 try {
-                    let sidemenu=$$("AA_MainSidemenu");
+                    let sidemenu = $$("AA_MainSidemenu");
 
                     idSelected = sidemenu.getSelectedId();
 
-                    if(idSelected == id) return true;
+                    if (idSelected == id) return true;
                     else sidemenu.select(id);
 
                     return true;
@@ -2121,97 +2086,74 @@ var AA_MainApp = {
                 }
 
             },
-            isVisible: function(){
-                if(!this.bInitialized) this.initialize();
-                if($$("AA_MainSidemenuBox").config.hidden) return false;
+            isVisible: function() {
+                if (!this.bInitialized) this.initialize();
+                if ($$("AA_MainSidemenuBox").config.hidden) return false;
                 return true;
             },
-            show: function()
-            {
-                
-                if(!this.bInitialized) this.initialize();
-                if($$("AA_MainSidemenuBox")) $$("AA_MainSidemenuBox").show();
+            show: function() {
+
+                if (!this.bInitialized) this.initialize();
+                if ($$("AA_MainSidemenuBox")) $$("AA_MainSidemenuBox").show();
             },
-            hide: function()
-            {
-                if(!this.bInitialized) this.initialize();
-                if($$("AA_MainSidemenuBox")) $$("AA_MainSidemenuBox").hide();
+            hide: function() {
+                if (!this.bInitialized) this.initialize();
+                if ($$("AA_MainSidemenuBox")) $$("AA_MainSidemenuBox").hide();
             },
-            toggle: function()
-            {
-                if(!this.bInitialized) this.initialize();
-                if($$("AA_MainSidemenuBox"))
-                {
-                    if($$("AA_MainSidemenuBox").config.hidden) 
-                    {
+            toggle: function() {
+                if (!this.bInitialized) this.initialize();
+                if ($$("AA_MainSidemenuBox")) {
+                    if ($$("AA_MainSidemenuBox").config.hidden) {
                         //console.log("AA_MainApp.ui.sidemenu.toggle - mostro il sidemenu.");
                         $$("AA_MainSidemenuBox").show();
-                    }
-                    else 
-                    {
+                    } else {
                         //console.log("AA_MainApp.ui.sidemenu.toggle - nascondo il sidemenu.");
                         $$("AA_MainSidemenuBox").hide();
                     }
-                }
-                else
-                {
+                } else {
                     console.log("AA_MainApp.ui.sidemenu.toggle - sidemenu non trovato.");
                 }
             },
-            refresh: async function()
-            {
-                if(!this.bInitialized) this.initialize();
-                try
-                {
-                    let sidemenu=$$("AA_MainSidemenu");
-                    if(!sidemenu)
-                    {
+            refresh: async function() {
+                if (!this.bInitialized) this.initialize();
+                try {
+                    let sidemenu = $$("AA_MainSidemenu");
+                    if (!sidemenu) {
                         console.error("AA_MainApp.ui.sidemenu.refresh - sidemenu non trovato");
                         return false;
                     }
 
-                    let sidemenucontent=await AA_VerboseTask("GetSideMenuContent",AA_MainApp.curModule.taskManager);
+                    let sidemenucontent = await AA_VerboseTask("GetSideMenuContent", AA_MainApp.curModule.taskManager);
 
-                    if(sidemenucontent.status.value!=0)
-                    {
-                        console.error("AA_MainApp.ui.sidemenu.refresh",sidemenucontent.error.content);
+                    if (sidemenucontent.status.value != 0) {
+                        console.error("AA_MainApp.ui.sidemenu.refresh", sidemenucontent.error.content);
                         return false;
                     }
 
-                    let curItemSelected=sidemenu.getSelectedId();
+                    let curItemSelected = sidemenu.getSelectedId();
                     sidemenu.parse(sidemenucontent.content.value);
-                    
-                    if(curItemSelected) 
-                    {
+
+                    if (curItemSelected) {
                         //console.log("AA_MainApp.ui.sidemenu.refresh - curItemSelected: "+curItemSelected);
                         sidemenu.select(curItemSelected);
-                    }
-                    else
-                    {
-                        if(AA_MainApp.ui.sidebar.itemSelected)
-                        {
+                    } else {
+                        if (AA_MainApp.ui.sidebar.itemSelected) {
                             //console.log("AA_MainApp.ui.sidemenu.refresh - sidebar.ItemSelected: "+AA_MainApp.ui.sidebar.itemSelected);
-                            sidemenu.select(AA_MainApp.ui.sidebar.itemSelected);    
-                        }
-                        else
-                        {
-                            for(i=0;i<sidemenu.config.data.length;i++)
-                            {
-                                if(sidemenu.config.data[i].section == AA_MainApp.curModule.curSection.id)
-                                {
-                                    AA_MainApp.ui.sidemenu.itemSelected=AA_MainApp.ui.sidemenu.content.body.data[i].id;
+                            sidemenu.select(AA_MainApp.ui.sidebar.itemSelected);
+                        } else {
+                            for (i = 0; i < sidemenu.config.data.length; i++) {
+                                if (sidemenu.config.data[i].section == AA_MainApp.curModule.curSection.id) {
+                                    AA_MainApp.ui.sidemenu.itemSelected = AA_MainApp.ui.sidemenu.content.body.data[i].id;
                                 }
                             }
-                            
-                            if(AA_MainApp.ui.sidemenu.itemSelected > 0) sidemenu.select(AA_MainApp.ui.sidemenu.itemSelected);
+
+                            if (AA_MainApp.ui.sidemenu.itemSelected > 0) sidemenu.select(AA_MainApp.ui.sidemenu.itemSelected);
                         }
                     }
 
                     return true;
-                }
-                catch(msg)
-                {
-                    console.error("AA_MainApp.ui.sidemenu.refresh",msg);
+                } catch (msg) {
+                    console.error("AA_MainApp.ui.sidemenu.refresh", msg);
                     return Promise.reject(false);
                 }
             }
@@ -2286,7 +2228,7 @@ var AA_MainApp = {
                     await AA_MainApp.curModule.refreshSectionUi();
 
                     //Aggiorna il contenuto del sidemenù
-                    if(AA_MainApp.ui.enableSidemenu) await AA_MainApp.ui.sidemenu.refresh();
+                    if (AA_MainApp.ui.enableSidemenu) await AA_MainApp.ui.sidemenu.refresh();
 
                     //Visualizza un messaggio di successo
                     console.log("MainUI::refreshModuleContentBox(" + bRefreshModuleContent + ") - La visualizzazione del modulo: " + AA_MainApp.curModule.id + " è stata aggiornata.");
@@ -2441,10 +2383,9 @@ async function AA_DefaultSystemInitialization(params) {
         AA_MainApp.ui.overlay.show();
 
         //Nasconde lo sfondo di default del body
-        let bodyBg= document.getElementById("AA_MainOverlayBg");
-        if(bodyBg)
-        {
-            bodyBg.style.display="none";
+        let bodyBg = document.getElementById("AA_MainOverlayBg");
+        if (bodyBg) {
+            bodyBg.style.display = "none";
         }
 
         //titolo dell'App
@@ -2465,8 +2406,7 @@ async function AA_DefaultSystemInitialization(params) {
     }
     //-------------------------------
 
-    if(AA_MainApp.bEnableLegacy)
-    {
+    if (AA_MainApp.bEnableLegacy) {
         //valori iniziali di ricerca
         if (typeof(stato_scheda_search) !== "undefined" && stato_scheda_search == 2) {
             AA_MainApp.searchBoxParams.query = "stato_scheda_search=2";
@@ -2572,7 +2512,7 @@ async function AA_SetCurrentModule(id) {
     //console.log("System::AA_SetCurrentModule("+id+")");
     var module = AA_MainApp.getModule(id);
     //console.log("AA_SetCurrentModule",module);
-    if (module !=null && module.isValid()) {
+    if (module != null && module.isValid()) {
         //console.log("System::AA_SetCurrentModule("+id+")")
         //inizializza il modulo
         var result = false;
@@ -2610,15 +2550,11 @@ async function AA_SetCurrentModule(id) {
 }
 
 //Default system initialization
-if(webix)
-{
+if (webix) {
     webix.ready(async function() {
-        try
-        {
-            setTimeout(async function(){await AA_MainApp.bootUpFunction()},1000);
-        }
-        catch(msg)
-        {
+        try {
+            setTimeout(async function() { await AA_MainApp.bootUpFunction() }, 1000);
+        } catch (msg) {
             console.error(msg);
         }
     });
@@ -2659,32 +2595,31 @@ async function AA_RefreshMainUi(params) {
             //--------------------------------------------------------
 
             //Aggiorna la sidebar
-            if(AA_MainApp.ui.enableSidebar)
-            {
+            if (AA_MainApp.ui.enableSidebar) {
                 var sidebar = JSON.parse($(getAppStatus.content.value)[1].innerText);
 
                 if (typeof sidebar != "undefined") {
                     console.log("System::AA_RefreshMainUi() sidebar: ", $(getAppStatus.content.value)[1].attributes["itemSelected"]);
-    
+
                     let itemSelected = "";
                     if ($(getAppStatus.content.value)[1].attributes["itemSelected"]) {
                         itemSelected = $(getAppStatus.content.value)[1].attributes["itemSelected"].nodeValue;
                     }
-    
+
                     $$("AA_MainSidebar").parse(sidebar);
-    
+
                     AA_MainApp.ui.sidebar.content = sidebar;
-    
+
                     if (AA_MainApp.ui.sidebar.itemSelected == "" && itemSelected != "") AA_MainApp.ui.sidebar.itemSelected = itemSelected;
-    
+
                     if (AA_MainApp.ui.sidebar.itemSelected != "") {
                         //Seleziona l'item corrente
                         AA_MainApp.ui.sidebar.select(AA_MainApp.ui.sidebar.itemSelected);
                     } else {
                         //Seleziona il modulo di default
-                        AA_MainApp.defaultModuleAA_MainApp.ui.sidebar.select(AA_MainApp.defaultModule);
+                        if (AA_MainApp.defaultModule) AA_MainApp.ui.sidebar.select(AA_MainApp.defaultModule);
                     }
-                }    
+                }
             }
 
             //Aggiorna il nome utente
@@ -2903,13 +2838,12 @@ function AA_AlertModalDlg(msg = "", title = "ERRORE", type = "alert-error") {
 
 //Funzione per le notifiche
 function AA_Message(msg = "", type = "success", timeout = 4000) {
-    if(!AA_MainApp.ui.overlay.isVisible())
-    {
+    if (!AA_MainApp.ui.overlay.isVisible()) {
         webix.message({
             text: msg,
             type: type,
             expire: timeout
-        });    
+        });
     }
 }
 
@@ -2920,8 +2854,7 @@ function AA_ShowWaitMessage(msg = "Attendere prego...", type = "info") {
         return;
     }
 
-    if(!AA_MainApp.ui.overlay.isVisible())
-    {
+    if (!AA_MainApp.ui.overlay.isVisible()) {
         AA_MainApp.ui.waitMessage = webix.message({
             text: "<span class='lds-dual-ring'></span><span style='margin-left: .5em'>" + msg + "</span>",
             type: type,
@@ -3038,9 +2971,9 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
         if (typeof params == "string" && params != "") url += "&" + params;
 
         //passa la dimensione della viewport
-        url+="&vw="+document.documentElement.clientWidth;
-        url+="&vh="+document.documentElement.clientHeight;
-        
+        url += "&vw=" + document.documentElement.clientWidth;
+        url += "&vh=" + document.documentElement.clientHeight;
+
         if (typeof params == "object") {
             if (Array.isArray(params)) {
                 for (let param of params) {
@@ -3128,12 +3061,9 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
 async function AA_VerboseTask(task, taskManagerURL = "", params = "", postParams = "", raw = false) {
     try {
         //Se è visibile l'overlay non scrive nulla
-        if(AA_MainApp.ui.overlay.isVisible())
-        {
+        if (AA_MainApp.ui.overlay.isVisible()) {
             return await AA_Task(task, taskManagerURL, params, postParams, false, raw);
-        } 
-        else 
-        {
+        } else {
             return await AA_Task(task, taskManagerURL, params, postParams, true, raw);
         }
     } catch (msg) {
