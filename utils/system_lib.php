@@ -10481,6 +10481,7 @@ class AA_JSON_Template_Datepicker extends AA_JSON_Template_Generic
     {
         $this->props["view"] = "datepicker";
         if ($id == "") $id = "AA_JSON_TEMPLATE_DATEPICKER";
+        if(!isset($props['clear'])) $props['clear']=true;
 
         parent::__construct($id, $props);
     }
@@ -10541,6 +10542,7 @@ class AA_JSON_Template_Text extends AA_JSON_Template_Generic
     {
         $this->props["view"] = "text";
         if ($id == "") $id = "AA_JSON_TEMPLATE_TEMPLATE";
+        if(!isset($props['clear'])) $props['clear']=true;
 
         parent::__construct($id, $props);
     }
@@ -10553,6 +10555,7 @@ class AA_JSON_Template_Richtext extends AA_JSON_Template_Generic
     {
         $this->props["view"] = "richtext";
         if ($id == "") $id = "AA_JSON_TEMPLATE_RICHTEXT";
+        if(!isset($props['clear'])) $props['clear']=true;
 
         parent::__construct($id, $props);
     }
