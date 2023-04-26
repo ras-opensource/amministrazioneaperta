@@ -3740,8 +3740,8 @@ Class AA_SinesModule extends AA_GenericModule
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoModifyIncaricoCompensoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_compenso:"'.$curComp->GetId().'"}]},"'.$this->id.'")';
                     $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashIncaricoCompensoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_compenso:"'.$curComp->GetId().'"}]},"'.$this->id.'")';
                     $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-                    $tot= number_format(str_replace(array(".",","),array("","."),$curComp->GetParteFissa())+str_replace(array(".",","),array("","."),$curComp->GetParteVariabile()),2,",",".");
-                    $compensi_data[]=array("id"=>$id_comp,"anno"=>$curComp->GetAnno(),"parte_fissa"=>number_format(str_replace(array(".",","),array("","."),$curComp->GetParteFissa()),2,",","."),"parte_variabile"=>number_format(str_replace(array(".",","),array("","."),$curComp->GetParteVariabile()),2,",","."),"rimborsi"=>number_format(str_replace(array(".",","),array("","."),$curComp->GetRimborsi()),2,",","."),"note"=>$curComp->GetNote(), "totale"=>$tot,"ops"=>$ops);
+                    $tot= number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteFissa().str_replace(array(".",","),array("","."),$curComp->GetParteVariabile()))),2,",",".");
+                    $compensi_data[]=array("id"=>$id_comp,"anno"=>$curComp->GetAnno(),"parte_fissa"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteFissa())),2,",","."),"parte_variabile"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteVariabile())),2,",","."),"rimborsi"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetRimborsi())),2,",","."),"note"=>$curComp->GetNote(), "totale"=>$tot,"ops"=>$ops);
                 }
                 $compensi->SetProp("data",$compensi_data);
                 if(sizeof($compensi_data) > 0) $incarico_compensi->AddRow($compensi);
@@ -9080,7 +9080,8 @@ Class AA_SinesModule extends AA_GenericModule
             //$curNumPage++;
             //$curPage_row="";
             //$curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
-            $curNumPage+=new AA_OrganismiFullReportTemplateDatiContabiliPageView("report_organismo_pdf_dati_contabili_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser,$doc);
+            $report = new AA_OrganismiFullReportTemplateDatiContabiliPageView("report_organismo_pdf_dati_contabili_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser,$doc);
+            $curNumPage+=$report->GetRelNumPage();
             //$curPage_row.="</div>";
             //$curPage->SetContent($curPage_row);
             

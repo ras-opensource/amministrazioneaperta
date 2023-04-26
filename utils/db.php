@@ -55,6 +55,11 @@ class Database
 		$this->bValid=true;
 	}
 
+	public function __construct($host=AA_Config::AA_DBHOST, $user=AA_Config::AA_DBUSER, $pass=AA_Config::AA_DBPWD, $db=AA_Config::AA_DBNAME, $utf8=true)
+	{
+		$this->Database($host, $user, $pass, $db, $utf8);
+	}
+
 	public function __destruct()
 	{
 		//libera le risorse
@@ -233,6 +238,11 @@ class RecordSet
 				}	
 			}
 		}
+	}
+
+	public function __construct($result)
+	{
+		$this->RecordSet($result);
 	}
 
 	function SetResult($result)

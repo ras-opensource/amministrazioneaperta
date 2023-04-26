@@ -963,7 +963,7 @@ Class AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE extends AA_PDF_Page
         
         if($logoImg != "")
         {
-            $header_content='<a href="https:///www.regione.sardegna.it"><img src="file:///home/sitod/web/amministrazione_aperta/immagini/'.$logoImg.'" style="height: 20mm;" title="logo" alt="logo"/></a><br/>';
+            $header_content='<a href="https:///www.regione.sardegna.it"><img src="file://'.AA_Const::AA_APP_FILESYSTEM_FOLDER.'/immagini/'.$logoImg.'" style="height: 20mm;" title="logo" alt="logo"/></a><br/>';
         }
         $header_content.='<span style="font-size: 3mm; font-weight: bold;">'.$title.'</span>';
         $this->SetHeaderContent($header_content);
@@ -994,7 +994,7 @@ Class AA_PDF_PAGE_GENERIC_DEFAULT_TEMPLATE extends AA_PDF_Page
         
         if($logoImg != "")
         {
-            $header_content='<a href="https:///www.regione.sardegna.it"><img src="file:///home/sitod/web/amministrazione_aperta/immagini/'.$logoImg.'" style="height: 20mm;" title="logo" alt="logo"/></a><br/>';
+            $header_content='<a href="https:///www.regione.sardegna.it"><img src="file://'.AA_Const::AA_APP_FILESYSTEM_FOLDER.'/immagini/'.$logoImg.'" style="height: 20mm;" title="logo" alt="logo"/></a><br/>';
         }
         $header_content.='<span style="font-size: 3mm; font-weight: bold;">'.$title.'</span>';
         $this->SetHeaderContent($header_content);

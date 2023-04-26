@@ -8641,6 +8641,11 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
 #Classe template per la gestione del report pdf dell'organismo (pagina generale)
 Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObjectTemplateView
 {
+    protected $nRelNumPage=0;
+    public function GetRelNumPage()
+    {
+        return $this->nRelNumPage;
+    }
     public function __construct($id="AA_OrganismiFullReportTemplateDaticontabiliPageView",$parent=null,$organismo=null, $user=null, $doc=null)
     {
         //Verifica utente
@@ -8761,7 +8766,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             $piva->SetText('<span style="font-weight:bold">Dotazione organica:</span><br/>'.$val);
 
             //personale assunto a tempo indeterminato
-            $val=$curDatocontabile->GetDipendenti()+$curDatocontabile->GetDipendentiDir();
+            $val=intval($curDatocontabile->GetDipendenti())+intval($curDatocontabile->GetDipendentiDir());
             if($val!="")
             {
                 if($curDatocontabile->GetDipendentiDir() > 0)
@@ -8775,7 +8780,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             $piva->SetText('<span style="font-weight:bold">Personale assunto a tempo indeterminato:</span><br/>'.$val);
 
             //personale assunto a tempo determinato
-            $val=$curDatocontabile->GetDipendentiDet()+$curDatocontabile->GetDipendentiDetDir();
+            $val=intval($curDatocontabile->GetDipendentiDet())+intval($curDatocontabile->GetDipendentiDetDir());
             if($val!="")
             {
                 if($curDatocontabile->GetDipendentiDetDir() > 0)
@@ -8842,7 +8847,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>");
         }
 
-        return $curRelNumPage;
+        $this->nRelNumPage=$curRelNumPage;
     }
 }
 

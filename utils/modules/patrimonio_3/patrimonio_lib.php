@@ -877,19 +877,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
     protected function GetDataSectionBozze_CustomFilter($params = array())
     {
         //Titolo di possesso
-        if($params['Titolo'] > 0)
+        if(isset($params['Titolo']) && $params['Titolo'] > 0)
         {
             $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".titolo = '".addslashes($params['Titolo'])."'";
         }
 
         //Comune
-        if($params['CodiceComune'] !="")
+        if(isset($params['CodiceComune']) && $params['CodiceComune'] !="")
         {
             $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".codice_comune = '".addslashes($params['CodiceComune'])."'";
         }
 
         //Cespite
-        if($params['Cespite'] !="")
+        if(isset($params['Cespite']) && $params['Cespite'] !="")
         {
             $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".cespite like '".addslashes($params['Cespite'])."'";
         }
@@ -913,9 +913,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
     public function Template_GetPatrimonioPublishDlg($params)
     {
         //lista elementi da ripristinare
-        if($params['ids'])
+        if(isset($params['ids']))
         {
             $ids= json_decode($params['ids']);
+            $ids_final=array();
             
             foreach($ids as $curId)
             {

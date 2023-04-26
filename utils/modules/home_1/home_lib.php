@@ -47,7 +47,7 @@ Class AA_HomeTask_Layout extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
+        AA_Log::Log(__METHOD__."() - task: ".$this->GetName());
         
         $module= AA_HomeModule::GetInstance();
         
@@ -71,7 +71,7 @@ Class AA_HomeTask_GetSections extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
+        AA_Log::Log(__METHOD__."() - task: ".$this->GetName());
         
         $module= AA_HomeModule::GetInstance();
                
@@ -94,7 +94,7 @@ Class AA_HomeTask_SectionContent extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
+        AA_Log::Log(__METHOD__."() - task: ".$this->GetName());
         
         $this->sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         
@@ -162,7 +162,7 @@ Class AA_HomeTask_ObjectContent extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
+        AA_Log::Log(__METHOD__."() - task: ".$this->GetName());
         
         $this->sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         
@@ -230,7 +230,7 @@ Class AA_HomeTask_NavbarContent extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
+        AA_Log::Log(__METHOD__."() - task: ".$this->GetName());
         
         $this->sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         
@@ -268,7 +268,7 @@ Class AA_HomeTask_ActionMenu extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        AA_Log::Log(__METHOD__."() - task: "+$this->GetName());
+        AA_Log::Log(__METHOD__."() - task: ".$this->GetName());
         
         $this->sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         

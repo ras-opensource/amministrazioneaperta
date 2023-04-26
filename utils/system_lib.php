@@ -5796,20 +5796,20 @@ class AA_GenericModule
         $templateData = array();
 
         $parametri = array("status" => AA_Const::AA_STATUS_PUBBLICATA);
-        if ($params['cestinate'] == 1) {
+        if (isset ($params['cestinate']) && $params['cestinate'] == 1) {
             $parametri['status'] |= AA_Const::AA_STATUS_CESTINATA;
         }
 
-        if ($params['revisionate'] == 1) {
+        if (isset($params['revisionate']) && $params['revisionate'] == 1) {
             $parametri['status'] |= AA_Const::AA_STATUS_REVISIONATA;
         }
 
-        if ($params['page'] > 0) $parametri['from'] = ($params['page'] - 1) * $params['count'];
-        if ($params['id_assessorato'] != "") $parametri['id_assessorato'] = $params['id_assessorato'];
-        if ($params['id_direzione'] != "") $parametri['id_direzione'] = $params['id_direzione'];
-        if ($params['id_servizio'] != "") $parametri['id_servizio'] = $params['id_servizio'];
-        if ($params['id'] != "") $parametri['id'] = $params['id'];
-        if ($params['nome'] != "") $parametri['nome'] = $params['nome'];
+        if (isset($params['page']) && $params['page'] > 0) $parametri['from'] = ($params['page'] - 1) * $params['count'];
+        if (isset($params['id_assessorato']) && $params['id_assessorato'] != "") $parametri['id_assessorato'] = $params['id_assessorato'];
+        if (isset($params['id_direzione']) && $params['id_direzione'] != "") $parametri['id_direzione'] = $params['id_direzione'];
+        if (isset($params['id_servizio']) && $params['id_servizio'] != "") $parametri['id_servizio'] = $params['id_servizio'];
+        if (isset($params['id']) && $params['id'] != "") $parametri['id'] = $params['id'];
+        if (isset($params['nome']) && $params['nome'] != "") $parametri['nome'] = $params['nome'];
 
         //Richiama la funzione custom per la personalizzazione dei parametri
         if (function_exists($customFilterFunction)) $parametri = array_merge($parametri, $customFilterFunction($params));
@@ -7437,14 +7437,14 @@ class AA_GenericModule
             $content->ViewReassign();
             $content->SetReassignHandlerParams(array("task" => static::AA_UI_TASK_REASSIGN_DLG));
 
-            if ($params['revisionate'] == 1) {
+            if (isset($params['revisionate']) && $params['revisionate'] == 1) {
                 $sectionName .= " revisionate";
                 $content->HideReassign();
                 $content->ViewPublish();
                 $content->SetPublishHandlerParams(array("task" => static::AA_UI_TASK_PUBLISH_DLG));
             }
 
-            if ($_REQUEST['cestinate'] == 0) {
+            if (isset($params['cestinate']) && $params['cestinate'] == 0) {
                 $content->ViewTrash();
                 $content->SetTrashHandlerParams(array("task" => static::AA_UI_TASK_TRASH_DLG));
             } else {
@@ -7486,16 +7486,16 @@ class AA_GenericModule
         $templateData = array();
 
         $parametri = array("status" => AA_Const::AA_STATUS_BOZZA);
-        if ($params['cestinate'] == 1) {
+        if (isset($params['cestinate']) && $params['cestinate'] == 1) {
             $parametri['status'] |= AA_Const::AA_STATUS_CESTINATA;
         }
 
-        if ($params['page'] > 0) $parametri['from'] = ($params['page'] - 1) * $params['count'];
-        if ($params['id_assessorato'] != "") $parametri['id_assessorato'] = $params['id_assessorato'];
-        if ($params['id_direzione'] != "") $parametri['id_direzione'] = $params['id_direzione'];
-        if ($params['id_servizio'] != "") $parametri['id_servizio'] = $params['id_servizio'];
-        if ($params['id'] != "") $parametri['id'] = $params['id'];
-        if ($params['nome'] != "") $parametri['nome'] = $params['nome'];
+        if (isset($params['page']) && $params['page'] > 0) $parametri['from'] = ($params['page'] - 1) * $params['count'];
+        if (isset($params['id_assessorato']) && $params['id_assessorato'] != "") $parametri['id_assessorato'] = $params['id_assessorato'];
+        if (isset($params['id_direzione']) && $params['id_direzione'] != "") $parametri['id_direzione'] = $params['id_direzione'];
+        if (isset($params['id_servizio']) && $params['id_servizio'] != "") $parametri['id_servizio'] = $params['id_servizio'];
+        if (isset($params['id']) && $params['id'] != "") $parametri['id'] = $params['id'];
+        if (isset($params['nome']) && $params['nome'] != "") $parametri['nome'] = $params['nome'];
 
         //Richiama la funzione custom per la personalizzazione dei parametri
         if (function_exists($customFilterFunction)) $parametri = array_merge($parametri, $customFilterFunction($params));
@@ -7592,11 +7592,11 @@ class AA_GenericModule
         $content->SetPagerItemForPage(10);
         $content->EnableFiltering();
         $content->EnableAddNew();
-        if($params['enableAddNewMultiFromCsv'] == true)
+        if(isset($params['enableAddNewMultiFromCsv']) && $params['enableAddNewMultiFromCsv'] == true)
         {
             $content->EnableAddNewMulti();
         }
-        if($params['enableAddNewMultiFromCsvDlgTask'] != "")
+        if(isset($params['enableAddNewMultiFromCsvDlgTask']) && $params['enableAddNewMultiFromCsvDlgTask'] != "")
         {
             $content->SetAddNewMultiDlgTask($params['enableAddNewMultiFromCsvDlgTask']);
         }
@@ -7614,7 +7614,7 @@ class AA_GenericModule
 
         $content->ViewDetail();
 
-        if ($params['cestinate'] == 0) {
+        if (!isset($params['cestinate']) || $params['cestinate'] == 0) {
             $content->ViewTrash();
             $content->SetTrashHandlerParams(array("task" => static::AA_UI_TASK_TRASH_DLG));
             $content->ViewPublish();
@@ -7877,8 +7877,8 @@ class AA_GenericModule
         ));
 
         foreach ($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] as $curTab) {
-            if (method_exists($this, $curTab['template']) && $curTab['template'] != "") {
-                $multiview->addCell($this->$curTab['template']($object));
+            if (method_exists($this, $curTab['template']) && $curTab['template'] != "" && is_string($curTab['template'])) {
+                $multiview->addCell($this->{$curTab['template']}($object));
             }
         }
         $content->AddRow($multiview);
@@ -8213,7 +8213,7 @@ class AA_JSON_Template_Generic
                 $result['cols'][] = $curCol->toArray();
             }
         }
-        if ($result['view'] == "layout" && !is_array($result['rows']) && !is_array($result['cols'])) $result['rows'] = array(array("view" => "spacer"));
+        if (isset($result['view']) && $result['view'] == "layout" && isset($result['rows']) && !is_array($result['rows']) && isset($result['cols']) && !is_array($result['cols'])) $result['rows'] = array(array("view" => "spacer"));
 
         //cells
         if (is_array($this->cells)) {
@@ -8222,7 +8222,7 @@ class AA_JSON_Template_Generic
                 $result['cells'][] = $curCell->toArray();
             }
         }
-        if ($result['view'] == "multiview" && !is_array($result['cells'])) $result['cells'] = array(array("view" => "spacer"));
+        if (isset ($result['view']) && $result['view'] == "multiview" && isset($result['cells']) && !is_array($result['cells'])) $result['cells'] = array(array("view" => "spacer"));
 
         //elements
         if (is_array($this->elements)) {
@@ -8231,7 +8231,7 @@ class AA_JSON_Template_Generic
                 $result['elements'][] = $curCell->toArray();
             }
         }
-        if ($result['view'] == "toolbar" && !is_array($result['elements'])) $result['elements'] = array(array("view" => "spacer"));
+        if (isset($result['view']) && $result['view'] == "toolbar" && isset($result['elements']) && !is_array($result['elements'])) $result['elements'] = array(array("view" => "spacer"));
 
         //bodyRows
         if (is_array($this->bodyRows) || is_array($this->bodyCols)) {
@@ -8262,7 +8262,8 @@ class AA_JSON_Template_Generic
     }
     public function GetProp($prop)
     {
-        return $this->props[$prop];
+        if(isset($this->props[$prop])) return $this->props[$prop];
+        else return "";
     }
 
     //Aggiunta righe
@@ -8731,7 +8732,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
             if ($type == "radio") $this->curRow->AddCol(new AA_JSON_Template_Radio($this->id . "_Field_" . $name, $props));
 
             //Se il campo è invisibile aggiunge uno spacer
-            if ($props['hidden'] == true) {
+            if (isset($props['hidden']) && $props['hidden'] == true) {
                 $this->curRow->AddCol(new AA_JSON_Template_Generic($this->id . "_Spacer_" . $name, array("view" => "spacer", "minHeight" => "0", "minWidth" => "0", "height" => 1)));
             }
         }
@@ -8812,10 +8813,10 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
             $this->layout->AddRow($this->curRow);
         }
 
-        if ($fieldParams['name'] == "") $fieldParams['name'] = "struct_desc";
-        if ($fieldParams['label'] == "") $fieldParams['label'] = "Struttura";
-        if ($fieldParams['readonly'] == "") $fieldParams['readonly'] = true;
-        if ($fieldParams['click'] == "") $fieldParams['click'] = $onSearchScript;
+        if (!isset($fieldParams['name']) || $fieldParams['name'] == "") $fieldParams['name'] = "struct_desc";
+        if (!isset($fieldParams['label']) || $fieldParams['label'] == "") $fieldParams['label'] = "Struttura";
+        if (!isset($fieldParams['readonly']) || $fieldParams['readonly'] == "") $fieldParams['readonly'] = true;
+        if (!isset($fieldParams['click']) || $fieldParams['click'] == "") $fieldParams['click'] = $onSearchScript;
 
         $this->curRow->AddCol(new AA_JSON_Template_Search($this->id . "_Field_Struct_Search", $fieldParams));
     }
@@ -8866,7 +8867,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     public function AddDateField($name = "", $label = "", $props = array(), $newRow = true)
     {
         $props['timepick'] = false;
-        if ($props['format'] == "") $props['format'] = "%Y-%m-%d";
+        if (!isset($props['format']) || $props['format'] == "") $props['format'] = "%Y-%m-%d";
         $props['stringResult'] = true;
         return $this->AddField($name, $label, "datepicker", $props, $newRow);
     }
@@ -8956,6 +8957,7 @@ class AA_GenericFilterDlg extends AA_GenericFormDlg
         if ($this->enableSessionSave) {
             $sessionSave = "AA_MainApp.setSessionVar(" . $filter_id . ", $$('" . $this->id . "_Form').getValues());";
         }
+        else $sessionSave="";
 
         $this->applyButton->SetProp("click", "try{" . $module . "; if(module.isValid()) {" . $sessionSave . "module.setRuntimeValue(" . $filter_id . ",'filter_data',$$('" . $this->id . "_Form').getValues());" . $this->applyActions . ";}$$('" . $this->id . "_Wnd').close()}catch(msg){console.error(msg)}");
     }
@@ -10285,7 +10287,7 @@ class AA_GenericPagedSectionTemplate
         $this->EnableExportFunctions(false);
     }
     protected $saveAsPdfHandler = "sectionActionMenu.saveAsPdf";
-    protected $saveAsPdfHandlerParams = "";
+    protected $saveAsPdfHandlerParams = array();
     public function SetSaveAsPdfHandler($handler = null, $params = null)
     {
         $this->saveAsPdfHandler = $handler;
@@ -10296,7 +10298,7 @@ class AA_GenericPagedSectionTemplate
         $this->saveAsPdfHandlerParams = $params;
     }
     protected $saveAsCsvHandler = "sectionActionMenu.saveAsCsv";
-    protected $saveAsCsvHandlerParams = "";
+    protected $saveAsCsvHandlerParams = array();
     public function SetSaveAsCsvHandler($handler = null, $params = null)
     {
         $this->saveAsCsvHandler = $handler;
@@ -11970,16 +11972,16 @@ class AA_Object_V2
         }
 
         //Filtra in base allo stato della scheda
-        if ($params['id'] == "") {
+        if (!isset($params['id']) || $params['id'] == "") {
             $where .= " AND status ='" . $params['status'] . "' ";
 
             //filtra in base al nome
-            if ($params['nome'] != "") {
+            if (isset($params['nome']) && $params['nome'] != "") {
                 $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".nome like '%" . addslashes($params['nome']) . "%'";
             }
 
             //filtra in base alla descrizione
-            if ($params['descrizione'] != "") {
+            if (isset($params['descrizione']) && $params['descrizione'] != "") {
                 $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".descrizione like '%" . addslashes($params['descrizione']) . "%'";
             }
         }
@@ -11998,21 +12000,21 @@ class AA_Object_V2
         }
 
         //filtro struttura
-        if ($params['id_assessorato'] != "" && $params['id_assessorato'] > 0) {
+        if (isset($params['id_assessorato']) && $params['id_assessorato'] != "" && $params['id_assessorato'] > 0) {
             $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id_assessorato = '" . addslashes($params['id_assessorato']) . "'";
         }
 
-        if ($params['id_direzione'] != "" && $params['id_direzione'] > 0) {
+        if (isset($params['id_direzione']) && $params['id_direzione'] != "" && $params['id_direzione'] > 0) {
             $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id_direzione = '" . addslashes($params['id_direzione']) . "'";
         }
 
-        if ($params['id_servizio'] != "" && $params['id_servizio'] > 0) {
+        if (isset($params['id_servizio']) && $params['id_servizio'] != "" && $params['id_servizio'] > 0) {
             $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id_servizio = '" . addslashes($params['id_servizio']) . "'";
         }
         //------------------------
 
         //filtra in base all'id(s)
-        if ($params['id'] != "") {
+        if (isset($params['id']) && $params['id'] != "") {
             $ids = array();
             preg_match("/([0-9]+\,*)+/", $params['id'], $ids);
 
@@ -12022,7 +12024,7 @@ class AA_Object_V2
         }
 
         //aggiunge i join
-        if (is_array($params['join'])) {
+        if (isset($params['join']) && is_array($params['join'])) {
             foreach ($params['join'] as $curJoin) {
                 $join .= " " . $curJoin . " ";
             }
@@ -12030,7 +12032,7 @@ class AA_Object_V2
         //-----------------------
 
         //aggiunge i where
-        if (is_array($params['where'])) {
+        if (isset($params['where']) && is_array($params['where'])) {
             foreach ($params['where'] as $curParam) {
                 if ($where == "") $where = " WHERE " . $curParam;
                 $where .= "  " . $curParam;
@@ -12039,7 +12041,7 @@ class AA_Object_V2
         //-----------------------
 
         //aggiunge i having
-        if (is_array($params['having'])) {
+        if (isset($params['having']) && is_array($params['having'])) {
             foreach ($params['having'] as $curParam) {
                 if ($having == "") $having = " HAVING " . $curParam;
                 else $having .= " AND " . $curParam;
@@ -12048,7 +12050,7 @@ class AA_Object_V2
         //-----------------------
 
         //aggiunge i group
-        if (is_array($params['group'])) {
+        if (isset($params['group']) && is_array($params['group'])) {
             foreach ($params['group'] as $curParam) {
                 if ($group == "") $group = " GROUP BY " . $curParam;
                 else $group .= ", " . $curParam;
@@ -12057,7 +12059,7 @@ class AA_Object_V2
         //-----------------------
 
         //aggiunge gli order
-        if (is_array($params['order'])) {
+        if (isset($params['order']) && is_array($params['order'])) {
             foreach ($params['order'] as $curParam) {
                 if ($order == "") $order = " ORDER BY " . $curParam;
                 else $order .= ", " . $curParam;
@@ -12089,7 +12091,7 @@ class AA_Object_V2
         }
 
         //Restituisce solo il numero
-        if ($params['onlyCount'] != "") return array(0 => $tot_count, array());
+        if (isset($params['onlyCount']) && $params['onlyCount'] != "") return array(0 => $tot_count, array());
 
         //Limita a 10 risultati di default
         if (!isset($params['from']) || $params['from'] < 0 || $params['from'] > $tot_count) $params['from'] = 0;
