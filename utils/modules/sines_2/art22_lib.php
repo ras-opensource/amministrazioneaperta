@@ -202,7 +202,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_COMMISSARIO_STRAORDINARIO=>"Commissario straordinario",
             self::AA_ORGANISMI_NOMINA_SINDACO_COLLEGGIO=>"Componente collegio sindacale",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=>"Componente supplente collegio sindacale",
-            self::AA_ORGANISMI_NOMINA_COMPONENTE_COMITATO_SCIENTIFICO=>"Componente comitato scientifico",
+            self::AA_ORGANISMI_NOMINA_COMPONENTE_COMITATO_SCIENTIFICO=>"Componente comitato",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_DIRETTIVO=>"Componente consiglio direttivo",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_INDIRIZZO=>"Componente consiglio di indirizzo",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_OIV=>"Componente OIV",
