@@ -628,9 +628,17 @@ Class AA_Organismi_Organigramma
 }
 
 //Classe Organismi
+/**
+ * Summary of AA_Organismi
+ */
 class AA_Organismi extends AA_Object
 {
     //Costruttore di default
+    /**
+     * Summary of __construct
+     * @param mixed $id
+     * @param mixed $user
+     */
     public function __construct($id=0,$user=null)
     {
         AA_Log::Log(get_class()."__construct($id)");
@@ -683,17 +691,35 @@ class AA_Organismi extends AA_Object
     }
 
     //Denominazione
+    /**
+     * Summary of GetDenominazione
+     * @return mixed|string
+     */
     public function GetDenominazione()
     {
         return $this->GetDescrizione();
     }
+    /**
+     * Summary of SetDenominazione
+     * @param mixed $var
+     * @return void
+     */
     public function SetDenominazione($var="denominazione organismo")
     {
         $this->SetDescrizione($var);
     }
     
     //Tipologia
+    /**
+     * Summary of nTipologia
+     * @var int
+     */
     protected $nTipologia=0;
+    /**
+     * Summary of SetTipologia
+     * @param mixed $var
+     * @return void
+     */
     public function SetTipologia($var=0)
     {
         if(is_numeric($var) && $var >= 0)
@@ -703,6 +729,11 @@ class AA_Organismi extends AA_Object
         } 
         
     }
+    /**
+     * Summary of GetTipologia
+     * @param mixed $bNumeric
+     * @return float|int|string
+     */
     public function GetTipologia($bNumeric=false)
     {
         if($bNumeric) return $this->nTipologia;
@@ -712,7 +743,16 @@ class AA_Organismi extends AA_Object
     }
     
     //Funzioni attribuite
+    /**
+     * Summary of sFunzioni
+     * @var string
+     */
     protected $sFunzioni="";
+    /**
+     * Summary of SetFunzioni
+     * @param mixed $var
+     * @return void
+     */
     public function SetFunzioni($var="")
     {
         if($this->sFunzioni != $var)
@@ -721,13 +761,26 @@ class AA_Organismi extends AA_Object
             $this->sFunzioni=$var;
         } 
     }
+    /**
+     * Summary of GetFunzioni
+     * @return mixed|string
+     */
     public function GetFunzioni()
     {
         return $this->sFunzioni;
     }
 
     //Partecipazione
+    /**
+     * Summary of sPartecipazione
+     * @var string
+     */
     protected $sPartecipazione="";
+    /**
+     * Summary of SetPartecipazione
+     * @param mixed $var
+     * @return void
+     */
     public function SetPartecipazione($var="")
     {
         if($this->sPartecipazione != $var)
@@ -736,13 +789,26 @@ class AA_Organismi extends AA_Object
             $this->sPartecipazione=preg_replace("/[€|\ |A-Za-z_]/", "",$var);
         } 
     }
+    /**
+     * Summary of GetPartecipazione
+     * @return array|string
+     */
     public function GetPartecipazione()
     {
         return $this->sPartecipazione;
     }
     
     //Forma societaria
+    /**
+     * Summary of nFormaSocietaria
+     * @var int
+     */
     protected $nFormaSocietaria=0;
+    /**
+     * Summary of SetFormaSocietaria
+     * @param mixed $var
+     * @return void
+     */
     public function SetFormaSocietaria($var=0)
     {
         if($this->nFormaSocietaria != $var)
@@ -751,6 +817,11 @@ class AA_Organismi extends AA_Object
             $this->nFormaSocietaria=$var;
         } 
     }
+    /**
+     * Summary of GetFormaSocietaria
+     * @param mixed $bNumeric
+     * @return int|mixed|string
+     */
     public function GetFormaSocietaria($bNumeric=false)
     {
         if($bNumeric) return $this->nFormaSocietaria;
@@ -762,7 +833,16 @@ class AA_Organismi extends AA_Object
     }
 
     //Stato società
+    /**
+     * Summary of nStatoOrganismo
+     * @var int
+     */
     protected $nStatoOrganismo=0;
+    /**
+     * Summary of SetStatoOrganismo
+     * @param mixed $var
+     * @return void
+     */
     public function SetStatoOrganismo($var=0)
     {
         if($this->nStatoOrganismo != $var)
@@ -771,6 +851,11 @@ class AA_Organismi extends AA_Object
             $this->nStatoOrganismo=$var;
         } 
     }
+    /**
+     * Summary of GetStatoOrganismo
+     * @param mixed $bNumeric
+     * @return int|mixed|string
+     */
     public function GetStatoOrganismo($bNumeric=false)
     {
         if($bNumeric) return $this->nStatoOrganismo;
@@ -782,7 +867,16 @@ class AA_Organismi extends AA_Object
     }
 
     //Sito web
+    /**
+     * Summary of sSitoWeb
+     * @var string
+     */
     protected $sSitoWeb="";
+    /**
+     * Summary of SetSitoWeb
+     * @param mixed $var
+     * @return void
+     */
     public function SetSitoWeb($var="")
     {
         if($this->sSitoWeb != $var)
@@ -791,13 +885,26 @@ class AA_Organismi extends AA_Object
             $this->sSitoWeb=$var;
         } 
     }
+    /**
+     * Summary of GetSitoWeb
+     * @return mixed|string
+     */
     public function GetSitoWeb()
     {
         return $this->sSitoWeb;
     }
 
     //Pec
+    /**
+     * Summary of sPec
+     * @var string
+     */
     protected $sPec="";
+    /**
+     * Summary of SetPec
+     * @param mixed $var
+     * @return void
+     */
     public function SetPec($var="")
     {
         if($this->sPec != $var)
@@ -806,12 +913,20 @@ class AA_Organismi extends AA_Object
             $this->sPec=$var;
         } 
     }
+    /**
+     * Summary of GetPec
+     * @return mixed|string
+     */
     public function GetPec()
     {
         return $this->sPec;
     }
 
     //Restituisce i provvedimenti
+    /**
+     * Summary of GetProvvedimenti
+     * @return array<AA_OrganismiProvvedimenti>
+     */
     public function GetProvvedimenti()
     {
         AA_Log::Log(__METHOD__."()");
@@ -847,7 +962,16 @@ class AA_Organismi extends AA_Object
     }
     
     //Data inizio impegno
+    /**
+     * Summary of sDataInizioImpegno
+     * @var string
+     */
     protected $sDataInizioImpegno="";
+    /**
+     * Summary of SetDataInizioImpegno
+     * @param mixed $var
+     * @return void
+     */
     public function SetDataInizioImpegno($var="")
     {
         if($this->sDataInizioImpegno != $var)
@@ -856,13 +980,26 @@ class AA_Organismi extends AA_Object
             $this->sDataInizioImpegno=$var;
         } 
     }
+    /**
+     * Summary of GetDataInizioImpegno
+     * @return mixed|string
+     */
     public function GetDataInizioImpegno()
     {
         return $this->sDataInizioImpegno;
     }
 
     //Data fine impegno
+    /**
+     * Summary of sDataFineImpegno
+     * @var string
+     */
     protected $sDataFineImpegno="";
+    /**
+     * Summary of SetDataFineImpegno
+     * @param mixed $var
+     * @return void
+     */
     public function SetDataFineImpegno($var="")
     {
         if($this->sDataFineImpegno != $var)
@@ -871,13 +1008,26 @@ class AA_Organismi extends AA_Object
             $this->sDataFineImpegno=$var;
         } 
     }
+    /**
+     * Summary of GetDataFineImpegno
+     * @return mixed|string
+     */
     public function GetDataFineImpegno()
     {
         return $this->sDataFineImpegno;
     }
 
     //PivaCf
+    /**
+     * Summary of sPivaCf
+     * @var string
+     */
     protected $sPivaCf="";
+    /**
+     * Summary of SetPivaCf
+     * @param mixed $var
+     * @return void
+     */
     public function SetPivaCf($var="")
     {
         if($this->sPivaCf != $var)
@@ -886,13 +1036,26 @@ class AA_Organismi extends AA_Object
             $this->sPivaCf=$var;
         } 
     }
+    /**
+     * Summary of GetPivaCf
+     * @return mixed|string
+     */
     public function GetPivaCf()
     {
         return $this->sPivaCf;
     }
 
     //flag società in house
+    /**
+     * Summary of bInHouse
+     * @var int
+     */
     protected $bInHouse=0;
+    /**
+     * Summary of SetInHouse
+     * @param mixed $var
+     * @return void
+     */
     public function SetInHouse($var=1)
     {
         if($this->bInHouse != $var)
@@ -902,10 +1065,18 @@ class AA_Organismi extends AA_Object
             else $this->bInHouse=0;
         } 
     }
+    /**
+     * Summary of GetInHouse
+     * @return int
+     */
     public function GetInHouse()
     {
         return $this->bInHouse;
     }
+    /**
+     * Summary of IsInHouse
+     * @return bool
+     */
     public function IsInHouse()
     {
         if($this->bInHouse!=0) return true;
@@ -913,7 +1084,16 @@ class AA_Organismi extends AA_Object
     }
 
     //flag società in TUSP
+    /**
+     * Summary of bInTUSP
+     * @var int
+     */
     protected $bInTUSP=0;
+    /**
+     * Summary of SetInTUSP
+     * @param mixed $var
+     * @return void
+     */
     public function SetInTUSP($var=1)
     {
         if($this->bInTUSP != $var)
@@ -923,10 +1103,18 @@ class AA_Organismi extends AA_Object
             else $this->bInTUSP = 0;
         } 
     }
+    /**
+     * Summary of GetInTUSP
+     * @return int
+     */
     public function GetInTUSP()
     {
         return $this->bInTUSP;
     }
+    /**
+     * Summary of IsInTUSP
+     * @return bool
+     */
     public function IsInTUSP()
     {
         if($this->bInTUSP!= 0) return true;
@@ -934,7 +1122,16 @@ class AA_Organismi extends AA_Object
     }
     
     //note
+    /**
+     * Summary of sNote
+     * @var string
+     */
     protected $sNote="";
+    /**
+     * Summary of SetNote
+     * @param mixed $var
+     * @return void
+     */
     public function SetNote($var="")
     {
         if($this->sNote != $var)
@@ -943,13 +1140,26 @@ class AA_Organismi extends AA_Object
             $this->sNote=$var;
         } 
     }
+    /**
+     * Summary of GetNote
+     * @return mixed|string
+     */
     public function GetNote()
     {
         return $this->sNote;
     }
 
     //Sede legale
+    /**
+     * Summary of sSedeLegale
+     * @var string
+     */
     protected $sSedeLegale="";
+    /**
+     * Summary of SetSedeLegale
+     * @param mixed $var
+     * @return void
+     */
     public function SetSedeLegale($var="")
     {
         if($this->sSedeLegale != $var)
@@ -958,17 +1168,29 @@ class AA_Organismi extends AA_Object
             $this->sSedeLegale=$var;
         } 
     }
+    /**
+     * Summary of GetSedeLegale
+     * @return mixed|string
+     */
     public function GetSedeLegale()
     {
         return $this->sSedeLegale;
     }
 
+    /**
+     * Summary of __toString
+     * @return mixed|string
+     */
     public function __toString()
     {
         return $this->GetDescrizione();
     }
 
     //Rappresentazione xml
+    /**
+     * Summary of toXml
+     * @return string
+     */
     public function toXml()
     {
         $xml='<organismo id="'.$this->GetID().'" aggiornamento="'.$this->GetAggiornamento().'" stato="'.$this->GetStatus().'">';
@@ -1016,6 +1238,11 @@ class AA_Organismi extends AA_Object
         return $xml;
     }
     
+    /**
+     * Summary of toJSON
+     * @param mixed $bDeep
+     * @return void
+     */
     public function toJSON($bDeep=false)
     {
         $return[]=array(
@@ -1043,18 +1270,33 @@ class AA_Organismi extends AA_Object
     }
 
     //Verifica che l'oggetto collegato sia aggiornabile dall'utente corrente
+    /**
+     * Summary of VerifyDbSync
+     * @param mixed $user
+     * @return bool
+     */
     protected function VerifyDbSync($user=null)
     {
         return parent::VerifyDbSync($user);
     }
 
     //Verifica che l'oggetto collegato sia visibile dall'utente corrente
+    /**
+     * Summary of VerifyDbLoad
+     * @return bool
+     */
     protected function VerifyDbLoad()
     {
         return parent::VerifyDbLoad();
     }
 
     //Carica l'organismo dal database
+    /**
+     * Summary of GetFromDb
+     * @param mixed $id
+     * @param mixed $user
+     * @return AA_Organismi|null
+     */
     static public function GetFromDb($id=0,$user=null)
     {
         AA_Log::Log(__METHOD__."($id)");
@@ -1071,6 +1313,11 @@ class AA_Organismi extends AA_Object
     }
 
     //Verifica permessi
+    /**
+     * Summary of GetUserCaps
+     * @param mixed $user
+     * @return int
+     */
     public function GetUserCaps($user=null)
     {
         $perms=AA_Const::AA_PERMS_NONE;
@@ -1112,12 +1359,25 @@ class AA_Organismi extends AA_Object
     }
 
     //Alias for Get
+    /**
+     * Summary of Load
+     * @param mixed $id
+     * @param mixed $user
+     * @return AA_Organismi|null
+     */
     static public function Load($id=0,$user=null)
     {
         return AA_Organismi::GetFromDb($id,$user);
     }
 
     //Aggiunge un nuovo provvedimento
+    /**
+     * Summary of AddNewProvvedimento
+     * @param mixed $provvedimento
+     * @param mixed $file
+     * @param mixed $user
+     * @return bool
+     */
     public function AddNewProvvedimento($provvedimento=null, $file="", $user=null)
     {
         AA_Log::Log(__METHOD__."()");
@@ -1206,6 +1466,13 @@ class AA_Organismi extends AA_Object
     }
     
     //Aggiorna un provvedimento esistente
+    /**
+     * Summary of UpdateProvvedimento
+     * @param mixed $provvedimento
+     * @param mixed $file
+     * @param mixed $user
+     * @return bool
+     */
     public function UpdateProvvedimento($provvedimento=null, $file="", $user=null)
     {
         AA_Log::Log(__METHOD__."()");
@@ -1290,6 +1557,12 @@ class AA_Organismi extends AA_Object
     }
 
     //Aggiorna un provvedimento esistente
+    /**
+     * Summary of UpdateOrganigramma
+     * @param mixed $organigramma
+     * @param mixed $user
+     * @return bool
+     */
     public function UpdateOrganigramma($organigramma=null, $user=null)
     {
         AA_Log::Log(__METHOD__."()");
@@ -1351,6 +1624,12 @@ class AA_Organismi extends AA_Object
     }
     
     //Restituisce un provvedimento esistente
+    /**
+     * Summary of GetProvvedimento
+     * @param mixed $id
+     * @param mixed $user
+     * @return AA_OrganismiProvvedimenti|null
+     */
     public function GetProvvedimento($id=null, $user=null)
     {
         AA_Log::Log(__METHOD__."()");
@@ -1403,6 +1682,12 @@ class AA_Organismi extends AA_Object
     }
     
     //Rimuovi un provvedimento esistente
+    /**
+     * Summary of DeleteProvvedimento
+     * @param mixed $id
+     * @param mixed $user
+     * @return bool
+     */
     public function DeleteProvvedimento($id=0, $user=null)
     {
         AA_Log::Log(__METHOD__."()");
@@ -1472,6 +1757,11 @@ class AA_Organismi extends AA_Object
     }
     
     //Rimuovi tutti i provvedimenti
+    /**
+     * Summary of DeleteAllProvvedimenti
+     * @param mixed $user
+     * @return bool
+     */
     public function DeleteAllProvvedimenti($user=null)
     {
         AA_Log::Log(__METHOD__."()");
@@ -1537,6 +1827,12 @@ class AA_Organismi extends AA_Object
     }
     
     //Aggiunge un nuovo organismo al db
+    /**
+     * Summary of AddNewToDb
+     * @param mixed $data
+     * @param mixed $user
+     * @return AA_Organismi|null
+     */
     static public function AddNewToDb($data=null,$user=null)
     {
         AA_Log::Log(__METHOD__."($data)");
@@ -1605,11 +1901,15 @@ class AA_Organismi extends AA_Object
 
             return $new_organismo;
         }
-
-        return null;
     }
 
     //Funzione di Parsing a partire da un array (non cambia l'identificativo dell'oggetto)
+    /**
+     * Summary of ParseData
+     * @param mixed $data
+     * @param mixed $user
+     * @return bool
+     */
     public function ParseData($data=null,$user=null)
     {
         //verifica utente
@@ -1694,6 +1994,12 @@ class AA_Organismi extends AA_Object
     }
 
     //Cestina l'oggetto
+    /**
+     * Summary of Trash
+     * @param mixed $user
+     * @param mixed $bDelete
+     * @return mixed
+     */
     public function Trash($user=null, $bDelete=false)
     {
         //Verifica permessi
@@ -1743,6 +2049,11 @@ class AA_Organismi extends AA_Object
     }
 
     //Elimina un organigramma
+    /**
+     * Summary of DeleteOrganigramma
+     * @param mixed $id
+     * @return bool
+     */
     public function DeleteOrganigramma($id=0)
     {
         //Verifica permessi
@@ -1789,6 +2100,12 @@ class AA_Organismi extends AA_Object
     }
 
     //Elimina un organigramma
+    /**
+     * Summary of DeleteOrganigrammaIncarico
+     * @param mixed $id
+     * @param mixed $id_incarico
+     * @return bool
+     */
     public function DeleteOrganigrammaIncarico($id=0,$id_incarico=0)
     {
         //Verifica permessi
@@ -1835,6 +2152,10 @@ class AA_Organismi extends AA_Object
     }
 
     //Elimina tutti gli organigrammi
+    /**
+     * Summary of DeleteAllOrganigrammi
+     * @return bool
+     */
     protected function DeleteAllOrganigrammi()
     {
         //Verifica permessi
@@ -1885,6 +2206,10 @@ class AA_Organismi extends AA_Object
     }
     
     //Funzione di pubblicazione
+    /**
+     * Summary of CanPublish
+     * @return bool
+     */
     public function CanPublish()
     {
         //Verifica dei campi obbligatori
@@ -1924,6 +2249,11 @@ class AA_Organismi extends AA_Object
     }
 
     //Aggiungi un organigramma
+    /**
+     * Summary of AddNewOrganigramma
+     * @param mixed $newOrganigramma
+     * @return bool|int|mixed|string
+     */
     public function AddNewOrganigramma($newOrganigramma=null)
     {
         //Verifica permessi
@@ -1974,6 +2304,12 @@ class AA_Organismi extends AA_Object
     }
 
     //Aggiungi un incarico ad un organigramma
+    /**
+     * Summary of AddNewOrganigrammaIncarico
+     * @param mixed $incarico
+     * @param mixed $idOrganigramma
+     * @return bool|int|mixed|string
+     */
     public function AddNewOrganigrammaIncarico($incarico=null, $idOrganigramma=0)
     {
         //Verifica permessi
@@ -2035,6 +2371,12 @@ class AA_Organismi extends AA_Object
     }
 
     //Aggiorna un incarico ad un organigramma
+    /**
+     * Summary of UpdateOrganigrammaIncarico
+     * @param mixed $incarico
+     * @param mixed $idOrganigramma
+     * @return mixed
+     */
     public function UpdateOrganigrammaIncarico($incarico=null, $idOrganigramma=0)
     {
         //Verifica permessi
@@ -2097,6 +2439,12 @@ class AA_Organismi extends AA_Object
     }
 
     //Funzione di recupero organismi per rappresentazione grafica
+    /**
+     * Summary of GetOrganismiPerRappresentazioneGrafica
+     * @param mixed $params
+     * @param mixed $user
+     * @return array
+     */
     static public function GetOrganismiPerRappresentazioneGrafica($params,$user=null)
     {
         //Verifica utente
@@ -2208,6 +2556,13 @@ class AA_Organismi extends AA_Object
     // $params['tipo_nomina']: Visualizza solo i gli organismi che hanno il tipo di nomina impostata.
     // $params['stato_organismo']: Visualizza solo gli organismi con lo stato indicato.
     
+    /**
+     * Summary of Search
+     * @param mixed $params
+     * @param mixed $bOnlyCount
+     * @param mixed $user
+     * @return array
+     */
     static public function Search($params,$bOnlyCount=false, $user=null)
     {
         //Verifica utente
@@ -2482,6 +2837,12 @@ class AA_Organismi extends AA_Object
     //------------------------------------------------------------------------------
 
     //Restituisce i dati contabili legati all'organismo, opzionalmente in un arco temporale limitato, ordinati dal più recente al meno recente
+    /**
+     * Summary of GetDatiContabili
+     * @param mixed $dal
+     * @param mixed $al
+     * @return array<AA_OrganismiDatiContabili>
+     */
     public function GetDatiContabili($dal="", $al="")
     {
         AA_Log::Log(__METHOD__."($dal,$al)");
@@ -2522,6 +2883,13 @@ class AA_Organismi extends AA_Object
     }
 
     //Restituisce le nomine legati all'organismo, opzionalmente in un arco temporale limitato, ordinati dal più recente al meno recente
+    /**
+     * Summary of GetNomine
+     * @param mixed $dal
+     * @param mixed $al
+     * @param mixed $onlyRas
+     * @return array<AA_OrganismiNomine>
+     */
     public function GetNomine($dal="", $al="", $onlyRas=false)
     {
         AA_Log::Log(__METHOD__."($dal,$al)");
@@ -2565,6 +2933,11 @@ class AA_Organismi extends AA_Object
     }
     
     //Restituisce le nomine legati all'organismo raggruppate per nominato
+    /**
+     * Summary of GetNomineGrouped
+     * @param mixed $params
+     * @return array<array>
+     */
     public function GetNomineGrouped($params=array())
     {
         AA_Log::Log(__METHOD__."()");
@@ -2631,6 +3004,11 @@ class AA_Organismi extends AA_Object
     }
 
     //Restituisce le nomine raggruppate per tipologia di incarico
+    /**
+     * Summary of GetNomineGroupedForOrganigramma
+     * @param mixed $params
+     * @return array<array>
+     */
     public function GetNomineGroupedForOrganigramma($params=array())
     {
         AA_Log::Log(__METHOD__."()");
@@ -2698,6 +3076,11 @@ class AA_Organismi extends AA_Object
     }
 
     //Restituisce gli organigrammi dell'organismo
+    /**
+     * Summary of GetOrganigrammi
+     * @param mixed $params
+     * @return array<AA_Organismi_Organigramma>
+     */
     public function GetOrganigrammi($params=array())
     {
         AA_Log::Log(__METHOD__."()");
@@ -2741,6 +3124,11 @@ class AA_Organismi extends AA_Object
     }
 
     //Restituisce l'organigramma indicato
+    /**
+     * Summary of GetOrganigramma
+     * @param mixed $id
+     * @return AA_Organismi_Organigramma|null
+     */
     public function GetOrganigramma($id=0)
     {
         AA_Log::Log(__METHOD__."()");
@@ -2789,6 +3177,10 @@ class AA_Organismi extends AA_Object
     }
 
     //Restituisce la lista degli organigrammi associati all'organismo
+    /**
+     * Summary of GetListOrganigrammi
+     * @return array
+     */
     public function GetListOrganigrammi()
     {
         AA_Log::Log(__METHOD__."()");
@@ -2800,10 +3192,15 @@ class AA_Organismi extends AA_Object
             return array();
         }
 
-
+        return array();
     }
 
     //Restituisce le nomine legati all'organismo raggruppate per nominato
+    /**
+     * Summary of GetNomineScadenzario
+     * @param mixed $params
+     * @return array<array>
+     */
     public function GetNomineScadenzario($params=array())
     {
         AA_Log::Log(__METHOD__."()");
@@ -3094,8 +3491,6 @@ Class AA_OrganismiDatiContabili extends AA_Object
             AA_Log::Log(__METHOD__." - L'utente: ".$user->GetNome()." ".$user->GetCognome()." non ha i permessi per modificare l'oggetto o il genitore",100, false,true);
             return false;
         }
-
-        return false;
     }
 
     //Tipologia
@@ -6131,8 +6526,6 @@ Class AA_OrganismiNomine extends AA_Object
             AA_Log::Log(__METHOD__." - L'utente: ".$user->GetNome()." ".$user->GetCognome()." non ha i permessi per modificare l'oggetto o il genitore",100, false,true);
             return false;
         }
-
-        return false;
     }
 
     //Tipologia

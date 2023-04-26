@@ -273,6 +273,11 @@ class AA_Struct
     //Albero della struttura
     protected $aTree = array();
 
+    public function __construct()
+    {
+
+    }
+
     static public function GetStruct($id_assessorato = '', $id_direzione = '', $id_servizio = '', $type = '')
     {
         AA_Log::Log(get_class() . "GetStruct($id_assessorato,$id_direzione,$id_servizio,$type)");
@@ -604,7 +609,7 @@ class AA_User
     protected $nID = "0";
 
     //Struttura
-    protected $oStruct = null;
+    protected $oStruct = new AA_Struct();
 
     //Flags
     protected $sFlags = "";
@@ -1424,16 +1429,16 @@ class AA_User
         }
 
         //Non si possono modificare i livelli di utenti dello stesso livello gerarchico (super user escluso)
-        $struct = $this->GetStruct();
-        if ($struct->GetServizio(true) == $user->GetStruct()->GetServizio(true) && $struct->GetServizio(true) != 0) {
+
+        if ($this->oStruct->GetServizio(true) == $user->GetStruct()->GetServizio(true) && $this->oStruct->GetServizio(true) != 0) {
             AA_Log::Log(get_class() . "->CanModifyUserLevel($idUser) - utente corrente non può modificare il livello dell'utente: " . $this->GetUsername() . " (stesso servizio)", 100);
             return false;
         }
-        if ($struct->GetDirezione(true) == $user->GetStruct()->GetDirezione(true) && $user->GetStruct()->GetServizio(true) == 0 && $struct->GetDirezione(true) != 0) {
+        if ($this->oStruct->GetDirezione(true) == $user->GetStruct()->GetDirezione(true) && $user->GetStruct()->GetServizio(true) == 0 && $this->oStruct->GetDirezione(true) != 0) {
             AA_Log::Log(get_class() . "->CanModifyUserLevel($idUser) - utente corrente non può modificare il livello dell'utente: " . $this->GetUsername() . " (stessa direzione)", 100);
             return false;
         }
-        if ($struct->GetAssessorato(true) == $user->GetStruct()->GetAssessorato(true) && $user->GetStruct()->GetDirezione(true) == 0 && $struct->GetAssessorato(true) != 0) {
+        if ($this->oStruct->GetAssessorato(true) == $user->GetStruct()->GetAssessorato(true) && $user->GetStruct()->GetDirezione(true) == 0 && $this->oStruct->GetAssessorato(true) != 0) {
             AA_Log::Log(get_class() . "->CanModifyUserLevel($idUser) - utente corrente non può modificare il livello dell'utente: " . $this->GetUsername() . " (stesso assessorato)", 100);
             return false;
         }
@@ -1534,30 +1539,29 @@ class AA_User
             return false;
         }
 
-        $struct = $this->GetStruct();
-        if ($struct->GetAssessorato(true) != 0 && $struct->GetAssessorato(true) != $params['assessorato']) {
+        if ($this->oStruct->GetAssessorato(true) != 0 && $this->oStruct->GetAssessorato(true) != $params['assessorato']) {
             AA_Log::Log(get_class() . "->AddNewUser($params) - Assessorato diverso", 100);
             return false;
         }
-        if ($struct->GetDirezione(true) != 0 && $struct->GetDirezione(true) != $params['direzione']) {
+        if ($this->oStruct->GetDirezione(true) != 0 && $this->oStruct->GetDirezione(true) != $params['direzione']) {
             AA_Log::Log(get_class() . "->AddNewUser($params) - Direzione diversa", 100);
             return false;
         }
-        if ($struct->GetServizio(true) != 0 && $struct->GetServizio(true) != $params['servizio']) {
+        if ($this->oStruct->GetServizio(true) != 0 && $this->oStruct->GetServizio(true) != $params['servizio']) {
             AA_Log::Log(get_class() . "->AddNewUser($params) - Servizio diverso", 100);
             return false;
         }
 
         //Non si possono istanziare utenti amministratori dello stesso livello gerarchico (super user escluso)
-        if ($struct->GetServizio(true) == $params['servizio'] && $params['livello'] == 0  && $struct->GetServizio(true) != 0) {
+        if ($this->oStruct->GetServizio(true) == $params['servizio'] && $params['livello'] == 0  && $this->oStruct->GetServizio(true) != 0) {
             $params['livello'] = "1";
             AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
         }
-        if ($struct->GetDirezione(true) == $params['direzione'] && $params['servizio'] == 0 && $params['livello'] == 0 && $struct->GetDirezione(true) != 0) {
+        if ($this->oStruct->GetDirezione(true) == $params['direzione'] && $params['servizio'] == 0 && $params['livello'] == 0 && $this->oStruct->GetDirezione(true) != 0) {
             $params['livello'] = "1";
             AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
         }
-        if ($struct->GetAssessorato(true) == $params['assessorato'] && $params['direzione'] == 0 && $params['livello'] == 0 && $struct->GetAssessorato(true) != 0) {
+        if ($this->oStruct->GetAssessorato(true) == $params['assessorato'] && $params['direzione'] == 0 && $params['livello'] == 0 && $this->oStruct->GetAssessorato(true) != 0) {
             $params['livello'] = "1";
             AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
         }
@@ -1713,7 +1717,7 @@ class AA_User
         }
 
         //Non si può modificare il livello per utenti amministratori dello stesso livello gerarchico (super user escluso)
-        $struct = $this->GetStruct();
+        $struct = $this->oStruct;
         if ($struct->GetServizio(true) == $params['servizio'] && $params['livello'] == 0 && $struct->GetServizio(true) != 0) {
             $params['livello'] = "";
             AA_Log::Log(get_class() . "->UpdateUser($idUser, $params) - L'utente corrente (" . $this->GetUsername() . ") non può modificare il livello dell'utente indicato: " . $user->GetUsername(), 100);
