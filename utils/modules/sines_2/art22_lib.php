@@ -3212,115 +3212,201 @@ class AA_Organismi extends AA_Object
             return array();
         }
 
-        //Impostazione dei parametri
-        $query="SELECT id, nome,cognome,codice_fiscale, data_fine, tipo_incarico from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
-        
-        //Nascondi nomine RAS
-        if($params['nomina_ras']=="0") $query.=" AND nomina_ras='0'";
-        
-        //Nascondi altre nomine
-        if($params['nomina_altri']=="0") $query.=" AND nomina_ras='1'";
-
-        //Tipo incarico
-        if($params['tipo_nomina'] > 0) $query.=" AND tipo_incarico='".$params['tipo_nomina']."'";
-
-        //nomine storiche
-        if($params['archivio'] != 1) $query.=" AND storico = 0";
-
-        //incaricato
-        if($params['incaricato'] != "") $query.=" AND (nome like '%".addslashes($params['incaricato'])."%' OR cognome like '%".addslashes($params['incaricato'])."%' OR codice_fiscale like '%".addslashes($params['incaricato'])."%') ";
-
-        //if($params['raggruppamento'] == "0") $query.= " GROUP by tipo_incarico, nome, cognome ";
-        //$query.= " GROUP by nome, cognome ";
-        
-        /*$query.= " HAVING id > 0 ";
-
-        //Nascondi le nomine scadute
-        if($params['scadute']=="0") $query.=" AND (data_fine > NOW())";
-        
-        //Nascondi quelle in corso
-        if($params['in_corso']=="0") $query.=" AND (data_fine < NOW())";
-        
-        //Parametri scadenzario
-        if($params['scadenzario_dal'] !="") $query.=" AND data_fine >= '".$params['scadenzario_dal']."'";
-        if($params['scadenzario_al'] !="") $query.=" AND data_fine <= '".$params['scadenzario_al']."'";*/
-
-        $query.=" ORDER by nome, cognome, codice_fiscale, data_fine DESC, tipo_incarico, data_inizio DESC";
-
-        $db=new AA_Database();
-        if(!$db->Query($query))
+        $organigrammi=$this->GetOrganigrammi();
+        $nomine_index=array();
+        /*foreach($organigrammi as $curOrganigramma)
         {
-            AA_Log::Log(__METHOD__."() - errore nella query: ".$query,100,false,true);
-            return array();
-        }
-
-        //AA_Log::Log(__METHOD__."() - query: ".$query,100);
-        
-        $result=array();
-        $blacklist=array();
-
-        $rs=$db->GetResultSet();
-        
-        $curIndex="";
-        foreach($rs as $curNomina)
-        {
-            $insert=0;
-            $index = trim(strtolower($curNomina['nome']))."|".trim(strtolower($curNomina['cognome']))."|".trim(strtolower($curNomina['codice_fiscale']));
-            if($curIndex != $index)
+            if($curOrganigramma->IsScadenzarioEnabled())
             {
-                //AA_Log::Log(__METHOD__."() - aggiorno index: ".print_r($curNomina,true)." - oldIndex: ".$curIndex." - new index: ".$index ,100);
-                $insert++;
-                $curIndex=$index;
-
-                //mette in black list gli eventuali altri incarichi precedenti riferiti alla stessa nomina
-                if($curNomina['data_fine'] > $params['scadenzario_al'] && $params['scadenzario_al'] != "")
+                $incarichi=$curOrganigramma->GetIncarichi();
+                foreach($incarichi as $curIncarico)
                 {
-                    //AA_Log::Log(__METHOD__."() - blacklisto: ".print_r($curNomina,true),100);
-                    $blacklist[$index]=1;
+                    if(!$curIncarico->IsOpzionale() && $curIncarico->IsScadenzarioEnabled()) $nomine_index[$curIncarico->GetTipologia(true)]+=1;
                 }
+            }
+        }*/
 
-                if($blacklist[$index] != 1)
-                {
-                            if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
-                            if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
-                            if($params['scadenzario_dal'] == "") $insert++;
-                            if($params['scadenzario_al'] == "") $insert++;        
-                } 
+        //restituisce il dato senza filtro organigrammi se non ce ne sono
+        if(sizeof($organigrammi) == 0 || $params['raggruppamento'] != "0")
+        {
+            //Impostazione dei parametri
+            $query="SELECT id, nome,cognome,codice_fiscale, data_fine, tipo_incarico from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
+            
+            //Nascondi nomine RAS
+            if($params['nomina_ras']=="0") $query.=" AND nomina_ras='0'";
+            
+            //Nascondi altre nomine
+            if($params['nomina_altri']=="0") $query.=" AND nomina_ras='1'";
+
+            //Tipo incarico
+            if($params['tipo_nomina'] > 0) $query.=" AND tipo_incarico='".$params['tipo_nomina']."'";
+
+            //nomine storiche
+            if($params['archivio'] != 1) $query.=" AND storico = 0";
+
+            //incaricato
+            if($params['incaricato'] != "") $query.=" AND (nome like '%".addslashes($params['incaricato'])."%' OR cognome like '%".addslashes($params['incaricato'])."%' OR codice_fiscale like '%".addslashes($params['incaricato'])."%') ";
+
+            //if($params['raggruppamento'] == "0") $query.= " GROUP by tipo_incarico, nome, cognome ";
+            //$query.= " GROUP by nome, cognome ";
+            
+            /*$query.= " HAVING id > 0 ";
+
+            //Nascondi le nomine scadute
+            if($params['scadute']=="0") $query.=" AND (data_fine > NOW())";
+            
+            //Nascondi quelle in corso
+            if($params['in_corso']=="0") $query.=" AND (data_fine < NOW())";
+            
+            //Parametri scadenzario
+            if($params['scadenzario_dal'] !="") $query.=" AND data_fine >= '".$params['scadenzario_dal']."'";
+            if($params['scadenzario_al'] !="") $query.=" AND data_fine <= '".$params['scadenzario_al']."'";*/
+
+            $query.=" ORDER by nome, cognome, codice_fiscale, data_fine DESC, tipo_incarico, data_inizio DESC";
+
+            $db=new AA_Database();
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__."() - errore nella query: ".$query,100,false,true);
+                return array();
             }
 
-            if($insert>=3)
+            //AA_Log::Log(__METHOD__."() - query: ".$query,100);
+            
+            $result=array();
+            $blacklist=array();
+
+            $rs=$db->GetResultSet();
+            
+            $curIndex="";
+            foreach($rs as $curNomina)
             {
-                //AA_Log::Log(__METHOD__."() - insert: ".$insert." - inserisco: ".print_r($curNomina,true),100);
-                if($params['raggruppamento'] == "0" && !isset($result[$curNomina['tipo_incarico']][$index]))
+                $insert=0;
+                $index = trim(strtolower($curNomina['nome']))."|".trim(strtolower($curNomina['cognome']))."|".trim(strtolower($curNomina['codice_fiscale']));
+                if($curIndex != $index)
                 {
-                    $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
-                    if($nomina->IsValid())
+                    //AA_Log::Log(__METHOD__."() - aggiorno index: ".print_r($curNomina,true)." - oldIndex: ".$curIndex." - new index: ".$index ,100);
+                    $insert++;
+                    $curIndex=$index;
+
+                    //mette in black list gli eventuali altri incarichi precedenti riferiti alla stessa nomina
+                    if($curNomina['data_fine'] > $params['scadenzario_al'] && $params['scadenzario_al'] != "")
                     {
-                        $result[$curNomina['tipo_incarico']][$index]=$nomina;
+                        //AA_Log::Log(__METHOD__."() - blacklisto: ".print_r($curNomina,true),100);
                         $blacklist[$index]=1;
-                    }    
+                    }
+
+                    if($blacklist[$index] != 1)
+                    {
+                                if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
+                                if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
+                                if($params['scadenzario_dal'] == "") $insert++;
+                                if($params['scadenzario_al'] == "") $insert++;        
+                    } 
                 }
-                else
+
+                if($insert>=3)
                 {
-                    $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
-                    if($nomina->IsValid())
+                    //AA_Log::Log(__METHOD__."() - insert: ".$insert." - inserisco: ".print_r($curNomina,true),100);
+                    if($params['raggruppamento'] == "0" && !isset($result[$curNomina['tipo_incarico']][$index]))
                     {
-                        $result[base64_encode($index)][$curNomina['id']]=$nomina;
-                        $blacklist[$index]=1;
+                        $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
+                        if($nomina->IsValid())
+                        {
+                            $result[$curNomina['tipo_incarico']][$index]=$nomina;
+                            $blacklist[$index]=1;
+                        }    
+                    }
+                    else
+                    {
+                        $nomina=new AA_OrganismiNomine($curNomina['id'],$this,$this->oUser);
+                        if($nomina->IsValid())
+                        {
+                            $result[base64_encode($index)][$curNomina['id']]=$nomina;
+                            $blacklist[$index]=1;
+                        }
                     }
                 }
             }
-        }
 
-        if($params['raggruppamento'] == "0")
-        {
-            foreach(array_keys($result) as $curKey)
+            if($params['raggruppamento'] == "0")
             {
-                ksort($result[$curKey]);
+                foreach(array_keys($result) as $curKey)
+                {
+                    ksort($result[$curKey]);
+                }
             }
+
+            return $result;
         }
         
-        //AA_Log::Log(__METHOD__."() - result: ".print_r($result,true),100);
+        //------------ matching organigrammi ------------------------
+        //AA_Log::Log(__METHOD__."() - matching organigrammi",100);
+        $nomine=$this->GetNomineGroupedForOrganigramma();
+        $result=array();
+        $nomine_index=array();
+        $now=date("Y-m-d");
+        foreach($organigrammi as $curOrganigramma)
+        {
+            $incarichi=$curOrganigramma->GetIncarichi();
+            if($curOrganigramma->IsScadenzarioEnabled())
+            {
+                //AA_Log::Log(__METHOD__." - ".print_r($incarichi,TRUE),100);
+                $riepilogo_data_item['incarichi']="";
+                foreach($incarichi as $id_incarico=>$incarico)
+                {
+                    //dati incarichi organigramma per riepilogo
+                    $riepilogo_incarico_label="<b>".$incarico->GetTipologia()."</b><br/>";
+                    $curTipoIncarico=$incarico->GetTipologia(true);
+                    $scaduto=false;
+                    $vacante=true;
+                    $opzionale=false;
+                    $ras=false;
+                    $tempo_indeterminato=false;
+                    if($incarico->IsOpzionale()) 
+                    {
+                        $opzionale=true;
+                    }
+                    if($incarico->IsNominaRas())
+                    {
+                        $ras=true;
+                    }
+                    if(!is_array($nomine_index[$curTipoIncarico])) $nomine_index[$curTipoIncarico]=array($incarico->getProp('ras')=>0);
+                    
+                    AA_Log::Log(__METHOD__." - curTipoIncarico: $curTipoIncarico - NominaRas: ".$incarico->getProp('ras')." - ".print_r($nomine[$curTipoIncarico][$incarico->getProp('ras')],TRUE),100);
+
+                    if(is_array($nomine[$curTipoIncarico][$incarico->getProp('ras')]) && sizeof($nomine[$curTipoIncarico][$incarico->getProp('ras')]) > $nomine_index[$curTipoIncarico][$incarico->getProp('ras')])
+                    {
+                        $curNominaIndex=0+$nomine_index[$curTipoIncarico][$incarico->getProp('ras')];
+                        if($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] < $now) 
+                        {
+                            $scaduto=true;
+                        }
+                        $dataScadenza=$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'];
+                        if($dataScadenza == "9999-12-31") $tempo_indeterminato=true;
+                        if(!$opzionale || ($opzionale && !$scaduto))
+                        {
+                            $riepilogo_incarico_label.="<p>".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']."</p>";
+                            $vacante=false;
+                            $nomine_index[$curTipoIncarico][$incarico->getProp('ras')]+=1;
+                        }
+                    }
+
+                    //nomina scaduta
+                    if(!$vacante) 
+                    {
+                        if((!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="") || ( isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al'])) 
+                        {
+                            $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
+                            $nomina=new AA_OrganismiNomine($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['id'],$this,$this->oUser);
+                            $result[$curTipoIncarico][$index]=$nomina;    
+                        }
+                    }
+                    //-------------------------
+                }
+            }
+        }
+        //-------------------------------------------------
         
         return $result;
     }
