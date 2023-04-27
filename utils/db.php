@@ -595,8 +595,7 @@ class PDO_Database
 				if(stripos($sql,"INSERT") !==false)
 				{
 					//Ultimo id inserito
-					$this->nLastInsertId=PDO_Database::$oPdo->lastInsertId();
-					self::$nLastInsertId=$this->nLastInsertId;	
+					self::$nLastInsertId=PDO_Database::$oPdo->lastInsertId();
 				}
 
 				$this->nStatus=0;

@@ -896,8 +896,8 @@ class AA_User
 
         if ($sToken == null || $sToken == "") 
         {
-            $sToken = $_SESSION['token'];
-            if($sToken == "")
+            if(isset($_SESSION['token'])) $sToken = $_SESSION['token'];
+            if($sToken == "" && isset($_COOKIE["AA_AUTH_TOKEN"]))
             {   
                 $sToken=$_COOKIE["AA_AUTH_TOKEN"];
                 AA_Log::Log(__METHOD__." - auth token login.",100);
@@ -4557,6 +4557,7 @@ class AA_SystemTask_GetAppStatus extends AA_GenericTask
             $sideBarContent = array();
             $mods = $platform->GetModules();
 
+            $itemSelected="";
             foreach ($mods as $curMod) {
                 //Modulo da selezionare
                 if ($_REQUEST['module'] == $curMod['id_modulo']) {
