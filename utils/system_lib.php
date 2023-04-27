@@ -8341,7 +8341,7 @@ class AA_JSON_Template_Generic
     }
     public function __construct($id = "", $props = null)
     {
-        if ($id != "") $this->props["id"] = $id;
+        if ($id != "") $this->props["id"] = "AA_JSON_TEMPLATE_GENERIC_".uniqid(time());
         if (is_array($props)) {
             foreach ($props as $key => $value) {
                 $this->props[$key] = $value;
@@ -10324,7 +10324,7 @@ class AA_JSON_Template_Multiview extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "multiview";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_MULTIVIEW";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_MULTIVIEW".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10336,7 +10336,7 @@ class AA_JSON_Template_Layout extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "layout";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_LAYOUT";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_LAYOUT".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10347,7 +10347,7 @@ class AA_JSON_Template_Fileupload extends AA_JSON_Template_Layout
 {
     public function __construct($id = "", $props = null, $sessionFileName="AA_SessionFileUploader")
     {
-        if ($id == "") $id = "AA_JSON_TEMPLATE_FILEUPLOAD";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_FILEUPLOAD".uniqid(time());
         $props['name'] = "AA_FileUploader";
 
         if (!isset($props['value'])) $props['value'] = "Sfoglia...";
@@ -10391,7 +10391,7 @@ class AA_JSON_Template_Carousel extends AA_JSON_Template_Generic
         $this->props["navigation"]["items"]=true;
         $this->props["scrollSpeed"]="800ms";
 
-        if ($id == "") $id = "AA_JSON_TEMPLATE_CAROUSEL";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_CAROUSEL".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10465,7 +10465,7 @@ class AA_JSON_Template_Toolbar extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "toolbar";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_TOOLBAR";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_TOOLBAR".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10477,7 +10477,7 @@ class AA_JSON_Template_Search extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "search";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_SEARCH";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_SEARCH".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10489,7 +10489,7 @@ class AA_JSON_Template_Datepicker extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "datepicker";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_DATEPICKER";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_DATEPICKER".uniqid(time());
         if(!isset($props['clear'])) $props['clear']=true;
 
         parent::__construct($id, $props);
@@ -10502,7 +10502,7 @@ class AA_JSON_Template_Tree extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "tree";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_TREE";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_TREE".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10514,7 +10514,7 @@ class AA_JSON_Template_Template extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "template";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_TEMPLATE";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_TEMPLATE".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10526,7 +10526,7 @@ class AA_JSON_Template_Checkbox extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "checkbox";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_CHECKBOX";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_CHECKBOX".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10538,7 +10538,7 @@ class AA_JSON_Template_Switch extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "switch";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_SWITCH";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_SWITCH".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10550,7 +10550,7 @@ class AA_JSON_Template_Text extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "text";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_TEMPLATE";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_TEMPLATE".uniqid(time());
         if(!isset($props['clear'])) $props['clear']=true;
 
         parent::__construct($id, $props);
@@ -10563,7 +10563,7 @@ class AA_JSON_Template_Richtext extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "richtext";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_RICHTEXT";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_RICHTEXT_".uniqid(time());
         if(!isset($props['clear'])) $props['clear']=true;
 
         parent::__construct($id, $props);
@@ -10576,7 +10576,7 @@ class AA_JSON_Template_Select extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "richselect";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_RICHSELECT";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_RICHSELECT".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10590,7 +10590,7 @@ class AA_JSON_Template_Radio extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "radio";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_RADIO";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_RADIO".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10602,7 +10602,7 @@ class AA_JSON_Template_Textarea extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "textarea";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_TEMPLATE";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_TEMPLATE".uniqid(time());
 
         parent::__construct($id, $props);
     }
@@ -10614,7 +10614,7 @@ class AA_JSON_Template_Form extends AA_JSON_Template_Generic
     public function __construct($id = "", $props = null)
     {
         $this->props["view"] = "form";
-        if ($id == "") $id = "AA_JSON_TEMPLATE_FORM";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_FORM".uniqid(time());
 
         parent::__construct($id, $props);
     }
