@@ -609,7 +609,7 @@ class AA_User
     protected $nID = "0";
 
     //Struttura
-    protected $oStruct = new AA_Struct();
+    protected $oStruct = null;
 
     //Flags
     protected $sFlags = "";
