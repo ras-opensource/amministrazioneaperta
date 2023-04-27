@@ -1,6 +1,6 @@
 <?php
 session_start();
-include_once "lib/system_lib.php";
+include_once "utils/system_lib.php";
 
 /*$admin=AA_User::UserAuth("","admin_ente",MD5("admin_ente"));
 

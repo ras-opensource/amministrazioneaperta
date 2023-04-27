@@ -8698,7 +8698,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
 
         //Toolbar
         $toolbar = new AA_JSON_Template_Layout($this->id . "_Button_Bar", array("height" => 38));
-        $toolbar->addCol(new AA_JSON_Template_Generic("spacer", array("view" => "spacer", "width" => 15)));
+        $toolbar->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 15)));
 
         //reset form button
         if ($this->enableReset && is_array($this->resetData)) {
@@ -8710,9 +8710,9 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         $toolbar->addCol($this->applyButton);
         if($this->applyButtonPosition != "right") $toolbar->addCol(new AA_JSON_Template_Generic());
         
-        $toolbar->addCol(new AA_JSON_Template_Generic("spacer", array("view" => "spacer", "width" => 15)));
+        $toolbar->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 15)));
         $this->body->AddRow($toolbar);
-        $this->body->AddRow(new AA_JSON_Template_Generic("spacer", array("view" => "spacer", "height" => 10)));
+        $this->body->AddRow(new AA_JSON_Template_Generic("", array("view" => "spacer", "height" => 10)));
         $this->applyButton->SetProp("click", $this->applyActions);
 
         parent::Update();
@@ -8726,7 +8726,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
             $props['label'] = $label;
 
             if ($newRow || !($this->curRow instanceof AA_JSON_Template_Layout)) {
-                $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row");
+                $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_".uniqid(time()));
                 $this->layout->AddRow($this->curRow);
             }
             if ($type == "text") $this->curRow->AddCol(new AA_JSON_Template_Text($this->id . "_Field_" . $name, $props));
@@ -8749,7 +8749,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     public function AddSection($name = "New Section", $newRow = true)
     {
         if ($newRow || !($this->curRow instanceof AA_JSON_Template_Layout)) {
-            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row");
+            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_".uniqid(time()));
             $this->layout->AddRow($this->curRow);
             $this->curRow->AddCol(new AA_JSON_Template_Generic($this->id . "_Section_", array("type" => "section", "template" => $name)));
         } else {
@@ -8761,11 +8761,11 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     public function AddSpacer($newRow = true)
     {
         if ($newRow) {
-            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row");
+            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_".uniqid(time()));
             $this->layout->AddRow($this->curRow);
         }
 
-        $this->curRow->AddCol(new AA_JSON_Template_Generic($this->id . "_Field_Spacer", array("view" => "spacer")));
+        $this->curRow->AddCol(new AA_JSON_Template_Generic($this->id . "_Field_Spacer_".uniqid(time()), array("view" => "spacer")));
     }
 
     //Aggiungi un campo di testo
@@ -8816,7 +8816,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         $onSearchScript = "try{ if($$('" . $this->id . "_Form').getValues().id_struct_tree_select) AA_MainApp.ui.MainUI.structDlg.lastSelectedItem={id: $$('" . $this->id . "_Form').getValues().id_struct_tree_select}; AA_MainApp.ui.MainUI.structDlg.show(" . json_encode($taskParams) . "," . json_encode($params) . ");}catch(msg){console.error(msg)}";
 
         if ($newRow) {
-            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row");
+            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_".uniqid(time()));
             $this->layout->AddRow($this->curRow);
         }
 
@@ -8832,7 +8832,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     public function AddFileUploadField($name = "AA_FileUploader", $label = "Sfoglia...", $props = array(), $newRow = true)
     {
         if ($newRow) {
-            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row");
+            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_".uniqid(time()));
             $this->layout->AddRow($this->curRow);
         }
 
@@ -8884,7 +8884,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         if ($obj instanceof AA_JSON_Template_Generic) {
             if ($newRow) {
-                $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row");
+                $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_".uniqid(time()));
                 $this->layout->AddRow($this->curRow);
             }
 
@@ -9148,7 +9148,7 @@ class AA_FieldSet extends AA_JSON_Template_Generic
         $onSearchScript = "try{ if($$('" . $this->GetId() . "_Form').getValues().id_struct_tree_select) AA_MainApp.ui.MainUI.structDlg.lastSelectedItem={id: $$('" . $this->GetId() . "_Form').getValues().id_struct_tree_select}; AA_MainApp.ui.MainUI.structDlg.show(" . json_encode($taskParams) . "," . json_encode($params) . ");}catch(msg){console.error(msg)}";
 
         if ($newRow) {
-            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row");
+            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row_".uniqid(time()));
             $this->layout->AddRow($this->curRow);
         }
 
@@ -9166,7 +9166,7 @@ class AA_FieldSet extends AA_JSON_Template_Generic
     public function AddFileUploadField($name = "AA_FileUploader", $label = "Sfoglia...", $props = array(), $newRow = true)
     {
         if ($newRow) {
-            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row");
+            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row_".uniqid(time()));
             $this->layout->AddRow($this->curRow);
         }
 
@@ -9308,16 +9308,16 @@ class AA_GenericStructDlg extends AA_GenericWindowTemplate
 
         //Toolbar
         $toolbar = new AA_JSON_Template_Layout($this->id . "_Button_Bar", array("height" => 38));
-        $toolbar->addCol(new AA_JSON_Template_Generic("spacer", array("view" => "spacer", "width" => 15)));
+        $toolbar->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 15)));
 
         //mostra/nascondi strutture soppresse
         $toolbar->addCol(new AA_JSON_Template_Generic($this->id . "_Switch_Supressed", array("view" => "switch", "width" => 350, "label" => "Strutture soppresse:", "labelWidth" => 150, "onLabel" => "visibili", "offLabel" => "nascoste", "tooltip" => "mostra/nascondi le strutture soppresse")));
 
         $toolbar->addCol(new AA_JSON_Template_Generic());
         $toolbar->addCol($this->applyButton);
-        $toolbar->addCol(new AA_JSON_Template_Generic("spacer", array("view" => "spacer", "width" => 15)));
+        $toolbar->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 15)));
         $this->body->AddRow($toolbar);
-        $this->body->AddRow(new AA_JSON_Template_Generic("spacer", array("view" => "spacer", "height" => 10)));
+        $this->body->AddRow(new AA_JSON_Template_Generic("", array("view" => "spacer", "height" => 10)));
     }
 
     protected function Update()

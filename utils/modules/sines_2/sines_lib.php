@@ -2447,7 +2447,7 @@ Class AA_SinesModule extends AA_GenericModule
         $form_data['sCognome']="";
         $form_data['sCodiceFiscale']="";
         
-        AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        AA_Log::Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi nuova nomina", $this->id,$form_data,$form_data);
         
@@ -2706,7 +2706,7 @@ Class AA_SinesModule extends AA_GenericModule
         array("id"=>$id."DatiContabili_Tab"."_$id_org","value"=>"Dati contabili", "tooltip"=>"Dati contabili e dotazione organica"),
         array("id"=>$id."Nomine_Tab"."_$id_org","value"=>"Nomine"));
 
-        if($this->oUser->IsSuperUser())
+        if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
         {
             $detail_options[]=array("id"=>$id."Organigramma_Tab"."_$id_org","value"=>"Organigrammi");
         }
@@ -3023,7 +3023,7 @@ Class AA_SinesModule extends AA_GenericModule
             $part=explode("/",$value);
             $value="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
         }
-        $partecipazione=new AA_JSON_Template_Template($id."_DataFine",array(
+        $partecipazione=new AA_JSON_Template_Template($id."_Partecipazione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "data"=>array("title"=>"Partecipazione:","value"=>$value)
         ));
@@ -3031,7 +3031,7 @@ Class AA_SinesModule extends AA_GenericModule
         //Stato
         $value=$object->GetStatoOrganismo();
         if($value=="")$value="n.d.";
-        $stato_società=new AA_JSON_Template_Template($id."_DataFine",array(
+        $stato_società=new AA_JSON_Template_Template($id."_Stato",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "data"=>array("title"=>"Stato società:","value"=>$value)
         ));        
@@ -3134,32 +3134,44 @@ Class AA_SinesModule extends AA_GenericModule
         }
         
         $header=new AA_JSON_Template_Layout($id."_Header",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
+
+        $dati_contabili=$object->GetDatiContabili();
+        if(sizeof($dati_contabili) > 0)
+        {
+            $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
+                "view"=>"tabbar",
+                "borderless"=>true,
+                "css"=>"AA_Bottom_TabBar",
+                "multiview"=>true,
+                "optionWidth"=>100,
+                "view_id"=>$id."_Multiview",
+                "type"=>"bottom"
+            ));
+            
+            $header->AddCol($tabbar);
+            
+            $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
+                "type"=>"clean",
+                "css"=>"AA_Detail_Content"
+            ));
+        }
+        else
+        {
+            $multiview=new AA_JSON_Template_Template($id."_Multiview",array(
+                "type"=>"clean",
+                "css"=>"AA_Detail_Content",
+                "template"=>"<div style='display: flex; justify-content: center; align-items:center; flex-direction: column; font-weight: 400; height: 100%'><p>Non sono presenti annualità.</p><p>Fai click sul pulsante 'Aggiungi' in basso a destra per aggiungerne una.</p></div>"
+             ));
+        }
         
-        $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
-            "view"=>"tabbar",
-            "borderless"=>true,
-            "css"=>"AA_Bottom_TabBar",
-            "multiview"=>true,
-            "optionWidth"=>100,
-            "view_id"=>$id."_Multiview",
-            "type"=>"bottom"
-        ));
-        
-        $header->AddCol($tabbar);
         $header->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         $header->AddCol($toolbar);
-        
-        $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
-            "type"=>"clean",
-            "css"=>"AA_Detail_Content"
-         ));
+
         $layout->AddRow($multiview);
         $layout->addRow($header);
         
         //Aggiunge gli anni come tab
-        $dati_contabili=$object->GetDatiContabili();
         $options=array();
-        
         foreach($dati_contabili as $idDato=>$curDato)
         {
             $anno=$curDato->GetAnno();
@@ -3169,9 +3181,9 @@ Class AA_SinesModule extends AA_GenericModule
             
             $curAnno=new AA_JSON_Template_Layout($id."_".$curDato->GetID()."_Tab",array("type"=>"clean"));
             
-            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38, "css"=>"AA_Header_Tabbar_Title"));
+            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_".$idDato,array("height"=>38, "css"=>"AA_Header_Tabbar_Title"));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_".$curDato->GetID(),array("view"=>"label","label"=>"<span style='color:#003380'>Dati contabili e dotazione organica - anno ".$anno."</span>", "align"=>"center")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_".$curDato->GetID()."_Label",array("view"=>"label","label"=>"<span style='color:#003380'>Dati contabili e dotazione organica - anno ".$anno."</span>", "align"=>"center")));
                 
             //Pulsante di Modifica dato contabile
             if($canModify)
@@ -3290,7 +3302,7 @@ Class AA_SinesModule extends AA_GenericModule
             
             //Spesa dotazione 
             $value=$curDato->GetSpesaDotazioneOrganica();
-            if($value=="")$value="n.d.";
+            if($value=="") $value="n.d.";
             else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
             $val2=new AA_JSON_Template_Template($id."_SpesaDotazione_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
@@ -3383,7 +3395,7 @@ Class AA_SinesModule extends AA_GenericModule
             $multiview->AddCell($curAnno);
         }
         
-        $tabbar->SetProp("options",$options);
+        if(isset($tabbar)) $tabbar->SetProp("options",$options);
         
         return $layout;
     }
@@ -3509,7 +3521,7 @@ Class AA_SinesModule extends AA_GenericModule
             
             $curNominaTab=new AA_JSON_Template_Layout($id."_".$id_intestazione_nomina."_Tab",array("type"=>"clean"));
             
-            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
+            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_".$id_intestazione_nomina,array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
             
             //torna al riepilogo
             $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Riepilogo_".$id_intestazione_nomina."_btn",array(
@@ -3529,7 +3541,7 @@ Class AA_SinesModule extends AA_GenericModule
             $incaricato_label="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;'><span style='color:#003380; font-weight: 900; font-size: larger;'>".current($curNomina)->GetNome()." ".current($curNomina)->GetCognome()."</span>";
             if(current($curNomina)->GetCodiceFiscale() !="") $incaricato_label.="<span style='font-size: smaller;'>(".current($curNomina)->GetCodiceFiscale().")</span>";
             $incaricato_label.="</div>";
-            $toolbar->AddElement(new AA_JSON_Template_Template($id."_Toolbar_".$id_intestazione_nomina,array("type"=>"clean","template"=>$incaricato_label)));
+            $toolbar->AddElement(new AA_JSON_Template_Template($id."_Toolbar_".$id_intestazione_nomina."_Label",array("type"=>"clean","template"=>$incaricato_label)));
                 
             //Pulsante di Modifica nome, cognome, cf
             if($canModify)
@@ -3976,7 +3988,7 @@ Class AA_SinesModule extends AA_GenericModule
             
             $curOrganigrammaTab=new AA_JSON_Template_Layout($id."_".$curOrganigramma->GetProp("id")."_Tab",array("type"=>"clean"));
             
-            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
+            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_".$curOrganigramma->GetProp("id"),array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
             
             //torna al riepilogo
             $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Riepilogo_".$curOrganigramma->GetProp("id")."_btn",array(
@@ -3995,7 +4007,7 @@ Class AA_SinesModule extends AA_GenericModule
             //Organigramma label
             $organigramma_label="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;'><span style='color:#003380; font-weight: 900; font-size: larger;'>".$curOrganigramma->GetTipologia()."</span>";
             $organigramma_label.="</div>";
-            $toolbar->AddElement(new AA_JSON_Template_Template($id."_Toolbar_".$curOrganigramma->GetProp("id"),array("type"=>"clean","template"=>$organigramma_label)));
+            $toolbar->AddElement(new AA_JSON_Template_Template($id."_Toolbar_".$curOrganigramma->GetProp("id")."_Label",array("type"=>"clean","template"=>$organigramma_label)));
                 
             //Pulsante di Aggiunta/modifica
             if($canModify)
@@ -4031,17 +4043,17 @@ Class AA_SinesModule extends AA_GenericModule
             
             $curOrganigrammaTab->AddRow($toolbar);
 
-            $content_layout=new AA_JSON_Template_Layout($id."_Box_layout",array());
-            $left=new AA_JSON_Template_Layout($id."_Box_layout_LeftPanel",array());
-            $toolbar_left=new AA_JSON_Template_Toolbar($id."_Toolbar_Left",array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
+            $content_layout=new AA_JSON_Template_Layout($id."_Box_layout_".$id_organigramma,array());
+            $left=new AA_JSON_Template_Layout($id."_Box_layout_LeftPanel_".$id_organigramma,array());
+            $toolbar_left=new AA_JSON_Template_Toolbar($id."_Toolbar_Left_".$id_organigramma,array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
 
             //scadenzario
             $scadenzario_label="<span class='AA_Label AA_Label_LightGreen'>Si</span>&nbsp;";
             if(!$curOrganigramma->IsScadenzarioEnabled())$scadenzario_label="<span class='AA_Label AA_Label_LightRed'>No</span>&nbsp;";
-            $toolbar_left->AddElement(new AA_JSON_Template_Template($id."_Enable_Scadenzario",array("type"=>"clean", "width"=>210,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Includi nello scadenzario: </span><br>$scadenzario_label</div>")));
+            $toolbar_left->AddElement(new AA_JSON_Template_Template($id."_Enable_Scadenzario_".$id_organigramma,array("type"=>"clean", "width"=>210,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Includi nello scadenzario: </span><br>$scadenzario_label</div>")));
             $left->addRow($toolbar_left);
             
-            $left->addRow(new AA_JSON_Template_Template($id."_Note",array("template"=>"#note#","data"=>array("note"=>nl2br($curOrganigramma->GetProp("note"))))));
+            $left->addRow(new AA_JSON_Template_Template($id."_Note_".$id_organigramma,array("template"=>"#note#","data"=>array("note"=>nl2br($curOrganigramma->GetProp("note"))))));
             
             $content_layout->addCol($left);
 

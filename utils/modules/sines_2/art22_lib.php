@@ -3065,8 +3065,13 @@ class AA_Organismi extends AA_Object
                 //$index=base64_encode(trim(strtolower($nomina->GetNome()))."|".trim(strtolower($nomina->GetCognome()))."|".trim(strtolower($nomina->GetCodiceFiscale())));
                 //if($params['raggruppamento'] == "0")  $index=$nomina->GetTipologia(true);
                 
-                if(is_array($result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']])) $result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']][]=$curNomina;
-                else $result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']]=array($curNomina);
+                if(isset($result[$curNomina['tipo_incarico']]) && isset($result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']]) && is_array($result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']])) $result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']][]=$curNomina;
+                else 
+                {
+                    if(!isset($result[$curNomina['tipo_incarico']])) $result[$curNomina['tipo_incarico']]=array();
+                    $result[$curNomina['tipo_incarico']][$curNomina['nomina_ras']]=array($curNomina);
+                }
+                
             }
         }
         
@@ -3214,17 +3219,6 @@ class AA_Organismi extends AA_Object
 
         $organigrammi=$this->GetOrganigrammi();
         $nomine_index=array();
-        /*foreach($organigrammi as $curOrganigramma)
-        {
-            if($curOrganigramma->IsScadenzarioEnabled())
-            {
-                $incarichi=$curOrganigramma->GetIncarichi();
-                foreach($incarichi as $curIncarico)
-                {
-                    if(!$curIncarico->IsOpzionale() && $curIncarico->IsScadenzarioEnabled()) $nomine_index[$curIncarico->GetTipologia(true)]+=1;
-                }
-            }
-        }*/
 
         //restituisce il dato senza filtro organigrammi se non ce ne sono
         if(sizeof($organigrammi) == 0 || $params['raggruppamento'] != "0")
@@ -3296,7 +3290,7 @@ class AA_Organismi extends AA_Object
                         $blacklist[$index]=1;
                     }
 
-                    if($blacklist[$index] != 1)
+                    if(!isset($blacklist[$index]) || $blacklist[$index] != 1)
                     {
                                 if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
                                 if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
@@ -3386,16 +3380,15 @@ class AA_Organismi extends AA_Object
                         if($dataScadenza == "9999-12-31") $tempo_indeterminato=true;
                         if(!$opzionale || ($opzionale && !$scaduto))
                         {
-                            $riepilogo_incarico_label.="<p>".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']."</p>";
                             $vacante=false;
                             $nomine_index[$curTipoIncarico][$incarico->getProp('ras')]+=1;
                         }
                     }
 
                     //nomina scaduta
-                    if(!$vacante) 
+                    if($scaduto && !$vacante)
                     {
-                        if((!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="") || ( isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al'])) 
+                        //if((!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="") || ( isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al'])) 
                         {
                             $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
                             $nomina=new AA_OrganismiNomine($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['id'],$this,$this->oUser);
