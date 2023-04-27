@@ -8341,7 +8341,9 @@ class AA_JSON_Template_Generic
     }
     public function __construct($id = "", $props = null)
     {
-        if ($id != "") $this->props["id"] = "AA_JSON_TEMPLATE_GENERIC_".uniqid(time());
+        if ($id != "") $this->props["id"] = $id;
+        else $this->props["id"]="AA_JSON_TEMPLATE_GENERIC_".uniqid(time());
+        
         if (is_array($props)) {
             foreach ($props as $key => $value) {
                 $this->props[$key] = $value;

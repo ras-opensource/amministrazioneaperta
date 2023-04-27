@@ -3495,7 +3495,7 @@ Class AA_SinesModule extends AA_GenericModule
         foreach($nomine as $id_intestazione_nomina=>$curNomina)
         {
             //Dati riepilogo
-            $riepilogo_data_item=array("nome"=>trim(current($curNomina)->GetNome()),"cognome"=>trim(current($curNomina)->GetCognome()),"cf"=>"");
+            $riepilogo_data_item=array("nome"=>trim(current($curNomina)->GetNome()),"cognome"=>trim(current($curNomina)->GetCognome()),"cf"=>"","incarichi"=>"");
             if(trim(current($curNomina)->GetCodiceFiscale()) !="") $riepilogo_data_item['cf']=" (".trim(current($curNomina)->GetCodiceFiscale()).")";
             
             $tab_label=current($curNomina)->GetNome()." ".current($curNomina)->GetCognome();

@@ -2674,7 +2674,7 @@ class AA_Organismi extends AA_Object
         
         //Filtra in base alle nomine in corso
         $now=date("Y-m-d");
-        if($params['in_corso'] !="" || $params['in_scadenza'] !="" || $params['scadute'] !="" || $params['recenti'] !="")
+        if((isset($params['in_corso']) && $params['in_corso'] !="") || (isset($params['in_scadenza']) && $params['in_scadenza'] !="") || (isset($params['scadute']) && $params['scadute'] !="") || (isset($params['recenti']) && $params['recenti'] !=""))
         {
             if($params['in_corso'] =="0" && $params['in_scadenza'] =="0" && $params['scadute'] =="0" && $params['recenti'] =="0")
             {
@@ -2683,14 +2683,14 @@ class AA_Organismi extends AA_Object
             }
             
             //default
-            if($params['data_scadenzario'] == "") $params['data_scadenzario']=Date("Y-m-d");
-            if($params['finestra_temporale'] =="") $params['finestra_temporale']=1;
-            if($params['raggruppamento'] =="") $params['raggruppamento']=0; //ricerca in base all'incarico
+            if(!isset($params['data_scadenzario']) || $params['data_scadenzario'] == "") $params['data_scadenzario']=Date("Y-m-d");
+            if(!isset($params['finestra_temporale']) || $params['finestra_temporale'] =="") $params['finestra_temporale']=1;
+            if(!isset($params['raggruppamento']) || $params['raggruppamento'] == "") $params['raggruppamento']=0; //ricerca in base all'incarico
 
             //organismi cessati
             if($params['cessati'] != 1) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 0 ) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."'))";
 
-            if($params['raggruppamento']==1) 
+            if(isset($params['raggruppamento']) && $params['raggruppamento']==1) 
             {
                 $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".denominazione, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".aggiornamento, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome,".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome,".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale, MAX(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_fine) as data_fine_incarico FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
                 $group.=",".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome";
@@ -2711,13 +2711,13 @@ class AA_Organismi extends AA_Object
             $mesePrec->modify("-".$params['finestra_temporale']." month");
             
             //In corso
-            if($params['in_corso'] =="1")
+            if(isset($params['in_corso']) && $params['in_corso'] =="1")
             {
                 $having.=" HAVING data_fine_incarico >= '".$meseProx->format("Y-m-d")."' ";
             }
             
             //Scaduti
-            if($params['scadute'] =="1")
+            if(isset($params['scadute']) && $params['scadute'] =="1")
             {
                 
                 if($having =="") $having.=" HAVING data_fine_incarico >= '".$mesePrec->format("Y-m-d")."' ";
@@ -2725,14 +2725,14 @@ class AA_Organismi extends AA_Object
             }
             
             //Scadono entro un mese
-            if($params['in_scadenza'] == "1")
+            if(isset($params['in_scadenza']) && $params['in_scadenza'] == "1")
             {                                
                 if($having =="") $having.=" HAVING (data_fine_incarico < '".$meseProx->format("Y-m-d")."' AND data_fine_incarico > '". addslashes($params['data_scadenzario'])."') ";
                 else $having.=" OR (data_fine_incarico < '".$meseProx->format("Y-m-d")."' AND data_fine_incarico > '".addslashes ($params['data_scadenzario'])."') ";
             }
 
             //Scadute da breve termine
-            if($params['recenti'] == "1")
+            if(isset($params['recenti']) && $params['recenti'] == "1")
             {
                 if($params['raggruppamento']==0) //ricerca in base all'incarico
                 {
@@ -2747,7 +2747,7 @@ class AA_Organismi extends AA_Object
             }
 
             //Non considerare le nomine archiviate (storiche)
-            if($params['archivio'] != 1) $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".storico = 0 ";
+            if(!isset($params['archivio']) || $params['archivio'] != 1) $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".storico = 0 ";
             
             if(strlen($where)>0) $where=" WHERE 1 ".$where;
             $select="SELECT id,denominazione,aggiornamento FROM (".$select.$join.$where.$group.$having.") as organismi_scadenzario GROUP BY id";
@@ -2760,9 +2760,9 @@ class AA_Organismi extends AA_Object
         else
         {
             //Ricerca ordinaria (al di fuori dello scadenzario)
-            if($params['stato_organismo'] != "" && $params['stato_organismo'] != 4 && $params['stato_organismo'] != 2) $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = '".$params['stato_organismo']."'";
-            if($params['stato_organismo'] == 4) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 4) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno < '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0))";
-            if($params['stato_organismo'] == 2) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 2) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organìsmo = 0))";
+            if(isset($params['stato_organismo']) && $params['stato_organismo'] != "" && $params['stato_organismo'] != 4 && $params['stato_organismo'] != 2) $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = '".$params['stato_organismo']."'";
+            if(isset($params['stato_organismo']) && $params['stato_organismo'] == 4) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 4) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno < '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0))";
+            if(isset($params['stato_organismo']) && $params['stato_organismo'] == 2) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 2) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organìsmo = 0))";
         }     
         
         //Conta i risultati
@@ -2992,7 +2992,7 @@ class AA_Organismi extends AA_Object
             if($nomina->IsValid())
             {
                 $index=base64_encode(trim(strtolower($nomina->GetNome()))."|".trim(strtolower($nomina->GetCognome()))."|".trim(strtolower($nomina->GetCodiceFiscale())));
-                if($params['raggruppamento'] == "0")  $index=$nomina->GetTipologia(true);
+                if(isset($params['raggruppamento']) && $params['raggruppamento'] == "0")  $index=$nomina->GetTipologia(true);
                 
                 $result[$index][$curNomina['id']]=$nomina;
             }
