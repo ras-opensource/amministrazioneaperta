@@ -3367,7 +3367,7 @@ class AA_Organismi extends AA_Object
                     }
                     if(!is_array($nomine_index[$curTipoIncarico])) $nomine_index[$curTipoIncarico]=array($incarico->getProp('ras')=>0);
                     
-                    AA_Log::Log(__METHOD__." - curTipoIncarico: $curTipoIncarico - NominaRas: ".$incarico->getProp('ras')." - ".print_r($nomine[$curTipoIncarico][$incarico->getProp('ras')],TRUE),100);
+                    //AA_Log::Log(__METHOD__." - curTipoIncarico: $curTipoIncarico - NominaRas: ".$incarico->getProp('ras')." - ".print_r($nomine[$curTipoIncarico][$incarico->getProp('ras')],TRUE),100);
 
                     if(is_array($nomine[$curTipoIncarico][$incarico->getProp('ras')]) && sizeof($nomine[$curTipoIncarico][$incarico->getProp('ras')]) > $nomine_index[$curTipoIncarico][$incarico->getProp('ras')])
                     {
