@@ -547,16 +547,16 @@ class AA_Struct
         $servizio_num = 1;
         $result = array(array("id" => $root, "value" => "Strutture", "open" => true, "data" => array()));
         foreach ($this->aTree['assessorati'] as $id_ass => $ass) {
-            if (sizeof($ass['direzioni']) > 0 && $params['hideDirs'] != 1) $curAssessorato = array("id" => $assessorato_num, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0, "data" => array());
+            if (sizeof($ass['direzioni']) > 0 && (!isset($params['hideDirs']) || $params['hideDirs'] !=1)) $curAssessorato = array("id" => $assessorato_num, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0, "data" => array());
             else $curAssessorato = array("id" => $assessorato_num, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0);
 
-            if ($params['hideDirs'] != 1) {
+            if ((!isset($params['hideDirs']) || $params['hideDirs'] !=1)) {
                 foreach ($ass['direzioni'] as $id_dir => $dir) {
                     //AA_Log::Log(get_class()."->toArray() - direzione: ".$dir['descrizione'],100);
 
-                    if (sizeof($dir['servizi']) && $params['hideServices'] != 1) $curDirezione = array("id" => $assessorato_num . "." . $direzione_num, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso'], "data" => array());
+                    if (sizeof($dir['servizi']) && (!isset($params['hideServices']) || $params['hideServices'] !=1)) $curDirezione = array("id" => $assessorato_num . "." . $direzione_num, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso'], "data" => array());
                     else $curDirezione = array("id" => $assessorato_num . "." . $direzione_num, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso']);
-                    if ($params['hideServices'] != 1) {
+                    if ((!isset($params['hideServices']) || $params['hideServices'] !=1)) {
                         foreach ($dir['servizi'] as $id_ser => $ser) {
                             $curDirezione['data'][] = array("id" => $assessorato_num . "." . $direzione_num . "." . $servizio_num, "id_servizio" => $id_ser, "id_assessorato" => $id_ass, "id_direzione" => $id_dir, "data_soppressione" => $ser['data_soppressione'], "soppresso" => $ser['soppresso'], "value" => $ser['descrizione']);
                             $servizio_num++;
@@ -4428,7 +4428,9 @@ class AA_SystemTask_GetStructDlg extends AA_GenericTask
     public function Run()
     {
         AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
-        $wnd = new AA_GenericStructDlg("AA_SystemStructDlg", "Organigramma", $_REQUEST, "", $_REQUEST['module'], $this->oUser);
+        $module="";
+        if(isset($_REQUEST['module'])) $module = $_REQUEST['module'];
+        $wnd = new AA_GenericStructDlg("AA_SystemStructDlg", "Organigramma", $_REQUEST, "", $module, $this->oUser);
 
         //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
 
@@ -8838,7 +8840,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         if ($label == "") $props['value'] = "Sfoglia...";
         else $props['value'] = $label;
         $props['autosend'] = false;
-        if ($props['multiple'] == "") $props['multiple'] = false;
+        if (!isset($props['multiple']) || $props['multiple'] == "") $props['multiple'] = false;
         $props['view'] = "uploader";
         $props['link'] = $this->id . "_FileUpload_List";
         $props['layout_id'] = $this->id . "_FileUpload_Layout";
@@ -9264,16 +9266,16 @@ class AA_GenericStructDlg extends AA_GenericWindowTemplate
             $struct = "";
             $userStruct = $user->GetStruct();
             if (is_array($options)) {
-                if ($options['showAll'] == 1) {
+                if (isset($options['showAll']) && $options['showAll'] == 1) {
                     if ($userStruct->GetTipo() <= 0) $struct = AA_Struct::GetStruct(0, 0, 0, $userStruct->GetTipo()); //RAS
                     else $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), 0, 0, $userStruct->GetTipo()); //Altri
                 }
 
-                if ($options['showAllDir'] == 1) {
+                if (isset($options['showAllDir']) && $options['showAllDir'] == 1) {
                     $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), 0, 0, $userStruct->GetTipo());
                 }
 
-                if ($options['showAllServ'] == 1) {
+                if (isset($options['showAllServ']) && $options['showAllServ'] == 1) {
                     $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), $userStruct->GetDirezione(true), 0, $userStruct->GetTipo());
                 }
             }
@@ -9285,7 +9287,7 @@ class AA_GenericStructDlg extends AA_GenericWindowTemplate
         //Struttura
         $filterLevel = 4;
 
-        if ($options['hideServices']) $filterLevel = 3;
+        if (isset($options['hideServices'])) $filterLevel = 3;
 
         $tree = new AA_JSON_Template_Tree($this->id . "_Tree", array(
             "data" => $struct->toArray($options),
