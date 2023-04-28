@@ -533,53 +533,6 @@ class AA_SystemTask_GetAppStatus extends AA_GenericTask
 
             return true;
         }
-        /*else
-        {
-            $this->sTaskLog.="<sidebar id='sidebar'>".'[';
-        }
-            
-        //home
-        $this->sTaskLog.='{"id": "home", "icon": "mdi mdi-home", "value": "Home", "tooltip" : "Home page", "module": "AA_MODULE_HOME"}';
-        
-        //Strumenti di amministrazione
-        if($this->oUser->IsSuperUser())
-        {
-            $this->sTaskLog.=',{"id": "admin_tools", "icon": "mdi mdi-security", "value": "Strumenti amministrativi", "tooltip":"Gestione strutture","data":[';
-            
-            //Gestione strutture
-            $this->sTaskLog.='{"id": "gest_struct", "icon":"mdi mdi-family-tree", "value": "Gestione strutture", "tooltip":"Gestione strutture", "module":"AA_MODULE_GEST_STRUCT"}';
-            
-            //Gestione utenti
-            $this->sTaskLog.=',{"id": "gest_utenti", "icon":"mdi mdi-account-box-multiple", "value": "Gestione utenti", "tooltip":"Gestione utenti", "module":"AA_MODULE_GEST_UTENTI"}';
-            
-            $this->sTaskLog.=']}';
-        }
-        
-        //pubblicazioni-----------
-        $this->sTaskLog.=',{"id": "pubblicazioni", "icon": "mdi mdi-certificate", "value": "Pubblicazioni", "tooltip":"Gestione delle pubblicazioni ai sensi del d.lgs.33/2013","data":[';
-        
-        //art26
-        $this->sTaskLog.='{"id": "art26", "icon":"mdi mdi-cash-register", "value": "Contributi (Art. 26,27)", "tooltip":"Contributi, sovvenzioni, vantaggi economici (Art. 26,27)", "module":"AA_MODULE_ART26"}';
-       
-        //art37
-        $this->sTaskLog.=',{"id": "art37", "icon":"mdi mdi-cart-variant", "value": "Bandi di gara e contratti (Art. 37)", "tooltip":"Bandi di gara e contratti (Art. 37)", "module":"AA_MODULE_ART37"}';
-        
-        $this->sTaskLog.=']}';
-        #-------------------------
-
-        //Gestione incarichi
-        if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_INCARICHI) || $this->oUser->HasFlag(AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI || $this->oUser->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN)) $this->sTaskLog.=',{"id": "gest_incarichi", "icon": "mdi mdi-briefcase-variant-outline", "value": "Gestione incarichi", "tooltip": "Gestione incarichi", "module":"AA_MODULE_INCARICHI"}';
-        
-        //SIMVRC
-        if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_PROCESSI) || $this->oUser->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN) $this->sTaskLog.=',{"id": "simvrc", "icon": "mdi mdi-format-list-checks", "value": "Mappatura processi", "tooltip": "SIMVRC - Sistema Informativo per la mappatura e la valutazione del rischio corruttivo dei processi", "module":"AA_MODULE_SIMVRC"}';
-        
-        //SINES
-        if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22) || $this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN)) $this->sTaskLog.=',{"id": "sines", "icon": "mdi mdi-office-building", "value": "Sistema Informativo Enti e Società", "tooltip": "SINES - Sistema Informativo Enti e Società", "module":"AA_MODULE_SINES"}';        
-        
-        $this->sTaskLog.=']</sidebar>';
-        
-        $this->sTaskLog.="</content>";
-        return true;*/
     }
 }
 #--------------------------------------------
