@@ -18,6 +18,11 @@ class AA_ObjectTemplateView
     public function DetailView()
     {
     }
+
+    public function __construct()
+    {
+        
+    }
 }
 #--------------------------------------------------
 
@@ -694,7 +699,7 @@ class AA_GenericAccordionTemplateView
     private $sFooterBoxStyle = "width: 100%; height: 5%";
 
     #costruttore
-    public function _construct()
+    public function __construct()
     {
         $this->oHeaderBox = new AA_GenericBoxTemplateView();
         $this->oContentBox = new AA_GenericBoxTemplateView();
