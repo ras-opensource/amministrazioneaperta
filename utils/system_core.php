@@ -1870,6 +1870,79 @@ class AA_User
         return true;
     }
 
+    //Funzione di aggiornamento del profilo utente corrente
+    public static function UpdateCurrentUserProfile($params,$imageFileName="")
+    {
+        $user=AA_User::GetCurrentUser();
+        if ($user->IsGuest()) {
+            AA_Log::Log(__METHOD__ . " - Utente corrente non valido", 100);
+            return false;
+        }
+
+        if($params["email"] != $user->GetEmail())
+        {
+            AA_Log::Log(__METHOD__ . " - L'utente corrente ha una email diversa da quella indicata.", 100);
+            return false;
+        }
+
+        if($params['nome'] =="" || $params['cognome']=="")
+        {
+            AA_Log::Log(__METHOD__ . " - il nome e il cognome non possono essere vuoti.", 100);
+            return false;            
+        }
+
+        $db=new AA_Database();
+        $pwd=false;
+
+        if($params["old_pwd"] !="" && $params['new_pwd'] !="" && $params["new_pwd_retype"] !="")
+        {
+            //verifica che la password attuale sia corretta
+            $query="SELECT id from utenti WHERE email='".addslashes($params['email'])."' AND passwd=MD5('".addslashes($params['old_pwd'])."') LIMIT 1";
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__ . " - Errore nella verifica delle credenziali impostate.", 100);
+                return false;
+            }
+
+            if($db->GetAffectedRows()==0)
+            {
+                AA_Log::Log(__METHOD__ . " - La password corrente è errata.", 100);
+                return false;
+            }
+
+            //Verifica che la nuova password abbia almeno 8 caratteri, contenga un numero, una lettera maiuscola e una lettera minuscola e non contenga la vecchia password
+            $password_regex = "/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/"; 
+            if(preg_match($password_regex, $params['new_pwd'])==0)
+            {
+                AA_Log::Log(__METHOD__ . " - La nuova password deve avere almeno 8 caratteri, almeno una lettera maiuscola e almeno una lettera minuscola.", 100);
+                return false;
+            }
+
+            if($params['new_pwd'] != $params['new_pwd_retype'])
+            {
+                AA_Log::Log(__METHOD__ . " - La nuova password deve coincidere con quella ridigitata.", 100);
+                return false;
+            }
+
+            $pwd=true;
+        }
+
+        $query="UPDATE utenti SET nome='".addSlashes($params['nome'])."',cognome='".addSlashes($params['cognome'])."',phone='".addslashes($params['cellulare'])."'";
+        if($pwd) $query.=",passwd=MD5('".addslashes($params['new_pwd'])."')";
+        if($imageFileName !="") $query.=", image='".addslashes($imageFileName)."'";
+        $query.=" WHERE id='".$user->GetId()."' LIMIT 1";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__ . " - Errore durante l'aggiornamento dei dati.", 100);
+            return false;
+        }
+
+        //AA_Log::Log(__METHOD__ . " - query: ".$query, 100);
+
+        return true;
+    }
+
     //Elimina l'utente indicato
     public function DeleteUser($idUser)
     {

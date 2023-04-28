@@ -3443,11 +3443,11 @@ async function AA_UserResetPwd(params = null) {
                                 //console.log("AA_UserAuth", result);
                                 if (result.status.value == 0) {
                                     $$("AA_UserResetPwdDlg").close();
-                                    AA_MainApp.ui.alert(result.content.value);
+                                    AA_MainApp.ui.alert(result.content.value,"Info","");
                                     return true;
                                 } else {
                                     AA_MainApp.ui.alert(result.error.value);
-                                    return true;
+                                    return false;
                                 }
                             } catch (msg) {
                                 console.error("AA_MainApp.AA_UserResetPwdDlg", msg);
