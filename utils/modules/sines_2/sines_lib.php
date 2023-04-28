@@ -2293,6 +2293,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
         $wnd->SetSaveTask("AddNewOrganismoOrganigramma");
+        $wnd->EnableApplyHotkey(false);
         
         return $wnd;
     }
@@ -2333,6 +2334,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_organigramma"=>$organigramma->GetId()));
         $wnd->SetSaveTask("UpdateOrganismoOrganigramma");
+        $wnd->EnableApplyHotkey(false);
         
         return $wnd;
     }
@@ -3752,7 +3754,7 @@ Class AA_SinesModule extends AA_GenericModule
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoModifyIncaricoCompensoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_compenso:"'.$curComp->GetId().'"}]},"'.$this->id.'")';
                     $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashIncaricoCompensoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_compenso:"'.$curComp->GetId().'"}]},"'.$this->id.'")';
                     $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-                    $tot= number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteFissa().str_replace(array(".",","),array("","."),$curComp->GetParteVariabile()))),2,",",".");
+                    $tot= number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteFissa())+doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteVariabile()))),2,",",".");
                     $compensi_data[]=array("id"=>$id_comp,"anno"=>$curComp->GetAnno(),"parte_fissa"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteFissa())),2,",","."),"parte_variabile"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteVariabile())),2,",","."),"rimborsi"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetRimborsi())),2,",","."),"note"=>$curComp->GetNote(), "totale"=>$tot,"ops"=>$ops);
                 }
                 $compensi->SetProp("data",$compensi_data);
