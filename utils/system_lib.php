@@ -2816,7 +2816,7 @@ class AA_GenericModule
                 $content->SetPublishHandlerParams(array("task" => static::AA_UI_TASK_PUBLISH_DLG));
             }
 
-            if (isset($params['cestinate']) && $params['cestinate'] == 0) {
+            if (!isset($params['cestinate']) || $params['cestinate'] == 0) {
                 $content->ViewTrash();
                 $content->SetTrashHandlerParams(array("task" => static::AA_UI_TASK_TRASH_DLG));
             } else {
