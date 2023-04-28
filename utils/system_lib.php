@@ -3,13 +3,6 @@ include_once "system_core.php";
 include_once "system_ui.php";
 include_once "system_ui.legacy.php";
 
-//STRUCT_TREE Classe
-//Albero di oggetti AA_Struct
-class AA_TStruct
-{
-    protected $root = array();
-}
-
 //Classi per la gestione dei task
 class AA_GenericTaskManager
 {
