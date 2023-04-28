@@ -35,6 +35,7 @@ header("Pragma: no-cache");
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/pdfobject.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_legacy.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_lib.js"></script>
+<script defer type="text/javascript" src="<?php echo $lib_path;?>/system_custom.js"></script>
 <?php
 foreach($platform->GetModules() as $curMod)
 {

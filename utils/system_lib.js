@@ -1204,7 +1204,9 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
                         }
 
-                        let found = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(arguments[0] || "");
+                        let email=arguments[0].trim();
+
+                        let found = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || "");
                         if (!found) {
                             val = false;
                         }
@@ -1666,7 +1668,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 }
 
 //Prototipo di modulo
-//var AA_dummy_module = new AA_Module();
+var AA_dummy_module = new AA_Module();
 
 //Variabile applicazione principale
 var AA_MainApp = {
@@ -1833,7 +1835,7 @@ var AA_MainApp = {
     },
 
     //modulo corrente
-    curModule: null,
+    curModule: AA_dummy_module,
 
     //modulo di default (sidebar id)
     defaultModule: "home",
@@ -3463,7 +3465,7 @@ async function AA_UserResetPwd(params = null) {
                     view: "form",
                     borderless: true,
                     rules: {
-                        "email": webix.rules.isEmail
+                        $all: AA_MainApp.curModule.eventHandlers['defaultHandlers'].validateForm
                     },
                     elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
                     elements: [{
