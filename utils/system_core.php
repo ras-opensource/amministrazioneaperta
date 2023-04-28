@@ -902,6 +902,10 @@ class AA_User
 
                     $user = AA_User::LoadUser($rs['id']);
                     $user->bCurrentUser = true;
+
+                    //update last login time
+                    $db->Query("UPDATE utenti set lastlogin = NOW() WHERE id='".$rs['id']."' LIMIT 1");
+
                     return $user;
                 }
 
@@ -976,6 +980,10 @@ class AA_User
                     $_SESSION['token'] = $sToken;
 
                     $user->bCurrentUser = true;
+
+                    //update last login time
+                    $db->Query("UPDATE utenti set lastlogin = NOW() WHERE id='".$rs['id_utente']."' LIMIT 1");
+
                     return $user;
                 }
             }
