@@ -667,6 +667,20 @@ class AA_User
         return !$this->bIsValid;
     }
 
+    //numero di telefono
+    protected $sPhone="";
+    public function GetPhone()
+    {
+        return $this->sPhone;
+    }
+
+    //immagine del profilo
+    protected $sImage="";
+    public function GetImage()
+    {
+        return $this->sImage;
+    } 
+
     //Verifica se è l'utente amministratore
     public function IsAdmin()
     {
@@ -730,6 +744,8 @@ class AA_User
             $user->sEmail = $row[0]['email'];
             $user->nLivello = $row[0]['livello'];
             $user->nDisabled = $row[0]['disable'];
+            $user->sImage = $row[0]['image'];
+            $user->sPhone = $row[0]['phone'];
             $user->sFlags = $row[0]['flags'];
             $user->bIsValid = true;
 
@@ -748,24 +764,28 @@ class AA_User
         $user = new AA_User();
         $user->bCurrentUser = false;
 
-        $db = new Database();
+        $db = new AA_Database();
         $db->Query("SELECT utenti.* from utenti where user = '" . $userName . "' and eliminato='0'");
-        $rs = $db->GetRecordSet();
-        if ($rs->GetCount() > 0) {
-            $user->nID = $rs->Get('id');
-            $user->sNome = $rs->Get('nome');
-            $user->sCognome = $rs->Get('cognome');
-            $user->sUser = $rs->Get('user');
-            $user->sEmail = $rs->Get('email');
-            $user->nLivello = $rs->Get('livello');
-            $user->sFlags = $rs->Get('flags');
-            $user->nDisabled = $rs->Get('disable');
+        if($db->GetAffectedRows() > 0)
+        {
+            $row = $db->GetResultSet();
+
+            $user->nID = $row[0]['id'];
+            $user->sNome = $row[0]['nome'];
+            $user->sCognome = $row[0]['cognome'];
+            $user->sUser = $row[0]['user'];
+            $user->sEmail = $row[0]['email'];
+            $user->nLivello = $row[0]['livello'];
+            $user->nDisabled = $row[0]['disable'];
+            $user->sImage = $row[0]['image'];
+            $user->sPhone = $row[0]['phone'];
+            $user->sFlags = $row[0]['flags'];
             $user->bIsValid = true;
 
             //Popola i dati della struttura
-            $user->oStruct = AA_Struct::GetStruct($rs->Get('id_assessorato'), $rs->Get('id_direzione'), $rs->Get('id_servizio'));
+            $user->oStruct = AA_Struct::GetStruct($row[0]['id_assessorato'], $row[0]['id_direzione'], $row[0]['id_servizio']);
         }
-
+        
         return $user;
     }
 
@@ -777,29 +797,33 @@ class AA_User
 
         $users = array();
 
-        $db = new Database();
+        $db = new AA_Database();
         $db->Query("SELECT utenti.* from utenti where email = '" . addslashes($email) . "' and eliminato='0' and disable='0'");
-        $rs = $db->GetRecordSet();
-        if ($rs->GetCount() > 0) {
-            do {
+        if($db->GetAffectedRows() > 0)
+        {
+            $rs = $db->GetResultSet();
+            foreach($rs as $curRow)
+            {
                 $user = new AA_User();
 
-                $user->nID = $rs->Get('id');
-                $user->sNome = $rs->Get('nome');
-                $user->sCognome = $rs->Get('cognome');
-                $user->sUser = $rs->Get('user');
-                $user->sEmail = $rs->Get('email');
-                $user->nLivello = $rs->Get('livello');
-                $user->sFlags = $rs->Get('flags');
-                $user->nDisabled = $rs->Get('disable');
+                $user->nID = $curRow['id'];
+                $user->sNome = $curRow['nome'];
+                $user->sCognome = $curRow['cognome'];
+                $user->sUser = $curRow['user'];
+                $user->sEmail = $curRow['email'];
+                $user->nLivello = $curRow['livello'];
+                $user->sFlags = $curRow['flags'];
+                $user->sImage = $curRow['image'];
+                $user->sPhone = $curRow['phone'];
+                $user->nDisabled = $$curRow['disable'];
                 $user->bCurrentUser = false;
                 $user->bIsValid = true;
-
+    
                 //Popola i dati della struttura
-                $user->oStruct = AA_Struct::GetStruct($rs->Get('id_assessorato'), $rs->Get('id_direzione'), $rs->Get('id_servizio'));
-
-                $users[] = $user;
-            } while ($rs->MoveNext());
+                $user->oStruct = AA_Struct::GetStruct($curRow['id_assessorato'], $curRow['id_direzione'], $curRow['id_servizio']);
+    
+                $users[] = $user;    
+            }
         }
 
         return $users;
