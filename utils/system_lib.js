@@ -760,7 +760,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     let module = AA_MainApp.getModule(pager.config.module_id);
                     if (!module.isValid()) module = AA_MainApp.curModule;
 
-                    console.log(module.name + "::pagerEventHandlerDefault", arguments);
+                    //console.log(module.name + "::pagerEventHandlerDefault", arguments);
 
                     let pager_title = $$(pager.config.title_id);
                     if (pager_title) {
@@ -791,7 +791,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                 //Resetta la selezione quando si sposta di pagina
                                 target.unselectAll();
 
-                                console.log(this.name + "::pagerEventHandlerDefault() - aggiorno i dati del componente: " + pager.config.target, targetAction);
+                                //console.log(this.name + "::pagerEventHandlerDefault() - aggiorno i dati del componente: " + pager.config.target, targetAction);
                                 await module.refreshObjectData(pager.config.target);
 
                                 //resetta il valore di scrolling della view
