@@ -1104,7 +1104,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
     //default form validation
     this.eventHandlers['defaultHandlers'].validateForm = function() {
         try {
-            console.log(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.validateForm", this, arguments);
+            //console.log(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.validateForm", this, arguments);
 
             let val = true;
 
@@ -3315,7 +3315,7 @@ async function AA_UserAuth(params = null) {
                         label: "Accedi",
                         hotkey: "enter",
                         type: "icon",
-                        css: "webix_primary",
+                        css: "webix_primary ",
                         icon: "mdi mdi-login",
                         width: 100,
                         align: "center",
@@ -3415,7 +3415,7 @@ async function AA_UserAuth(params = null) {
                             type: "clean",
                             borderless: true,
                             cols: [{
-                                    template: "<div style='display:flex;justify-content:center;align-items:center;height:100%; font-size: smaller'><a onClick='AA_UserResetPwd()'>recupero credenziali</a></div>",
+                                    template: "<div style='display:flex;justify-content:center;align-items:center;height:100%; font-size: smaller'><a onClick='AA_MainAPP.resetPwd()'>recupero credenziali</a></div>",
                                     tooltip: "Fai click qui se hai dimenticato il nome utente, la password o entrambi."
                                 },
                                 {

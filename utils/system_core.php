@@ -2075,11 +2075,10 @@ class AA_User
                     if (!$db->Query($query)) {
                         AA_Log::Log(get_class() . "->RecoverPassword($email) - Errore durante l'aggiornamento della password per l'utente: " . $user->GetUserName() . " - " . $db->lastError, 100);
                     } else {
-                        if(static::$aResetPasswordEmailParams['showStruct']) $credenziali .= '<br>struttura: ' . $struttura;
+                        if(static::$aResetPasswordEmailParams['bShowStruct']) $credenziali .= '<br>struttura: ' . $struttura;
                         $credenziali .= '
-                        nome utente: ' . $user->GetUserName() . '
-                        password: ' . $newPwd . '
-                        ';
+                        nome utente: <b>' . $user->GetUserName() . '</b>
+                        password: <b>' . $newPwd . '</b>';
                     }
                 }
             }
@@ -2087,7 +2086,7 @@ class AA_User
             if ($credenziali != "") {
                 $oggetto = static::$aResetPasswordEmailParams['oggetto'];
 
-                $corpo = static::$aResetPasswordEmailParams['incipit']."<br>".$credenziali.static::$aResetPasswordEmailParams['post'];
+                $corpo = static::$aResetPasswordEmailParams['incipit'].$credenziali.static::$aResetPasswordEmailParams['post'];
                 $firma = static::$aResetPasswordEmailParams['firma'];
 
                 if ($bSendEmail) {

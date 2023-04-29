@@ -6,6 +6,9 @@ $task=$_REQUEST['task'];
 
 //Utente non identificato o sessioen scaduta
 $user=AA_User::GetCurrentUser();
+
+include_once("system_custom.php");
+
 if($user->IsGuest() && $task !="UserAuth" && $task !="UserLogOut" && $task !="struttura-utente" && $task !="ResetPassword")
 {
   //AA_Log::Log("SmartCV - token: ".$_SESSION['token']);

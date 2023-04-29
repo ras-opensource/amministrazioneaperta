@@ -1,13 +1,14 @@
 <?php 
 include_once("utils/config.php");
 include_once("utils/system_lib.php");
-include_once("utils/system_custom.php");
 
 session_start();
 
 //Verifica utente
 $user=AA_User::GetCurrentUser();
 $platform = AA_Platform::GetInstance($user);
+
+include_once("utils/system_custom.php");
 
 $lib_path=AA_Const::AA_PUBLIC_LIB_PATH;
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
