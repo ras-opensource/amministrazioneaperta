@@ -543,7 +543,12 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                     console.log(this.name + "::refreshSectionContentDefault(" + section_id + ") - Nuovo contenuto della sezione: ", module_content.content.value);
                     return 1;
-                } else return Promise.reject("Contenuto della sezione non trovato.");
+                }
+                else 
+                {
+                    console.error(this.name + "::refreshSectionContentDefault(" + section_id + ") - Contenuto della sezione non trovato.");
+                    return 0;
+                }
             } else {
                 console.error(this.name + "::refreshObjectContentDefault(" + section_id + ") errore: " + module_content.error.value);
                 return Promise.reject(module_content.error.value);
@@ -592,7 +597,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 } else {
                     //riabilita il componente
                     if (view) view.enable();
-                    return Promise.reject("Contenuto del modulo non trovato.");
+                    console.log(this.name + "::refreshObjectContentDefault(" + object_id + ") - Contenuto del modulo non trovato.");
+                    return 0;
                 }
             } else {
                 //riabilita il componente
@@ -730,7 +736,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 return true;
             } else {
                 console.error(this.name + "::refreshActionMenuContentDefault() - errore: ", result.error.value);
-                return Promise.reject(result.error.value);
+                return false;
             }
         } catch (msg) {
             console.error(this.name + "::refreshActionMenuContentDefault", arguments);
@@ -888,13 +894,18 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         }
                         return true;
                     } else {
-                        if (result.error.type != "json") {
-                            AA_MainApp.ui.alert(result.error.value);
-                            return Promise.reject(result.error.value);
-                        } else {
-                            webix.ui(result.error.value).show();
-                            return false;
+
+                        if(result.status.value > -2)
+                        {
+                            if (result.error.type != "json") {
+                                AA_MainApp.ui.alert(result.error.value);
+                                return false;
+                            } else {
+                                webix.ui(result.error.value).show();
+                                return false;
+                            }    
                         }
+                        return false;
                     }
                 }
             };
@@ -2381,34 +2392,42 @@ var AA_MainApp = {
 async function AA_DefaultSystemInitialization(params) {
     console.log("Amministrazione Aperta - Inizializzazione di sistema...");
 
-    //nuova interfaccia
-    if (AA_MainApp.ui.enableGui && !AA_MainApp.bEnableLegacy) {
+    try
+    {
+        //nuova interfaccia
+        if (AA_MainApp.ui.enableGui && !AA_MainApp.bEnableLegacy) {
 
-        AA_MainApp.ui.overlay.show();
+            AA_MainApp.ui.overlay.show();
 
-        //Nasconde lo sfondo di default del body
-        let bodyBg = document.getElementById("AA_MainOverlayBg");
-        if (bodyBg) {
-            bodyBg.style.display = "none";
+            //Nasconde lo sfondo di default del body
+            let bodyBg = document.getElementById("AA_MainOverlayBg");
+            if (bodyBg) {
+                bodyBg.style.display = "none";
+            }
+
+            //titolo dell'App
+            AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
+
+            //logo
+            AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
+
+            //inizializza l'interfaccia principale
+            AA_MainApp.ui.MainUI.setup();
+
+            let result = await AA_MainApp.ui.MainUI.refresh();
+            if(result) AA_MainApp.ui.overlay.hide();        
+
+            console.log("Amministrazione Aperta - Inizializzazione di sistema conclusa.");
+            
+            return true;
         }
-
-        //titolo dell'App
-        AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
-
-        //logo
-        AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
-
-        //inizializza l'interfaccia principale
-        AA_MainApp.ui.MainUI.setup();
-
-        await AA_MainApp.ui.MainUI.refresh();
-
-        AA_MainApp.ui.overlay.hide();
-
-        console.log("Amministrazione Aperta - Inizializzazione di sistema conclusa.");
-        return;
+        //-------------------------------
     }
-    //-------------------------------
+    catch(msg)
+    {
+        console.error(msg);
+        return false;
+    }
 
     if (AA_MainApp.bEnableLegacy) {
         //valori iniziali di ricerca
@@ -2635,10 +2654,13 @@ async function AA_RefreshMainUi(params) {
                 });
                 AA_MainApp.ui.user = user;
             }
+
+            return true;
+
         } else {
             console.error("AA_RefreshMainUi() - " + getAppStatus.error.value);
-            if (getAppStatus.error.value != "") AA_MainApp.ui.alert(getAppStatus.error.value);
-            return Promise.reject(getAppStatus.error.value);
+            if (getAppStatus.error.value != "" && getAppStatus.status.value > -2) AA_MainApp.ui.alert(getAppStatus.error.value);
+            return false;
         }
     } catch (msg) {
         AA_MainApp.ui.hideWaitMessage();
@@ -3189,8 +3211,8 @@ async function AA_StartAMAAI() {
             return true;
         } else {
             console.error("AA_ShowAMAAI() - " + result.error.value);
-            AA_MainApp.ui.alert(result.error.value);
-            return Promise.reject(result.error.value);
+            if(result.status.value > -2) AA_MainApp.ui.alert(result.error.value);
+            return false;
         }
     } catch (msg) {
         console.error("AA_ShowAMAAI() - " + msg);
@@ -3286,12 +3308,12 @@ async function AA_UserAuth(params = null) {
                                     return;
                                 } else {
                                     AA_MainApp.ui.alert(result.error.value);
-                                    return;
+                                    console.error("AA_UserAuthDlg - "+result.error.value);
                                 }
                             } catch (msg) {
                                 console.error("AA_MainApp.AA_UserAuth", msg);
                                 AA_MainApp.ui.alert(msg);
-                                return Promise.reject(msg);
+                                return;
                             }
                         }
                     },
@@ -3614,7 +3636,7 @@ function AA_UserRegister(params=null) {
                                 //console.log("AA_UserAuth", result);
                                 if (result.status.value == 0) {
                                     $$("AA_UserRegisterDlg").close();
-                                    AA_MainApp.ui.alert(result.content.value);
+                                    AA_MainApp.ui.alert(result.content.value,"Info","");
                                     return true;
                                 } else {
                                     AA_MainApp.ui.alert(result.error.value);
