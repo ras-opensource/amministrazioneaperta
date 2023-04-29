@@ -6,7 +6,7 @@ $task=$_REQUEST['task'];
 
 //Utente non identificato o sessioen scaduta
 $user=AA_User::GetCurrentUser();
-if($user->IsGuest() && $task !="UserAuth" && $task !="UserLogOut" && $task !="struttura-utente")
+if($user->IsGuest() && $task !="UserAuth" && $task !="UserLogOut" && $task !="struttura-utente" && $task !="ResetPassword")
 {
   //AA_Log::Log("SmartCV - token: ".$_SESSION['token']);
   die("<status id='status'>-2</status><error id='error'>Credenziali non impostate o sessione scaduta.</error>");

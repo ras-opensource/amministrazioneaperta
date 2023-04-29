@@ -330,6 +330,9 @@ class AA_SystemTaskManager extends AA_GenericTaskManager
 
         //Restituisce la finestra dei log di un oggetto
         $this->RegisterTask("GetLogDlg", "AA_SystemTask_GetLogDlg");
+
+        //Aggiorna il profilo dell'utente corrente
+        $this->RegisterTask("UpdateCurrentUserProfile","AA_SystemTask_UpdateCurrentUserProfile");
     }
 }
 
@@ -3479,7 +3482,7 @@ class AA_GenericModuleSection
     {
         $this->icon = $val;
     }
-    
+
     //indica se deve esserci il riferimento sulla navbar
     protected $navbar = false;
     public function IsVisibleInNavbar()
@@ -4751,7 +4754,7 @@ class AA_GenericResetPwdDlg extends AA_GenericFormDlg
 
         //AA_Log::Log(__METHOD__." - ".$module,100);
 
-        $this->SetWidth("700");
+        $this->SetWidth("340");
         $this->SetHeight("400");
 
         $this->applyActions = $applyActions;
@@ -4770,7 +4773,7 @@ class AA_GenericResetPwdDlg extends AA_GenericFormDlg
 
         $this->body->AddRow(new AA_JSON_Template_Generic("", array("view" => "spacer", "height" => 10, "css" => array("border-top" => "1px solid #e6f2ff !important;"))));
 
-        $this->AddTextField("email_verification_code","OTP",array("required"=>true,"bottomLabel"=>"Inserisci il codice OTP ricevut via email."));
+        $this->AddTextField("email_verification_code","OTP",array("required"=>true,"bottomLabel"=>"Inserisci il codice OTP ricevuto via email."));
         $this->SetSaveTask("User");
     }
 }

@@ -212,7 +212,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             var sections = await AA_VerboseTask("GetSections", this.taskManager);
             if (sections.status.value == 0) {
                 this.sections = sections.content.value;
-                console.log(this.name + "::initializeDefault()", this);
+                //console.log(this.name + "::initializeDefault()");
 
                 //Imposta come sezione di default la prima
                 this.curSection = this.sections[0];
@@ -878,13 +878,45 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
             let postFunction = async function(params) {
                 if (AA_MainApp.utils.isDefined(params.task)) {
-                    let result = await AA_VerboseTask(params.task, this.taskManager, params.taskParams, params.data);
+                    
+                    let taskManager=this.taskManager;
+                    if(AA_MainApp.utils.isDefined(params.taskManager))
+                    {
+                        taskManager = params.taskManager;
+                    }
+
+                    let result = await AA_VerboseTask(params.task, taskManager, params.taskParams, params.data);
                     if (result.status.value == 0) {
                         AA_MainApp.ui.message(result.content.value);
                         if (AA_MainApp.utils.isDefined(params.wnd_id)) $$(params.wnd_id).close();
                         if (AA_MainApp.utils.isDefined(params.refresh)) {
                             if (AA_MainApp.utils.isDefined(params.refresh_obj_id)) this.refreshUiObject(params.refresh_obj_id, true);
-                            else this.refreshCurSection();
+                            else
+                            {
+                                if(AA_MainApp.utils.isDefined(params.refreshApp))
+                                {
+                                    AA_MainApp.ui.MainUI.refresh();
+                                }
+                                else this.refreshCurSection();
+
+                                //aggiorna l'immagine del profilo
+                                if(AA_MainApp.utils.isDefined(params.refreshUserProfile))
+                                {
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module")+"&mobile="+AA_MainApp.device.isMobile+"&viewport_width="+AA_MainApp.ui.viewport.width+"&viewport_height="+AA_MainApp.ui.viewport.height);
+                                    if (getAppStatus.status.value == "0") 
+                                    {
+                                        //Aggiorna il nome utente e l'immagine
+                                        var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
+                                        if (user.length > 0) 
+                                        {
+                                            $$("AA_icon_user").define("tooltip", user);
+                                            $$("AA_icon_user").define("data",{"user_image_path":$(getAppStatus.content.value)[0].childNodes[5].nextSibling.data});
+                                            AA_MainApp.ui.user = user;
+                                        }
+                                    }
+                                } 
+                            }                        
                         }
 
                         //Verifica se ci sono ulteriori azioni da intraprendere
@@ -2640,6 +2672,7 @@ async function AA_RefreshMainUi(params) {
             var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
             if (user.length > 0 && $$("AA_icon_user")) {
                 $$("AA_icon_user").define("tooltip", user);
+                $$("AA_icon_user").define("data",{"user_image_path":$(getAppStatus.content.value)[0].childNodes[5].nextSibling.data});
                 AA_MainApp.ui.user = user;
             }
 
@@ -2648,7 +2681,7 @@ async function AA_RefreshMainUi(params) {
                 var sidebar = JSON.parse($(getAppStatus.content.value)[1].innerText);
 
                 if (typeof sidebar != "undefined") {
-                    console.log("System::AA_RefreshMainUi() sidebar: ", $(getAppStatus.content.value)[1].attributes["itemSelected"]);
+                    //console.log("System::AA_RefreshMainUi() sidebar: ", $(getAppStatus.content.value)[1].attributes["itemSelected"]);
 
                     let itemSelected = "";
                     if ($(getAppStatus.content.value)[1].attributes["itemSelected"]) {
@@ -2677,7 +2710,7 @@ async function AA_RefreshMainUi(params) {
                 }
             }
 
-            //seleziona il modulo ddefault
+            //seleziona il modulo default
             if (AA_MainApp.defaultModule) await AA_MainApp.setCurrentModule(AA_MainApp.defaultModule);
 
             return true;
@@ -3427,7 +3460,7 @@ async function AA_UserResetPwd(params = null) {
                 id: "AA_UserResetPwdDlg",
                 view: "window",
                 height: 310,
-                width: 400,
+                width: 320,
                 position: "center",
                 modal: true,
                 css: "AA_Wnd"

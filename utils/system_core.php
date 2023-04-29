@@ -636,10 +636,10 @@ class AA_User
     //restituisce l'immagine associata all'utente (percorso pubblico)
     public function GetProfileImagePublicPath()
     {
-        $imgFile=$imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetID();
+        $imgFile=$imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetImage();
         if(is_file($imgFile))
         {
-            return AA_Const::AA_WWW_ROOT."/immagini/profili/".$this->GetId();
+            return AA_Const::AA_WWW_ROOT."/immagini/profili/".$this->GetImage();
         }
         else
         {
@@ -650,7 +650,7 @@ class AA_User
     //restituisce l'immagine associata all'utente (percorso locale)
     public function GetProfileImageLocalPath()
     {
-        $imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetID();
+        $imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetImage();
         if(is_file($imgfile)) return $imgfile;
         else return AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/generic.png";
     }
@@ -754,6 +754,36 @@ class AA_User
         }
 
         return $user;
+    }
+
+    //Reset password email params
+    protected static $aResetPasswordEmailParams=array(
+        "oggetto"=>'Amministrazione Aperta - Reset della password.',
+        "incipit"=> '<p>Buongiorno,
+        E\' stato richiesto il reset della password per l\'accesso alla piattaforma applicativa "Amministrazione Aperta", per le pubblicazioni sul sito istituzionale di cui al d.lgs.33/2013.
+                       
+        url: http://sitod.regione.sardegna.it/web/amministrazione_aperta
+
+        di seguito le credenziali per l\'accesso:',
+        "bShowStruct"=>true,
+        "post"=>'E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.
+
+        Le utenze che hanno associato l\'indirizzo email sul proprio profilo possono effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente
+
+        Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
+        "firma"=>'<div>--
+        <div><strong>Amministrazione Aperta</strong></div>
+        <div>Presidentzia</div>
+        <div>Presidenza</div>
+        <div>V.le Trento, 69 - 09123 Cagliari</div>
+        <img src="https://sitod.regione.sardegna.it/web/logo.jpg" data-mce-src="https://sitod.regione.sardegna.it/web/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
+    );
+    public static function SetResetPwdEmailParams($params=array())
+    {
+        foreach($params as $key=>$val)
+        {
+            if(isset(static::$aResetPasswordEmailParams[$key])) static::$aResetPasswordEmailParams[$key]=$val;
+        }
     }
 
     //Popola i dati dell'utente a partire dal nome utente
@@ -1302,6 +1332,7 @@ class AA_User
         $result .= '<user>' . $this->sUser . '</user>';
         $result .= '<email>' . $this->sEmail . '</email>';
         $result .= '<flags>' . $this->sFlags . '</flags>';
+        $result .= '<image>' . $this->GetProfileImagePublicPath() . '</image>';
         //$result.=$this->oStruct->toXML();
         $result .= '</utente>';
 
@@ -2025,12 +2056,18 @@ class AA_User
                 }
 
                 //Reimposta la password
-                if ($user->IsValid() && !$user->IsDisabled()) {
-                    $struttura = $user->GetStruct()->GetAssessorato();
-                    if ($user->GetStruct()->GetDirezione(true) != 0) $struttura .= " - " . $user->GetStruct()->GetDirezione();
-                    if ($user->GetStruct()->GetServizio(true) != 0) $struttura .= " - " . $user->GetStruct()->GetServizio();
+                if ($user->IsValid() && !$user->IsDisabled()) 
+                {
 
-                    $newPwd = substr(md5(uniqid(mt_rand(), true)), 0, 8);
+                    $struttura="";
+                    if(static::$aResetPasswordEmailParams['showStruct'])
+                    {
+                        $struttura = $user->GetStruct()->GetAssessorato();
+                        if ($user->GetStruct()->GetDirezione(true) != 0) $struttura .= " - " . $user->GetStruct()->GetDirezione();
+                        if ($user->GetStruct()->GetServizio(true) != 0) $struttura .= " - " . $user->GetStruct()->GetServizio();    
+                    }
+
+                    $newPwd = "A".substr(md5(uniqid(mt_rand(), true)), 0, 8)."a";
 
                     //Reimposta le credenziali dell'utente
                     $query = "UPDATE utenti set passwd=MD5('" . $newPwd . "') where id='" . $user->GetID() . "' LIMIT 1";
@@ -2038,8 +2075,8 @@ class AA_User
                     if (!$db->Query($query)) {
                         AA_Log::Log(get_class() . "->RecoverPassword($email) - Errore durante l'aggiornamento della password per l'utente: " . $user->GetUserName() . " - " . $db->lastError, 100);
                     } else {
+                        if(static::$aResetPasswordEmailParams['showStruct']) $credenziali .= '<br>struttura: ' . $struttura;
                         $credenziali .= '
-                        struttura: ' . $struttura . '
                         nome utente: ' . $user->GetUserName() . '
                         password: ' . $newPwd . '
                         ';
@@ -2048,29 +2085,10 @@ class AA_User
             }
 
             if ($credenziali != "") {
-                $oggetto = "Amministrazione Aperta - Reset della password.";
+                $oggetto = static::$aResetPasswordEmailParams['oggetto'];
 
-                $corpo = '<p>Buongiorno,
-                E\' stato richiesto il reset della password per l\'accesso alla piattaforma applicativa "Amministrazione Aperta", per le pubblicazioni sul sito istituzionale di cui al d.lgs.33/2013.
-                               
-                url: http://sitod.regione.sardegna.it/web/amministrazione_aperta
-
-                di seguito le credenziali per l\'accesso:
-
-                ' . $credenziali . '
-        
-                E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.
-
-                Le utenze che hanno associato l\'indirizzo email sul proprio profilo possono effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente
-        
-                Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>';
-
-                $firma = '<div>--
-                            <div><strong>Amministrazione Aperta</strong></div>
-                            <div>Presidentzia</div>
-                            <div>Presidenza</div>
-                            <div>V.le Trento, 69 - 09123 Cagliari</div>
-                            <img src="https://sitod.regione.sardegna.it/web/logo.jpg" data-mce-src="https://sitod.regione.sardegna.it/web/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>';
+                $corpo = static::$aResetPasswordEmailParams['incipit']."<br>".$credenziali.static::$aResetPasswordEmailParams['post'];
+                $firma = static::$aResetPasswordEmailParams['firma'];
 
                 if ($bSendEmail) {
                     if (!SendMail(array($email), array(), $oggetto, nl2br($corpo) . $firma, array(), 1)) {
