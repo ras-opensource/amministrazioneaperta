@@ -3415,7 +3415,7 @@ async function AA_UserAuth(params = null) {
                             type: "clean",
                             borderless: true,
                             cols: [{
-                                    template: "<div style='display:flex;justify-content:center;align-items:center;height:100%; font-size: smaller'><a onClick='AA_MainAPP.resetPwd()'>recupero credenziali</a></div>",
+                                    template: "<div style='display:flex;justify-content:center;align-items:center;height:100%; font-size: smaller'><a onClick='AA_MainApp.resetPwd()'>recupero credenziali</a></div>",
                                     tooltip: "Fai click qui se hai dimenticato il nome utente, la password o entrambi."
                                 },
                                 {

@@ -674,6 +674,13 @@ class AA_User
         return $this->sPhone;
     }
 
+    //last login time
+    protected $sLastLogin="";
+    public function GetLastLogin()
+    {
+        return $this->sLastLogin;
+    }
+
     //immagine del profilo
     protected $sImage="";
     public function GetImage()
@@ -746,6 +753,7 @@ class AA_User
             $user->nDisabled = $row[0]['disable'];
             $user->sImage = $row[0]['image'];
             $user->sPhone = $row[0]['phone'];
+            $user->sLastLogin = $row[0]['lastlogin'];
             $user->sFlags = $row[0]['flags'];
             $user->bIsValid = true;
 
@@ -810,6 +818,7 @@ class AA_User
             $user->sImage = $row[0]['image'];
             $user->sPhone = $row[0]['phone'];
             $user->sFlags = $row[0]['flags'];
+            $user->sLastLogin = $row[0]['lastlogin'];
             $user->bIsValid = true;
 
             //Popola i dati della struttura
@@ -845,7 +854,8 @@ class AA_User
                 $user->sFlags = $curRow['flags'];
                 $user->sImage = $curRow['image'];
                 $user->sPhone = $curRow['phone'];
-                $user->nDisabled = $$curRow['disable'];
+                $user->nDisabled = $curRow['disable'];
+                $user->sLastLogin = $curRow['lastlogin'];
                 $user->bCurrentUser = false;
                 $user->bIsValid = true;
     
