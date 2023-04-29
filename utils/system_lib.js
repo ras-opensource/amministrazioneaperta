@@ -1987,6 +1987,7 @@ var AA_MainApp = {
         enableSidemenu: false,
         enableModuleHeader: true,
         enableSectionHeader: true,
+        enablePullToRefresh: "",
 
         alert: AA_AlertModalDlg,
         message: AA_Message,
@@ -2416,6 +2417,21 @@ async function AA_DefaultSystemInitialization(params) {
 
             //inizializza l'interfaccia principale
             AA_MainApp.ui.MainUI.setup();
+
+            //pull to refresh
+            if(AA_MainApp.ui.enablePullToRefresh != "")
+            {
+                const ptr = PullToRefresh.init({
+                    mainElement: 'body',
+                    triggerElement: AA_MainApp.ui.enablePullToRefresh,
+                    instructionsReleaseToRefresh: "Rilascia per aggiornare...",
+                    instructionsPullToRefresh: "Trascina per aggiornare...",
+                    instructionsRefreshing: "Aggiornamento...",
+                    onRefresh() {
+                    window.location.reload();
+                    }
+                });
+            }
 
             let result = await AA_MainApp.ui.MainUI.refresh();
             if(result) AA_MainApp.ui.overlay.hide();        

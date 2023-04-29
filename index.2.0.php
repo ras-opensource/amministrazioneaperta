@@ -33,6 +33,7 @@ header("Pragma: no-cache");
 <script defer src="<?php echo $lib_path;?>/jointjs/joint.shapes.org.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/webix/codebase/webix.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/pdfobject.min.js"></script>
+<script defer type="text/javascript" src="<?php echo $lib_path;?>/pulltorefresh.js/dist/index.umd.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_legacy.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_lib.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_custom.js"></script>

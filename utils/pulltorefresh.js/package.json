@@ -1,0 +1,41 @@
+{
+  "name": "pulltorefreshjs",
+  "version": "0.1.22",
+  "description": "Pull To Refresh",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "browser": "dist/index.umd.js",
+  "scripts": {
+    "lint": "eslint src",
+    "build:browser": "bili src/lib/index.js --banner --minimal --format umd --format umd-min --module-name PullToRefresh",
+    "build:nodejs": "bili src/lib/index.js --minimal --format es --format cjs --module-name PullToRefresh",
+    "build:styles": "lessc src/style.less demos/style.css -x --source-map-inline",
+    "build:demos": "pug src/demos --pretty --out demos && pug src/index.pug --pretty --out demos",
+    "build:test": "npm run build:styles && npm run build:demos && cp dist/*.min* demos",
+    "build:lib": "npm run build:browser && npm run build:nodejs",
+    "build": "npm run build:lib && npm run build:test",
+    "serve": "live-server demos",
+    "watch": "npm run build:browser -- -w",
+    "dev": "npm run serve & npm run watch",
+    "prepublish": "npm run build:lib",
+    "pretest": "npm run lint && NODE_ENV=test npm run build --",
+    "posttest": "git checkout -- demos dist",
+    "test": "testcafe ${BROWSER:-chrome:headless} -a 'npm run serve -- --no-browser' tests/e2e/cases"
+  },
+  "files": [
+    "dist/*.js"
+  ],
+  "author": "Rafael Soto",
+  "license": "MIT",
+  "devDependencies": {
+    "bili": "^4.8.1",
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-utils": ">=1.4.1",
+    "less": "^3.8.1",
+    "live-server": "^1.2.1",
+    "pug-cli": "^1.0.0-alpha6",
+    "testcafe": "1.18.6"
+  }
+}
