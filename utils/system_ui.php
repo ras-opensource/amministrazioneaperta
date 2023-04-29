@@ -711,6 +711,12 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         $this->labelAlign = $val;
     }
 
+    protected $labelPosition="left";
+    public function SetLabelPosition($val = "left")
+    {
+        $this->labelPosition = $val;
+    }
+
     //Gestione pulsanti
     protected $applyButton = null;
     protected $applyButtonName = "Salva";
@@ -806,7 +812,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     #-----------------------------------------------------    
     protected function Update()
     {
-        $elementsConfig = array("labelWidth" => $this->labelWidth, "labelAlign" => $this->labelAlign, "bottomPadding" => $this->bottomPadding);
+        $elementsConfig = array("labelWidth" => $this->labelWidth, "labelAlign" => $this->labelAlign, "bottomPadding" => $this->bottomPadding,"labelPosition"=>$this->labelPosition);
         if ($this->validation) {
             $this->form->SetProp("validation", "validateForm");
         }

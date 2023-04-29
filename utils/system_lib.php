@@ -3470,6 +3470,16 @@ class AA_GenericModuleSection
         $this->name = $val;
     }
 
+    protected $icon = "";
+    public function GetIcon()
+    {
+        return $this->icon;
+    }
+    public function SetIcon($val = "")
+    {
+        $this->icon = $val;
+    }
+    
     //indica se deve esserci il riferimento sulla navbar
     protected $navbar = false;
     public function IsVisibleInNavbar()
@@ -3554,7 +3564,7 @@ class AA_GenericModuleSection
         return base64_encode($this->toString());
     }
 
-    public function __construct($id = "AA_GENERIC_MODULE_SECTION", $name = "section name", $navbar = false, $view_id = "AA_Section_Content_Box", $module_id = "AA_GENERIC_MODULE", $default = false, $refresh_view = true, $detail = false, $valid = false)
+    public function __construct($id = "AA_GENERIC_MODULE_SECTION", $name = "section name", $navbar = false, $view_id = "AA_Section_Content_Box", $module_id = "AA_GENERIC_MODULE", $default = false, $refresh_view = true, $detail = false, $valid = false, $icon="")
     {
         $this->name = $name;
         $this->id = $id;
@@ -3565,6 +3575,7 @@ class AA_GenericModuleSection
         $this->valid = $valid;
         $this->refresh_view = $refresh_view;
         $this->detail = $detail;
+        $this->icon = $icon;
     }
 }
 #----------------------------------------------

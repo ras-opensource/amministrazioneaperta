@@ -376,7 +376,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         }
 
                         //Aggiorna il titolo della sezione.
-                        if (this.getActiveView() == newObj.id) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: newObj.name });
+                        if (this.getActiveView() == newObj.id && AA_MainApp.ui.enableHeaderSection) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: newObj.name });
 
                         //Abilita l'auto animazione dei caroselli
                         let carouselObjs = obj.queryView({ view: "carousel" }, "all");
@@ -1849,7 +1849,10 @@ var AA_MainApp = {
     curModule: AA_dummy_module,
 
     //modulo di default (sidebar id)
-    defaultModule: "home",
+    defaultSidebarModule: "home",
+
+    //modulo di default (id)
+    defaultModule: "AA_MODULE_HOME",
 
     searchBoxParams: {
         id: "AA_MainSearchBox",
@@ -2595,7 +2598,7 @@ async function AA_RefreshMainUi(params) {
         //console.log("System::AA_RefreshMainUi() - parametri: ", urlParams);
 
         //Recupero i dati della piattaforma
-        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module"));
+        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module")+"&mobile="+AA_MainApp.device.isMobile+"&viewport_width="+AA_MainApp.ui.viewport.width+"&viewport_height="+AA_MainApp.ui.viewport.height);
 
         if (getAppStatus.status.value == "0") {
             if (getAppStatus.error.value != "") AA_MainApp.ui.message(getAppStatus.error.value);
@@ -2617,8 +2620,15 @@ async function AA_RefreshMainUi(params) {
             }
             //--------------------------------------------------------
 
+            //Aggiorna il nome utente
+            var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
+            if (user.length > 0 && $$("AA_icon_user")) {
+                $$("AA_icon_user").define("tooltip", user);
+                AA_MainApp.ui.user = user;
+            }
+
             //Aggiorna la sidebar
-            if (AA_MainApp.ui.enableSidebar) {
+            if (AA_MainApp.ui.enableSidebar && $$("AA_MainSidebar")) {
                 var sidebar = JSON.parse($(getAppStatus.content.value)[1].innerText);
 
                 if (typeof sidebar != "undefined") {
@@ -2635,25 +2645,24 @@ async function AA_RefreshMainUi(params) {
 
                     if (AA_MainApp.ui.sidebar.itemSelected == "" && itemSelected != "") AA_MainApp.ui.sidebar.itemSelected = itemSelected;
 
-                    if (AA_MainApp.ui.sidebar.itemSelected != "") {
+                    if (AA_MainApp.ui.sidebar.itemSelected != "") 
+                    {
                         //Seleziona l'item corrente
                         AA_MainApp.ui.sidebar.select(AA_MainApp.ui.sidebar.itemSelected);
+                        return true;
                     } else {
                         //Seleziona il modulo di default
-                        if (AA_MainApp.defaultModule) AA_MainApp.ui.sidebar.select(AA_MainApp.defaultModule);
+                        if (AA_MainApp.defaultSidebarModule) 
+                        {
+                            AA_MainApp.ui.sidebar.select(AA_MainApp.defaultSidebarModule);
+                            return true;
+                        }
                     }
                 }
             }
 
-            //Aggiorna il nome utente
-            var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
-            if (user.length > 0) {
-                $$("AA_icon_user").define("tooltip", user);
-                $$("AA_icon_user").define("click", function() {
-                    AA_MainApp.ui.message("Selected: " + user, "success");
-                });
-                AA_MainApp.ui.user = user;
-            }
+            //seleziona il modulo ddefault
+            if (AA_MainApp.defaultModule) await AA_MainApp.setCurrentModule(AA_MainApp.defaultModule);
 
             return true;
 
