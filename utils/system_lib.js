@@ -2448,7 +2448,7 @@ async function AA_DefaultSystemInitialization(params) {
             AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
 
             //inizializza l'interfaccia principale
-            AA_MainApp.ui.MainUI.setup();
+            await AA_MainApp.ui.MainUI.setup();
 
             //pull to refresh
             if(AA_MainApp.ui.enablePullToRefresh != "")
@@ -2729,7 +2729,7 @@ async function AA_RefreshMainUi(params) {
 }
 
 //Compone l'interfaccia principale
-function AA_SetupMainUi() {
+async function AA_SetupMainUi() {
     console.log("System::AA_SetupMainUi()");
 
     if (webix.CustomScroll && !webix.env.touch) webix.CustomScroll.init();

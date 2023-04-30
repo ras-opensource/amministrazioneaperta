@@ -75,7 +75,7 @@ if(AA_Const::AA_ENABLE_PUBLIC_MODULE && !isset($_REQUEST['reserved']))
         <div class='AA_MainOverlayContent'>
             <img class="AA_Header_Logo" src="immagini/logo_ras.svg" alt="logo RAS" title="www.regione.sardegna.it">
             <h1><span>A</span>mministrazione <span>A</span>perta</h1>
-            <div style='margin-top: 5em'><span class='mdi mdi-cog mdi-light mdi-spin' style='font-size: 92px;'></span></div>
+            <div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
         </div>
     <div>
 </body>
