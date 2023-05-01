@@ -2640,7 +2640,7 @@ async function AA_RefreshMainUi(params) {
     console.log("System::AA_RefreshMainUi()");
 
     try {
-
+        
         //Parametri url
         const urlParams = new URLSearchParams(window.location.search);
         //console.log("System::AA_RefreshMainUi() - parametri: ", urlParams);
