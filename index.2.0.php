@@ -71,12 +71,6 @@ if(AA_Const::AA_ENABLE_PUBLIC_MODULE && !isset($_REQUEST['reserved']))
 ?>
 </head>
 <body>
-    <div id="AA_MainOverlay" class='AA_MainOverlay' style="display: block;">
-        <div class='AA_MainOverlayContent'>
-            <img class="AA_Header_Logo" src="immagini/logo_ras.svg" alt="logo RAS" title="www.regione.sardegna.it">
-            <h1><span>A</span>mministrazione <span>A</span>perta</h1>
-            <div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-        </div>
-    <div>
+   <?php echo $platform->GetOverlay();?>
 </body>
 </html>
