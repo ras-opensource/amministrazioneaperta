@@ -809,7 +809,8 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         if (is_array($params)) $this->saveTaskParams = $params;
     }
-    #-----------------------------------------------------    
+    #-----------------------------------------------------
+        
     protected function Update()
     {
         $elementsConfig = array("labelWidth" => $this->labelWidth, "labelAlign" => $this->labelAlign, "bottomPadding" => $this->bottomPadding,"labelPosition"=>$this->labelPosition);
