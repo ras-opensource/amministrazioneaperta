@@ -155,6 +155,28 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     form.setValues(oldValues);
                 }
 
+                //verifica se ci sono campi di ricerca
+                let searchObjs = wnd.queryView({ view: "search" }, "all");
+                if (Array.isArray(searchObjs) && searchObjs.length > 0) {
+                    for (item of searchObjs) {
+                        let funct = item.config.filterFunction;
+                        if (AA_MainApp.utils.isDefined(funct)) {
+                            
+                            if(!item.hasEvent("onTimedKeyPress"))
+                            {
+                                console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                item.attachEvent("onTimedKeyPress",AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                            }
+
+                            if(!item.hasEvent("onChange") && item.config.clear==true)
+                            {
+                                console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                item.attachEvent("onChange",AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                            }
+                        }
+                    }
+                }
+
                 wnd.show();
 
                 return true;
@@ -303,7 +325,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let status = item.getValue();
                             if (AA_MainApp.utils.isDefined(status)) {
                                 console.log(this.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                                module.setRuntimeValue("multiviewStatus", item.config.id, status);
+                                this.setRuntimeValue("multiviewStatus", item.config.id, status);
                             }
                         }
                     }
@@ -314,7 +336,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let status = item.getValue();
                             if (AA_MainApp.utils.isDefined(status)) {
                                 console.log(this.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                                module.setRuntimeValue("tabBarStatus", item.config.id, status);
+                                this.setRuntimeValue("tabBarStatus", item.config.id, status);
                             }
                         }
                     }
@@ -324,7 +346,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         for (item of accordionObjs) {
                             let status = 1;
                             console.log(this.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                            module.setRuntimeValue("accordionItemStatus", item.config.id, status);
+                            this.setRuntimeValue("accordionItemStatus", item.config.id, status);
                         }
                     }
                 }
@@ -334,7 +356,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     let postParams = "";
                     if (obj.config.filtered == true) {
                         let filter_id = obj.config.filter_id;
-                        if (!AA_MainApp.utils.isDefined(filter_id)) filter_id = module.getActiveView();
+                        if (!AA_MainApp.utils.isDefined(filter_id)) filter_id = this.getActiveView();
                         postParams = this.getRuntimeValue(filter_id, "filter_data");
                         //console.log(this.name+"::refreshUiObjectDefault("+idObj+")", filter_id,postParams);
                     }
@@ -373,6 +395,27 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                     table.adjust();
                                 }
                             }*/
+                        }
+
+                        //verifica se ci sono campi di ricerca
+                        let searchObjs = obj.queryView({ view: "search" }, "all");
+                        if (Array.isArray(searchObjs) && searchObjs.length > 0) {
+                            for (item of searchObjs) {
+                                let funct = item.config.filterFunction;
+                                if (AA_MainApp.utils.isDefined(funct)) {
+                                    if(!item.hasEvent("onTimedKeyPress"))
+                                    {
+                                        console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                        item.attachEvent("onTimedKeyPress",AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                                    }
+
+                                    if(!item.hasEvent("onChange") && item.config.clear==true)
+                                    {
+                                        console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                        item.attachEvent("onChange",AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                                    }
+                                }
+                            }
                         }
 
                         //Aggiorna il titolo della sezione.
@@ -2283,7 +2326,7 @@ var AA_MainApp = {
 
                     //Visualizza un messaggio di successo
                     console.log("MainUI::refreshModuleContentBox(" + bRefreshModuleContent + ") - La visualizzazione del modulo: " + AA_MainApp.curModule.id + " è stata aggiornata.");
-                    AA_MainApp.ui.message("La visualizzazione del modulo: " + AA_MainApp.curModule.id + " è stata aggiornata.", "success");
+                    //AA_MainApp.ui.message("La visualizzazione del modulo: " + AA_MainApp.curModule.id + " è stata aggiornata.", "success");
                     return true;
                 }
                 return Promise.reject(false);
@@ -2595,7 +2638,7 @@ async function AA_SetCurrentModule(id) {
 
             //Visualizza un messaggio di successo
             console.log("System::AA_SetCurrentModule(" + id + ") - Il modulo: " + id + " è stato inizializzato correttamente.");
-            AA_MainApp.ui.message("Il modulo: " + id + " è stato inizializzato correttamente.", "success");
+            //AA_MainApp.ui.message("Il modulo: " + id + " è stato inizializzato correttamente.", "success");
         } catch (msg) {
             console.error("System::AA_SetCurrentModule(" + id + ") - errore: ", msg);
             //return Promise.reject(msg);
