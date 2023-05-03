@@ -4186,8 +4186,8 @@ Class AA_SinesModule extends AA_GenericModule
                 if($incarico->IsScadenzarioEnabled() > 0) $forza_scadenzario="Si";
                 $opzionale="No";
                 $compenso_spettante=$incarico->GetProp("compenso_spettante");
-                if($compenso_spettante=="0,00" || $compenso_spettante=="0,0" || $compenso_spettante=="0") $compenso_spettante="n.d.";
-                else $compenso_spettante=$incarico->GetProp("compenso_spettante");
+                //if($compenso_spettante=="0,00" || $compenso_spettante=="0,0" || $compenso_spettante=="0") $compenso_spettante="gratuito";
+                //$compenso_spettante=$incarico->GetProp("compenso_spettante");
 
                 if($incarico->IsOpzionale())$opzionale="Si";
                 $incarichi_data[]=array("id"=>$id_incarico,"compenso_spettante"=>$compenso_spettante,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$ras,"opzionale"=>$opzionale,"forza_scadenzario"=>$forza_scadenzario,"ops"=>$ops);

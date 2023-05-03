@@ -810,7 +810,14 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".cespite like '".addslashes($params['Cespite'])."'";
         }
-  
+
+        //conduttore
+        if(isset($params['Conduttore']) && $params['Conduttore'] !="")
+        {
+            $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_CANONI.".conduttore like '%".addslashes($params['Conduttore'])."%'";
+            $params['join'][]=" LEFT JOIN ".AA_Patrimonio::AA_DBTABLE_CANONI." ON FIND_IN_SET(".AA_Patrimonio::AA_DBTABLE_DATA.".id,".AA_Patrimonio::AA_DBTABLE_CANONI.".id_patrimonio)";
+        }
+          
         return $params;
     }
 
@@ -892,6 +899,13 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if(isset($params['Cespite']) && $params['Cespite'] !="")
         {
             $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_DATA.".cespite like '".addslashes($params['Cespite'])."'";
+        }
+
+        //conduttore
+        if(isset($params['Conduttore']) && $params['Conduttore'] !="")
+        {
+            $params['where'][]=" AND ".AA_Patrimonio::AA_DBTABLE_CANONI.".conduttore like '%".addslashes($params['Conduttore'])."%'";
+            $params['join'][]=" LEFT JOIN ".AA_Patrimonio::AA_DBTABLE_CANONI." ON FIND_IN_SET(".AA_Patrimonio::AA_DBTABLE_DATA.".id,".AA_Patrimonio::AA_DBTABLE_CANONI.".id_patrimonio)";
         }
 
         return $params;
@@ -2973,7 +2987,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"CodiceComune"=>$params['CodiceComune'],"Cespite"=>$params['Cespite'],"cestinate"=>$params['cestinate'], "Titolo"=>$params['Titolo']);
+        $formData=array("Conduttore"=>$params['Conduttore'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"CodiceComune"=>$params['CodiceComune'],"Cespite"=>$params['Cespite'],"cestinate"=>$params['cestinate'], "Titolo"=>$params['Titolo']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -2992,7 +3006,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
         
-        $dlg->SetHeight(580);
+        $dlg->SetHeight(680);
                 
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
@@ -3022,7 +3036,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Cespite
         $label="Cespite";
         $dlg->AddTextField("Cespite",$label,array("bottomLabel"=>"*Inserisci il numero del cespite.", "tooltip"=>"Inserisci il numero del cespite","placeholder"=>"..."));
-  
+
+        //Conduttore
+        $label="Conduttore";
+        $dlg->AddTextField("Conduttore",$label,array("bottomLabel"=>"*Conduttore del contratto di locazione.", "tooltip"=>"Conduttore del contratto di locazione","placeholder"=>"..."));
+        
         $dlg->SetApplyButtonName("Filtra");
         
         return $dlg->GetObject();
@@ -3032,7 +3050,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"Titolo"=>$params['Titolo'],"CodiceComune"=>$params['CodiceComune'],"Cespite"=>$params['Cespite'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
+        $formData=array("Conduttore"=>$params['Conduttore'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"Titolo"=>$params['Titolo'],"CodiceComune"=>$params['CodiceComune'],"Cespite"=>$params['Cespite'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -3077,6 +3095,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //Cespite
         $label="Cespite";
         $dlg->AddTextField("Cespite",$label,array("bottomLabel"=>"*Inserisci il numero del cespite.", "tooltip"=>"Inserisci il numero del cespite","placeholder"=>"..."));
+
+        //Conduttore
+        $label="Conduttore";
+        $dlg->AddTextField("Conduttore",$label,array("bottomLabel"=>"*Conduttore del contratto di locazione.", "tooltip"=>"Conduttore del contratto di locazione","placeholder"=>"..."));
 
         $dlg->SetApplyButtonName("Filtra");
 

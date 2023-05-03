@@ -4708,7 +4708,7 @@ class AA_Object_V2
 
         if (!$db->Query($query)) {
             //Imposta lo stato di errore
-            AA_Log::Log(__METHOD__ . "(" . print_r($params, TRUE) . ") - Errore :" . $db->GetErrorMessage(), 100);
+            AA_Log::Log(__METHOD__ . "(" . print_r($params, TRUE) . ") - Errore :" . $db->GetErrorMessage()." - ".$query, 100);
 
             return array(0 => -1, array());
         }
@@ -4736,7 +4736,7 @@ class AA_Object_V2
         else $query .= $group . $having . $order;
         if (!$db->Query($query)) {
             //Errore query
-            AA_Log::Log(__METHOD__ . "(" . print_r($params, TRUE) . ") - Errore nella query:" . $db->GetErrorMessage(), 100);
+            AA_Log::Log(__METHOD__ . "(" . print_r($params, TRUE) . ") - Errore nella query:" . $db->GetErrorMessage()." - ".$query, 100);
             return array(0 => -1, array());
         }
 
