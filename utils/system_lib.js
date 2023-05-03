@@ -161,17 +161,15 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     for (item of searchObjs) {
                         let funct = item.config.filterFunction;
                         if (AA_MainApp.utils.isDefined(funct)) {
-                            
-                            if(!item.hasEvent("onTimedKeyPress"))
-                            {
+
+                            if (!item.hasEvent("onTimedKeyPress")) {
                                 console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
-                                item.attachEvent("onTimedKeyPress",AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                                item.attachEvent("onTimedKeyPress", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
                             }
 
-                            if(!item.hasEvent("onChange") && item.config.clear==true)
-                            {
+                            if (!item.hasEvent("onChange") && item.config.clear == true) {
                                 console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
-                                item.attachEvent("onChange",AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                                item.attachEvent("onChange", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
                             }
                         }
                     }
@@ -403,23 +401,21 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             for (item of searchObjs) {
                                 let funct = item.config.filterFunction;
                                 if (AA_MainApp.utils.isDefined(funct)) {
-                                    if(!item.hasEvent("onTimedKeyPress"))
-                                    {
+                                    if (!item.hasEvent("onTimedKeyPress")) {
                                         console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
-                                        item.attachEvent("onTimedKeyPress",AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                                        item.attachEvent("onTimedKeyPress", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
                                     }
 
-                                    if(!item.hasEvent("onChange") && item.config.clear==true)
-                                    {
+                                    if (!item.hasEvent("onChange") && item.config.clear == true) {
                                         console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
-                                        item.attachEvent("onChange",AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                                        item.attachEvent("onChange", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
                                     }
                                 }
                             }
                         }
 
                         //Aggiorna il titolo della sezione.
-                        if (this.getActiveView() == newObj.id && AA_MainApp.ui.enableHeaderSection) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: newObj.name });
+                        if (this.getActiveView() == newObj.id && AA_MainApp.ui.enableSectionHeader) AA_MainApp.ui.MainUI.setModuleSectionHeaderContent({ title: newObj.name });
 
                         //Abilita l'auto animazione dei caroselli
                         let carouselObjs = obj.queryView({ view: "carousel" }, "all");
@@ -586,9 +582,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                     console.log(this.name + "::refreshSectionContentDefault(" + section_id + ") - Nuovo contenuto della sezione: ", module_content.content.value);
                     return 1;
-                }
-                else 
-                {
+                } else {
                     console.error(this.name + "::refreshSectionContentDefault(" + section_id + ") - Contenuto della sezione non trovato.");
                     return 0;
                 }
@@ -921,10 +915,9 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
             let postFunction = async function(params) {
                 if (AA_MainApp.utils.isDefined(params.task)) {
-                    
-                    let taskManager=this.taskManager;
-                    if(AA_MainApp.utils.isDefined(params.taskManager))
-                    {
+
+                    let taskManager = this.taskManager;
+                    if (AA_MainApp.utils.isDefined(params.taskManager)) {
                         taskManager = params.taskManager;
                     }
 
@@ -934,32 +927,26 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (AA_MainApp.utils.isDefined(params.wnd_id)) $$(params.wnd_id).close();
                         if (AA_MainApp.utils.isDefined(params.refresh)) {
                             if (AA_MainApp.utils.isDefined(params.refresh_obj_id)) this.refreshUiObject(params.refresh_obj_id, true);
-                            else
-                            {
-                                if(AA_MainApp.utils.isDefined(params.refreshApp))
-                                {
+                            else {
+                                if (AA_MainApp.utils.isDefined(params.refreshApp)) {
                                     AA_MainApp.ui.MainUI.refresh();
-                                }
-                                else this.refreshCurSection();
+                                } else this.refreshCurSection();
 
                                 //aggiorna l'immagine del profilo
-                                if(AA_MainApp.utils.isDefined(params.refreshUserProfile))
-                                {
+                                if (AA_MainApp.utils.isDefined(params.refreshUserProfile)) {
                                     const urlParams = new URLSearchParams(window.location.search);
-                                    var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module")+"&mobile="+AA_MainApp.device.isMobile+"&viewport_width="+AA_MainApp.ui.viewport.width+"&viewport_height="+AA_MainApp.ui.viewport.height);
-                                    if (getAppStatus.status.value == "0") 
-                                    {
+                                    var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module") + "&mobile=" + AA_MainApp.device.isMobile + "&viewport_width=" + AA_MainApp.ui.viewport.width + "&viewport_height=" + AA_MainApp.ui.viewport.height);
+                                    if (getAppStatus.status.value == "0") {
                                         //Aggiorna il nome utente e l'immagine
                                         var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
-                                        if (user.length > 0) 
-                                        {
+                                        if (user.length > 0) {
                                             $$("AA_icon_user").define("tooltip", user);
-                                            $$("AA_icon_user").define("data",{"user_image_path":$(getAppStatus.content.value)[0].childNodes[5].nextSibling.data});
+                                            $$("AA_icon_user").define("data", { "user_image_path": $(getAppStatus.content.value)[0].childNodes[5].nextSibling.data });
                                             AA_MainApp.ui.user = user;
                                         }
                                     }
-                                } 
-                            }                        
+                                }
+                            }
                         }
 
                         //Verifica se ci sono ulteriori azioni da intraprendere
@@ -970,15 +957,14 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         return true;
                     } else {
 
-                        if(result.status.value > -2)
-                        {
+                        if (result.status.value > -2) {
                             if (result.error.type != "json") {
                                 AA_MainApp.ui.alert(result.error.value);
                                 return false;
                             } else {
                                 webix.ui(result.error.value).show();
                                 return false;
-                            }    
+                            }
                         }
                         return false;
                     }
@@ -1028,7 +1014,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
             let selection = [];
             for (item of sel) {
-                selection.push(parseInt(item.id));
+                if (item) selection.push(parseInt(item.id));
             }
 
             module.setRuntimeValue(this.config.id, "itemSelected", selection);
@@ -1290,7 +1276,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
                         }
 
-                        let email=arguments[0].trim();
+                        let email = arguments[0].trim();
 
                         let found = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || "");
                         if (!found) {
@@ -2471,8 +2457,7 @@ var AA_MainApp = {
 async function AA_DefaultSystemInitialization(params) {
     console.log("Amministrazione Aperta - Inizializzazione di sistema...");
 
-    try
-    {
+    try {
         //nuova interfaccia
         if (AA_MainApp.ui.enableGui && !AA_MainApp.bEnableLegacy) {
 
@@ -2494,8 +2479,7 @@ async function AA_DefaultSystemInitialization(params) {
             await AA_MainApp.ui.MainUI.setup();
 
             //pull to refresh
-            if(AA_MainApp.ui.enablePullToRefresh != "")
-            {
+            if (AA_MainApp.ui.enablePullToRefresh != "") {
                 const ptr = PullToRefresh.init({
                     mainElement: 'body',
                     triggerElement: AA_MainApp.ui.enablePullToRefresh,
@@ -2503,22 +2487,20 @@ async function AA_DefaultSystemInitialization(params) {
                     instructionsPullToRefresh: "Trascina per aggiornare...",
                     instructionsRefreshing: "Aggiornamento...",
                     onRefresh() {
-                    window.location.reload();
+                        window.location.reload();
                     }
                 });
             }
 
             let result = await AA_MainApp.ui.MainUI.refresh();
-            if(result) AA_MainApp.ui.overlay.hide();        
+            if (result) AA_MainApp.ui.overlay.hide();
 
             console.log("Amministrazione Aperta - Inizializzazione di sistema conclusa.");
-            
+
             return true;
         }
         //-------------------------------
-    }
-    catch(msg)
-    {
+    } catch (msg) {
         console.error(msg);
         return false;
     }
@@ -2683,13 +2665,13 @@ async function AA_RefreshMainUi(params) {
     console.log("System::AA_RefreshMainUi()");
 
     try {
-        
+
         //Parametri url
         const urlParams = new URLSearchParams(window.location.search);
         //console.log("System::AA_RefreshMainUi() - parametri: ", urlParams);
 
         //Recupero i dati della piattaforma
-        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module")+"&mobile="+AA_MainApp.device.isMobile+"&viewport_width="+AA_MainApp.ui.viewport.width+"&viewport_height="+AA_MainApp.ui.viewport.height);
+        var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module") + "&mobile=" + AA_MainApp.device.isMobile + "&viewport_width=" + AA_MainApp.ui.viewport.width + "&viewport_height=" + AA_MainApp.ui.viewport.height);
 
         if (getAppStatus.status.value == "0") {
             if (getAppStatus.error.value != "") AA_MainApp.ui.message(getAppStatus.error.value);
@@ -2715,7 +2697,7 @@ async function AA_RefreshMainUi(params) {
             var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
             if (user.length > 0 && $$("AA_icon_user")) {
                 $$("AA_icon_user").define("tooltip", user);
-                $$("AA_icon_user").define("data",{"user_image_path":$(getAppStatus.content.value)[0].childNodes[5].nextSibling.data});
+                $$("AA_icon_user").define("data", { "user_image_path": $(getAppStatus.content.value)[0].childNodes[5].nextSibling.data });
                 AA_MainApp.ui.user = user;
             }
 
@@ -2737,15 +2719,13 @@ async function AA_RefreshMainUi(params) {
 
                     if (AA_MainApp.ui.sidebar.itemSelected == "" && itemSelected != "") AA_MainApp.ui.sidebar.itemSelected = itemSelected;
 
-                    if (AA_MainApp.ui.sidebar.itemSelected != "") 
-                    {
+                    if (AA_MainApp.ui.sidebar.itemSelected != "") {
                         //Seleziona l'item corrente
                         AA_MainApp.ui.sidebar.select(AA_MainApp.ui.sidebar.itemSelected);
                         return true;
                     } else {
                         //Seleziona il modulo di default
-                        if (AA_MainApp.defaultSidebarModule) 
-                        {
+                        if (AA_MainApp.defaultSidebarModule) {
                             AA_MainApp.ui.sidebar.select(AA_MainApp.defaultSidebarModule);
                             return true;
                         }
@@ -3312,7 +3292,7 @@ async function AA_StartAMAAI() {
             return true;
         } else {
             console.error("AA_ShowAMAAI() - " + result.error.value);
-            if(result.status.value > -2) AA_MainApp.ui.alert(result.error.value);
+            if (result.status.value > -2) AA_MainApp.ui.alert(result.error.value);
             return false;
         }
     } catch (msg) {
@@ -3409,7 +3389,7 @@ async function AA_UserAuth(params = null) {
                                     return;
                                 } else {
                                     AA_MainApp.ui.alert(result.error.value);
-                                    console.error("AA_UserAuthDlg - "+result.error.value);
+                                    console.error("AA_UserAuthDlg - " + result.error.value);
                                 }
                             } catch (msg) {
                                 console.error("AA_MainApp.AA_UserAuth", msg);
@@ -3566,7 +3546,7 @@ async function AA_UserResetPwd(params = null) {
                                 //console.log("AA_UserAuth", result);
                                 if (result.status.value == 0) {
                                     $$("AA_UserResetPwdDlg").close();
-                                    AA_MainApp.ui.alert(result.content.value,"Info","");
+                                    AA_MainApp.ui.alert(result.content.value, "Info", "");
                                     return true;
                                 } else {
                                     AA_MainApp.ui.alert(result.error.value);
@@ -3653,7 +3633,7 @@ async function AA_LogOut(params = null) {
 }
 
 //Registrazione
-function AA_UserRegister(params=null) {
+function AA_UserRegister(params = null) {
     try {
         if ($$("AA_UserRegisterDlg")) {
             $$("AA_UserRegisterDlg").show();
@@ -3737,7 +3717,7 @@ function AA_UserRegister(params=null) {
                                 //console.log("AA_UserAuth", result);
                                 if (result.status.value == 0) {
                                     $$("AA_UserRegisterDlg").close();
-                                    AA_MainApp.ui.alert(result.content.value,"Info","");
+                                    AA_MainApp.ui.alert(result.content.value, "Info", "");
                                     return true;
                                 } else {
                                     AA_MainApp.ui.alert(result.error.value);
@@ -3758,68 +3738,67 @@ function AA_UserRegister(params=null) {
                 type: "clean",
                 css: "AA_RegisterDlg_bg",
                 autoHeight: true,
-                rows: [
-                    {
+                rows: [{
                         view: "template",
                         autoHeight: true,
                         template: "<div style='text-align: center;'><div style='text-align: center; font-weight: bold'>Benvenuto!</div><br>Inserisci i tuoi dati sui campi sottostanti.<br>il sistema ti invierà delle credenziali per l'accesso alla piattaforma.</div>"
                     },
                     {
-                    id: "AA_UserRegister_Form",
-                    view: "form",
-                    borderless: true,
-                    rules: {
-                        "email": webix.rules.isEmail,
-                        "nome": webix.rules.isNotEmpty,
-                        "cognome": webix.rules.isNotEmpty,
-                        "privacy": webix.rules.isChecked
-                    },
-                    elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
-                    elements: [
-                        {
-                            view: "text",
-                            icon: "mdi mdi-account",
-                            name: "nome",
-                            bottomLabel: "Inserisci il tuo nome.",
-                            required: true,
-                            label: "Nome"
+                        id: "AA_UserRegister_Form",
+                        view: "form",
+                        borderless: true,
+                        rules: {
+                            "email": webix.rules.isEmail,
+                            "nome": webix.rules.isNotEmpty,
+                            "cognome": webix.rules.isNotEmpty,
+                            "privacy": webix.rules.isChecked
                         },
-                        {
-                            view: "text",
-                            icon: "mdi mdi-account",
-                            name: "cognome",
-                            bottomLabel: "Inserisci il tuo cognome.",
-                            required: true,
-                            label: "Cognome"
-                        },
-                        {
-                            view: "text",
-                            icon: "mdi mdi-email",
-                            name: "email",
-                            bottomLabel: "Inserisci il tuo indirizzo email.",
-                            required: true,
-                            label: "Email"
-                        },
-                        {
-                            view: "checkbox",
-                            labelRight: "<span style='font-size:smaller'>Dichiaro di aver letto l'informativa privacy.</span>",
-                            bottomLabel:"Fai <a href='#'>click qui</a> per leggere l'informativa su come trattiamo i tuoi dati e su come puoi esercitare i tuoi diritti.",
-                            bottomPadding: 48,
-                            name: "privacy",
-                            value: 0,
-                            label: "",
-                            required: true
-                        },
-                        {},
-                        {
-                            type: "space",
-                            css: { "background-color": "transparent" },
-                            rows: [
-                                apply_btn
-                            ]
-                        }
-                    ]
-                }]
+                        elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
+                        elements: [{
+                                view: "text",
+                                icon: "mdi mdi-account",
+                                name: "nome",
+                                bottomLabel: "Inserisci il tuo nome.",
+                                required: true,
+                                label: "Nome"
+                            },
+                            {
+                                view: "text",
+                                icon: "mdi mdi-account",
+                                name: "cognome",
+                                bottomLabel: "Inserisci il tuo cognome.",
+                                required: true,
+                                label: "Cognome"
+                            },
+                            {
+                                view: "text",
+                                icon: "mdi mdi-email",
+                                name: "email",
+                                bottomLabel: "Inserisci il tuo indirizzo email.",
+                                required: true,
+                                label: "Email"
+                            },
+                            {
+                                view: "checkbox",
+                                labelRight: "<span style='font-size:smaller'>Dichiaro di aver letto l'informativa privacy.</span>",
+                                bottomLabel: "Fai <a href='#'>click qui</a> per leggere l'informativa su come trattiamo i tuoi dati e su come puoi esercitare i tuoi diritti.",
+                                bottomPadding: 48,
+                                name: "privacy",
+                                value: 0,
+                                label: "",
+                                required: true
+                            },
+                            {},
+                            {
+                                type: "space",
+                                css: { "background-color": "transparent" },
+                                rows: [
+                                    apply_btn
+                                ]
+                            }
+                        ]
+                    }
+                ]
             }
 
             register_dlg['head'] = header_box;
