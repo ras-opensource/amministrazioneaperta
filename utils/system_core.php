@@ -1030,7 +1030,7 @@ class AA_User
 
             //Old stuff
             if (isset($log)) AA_Log::LogAction($rs->Get('id'), 0, "Authenticate token ($sToken) - failed");
-            //*
+            //----------
 
             AA_Log::Log(get_class() . "->UserAuth($sToken) - Authenticate token ($sToken) - failed", 100);
             return AA_User::Guest();
