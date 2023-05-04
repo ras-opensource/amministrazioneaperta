@@ -3080,7 +3080,8 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
         //passa la dimensione della viewport
         url += "&vw=" + document.documentElement.clientWidth;
         url += "&vh=" + document.documentElement.clientHeight;
-
+        url += "&mobile=" + AA_MainApp.device.isMobile;
+        
         if (typeof params == "object") {
             if (Array.isArray(params)) {
                 for (let param of params) {
