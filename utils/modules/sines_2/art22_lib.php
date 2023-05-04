@@ -2346,7 +2346,7 @@ class AA_Organismi extends AA_Object
         $query.=", opzionale='".addslashes($incarico->GetProp("opzionale"))."'";
         $query.=", compenso_spettante='".addslashes($incarico->GetProp("compenso_spettante"))."'";
         if($incarico->GetProp("forza_scadenzario") > 0) $query.=", forza_scadenzario='1'";
-        else $query.=", forza_scadenzario='1'";
+        else $query.=", forza_scadenzario='0'";
         
         if(!$db->Query($query))
         {
@@ -2413,7 +2413,7 @@ class AA_Organismi extends AA_Object
         $query.=", opzionale='".addslashes($incarico->GetProp("opzionale"))."'";
         $query.=", compenso_spettante='".addslashes($incarico->GetProp("compenso_spettante"))."'";
         if($incarico->GetProp("forza_scadenzario") > 0) $query.=", forza_scadenzario='1'";
-        else $query.=", forza_scadenzario='1'";
+        else $query.=", forza_scadenzario='0'";
         $query.=" WHERE ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI.".id = '".addslashes($incarico->GetId())."' and ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA_INCARICHI.".id_organigramma='".$organigramma->GetProp("id")."' LIMIT 1";
         
         if(!$db->Query($query))
