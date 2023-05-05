@@ -4923,7 +4923,7 @@ class AA_Platform
     }
 
     //public overlay
-    protected $sOverlay='<div id="AA_MainOverlay" class="AA_MainOverlay" style="display: block;">
+    static protected $sOverlay='<div id="AA_MainOverlay" class="AA_MainOverlay" style="display: block;">
         <div class="AA_MainOverlayContent">
             <img class="AA_Header_Logo" src="immagini/logo_ras.svg" alt="logo RAS" title="www.regione.sardegna.it">
             <h1><span>A</span>mministrazione <span>A</span>perta</h1>
@@ -4931,14 +4931,14 @@ class AA_Platform
         </div>
     <div>';
 
-    public function GetOverlay()
+    public static function GetOverlay()
     {
-        return $this->sOverlay;
+        return static::$sOverlay;
     }
 
-    public function SetOverlay($var="")
+    public static function SetOverlay($var="")
     {
-        $this->sOverlay=$var;
+        static::$sOverlay=$var;
     }
     //---------------------------
 

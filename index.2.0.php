@@ -71,6 +71,6 @@ if(AA_Const::AA_ENABLE_PUBLIC_MODULE && !isset($_REQUEST['reserved']))
 ?>
 </head>
 <body>
-   <?php echo $platform->GetOverlay();?>
+   <?php echo AA_Platform::GetOverlay();?>
 </body>
 </html>
