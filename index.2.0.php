@@ -25,7 +25,7 @@ header("Pragma: no-cache");
 <link rel="stylesheet" type="text/css" href="<?php echo $lib_path;?>/webix/codebase/webix.min.css" />
 <link rel="stylesheet" href="stili/mdi/css/materialdesignicons.min.css" type="text/css" />
 <link href="stili/system.css" rel="stylesheet" type="text/css" />
-<link href="stili/organismi.css" rel="stylesheet" type="text/css" />
+<link href="stili/system_custom.css" rel="stylesheet" type="text/css" />
 <script defer src="<?php echo $lib_path;?>/cryptojs/aes.js"></script>
 <script defer src="<?php echo $lib_path;?>/jquery/jquery-3.6.0.min.js"></script>
 <script defer src="<?php echo $lib_path;?>/jointjs/lodash.js"></script>
