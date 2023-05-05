@@ -2070,7 +2070,7 @@ class AA_User
                 {
 
                     $struttura="";
-                    if(static::$aResetPasswordEmailParams['showStruct'])
+                    if(static::$aResetPasswordEmailParams['bShowStruct'])
                     {
                         $struttura = $user->GetStruct()->GetAssessorato();
                         if ($user->GetStruct()->GetDirezione(true) != 0) $struttura .= " - " . $user->GetStruct()->GetDirezione();

@@ -431,6 +431,7 @@ else $curpage="first-page";
 <script src="https://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 <script src="/web/amministrazione_aperta/utils/jstree.min.js"></script>
 <script src="/web/amministrazione_aperta/utils/jquery.fileupload.js"></script>
+<script src="/web/amministrazione_aperta/utils/system_legacy.js"></script>
 <script src="/web/amministrazione_aperta/utils/system_lib.js"></script>
 <script src="/web/amministrazione_aperta/utils/smartcv_lib.js"></script>
 <link href="/web/amministrazione_aperta/stili/email_login.css" rel="stylesheet" type="text/css" />
