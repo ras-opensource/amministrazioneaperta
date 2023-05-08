@@ -4459,7 +4459,7 @@ Class AA_SinesModule extends AA_GenericModule
             "module_id"=>$this->id,
             "type"=>array(
                 "type"=>"tiles",
-                "height"=>120,
+                "height"=>140,
                 "width"=>"auto",
                 "css"=>"AA_DataView_Nomine_item",
             ),

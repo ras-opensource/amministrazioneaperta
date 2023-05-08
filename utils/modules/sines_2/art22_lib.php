@@ -2674,6 +2674,7 @@ class AA_Organismi extends AA_Object
         
         //Filtra in base alle nomine in corso
         $now=date("Y-m-d");
+        $ricerca_scadenzario=false;
         if((isset($params['in_corso']) && $params['in_corso'] !="") || (isset($params['in_scadenza']) && $params['in_scadenza'] !="") || (isset($params['scadute']) && $params['scadute'] !="") || (isset($params['recenti']) && $params['recenti'] !=""))
         {
             if($params['in_corso'] =="0" && $params['in_scadenza'] =="0" && $params['scadute'] =="0" && $params['recenti'] =="0")
@@ -2756,6 +2757,10 @@ class AA_Organismi extends AA_Object
             $where="";
             $having="";
             //$order="";
+            $scadenzario_count=10;
+            if(isset($params['count']) && intval($params['count'])>0) $scadenzario_count=$params['count'];
+            $params['count']="all";
+            $ricerca_scadenzario=true;
         }
         else
         {
@@ -2765,41 +2770,43 @@ class AA_Organismi extends AA_Object
             if(isset($params['stato_organismo']) && $params['stato_organismo'] == 2) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 2) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organìsmo = 0))";
         }     
         
-        //Conta i risultati
-        $query="SELECT COUNT(id) as tot FROM (".$select.$join;
-        if(strlen($where) > 0) $query.=" WHERE 1 ".$where;
-        $query.=$group.$having.") as organismi_filter";
-
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
-        
-        $db = new Database();
-        $db->Query($query);
-        if($db->Query($query)===false)
-        {
-            //Imposta lo stato di errore
-            AA_Log::Log(__METHOD__."(".print_r($params,TRUE).") - Errore nella query: $query",100, true, true);
-
-            return array(0=>-1,array());
-        }
-
-        $rs=$db->GetRecordSet();
         $tot_count=0;
-        if($rs->GetCount() > 0) $tot_count=$rs->Get('tot');
-
-        //Restituisce un array vuoto se non trova nulla
-        if($tot_count==0)
+        $db = new AA_Database();
+        if(!$ricerca_scadenzario)
         {
-            AA_Log::Log(__METHOD__."(".print_r($params,TRUE).") - query vuota: $query",0, false, true);
-            return array(0=>0,array());
+            //Conta i risultati
+            $query="SELECT COUNT(id) as tot FROM (".$select.$join;
+            if(strlen($where) > 0) $query.=" WHERE 1 ".$where;
+            $query.=$group.$having.") as organismi_filter";
+
+            //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+            $db->Query($query);
+            if($db->Query($query)===false)
+            {
+                //Imposta lo stato di errore
+                AA_Log::Log(__METHOD__."(".print_r($params,TRUE).") - Errore nella query: $query",100, true, true);
+
+                return array(0=>-1,array());
+            }
+
+            $rs=$db->GetResultSet();
+            if(sizeof($rs) > 0) $tot_count=$rs[0]['tot'];
+
+            //Restituisce un array vuoto se non trova nulla
+            if($tot_count==0)
+            {
+                AA_Log::Log(__METHOD__."(".print_r($params,TRUE).") - query vuota: $query",0, false, true);
+                return array(0=>0,array());
+            }
+
+            //Limita a 10 risultati di default
+            if(!isset($params['from']) || $params['from'] < 0 || $params['from'] > $tot_count) $params['from'] = 0;
+            if(!isset($params['count']) || $params['count'] < 0) $params['count'] = 10;
+            if($params['from'] >= $tot_count && $tot_count >=10) $params['from']=$tot_count-10;
+
+            //Restituisce solo il numero
+            if($bOnlyCount) return array(0=>$tot_count,array());
         }
-
-        //Restituisce solo il numero
-        if($bOnlyCount) return array(0=>$tot_count,array());
-
-        //Limita a 10 risultati di default
-        if(!isset($params['from']) || $params['from'] < 0 || $params['from'] > $tot_count) $params['from'] = 0;
-        if(!isset($params['count']) || $params['count'] < 0) $params['count'] = 10;
-        if($params['from'] == $tot_count && $tot_count >=10) $params['from']=$tot_count-10;
 
         //Effettua la query
         $query=$select.$join;
@@ -2815,19 +2822,35 @@ class AA_Organismi extends AA_Object
 
         //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
-        $rs=$db->GetRecordSet();
+        $rs=$db->GetResultSet();
         
+        if($ricerca_scadenzario)
+        {
+            $tot_count=sizeof($rs);
+            if(!isset($params['from']) || $params['from'] < 0 || $params['from'] > $tot_count) $params['from'] = 0;
+            //if(!isset($params['count']) || $params['count'] < 0) $params['count'] = 10;
+            if($params['from'] >= $tot_count && $tot_count >=10) $params['from']=$tot_count-10;
+        }
+
         //Popola l'array dei risultati
         $results=array();
-        
-        if($rs->GetCount() > 0)
+        $curRecIndex=0;
+        if(sizeof($rs) > 0)
         {
-            do
+            foreach($rs as $curRow)
             {
-                $curResult=new AA_Organismi($rs->Get('id'),$user);
-                if($curResult != null) $results[$rs->Get('id')]=$curResult;
-
-            } while($rs->MoveNext());
+                $curResult=new AA_Organismi($curRow['id'],$user);
+                if($curResult != null)
+                {
+                    //verifica organigrammi;
+                    if($ricerca_scadenzario && $curRecIndex >= $params['from'] && $curRecIndex < ($params['from']+$scadenzario_count))
+                    {
+                        $results[$curRow['id']]=$curResult;
+                        $curRecIndex++;
+                    }
+                    else $results[$curRow['id']]=$curResult;
+                } 
+            }
         }
 
         $result=array(0=>$tot_count,$results);
