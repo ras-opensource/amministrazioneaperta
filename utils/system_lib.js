@@ -158,11 +158,12 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 //Imposta lo stato dei sidemenu (se presenti)
                 let menus = wnd.queryView("sidemenu", "all");
                 for (menu of menus) {
-                    if (AA_MainApp.utils.isDefined(menu.config.state)) {
+                    if (AA_MainApp.utils.isDefined(menu.config.stateFunction)) {
                         console.log("dlg - sidemenu");
-                        menu.state = AA_MainApp.utils.getEventHandler(menu.config.state, this.id);
+                        menu.config.state = AA_MainApp.utils.getEventHandler(menu.config.stateFunction, this.id);
                     }
                 }
+
                 if (AA_MainApp.utils.isDefined(wnd.config.stateFunction)) {
                     console.log("dlg - sidemenu");
                     wnd.config.state = AA_MainApp.utils.getEventHandler(wnd.config.stateFunction, this.id);
