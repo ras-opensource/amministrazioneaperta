@@ -321,6 +321,28 @@ div.AA_Module_Section_Title_Gradient {
     margin-right: 3px;
 }
 
+.AA_Popup {
+    border-radius: 5px;
+    border-color: rgba(52, 151, 197, 1);
+}
+
+.AA_Popup_header_box {
+    background: transparent;
+    border: 0px;
+}
+
+.AA_Popup_title {
+    background: transparent;
+}
+
+.AA_Popup_btn_close span.webix_icon {
+    color: #ff8080;
+}
+
+.AA_Popup_btn_close span.webix_icon:hover {
+    color: #ff8080;
+}
+
 div.AA_Footer_Gradient {
     border: none !important;
     border-style: none !important;

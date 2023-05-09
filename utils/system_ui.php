@@ -966,6 +966,155 @@ class AA_GenericWindowTemplate
     }
 }
 
+//Classe per la gestione del layout dei popup
+class AA_GenericPopupTemplate
+{
+    protected $id = "AA_TemplateGenericPopup";
+    public function SetId($id = "")
+    {
+        if ($id != "") $this->id = $id;
+    }
+
+    public function GetId()
+    {
+        return $this->id;
+    }
+
+    public function GetPopupId()
+    {
+        return $this->id."_Popup";
+    }
+
+    protected $body = "";
+    protected $head = "";
+    protected $wnd = "";
+    private $title = "";
+    protected $css = "";
+    public function SetCss($val="")
+    {
+        $this->css=$val;
+    }
+
+    protected $bClose=true;
+    public function Enableclose($val=true)
+    {
+        if($val) $this->bClose=true;
+        else $this->bClose=false;
+    }
+
+    protected $modal = true;
+    public function EnableModal()
+    {
+        $this->modal = true;
+    }
+    public function DisableModal()
+    {
+        $this->modal = false;
+    }
+
+    protected $module = "";
+    public function SetModule($idModule)
+    {
+        $this->module = $idModule;
+    }
+    public function GetModule()
+    {
+        return $this->module;
+    }
+
+    public function __construct($id = "", $module = "")
+    {
+        if ($id != "") $this->id = $id;
+
+        //AA_Log::Log(__METHOD__." - ".$module,100);
+
+        $this->module = $module;
+
+        $this->body = new AA_JSON_Template_Layout($this->id . "_Content_Box", array("type" => "clean", "padding"=>5));
+
+        $this->wnd = new AA_JSON_Template_Generic($this->id . "_Popup", array(
+            "view" => "popup",
+            "height" => $this->height,
+            "width" => $this->width,
+            "modal"=>$this->modal,
+            "position" => "center",
+            "css" => "AA_Popup"
+        ));
+
+        $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+            array("id" => $this->id . "_Title", "css" => "AA_Popup_title", "template" => $this->title),
+            //array("id" => $this->id . "_btn_resize", "view" => "icon", "icon" => "mdi mdi-fullscreen", "css" => "AA_Wnd_btn_fullscreen", "width" => 24, "height" => 24, "tooltip" => "Mostra la finestra a schermo intero", "click" => $script),
+            array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}")
+        )));
+
+        $this->body->AddRow($this->head);
+        $this->wnd->SetProp("body", $this->body);
+    }
+
+    protected function Update()
+    {
+        $this->wnd->setProp("height", $this->height);
+        $this->wnd->setProp("width", $this->width);
+        $this->wnd->setProp("modal", $this->modal);
+        if(!$this->bClose) $this->head->SetProp("hidden",true);
+        if($this->css !="") $this->body->SetProp("css",$this->css);
+    }
+
+    protected $width = "1280";
+    public function SetWidth($width = "1280")
+    {
+        if ($width > 0) $this->width = $width;
+    }
+    public function GetWidth()
+    {
+        return $this->width;
+    }
+
+    protected $height = "720";
+    public function SetHeight($height = "720")
+    {
+        if ($height > 0) $this->height = $height;
+    }
+    public function GetHeight()
+    {
+        return $this->height;
+    }
+
+    //Gestione del contenuto
+    public function AddView($view)
+    {
+        if (is_array($view) && $view['id'] != "") {
+            $this->body->AddRow(new AA_JSON_Template_Generic($view['id'], $view));
+        }
+
+        if ($view instanceof AA_JSON_Template_Generic) $this->body->AddRow($view);
+    }
+
+    public function __toString()
+    {
+        $this->Update();
+        return json_encode($this->wnd->toArray());
+    }
+
+    public function toString()
+    {
+        return $this->__toString();
+    }
+
+    public function GetObject()
+    {
+        $this->Update();
+        return $this->wnd;
+    }
+
+    public function toBase64()
+    {
+        $this->Update();
+
+        return $this->wnd->toBase64();
+    }
+}
+
 //Template generic filter box
 class AA_GenericFormDlg extends AA_GenericWindowTemplate
 {
