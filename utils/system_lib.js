@@ -309,6 +309,9 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 //Se la sezione è paginata salva la pagina corrente
                 let curPage = 0;
                 let params = "";
+                let module = AA_MainApp.curModule;
+                
+                if(this instanceof AA_Module) module = this;
 
                 if (obj.config.paged == true) {
                     curPage = this.getRuntimeValue(obj.config.pager_id, "curPage");
@@ -322,8 +325,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         for (item of multiObjs) {
                             let status = item.getValue();
                             if (AA_MainApp.utils.isDefined(status)) {
-                                console.log(this.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                                this.setRuntimeValue("multiviewStatus", item.config.id, status);
+                                console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                                module.setRuntimeValue("multiviewStatus", item.config.id, status);
                             }
                         }
                     }
@@ -333,8 +336,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         for (item of tabbarObjs) {
                             let status = item.getValue();
                             if (AA_MainApp.utils.isDefined(status)) {
-                                console.log(this.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                                this.setRuntimeValue("tabBarStatus", item.config.id, status);
+                                console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                                module.setRuntimeValue("tabBarStatus", item.config.id, status);
                             }
                         }
                     }
@@ -343,8 +346,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     if (Array.isArray(accordionObjs) && accordionObjs.length > 0) {
                         for (item of accordionObjs) {
                             let status = 1;
-                            console.log(this.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                            this.setRuntimeValue("accordionItemStatus", item.config.id, status);
+                            console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                            module.setRuntimeValue("accordionItemStatus", item.config.id, status);
                         }
                     }
                 }
@@ -354,8 +357,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     let postParams = "";
                     if (obj.config.filtered == true) {
                         let filter_id = obj.config.filter_id;
-                        if (!AA_MainApp.utils.isDefined(filter_id)) filter_id = this.getActiveView();
-                        postParams = this.getRuntimeValue(filter_id, "filter_data");
+                        if (!AA_MainApp.utils.isDefined(filter_id)) filter_id = module.getActiveView();
+                        postParams = module.getRuntimeValue(filter_id, "filter_data");
                         //console.log(this.name+"::refreshUiObjectDefault("+idObj+")", filter_id,postParams);
                     }
 
@@ -363,9 +366,9 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     $$(idObj).disable();
 
                     //console.log(this.name+"::refreshUiObjectDefault("+idObj+")",postParams);
-                    let result = await this.refreshObjectContent(idObj, params, postParams);
+                    let result = await module.refreshObjectContent(idObj, params, postParams);
                     if (result != 1) {
-                        console.error(this.name + "::refreshUiObjectDefault(" + idObj + ") - errore: ", result);
+                        console.error(module.name + "::refreshUiObjectDefault(" + idObj + ") - errore: ", result);
                         return Promise.reject(result);
                     }
                 }
@@ -373,14 +376,14 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 //Aggiorna il componente grafico
                 let newObj = this.content[idObj];
                 if (newObj) {
-                    console.log(this.name + "::refreshUiObjectDefault(" + idObj + ") - Aggiorno l'interfaccia.");
+                    console.log(AA_MainApp.curModule.name + "::refreshUiObjectDefault(" + idObj + ") - Aggiorno l'interfaccia.");
                     //webix.ui(newObj,$$(this.ui.module_content_id),obj);
                     webix.ui(newObj, obj.getParentView(), obj);
 
                     obj = $$(newObj.id);
                     if (obj) {
                         if (obj.config.view == "layout") {
-                            console.log(this.name + "::refreshUiObjectDefault(" + idObj + ") - ricostruisco il layout.")
+                            console.log(module.name + "::refreshUiObjectDefault(" + idObj + ") - ricostruisco il layout.")
                             obj.reconstruct();
                             /*
                             let tables=obj.queryView({view: "datatable"},"all");
@@ -402,13 +405,13 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                 let funct = item.config.filterFunction;
                                 if (AA_MainApp.utils.isDefined(funct)) {
                                     if (!item.hasEvent("onTimedKeyPress")) {
-                                        console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
-                                        item.attachEvent("onTimedKeyPress", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                                        console.log(module.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                        item.attachEvent("onTimedKeyPress", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", AA_MainApp.curModule.id));
                                     }
 
                                     if (!item.hasEvent("onChange") && item.config.clear == true) {
-                                        console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
-                                        item.attachEvent("onChange", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
+                                        console.log(module.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                        item.attachEvent("onChange", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", AA_MainApp.curModule.id));
                                     }
                                 }
                             }
@@ -440,11 +443,11 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                                     //console.log(this.name + "::refreshUiObjectDefault - imposto la funzione di autoscroll sul carosello.");
                                     //rimuove le precedenti funzioni di impostazione di intervallo
-                                    if (this.getRuntimeValue(item.config.id, "autoScrollIntervalFunction")) {
+                                    if (module.getRuntimeValue(item.config.id, "autoScrollIntervalFunction")) {
                                         //console.log(this.name + "::refreshUiObjectDefault - Rimuovo la precedente funzione di autoScroll");
-                                        window.clearInterval(this.getRuntimeValue(item.config.id, "autoScrollIntervalFunction"));
+                                        window.clearInterval(module.getRuntimeValue(item.config.id, "autoScrollIntervalFunction"));
                                     }
-                                    this.setRuntimeValue(item.config.id, "autoScrollIntervalFunction", window.setInterval(autoScroll, item.config.autoScrollSlideTime, item.config.id));
+                                    module.setRuntimeValue(item.config.id, "autoScrollIntervalFunction", window.setInterval(autoScroll, item.config.autoScrollSlideTime, item.config.id));
                                 }
                             }
                         }
@@ -454,7 +457,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         for (form of forms) {
                             let oldValues = form.getValues();
                             if (AA_MainApp.utils.isDefined(form.config.validation)) {
-                                form.config.rules = { $all: AA_MainApp.utils.getEventHandler(form.config.validation, this.id) };
+                                form.config.rules = { $all: AA_MainApp.utils.getEventHandler(form.config.validation, module.id) };
                             }
                             form.reconstruct();
                             form.setValues(oldValues);
@@ -487,7 +490,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                         item.setValue(status);
                                         view.config.animate = animate;
                                         module.unsetRuntimeValue("tabBarStatus", item.config.id);
-                                        console.log(this.name + "::refreshUiObjectDefault - ripristino lo status del tab (" + item.config.view_id + ")", status);
+                                        console.log(module.name + "::refreshUiObjectDefault - ripristino lo status del tab (" + item.config.view_id + ")", status);
                                     }
                                 }
                             }
