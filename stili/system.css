@@ -324,6 +324,7 @@ div.AA_Module_Section_Title_Gradient {
 .AA_Popup {
     border-radius: 5px;
     border-color: rgba(52, 151, 197, 1);
+    box-shadow: 5px 5px 10px #000;
 }
 
 .AA_Popup_header_box {
