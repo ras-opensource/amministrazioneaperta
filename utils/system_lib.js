@@ -155,6 +155,19 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     form.setValues(oldValues);
                 }
 
+                //Imposta lo stato dei sidemenu (se presenti)
+                let menus = wnd.queryView("sidemenu", "all");
+                for (menu of menus) {
+                    if (AA_MainApp.utils.isDefined(menu.config.state)) {
+                        console.log("dlg - sidemenu");
+                        menu.state = AA_MainApp.utils.getEventHandler(menu.config.state, this.id);
+                    }
+                }
+                if (AA_MainApp.utils.isDefined(wnd.config.stateFunction)) {
+                    console.log("dlg - sidemenu");
+                    wnd.config.state = AA_MainApp.utils.getEventHandler(wnd.config.stateFunction, this.id);
+                }
+
                 //verifica se ci sono campi di ricerca
                 let searchObjs = wnd.queryView({ view: "search" }, "all");
                 if (Array.isArray(searchObjs) && searchObjs.length > 0) {
