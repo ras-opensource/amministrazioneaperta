@@ -986,9 +986,15 @@ class AA_GenericPopupTemplate
     }
 
     protected $body = "";
+    public function GetContent()
+    {
+        return $this->body;
+    }
+
     protected $head = "";
     protected $wnd = "";
-    private $title = "";
+    
+    //content css
     protected $css = "";
     public function SetCss($val="")
     {
@@ -1049,7 +1055,6 @@ class AA_GenericPopupTemplate
             "position" => "center",
             "css" => "AA_Popup"
         ));
-        //$this->body->AddRow($this->head);
     }
 
     protected function Update()
@@ -1059,6 +1064,14 @@ class AA_GenericPopupTemplate
         $this->wnd->setProp("modal", $this->modal);
         if($this->bClose && $this->closePosition <3)
         {
+            if($this->closePosition == 0)
+            {
+                $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                    array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
+                    array("view" => "spacer")
+                )));
+            }
+
             if($this->closePosition == 1)
             {
                 $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
@@ -1075,7 +1088,7 @@ class AA_GenericPopupTemplate
                 )));
             }
 
-            $this->body->addRow($this->head);
+            if($this->head instanceof AA_JSON_Template_Generic) $this->body->addRow($this->head);
         }
 
         //inserisce i figli
@@ -1086,6 +1099,14 @@ class AA_GenericPopupTemplate
 
         if($this->bClose && $this->closePosition >=3)
         {
+            if($this->closePosition == 3)
+            {
+                $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                    array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
+                    array("view" => "spacer")
+                )));
+            }
+
             if($this->closePosition == 4)
             {
                 $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
@@ -1102,7 +1123,7 @@ class AA_GenericPopupTemplate
                 )));
             }
 
-            $this->body->addRow($this->head);
+            if($this->head instanceof AA_JSON_Template_Generic) $this->body->addRow($this->head);
         }
 
         if($this->css !="") $this->body->SetProp("css",$this->css);
