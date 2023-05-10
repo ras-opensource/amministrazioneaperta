@@ -778,6 +778,18 @@ class AA_JSON_Template_Richtext extends AA_JSON_Template_Generic
 }
 
 //Classe per la gestione dei campi di testo
+class AA_JSON_Template_Ckeditor5 extends AA_JSON_Template_Generic
+{
+    public function __construct($id = "", $props = null)
+    {
+        $this->props["view"] = "ckeditor5";
+        if ($id == "") $id = "AA_JSON_TEMPLATE_CKEDITOR5_".uniqid(time());
+
+        parent::__construct($id, $props);
+    }
+}
+
+//Classe per la gestione dei campi di testo
 class AA_JSON_Template_Select extends AA_JSON_Template_Generic
 {
     public function __construct($id = "", $props = null)
@@ -1441,6 +1453,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
             }
             if ($type == "text") $this->curRow->AddCol(new AA_JSON_Template_Text($this->id . "_Field_" . $name, $props));
             if ($type == "richtext") $this->curRow->AddCol(new AA_JSON_Template_Richtext($this->id . "_Field_" . $name, $props));
+            if ($type == "ckeditor5") $this->curRow->AddCol(new AA_JSON_Template_Ckeditor5($this->id . "_Field_" . $name, $props));
             if ($type == "textarea") $this->curRow->AddCol(new AA_JSON_Template_Textarea($this->id . "_Field_" . $name, $props));
             if ($type == "checkbox") $this->curRow->AddCol(new AA_JSON_Template_Checkbox($this->id . "_Field_" . $name, $props));
             if ($type == "select") $this->curRow->AddCol(new AA_JSON_Template_Select($this->id . "_Field_" . $name, $props));
@@ -1495,6 +1508,12 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         return $this->AddField($name, $label, "richtext", $props, $newRow);
     }
+
+     //Aggiungi un campo richtext ckeditor5
+     public function AddCkeditor5Field($name = "", $label = "", $props = array(), $newRow = true)
+     {
+         return $this->AddField($name, $label, "ckeditor5", $props, $newRow);
+     }
 
     //Aggiungi un checkbox
     public function AddCheckBoxField($name = "", $label = "", $props = array(), $newRow = true)
@@ -1783,6 +1802,8 @@ class AA_FieldSet extends AA_JSON_Template_Generic
 
             if ($type == "text") $this->curRow->AddCol(new AA_JSON_Template_Text($this->GetId() . "_Field_" . $name, $props));
             if ($type == "textarea") $this->curRow->AddCol(new AA_JSON_Template_Textarea($this->GetId() . "_Field_" . $name, $props));
+            if ($type == "richtext") $this->curRow->AddCol(new AA_JSON_Template_Richtext($this->Getid() . "_Field_" . $name, $props));
+            if ($type == "ckeditor5") $this->curRow->AddCol(new AA_JSON_Template_Ckeditor5($this->GetId() . "_Field_" . $name, $props));
             if ($type == "checkbox") $this->curRow->AddCol(new AA_JSON_Template_Checkbox($this->GetId() . "_Field_" . $name, $props));
             if ($type == "select") $this->curRow->AddCol(new AA_JSON_Template_Select($this->GetId() . "_Field_" . $name, $props));
             if ($type == "switch") $this->curRow->AddCol(new AA_JSON_Template_Switch($this->GetId() . "_Field_" . $name, $props));
@@ -1827,6 +1848,18 @@ class AA_FieldSet extends AA_JSON_Template_Generic
     {
         return $this->AddField($name, $label, "textarea", $props, $newRow);
     }
+
+    //Aggiungi un campo richtext
+    public function AddRichtextField($name = "", $label = "", $props = array(), $newRow = true)
+    {
+        return $this->AddField($name, $label, "richtext", $props, $newRow);
+    }
+
+    //Aggiungi un campo richtext ckeditor5
+    public function AddCkeditor5Field($name = "", $label = "", $props = array(), $newRow = true)
+    {
+        return $this->AddField($name, $label, "ckeditor5", $props, $newRow);
+    } 
 
     //Aggiungi un checkbox
     public function AddCheckBoxField($name = "", $label = "", $props = array(), $newRow = true)
