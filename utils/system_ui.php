@@ -1071,7 +1071,6 @@ class AA_GenericPopupTemplate
                     array("view" => "spacer")
                 )));
             }
-
             if($this->closePosition == 1)
             {
                 $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
@@ -1106,7 +1105,6 @@ class AA_GenericPopupTemplate
                     array("view" => "spacer")
                 )));
             }
-
             if($this->closePosition == 4)
             {
                 $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
