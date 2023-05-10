@@ -1002,6 +1002,15 @@ class AA_GenericPopupTemplate
         else $this->bClose=false;
     }
 
+    protected $closePosition=2; //0 top-left, 1 top-center, 2: top-right (default), 3: bottom-left, 4: bottom-center, 5 bottom-right
+    public function SetClosePosition($val=2)
+    {
+        if(intval($val) >= 0 && intval($val) <= 5)
+        {
+            $this->closePosition=$val;
+        }
+    }
+
     protected $modal = true;
     public function EnableModal()
     {
@@ -1040,15 +1049,7 @@ class AA_GenericPopupTemplate
             "position" => "center",
             "css" => "AA_Popup"
         ));
-
-        $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
-            array("id" => $this->id . "_Title", "css" => "AA_Popup_title", "template" => $this->title),
-            //array("id" => $this->id . "_btn_resize", "view" => "icon", "icon" => "mdi mdi-fullscreen", "css" => "AA_Wnd_btn_fullscreen", "width" => 24, "height" => 24, "tooltip" => "Mostra la finestra a schermo intero", "click" => $script),
-            array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}")
-        )));
-
-        $this->body->AddRow($this->head);
-        $this->wnd->SetProp("body", $this->body);
+        //$this->body->AddRow($this->head);
     }
 
     protected function Update()
@@ -1056,8 +1057,58 @@ class AA_GenericPopupTemplate
         $this->wnd->setProp("height", $this->height);
         $this->wnd->setProp("width", $this->width);
         $this->wnd->setProp("modal", $this->modal);
-        if(!$this->bClose) $this->head->SetProp("hidden",true);
+        if($this->bClose && $this->closePosition <3)
+        {
+            if($this->closePosition == 1)
+            {
+                $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                    array("view" => "spacer"),
+                    array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
+                    array("view" => "spacer")
+                )));
+            }
+            if($this->closePosition == 2)
+            {
+                $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                    array("view" => "spacer"),
+                    array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}")
+                )));
+            }
+
+            $this->body->addRow($this->head);
+        }
+
+        //inserisce i figli
+        foreach($this->children as $curChild)
+        {
+            $this->body->addRow($curChild);
+        }
+
+        if($this->bClose && $this->closePosition >=3)
+        {
+            if($this->closePosition == 4)
+            {
+                $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                    array("view" => "spacer"),
+                    array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
+                    array("view" => "spacer")
+                )));
+            }
+            if($this->closePosition == 5)
+            {
+                $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                    array("view" => "spacer"),
+                    array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}")
+                )));
+            }
+
+            $this->body->addRow($this->head);
+        }
+
         if($this->css !="") $this->body->SetProp("css",$this->css);
+
+        //Aggiunge il body
+        $this->wnd->SetProp("body", $this->body);
     }
 
     protected $width = "1280";
@@ -1081,13 +1132,18 @@ class AA_GenericPopupTemplate
     }
 
     //Gestione del contenuto
+    protected $children=array();
     public function AddView($view)
     {
         if (is_array($view) && $view['id'] != "") {
-            $this->body->AddRow(new AA_JSON_Template_Generic($view['id'], $view));
+            $this->children[]=new AA_JSON_Template_Generic($view['id'], $view);
+            return;
         }
 
-        if ($view instanceof AA_JSON_Template_Generic) $this->body->AddRow($view);
+        if ($view instanceof AA_JSON_Template_Generic) 
+        {
+            $this->children[]=$view;
+        }
     }
 
     public function __toString()
@@ -1112,6 +1168,13 @@ class AA_GenericPopupTemplate
         $this->Update();
 
         return $this->wnd->toBase64();
+    }
+
+    public function toArray()
+    {
+        $this->Update();
+
+        return $this->wnd->toArray();
     }
 }
 
