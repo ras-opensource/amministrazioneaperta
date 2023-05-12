@@ -1133,7 +1133,11 @@ class AA_GenericPopupTemplate
                 )));
             }
 
-            if($this->head instanceof AA_JSON_Template_Generic) $this->body->addRow($this->head);
+            if($this->head instanceof AA_JSON_Template_Generic)
+            {
+                $this->body->addRow(new AA_JSON_Template_Generic());
+                $this->body->addRow($this->head);
+            } 
         }
 
         if($this->css !="") $this->body->SetProp("css",$this->css);
