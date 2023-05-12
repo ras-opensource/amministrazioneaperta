@@ -1302,6 +1302,12 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
 
+                    if (valFunc == "IsChecked") {
+                        if(arguments[0]==1) val=true;
+                        else val=false;
+                        //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
+                    }
+
                     if (valFunc == "IsIsoDate") {
                         if (!AA_MainApp.utils.isDefined(this.elements[arguments[2]].config.customInvalidMessage)) {
                             let invalidMessage = "*Inserire una data nel formato: yyyy-mm-gg";
