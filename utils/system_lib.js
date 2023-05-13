@@ -941,7 +941,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     let result = await AA_VerboseTask(params.task, taskManager, params.taskParams, params.data);
                     if (result.status.value == 0) {
                         AA_MainApp.ui.message(result.content.value);
-                        if (AA_MainApp.utils.isDefined(params.wnd_id)) $$(params.wnd_id).close();
+                        if (AA_MainApp.utils.isDefined(params.wnd_id) && $$(params.wnd_id)) $$(params.wnd_id).close();
                         if (AA_MainApp.utils.isDefined(params.refresh)) {
                             if (AA_MainApp.utils.isDefined(params.refresh_obj_id)) this.refreshUiObject(params.refresh_obj_id, true);
                             else {
