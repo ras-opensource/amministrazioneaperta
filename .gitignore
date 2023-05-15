@@ -1,3 +1,6 @@
 .vscode/settings.json
 .vscode/*
 utils/config.php
+sso_login.php
+sso_logout.php
+
