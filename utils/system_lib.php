@@ -1344,11 +1344,13 @@ class AA_GenericModule
 
             if (($userCaps & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
 
+            $object_name=$object->GetName();
+            if(strlen($object_name) > 190) $object_name=substr($object_name,0,190)."...";
             $result = array(
                 "id" => $object->GetId(),
                 "tags" => "",
                 "aggiornamento" => $object->GetAggiornamento(),
-                "denominazione" => $object->GetName(),
+                "denominazione" => $object_name,
                 "pretitolo" => "",
                 "sottotitolo" => $struttura_gest,
                 "stato" => $status,
@@ -3029,11 +3031,13 @@ class AA_GenericModule
 
             if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
 
+            $object_name=$object->GetName();
+            if(strlen($object_name) > 190) $object_name=substr($object_name,0,190)."...";
             $newData = array(
                 "id" => $object->GetId(),
                 "tags" => "",
                 "aggiornamento" => $object->GetAggiornamento(),
-                "denominazione" => $object->GetName(),
+                "denominazione" => $object_name,
                 "pretitolo" => "",
                 "sottotitolo" => $struttura_gest,
                 "stato" => $status,
