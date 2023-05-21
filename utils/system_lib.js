@@ -366,7 +366,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     }
                 }
 
-                if (bRefreshContent || !$$(idObj).config.initialized); {
+                if (bRefreshContent || !$$(idObj).config.initialized) {
                     //aggiorna il contenuto dell'oggetto
                     let postParams = "";
                     if (obj.config.filtered == true) {
