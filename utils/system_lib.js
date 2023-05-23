@@ -2503,6 +2503,7 @@ async function AA_DefaultSystemInitialization(params) {
 
             //pull to refresh
             if (AA_MainApp.ui.enablePullToRefresh != "") {
+                console.log("AA_DefaultSystemInitialization - abilito il pull to refresh sull'elemento: ",AA_MainApp.ui.enablePullToRefresh);
                 const ptr = PullToRefresh.init({
                     mainElement: 'body',
                     triggerElement: AA_MainApp.ui.enablePullToRefresh,
