@@ -1006,6 +1006,16 @@ class AA_GenericPopupTemplate
     protected $head = "";
     protected $wnd = "";
     
+    protected $title="";
+    public function SetTitle($val="")
+    {
+        $this->title=$val;
+    }
+    public function GetTitle()
+    {
+        return $this->title;
+    }
+
     //content css
     protected $css = "";
     public function SetCss($val="")
@@ -1074,17 +1084,30 @@ class AA_GenericPopupTemplate
         $this->wnd->setProp("height", $this->height);
         $this->wnd->setProp("width", $this->width);
         $this->wnd->setProp("modal", $this->modal);
+
         if($this->bClose && $this->closePosition <3)
         {
             if($this->closePosition == 0)
             {
-                $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+
+                if($this->title !="") 
+                {
+                    $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
                     array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
-                    array("view" => "spacer")
-                )));
+                    array("view"=>"label","label"=>$this->title,"align"=>"center"),
+                    )));
+                }
+                else
+                {
+                    $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                        array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
+                        array("view"=>"spacer"),
+                        )));    
+                }
             }
             if($this->closePosition == 1)
             {
+                if($this->title !="") $this->body->addRow(new AA_JSON_Template_Generic($this->id."_Title",array("view"=>"label","label"=>$this->title,"align"=>"center")));
                 $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
                     array("view" => "spacer"),
                     array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
@@ -1093,13 +1116,28 @@ class AA_GenericPopupTemplate
             }
             if($this->closePosition == 2)
             {
-                $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
-                    array("view" => "spacer"),
-                    array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}")
-                )));
+                
+                if($this->title !="") 
+                {
+                    $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                        array("view"=>"label","label"=>$this->title,"align"=>"center"),
+                        array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
+                    )));
+                }
+                else
+                {
+                    $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
+                        array("view"=>"spacer"),
+                        array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
+                        )));    
+                }
             }
 
             if($this->head instanceof AA_JSON_Template_Generic) $this->body->addRow($this->head);
+        }
+        else
+        {
+            if($this->title !="") $this->body->addRow(new AA_JSON_Template_Generic($this->id."_Title",array("view"=>"label","label"=>$this->title,"align"=>"center")));
         }
 
         //inserisce i figli
