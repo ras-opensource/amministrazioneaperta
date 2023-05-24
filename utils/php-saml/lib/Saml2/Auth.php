@@ -272,7 +272,7 @@ class OneLogin_Saml2_Auth
                 }
             }
         } else if (isset($_REQUEST['SAMLRequest'])) {
-            $logoutRequest = new OneLogin_Saml2_LogoutRequest($this->_settings, $_GET['SAMLRequest']);
+            $logoutRequest = new OneLogin_Saml2_LogoutRequest($this->_settings, $_REQUEST['SAMLRequest']);
             $this->_lastRequest = $logoutRequest->getXML();
             if (!$logoutRequest->isValid($retrieveParametersFromServer)) {
                 $this->_errors[] = 'invalid_logout_request';
