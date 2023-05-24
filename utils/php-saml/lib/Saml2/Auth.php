@@ -253,8 +253,8 @@ class OneLogin_Saml2_Auth
     {
         $this->_errors = array();
         $this->_errorReason = null;
-        if (isset($_GET['SAMLResponse'])) {
-            $logoutResponse = new OneLogin_Saml2_LogoutResponse($this->_settings, $_GET['SAMLResponse']);
+        if (isset($_REQUEST['SAMLResponse'])) {
+            $logoutResponse = new OneLogin_Saml2_LogoutResponse($this->_settings, $_REQUEST['SAMLResponse']);
             $this->_lastResponse = $logoutResponse->getXML();
             if (!$logoutResponse->isValid($requestId, $retrieveParametersFromServer)) {
                 $this->_errors[] = 'invalid_logout_response';
@@ -271,7 +271,7 @@ class OneLogin_Saml2_Auth
                     }
                 }
             }
-        } else if (isset($_GET['SAMLRequest'])) {
+        } else if (isset($_REQUEST['SAMLRequest'])) {
             $logoutRequest = new OneLogin_Saml2_LogoutRequest($this->_settings, $_GET['SAMLRequest']);
             $this->_lastRequest = $logoutRequest->getXML();
             if (!$logoutRequest->isValid($retrieveParametersFromServer)) {
@@ -294,8 +294,8 @@ class OneLogin_Saml2_Auth
                 $logoutResponse = $responseBuilder->getResponse();
 
                 $parameters = array('SAMLResponse' => $logoutResponse);
-                if (isset($_GET['RelayState'])) {
-                    $parameters['RelayState'] = $_GET['RelayState'];
+                if (isset($_REQUEST['RelayState'])) {
+                    $parameters['RelayState'] = $_REQUEST['RelayState'];
                 }
 
                 $security = $this->_settings->getSecurityData();
