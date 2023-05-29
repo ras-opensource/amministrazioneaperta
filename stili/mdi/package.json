@@ -1,28 +1,57 @@
 {
-  "name": "@mdi/font",
-  "version": "5.9.55",
+  "_from": "@mdi/font",
+  "_id": "@mdi/font@7.2.96",
+  "_inBundle": false,
+  "_integrity": "sha512-e//lmkmpFUMZKhmCY9zdjRe4zNXfbOIJnn6xveHbaV2kSw5aJ5dLXUxcRt1Gxfi7ZYpFLUWlkG2MGSFAiqAu7w==",
+  "_location": "/@mdi/font",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "@mdi/font",
+    "name": "@mdi/font",
+    "escapedName": "@mdi%2ffont",
+    "scope": "@mdi",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/@mdi/font/-/font-7.2.96.tgz",
+  "_shasum": "af800d9fe3b424f85ad45e9baa755bd003ab4986",
+  "_spec": "@mdi/font",
+  "_where": "/home/elia/progetti",
+  "author": {
+    "name": "Austin Andrews",
+    "url": "http://twitter.com/templarian"
+  },
+  "bugs": {
+    "url": "https://github.com/Templarian/MaterialDesign/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
   "description": "Dist for Material Design Webfont. This includes the Stock and Community icons in a single webfont collection.",
-  "style": "css/materialdesignicons.css",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Templarian/MaterialDesign-Webfont.git"
-  },
+  "homepage": "https://materialdesignicons.com",
   "keywords": [
     "material",
     "design",
     "icons",
     "webfont"
   ],
-  "author": {
-    "name": "Austin Andrews",
-    "web": "http://twitter.com/templarian"
-  },
   "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/Templarian/MaterialDesign/issues"
+  "name": "@mdi/font",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Templarian/MaterialDesign-Webfont.git"
   },
-  "homepage": "https://materialdesignicons.com"
+  "scripts": {
+    "prepublish": "node scripts/verify.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "verify": "node scripts/verify.js"
+  },
+  "style": "css/materialdesignicons.css",
+  "version": "7.2.96"
 }
