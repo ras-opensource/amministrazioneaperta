@@ -1408,6 +1408,28 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
                 }
+                else
+                {
+                    if (this.elements[arguments[2]].config.required) {
+                        if (!AA_MainApp.utils.isDefined(this.elements[arguments[2]].config.customInvalidMessage)) {
+                            let invalidMessage = "*Il campo non può essere vuoto";
+                            this.elements[arguments[2]].config.invalidMessage = invalidMessage;
+                        } else {
+                            this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
+                        }
+
+                        if (String(arguments[0]).length == 0) 
+                        {
+                            val = false;
+
+                            if (this.elements[arguments[2]].config.showMessage)
+                            {
+                                AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                            }
+                        }
+                    }
+
+                }
             }
 
             return val;
