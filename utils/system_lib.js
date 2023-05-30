@@ -1179,6 +1179,11 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let found = /^[\+]?[0-9]+(\.[0-9]{3})*(\,[0-9]{2})?$/.test(arguments[0]);
                             if (!found) {
                                 val = false;
+
+                                if (this.elements[arguments[2]].config.showMessage)
+                                {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                }
                             }
                         }
                     }
@@ -1196,6 +1201,11 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let found = /^[\+]?[0-9]+(\.[0-9]{3})*(\,[0-9]{2})?$/.test(arguments[0]);
                             if (arguments[0] <= 0) {
                                 val = false;
+
+                                if (this.elements[arguments[2]].config.showMessage)
+                                {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                }
                             }
                         }
                     }
@@ -1213,6 +1223,11 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let found = /^[\-\+]?[0-9]+(\.[0-9]{3})*(\,[0-9]{2})?$/.test(arguments[0]);
                             if (!found) {
                                 val = false;
+
+                                if (this.elements[arguments[2]].config.showMessage)
+                                {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                }
                             }
                         }
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", value, valFunc, val);
@@ -1231,6 +1246,11 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let found = /^https:\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])$/.test(arguments[0]);
                             if (!found) {
                                 val = false;
+
+                                if (this.elements[arguments[2]].config.showMessage)
+                                {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                }
                             }
                         }
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", value, valFunc, val);
@@ -1256,6 +1276,11 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                 if (layout) {
                                     layout.$view.style.backgroundColor = "#ffe6e6";
                                 }
+                                
+                                if (this.elements[arguments[2]].config.showMessage)
+                                {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                }
                             } else {
                                 let layout = $$(fileField.config.layout_id);
                                 if (layout) {
@@ -1279,12 +1304,17 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let found = /^[\-\+]?[0-9]+(\.[0-9]{3})*$/.test(arguments[0] || "");
                             if (!found) {
                                 val = false;
+
+                                if (this.elements[arguments[2]].config.showMessage)
+                                {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                }
                             }
                         }
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
 
-                    if (valFunc == "IsMail") {
+                    if (valFunc == "IsMail" || valFunc == "IsEmail") {
                         if (!AA_MainApp.utils.isDefined(this.elements[arguments[2]].config.customInvalidMessage)) {
                             let invalidMessage = "*Inserire un indirizzo email valido";
                             if (!this.elements[arguments[2]].config.required) invalidMessage += " o lasciare vuoto";
@@ -1299,12 +1329,33 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (!found) {
                             val = false;
                         }
+                        
+                        if(this.elements[arguments[2]].config.required && email=="") val = false;
+                        if(!val && this.elements[arguments[2]].config.showMessage)
+                        {
+                            AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                        }
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
 
                     if (valFunc == "IsChecked") {
+                        if (!AA_MainApp.utils.isDefined(this.elements[arguments[2]].config.customInvalidMessage) && this.elements[arguments[2]].config.required) {
+                            let invalidMessage = "*Occorre impostare il check.";
+                            this.elements[arguments[2]].config.invalidMessage = invalidMessage;
+                        } else {
+                            this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
+                        }
+
                         if(arguments[0]==1) val=true;
-                        else val=false;
+                        else
+                        {
+                            val=false;
+                            if (this.elements[arguments[2]].config.showMessage)
+                            {
+                                AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                            }
+                        } 
+
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
 
@@ -1323,7 +1374,14 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (arguments[0].match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)) val = false; // Invalid format
                             var d = new Date(arguments[0]);
                             var dNum = d.getTime();
-                            if (!dNum && dNum !== 0) val = false;
+                            if (!dNum && dNum !== 0) 
+                            {
+                                val = false;
+                                if (this.elements[arguments[2]].config.showMessage)
+                                {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                }
+                            }
                         }
                     }
 
@@ -1340,6 +1398,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let found = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/.test(arguments[0]);
                             if (!found) {
                                 val = false;
+                                if (this.elements[arguments[2]].config.showMessage)
+                                {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                }    
                             }
                         }
 
