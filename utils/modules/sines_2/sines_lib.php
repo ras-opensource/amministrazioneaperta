@@ -2888,7 +2888,7 @@ Class AA_SinesModule extends AA_GenericModule
         $multiview->addCell($this->TemplateDettaglio_Generale_Tab($organismo));
         $multiview->addCell($this->TemplateDettaglio_DatiContabili_Tab($organismo));
         $multiview->addCell($this->TemplateDettaglio_Nomine_Tab($organismo));
-        if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        //if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
         {
             $multiview->addCell($this->TemplateDettaglio_Organigramma_Tab($organismo));
         }
@@ -3882,7 +3882,7 @@ Class AA_SinesModule extends AA_GenericModule
         //permessi
         $perms = $object->GetUserCaps($this->oUser);
         $canModify=false;
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN)) $canModify=true;
         
         //layout generale
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
@@ -3920,7 +3920,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "click"=>$filterClickAction
             ));
             $toolbar->AddElement(new AA_JSON_Template_Generic());
-            $toolbar->AddElement($addnew_btn);
+            if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN)) $toolbar->AddElement($addnew_btn);
         }
         
         $footer=new AA_JSON_Template_Layout($id."_Footer",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
