@@ -2561,12 +2561,16 @@ async function AA_DefaultSystemInitialization(params) {
             }
 
             //titolo dell'App
-            AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
+            //AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
 
             //logo
-            AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
+            //AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
 
-            if (typeof cookieconsent === 'function') cookieconsent.run({ "notice_banner_type": "interstitial", "consent_type": "express", "palette": "dark", "language": "it", "page_load_consent_levels": ["strictly-necessary"], "notice_banner_reject_button_hide": false, "preferences_center_close_button_hide": false, "page_refresh_confirmation_buttons": false, "website_name": "https://sitod.regione.sardegna.it/web/amministrazione_aperta", "website_privacy_policy_url": "https://sitod.regione.sardegna.it/web/amministrazione_aperta" });
+            if (typeof cookieconsent === 'object') {
+                console.log("AA_DefaultSystemInitialization - abilito la gestione dei cookie.");
+                cookieconsent.run({ "notice_banner_type": "interstitial", "consent_type": "express", "palette": "dark", "language": "it", "page_load_consent_levels": ["strictly-necessary"], "notice_banner_reject_button_hide": false, "preferences_center_close_button_hide": false, "page_refresh_confirmation_buttons": false, "website_name": "https://sitod.regione.sardegna.it/web/amministrazione_aperta", "website_privacy_policy_url": "https://sitod.regione.sardegna.it/web/amministrazione_aperta" });
+                console.log("AA_DefaultSystemInitialization", cookieconsent);
+            }
 
             //inizializza l'interfaccia principale
             await AA_MainApp.ui.MainUI.setup();

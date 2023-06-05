@@ -4929,7 +4929,7 @@ class AA_Platform
             <h1><span>A</span>mministrazione <span>A</span>perta</h1>
             <div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
         </div>
-    <div>';
+    </div>';
 
     public static function GetOverlay()
     {

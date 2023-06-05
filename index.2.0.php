@@ -75,6 +75,6 @@ if(AA_Const::AA_ENABLE_PUBLIC_MODULE && !isset($_REQUEST['reserved']))
 </head>
 <body>
    <?php echo AA_Platform::GetOverlay();?>
-   <div style='height:10px;'><a href='#' id='open_preferences_center'>&nbsp;</a></div>
+   <!--<div style='height:0px;'><a href='#' id='open_preferences_center'></a></div>-->
 </body>
 </html>
