@@ -1510,7 +1510,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 //Qualora sia la visualizzazione di default imposta l'attributo filtered
                 $$(detailSection.view_id).define("filtered", true);
 
-                module.refreshSectionUi(false, true);
+                module.refreshSectionUi(true, true);
 
                 return true;
             } else {
