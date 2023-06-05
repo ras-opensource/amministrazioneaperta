@@ -324,8 +324,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 let curPage = 0;
                 let params = "";
                 let module = AA_MainApp.curModule;
-                
-                if(this instanceof AA_Module) module = this;
+
+                if (this instanceof AA_Module) module = this;
 
                 if (obj.config.paged == true) {
                     curPage = this.getRuntimeValue(obj.config.pager_id, "curPage");
@@ -1180,9 +1180,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (!found) {
                                 val = false;
 
-                                if (this.elements[arguments[2]].config.showMessage)
-                                {
-                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                if (this.elements[arguments[2]].config.showMessage) {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                                 }
                             }
                         }
@@ -1202,9 +1201,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (arguments[0] <= 0) {
                                 val = false;
 
-                                if (this.elements[arguments[2]].config.showMessage)
-                                {
-                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                if (this.elements[arguments[2]].config.showMessage) {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                                 }
                             }
                         }
@@ -1224,9 +1222,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (!found) {
                                 val = false;
 
-                                if (this.elements[arguments[2]].config.showMessage)
-                                {
-                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                if (this.elements[arguments[2]].config.showMessage) {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                                 }
                             }
                         }
@@ -1247,9 +1244,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (!found) {
                                 val = false;
 
-                                if (this.elements[arguments[2]].config.showMessage)
-                                {
-                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                if (this.elements[arguments[2]].config.showMessage) {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                                 }
                             }
                         }
@@ -1276,10 +1272,9 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                 if (layout) {
                                     layout.$view.style.backgroundColor = "#ffe6e6";
                                 }
-                                
-                                if (this.elements[arguments[2]].config.showMessage)
-                                {
-                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+
+                                if (this.elements[arguments[2]].config.showMessage) {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                                 }
                             } else {
                                 let layout = $$(fileField.config.layout_id);
@@ -1305,9 +1300,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (!found) {
                                 val = false;
 
-                                if (this.elements[arguments[2]].config.showMessage)
-                                {
-                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                if (this.elements[arguments[2]].config.showMessage) {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                                 }
                             }
                         }
@@ -1329,11 +1323,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (!found) {
                             val = false;
                         }
-                        
-                        if(this.elements[arguments[2]].config.required && email=="") val = false;
-                        if(!val && this.elements[arguments[2]].config.showMessage)
-                        {
-                            AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+
+                        if (this.elements[arguments[2]].config.required && email == "") val = false;
+                        if (!val && this.elements[arguments[2]].config.showMessage) {
+                            AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                         }
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
@@ -1346,15 +1339,13 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
                         }
 
-                        if(arguments[0]==1) val=true;
-                        else
-                        {
-                            val=false;
-                            if (this.elements[arguments[2]].config.showMessage)
-                            {
-                                AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                        if (arguments[0] == 1) val = true;
+                        else {
+                            val = false;
+                            if (this.elements[arguments[2]].config.showMessage) {
+                                AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                             }
-                        } 
+                        }
 
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
@@ -1374,12 +1365,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (arguments[0].match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)) val = false; // Invalid format
                             var d = new Date(arguments[0]);
                             var dNum = d.getTime();
-                            if (!dNum && dNum !== 0) 
-                            {
+                            if (!dNum && dNum !== 0) {
                                 val = false;
-                                if (this.elements[arguments[2]].config.showMessage)
-                                {
-                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                                if (this.elements[arguments[2]].config.showMessage) {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                                 }
                             }
                         }
@@ -1398,18 +1387,15 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let found = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/.test(arguments[0]);
                             if (!found) {
                                 val = false;
-                                if (this.elements[arguments[2]].config.showMessage)
-                                {
-                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
-                                }    
+                                if (this.elements[arguments[2]].config.showMessage) {
+                                    AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
+                                }
                             }
                         }
 
                         //console.log(AA_MainApp.curModule.name+"eventHandlers.defaultHandlers.validateForm - value:", arguments[0], valFunc, val);
                     }
-                }
-                else
-                {
+                } else {
                     if (this.elements[arguments[2]].config.required) {
                         if (!AA_MainApp.utils.isDefined(this.elements[arguments[2]].config.customInvalidMessage)) {
                             let invalidMessage = "*Il campo non può essere vuoto";
@@ -1418,13 +1404,11 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             this.elements[arguments[2]].config.invalidMessage = this.elements[arguments[2]].config.customInvalidMessage;
                         }
 
-                        if (String(arguments[0]).length == 0) 
-                        {
+                        if (String(arguments[0]).length == 0) {
                             val = false;
 
-                            if (this.elements[arguments[2]].config.showMessage)
-                            {
-                                AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage,"error");
+                            if (this.elements[arguments[2]].config.showMessage) {
+                                AA_MainApp.ui.message(this.elements[arguments[2]].config.invalidMessage, "error");
                             }
                         }
                     }
@@ -2582,12 +2566,14 @@ async function AA_DefaultSystemInitialization(params) {
             //logo
             AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
 
+            if (typeof cookieconsent === 'function') cookieconsent.run({ "notice_banner_type": "interstitial", "consent_type": "express", "palette": "dark", "language": "it", "page_load_consent_levels": ["strictly-necessary"], "notice_banner_reject_button_hide": false, "preferences_center_close_button_hide": false, "page_refresh_confirmation_buttons": false, "website_name": "https://sitod.regione.sardegna.it/web/amministrazione_aperta", "website_privacy_policy_url": "https://sitod.regione.sardegna.it/web/amministrazione_aperta" });
+
             //inizializza l'interfaccia principale
             await AA_MainApp.ui.MainUI.setup();
 
             //pull to refresh
             if (AA_MainApp.ui.enablePullToRefresh != "") {
-                console.log("AA_DefaultSystemInitialization - abilito il pull to refresh sull'elemento: ",AA_MainApp.ui.enablePullToRefresh);
+                console.log("AA_DefaultSystemInitialization - abilito il pull to refresh sull'elemento: ", AA_MainApp.ui.enablePullToRefresh);
                 const ptr = PullToRefresh.init({
                     mainElement: 'body',
                     triggerElement: AA_MainApp.ui.enablePullToRefresh,
@@ -3189,7 +3175,7 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
         url += "&vw=" + document.documentElement.clientWidth;
         url += "&vh=" + document.documentElement.clientHeight;
         url += "&mobile=" + AA_MainApp.device.isMobile;
-        
+
         if (typeof params == "object") {
             if (Array.isArray(params)) {
                 for (let param of params) {

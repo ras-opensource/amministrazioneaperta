@@ -37,6 +37,7 @@ header("Pragma: no-cache");
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/pdfobject.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/pulltorefresh.js/dist/index.umd.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/ckeditor5/ckeditor5.js"></script>
+<script defer type="text/javascript" src="<?php echo $lib_path;?>/cookie-consent/cookie-consent.js" charset="UTF-8"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_legacy.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_lib.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_custom.js"></script>
@@ -74,5 +75,6 @@ if(AA_Const::AA_ENABLE_PUBLIC_MODULE && !isset($_REQUEST['reserved']))
 </head>
 <body>
    <?php echo AA_Platform::GetOverlay();?>
+   <div style='height:10px;'><a href='#' id='open_preferences_center'>&nbsp;</a></div>
 </body>
 </html>
