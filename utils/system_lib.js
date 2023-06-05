@@ -2589,7 +2589,7 @@ async function AA_DefaultSystemInitialization(params) {
 
             if (typeof cookieconsent === 'object') {
                 console.log("AA_DefaultSystemInitialization - abilito la gestione dei cookie.");
-                cookieconsent.run({ "notice_banner_type": "interstitial", "consent_type": "express", "palette": "dark", "language": "it", "page_load_consent_levels": ["strictly-necessary"], "notice_banner_reject_button_hide": false, "preferences_center_close_button_hide": false, "page_refresh_confirmation_buttons": false, "website_name": AA_MainApp.web_url, "website_privacy_policy_url": AA_MainApp.privacy_policy_url });
+                cookieconsent.run({ "notice_banner_type": "interstitial", "consent_type": "express", "palette": "light", "language": "it", "page_load_consent_levels": ["strictly-necessary"], "notice_banner_reject_button_hide": false, "preferences_center_close_button_hide": false, "page_refresh_confirmation_buttons": false, "website_name": AA_MainApp.web_url, "website_privacy_policy_url": AA_MainApp.privacy_policy_url });
                 //console.log("AA_DefaultSystemInitialization", cookieconsent);
             }
 
