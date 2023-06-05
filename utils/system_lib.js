@@ -1835,6 +1835,11 @@ var AA_dummy_module = new AA_Module();
 
 //Variabile applicazione principale
 var AA_MainApp = {
+    //sito web o url principale
+    web_url: "https://sitod.regione.sardegna.it",
+
+    //policy url
+    privacy_policy_url: "https://sitod.regione.sardegna.it",
 
     //enable legacy
     bEnableLegacy: false,
@@ -2566,9 +2571,19 @@ async function AA_DefaultSystemInitialization(params) {
             //logo
             //AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
 
+            //web site url 
+            if (params && params.web_url) {
+                AA_MainApp.web_url = params.web_url;
+            }
+
+            //policy url 
+            if (params && params.privacy_policy_url) {
+                AA_MainApp.privacy_policy_url = params.privacy_policy_url;
+            }
+
             if (typeof cookieconsent === 'object') {
                 console.log("AA_DefaultSystemInitialization - abilito la gestione dei cookie.");
-                cookieconsent.run({ "notice_banner_type": "interstitial", "consent_type": "express", "palette": "dark", "language": "it", "page_load_consent_levels": ["strictly-necessary"], "notice_banner_reject_button_hide": false, "preferences_center_close_button_hide": false, "page_refresh_confirmation_buttons": false, "website_name": "https://sitod.regione.sardegna.it/web/amministrazione_aperta", "website_privacy_policy_url": "https://sitod.regione.sardegna.it/web/amministrazione_aperta" });
+                cookieconsent.run({ "notice_banner_type": "interstitial", "consent_type": "express", "palette": "dark", "language": "it", "page_load_consent_levels": ["strictly-necessary"], "notice_banner_reject_button_hide": false, "preferences_center_close_button_hide": false, "page_refresh_confirmation_buttons": false, "website_name": AA_MainApp.web_url, "website_privacy_policy_url": AA_MainApp.privacy_policy_url });
                 //console.log("AA_DefaultSystemInitialization", cookieconsent);
             }
 
