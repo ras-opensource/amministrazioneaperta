@@ -2565,20 +2565,26 @@ async function AA_DefaultSystemInitialization(params) {
                 bodyBg.style.display = "none";
             }
 
-            //titolo dell'App
-            //AA_MainApp.ui.MainUI.appTitle = "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>";
+            if (params) {
+                //titolo dell'App
+                if (params.appTitle) {
+                    AA_MainApp.ui.MainUI.appTitle = params.appTitle;
+                }
 
-            //logo
-            //AA_MainApp.ui.MainUI.appLogo = "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>";
+                //logo
+                if (params.appLogo) {
+                    AA_MainApp.ui.MainUI.appLogo = params.appLogo;
+                }
 
-            //web site url 
-            if (params && params.web_url) {
-                AA_MainApp.web_url = params.web_url;
-            }
+                //web site url 
+                if (params.web_url) {
+                    AA_MainApp.web_url = params.web_url;
+                }
 
-            //policy url 
-            if (params && params.privacy_policy_url) {
-                AA_MainApp.privacy_policy_url = params.privacy_policy_url;
+                //policy url 
+                if (params.privacy_policy_url) {
+                    AA_MainApp.privacy_policy_url = params.privacy_policy_url;
+                }
             }
 
             if (typeof cookieconsent === 'object') {
