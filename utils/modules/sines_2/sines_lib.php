@@ -666,7 +666,7 @@ Class AA_SinesModule extends AA_GenericModule
                         $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
                         if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
                         $nominaRas="";
-                        if($curNomina->IsNominaRas()) $nominaRas="<div>nomina Ras</div>";
+                        if($curNomina->IsNominaRas()) $nominaRas="<div><span style='font-size: smaller'>nomina Ras</span></div>";
                         $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em;'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>".$nominaRas."<div>".$label_scadenza."<br/><span style='font-size: smaller'>".$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
                     }
                 }

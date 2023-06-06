@@ -84,7 +84,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_DIRETTIVO=262144;
     const AA_ORGANISMI_NOMINA_PRESIDENTE_ONORARIO=524288;
     const AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_INDIRIZZO=1048576;
-    const AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_INDIRIZZO=2097152;
+    const AA_ORGANISMI_NOMINA_REVISORE_CONTI_SUPPLENTE=2097152;
     const AA_ORGANISMI_NOMINA_COMPONENTE_OIV=4194304;
     const AA_ORGANISMI_NOMINA_PRESIDENTE_OIV=8388608;
     const AA_ORGANISMI_NOMINA_DIRETTORE_GENERALE=16777216; //16769216;
@@ -204,7 +204,6 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=>"Componente supplente collegio sindacale",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_COMITATO_SCIENTIFICO=>"Componente comitato",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_DIRETTIVO=>"Componente consiglio direttivo",
-            //self::AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_INDIRIZZO=>"Componente consiglio di indirizzo",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_OIV=>"Componente OIV",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_ORGANO_INDIRIZZO=>"Componente organo di indirizzo",
             self::AA_ORGANISMI_NOMINA_CONSIGLIERE=>"Consigliere CDA",
@@ -224,6 +223,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_ONORARIO=>"Presidente onorario",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_OIV=>"Presidente OIV",
             self::AA_ORGANISMI_NOMINA_REVISORE_CONTI=>"Revisore dei conti",
+            self::AA_ORGANISMI_NOMINA_REVISORE_CONTI_SUPPLENTE=>"Revisore dei conti supplente",
             self::AA_ORGANISMI_NOMINA_REVISORE_UNICO=>"Revisore unico",
             self::AA_ORGANISMI_NOMINA_VICEPRESIDENTE=>"Vice Presidente",
             self::AA_ORGANISMI_NOMINA_VICEPRESIDENTE_CDA=>"Vice Presidente CDA"
@@ -9571,8 +9571,8 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                     //AA_Log::Log(__METHOD__." - inserisco: ".$nomina_label,100);
                     if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
                     $nominaRas="";
-                    if($curNomina->IsNominaRas()) $nominaRas="<div>nomina Ras</div>";
-                    $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div>".$label_scadenza.$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
+                    if($curNomina->IsNominaRas()) $nominaRas="<div><span style='font-size: smaller'>nomina Ras</span></div>";
+                    $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div>".$label_scadenza.$curNomina->GetDataFine()." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
                 }
             }
         }
