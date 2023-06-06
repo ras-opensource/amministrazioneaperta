@@ -2888,7 +2888,7 @@ Class AA_SinesModule extends AA_GenericModule
         $multiview->addCell($this->TemplateDettaglio_Generale_Tab($organismo));
         $multiview->addCell($this->TemplateDettaglio_DatiContabili_Tab($organismo));
         $multiview->addCell($this->TemplateDettaglio_Nomine_Tab($organismo));
-        //if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
         {
             $multiview->addCell($this->TemplateDettaglio_Organigramma_Tab($organismo));
         }
@@ -3133,6 +3133,10 @@ Class AA_SinesModule extends AA_GenericModule
                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetOrganismoAddNewDatoContabileDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
             ));
             $toolbar->AddElement($addnew_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic(""));
         }
         
         $header=new AA_JSON_Template_Layout($id."_Header",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
@@ -3450,6 +3454,10 @@ Class AA_SinesModule extends AA_GenericModule
             ));
             $toolbar->AddElement(new AA_JSON_Template_Generic());
             $toolbar->AddElement($addnew_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic());
         }
         
         $footer=new AA_JSON_Template_Layout($id."_Footer",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
