@@ -2845,7 +2845,9 @@ class AA_Organismi extends AA_Object
                     //verifica organigrammi;
                     if($ricerca_scadenzario && $curRecIndex >= $params['from'] && $curRecIndex < ($params['from']+$scadenzario_count))
                     {
-                        $results[$curRow['id']]=$curResult;
+                        $nomine=$curResult->GetNomineScadenzario($params);
+                        if(sizeof($nomine)>0) $results[$curRow['id']]=$curResult;
+                        else $tot_count--;
                         $curRecIndex++;
                     }
                     else $results[$curRow['id']]=$curResult;
