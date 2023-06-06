@@ -1115,8 +1115,7 @@ class AA_GenericPopupTemplate
                 )));
             }
             if($this->closePosition == 2)
-            {
-                
+            {   
                 if($this->title !="") 
                 {
                     $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
