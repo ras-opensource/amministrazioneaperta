@@ -9532,7 +9532,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                 {
                     $view=true;
                     $label_class="AA_Label_LightGreen";
-                    $label_scadenza="Scade il: ";
+                    $label_scadenza="Cessa il: ";
                     $index="in_corso";
                 }
                     
@@ -9540,7 +9540,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                 {
                     $view=true;
                     $label_class="AA_Label_LightYellow";
-                    $label_scadenza="Scade il: ";
+                    $label_scadenza="Cessa il: ";
                     $index="in_scadenza";
                 }
                 
@@ -9548,7 +9548,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                 {
                     $view=true;
                     $label_class="AA_Label_LightOrange";
-                    $label_scadenza="Scaduta il: ";
+                    $label_scadenza="Cessata il: ";
                     $index="recenti";
                 }
                 
@@ -9556,8 +9556,8 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                 {
                     $view=true;
                     $label_class="AA_Label_LightRed";
-                    $label_scadenza="Scaduta il: ";
-                    $index="scadute";
+                    $label_scadenza="Cessata il: ";
+                    $index="cessate";
                 }
                 
                 //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
@@ -9567,8 +9567,10 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                     $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
                     
                     //AA_Log::Log(__METHOD__." - inserisco: ".$nomina_label,100);
-                    if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" (".$curNomina->GetCodiceFiscale().")";
-                    $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div><div>".$label_scadenza.$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
+                    if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
+                    $nominaRas="";
+                    if($curNomina->IsNominaRas()) $nominaRas="<div>nomina Ras</div>";
+                    $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div>".$label_scadenza.$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</div></div>";
                 }
             }
         }
