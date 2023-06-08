@@ -2559,12 +2559,6 @@ async function AA_DefaultSystemInitialization(params) {
 
             AA_MainApp.ui.overlay.show();
 
-            //Nasconde lo sfondo di default del body
-            let bodyBg = document.getElementById("AA_MainOverlayBg");
-            if (bodyBg) {
-                bodyBg.style.display = "none";
-            }
-
             if (params) {
                 //titolo dell'App
                 if (params.appTitle) {
