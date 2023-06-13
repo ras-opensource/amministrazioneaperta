@@ -2846,9 +2846,13 @@ class AA_Organismi extends AA_Object
                     if($ricerca_scadenzario && $curRecIndex >= $params['from'] && $curRecIndex < ($params['from']+$scadenzario_count))
                     {
                         $nomine=$curResult->GetNomineScadenzario($params);
-                        if(sizeof($nomine)>0) $results[$curRow['id']]=$curResult;
+                        if(sizeof($nomine)>0) 
+                        {
+                            $results[$curRow['id']]=$curResult;
+                            $curRecIndex++;
+                        }
                         else $tot_count--;
-                        $curRecIndex++;
+                        
                     }
                     else $results[$curRow['id']]=$curResult;
                 } 
@@ -3309,19 +3313,19 @@ class AA_Organismi extends AA_Object
                     $curIndex=$index;
 
                     //mette in black list gli eventuali altri incarichi precedenti riferiti alla stessa nomina
-                    if($curNomina['data_fine'] > $params['scadenzario_al'] && $params['scadenzario_al'] != "")
+                    if($curNomina['data_fine'] >= $params['scadenzario_al'] && $params['scadenzario_al'] != "")
                     {
                         //AA_Log::Log(__METHOD__."() - blacklisto: ".print_r($curNomina,true),100);
                         $blacklist[$index]=1;
                     }
-
+                    
                     if(!isset($blacklist[$index]) || $blacklist[$index] != 1)
                     {
                                 if($params['scadenzario_dal'] !="" && $curNomina['data_fine'] >= $params['scadenzario_dal']) $insert++;
                                 if($params['scadenzario_al'] !="" && $curNomina['data_fine'] <= $params['scadenzario_al']) $insert++;
                                 if($params['scadenzario_dal'] == "") $insert++;
                                 if($params['scadenzario_al'] == "") $insert++;        
-                    } 
+                    }
                 }
 
                 if($insert>=3)
@@ -3367,15 +3371,13 @@ class AA_Organismi extends AA_Object
         $now=date("Y-m-d");
         foreach($organigrammi as $curOrganigramma)
         {
-            $incarichi=$curOrganigramma->GetIncarichi();
             if($curOrganigramma->IsScadenzarioEnabled())
             {
+                $incarichi=$curOrganigramma->GetIncarichi();
                 //AA_Log::Log(__METHOD__." - ".print_r($incarichi,TRUE),100);
-                $riepilogo_data_item['incarichi']="";
                 foreach($incarichi as $id_incarico=>$incarico)
                 {
                     //dati incarichi organigramma per riepilogo
-                    $riepilogo_incarico_label="<b>".$incarico->GetTipologia()."</b><br/>";
                     $curTipoIncarico=$incarico->GetTipologia(true);
                     $scaduto=false;
                     $vacante=true;
@@ -3392,7 +3394,7 @@ class AA_Organismi extends AA_Object
                     }
                     if(!is_array($nomine_index[$curTipoIncarico])) $nomine_index[$curTipoIncarico]=array($incarico->getProp('ras')=>0);
                     
-                    //AA_Log::Log(__METHOD__." - curTipoIncarico: $curTipoIncarico - NominaRas: ".$incarico->getProp('ras')." - ".print_r($nomine[$curTipoIncarico][$incarico->getProp('ras')],TRUE),100);
+                    //if($this->GetId()==25) AA_Log::Log(__METHOD__." - curTipoIncarico: $curTipoIncarico - NominaRas: ".$incarico->getProp('ras')." - ".print_r($nomine[$curTipoIncarico][$incarico->getProp('ras')],TRUE),100);
 
                     if(is_array($nomine[$curTipoIncarico][$incarico->getProp('ras')]) && sizeof($nomine[$curTipoIncarico][$incarico->getProp('ras')]) > $nomine_index[$curTipoIncarico][$incarico->getProp('ras')])
                     {
@@ -3413,6 +3415,7 @@ class AA_Organismi extends AA_Object
                     //nomina scaduta
                     if($scaduto && !$vacante)
                     {
+
                         //if((!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="") || ( isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al'])) 
                         {
                             $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
@@ -3421,11 +3424,25 @@ class AA_Organismi extends AA_Object
                         }
                     }
                     //-------------------------
+
+                    //nomina in scadenza
+                    if(!$scaduto && !$vacante)
+                    {
+                        if((isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al']) || (!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="")) 
+                        {
+                            $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
+                            $nomina=new AA_OrganismiNomine($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['id'],$this,$this->oUser);
+                            $result[$curTipoIncarico][$index]=$nomina;    
+                        }
+                    }
+                    //-----------------------
                 }
             }
         }
         //-------------------------------------------------
         
+        //AA_Log::Log(__METHOD__." - organismo: ".$this->GetDenominazione()." - nomine: ".sizeof($result),100);
+
         return $result;
     }
 }
