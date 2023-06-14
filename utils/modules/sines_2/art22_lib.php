@@ -355,7 +355,23 @@ class AA_Organismi_Const extends AA_Const
     }
 }
 
-//Classe Organigramma incarico
+/*La classe "AA_Organismi_Organigramma_Incarico" rappresenta un incarico all'interno di un organigramma.
+
+Il costruttore della classe ha un parametro opzionale "$data" che, se passato come un array, 
+viene utilizzato per inizializzare le proprietà dell'oggetto tramite il metodo "ParseData()".
+
+Ci sono diversi metodi nella classe per controllare le proprietà dell'oggetto, come ad esempio "IsNominaRas()" 
+per verificare se l'incarico è una nomina RAS, "IsOpzionale()" per verificare se l'incarico è opzionale e "IsScadenzarioEnabled()"
+per verificare se l'incarico deve avere lo scadenzario abilitato.
+
+Il metodo "GetTipologia()" restituisce la tipologia dell'incarico, che può essere passata come parametro booleano 
+per restituire l'indice numerico della tipologia invece del nome.
+
+La classe ha anche metodi per impostare e ottenere le proprietà dell'oggetto.
+
+Il metodo statico "LoadFromDb()" viene utilizzato per caricare i dati dell'incarico dal database, 
+prendendo come parametro l'ID dell'incarico. Il metodo restituisce un'istanza della classe "AA_Organismi_Organigramma_Incarico" 
+con le proprietà inizializzate.*/
 Class AA_Organismi_Organigramma_Incarico
 {
     //Costruttore di default
