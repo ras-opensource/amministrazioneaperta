@@ -200,8 +200,6 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_AMMINISTRATORE_DELEGATO=>"Amministratore delegato",
             self::AA_ORGANISMI_NOMINA_COMMISSARIO_LIQUIDATORE=>"Commissario liquidatore",
             self::AA_ORGANISMI_NOMINA_COMMISSARIO_STRAORDINARIO=>"Commissario straordinario",
-            self::AA_ORGANISMI_NOMINA_SINDACO_COLLEGGIO=>"Componente collegio sindacale",
-            self::AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=>"Componente supplente collegio sindacale",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_COMITATO_SCIENTIFICO=>"Componente comitato",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_CONSIGLIO_DIRETTIVO=>"Componente consiglio direttivo",
             self::AA_ORGANISMI_NOMINA_COMPONENTE_OIV=>"Componente OIV",
@@ -225,6 +223,8 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_REVISORE_CONTI=>"Revisore dei conti",
             self::AA_ORGANISMI_NOMINA_REVISORE_CONTI_SUPPLENTE=>"Revisore dei conti supplente",
             self::AA_ORGANISMI_NOMINA_REVISORE_UNICO=>"Revisore unico",
+            self::AA_ORGANISMI_NOMINA_SINDACO_COLLEGGIO=>"Sindaco",
+            self::AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO=>"Sindaco supplente",
             self::AA_ORGANISMI_NOMINA_VICEPRESIDENTE=>"Vice Presidente",
             self::AA_ORGANISMI_NOMINA_VICEPRESIDENTE_CDA=>"Vice Presidente CDA"
             );
@@ -516,7 +516,7 @@ Class AA_Organismi_Organigramma
                 if($key=="dal") $this->organigramma_props['dal']=$val;
                 if($key=="al") $this->organigramma_props['al']=$val;
                 if($key=="note") $this->organigramma_props['note']=$val;
-                if($key="incarichi" && is_array($val))
+                if($key=="incarichi" && is_array($val))
                 {
                     $this->organigramma_incarichi=array();
                     foreach($val as $curIncarico)
