@@ -12,6 +12,10 @@ class AA_Organismi_Const extends AA_Const
     //percorso pubblicazione provvedimenti
     const AA_ORGANISMI_PROVVEDIMENTI_PATH="/amministrazione_trasparente/art22/provvedimenti";
     const AA_ORGANISMI_PROVVEDIMENTI_PUBLIC_PATH="/web/amministrazione_trasparente/pubblicazioni/art22/provvedimenti/docs.php";
+
+    //percorso pubblicazione bilanci
+    const AA_ORGANISMI_BILANCI_PATH="/amministrazione_trasparente/art22/bilanci";
+    const AA_ORGANISMI_BILANCI_PUBLIC_PATH="/web/amministrazione_trasparente/pubblicazioni/art22/bilanci/docs.php";
     
     //Tabella db
     const AA_ORGANISMI_DB_TABLE="art22_pubblicazioni";
@@ -7501,6 +7505,47 @@ Class AA_OrganismiBilanci
     public function GetRisultati()
     {
         return $this->sRisultati;
+    }
+
+    //restituisce il percorso locale al documento
+    public function GetLocalDocumentPath()
+    {
+        if(!$this->bValid) return "";
+
+        if(file_exists(AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$this->nIdDatiContabili."_".$this->nId.".pdf"))
+        {
+            return AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$this->nIdDatiContabili."_".$this->nId.".pdf";
+        }
+    }
+
+    //restituisce il percorso pubblico
+    public function GetPublicDocumentPath()
+    {
+        if(!$this->bValid) return "";
+
+        return AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH."?nomina=".$this->nIdDatiContabili."_".$this->nId;
+    }
+ 
+
+    //Download del documento
+    public function Download($embed=false)
+    {
+        if(!$this->bValid)
+        {
+            die("Documento non trovato.");
+        }
+
+        $filename=$this->GetLocalDocumentPath();
+
+        header("Cache-control: private");
+		header("Content-type: application/pdf");
+		header("Content-Length: ".filesize($filename));
+		if(!$embed) header('Content-Disposition: attachment; filename="bilancio_'.$this->nIdDatiContabili."_".$this->nId.".pdf'");
+		
+		$fd = fopen ($filename, "rb");
+		echo fread ($fd, filesize ($filename));
+		fclose ($fd);
+        die();
     }
 
     //note
