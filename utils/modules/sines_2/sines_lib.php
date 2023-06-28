@@ -4109,7 +4109,7 @@ Class AA_SinesModule extends AA_GenericModule
                 $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>90,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"forza_scadenzario", "header"=>"Scadenzario", "width"=>100,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"compenso_spettante", "header"=>"Compenso s.", "width"=>100,"css"=>array("text-align"=>"center"));
-                $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+                $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
             }
             else
@@ -4119,7 +4119,7 @@ Class AA_SinesModule extends AA_GenericModule
                 $options_incarichi[]=array("id"=>"opzionale", "header"=>"Opzionale", "width"=>50,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"forza_scadenzario", "header"=>"Scadenzario", "width"=>100,"css"=>array("text-align"=>"center"));
                 $options_incarichi[]=array("id"=>"compenso_spettante", "header"=>"Compenso s.", "width"=>100,"css"=>array("text-align"=>"center"));
-                $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+                $options_incarichi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"center"));
             }
 
             $incarichi_table=new AA_JSON_Template_Generic($curId."_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true, "scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_incarichi));
@@ -4200,7 +4200,10 @@ Class AA_SinesModule extends AA_GenericModule
                 //$compenso_spettante=$incarico->GetProp("compenso_spettante");
 
                 if($incarico->IsOpzionale())$opzionale="Si";
-                $incarichi_data[]=array("id"=>$id_incarico,"compenso_spettante"=>$compenso_spettante,"tipo"=>$incarico->GetTipologia(),"note"=>$incarico->GetProp('note'),"ras"=>$ras,"opzionale"=>$opzionale,"forza_scadenzario"=>$forza_scadenzario,"ops"=>$ops);
+                //note come popup
+                $note="";
+                if($incarico->GetProp('note') != "") $note='<a href="#" onClick=\'AA_MainApp.ui.modalBox("'.addslashes(str_replace(array("\r", "\n"), '',nl2br($incarico->GetProp('note')))).'","Note")\'><span class="mdi mdi-eye"></span></a>';
+                $incarichi_data[]=array("id"=>$id_incarico,"compenso_spettante"=>$compenso_spettante,"tipo"=>$incarico->GetTipologia(),"note"=>$note,"ras"=>$ras,"opzionale"=>$opzionale,"forza_scadenzario"=>$forza_scadenzario,"ops"=>$ops);
                 #--------------------------------------
             }
 

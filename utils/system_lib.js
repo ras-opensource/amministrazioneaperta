@@ -2147,6 +2147,7 @@ var AA_MainApp = {
         enablePullToRefresh: "",
 
         alert: AA_AlertModalDlg,
+        modalBox: AA_CustomModalDlg,
         message: AA_Message,
         showWaitMessage: AA_ShowWaitMessage,
         hideWaitMessage: AA_HideWaitMessage,
@@ -3051,6 +3052,16 @@ async function AA_SetupMainUi() {
 function AA_AlertModalDlg(msg = "", title = "ERRORE", type = "alert-error") {
     webix.alert({
         title: title,
+        text: msg,
+        type: type
+    });
+}
+
+//Funzione per i messaggi bloccanti box
+function AA_CustomModalDlg(msg = "", titleText = "", buttonsArray = ["chiudi"],type = "") {
+    webix.modalbox({
+        title: titleText,
+        buttons: buttonsArray,
         text: msg,
         type: type
     });
