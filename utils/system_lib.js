@@ -3058,10 +3058,11 @@ function AA_AlertModalDlg(msg = "", title = "ERRORE", type = "alert-error") {
 }
 
 //Funzione per i messaggi bloccanti box
-function AA_CustomModalDlg(msg = "", titleText = "", buttonsArray = ["chiudi"],type = "") {
+function AA_CustomModalDlg(msg = "", titleText = "", buttonsArray = ["chiudi"],type = "",width=640) {
     webix.modalbox({
         title: titleText,
         buttons: buttonsArray,
+        width: width,
         text: msg,
         type: type
     });
