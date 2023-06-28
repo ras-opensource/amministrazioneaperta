@@ -4202,7 +4202,7 @@ Class AA_SinesModule extends AA_GenericModule
                 if($incarico->IsOpzionale())$opzionale="Si";
                 //note come popup
                 $note="";
-                if($incarico->GetProp('note') != "") $note='<a href="#" onClick=\'AA_MainApp.ui.modalBox("'.addslashes(str_replace(array("\r", "\n"), '',nl2br($incarico->GetProp('note')))).'","Note")\'><span class="mdi mdi-eye"></span></a>';
+                if($incarico->GetProp('note') != "") $note='<a href="#" onClick=\'let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode(str_replace(array("\n","\r"),"",nl2br($incarico->GetProp('note')))).'"));AA_MainApp.ui.modalBox(note,"Note")\'><span class="mdi mdi-eye"></span></a>';
                 $incarichi_data[]=array("id"=>$id_incarico,"compenso_spettante"=>$compenso_spettante,"tipo"=>$incarico->GetTipologia(),"note"=>$note,"ras"=>$ras,"opzionale"=>$opzionale,"forza_scadenzario"=>$forza_scadenzario,"ops"=>$ops);
                 #--------------------------------------
             }
