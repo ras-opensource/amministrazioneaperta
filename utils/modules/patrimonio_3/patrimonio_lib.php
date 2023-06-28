@@ -432,7 +432,7 @@ Class AA_Patrimonio extends AA_Object_V2
         return true;
     }
 
-    //Aggiornamento di un canone
+    //link ad un canone esistente
     public function LinkCanone($canone=null, $user=null)
     {
         if(!$this->IsValid() || !($canone instanceof AA_Patrimonio_Canone) || $this->IsReadOnly()) return false;
