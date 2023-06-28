@@ -416,7 +416,9 @@ Class AA_Patrimonio extends AA_Object_V2
             }
         }
 
-        $query.=" WHERE '".$this->nId_Data."' in (id_patrimonio) AND serial = '".$canone->GetProp('serial')."' LIMIT 1";
+        //$query.=" WHERE '".$this->nId_Data."' in (id_patrimonio) AND serial = '".$canone->GetProp('serial')."' LIMIT 1";
+
+        $query.=" WHERE serial = '".$canone->GetProp('serial')."' LIMIT 1";
 
         $db=new AA_Database();
         if(!$db->Query($query))
