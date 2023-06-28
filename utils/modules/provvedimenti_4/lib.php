@@ -2149,7 +2149,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
     //Funzione di esportazione in pdf (da specializzare)
     public function Template_PdfExport($ids=array())
     {
-        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.23 del d.lgs. 33/2013","Template_ProvvedimentiPdfExport");
+        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.23 del d.lgs. 33/2013","Template_ProvvedimentiPdfExport", 20);
     }
 
     //Template pdf export single
@@ -2259,105 +2259,47 @@ Class AA_ProvvedimentiPublicReportTemplateView extends AA_GenericObjectTemplateV
         //Chiama il costruttore della classe base
         parent::__construct($id,$parent,$object);
         
-        $this->SetStyle("width: 99%; display:flex; flex-direction: column; align-items: center;");
+        $this->SetStyle("width: 100%; display:flex; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 1px solid  gray; height: 100%");
 
-        #Parte generale---------------------------------
-        $generale=new AA_XML_Div_Element("AA_OrganismiPublicReportTemplateView-generale",$this);
-        $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%");
+        #Ufficio----------------------------------
+        $struct=$object->GetStruct();
+        $struct_desc=$struct->GetAssessorato();
+        if($struct->GetDirezione() !="") $struct_desc.="<br>".$struct->GetDirezione();
+        if($struct->GetServizio() !="") $struct_desc.="<br>".$struct->GetServizio();
 
-        #Denominazione----------------------------------
-        $denominazione=new AA_XML_Div_Element("generale-tab-denominazione",$generale);
-        $denominazione->SetStyle('width:100%; border-bottom: 1px solid  gray; margin-bottom: 1em; margin-top: .2em; font-size: 20px; font-weight: bold; padding: .1em');
-        $denominazione->SetText($object->GetName()."<div style='font-size: x-small; font-weight: normal; margin-top: .1em;'>tipo</div>");
+        $ufficio=new AA_XML_Div_Element($id."_ufficio",$this);
+        $ufficio->SetStyle('width:30%; font-size: .6em; padding: .1em');
+        $ufficio->SetText($struct_desc);
+        #-----------------------------------------------
+        
+        #descrizione----------------------------------
+        $oggetto=new AA_XML_Div_Element($id."_descrizione",$this);
+        $oggetto->SetStyle('width:30%; font-size: .6em; padding: .1em; text-align: justify');
+        $oggetto->SetText(substr($object->GetName(),0,320));
         #-----------------------------------------------
 
-        //left panel-------
-        $left_panel= new AA_XML_Div_Element("generale-tab-left-panel",$generale);
-        $left_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; align-self: start; width:70%; flex: 1; align-self: stretch; border: 1px solid #d7dbdd;");
-        
-        //Etichetta descrizione
-        $descr= new AA_XML_Div_Element("generale-tab-left-panel-descrizione",$left_panel);
-        $descr->SetStyle("width:100%; margin-bottom: .8em; text-align: center; background: #d7dbdd; border-bottom: 1px solid #d7dbdd;");
-        $descr->SetText('<span style="font-weight:bold">Descrizione</span>');
+        if($object->GetTipo(true) == AA_Provvedimenti_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE)
+        {
+            #modalità----------------------------------
+            $oggetto=new AA_XML_Div_Element($id."_modalita",$this);
+            $oggetto->SetStyle('width:20%; font-size: .5em; padding: .1em');
+            $oggetto->SetText($object->GetModalita());
+            #-----------------------------------------------
+        }
+        else
+        {
+            #contraente----------------------------------
+            $oggetto=new AA_XML_Div_Element($id."_contraente",$this);
+            $oggetto->SetStyle('width:20%; font-size: .6em; padding: .1em');
+            $oggetto->SetText($object->GetProp("Contraente"));
+            #-----------------------------------------------                        
+        }
 
-        //Descrizione
-        $val=$object->GetProp("Descrizione");
-        if($val=="") $val="n.d.";
-        $descr=new AA_XML_Div_Element("descr",$left_panel);
-        $descr->SetStyle("display: flex; width: 100%; margin-bottom: .8em; text-align: left; align-self: stretch; flex: 1; padding: .3em");
-        $descr->SetText($val);
-
-        //Etichetta indirizzo
-        $descr= new AA_XML_Div_Element("generale-tab-left-panel-indirizzo",$left_panel);
-        $descr->SetStyle("width:100%; margin-bottom: .8em; text-align: center; background: #d7dbdd; border-bottom: 1px solid #d7dbdd;");
-        $descr->SetText('<span style="font-weight:bold">Indirizzo</span>');
-
-        //Indirizzo
-        $val=$object->GetProp("Indirizzo");
-        if($val=="") $val="n.d.";
-        $descr=new AA_XML_Div_Element("indirizzo",$left_panel);
-        $descr->SetStyle("width: 100%; margin-bottom: .8em; text-align: left; padding: .3em;");
-        $descr->SetText($val);
-        #-------------------
-        
-        //right panel ------
-        $right_panel= new AA_XML_Div_Element("generale-tab-right-panel",$generale);
-        $right_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; width:29%; border: 1px solid  #d7dbdd");
-        
-        $databoxStyle="display: flex; justify-content: space-between; width: 98%; margin-bottom: .8em; border-bottom: 1px solid #d7dbdd; padding: 1%;";
-        $databoxStyleLastRow="display: flex; justify-content: space-between; width: 98%; margin-bottom: .8em; padding: 1%;";
-
-        //Etichetta dati catastali
-        $dati_catastali= new AA_XML_Div_Element("generale-tab-right-panel-dati_catastali",$right_panel);
-        $dati_catastali->SetStyle("width: 100%; margin-bottom: .8em; text-align: center; border-bottom: 1px solid  #d7dbdd; background: #d7dbdd");
-        $dati_catastali->SetText('<span style="font-weight:bold">Dati catastali</span>');
-
-        //codice comune
-        $val=$object->GetProp("CodiceComune");
-        if($val=="") $val="n.d.";
-        $codcomune = new AA_XML_Div_Element("generale-tab-right-panel-cod_comune",$right_panel);
-        $codcomune->SetStyle($databoxStyle);
-        $codcomune->SetText('<span style="font-weight:bold">Codice Comune:</span><span>'.$val.'</span>');
-
-        //classe
-        $val=$object->GetProp("ClasseCatasto");
-        if($val=="") $val="n.d.";
-        $classe = new AA_XML_Div_Element("generale-tab-right-panel-classe",$right_panel);
-        $classe->SetStyle($databoxStyle);
-        $classe->SetText('<span style="font-weight:bold">Classe:</span>'.$val.'</span>');
-
-        //foglio
-        $val=$object->GetProp("FoglioCatasto");
-        if($val=="") $val="n.d.";
-        $foglio = new AA_XML_Div_Element("generale-tab-right-panel-foglio",$right_panel);
-        $foglio->SetStyle($databoxStyle);
-        $foglio->SetText('<span style="font-weight:bold">Foglio:</span>'.$val.'</span>');
-
-        //particella
-        $val=$object->GetProp("ParticellaCatasto");
-        if($val=="") $val="n.d.";
-        $particella = new AA_XML_Div_Element("generale-tab-right-panel-particella",$right_panel);
-        $particella->SetStyle($databoxStyle);
-        $particella->SetText('<span style="font-weight:bold">Particella:</span><span>'.$val.'</span>');
-
-        //codice comune
-        $val=$object->GetProp("RenditaCatasto");
-        if($val=="") $val="n.d.";
-        $rendita = new AA_XML_Div_Element("generale-tab-right-panel-rendita",$right_panel);
-        $rendita->SetStyle($databoxStyle);
-        $rendita->SetText('<span style="font-weight:bold">Rendita:</span><span>'.$val.'</span>');
-
-        //consistenza
-        $val=$object->GetProp("ConsistenzaCatasto");
-        if($val=="") $val="n.d.";
-        $consistenza = new AA_XML_Div_Element("generale-tab-right-panel-consistenza",$right_panel);
-        $consistenza->SetStyle($databoxStyleLastRow);
-        $consistenza->SetText('<span style="font-weight:bold">Consistenza:</span><span>'.$val.'</span>');
-        #-------------------
-
-        //legenda
-        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-top: 1em;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente prospetto sono state aggiornate l'ultima volta il ".$object->GetAggiornamento()."</span></div>";
-        $this->SetText($footer,false);
+        #estremi----------------------------------
+        $oggetto=new AA_XML_Div_Element($id."_estremi",$this);
+        $oggetto->SetStyle('width:19%; font-size: .6em; padding: .1em');
+        $oggetto->SetText($object->GetProp("Estremi"));
+        #-----------------------------------------------        
     }
 }
 

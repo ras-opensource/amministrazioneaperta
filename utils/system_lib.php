@@ -2507,7 +2507,7 @@ class AA_GenericModule
     }
 
     //Template pdf export generic
-    protected function Template_GenericPdfExport($objects = array(), $bToBrowser = true, $title = "Esportazione in pdf", $pageTemplateFunc = "Template_GenericObjectPdfExport")
+    protected function Template_GenericPdfExport($objects = array(), $bToBrowser = true, $title = "Esportazione in pdf", $pageTemplateFunc = "Template_GenericObjectPdfExport",$rowsForPage=1)
     {
         include_once "pdf_lib.php";
 
@@ -2525,6 +2525,9 @@ class AA_GenericModule
         //$count = sizeof($objects);
         #--------------------------------------------
 
+        $count = sizeof($objects);
+        if($rowForPage <=0) $rowForPage=1;
+
         //nome file
         $filename = "pdf_export";
         $filename .= "-" . date("YmdHis");
@@ -2533,11 +2536,12 @@ class AA_GenericModule
         $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
         $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
         $curRow = 0;
-        $rowForPage = 1;
+        $rowForPage = $rowsForPage;
         $lastRow = $rowForPage - 1;
         $curPage = null;
         $curPage_row = "";
         $curNumPage = 0;
+        $maxItemHeight=intval(100/$rowsForPage);
         //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
         //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
         $rowContentWidth = "width: 99.8%;";
@@ -2563,6 +2567,7 @@ class AA_GenericModule
                 $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
                 $curNumPage++;
             }
+            $curPage=null;
             #---------------------------------------
         }
 
@@ -2578,15 +2583,27 @@ class AA_GenericModule
             if ($curRow == $rowForPage) $curRow = 0;
             if ($curRow == 0) {
                 $border = "";
-                if ($curPage != null) $curPage->SetContent($curPage_row);
-                $curPage = $doc->AddPage();
-                $curNumPage++;
-                //$curPage->SetCorpoStyle("display: flex; flex-direction: column;  justify-content: space-between; padding:0; border: 1px solid black");
+                if ($curPage != null) 
+                {
+                    if($curPage_row !="")
+                    {
+                        $curPage->SetContent($curPage_row);
+                        $curPage = $doc->AddPage();
+                        $curNumPage++;
+                    }
+                }
+                else 
+                {
+                    $curPage = $doc->AddPage();
+                    $curNumPage++;
+                }
+                
+                $curPage->SetCorpoStyle("display: flex; flex-direction: column;  justify-content: flex-start; padding:0;");
                 $curPage_row = "";
             }
 
             $indice[$curObject->GetID()] = $curNumPage . "|" . $curObject->GetName();
-            $curPage_row .= "<div id='" . $curObject->GetID() . "' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+            $curPage_row .= "<div id='" . $curObject->GetID() . "' style='display:flex;  flex-direction: column; width: 99.8%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
 
             if (method_exists($this, $pageTemplateFunc)) $template = $this->$pageTemplateFunc("report_object_pdf_" . $curObject->GetId(), null, $curObject, $this->oUser);
             else $template = "";
