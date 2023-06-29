@@ -2176,9 +2176,9 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
     }
     
     //Funzione di esportazione in pdf (da specializzare)
-    public function Template_PdfExport($ids=array())
+    public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.23 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="")
     {
-        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.23 del d.lgs. 33/2013","Template_ProvvedimentiPdfExport", 20, false);
+        return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_ProvvedimentiPdfExport", $rowsForPage, $index,$subTitle);
     }
 
     //Template pdf export single

@@ -2507,7 +2507,7 @@ class AA_GenericModule
     }
 
     //Template pdf export generic
-    protected function Template_GenericPdfExport($objects = array(), $bToBrowser = true, $title = "Esportazione in pdf", $pageTemplateFunc = "Template_GenericObjectPdfExport",$rowsForPage=1, $index=true)
+    protected function Template_GenericPdfExport($objects = array(), $bToBrowser = true, $title = "Esportazione in pdf", $pageTemplateFunc = "Template_GenericObjectPdfExport",$rowsForPage=1, $index=true, $subTitle="")
     {
         include_once "pdf_lib.php";
 
@@ -2555,6 +2555,10 @@ class AA_GenericModule
 
             //Intestazione
             $intestazione = "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>$title</div>";
+            if($subtitle !="")
+            {
+                $intestazione .= "<div style='width: 100%; text-align: center; font-weight: normal; margin-top: 1em;'>".$subTitle."</div>";
+            }
             $intestazione .= "<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il " . date("Y-m-d") . "</div>";
 
             $curPage->SetContent($intestazione);
