@@ -2555,7 +2555,7 @@ class AA_GenericModule
 
             //Intestazione
             $intestazione = "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>$title</div>";
-            if($subtitle !="")
+            if($subTitle !="")
             {
                 $intestazione .= "<div style='width: 100%; text-align: center; font-weight: normal; margin-top: 1em;'>".$subTitle."</div>";
             }
@@ -2579,7 +2579,8 @@ class AA_GenericModule
         }
 
         //Imposta il titolo per le pagine successive
-        $doc->SetTitle("$title - report generato il " . date("Y-m-d"));
+        if($subTitle =="") $doc->SetTitle("$title - report generato il " . date("Y-m-d"));
+        else $doc->SetTitle("$subTitle - report generato il " . date("Y-m-d"));
 
         $indice = array();
         $lastPage = $count / $rowForPage + $curNumPage;

@@ -2293,8 +2293,8 @@ Class AA_ProvvedimentiPublicReportTemplateView extends AA_GenericObjectTemplateV
         #Ufficio----------------------------------
         $struct=$object->GetStruct();
         $struct_desc=$struct->GetAssessorato();
-        if($struct->GetDirezione() !="") $struct_desc.="<br>".$struct->GetDirezione();
-        if($struct->GetServizio() !="") $struct_desc.="<br>".$struct->GetServizio();
+        if($struct->GetDirezione(true) > 0) $struct_desc.="<br>".$struct->GetDirezione();
+        if($struct->GetServizio(true) >0) $struct_desc.="<br>".$struct->GetServizio();
 
         $ufficio=new AA_XML_Div_Element($id."_ufficio",$this);
         $ufficio->SetStyle('width:30%; font-size: .6em; padding: .1em');
