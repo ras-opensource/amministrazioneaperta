@@ -763,6 +763,19 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
        {
            $params['where'][]=" AND ".AA_Provvedimenti::AA_DBTABLE_DATA.".tipo = '".addslashes($params['Tipo'])."'";
        }
+
+        //anno rif
+        if($params['AnnoRiferimento'] > 0)
+        {
+            $params['where'][]=" AND ".AA_Provvedimenti::AA_DBTABLE_DATA.".anno_rif = '".addslashes($params['AnnoRiferimento'])."'";
+        }
+
+        //Estremi
+        if($params['Estremi'] !="")
+        {
+            $params['where'][]=" AND ".AA_Provvedimenti::AA_DBTABLE_DATA.".estremi_atto like '%".addslashes($params['Estremi'])."%'";
+        }
+       
        return $params;
     }
 
@@ -838,6 +851,19 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         {
             $params['where'][]=" AND ".AA_Provvedimenti::AA_DBTABLE_DATA.".tipo = '".addslashes($params['Tipo'])."'";
         }
+
+        //anno rif
+        if($params['AnnoRiferimento'] > 0)
+        {
+            $params['where'][]=" AND ".AA_Provvedimenti::AA_DBTABLE_DATA.".anno_rif = '".addslashes($params['AnnoRiferimento'])."'";
+        }
+
+        //Estremi
+        if($params['Estremi'] !="")
+        {
+            $params['where'][]=" AND ".AA_Provvedimenti::AA_DBTABLE_DATA.".estremi_atto like '%".addslashes($params['Estremi'])."%'";
+        }
+
         return $params;
     }
 
@@ -2038,7 +2064,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"oggetto"=>$params['oggetto'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Tipo"=>$params['Tipo'],"estremi"=>$params['estremi']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"descrizione"=>$params['descrizione'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Tipo"=>$params['Tipo'],"Estremi"=>$params['Estremi']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -2050,7 +2076,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         if($params['Tipo']=="") $formData['Tipo']=0;
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","oggetto"=>"","nome"=>"","cestinate"=>0,"revisionate"=>0,"estremi"=>"", "Tipo"=>0);
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","descrizione"=>"","nome"=>"","cestinate"=>0,"revisionate"=>0,"Estremi"=>"", "Tipo"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -2065,8 +2091,8 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         //Revisionate
         //$dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
         
-        //Denominazione
-        $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'immobile.", "placeholder"=>"Denominazione..."));
+        //oggetto
+        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del provvedimento/accordo.", "placeholder"=>"Oggetto..."));
         
         //Struttura
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
@@ -2081,11 +2107,11 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         }
         $dlg->AddSelectField("Tipo","Tipo",array("bottomLabel"=>"*filtra in base al tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options));
 
-        //Oggetto
-        $dlg->AddTextField("oggetto","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del provvedimento/accordo.", "placeholder"=>"Oggetto..."));
+        //descrizione
+        $dlg->AddTextField("descrizione","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione del provvedimento/accordo.", "placeholder"=>"Descrizione..."));
 
         //Estremi provvedimento
-        $dlg->AddTextField("estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del provvedimenti.", "placeholder"=>"Estremi..."));
+        $dlg->AddTextField("Estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del provvedimento/accordo.", "placeholder"=>"Estremi..."));
         
         $dlg->SetApplyButtonName("Filtra");
 
@@ -2096,7 +2122,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"oggetto"=>$params['oggetto'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Tipo"=>$params['Tipo'],"estremi"=>$params['estremi']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"descrizione"=>$params['descrizione'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Tipo"=>$params['Tipo'],"Estremi"=>$params['Estremi']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -2105,26 +2131,29 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['Tipo']=="") $formData['Tipo']=0;
-        
+
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","oggetto"=>"","nome"=>"","estremi"=>"","cestinate"=>0,"Tipo"=>0);
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","descrizione"=>"","nome"=>"","cestinate"=>0,"revisionate"=>0,"Estremi"=>"", "Tipo"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Bozze_Filter", "Parametri di ricerca per le bozze",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
+      
+        //Revisionate
+        //$dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
         
-        //Denominazione
-        $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione del provvedimento/accordo.", "placeholder"=>"Denominazione..."));
+        //oggetto
+        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del provvedimento/accordo.", "placeholder"=>"Oggetto..."));
         
         //Struttura
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
-
+        
         //tipo
         $selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
         $options=array();
@@ -2135,11 +2164,11 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
         }
         $dlg->AddSelectField("Tipo","Tipo",array("bottomLabel"=>"*filtra in base al tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options));
 
-        //Oggetto
-        $dlg->AddTextField("oggetto","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del provvedimento/accordo.", "placeholder"=>"Oggetto..."));
+        //descrizione
+        $dlg->AddTextField("descrizione","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione del provvedimento/accordo.", "placeholder"=>"Descrizione..."));
 
         //Estremi provvedimento
-        $dlg->AddTextField("estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del provvedimenti.", "placeholder"=>"Estremi..."));
+        $dlg->AddTextField("Estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del provvedimento/accordo.", "placeholder"=>"Estremi..."));
 
         $dlg->SetApplyButtonName("Filtra");
 
@@ -2149,7 +2178,7 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
     //Funzione di esportazione in pdf (da specializzare)
     public function Template_PdfExport($ids=array())
     {
-        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.23 del d.lgs. 33/2013","Template_ProvvedimentiPdfExport", 20);
+        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.23 del d.lgs. 33/2013","Template_ProvvedimentiPdfExport", 20, false);
     }
 
     //Template pdf export single

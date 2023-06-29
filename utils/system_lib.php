@@ -2507,7 +2507,7 @@ class AA_GenericModule
     }
 
     //Template pdf export generic
-    protected function Template_GenericPdfExport($objects = array(), $bToBrowser = true, $title = "Esportazione in pdf", $pageTemplateFunc = "Template_GenericObjectPdfExport",$rowsForPage=1)
+    protected function Template_GenericPdfExport($objects = array(), $bToBrowser = true, $title = "Esportazione in pdf", $pageTemplateFunc = "Template_GenericObjectPdfExport",$rowsForPage=1, $index=true)
     {
         include_once "pdf_lib.php";
 
@@ -2560,12 +2560,15 @@ class AA_GenericModule
             $curPage->SetContent($intestazione);
             $curNumPage++;
 
-            //pagine indice (50 nominativi per pagina)
-            $indiceNumVociPerPagina = 50;
-            for ($i = 0; $i < $count / $indiceNumVociPerPagina; $i++) {
-                $curPage = $doc->AddPage();
-                $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
-                $curNumPage++;
+            if($index)
+            {
+                //pagine indice (50 nominativi per pagina)
+                $indiceNumVociPerPagina = 50;
+                for ($i = 0; $i < $count / $indiceNumVociPerPagina; $i++) {
+                    $curPage = $doc->AddPage();
+                    $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
+                    $curNumPage++;
+                }
             }
             $curPage=null;
             #---------------------------------------
@@ -2602,7 +2605,7 @@ class AA_GenericModule
                 $curPage_row = "";
             }
 
-            $indice[$curObject->GetID()] = $curNumPage . "|" . $curObject->GetName();
+            $indice[$curObject->GetID()] = $curNumPage . "|" . substr($curObject->GetName(),0,90);
             $curPage_row .= "<div id='" . $curObject->GetID() . "' style='display:flex;  flex-direction: column; width: 99.8%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
 
             if (method_exists($this, $pageTemplateFunc)) $template = $this->$pageTemplateFunc("report_object_pdf_" . $curObject->GetId(), null, $curObject, $this->oUser);
@@ -2617,7 +2620,7 @@ class AA_GenericModule
         if ($curPage != null) $curPage->SetContent($curPage_row);
         #-----------------------------------------
 
-        if ($count > 1) {
+        if ($count > 1 && $index) {
             //Aggiornamento indice
             $curNumPage = 1;
             $curPage = $doc->GetPage($curNumPage);
