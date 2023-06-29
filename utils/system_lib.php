@@ -2377,7 +2377,7 @@ class AA_GenericModule
                     }
                 }
 
-                if (sizeof($result_error) > 0) {
+                if (is_array($result_error) && sizeof($result_error) > 0) {
                     $id = static::AA_UI_PREFIX . "_Trash";
                     $wnd = new AA_GenericWindowTemplate(static::AA_UI_PREFIX . "_Publish", "Avviso", $this->id);
                     $wnd->SetWidth("640");
@@ -2526,7 +2526,7 @@ class AA_GenericModule
         #--------------------------------------------
 
         $count = sizeof($objects);
-        if($rowForPage <=0) $rowForPage=1;
+        if($rowsForPage <=0) $rowsForPage=1;
 
         //nome file
         $filename = "pdf_export";
