@@ -1970,7 +1970,7 @@ Class AA_SinesModule extends AA_GenericModule
             $form_data[$id_obj]=$dato->GetProp($id_obj);
         }
         
-        AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $wnd=new AA_GenericFormDlg($id, "Modifica i dati contabili e la dotazione organica", $this->id,$form_data,$form_data);
         
@@ -1980,13 +1980,16 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(1080);
-        $wnd->SetHeight(650);
+        $wnd->SetHeight(700);
         
         //anno
         $wnd->AddTextField("nAnno","Anno",array("tooltip"=>"Anno di riferimento", "validateFunction"=>"IsNumber" ,"required"=>true,"bottomLabel"=>"*Inserire il valore numerico dell'anno a quattro cifre, es. 2021", "bottomPadding"=>30,"placeholder"=>"inserisci qui l'anno di riferimento"));
         
         //oneri totali
         $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"), false);
+
+        //gap
+        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30));
 
         //Spesa incarichi
         $wnd->AddTextField("sSpesaIncarichi","Spesa per incarichi",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per incarichi"));
@@ -2511,6 +2514,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         $form_data['nIdParent']=$object->GetID();
         $form_data['nAnno']=Date("Y");
+        $form_data['Gap']=0;
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo dato contabile e dotazione organica", $this->id,$form_data,$form_data);
         
@@ -2520,7 +2524,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(1080);
-        $wnd->SetHeight(650);
+        $wnd->SetHeight(700);
         
         //anno
         $wnd->AddTextField("nAnno","Anno",array("tooltip"=>"Anno di riferimento", "validateFunction"=>"isNumber", "invalidMessage"=>"L'anno deve essere un numero intero a quatttro cifre","required"=>true,"bottomLabel"=>"*Inserire il valore numerico dell'anno a quattro cifre, es. 2021", "bottomPadding"=>30, "placeholder"=>"inserisci qui l'anno di riferimento"));
@@ -2528,6 +2532,9 @@ Class AA_SinesModule extends AA_GenericModule
         //oneri totali
         $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"), false);
 
+        //gap
+        $wnd->AddCheckBoxField("Gap","GAP",array("validateFunction"=>"IsChecked", "tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30));
+        
         //Spesa incarichi
         $wnd->AddTextField("sSpesaIncarichi","Spesa per incarichi",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per incarichi"));
 
@@ -3183,15 +3190,17 @@ Class AA_SinesModule extends AA_GenericModule
         foreach($dati_contabili as $idDato=>$curDato)
         {
             $anno=$curDato->GetAnno();
-            if($canModify) $label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina annualità' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashDatoContabileDlg", params: [{id: "'.$object->GetId().'"},{id_dato_contabile:"'.$curDato->GetId().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno."</span></div>";
+            if($curDato->IsInGap()) $gap="*";
+            else $gap="";
+            if($canModify) $label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno.$gap."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina annualità' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashDatoContabileDlg", params: [{id: "'.$object->GetId().'"},{id_dato_contabile:"'.$curDato->GetId().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno.$gap."</span></div>";
             $options[]=array("id"=>$id."_".$curDato->GetID()."_Tab", "id_rec"=>$idDato, "value"=>$label);
             
             $curAnno=new AA_JSON_Template_Layout($id."_".$curDato->GetID()."_Tab",array("type"=>"clean"));
             
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_".$idDato,array("height"=>38, "css"=>"AA_Header_Tabbar_Title"));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_".$curDato->GetID()."_Label",array("view"=>"label","label"=>"<span style='color:#003380'>Dati contabili e dotazione organica - anno ".$anno."</span>", "align"=>"center")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_".$curDato->GetID()."_Label",array("view"=>"label","label"=>"<span style='color:#003380'>Dati contabili e dotazione organica - anno ".$anno.$gap."</span>", "align"=>"center")));
                 
             //Pulsante di Modifica dato contabile
             if($canModify)
@@ -3332,6 +3341,8 @@ Class AA_SinesModule extends AA_GenericModule
             $riga=new AA_JSON_Template_Layout($id."_SixRow_".$curDato->GetID(), array("css"=>array("border-top"=>"1px solid #dadee0 !important")));
             $riga->AddCol($val1);
             $curAnno->AddRow($riga);
+
+            if($curDato->IsInGap()) $curAnno->AddRow(new AA_JSON_Template_Template($id."_Gap",array("template"=>"<span>*Il presente organismo fa parte del gap per l'anno $anno</span>","height"=>22)));
             
             #bilanci----------------------------------
            

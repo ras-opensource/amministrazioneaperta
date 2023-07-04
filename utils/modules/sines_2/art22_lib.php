@@ -3515,6 +3515,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $this->oDbBind->AddBind("sSpesaLavoroFlessibile","spesa_lavoro_flessibile");
         $this->oDbBind->AddBind("sSpesaIncarichi","spesa_incarichi");
         $this->oDbBind->AddBind("sFatturato","fatturato");
+        $this->oDbBind->AddBind("Gap","gap");
 
         if($parent instanceof AA_Organismi && $id==0)
         {
@@ -3568,6 +3569,19 @@ Class AA_OrganismiDatiContabili extends AA_Object
         {
             AA_Log::Log(__METHOD__." - Genitore non impostato.",100, false,true);
         }
+    }
+
+    //Gap
+    protected $Gap=0;
+    public function IsInGap()
+    {
+        if($this->Gap > 0) return true;
+        else return false;
+    }
+    public function SetInGap($val=true)
+    {
+        if($val>0) $this->Gap=1;
+        else $this->Gap=0;
     }
 
     //Identitficativo del genitore
