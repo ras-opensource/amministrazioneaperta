@@ -7804,6 +7804,9 @@ Class AA_OrganismiNomineDocument
         //permessi utente
         $perms=$nomina->GetUserCaps($user);
 
+        //abilita il warning in caso di documento già esistente
+        $bOverride=false;
+
         //Verifica se esiste già un file
         $oldDoc=new AA_OrganismiNomineDocument($nomina->GetId(),$anno,$tipo,$user);
         if($oldDoc->IsValid() && !$bOverride)
