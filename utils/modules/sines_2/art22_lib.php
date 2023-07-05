@@ -9311,9 +9311,27 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             $this_id=$id."_".$curDatocontabile->GetID();
 
             //intestazione anno
+            if($curDatocontabile->IsInGap()) 
+            {
+                $gap_label="<span class='AA_Label AA_Label_LightYellow' title='Stato scheda organismo'>GAP</span>";
+            }
+            else 
+            {
+                $gab_label="";
+            }
+            
+            if($curDatocontabile->IsInGbc()) 
+            {
+                $gbc_label="<span class='AA_Label AA_Label_LightYellow' title='Stato scheda organismo'>GBC</span>";
+            }
+            else 
+            {
+                $gbc_label="";
+            }
+
             $intestazione=new AA_XML_Div_Element($this_id."_generale-tab-intestazione",$corpo_page);
             $intestazione->SetStyle('width:97.6%; border-top: 1px solid gray; border-left: 1px solid gray; border-right: 1px solid gray; background-color: #dedede; text-align: center; font-weight: bold; font-size: larger;padding: .5em');
-            $intestazione->SetText("Dati contabili per l'anno ".$curDatocontabile->GetAnno());
+            $intestazione->SetText("Dati contabili per l'anno ".$curDatocontabile->GetAnno()." ".$gap_label." ".$gbc_label);
             
             #Parte generale---------------------------------
             $generale=new AA_XML_Div_Element($this_id."_Generale",$corpo_page);

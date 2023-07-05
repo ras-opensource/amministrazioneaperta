@@ -3196,17 +3196,35 @@ Class AA_SinesModule extends AA_GenericModule
         foreach($dati_contabili as $idDato=>$curDato)
         {
             $anno=$curDato->GetAnno();
-            if($curDato->IsInGap()) $gap="*";
-            else $gap="";
-            if($canModify) $label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno.$gap."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina annualità' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashDatoContabileDlg", params: [{id: "'.$object->GetId().'"},{id_dato_contabile:"'.$curDato->GetId().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno.$gap."</span></div>";
+            if($curDato->IsInGap()) 
+            {
+                $gap="*";
+                $gap_label="<span class='AA_Label AA_Label_LightYellow' title='Stato scheda organismo'>GAP</span>";
+            }
+            else 
+            {
+                $gap=$gab_label="";
+            }
+            
+            if($curDato->IsInGbc()) 
+            {
+                $gbc="*";
+                $gbc_label="<span class='AA_Label AA_Label_LightYellow' title='Stato scheda organismo'>GBC</span>";
+            }
+            else 
+            {
+                $gbc=$gbc_label="";
+            }
+
+            if($canModify) $label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno.$gap.$gbc."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina annualità' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashDatoContabileDlg", params: [{id: "'.$object->GetId().'"},{id_dato_contabile:"'.$curDato->GetId().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px;'><span>".$anno.$gap.$gbc."</span></div>";
             $options[]=array("id"=>$id."_".$curDato->GetID()."_Tab", "id_rec"=>$idDato, "value"=>$label);
             
             $curAnno=new AA_JSON_Template_Layout($id."_".$curDato->GetID()."_Tab",array("type"=>"clean"));
             
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_".$idDato,array("height"=>38, "css"=>"AA_Header_Tabbar_Title"));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_".$curDato->GetID()."_Label",array("view"=>"label","label"=>"<span style='color:#003380'>Dati contabili e dotazione organica - anno ".$anno.$gap."</span>", "align"=>"center")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_".$curDato->GetID()."_Label",array("view"=>"label","label"=>"<span style='color:#003380'>Dati contabili e dotazione organica - anno ".$anno." ".$gap_label." ".$gbc_label."</span>", "align"=>"center")));
                 
             //Pulsante di Modifica dato contabile
             if($canModify)
@@ -3348,7 +3366,7 @@ Class AA_SinesModule extends AA_GenericModule
             $riga->AddCol($val1);
             $curAnno->AddRow($riga);
 
-            if($curDato->IsInGap()) $curAnno->AddRow(new AA_JSON_Template_Template($id."_Gap",array("template"=>"<span>*Il presente organismo fa parte del gap per l'anno $anno</span>","height"=>22)));
+            //if($curDato->IsInGap()) $curAnno->AddRow(new AA_JSON_Template_Template($id."_Gap",array("template"=>"<span>*Il presente organismo fa parte del gap per l'anno $anno</span>","height"=>22)));
             
             #bilanci----------------------------------
            
