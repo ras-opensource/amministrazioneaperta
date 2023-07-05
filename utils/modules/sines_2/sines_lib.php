@@ -1984,12 +1984,12 @@ Class AA_SinesModule extends AA_GenericModule
         
         //anno
         $wnd->AddTextField("nAnno","Anno",array("tooltip"=>"Anno di riferimento", "validateFunction"=>"IsNumber" ,"required"=>true,"bottomLabel"=>"*Inserire il valore numerico dell'anno a quattro cifre, es. 2021", "bottomPadding"=>30,"placeholder"=>"inserisci qui l'anno di riferimento"));
-        
-        //oneri totali
-        $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"), false);
 
         //gap
-        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30));
+        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30),false);
+
+        //oneri totali
+        $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"));
 
         //gbc
         $wnd->AddCheckBoxField("Gbc","GBC",array("tooltip"=>"Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomPadding"=>30),false);
@@ -2531,12 +2531,12 @@ Class AA_SinesModule extends AA_GenericModule
         
         //anno
         $wnd->AddTextField("nAnno","Anno",array("tooltip"=>"Anno di riferimento", "validateFunction"=>"isNumber", "invalidMessage"=>"L'anno deve essere un numero intero a quatttro cifre","required"=>true,"bottomLabel"=>"*Inserire il valore numerico dell'anno a quattro cifre, es. 2021", "bottomPadding"=>30, "placeholder"=>"inserisci qui l'anno di riferimento"));
-        
-        //oneri totali
-        $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"), false);
 
         //gap
-        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30));
+        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30),false);
+
+        //oneri totali
+        $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"));
         
         //gbc
         $wnd->AddCheckBoxField("Gbc","GBC",array("tooltip"=>"Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomPadding"=>30),false);
