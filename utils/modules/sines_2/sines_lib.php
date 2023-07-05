@@ -1991,6 +1991,9 @@ Class AA_SinesModule extends AA_GenericModule
         //gap
         $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30));
 
+        //gbc
+        $wnd->AddCheckBoxField("Gbc","GBC",array("tooltip"=>"Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomPadding"=>30),false);
+        
         //Spesa incarichi
         $wnd->AddTextField("sSpesaIncarichi","Spesa per incarichi",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per incarichi"));
 
@@ -2533,8 +2536,11 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"), false);
 
         //gap
-        $wnd->AddCheckBoxField("Gap","GAP",array("validateFunction"=>"IsChecked", "tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30));
+        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30));
         
+        //gbc
+        $wnd->AddCheckBoxField("Gbc","GBC",array("tooltip"=>"Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomPadding"=>30),false);
+
         //Spesa incarichi
         $wnd->AddTextField("sSpesaIncarichi","Spesa per incarichi",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per incarichi"));
 

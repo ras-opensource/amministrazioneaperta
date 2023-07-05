@@ -3516,6 +3516,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $this->oDbBind->AddBind("sSpesaIncarichi","spesa_incarichi");
         $this->oDbBind->AddBind("sFatturato","fatturato");
         $this->oDbBind->AddBind("Gap","gap");
+        $this->oDbBind->AddBind("Gbc","gbc");
 
         if($parent instanceof AA_Organismi && $id==0)
         {
@@ -3582,6 +3583,19 @@ Class AA_OrganismiDatiContabili extends AA_Object
     {
         if($val>0) $this->Gap=1;
         else $this->Gap=0;
+    }
+
+    //Gbc
+    protected $Gbc=0;
+    public function IsInGbc()
+    {
+        if($this->Gbc > 0) return true;
+        else return false;
+    }
+    public function SetInGbc($val=true)
+    {
+        if($val>0) $this->Gbc=1;
+        else $this->Gbc=0;
     }
 
     //Identitficativo del genitore
