@@ -64,6 +64,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_BILANCIO_ESERCIZIO=8;
     const AA_ORGANISMI_BILANCIO_RISULTATO_AMMINISTRAZIONE=16;
     const AA_ORGANISMI_BILANCIO_RISULTATO_GESTIONE=32;
+    const AA_ORGANISMI_BILANCIO_PREVISIONE=64;
     
     //Tipo nomina
     static private $TIPO_NOMINE=null;
@@ -191,6 +192,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_BILANCIO_CONSUNTIVO=>"Bilancio consuntivo",
             self::AA_ORGANISMI_BILANCIO_CONSOLIDATO=>"Bilancio consolidato",
             self::AA_ORGANISMI_BILANCIO_ESERCIZIO=>"Bilancio d'esercizio",
+            self::AA_ORGANISMI_BILANCIO_PREVISIONE=>"Bilancio di previsione",
             self::AA_ORGANISMI_BILANCIO_RISULTATO_AMMINISTRAZIONE=>"Risultato di amministrazione",
             self::AA_ORGANISMI_BILANCIO_RISULTATO_GESTIONE=>"Risultato di gestione"
             );
