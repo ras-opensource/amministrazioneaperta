@@ -1406,6 +1406,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         $form_data['anno']=$doc->GetAnno();
         $form_data['tipo']=$doc->GetTipologia(true);
+        $form_data['serial']=$doc->GetSerial();
                 
         $wnd=new AA_GenericFormDlg($id, "Elimina documento di ".$incarico->GetNome()." ".$incarico->GetCognome()." (".$incarico->GetCodiceFiscale().")", $this->id,$form_data,$form_data);
         
@@ -3860,7 +3861,7 @@ Class AA_SinesModule extends AA_GenericModule
                 foreach($incarico->GetDocs() as $id_doc=>$curDoc)
                 {
                     $modify='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetPublicDocumentPath().'&embed=1"},"'.$this->id.'")';
-                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashIncaricoDocDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{anno:"'.$curDoc->GetAnno().'"},{tipo:"'.$curDoc->GetTipologia(true).'"}]},"'.$this->id.'")';
+                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashIncaricoDocDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{anno:"'.$curDoc->GetAnno().'"},{tipo:"'.$curDoc->GetTipologia(true).'"},{serial:"'.$curDoc->GetSerial().'"}]},"'.$this->id.'")';
                     if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Download' onClick='".$modify."'><span class='mdi mdi-floppy'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
                     else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Download' onClick='".$modify."'><span class='mdi mdi-floppy'></span></a></div>";
                     $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetAnno(),"id_tipo"=>$curDoc->GetTipologia(true) ,"tipo"=>$curDoc->GetTipologia(),"ops"=>$ops);
@@ -7157,7 +7158,7 @@ Class AA_SinesModule extends AA_GenericModule
             return false;
         }
         
-        $doc = AA_OrganismiNomineDocument::GetDoc($incarico, $_REQUEST['anno'], $_REQUEST['tipo'], $this->oUser);
+        $doc = AA_OrganismiNomineDocument::GetDoc($incarico, $_REQUEST['anno'], $_REQUEST['tipo'], $_REQUEST['serial'], $this->oUser);
         if(!$doc->IsValid())
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
@@ -7316,7 +7317,7 @@ Class AA_SinesModule extends AA_GenericModule
             return false;
         }
 
-        $doc = AA_OrganismiNomineDocument::GetDoc($incarico,$_REQUEST['anno'], $_REQUEST['tipo'],$this->oUser);
+        $doc = AA_OrganismiNomineDocument::GetDoc($incarico,$_REQUEST['anno'], $_REQUEST['tipo'], $_REQUEST['serial'],$this->oUser);
         
         if(!$doc->isValid())
         {
@@ -7331,7 +7332,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
         {
-            if($incarico->DelDoc($_REQUEST['anno'],$_REQUEST['tipo'],$this->oUser))
+            if($incarico->DelDoc($_REQUEST['anno'],$_REQUEST['tipo'],$_REQUEST['serial'],$this->oUser))
             {
                 $sTaskLog="<status id='status'>0</status><content id='content'>";
                 $sTaskLog.="Documento eliminato.";

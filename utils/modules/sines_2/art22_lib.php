@@ -7317,11 +7317,11 @@ Class AA_OrganismiNomine extends AA_Object
     }
 
     //Restituisce i documenti collegati, sottoforma di array
-    public function GetDocs($annoRif="",$tipodoc=0,$user=null)
+    public function GetDocs($annoRif="",$tipodoc=0,$serial="",$user=null)
     {
         if(!$this->IsValid()) return array();
 
-        return AA_OrganismiNomineDocument::GetAllDocs($this,$annoRif,$tipodoc,$user);
+        return AA_OrganismiNomineDocument::GetAllDocs($this,$annoRif,$tipodoc,$serial,$user);
     }
     
     //elimina l'oggetto
@@ -7344,7 +7344,7 @@ Class AA_OrganismiNomine extends AA_Object
             return false;
         }
         
-        if($this->DeleteAllDocs("",0,$user)) return parent::Trash($user, true);
+        if($this->DeleteAllDocs("",0,"",$user)) return parent::Trash($user, true);
         else
         {
             return false;
@@ -7377,7 +7377,7 @@ Class AA_OrganismiNomine extends AA_Object
 
             foreach($docs as $curDoc)
             {
-                $curDichiarazione=$this->GetId()."_".$curDoc->GetAnno()."_".$curDoc->GetTipologia(true).".pdf";
+                $curDichiarazione=$this->GetId()."_".$curDoc->GetAnno()."_".$curDoc->GetTipologia(true)."_".$curDoc->GetSerial().".pdf";
                 if(!$zip->addFile($curDoc->GetLocalDocumentPath(), $curDichiarazione))
                 {
                     AA_Log::Log(__METHOD__."() - errore durante l'inserimento del file: ", 100, false, true);
@@ -7420,7 +7420,7 @@ Class AA_OrganismiNomine extends AA_Object
     }
 
     //Elimina tutti i documenti collegati, che soddisfano i criteri indicati
-    public function DeleteAllDocs($annoRif="",$tipodoc=0,$user=null)
+    public function DeleteAllDocs($annoRif="",$tipodoc=0,$serial="",$user=null)
     {
         if(!$this->IsValid())
         {
@@ -7448,13 +7448,18 @@ Class AA_OrganismiNomine extends AA_Object
         }
 
         $bUpdate=false;
-        foreach($this->GetDocs($annoRif,$tipodoc) as $curDoc)
+        foreach($this->GetDocs($annoRif,$tipodoc,$serial) as $curDoc)
         {
+
             if(!$curDoc->Delete($user))
             {
                 return false;
             }
-            else $bUpdate=true;
+            else 
+            {
+
+                $bUpdate=true;
+            }
         }
 
         if($bUpdate) return $this->UpdateDb($user);
@@ -7463,9 +7468,9 @@ Class AA_OrganismiNomine extends AA_Object
     }
 
     //Elimina un singolo documento (se sono impostati i parametri)
-    public function DelDoc($annoRif="",$tipoDoc=0,$user=null)
+    public function DelDoc($annoRif="",$tipoDoc=0,$serial="",$user=null)
     {
-        return $this->DeleteAllDocs($annoRif,$tipoDoc,$user);
+        return $this->DeleteAllDocs($annoRif,$tipoDoc,$serial,$user);
     }
 }
 
@@ -7670,6 +7675,17 @@ Class AA_OrganismiNomineDocument
         }
     }
 
+    //serial
+    private $sSerial="";
+    public function SetSerial($val="")
+    {
+        $this->sSerial=$val;
+    }
+    public function GetSerial()
+    {
+        return $this->sSerial;
+    }
+
     //Flag di validità
     private $bValid=false;
     public function IsValid()
@@ -7677,7 +7693,7 @@ Class AA_OrganismiNomineDocument
         return $this->bValid;
     }
 
-    private function __construct($idNomina=0,$anno="",$tipo=0,$user=null)
+    private function __construct($idNomina=0,$anno="",$tipo=0, $serial="0",$user=null)
     {
         $this->SetIdNomina($idNomina);
 
@@ -7686,9 +7702,21 @@ Class AA_OrganismiNomineDocument
 
         $this->SetTipologia($tipo);
 
-        if(file_exists(AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$idNomina."_".$anno."_".$tipo.".pdf"))
+        $this->SetSerial($serial);
+
+        $file=AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$idNomina."_".$anno."_".$tipo.".pdf";
+        if($serial !="")
+        {
+            $file=AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$idNomina."_".$anno."_".$tipo."_".$serial.".pdf";
+        }
+
+        if(file_exists($file))
         {
             $this->bValid=true;
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - file non trovato: ".$file,100);
         }
     }
 
@@ -7697,9 +7725,15 @@ Class AA_OrganismiNomineDocument
     {
         if(!$this->bValid) return "";
 
-        if(file_exists(AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$this->nIdNomina."_".$this->nAnno."_".$this->nTipologia.".pdf"))
+        $file=AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$this->nIdNomina."_".$this->nAnno."_".$this->nTipologia.".pdf";
+        if($this->sSerial !="")
         {
-            return AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$this->nIdNomina."_".$this->nAnno."_".$this->nTipologia.".pdf";
+            $file=AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$this->nIdNomina."_".$this->nAnno."_".$this->nTipologia."_".$this->sSerial.".pdf";
+        }
+
+        if(file_exists($file))
+        {
+            return $file;
         }
     }
 
@@ -7707,8 +7741,8 @@ Class AA_OrganismiNomineDocument
     public function GetPublicDocumentPath()
     {
         if(!$this->bValid) return "";
-
-        return AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH."?nomina=".$this->nIdNomina."&anno=".$this->nAnno."&tipo=".$this->nTipologia;
+        
+        return AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH."?nomina=".$this->nIdNomina."&anno=".$this->nAnno."&tipo=".$this->nTipologia."&serial=".$this->sSerial;
     }
  
 
@@ -7725,7 +7759,7 @@ Class AA_OrganismiNomineDocument
         header("Cache-control: private");
 		header("Content-type: application/pdf");
 		header("Content-Length: ".filesize($filename));
-		if(!$embed) header('Content-Disposition: attachment; filename="'.$this->nIdNomina."_".$this->nAnno."_".$this->GetTipologia(true).'.pdf"');
+		if(!$embed) header('Content-Disposition: attachment; filename="'.$this->nIdNomina."_".$this->nAnno."_".$this->GetTipologia(true).'_'.$this->GetSerial().'.pdf"');
 		
 		$fd = fopen ($filename, "rb");
 		echo fread ($fd, filesize ($filename));
@@ -7803,52 +7837,39 @@ Class AA_OrganismiNomineDocument
 
         //permessi utente
         $perms=$nomina->GetUserCaps($user);
-
-        //abilita il warning in caso di documento già esistente
-        $bOverride=false;
-
-        //Verifica se esiste già un file
-        $oldDoc=new AA_OrganismiNomineDocument($nomina->GetId(),$anno,$tipo,$user);
-        if($oldDoc->IsValid() && !$bOverride)
+        if(($perms & AA_Const::AA_PERMS_WRITE) == 0)
         {
-            AA_Log::Log(__METHOD__." - Documento già presente e sovrascrittura disabilitata.", 100,false,true);
+            AA_Log::Log(__METHOD__." - l'utente corrente (".$user->GetNome()." ".$user->GetCognome().") non può modificare gli incarichi di: ".$nomina->GetNome()." ".$nomina->GetCognome()." (".$nomina->GetId().")", 100,false,true);
             return false;
         }
-        else
-        {
-            if($oldDoc->IsValid())
-            {
-                if(($perms & AA_Const::AA_PERMS_WRITE) > 0)
-                {
-                    if(!$oldDoc->Delete($user))
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - l'utente corrente (".$user->GetNome()." ".$user->GetCognome().") non può eliminare il documento (".$oldDoc->GetLocalDocumentPath().") per la nomina: ".$nomina->GetNome()." ".$nomina->GetCognome()." (".$nomina->GetId().")", 100,false,true);
-                    return false;
-                }
-            }
-        }
+
+        //Verifica se esiste già un file
+        //$oldDoc=new AA_OrganismiNomineDocument($nomina->GetId(),$anno,$tipo,"",$user);
+        //if($oldDoc->IsValid())
+        //{
+        //    AA_Log::Log(__METHOD__." - Documento già presente e sovrascrittura disabilitata.", 100,false,true);
+        //    return false;
+        //}
+
+        $serial=time();
+        $filename=AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$nomina->GetId()."_".$anno."_".$tipo."_".$serial.".pdf";
 
         if(($perms & AA_Const::AA_PERMS_WRITE) > 0)
         {
             if(is_uploaded_file($file))
             {
-                if(!move_uploaded_file($file,AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$nomina->GetId()."_".$anno."_".$tipo.".pdf"))
+                if(!move_uploaded_file($file,$filename))
                 {
-                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file: ".AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$nomina->GetId()."_".$anno."_".$tipo.".pdf", 100,false,true);
+                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file: ".$filename, 100,false,true);
                     return false;
                 }
                 else return true;                
             }
             else 
             {
-                if(!rename($file,AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$nomina->GetId()."_".$anno."_".$tipo.".pdf"))
+                if(!rename($file,$filename))
                 {
-                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file: ".AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$nomina->GetId()."_".$anno."_".$tipo.".pdf", 100,false,true);
+                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file: ".$filename, 100,false,true);
                     return false;
                 }
                 else return true; 
@@ -7862,25 +7883,27 @@ Class AA_OrganismiNomineDocument
     }
     
     //Restituisce un oggetto collegato al documento
-    static public function GetDoc($nomina=null,$anno="",$tipo=0,$user=null)
+    static public function GetDoc($nomina=null,$anno="",$tipo=0,$serial="0",$user=null)
     {
         if($nomina instanceof AA_OrganismiNomine)
         {
-            if($nomina->IsValid()) return new AA_OrganismiNomineDocument($nomina->GetId(),$anno,$tipo,$user);
+            //AA_Log::Log(__METHOD__." - Carico tramite nomina",100);
+            if($nomina->IsValid()) return new AA_OrganismiNomineDocument($nomina->GetId(),$anno,$tipo,$serial,$user);
         }
 
         //Tenta il caricamento tramite id
         $nomina=new AA_OrganismiNomine($nomina,null,$user);
         if($nomina instanceof AA_OrganismiNomine)
         {
-            if($nomina->IsValid()) return new AA_OrganismiNomineDocument($nomina->GetId(),$anno,$tipo,$user);
+            //AA_Log::Log(__METHOD__." - Carico tramite id nomina",100);
+            if($nomina->IsValid()) return new AA_OrganismiNomineDocument($nomina->GetId(),$anno,$tipo,$serial,$user);
         }
 
         return null;
     }
 
     //Restituisce un array con tutti i documenti collegati ad una nomina che soddisfano determinati criteri
-    static public function GetAllDocs($nomina=null,$anno="",$tipo=0,$user)
+    static public function GetAllDocs($nomina=null,$anno="",$tipo=0,$serial="",$user)
     {
         if(!($nomina instanceof AA_OrganismiNomine))
         {
@@ -7894,11 +7917,7 @@ Class AA_OrganismiNomineDocument
             return array();
         }
 
-        //Imposta il pattern del nome file
-        if($anno=="") $anno="*";
-        if($tipo==0) $tipo="*";
-
-        $path=AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$nomina->GetId()."_".$anno."_".$tipo.".pdf";
+        $path=AA_Const::AA_UPLOADS_PATH.AA_Organismi_Const::AA_ORGANISMI_NOMINE_DOCS_PATH."/".$nomina->GetId()."_*.pdf";
         $return=array();
 
         foreach(glob($path) as $key=>$value)
@@ -7906,21 +7925,33 @@ Class AA_OrganismiNomineDocument
             $curPath=explode("/",$value);
             $file=array_pop($curPath);
             $fileParts=explode("_",$file);
-            $curAnno=$fileParts[1];
-            $curTipo=substr($fileParts[2],0,-4);
 
-            $doc=new AA_OrganismiNomineDocument($nomina->GetId(),$curAnno,$curTipo);
-            if($doc->IsValid())
+            $curAnno=$fileParts[1];
+            $curTipo=$fileParts[2];
+            $curSerial=substr($fileParts[3],0,-4);
+
+            //AA_Log::Log(__METHOD__." - ".print_r($fileParts,true),100);
+
+            if(($anno != "" && $curAnno == $anno) || $anno =="")
             {
-                $return[]=$doc;
-            }
-            else
-            {
-                AA_Log::Log(__METHOD__." - Errore nel caricamento del documento dal file: ".$value, 100,false,true);
+                //AA_Log::Log(__METHOD__." - anno: ".$anno,100);
+                if(($tipo > 0 && $tipo == $curTipo) || $tipo == 0)
+                {
+                    //AA_Log::Log(__METHOD__." - tipo: ".$tipo,100);
+                    if(($serial !="" && $serial == $curSerial) || $serial=="")
+                    {
+                        //AA_Log::Log(__METHOD__." - inserisco il doc: ".print_r($fileParts,true),100);
+                        $doc=new AA_OrganismiNomineDocument($nomina->GetId(),$curAnno,$curTipo,$curSerial,$user);
+                        if($doc->IsValid())
+                        {
+                            $return[]=$doc;
+                        }    
+                    }
+                }
             }
         }
 
-        //AA_Log::Log(__METHOD__." - ".print_R($return,true),100);
+        //AA_Log::Log(__METHOD__." - ".print_r($return,true),100);
         
         return $return;
     }
