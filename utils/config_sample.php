@@ -11,6 +11,9 @@ Class AA_Config
     const AA_LIB_PATH="";
     const AA_PUBLIC_LIB_PATH="";
 
+    //percorso della cartella dello storage (assoluto)
+    const AA_STORAGE_PATH="";
+
     //Locale
     const AA_LOCALE="it_IT";
 

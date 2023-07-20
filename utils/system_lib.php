@@ -1,5 +1,6 @@
 <?php
 include_once "system_core.php";
+include_once "system_storage.php";
 include_once "system_ui.php";
 include_once "system_ui.legacy.php";
 
