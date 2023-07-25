@@ -5093,9 +5093,10 @@ Class AA_SinesModule extends AA_GenericModule
                     if($params['section'] !="Scadenzario") $params["status"]=AA_Const::AA_STATUS_PUBBLICATA;
                     else 
                     {
-                        $params=unserialize($_SESSION['AA_Organismi_Scadenzario_Filter_Params']);
-                        if(is_array($params)) $params['count']='all';
-                        else $params=array('status'=>'AA_Const::AA_STATUS_PUBBLICATA','count'=>'all');
+                        //$params=unserialize($_SESSION['AA_Organismi_Scadenzario_Filter_Params']);
+                        //if(is_array($params)) $params['count']='all';
+                        //else $params=array('status'=>'AA_Const::AA_STATUS_PUBBLICATA','count'=>'all');
+                        $params["status"]=AA_Const::AA_STATUS_PUBBLICATA;
                     }
                 }
                 
@@ -5105,6 +5106,7 @@ Class AA_SinesModule extends AA_GenericModule
                 }
 
                 $objects=AA_Organismi::Search($params,false,$this->oUser);
+                //AA_Log::Log(__METHOD__." - search params: ".print_r($params,true),100);
                 
                 if($objects[0]==0)
                 {

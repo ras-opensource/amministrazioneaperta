@@ -4811,12 +4811,13 @@ class AA_SessionVar
             if (is_string($value)) {
                 if (json_last_error() === JSON_ERROR_NONE && $parse) {
                     $_SESSION['SessionVars'][$name] = serialize($var);
-
                     //AA_Log::Log(__METHOD__." - name:".$name." - value: ".print_r($var,true),100);
+                    //AA_Log::Log(__METHOD__." - name:".$name." - value: ".$_SESSION['SessionVars'][$name],100);
                 } else $_SESSION['SessionVars'][$name] = $value;
             } else {
                 $_SESSION['SessionVars'][$name] = serialize($var);
                 //AA_Log::Log(__METHOD__." - name:".$name." - value: ".print_r($var,true),100);
+                //AA_Log::Log(__METHOD__." - name:".$name." - value: ".$_SESSION['SessionVars'][$name],100);
             }
 
             return true;

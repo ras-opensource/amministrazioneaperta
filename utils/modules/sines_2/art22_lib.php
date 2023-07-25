@@ -2780,7 +2780,7 @@ class AA_Organismi extends AA_Object
             $having="";
             //$order="";
             $scadenzario_count=10;
-            if(isset($params['count']) && intval($params['count'])>0) $scadenzario_count=$params['count'];
+            if(isset($params['count']) && intval($params['count'])>0 || $params['count']=="all") $scadenzario_count=$params['count'];
             $params['count']="all";
             $ricerca_scadenzario=true;
         }
@@ -2857,6 +2857,7 @@ class AA_Organismi extends AA_Object
         //Popola l'array dei risultati
         $results=array();
         $curRecIndex=0;
+        $curRecCount=0;
         if(sizeof($rs) > 0)
         {
             foreach($rs as $curRow)
@@ -2865,19 +2866,22 @@ class AA_Organismi extends AA_Object
                 if($curResult != null)
                 {
                     //verifica organigrammi;
-                    if($ricerca_scadenzario && $curRecIndex >= $params['from'] && $curRecIndex < ($params['from']+$scadenzario_count))
+                    if($ricerca_scadenzario)
                     {
                         $nomine=$curResult->GetNomineScadenzario($params);
                         if(sizeof($nomine)>0) 
                         {
-                            $results[$curRow['id']]=$curResult;
+                            if($curRecIndex >= $params['from'] && ($curRecCount < $scadenzario_count || $scadenzario_count=="all"))
+                            {
+                                $results[$curRow['id']]=$curResult;
+                                $curRecCount++;
+                            }
                             $curRecIndex++;
                         }
-                        else $tot_count--;
-                        
+                        else $tot_count--;                                                        
                     }
                     else $results[$curRow['id']]=$curResult;
-                } 
+                }
             }
         }
 
