@@ -6780,6 +6780,13 @@ Class AA_OrganismiNomine extends AA_Object
         return $this->sCompensoErogato;
     }
 
+    //Verifica se l'incaricato compie o supera i 65 anni durante l'incarico
+    public function IsOver65()
+    {
+        if(intval("19".substr($this->sCodiceFiscale,6,2))+65 <= date("Y") && $this->sCodiceFiscale !="" && $this->sCodiceFiscale!="n.d.") return true;
+        return false;
+    }
+
     //Aggiunge una nuova nomina al db
     static public function AddNewToDb($data=null, $parent=null, $user=null)
     {

@@ -661,9 +661,19 @@ Class AA_SinesModule extends AA_GenericModule
 
                     //AA_Log::Log(__METHOD__." - data_fine: ".print_r($datafine,true)." - data_scadenzario: ".print_r($data_scadenzario,true)." - mese prox: ".print_r($meseProx,true)." - mese prec: ".print_r($mesePrec,true),100);
                     
+                    //Calcolo età anagrafica
+                    $eta_alert="";
+                    if($view && $curNomina->GetCodiceFiscale() !="")
+                    {
+                        if(intval("19".substr($curNomina->GetCodiceFiscale(),6,2))+65 <= date("Y"))
+                        {
+                            $eta_alert='<span class="mdi mdi-alert">';
+                        }
+                    }
+
                     if($view)
                     {
-                        $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
+                        $nomina_label=$eta_alert.$curNomina->GetNome()." ".$curNomina->GetCognome();
                         if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
                         $nominaRas="";
                         if($curNomina->IsNominaRas()) $nominaRas="<div><span style='font-size: smaller'>nomina Ras</span></div>";
@@ -3662,8 +3672,9 @@ Class AA_SinesModule extends AA_GenericModule
                 $incarico_label="<span class='AA_Label AA_Label_LightBlue'>in corso</span>&nbsp;";
                 if($incarico->GetDataFine() < $now && !$incarico->IsStorico()) $incarico_label="<span class='AA_Label AA_Label_LightRed'>cessato</span>&nbsp;";
                 if($incarico->IsStorico()) $incarico_label="<span class='AA_Label AA_Label_LightGray'>storico</span>&nbsp;";
-                if($incarico->GetNominaRas()) $incarico_label.="<span class='AA_Label AA_Label_LightGreen'>nomina RAS</span>";
-                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Nomina_Ras",array("type"=>"clean", "width"=>170,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Stato incarico: </span><br>$incarico_label</div>")));
+                if($incarico->GetNominaRas()) $incarico_label.="<span class='AA_Label AA_Label_LightGreen'>nomina RAS</span>&nbsp;";
+                if($incarico->IsOver65()) $incarico_label.="<span class='AA_Label AA_Label_LightOrange'>+65</span>";
+                $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Nomina_Ras",array("type"=>"clean", "width"=>210,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Stato incarico: </span><br>$incarico_label</div>")));
                     
                 //Codice fiscale
                 //$value=$incarico->GetCodiceFiscale();
