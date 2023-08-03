@@ -663,12 +663,9 @@ Class AA_SinesModule extends AA_GenericModule
                     
                     //Calcolo età anagrafica
                     $eta_alert="";
-                    if($view && $curNomina->GetCodiceFiscale() !="")
+                    if($view && $curNomina->IsOver65())
                     {
-                        if(intval("19".substr($curNomina->GetCodiceFiscale(),6,2))+65 <= date("Y"))
-                        {
                             $eta_alert='<span class="mdi mdi-alert">';
-                        }
                     }
 
                     if($view)
@@ -3641,6 +3638,7 @@ Class AA_SinesModule extends AA_GenericModule
             {
                 //dati incarico per riepilogo
                 $riepilogo_incarico_label=$incarico->GetTipologia();
+                if($incarico->IsOver65()) $riepilogo_incarico_label.=" (+65)";
                 if($incarico->IsStorico())
                 {
                     $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGray'>".$riepilogo_incarico_label."</span>&nbsp;";
