@@ -1105,7 +1105,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
             if (AA_MainApp.utils.isDefined(params) && AA_MainApp.utils.isDefined(params.url)) {
 
-                console.log("eventHandlers.defaultHandlers.pdfPreview params:", params);
+                //console.log("eventHandlers.defaultHandlers.pdfPreview params:", params);
 
                 let result = await AA_VerboseTask("GetPdfPreviewDlg", AA_MainApp.taskManager, params.queryString, params.postParams);
                 if (result.status.value == 0) {
@@ -1550,7 +1550,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             queryString.count = "all";
                             queryString.section = this.curSection.id;
                         }
-                        console.log("defaultHandlers.saveAsPdf - queryString:", queryString);
+                        //console.log("defaultHandlers.saveAsPdf - queryString:", queryString);
                     }
                 }
             }
