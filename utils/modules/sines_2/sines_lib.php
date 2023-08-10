@@ -8616,7 +8616,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
        
-        $dlg->SetHeight(620);
+        $dlg->SetHeight(640);
         
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
@@ -8655,7 +8655,7 @@ Class AA_SinesModule extends AA_GenericModule
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
         //Over 65
-        $dlg->AddSwitchBoxField("over65","Età nomine",array("onLabel"=>"solo over 65","offLabel"=>"tutti","bottomLabel"=>"*Mostra solo le nomine che raggiungono i 65 anni entro la durata dell'incarico."));
+        $dlg->AddSwitchBoxField("over65","Età nomine",array("onLabel"=>"solo over 65","bottomPadding"=>28,"offLabel"=>"tutti","bottomLabel"=>"*Mostra solo gli organismi con individui nominati che hanno 65 anni o più durante la durata dell'incarico."));
 
         $dlg->SetApplyButtonName("Filtra");
 
@@ -8687,7 +8687,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Bozze_Filter", "Parametri di ricerca per le bozze pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
         
-        $dlg->SetHeight(580);
+        $dlg->SetHeight(640);
                 
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
@@ -8726,7 +8726,7 @@ Class AA_SinesModule extends AA_GenericModule
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
         //Over 65
-        $dlg->AddSwitchBoxField("over65","Età nomine",array("onLabel"=>"solo over 65","offLabel"=>"tutti","bottomLabel"=>"*Mostra solo le nomine che raggiungono i 65 anni entro la durata dell'incarico."));
+        $dlg->AddSwitchBoxField("over65","Età nomine",array("onLabel"=>"solo over 65","offLabel"=>"tutti","bottomPadding"=>28,"bottomLabel"=>"*Mostra solo le nomine che raggiungono i 65 anni entro la durata dell'incarico."));
 
         $dlg->SetApplyButtonName("Filtra");
 

@@ -2689,7 +2689,7 @@ class AA_Organismi extends AA_Object
             {
                 //Anno corrente
                 $cur_anno=substr(date("Y")-65,2,2);
-                $where.=" AND (SUBSTR(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale,7,2) <= '".$cur_anno."' AND SUBSTR(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale,7,2) << '') ";
+                $where.=" AND (SUBSTR(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale,7,2) <= '".$cur_anno."' AND SUBSTR(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale,7,2) <> '') AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_fine > NOW() ";
             }
         }
         
@@ -2820,7 +2820,7 @@ class AA_Organismi extends AA_Object
                 return array(0=>-1,array());
             }
 
-            //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+            AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
             $rs=$db->GetResultSet();
             if(sizeof($rs) > 0) $tot_count=$rs[0]['tot'];
