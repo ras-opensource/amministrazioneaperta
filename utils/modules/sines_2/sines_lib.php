@@ -725,6 +725,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['incaricato']) $parametri['incaricato']=$params['incaricato'];
         if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
         if($params['stato_organismo']) $parametri['stato_organismo']=$params['stato_organismo'];
+        if($params['over65']) $parametri['over65']=$params['over65'];
 
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         $now=date("Y-m-d");
@@ -8665,7 +8666,7 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg()
     {
         //Valori runtime
-        $formData=array("stato_organismo"=>$_REQUEST['stato_organismo'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("over65"=>$_REQUEST['over65'],"stato_organismo"=>$_REQUEST['stato_organismo'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
 
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
@@ -8676,6 +8677,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($_REQUEST['id_servizio']=="") $formData['id_servizio']=0;
         if($_REQUEST['cestinate']=="") $formData['cestinate']=0;
         if($_REQUEST['stato_organismo']=="") $formData['stato_organismo']=0;
+        if($_REQUEST['over65']=="") $formData['over65']=0;
                 
         //Valori reset
         $resetData=array("stato_organismo"=>0,"tipo_nomina"=>0,"id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0,"incaricato"=>"");
@@ -8723,6 +8725,9 @@ Class AA_SinesModule extends AA_GenericModule
         //Nominato
         $dlg->AddTextField("incaricato","Nominato",array("bottomLabel"=>"*Filtra in base al nome, cognome o cf del nominato.", "placeholder"=>"nome, cognome o cf del nominato..."));
         
+        //Over 65
+        $dlg->AddSwitchBoxField("over65","Età nomine",array("onLabel"=>"solo over 65","offLabel"=>"tutti","bottomLabel"=>"*Mostra solo le nomine che raggiungono i 65 anni entro la durata dell'incarico."));
+
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();

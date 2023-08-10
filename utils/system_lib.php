@@ -3984,6 +3984,17 @@ class AA_GenericPagedSectionTemplate
         if ($obj instanceof AA_JSON_Template_Generic) $this->pager_box = $obj;
     }
 
+    //pager filter
+    protected $pager_filtered=false;
+    public function SetPagerFiltered($var=true)
+    {
+        $this->pager_filtered=$var;
+    }
+    public function IsPagerFiltered()
+    {
+        return $this->pager_filtered;
+    }
+
     //Pager title box
     protected $pagerTitle_box = "";
     public function GetPagerTitle()
@@ -4086,6 +4097,7 @@ class AA_GenericPagedSectionTemplate
             $pager = new AA_JSON_Template_Generic($this->id . "_Pager", array(
                 "view" => "pager",
                 "minWidth" => "400",
+                "isFiltered"=>$this->pager_filtered,
                 "master" => false,
                 "size" => $this->pagerItemsForPage,
                 "group" => $this->pagerGroup,
@@ -4099,7 +4111,12 @@ class AA_GenericPagedSectionTemplate
                 "on" => array("onItemClick" => "try{AA_MainApp.utils.getEventHandler('pagerEventHandler','$this->module','" . $this->id . "_Content_Box')}catch(msg){console.error(msg)}")
             ));
 
-            $pager_title = new AA_JSON_Template_Generic($this->id . "_Pager_Title", array("view" => "template", "type" => "clean", "minWidth" => "150", "align" => "center", "template" => "<div style='display: flex; justify-content: center; align-items: center; height: 100%; color: #006699;'>Pagina #curPage# di #totPages#</div>", "data" => array("curPage" => ($this->pagerCurPage + 1), "totPages" => $totPages)));
+            $filtered="";
+            if($this->pager_filtered)
+            {
+                $filtered=" <span class='mdi mdi-filter'></span>";
+            }
+            $pager_title = new AA_JSON_Template_Generic($this->id . "_Pager_Title", array("view" => "template", "type" => "clean", "minWidth" => "150", "align" => "center", "template" => "<div style='display: flex; justify-content: center; align-items: center; height: 100%; color: #006699;'>Pagina #curPage# di #totPages#".$filtered."</div>", "data" => array("curPage" => ($this->pagerCurPage + 1), "totPages" => $totPages)));
         }
 
         if ($this->withPager || $this->filtered || $this->saveAsPdfView || $this->saveAsCsvView || $this->trashView || $this->reassignView || $this->publishView || $this->resumeView || $this->detailView) {
