@@ -668,8 +668,6 @@ Class AA_ProvvedimentiModule extends AA_GenericModule
 
     public function __construct($user=null,$bDefaultSections=true)
     {
-        $this->SetId("AA_MODULE_PROVVEDIMENTI");
-        
         parent::__construct($user,$bDefaultSections);
         
         #--------------------------------Registrazione dei task-----------------------------

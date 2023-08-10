@@ -927,6 +927,9 @@ class AA_ObjectVarMapping
 //Classe per la gestione dei moduli
 class AA_GenericModule
 {
+    //Id default
+    const AA_ID_MODULE = "AA_MODULE_GENERIC";
+
     //Classe per la gestione degli oggetti del modulo
     const AA_MODULE_OBJECTS_CLASS = "AA_Object_V2";
 
@@ -1201,6 +1204,8 @@ class AA_GenericModule
         if (!($user instanceof AA_User) || !$user->isCurrentUser()) $user = AA_User::GetCurrentUser();
 
         $this->oUser = $user;
+
+        $this->SetId(static::AA_ID_MODULE);
 
         //Task manager url
         $platform = AA_Platform::GetInstance($user);

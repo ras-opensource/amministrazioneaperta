@@ -13,12 +13,13 @@ Class AA_SinesModule extends AA_GenericModule
 {
     const AA_UI_PREFIX="AA_Sines";
     const AA_UI_SCADENZARIO_BOX="Scadenzario_Content_Box";
+    
+    //Id modulo
+    const AA_ID_MODULE="AA_MODULE_SINES";
 
     public function __construct($user=null)
     {
         parent::__construct($user,false);
-        
-        $this->SetId("AA_MODULE_SINES");
         
         //{"id": "sines", "icon": "mdi mdi-office-building", "value": "Sistema Informativo Enti e Società", "tooltip": "SINES - Sistema Informativo Enti e Società", "module":"AA_MODULE_SINES"}
         //Sidebar config

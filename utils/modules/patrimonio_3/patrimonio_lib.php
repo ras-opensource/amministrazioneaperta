@@ -675,6 +675,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
 {
     const AA_UI_PREFIX="AA_Patrimonio";
 
+    //Id modulo
+    const AA_ID_MODULE="AA_MODULE_PATRIMONIO";
+
     const AA_MODULE_OBJECTS_CLASS="AA_Patrimonio";
 
     //Task per la gestione dei dialoghi standard
@@ -691,9 +694,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //------------------------------------
 
     public function __construct($user=null,$bDefaultSections=true)
-    {
-        $this->SetId("AA_MODULE_PATRIMONIO");
-        
+    {   
         parent::__construct($user,$bDefaultSections);
         
         #--------------------------------Registrazione dei task-----------------------------

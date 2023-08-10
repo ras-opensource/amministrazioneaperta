@@ -564,7 +564,7 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_PREFIX="AA_Sier";
 
     //Id modulo
-    const AA_ID_MODULE="AA_MODULE_PROVVEDIMENTI";
+    const AA_ID_MODULE="AA_MODULE_SIER";
 
     //main ui layout box
     const AA_UI_MODULE_MAIN_BOX="AA_Sier_module_layout";
@@ -585,8 +585,6 @@ Class AA_SierModule extends AA_GenericModule
 
     public function __construct($user=null,$bDefaultSections=true)
     {
-        $this->SetId("AA_MODULE_PROVVEDIMENTI");
-        
         parent::__construct($user,$bDefaultSections);
         
         #--------------------------------Registrazione dei task-----------------------------
