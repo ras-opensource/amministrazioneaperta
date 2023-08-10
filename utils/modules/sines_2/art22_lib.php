@@ -2670,7 +2670,7 @@ class AA_Organismi extends AA_Object
         }
                 
         //Filtra in base all'incaricato o tipo di nomina
-        if($params['incaricato'] !="" || $params['tipo_nomina'] > 0)
+        if($params['incaricato'] !="" || $params['tipo_nomina'] > 0 || $params['over65'] > 0)
         {
             $join=" LEFT JOIN ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." on ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".id_organismo=".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id";
             if($params['incaricato'] !="")
@@ -2682,6 +2682,14 @@ class AA_Organismi extends AA_Object
             if($params['tipo_nomina'] > 0)
             {
                 $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".tipo_incarico like '". addslashes(trim($params['tipo_nomina']))."' ";
+            }
+
+            //Seleziona solo gli organismi in cui ci sono dei nominati che hanno una età uguale o superiore a 65 anni nell'arco di durata dell'incarico
+            if($params['over65']>0)
+            {
+                //Anno corrente
+                $cur_anno=substr(date("Y")-65,2,2);
+                $where.=" AND (SUBSTR(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale,7,2) <= '".$cur_anno."' AND SUBSTR(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale,7,2) << '') ";
             }
         }
         
@@ -2736,7 +2744,8 @@ class AA_Organismi extends AA_Object
             //In corso
             if(isset($params['in_corso']) && $params['in_corso'] =="1")
             {
-                $having.=" HAVING data_fine_incarico >= '".$meseProx->format("Y-m-d")."' ";
+                if($having =="") $having=" HAVING ";
+                $having.=" data_fine_incarico >= '".$meseProx->format("Y-m-d")."' ";
             }
             
             //Scaduti
@@ -2811,6 +2820,8 @@ class AA_Organismi extends AA_Object
                 return array(0=>-1,array());
             }
 
+            AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+
             $rs=$db->GetResultSet();
             if(sizeof($rs) > 0) $tot_count=$rs[0]['tot'];
 
@@ -2842,7 +2853,7 @@ class AA_Organismi extends AA_Object
             return array(0=>-1,array());
         }
 
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         $rs=$db->GetResultSet();
         
