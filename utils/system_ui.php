@@ -23,6 +23,17 @@ class AA_JSON_Template_Generic
     {
         $result = array();
 
+        //Gestori eventi
+        if(sizeof($this->aEventHandlers)>0)
+        {
+            $result["on"]=array();
+            $result['eventHandlers']=$this->aEventHandlers;
+            foreach($this->aEventHandlers as $event=>$curHandler)
+            {
+                $result["on"][$event]="AA_MainApp.utils.getEventHandler('".$curHandler['handler']."','".$curHandler['module_id']."')";
+            }
+        }
+
         //Infopopup
         if((isset($this->props['label']) || isset($this->props['bottomLabel']))&& isset($this->props['infoPopup']) && is_array($this->props['infoPopup']))
         {
@@ -151,6 +162,24 @@ class AA_JSON_Template_Generic
         }
     }
 
+    //gestori degli eventi
+    protected $aEventHandlers=array();
+    public function AddEventHandler($event="",$handler="",$handlerParams=null,$module_id="")
+    {
+        try
+        {
+            if($event !="" && $handler!="") $this->aEventHandlers[$event]=array("handler"=>$handler,"params"=>$handlerParams,"module_id"=>$module_id);
+        }
+        catch(Exception $e)
+        {
+            AA_Log::Log(__METHOD__." - ".$e->getMessage(),100);
+        }
+    }
+    public function DelEventHandler($event="")
+    {
+        if($event !="" && isset($aEventHandlers[$event])) unset($aEventHandlers[$event]);
+    }
+
     //Aggiunta celle
     protected $cells = null;
     public function addCell($cell = null, $bFromHead = false)
@@ -178,8 +207,13 @@ class AA_JSON_Template_Generic
         
         if (is_array($props)) {
             foreach ($props as $key => $value) {
-                $this->props[$key] = $value;
+                if($key != "eventHandlers") $this->props[$key] = $value;
             }
+        }
+
+        if(isset($props['eventHandlers']) && is_array($props['eventHandlers']))
+        {
+            $this->aEventHandlers=$props['eventHandlers'];
         }
     }
 

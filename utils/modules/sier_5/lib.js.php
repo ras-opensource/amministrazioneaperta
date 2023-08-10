@@ -7,7 +7,7 @@
 include_once("lib.php");
 ?>
 //modulo
-var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_SierModule::AA_ID_MODULE?>", "PROVVEDIMENTI");
+var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_SierModule::AA_ID_MODULE?>", "SIER");
 <?php echo AA_SierModule::AA_ID_MODULE?>.valid = true;
 <?php echo AA_SierModule::AA_ID_MODULE?>.content = {};
 <?php echo AA_SierModule::AA_ID_MODULE?>.contentType = "json";

@@ -2693,16 +2693,16 @@ async function AA_DefaultSystemInitialization(params) {
 
 //Register new module
 function AA_RegisterModule(newModule) {
-    console.log("System::AA_RegisterModule(" + newModule + ")");
+    //console.log("System::AA_RegisterModule(" + newModule + ")");
 
     if (typeof(newModule) !== "undefined") {
         if (newModule.hasOwnProperty("id") && newModule.id != "" && newModule.hasOwnProperty("type") && newModule.type == 'AA_MODULE') {
             AA_MainApp.modules.push(newModule);
-            console.log("System::AA_RegisterModule() - Modulo registrato: " + newModule);
+            console.log("System::AA_RegisterModule() - Modulo registrato: " + newModule.id);
             return true;
         }
     } else {
-        console.log("System::AA_RegisterModule() - Modulo non valido.");
+        console.log("System::AA_RegisterModule() - Modulo non valido.",newModule);
         return false;
     }
 }
