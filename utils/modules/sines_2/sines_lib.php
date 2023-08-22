@@ -451,6 +451,12 @@ Class AA_SinesModule extends AA_GenericModule
                 
                 //id
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+
+                //organigramma
+                if($object->HasOrganigrammi())
+                {
+                    $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Per questo organismo è stato impostato almeno un'organigramma'><span class='mdi mdi-file-tree'></span>";
+                }
             } 
             else
             {
@@ -780,6 +786,12 @@ Class AA_SinesModule extends AA_GenericModule
                 
                 //id
                 $details.="</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;".$object->GetId()."</span>";
+
+                //organigramma
+                if($object->HasOrganigrammi())
+                {
+                    $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Per questo organismo è stato impostato almeno organigramma'><span class='mdi mdi-file-tree'></span>";
+                }
             } 
             else
             {

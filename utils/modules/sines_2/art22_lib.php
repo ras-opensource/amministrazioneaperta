@@ -3194,6 +3194,43 @@ class AA_Organismi extends AA_Object
         return $result;
     }
 
+    //Restituisce true se l'organismo ha almeno un organigramma impostato
+    /**
+     * Summary of HasOrganigrammi
+     * @param mixed $params
+     * @return array<AA_Organismi_Organigramma>
+     */
+    public function HasOrganigrammi($params=array())
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->IsValid())
+        {
+            AA_Log::Log(__METHOD__."() - oggetto non valido.");
+
+            return array();
+        }
+
+        //Impostazione dei parametri
+        $query="SELECT id from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." where id_organismo='".$this->GetId()."'";
+
+        $db=new AA_Database();
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__."() - errore nella query: ".$query,100,false,true);
+            return array();
+        }
+
+        //AA_Log::Log(__METHOD__."() - query: ".$query,100);
+
+        if($db->GetAffectedRows()>0)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     //Restituisce l'organigramma indicato
     /**
      * Summary of GetOrganigramma
