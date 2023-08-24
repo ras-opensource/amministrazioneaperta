@@ -219,7 +219,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NOMINA_LIQUIDATORE_GIUDIZIARIO=>"Liquidatore giudiziario",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_NON_CDA=>"Presidente",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE=>"Presidente CDA",
-            self::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE=>"Presidente colleggio revisori dei conti",
+            self::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE=>"Presidente collegio revisori dei conti",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO=>"Presidente collegio sindacale",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_DIRETTIVO=>"Presidente consiglio direttivo",
             self::AA_ORGANISMI_NOMINA_PRESIDENTE_CONSIGLIO_INDIRIZZO=>"Presidente organo consultivo",
