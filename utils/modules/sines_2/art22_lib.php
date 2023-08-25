@@ -6600,11 +6600,11 @@ Class AA_OrganismiNomine extends AA_Object
     {
         if(!$this->isValid()) return;
         
-        $trattamento="";
+        $trattamento=0;
         
         foreach($this->GetCompensi($user) as $curCompenso)
         {
-            $trattamento+= str_replace(array(".",","),array("","."),$curCompenso->GetParteFissa())+str_replace(array(".",","),array("","."),$curCompenso->GetParteVariabile());
+            $trattamento+= floatval(str_replace(array(".",","),array("","."),$curCompenso->GetParteFissa()))+floatval(str_replace(array(".",","),array("","."),$curCompenso->GetParteVariabile()));
         }
         
         $this->SetCompensoSpettante(number_format($trattamento,2,",","."));
