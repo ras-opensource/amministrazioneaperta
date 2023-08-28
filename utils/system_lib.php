@@ -1088,13 +1088,10 @@ class AA_GenericModule
     protected $aSectionItemTemplates = null;
     public function SetSectionItemTemplate($section = "", $template = "")
     {
-        if ($section == static::AA_ID_SECTION_BOZZE || $section == static::AA_ID_SECTION_DETAIL || $section == static::AA_ID_SECTION_PUBBLICATE) {
-            if (!is_array($this->aSectionItemTemplates)) {
-                $this->aSectionItemTemplates = array();
-            }
-
-            $this->aSectionItemTemplates[$section] = $template;
+        if (!is_array($this->aSectionItemTemplates)) {
+            $this->aSectionItemTemplates = array();
         }
+        $this->aSectionItemTemplates[$section] = $template;        
     }
     public function GetSectionItemTemplate($section = "")
     {
@@ -2755,6 +2752,24 @@ class AA_GenericModule
     //Task section layout (da specializzare)
     public function Task_GetSectionContent($task)
     {
+        //verifica se è presente un template per la sezione impostata
+        if($_REQUEST['section'] !="" && isset($this->aSectionItemTemplates[$_REQUEST['section']]))
+        {
+            $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+
+            if(method_exists($this,$this->aSectionItemTemplates[$_REQUEST['section']]))
+            {
+                $content=$this->{$this->aSectionItemTemplates[$_REQUEST['section']]}($_REQUEST);
+                if($content instanceof AA_JSON_Template_Generic)
+                {
+                    $sTaskLog.=$content->toBase64()."</content>";
+                    $task->SetLog($sTaskLog);
+
+                    return true;
+                }
+            }
+        }
+
         return $this->Task_GetGenericObjectContent($task, $_REQUEST, "section");
     }
 
