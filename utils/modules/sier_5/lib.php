@@ -583,6 +583,13 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_TASK_MODIFY_DLG="GetSierModifyDlg";
     //------------------------------------
 
+    //section ui ids
+    const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
+    const AA_UI_DETAIL_LISTE_BOX = "Liste_Box";
+    const AA_UI_DETAIL_CANDIDATI_BOX = "Candidati_Box";
+    const AA_UI_DETAIL_COMUNI_BOX = "Comuni_Box";
+    const AA_UI_DETAIL_CRUSCOTTO_BOX = "Cruscotto_Box";
+
     public function __construct($user=null,$bDefaultSections=true)
     {
         parent::__construct($user,$bDefaultSections);
@@ -620,8 +627,10 @@ Class AA_SierModule extends AA_GenericModule
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab", "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
-            //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Canoni_Tab", "value"=>"Canoni","tooltip"=>"Canoni legati all'immobile","template"=>"TemplateSierDettaglio_Canoni_Tab")
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
+            //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CRUSCOTTO_TAB, "value"=>"Cruscotto","tooltip"=>"Cruscotto di gestione","template"=>"TemplateSierDettaglio_Cruscotto_Tab"),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"Coalizioni e Liste","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Liste_Tab"),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab"),
         ));
     }
     
@@ -1263,6 +1272,201 @@ Class AA_SierModule extends AA_GenericModule
         if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
         //$id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".$object->GetId();
+        $rows_fixed_height=50;
+
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
+
+        //Descrizione
+        $value=$object->GetDescr();
+        if($value=="")$value="n.d.";
+        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Descrizione:","value"=>$value)
+        ));
+
+        //anno riferimento
+        $value=$object->GetProp("AnnoRiferimento");
+        if($value=="")$value="n.d.";
+        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Anno:","value"=>$value)
+        ));
+        
+        //estremi
+        $value= $object->GetProp("Estremi");
+        if($value=="") $value="n.d.";
+        $estremi=new AA_JSON_Template_Template($id."_Estremi",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Estremi atto:","value"=>$value)
+        ));
+
+        $modalita=null;
+        $contraente=null;
+        
+        //prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($anno_rif);
+        if($modalita) $riga->AddCol($modalita);
+        if($contraente) $riga->AddCol($contraente);
+        $riga->AddCol($estremi);
+        $layout->AddRow($riga);
+        
+        //seconda riga
+        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","gravity"=>1)));
+        //$riga->addCol($oggetto);
+        //$layout->AddRow($riga);
+
+        //terza riga
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
+        $riga->addCol($descr);
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
+        }
+        else $riga->addCol($this->TemplateDettaglio_Allegati($object,$id));
+
+        $layout->AddRow($riga);
+
+        return $layout;
+    }
+
+    //Template section detail, tab liste
+    public function TemplateSierDettaglio_Liste_Tab($object=null)
+    {
+       $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX;
+
+        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        
+        $rows_fixed_height=50;
+
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
+
+        //Descrizione
+        $value=$object->GetDescr();
+        if($value=="")$value="n.d.";
+        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Descrizione:","value"=>$value)
+        ));
+
+        //anno riferimento
+        $value=$object->GetProp("AnnoRiferimento");
+        if($value=="")$value="n.d.";
+        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Anno:","value"=>$value)
+        ));
+        
+        //estremi
+        $value= $object->GetProp("Estremi");
+        if($value=="") $value="n.d.";
+        $estremi=new AA_JSON_Template_Template($id."_Estremi",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Estremi atto:","value"=>$value)
+        ));
+
+        $modalita=null;
+        $contraente=null;
+        
+        //prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($anno_rif);
+        if($modalita) $riga->AddCol($modalita);
+        if($contraente) $riga->AddCol($contraente);
+        $riga->AddCol($estremi);
+        $layout->AddRow($riga);
+        
+        //seconda riga
+        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","gravity"=>1)));
+        //$riga->addCol($oggetto);
+        //$layout->AddRow($riga);
+
+        //terza riga
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
+        $riga->addCol($descr);
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
+        }
+        else $riga->addCol($this->TemplateDettaglio_Allegati($object,$id));
+
+        $layout->AddRow($riga);
+
+        return $layout;
+    }
+
+    //Template section detail, tab candidati
+    public function TemplateSierDettaglio_Candidati_Tab($object=null)
+    {
+       $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX;
+
+        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        
+        $rows_fixed_height=50;
+
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
+
+        //Descrizione
+        $value=$object->GetDescr();
+        if($value=="")$value="n.d.";
+        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Descrizione:","value"=>$value)
+        ));
+
+        //anno riferimento
+        $value=$object->GetProp("AnnoRiferimento");
+        if($value=="")$value="n.d.";
+        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Anno:","value"=>$value)
+        ));
+        
+        //estremi
+        $value= $object->GetProp("Estremi");
+        if($value=="") $value="n.d.";
+        $estremi=new AA_JSON_Template_Template($id."_Estremi",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Estremi atto:","value"=>$value)
+        ));
+
+        $modalita=null;
+        $contraente=null;
+        
+        //prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($anno_rif);
+        if($modalita) $riga->AddCol($modalita);
+        if($contraente) $riga->AddCol($contraente);
+        $riga->AddCol($estremi);
+        $layout->AddRow($riga);
+        
+        //seconda riga
+        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","gravity"=>1)));
+        //$riga->addCol($oggetto);
+        //$layout->AddRow($riga);
+
+        //terza riga
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
+        $riga->addCol($descr);
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
+        }
+        else $riga->addCol($this->TemplateDettaglio_Allegati($object,$id));
+
+        $layout->AddRow($riga);
+
+        return $layout;
+    }
+
+    //Template section detail, tab liste
+    public function TemplateSierDettaglio_Comuni_Tab($object=null)
+    {
+       $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX;
+
+        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        
         $rows_fixed_height=50;
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
