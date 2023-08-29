@@ -16,6 +16,17 @@ Class AA_Sier_Const extends AA_Const
     //percorso pubblicazione provvedimenti
     const AA_SIER_ALLEGATI_PATH="/sier/allegati";
     const AA_SIER_ALLEGATI_PUBLIC_PATH="/pubblicazioni/sier/docs.php";
+
+    //Flags
+    const AA_SIER_FLAG_CARICAMENTO_DATIGENERALI=256;
+    const AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE=1;
+    const AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI=128;
+    const AA_SIER_FLAG_CARICAMENTO_AFFLUENZA=2;
+    const AA_SIER_FLAG_CARICAMENTO_RISULTATI=4;
+    const AA_SIER_FLAG_EXPORT_AFFLUENZA=8;
+    const AA_SIER_FLAG_EXPORT_RISULTATI=16;
+    const AA_SIER_FLAG_ACCESSO_OPERATORI=32;
+    const AA_SIER_FLAG_CARICAMENTO_RESOCONTI=64;
 }
 
 #Classe oggetto elezioni
@@ -61,15 +72,12 @@ Class AA_Sier extends AA_Object_V2
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
         //Db data binding
-        $this->SetBind("Estremi","estremi_atto");
-        $this->SetBind("AnnoRiferimento","anno_rif");
-        $this->SetBind("Tipo","tipo");
-        $this->SetBind("Contraente","contraente");
-        $this->SetBind("Modalita","modalita");
+        $this->SetBind("Note","note");
+        $this->SetBind("Flags","flags");
+        $this->SetBind("Anno","anno");
 
         //Valori iniziali
         $this->SetProp("IdData",0);
-        $this->SetProp("Modalita",0);
 
         //disabilita la revisione
         $this->EnableRevision(false);
@@ -278,13 +286,13 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        $allegato->SetIdProvvedimento($this->nId_Data);
+        $allegato->SetIdSier($this->nId_Data);
         if($this->nId_Data_Rev > 0)
         {
-            $allegato->SetIdProvvedimento($this->nId_Data_Rev);
+            $allegato->SetIdSier($this->nId_Data_Rev);
         }
 
-        $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdProvvedimento()."'";
+        $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdSier()."'";
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
         
@@ -367,13 +375,13 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        $allegato->SetIdProvvedimento($this->nId_Data);
+        $allegato->SetIdSier($this->nId_Data);
         if($this->nId_Data_Rev > 0)
         {
-            $allegato->SetIdProvvedimento($this->nId_Data_Rev);
+            $allegato->SetIdSier($this->nId_Data_Rev);
         }
         
-        $query="UPDATE ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdProvvedimento()."'";
+        $query="UPDATE ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdSier()."'";
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
         $query.=" WHERE id='".addslashes($allegato->GetId())."' LIMIT 1";
@@ -468,10 +476,10 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        $allegato->SetIdProvvedimento($this->nId_Data);
+        $allegato->SetIdSier($this->nId_Data);
         if($this->nId_Data_Rev > 0)
         {
-            $allegato->SetIdProvvedimento($this->nId_Data_Rev);
+            $allegato->SetIdSier($this->nId_Data_Rev);
         }
         
         $query="DELETE FROM ".static::AA_ALLEGATI_DB_TABLE;
@@ -770,22 +778,10 @@ Class AA_SierModule extends AA_GenericModule
     //Personalizza il filtro delle bozze per il modulo corrente
     protected function GetDataSectionBozze_CustomFilter($params = array())
     {
-        //Tipo
-        if($params['Tipo'] > 0)
-        {
-            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".tipo = '".addslashes($params['Tipo'])."'";
-        }
-
         //anno rif
-        if($params['AnnoRiferimento'] > 0)
+        if($params['Anno'] > 0)
         {
-            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".anno_rif = '".addslashes($params['AnnoRiferimento'])."'";
-        }
-
-        //Estremi
-        if($params['Estremi'] !="")
-        {
-            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".estremi_atto like '%".addslashes($params['Estremi'])."%'";
+            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".anno = '".addslashes($params['AnnoRiferimento'])."'";
         }
 
         return $params;
@@ -798,20 +794,13 @@ Class AA_SierModule extends AA_GenericModule
         if($object instanceof AA_Sier)
         {
 
-            /*$data['pretitolo']=$object->GetTipo();
-            if($object->GetTipo(true) != AA_Sier_Const::AA_TIPO_PROVVEDIMENTO_ACCORDO)
+            $data['pretitolo']=$object->GetProp("Anno");
+            $tag="";
+            foreach(explode("|",$object->GetProp('Flags')) as $value)
             {
-                $data['tags']="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetModalita()."</span>";
-            } 
-            else
-            {
-                $tag="";
-                foreach(explode("|",$object->GetProp('Contraente')) as $value)
-                {
-                    $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
-                }
-                $data['tags']=$tag;
-            }*/
+                if($value != "") $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
+            }
+            $data['tags']=$tag;
         }
         
         return $data;
@@ -898,20 +887,19 @@ Class AA_SierModule extends AA_GenericModule
         
         $form_data=array();
         
-        $anno_fine=Date('Y');
-        $form_data['AnnoRiferimento']=$anno_fine;
-        $form_data['Modalita']=0;
-        $form_data['Contraente']="n.d.";
+        $form_data['Note']="";
+        $form_data['Anno']=date("Y");
+        $form_data['Flags']=0;
+        $form_data['nome']="Elezioni regionali ".date("Y");
+        $form_data['descrizione']="";
         
-        $form_data['Tipo']=-1;
-        
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo provvedimento/accordo", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi elezioni regionali", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(920);
-        $wnd->SetHeight(640);
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(340);
         $wnd->EnableValidation();
               
         //tipo
@@ -933,7 +921,8 @@ Class AA_SierModule extends AA_GenericModule
 
         //Contraente
         $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti (utilizzare il carattere | \"pipe\" come separatore).", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));
-
+        */
+        $anno_fine=date("Y")+5;
         $anno_start=($anno_fine-10);
         //anno riferimento
         $options=array();
@@ -941,18 +930,19 @@ Class AA_SierModule extends AA_GenericModule
         {
             $options[]=array("id"=>$i, "value"=>$i);
         }
-        $wnd->AddSelectField("AnnoRiferimento","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));*/
+        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno in cui si dovrebbero svolgere le elezioni.", "placeholder"=>"...","options"=>$options,"value"=>Date('Y')));
 
         //Nome
-        $wnd->AddTextField("nome","Oggetto",array("required"=>true, "bottomLabel"=>"*Inserisci l'oggetto del provvedimento.", "placeholder"=>"Oggetto del provvedimento..."));
+        $wnd->AddTextField("nome","Titolo",array("required"=>true, "bottomLabel"=>"*Inserisci il titolo.", "placeholder"=>"es. Nuove elezioni regionali..."));
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
+        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione.", "placeholder"=>"Inserisci qui la descrizione..."));
 
-        //estremi
-        $wnd->AddTextField("Estremi","Estremi",array("required"=>true, "bottomLabel"=>"*Inserisci gli estremi dell'atto.", "placeholder"=>"Estremi dell'atto..."));
-
+        //Note
+        $label="Note";
+        $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni.", "placeholder"=>"Inserisci qui le note..."));
+        
         $wnd->EnableCloseWndOnSuccessfulSave();
 
         $wnd->SetSaveTask("AddNewSier");
@@ -1285,7 +1275,7 @@ Class AA_SierModule extends AA_GenericModule
         ));
 
         //anno riferimento
-        $value=$object->GetProp("AnnoRiferimento");
+        $value=$object->GetProp("Anno");
         if($value=="")$value="n.d.";
         $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
@@ -2483,11 +2473,11 @@ Class AA_SierAllegati
     }
     
     protected $id_sier=0;
-    public function GetIdProvvedimento()
+    public function GetIdSier()
     {
         return $this->id_sier;
     }
-    public function SetIdProvvedimento($id=0)
+    public function SetIdSier($id=0)
     {
         $this->id_sier=$id;
     }

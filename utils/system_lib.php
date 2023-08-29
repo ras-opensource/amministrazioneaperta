@@ -2124,6 +2124,7 @@ class AA_GenericModule
             //Esiste almeno un organismo che può essere cestinato dall'utente corrente
             if (sizeof($ids_final) > 0) {
                 $count = 0;
+                $result_error=array();
                 foreach ($ids_final as $id => $object) {
 
                     if (!$object->Trash($this->oUser, $bStandardCheck, false)) {
@@ -2213,6 +2214,7 @@ class AA_GenericModule
             //Esiste almeno un organismo che può essere eliminato dall'utente corrente
             if (sizeof($ids_final) > 0) {
                 $count = 0;
+                $result_error=array();
                 foreach ($ids_final as $id => $object) {
 
                     if (!$object->Delete($this->oUser, $bStandardCheck, false)) {
