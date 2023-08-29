@@ -27,6 +27,46 @@ Class AA_Sier_Const extends AA_Const
     const AA_SIER_FLAG_EXPORT_RISULTATI=16;
     const AA_SIER_FLAG_ACCESSO_OPERATORI=32;
     const AA_SIER_FLAG_CARICAMENTO_RESOCONTI=64;
+
+    static protected $aFlags=null;
+    public static function GetFlags()
+    {
+        if(static::$aFlags==null)
+        {
+            static::$aFlags=array(
+                32=>"Abilita l'accesso da parte degli operatori comunali",
+                256=>"Abilita l'aggiornamento dei dati generali dei comuni da parte degli operatori",
+                1=>"Abilita l'aggiornamento dei dati del corpo elettorale dei comuni da parte degli operatori",
+                2=>"Abilita l'aggiornamento dei dati sull'affluenza da parte degli operatori",
+                4=>"Abilita l'aggiornamento dei risultati elettorali da parte degli operatori",
+                64=>"Abilita l'aggiornamento dei resoconti dei comuni da parte degli operatori",
+                8=>"Abilita l'esportazione dell'affluenza per la visualizzazione sul sito istituzionale",
+                16=>"Abilita l'esportazione dei risultati per la visualizzazione sul sito istituzionale"
+            );
+
+            return static::$aFlags;
+        }
+    }
+
+    static protected $aFlagsForTags=null;
+    public static function GetFlagsForTags()
+    {
+        if(static::$aFlagsForTags==null)
+        {
+            static::$aFlags=array(
+                32=>"accesso",
+                256=>"dati generali",
+                1=>"corpo elettorale",
+                2=>"affluenza",
+                4=>"risultati",
+                64=>"resoconti",
+                8=>"export affluenza",
+                16=>"export risultati"
+            );
+
+            return static::$aFlags;
+        }
+    }
 }
 
 #Classe oggetto elezioni
@@ -796,13 +836,21 @@ Class AA_SierModule extends AA_GenericModule
 
             $data['pretitolo']=$object->GetProp("Anno");
             $tag="";
-            foreach(explode("|",$object->GetProp('Flags')) as $value)
+            $flags=$object->GetProp('Flags');
+            if($flags==0)
             {
-                if($value != "") $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
+                $tag="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>accesso disabilitato</span>";
             }
-            $data['tags']=$tag;
+            else
+            {
+                foreach(AA_Sier_Const::GetFlagsForTags() as $key=>$value)
+                {
+                    if($flags & $key) $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
+                }
+            }
         }
         
+        $data['tags']=$tag;
         return $data;
     }
     
