@@ -849,7 +849,7 @@ Class AA_SierModule extends AA_GenericModule
                 }
             }
         }
-        
+
         $data['tags']=$tag;
         return $data;
     }
@@ -1297,19 +1297,10 @@ Class AA_SierModule extends AA_GenericModule
     //Template section detail, tab generale
     public function TemplateSierDettaglio_Generale_Tab($object=null)
     {
-        $sectionTemplate=$this->GetSectionItemTemplate(static::AA_ID_SECTION_DETAIL);
-        if(!is_array($sectionTemplate))
-        {
-            $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".date("Y-m-d_h:i:s");
-        }
-        else
-        {
-            $id=$sectionTemplate[0]['id'];
-        }
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX;
 
         if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
-        //$id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_Generale_Tab_".$object->GetId();
         $rows_fixed_height=50;
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);

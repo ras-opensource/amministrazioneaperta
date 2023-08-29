@@ -3470,7 +3470,7 @@ class AA_GenericModule
     }
 
     //Template generic section detail, tab generale header
-    public function TemplateGenericDettaglio_Header_Generale_Tab($object = null, $id = "")
+    public function TemplateGenericDettaglio_Header_Generale_Tab($object = null, $id = "",$header_content=null)
     {
         if (!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template($id, array("template" => "Dati non validi"));
 
@@ -3480,6 +3480,9 @@ class AA_GenericModule
 
         $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 120)));
         $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+        
+        if($header_content instanceof AA_JSON_Template_Generic) $toolbar->addElement($header_content);
+        if(is_string($header_content)) $toolbar->addElement(new AA_JSON_Template_Template($id."_header_content",array("type"=>"clean","template"=>$header_content)));
 
         $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
 
