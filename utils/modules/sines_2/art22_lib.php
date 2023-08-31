@@ -2798,7 +2798,7 @@ class AA_Organismi extends AA_Object
             //Ricerca ordinaria (al di fuori dello scadenzario)
             if(isset($params['stato_organismo']) && $params['stato_organismo'] != "" && intval($params['stato_organismo']) > 0 && $params['stato_organismo'] != 4 && $params['stato_organismo'] != 2) $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = '".$params['stato_organismo']."'";
             if(isset($params['stato_organismo']) && $params['stato_organismo'] == 4) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 4) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno < '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0))";
-            if(isset($params['stato_organismo']) && $params['stato_organismo'] == 2) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 2) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organìsmo = 0))";
+            if(isset($params['stato_organismo']) && $params['stato_organismo'] == 2) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 2) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0))";
         }     
         
         $tot_count=0;
@@ -2853,7 +2853,7 @@ class AA_Organismi extends AA_Object
             return array(0=>-1,array());
         }
 
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         $rs=$db->GetResultSet();
         
