@@ -2440,7 +2440,7 @@ Class AA_SinesModule extends AA_GenericModule
         $form_data['sCodiceFiscale']=$params['cf'];
         $form_data['ids']=$params['ids'];
         
-        AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        AA_Log::Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $wnd=new AA_GenericFormDlg($id, "Rinomina nomine", $this->id,$form_data,$form_data);
         
