@@ -4396,7 +4396,7 @@ Class AA_SinesModule extends AA_GenericModule
         $riepilogo_layout=new AA_JSON_Template_Layout($id."_Riepilogo_Layout",array("type"=>"clean"));
         //$onDblClickEvent="try{console.log('_TabBar')}catch(msg){console.error(msg)}";
         $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
-            . "<div><span class='AA_DataView_ItemTitle'>#nome# #cognome#</span><span style='font-size: smaller'>#cf#</span></div>"
+            . "<div><span class='AA_DataView_ItemTitle'>#cognome# #nome#</span><span style='font-size: smaller'>#cf#</span></div>"
             . "<div><span class='AA_DataView_ItemSubTitle'>#incarichi#</span></div>"
             . "</div><div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli degli incarichi' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
         $riepilogo_tab=new AA_JSON_Template_Generic($id."_Riepilogo_Tab",array(
