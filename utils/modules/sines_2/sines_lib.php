@@ -2294,7 +2294,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
-        $form_data=array();
+        $form_data=array("ordine"=>0);
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi organigramma", $this->id,$form_data,$form_data);
         
@@ -2304,7 +2304,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(420);
+        $wnd->SetHeight(480);
         
         //Tipo
         $options=array();
@@ -2316,6 +2316,9 @@ Class AA_SinesModule extends AA_GenericModule
 
         //abilita scadenzario
         $wnd->AddSwitchBoxField("enable_scadenzario","Scadenzario",array("onLabel"=>"includi","offLabel"=>"escludi","bottomLabel"=>"*Includi o escludi l'organigramma nel calcolo dello scadenzario."));
+
+        //ordine
+        $wnd->AddTextField("ordine","Ordine",array("bottomLabel"=>"*Ordine di visualizzazione, valori più piccoli vengono prima."));
 
         //note
         $wnd->AddTextareaField("note", "Note", array("bottomLabel" => "", "placeholder" => "..."));
@@ -2335,7 +2338,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
-        $form_data=array("tipo"=>$organigramma->GetProp("tipo"),"enable_scadenzario"=>$organigramma->GetProp('enable_scadenzario'),"note"=>$organigramma->GetProp("note"));
+        $form_data=array("ordine"=>$organigramma->GetProp("ordine"),"tipo"=>$organigramma->GetProp("tipo"),"enable_scadenzario"=>$organigramma->GetProp('enable_scadenzario'),"note"=>$organigramma->GetProp("note"));
         
         $wnd=new AA_GenericFormDlg($id, "Modifica organigramma", $this->id,$form_data,$form_data);
         
@@ -2345,7 +2348,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(420);
+        $wnd->SetHeight(480);
         
         //Tipo
         $options=array();
@@ -2357,6 +2360,9 @@ Class AA_SinesModule extends AA_GenericModule
 
         //abilita scadenzario
         $wnd->AddSwitchBoxField("enable_scadenzario","Scadenzario",array("onLabel"=>"includi","offLabel"=>"escludi","bottomLabel"=>"*Includi o escludi l'organigramma nel calcolo dello scadenzario."));
+
+        //ordine
+        $wnd->AddTextField("ordine","Ordine",array("bottomLabel"=>"*Ordine di visualizzazione, valori più piccoli vengono prima."));
 
         //note
         $wnd->AddTextareaField("note", "Note", array("bottomLabel" => "", "placeholder" => "..."));
@@ -6265,7 +6271,9 @@ Class AA_SinesModule extends AA_GenericModule
         //Aggiorna i dati
         $organigramma->SetProp('tipo',$_REQUEST['tipo']);
         $organigramma->SetProp('note',$_REQUEST['note']);
+        $organigramma->SetProp('ordine',$_REQUEST['ordine']);
         $organigramma->SetProp('enable_scadenzario',$_REQUEST['enable_scadenzario']);
+
         if(!$organismo->UpdateOrganigramma($organigramma))
         {
             $task->SetError(AA_Log::$lastErrorLog);

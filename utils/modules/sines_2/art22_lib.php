@@ -537,6 +537,7 @@ Class AA_Organismi_Organigramma
                 if($key=="enable_scadenzario") $this->organigramma_props['enable_scadenzario']=$val;
                 if($key=="dal") $this->organigramma_props['dal']=$val;
                 if($key=="al") $this->organigramma_props['al']=$val;
+                if($key=="ordine") $this->organigramma_props['ordine']=$val;
                 if($key=="note") $this->organigramma_props['note']=$val;
                 if($key=="incarichi" && is_array($val))
                 {
@@ -1623,6 +1624,7 @@ class AA_Organismi extends AA_Object
         $query="UPDATE ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." SET id_organismo='".$this->GetID()."'";
         $query.=", tipo='".$organigramma->GetProp("tipo")."'";
         $query.=", note='".addslashes($organigramma->GetProp("note"))."'";
+        if(intval($organigramma->GetProp("ordine")) >= 0) $query.=", ordine='".addslashes(intval($organigramma->GetProp("ordine")))."'";
         $query.=", enable_scadenzario='".addslashes($organigramma->GetProp("enable_scadenzario"))."'";
         $query.=" WHERE id='".$organigramma->GetId()."' LIMIT 1";
         
@@ -2297,10 +2299,19 @@ class AA_Organismi extends AA_Object
             return 0;            
         }
 
+        $dal=addslashes($newOrganigramma->GetProp("dal"));
+        if($dal=="") $dal="0000-01-01";
+        $al=addslashes($newOrganigramma->GetProp("al"));
+        if($al=="") $al="9999-12-31";
+
         $db=new AA_Database();
         $query="INSERT INTO ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." set id_organismo='".$this->GetId()."'";
         $query.=", tipo='".addslashes($newOrganigramma->GetProp("tipo"))."'";
+        $query.=", dal='".$dal."'";
+        $query.=", al='".$al."'";
         $query.=", enable_scadenzario='".addslashes($newOrganigramma->GetProp("enable_scadenzario"))."'";
+        if(is_numeric($newOrganigramma->GetProp("ordine"))) $query.=", ordine='".addslashes($newOrganigramma->GetProp("ordine"))."'";
+
         $query.=", note='".addslashes($newOrganigramma->GetProp("note"))."'";
         
         if(!$db->Query($query))
@@ -3165,7 +3176,7 @@ class AA_Organismi extends AA_Object
 
         //Impostazione dei parametri
         $query="SELECT id,tipo,enable_scadenzario,note from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." where id_organismo='".$this->GetId()."'";
-        $query.=" ORDER by tipo";
+        $query.=" ORDER by ordine,tipo";
 
         $db=new AA_Database();
         if(!$db->Query($query))
@@ -3256,7 +3267,7 @@ class AA_Organismi extends AA_Object
         }
 
         //Impostazione dei parametri
-        $query="SELECT id,tipo,enable_scadenzario,note from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." where id_organismo='".$this->GetId()."' AND id='".addslashes($id)."'";
+        $query="SELECT id,tipo,enable_scadenzario,ordine,note from ".AA_Organismi_Const::AA_DBTABLE_ORGANIGRAMMA." where id_organismo='".$this->GetId()."' AND id='".addslashes($id)."'";
         $query.= " ORDER by tipo";
 
         $db=new AA_Database();
