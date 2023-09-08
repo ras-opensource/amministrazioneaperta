@@ -2932,7 +2932,7 @@ Class AA_SinesModule extends AA_GenericModule
         $multiview->addCell($this->TemplateDettaglio_Generale_Tab($organismo));
         $multiview->addCell($this->TemplateDettaglio_DatiContabili_Tab($organismo));
         $multiview->addCell($this->TemplateDettaglio_Nomine_Tab($organismo));
-        if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        //if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
         {
             $multiview->addCell($this->TemplateDettaglio_Organigramma_Tab($organismo));
         }
