@@ -308,7 +308,7 @@ Class AA_Sier extends AA_Object_V2
         //Verifica Flags
         if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
         {
-            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare il provvedimento.", 100,false,true);
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
             return false;
         }
 
@@ -526,7 +526,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=" WHERE id='".addslashes($allegato->GetId())."'";
         if($this->nId_Data_Rev > 0)
         {
-            $query.=" AND id_sier = in (".$this->nId_Data_Rev.",".$this->nId_Data."')";
+            $query.=" AND id_sier = '".$this->nId_Data_Rev."'";
         }
         else $query.=" AND id_sier = '".$this->nId_Data."'";
         
