@@ -3232,7 +3232,8 @@ Class AA_SinesModule extends AA_GenericModule
             }
             else 
             {
-                $gap=$gab_label="";
+                $gap="";
+                $gap_label="";
             }
             
             if($curDato->IsInGbc()) 
