@@ -2752,7 +2752,7 @@ Class AA_SinesModule extends AA_GenericModule
         array("id"=>$id."DatiContabili_Tab"."_$id_org","value"=>"Dati contabili", "tooltip"=>"Dati contabili e dotazione organica"),
         array("id"=>$id."Nomine_Tab"."_$id_org","value"=>"Nomine"));
 
-        if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        //if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
         {
             $detail_options[]=array("id"=>$id."Organigramma_Tab"."_$id_org","value"=>"Organigrammi");
         }
@@ -3964,7 +3964,8 @@ Class AA_SinesModule extends AA_GenericModule
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"borderless"=>true,"width"=>130));
-        
+        $toolbar->AddElement(new AA_JSON_Template_Generic());
+
         if($canModify)
         {            
             //Pulsante di Aggiunta organigramma
@@ -3995,7 +3996,6 @@ Class AA_SinesModule extends AA_GenericModule
                 "tooltip"=>"Imposta un filtro di ricerca",
                 "click"=>$filterClickAction
             ));
-            $toolbar->AddElement(new AA_JSON_Template_Generic());
             if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN)) $toolbar->AddElement($addnew_btn);
         }
         
