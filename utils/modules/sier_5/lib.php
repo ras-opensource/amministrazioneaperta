@@ -95,6 +95,12 @@ Class AA_Sier extends AA_Object_V2
         return parent::DeleteData($idData,$user);
     }
 
+    //Restituisce le abilitazioni
+    public function GetAbilitazioni()
+    {
+        return $this->GetProp("Flags");
+    }
+
     //Funzione di clonazione dei dati
     protected function CloneData($idData = 0, $user = null)
     {
@@ -115,9 +121,11 @@ Class AA_Sier extends AA_Object_V2
         $this->SetBind("Note","note");
         $this->SetBind("Flags","flags");
         $this->SetBind("Anno","anno");
+        $this->SetBind("Giornate","giornate");
 
         //Valori iniziali
         $this->SetProp("IdData",0);
+        $this->SetProp("Flags",0);
 
         //disabilita la revisione
         $this->EnableRevision(false);
@@ -946,30 +954,10 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(720);
-        $wnd->SetHeight(340);
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(400);
         $wnd->EnableValidation();
               
-        //tipo
-        /*$selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
-        $options=array();
-        foreach(AA_Sier_Const::GetListaTipologia() as $key=>$value)
-        {
-            $options[]=array("id"=>$key,"value"=>$value);
-        }
-        $wnd->AddSelectField("Tipo","Tipo",array("required"=>true,"validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di provvedimento.","bottomLabel"=>"*Indicare il tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options,"on"=>array("onChange"=>$selectionChangeEvent)));
-        
-        //modalità
-        $options=array();
-        foreach(AA_Sier_Const::GetListaModalita() as $key=>$value)
-        {
-            $options[]=array("id"=>$key,"value"=>$value);
-        }
-        $wnd->AddSelectField("Modalita","Modalità",array("hidden"=>"true", "required"=>"true","validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di modalità di scelta del contraente.","bottomLabel"=>"*Indicare il tipo di modalità","placeholder"=>"Scegli una voce...","options"=>$options,"gravity"=>100));
-
-        //Contraente
-        $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti (utilizzare il carattere | \"pipe\" come separatore).", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));
-        */
         $anno_fine=date("Y")+5;
         $anno_start=($anno_fine-10);
         //anno riferimento
@@ -1221,6 +1209,8 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['id']=$object->GetID();
         $form_data['nome']=$object->GetName();
         $form_data['descrizione']=$object->GetDescr();
+        $form_data['Anno']=$object->GetProp("Anno");
+        $form_data['Note']=$object->GetProp("Note");
 
         foreach($object->GetDbBindings() as $prop=>$field)
         {
@@ -1233,31 +1223,10 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetLabelWidth(120);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(920);
-        $wnd->SetHeight(640);
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(400);
         
-        //tipo
-        /*
-        $selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
-        $options=array();
-        foreach(AA_Sier_Const::GetListaTipologia() as $key=>$value)
-        {
-            $options[]=array("id"=>$key,"value"=>$value);
-        }
-        $wnd->AddSelectField("Tipo","Tipo",array("required"=>true,"validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di provvedimento.","bottomLabel"=>"*Indicare il tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options,"on"=>array("onChange"=>$selectionChangeEvent)));
-        
-        //modalità
-        $options=array();
-        foreach(AA_Sier_Const::GetListaModalita() as $key=>$value)
-        {
-            $options[]=array("id"=>$key,"value"=>$value);
-        }
-        $wnd->AddSelectField("Modalita","Modalità",array("hidden"=>"true", "required"=>"true","validateFunction"=>"IsSelected","customInvalidMessage"=>"*Occorre selezionare il tipo di modalità di scelta del contraente.","bottomLabel"=>"*Indicare il tipo di modalità","placeholder"=>"Scegli una voce...","options"=>$options,"gravity"=>100));*/
-
-        //Contraente
-        $wnd->AddTextField("Contraente","Stipulanti",array("hidden"=>"true", "required"=>true,"bottomLabel"=>"*Inserisci la denominazione degli enti esterni stipulanti (utilizzare il carattere | \"pipe\" come separatore).", "placeholder"=>"Denominazione degli enti esterni stipulanti...","gravity"=>100));        
-
-        $anno_fine=Date('Y');
+        $anno_fine=date("Y")+5;
         $anno_start=($anno_fine-10);
         //anno riferimento
         $options=array();
@@ -1265,17 +1234,18 @@ Class AA_SierModule extends AA_GenericModule
         {
             $options[]=array("id"=>$i, "value"=>$i);
         }
-        $wnd->AddSelectField("AnnoRiferimento","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"Scegli l'anno di riferimento.","options"=>$options,"value"=>Date('Y')));
+        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno in cui si dovrebbero svolgere le elezioni.", "placeholder"=>"...","options"=>$options));
 
         //Nome
-        $wnd->AddTextField("nome","Oggetto",array("required"=>true, "bottomLabel"=>"*Inserisci l'oggetto del provvedimento.", "placeholder"=>"Oggetto del provvedimento..."));
+        $wnd->AddTextField("nome","Titolo",array("required"=>true, "bottomLabel"=>"*Inserisci il titolo.", "placeholder"=>"es. Nuove elezioni regionali..."));
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione del provvedimento.", "placeholder"=>"Inserisci qui la descrizione del provvedimento..."));
+        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione.", "placeholder"=>"Inserisci qui la descrizione..."));
 
-        //estremi
-        $wnd->AddTextField("Estremi","Estremi",array("required"=>true, "bottomLabel"=>"*Inserisci gli estremi dell'atto.", "placeholder"=>"Estremi dell'atto..."));
+        //Note
+        $label="Note";
+        $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni.", "placeholder"=>"Inserisci qui le note..."));
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
@@ -1307,9 +1277,9 @@ Class AA_SierModule extends AA_GenericModule
 
         //Descrizione
         $value=$object->GetDescr();
-        if($value=="")$value="n.d.";
         $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
             "data"=>array("title"=>"Descrizione:","value"=>$value)
         ));
 
@@ -1318,37 +1288,38 @@ Class AA_SierModule extends AA_GenericModule
         if($value=="")$value="n.d.";
         $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "gravity"=>1,
             "data"=>array("title"=>"Anno:","value"=>$value)
         ));
         
-        //estremi
-        $value= $object->GetProp("Estremi");
-        if($value=="") $value="n.d.";
-        $estremi=new AA_JSON_Template_Template($id."_Estremi",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Estremi atto:","value"=>$value)
+        //note
+        $value = $object->GetProp("Note");
+        $note=new AA_JSON_Template_Template($id."_Note",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Note:","value"=>$value)
         ));
-
-        $modalita=null;
-        $contraente=null;
         
         //prima riga
         $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddCol($anno_rif);
-        if($modalita) $riga->AddCol($modalita);
-        if($contraente) $riga->AddCol($contraente);
-        $riga->AddCol($estremi);
+        $riga->AddCol($this->TemplateDettaglio_Abilitazioni($object,$id."_Abilitazioni"));
         $layout->AddRow($riga);
-        
+
         //seconda riga
-        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","gravity"=>1)));
-        //$riga->addCol($oggetto);
-        //$layout->AddRow($riga);
+        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("gravity"=>1));
+        $riga->addCol($descr);
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $riga->addCol($this->TemplateDettaglio_Giornate($object,$id,true));
+        }
+        else $riga->addCol($this->TemplateDettaglio_Giornate($object,$id));
+
+        $layout->AddRow($riga);
 
         //terza riga
-        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
-        $riga->addCol($descr);
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>1));
+        $riga->addCol($note);
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
         {
             $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
         }
@@ -2392,6 +2363,187 @@ Class AA_SierModule extends AA_GenericModule
         #--------------------------------------
         
         return $provvedimenti;
+    }
+
+    //Template dettaglio giornate
+    public function TemplateDettaglio_Giornate($object=null,$id="", $canModify=false)
+    {
+        #documenti----------------------------------
+        $curId=$id."_Layout_Allegati";
+        $provvedimenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-left"=>"1px solid #dedede !important;")));
+
+        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Allegati_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Giornate</span>", "align"=>"center")));
+
+        if($canModify)
+        {
+            //Pulsante di aggiunta documento
+            $add_giornata_btn=new AA_JSON_Template_Generic($curId."_AddGiornata_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-file-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi allegato o link",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewGiornataDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+            ));
+
+            $toolbar->AddElement($add_giornata_btn);
+        }
+        else 
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+
+        $provvedimenti->AddRow($toolbar);
+
+        $options_documenti=array();
+
+        if($canModify)
+        {
+            $options_documenti[]=array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+        else
+        {
+            $options_documenti[]=array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+
+        $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
+
+        $documenti_data=array();
+        foreach($object->GetAllegati() as $id_doc=>$curDoc)
+        {
+            if($curDoc->GetUrl() == "")
+            {
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetFilePublicPath().'&embed=1&id_object='.$object->GetId().'"},"'.$this->id.'")';
+                $view_icon="mdi-floppy";
+            }
+            else 
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetUrl().'"},"'.$this->id.'")';
+                $view_icon="mdi-eye";
+            }
+            
+            
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+            $documenti_data[]=array("id"=>$id_doc,"estremi"=>$curDoc->GetEstremi(),"ops"=>$ops);
+        }
+        $documenti->SetProp("data",$documenti_data);
+        if(sizeof($documenti_data) > 0) $provvedimenti->AddRow($documenti);
+        else $provvedimenti->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        #--------------------------------------
+        
+        return $provvedimenti;
+    }
+
+    //Template dettaglio allegati
+    public function TemplateDettaglio_Abilitazioni($object=null,$id="")
+    {
+        #Abilitazioni----------------------------------
+        $curId=$id."_Layout_Abilitazioni";
+        $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","title"=>"Abilitazioni di caricamento per gli operatori ed esportazione info per il sito istituzionale.","gravity"=>10));
+
+        //oggetto non valido
+        if(!($object instanceof AA_Sier) || !$object->isValid())
+        {
+            $layout->addRow(new AA_JSON_Template_Generic());
+            return $layout;
+        }
+
+        $abilitazioni=$object->GetAbilitazioni();
+
+        //Abilitazione accesso operatori
+        $value="Disabilitato";
+        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI > 0) $value="Abilitato";
+        $campo=new AA_JSON_Template_Template($id."_AccessoOperatori",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Accesso operatori:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $layout->addCol($campo);
+        #--------------------------------------
+
+        //Abilitazione modifica info generali
+        $value="Disabilitato";
+        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI > 0) $value="Abilitato";
+        $campo=new AA_JSON_Template_Template($id."_DatiGenerali",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Modifica info generali:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $layout->addCol($campo);
+        #--------------------------------------
+
+        //Abilitazione caricamento corpo elettorale
+        $value="Disabilitato";
+        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE > 0) $value="Abilitato";
+        $campo=new AA_JSON_Template_Template($id."_CorpoElettorale",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Caricamento corpo elettorale:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $layout->addCol($campo);
+        #--------------------------------------
+        
+        //Abilitazione caricamento affluenza
+        $value="Disabilitato";
+        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA > 0) $value="Abilitato";
+        $campo=new AA_JSON_Template_Template($id."_Affluenza",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Caricamento affluenza:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $layout->addCol($campo);
+        #--------------------------------------
+
+        //Abilitazione caricamento risultati
+        $value="Disabilitato";
+        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI > 0) $value="Abilitato";
+        $campo=new AA_JSON_Template_Template($id."_Risultati",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Caricamento risultati:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        #--------------------------------------
+        $layout->addCol($campo);
+
+        //Abilitazione esportazione affluenza
+        $value="Disabilitato";
+        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA > 0) $value="Abilitato";
+        $campo=new AA_JSON_Template_Template($id."_ExportAffluenza",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Esportazione affluenza:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        #--------------------------------------
+        $layout->addCol($campo);
+
+        //Abilitazione esportazione risultati
+        $value="Disabilitato";
+        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_RISULTATI > 0) $value="Abilitato";
+        $campo=new AA_JSON_Template_Template($id."_ExportRisultati",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Esportazione risultati:","value"=>$value)
+        ));
+        #--------------------------------------
+        $layout->addCol($campo);
+
+        return $layout;
     }
 }
 
