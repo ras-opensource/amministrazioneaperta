@@ -104,10 +104,10 @@ Class AA_Sier extends AA_Object_V2
     //Restituisce le giornate
     public function GetGiornate()
     {
-        $value=json_decode($this->GetProp("Giornate"));
+        $value=json_decode($this->GetProp("Giornate"),true);
         if(!is_array($value))
         {
-            AA_Log::Log(__METHOD__." - Errore durante la decodifica delle giornate: ".$this->GetProp("Giornate"),100);
+            AA_Log::Log(__METHOD__." - Errore durante la decodifica delle giornate: ".$this->GetProp("Giornate")." - ".print_r($value,true),100);
             return array();
         }
 
@@ -701,6 +701,14 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSierTrashAllegatoDlg");
         $taskManager->RegisterTask("DeleteSierAllegato");
 
+        //giornate
+        $taskManager->RegisterTask("GetSierAddNewGiornataDlg");
+        $taskManager->RegisterTask("AddNewSierGiornata");
+        $taskManager->RegisterTask("GetSierModifyGiornataDlg");
+        $taskManager->RegisterTask("UpdateSierGiornata");
+        $taskManager->RegisterTask("GetSierTrashGiornataDlg");
+        $taskManager->RegisterTask("DeleteSierGiornata");
+
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
@@ -1007,6 +1015,98 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
     
+    //Template dlg aggiungi giornata
+    public function Template_GetSierAddNewGiornataDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierAddNewGiornataDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array();
+        $form_data['giornata']=date("Y-m-d");
+        $form_data['affluenza']=0;
+        $form_data['risultati']=0;
+
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi giornata", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(480);
+        $wnd->SetHeight(350);
+
+        //data
+        $wnd->AddDateField("giornata", "Data", array("required"=>true,"bottomLabel" => "*Selezionare una data dal calendario","width"=>350,"labelWidth"=>180));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic(),false);
+
+        //Abilita/disabilita il caricamento dell'affluenza
+        $wnd->AddSwitchBoxField("affluenza","Caricamento affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>180,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."));
+
+        //Abilita/disabilita il caricamento dei risultati
+        $wnd->AddSwitchBoxField("risultati","Caricamento risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>180,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSierGiornata");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi giornata
+    public function Template_GetSierModifyGiornataDlg($object=null,$data="")
+    {
+        $id=static::AA_UI_PREFIX."_GetSierModifyGiornataDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $giornate=$object->GetGiornate();
+
+        $form_data=array();
+        if($data !="")
+        {
+            $form_data['giornata']=$data;
+            $form_data['affluenza']=$giornate[$data]['affluenza'];
+            $form_data['risultati']=$giornate[$data]['risultati'];
+            $form_data['old_giornata']=$data;
+        }
+        else
+        {
+            $form_data['giornata']=date("Y-m-d");
+            $form_data['affluenza']=0;
+            $form_data['risultati']=0;
+        }
+
+        $wnd=new AA_GenericFormDlg($id, "Modifica giornata", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(480);
+        $wnd->SetHeight(350);
+
+        //data
+        $wnd->AddDateField("giornata", "Data", array("required"=>true,"bottomLabel" => "*Selezionare una data dal calendario","width"=>350,"labelWidth"=>180));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic(),false);
+
+        //Abilita/disabilita il caricamento dell'affluenza
+        $wnd->AddSwitchBoxField("affluenza","Caricamento affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>180,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."));
+
+        //Abilita/disabilita il caricamento dei risultati
+        $wnd->AddSwitchBoxField("risultati","Caricamento risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>180,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("UpdateSierGiornata");
+        
+        return $wnd;
+    }
+
     //Template dlg aggiungi allegato/link
     public function Template_GetSierAddNewAllegatoDlg($object=null)
     {
@@ -1052,7 +1152,7 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
-    //Template dlg aggiungi allegato/link
+    //Template dlg modifca allegato/link
     public function Template_GetSierModifyAllegatoDlg($object=null,$allegato=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierModifyAllegatoDlg";
@@ -1150,6 +1250,242 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Task Aggiungi giornata
+    public function Task_AddNewSierGiornata($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $giornata=substr($_REQUEST['giornata'],0,10);
+        if(strlen($giornata) != 10)
+        {
+            $task->SetError("Data non valida");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Data non valida</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+
+        $giornate=$object->GetGiornate();
+        
+        $affluenza=0;
+        if($_REQUEST['affluenza'] > 0) $affluenza=1;
+        $risultati=0;
+        if($_REQUEST['risultati'] > 0) $risultati=1;
+
+        $giornate[$giornata]=array("affluenza"=>$affluenza,"risultati"=>$risultati);
+        $object->SetProp("Giornate",json_encode($giornate));
+        if(!$object->Update($this->oUser,true,"Aggiunta giornata - ".$_REQUEST['giornata']))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiunta della giornata. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Giornata aggiunta con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task modifica giornata
+    public function Task_UpdateSierGiornata($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $giornata=substr($_REQUEST['giornata'],0,10);
+        if(strlen($giornata) != 10)
+        {
+            $task->SetError("Data non valida");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Data non valida</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+
+        $giornate=$object->GetGiornate();
+
+        //controlla se e' cambiata la data
+        if($_REQUEST['giornata']!=$_REQUEST['old_giornata'])
+        {
+            unset($giornate[$_REQUEST['old_giornata']]);
+        }
+        
+        $affluenza=0;
+        if($_REQUEST['affluenza'] > 0) $affluenza=1;
+        $risultati=0;
+        if($_REQUEST['risultati'] > 0) $risultati=1;
+
+        $giornate[$giornata]=array("affluenza"=>$affluenza,"risultati"=>$risultati);
+        ksort($giornate);
+
+        $object->SetProp("Giornate",json_encode($giornate));
+        if(!$object->Update($this->oUser,true,"Modifica giornata - ".$_REQUEST['giornata']))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiunta della giornata. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Giornata aggiornata con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task modifica giornata
+    public function Task_DeleteSierGiornata($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $giornata=substr($_REQUEST['giornata'],0,10);
+        if(strlen($giornata) != 10)
+        {
+            $task->SetError("Data non valida");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Data non valida</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+
+        $giornate=$object->GetGiornate();
+        if(isset($giornate[$_REQUEST['giornata']]))unset($giornate[$_REQUEST['giornata']]);
+
+        $object->SetProp("Giornate",json_encode($giornate));
+        if(!$object->Update($this->oUser,true,"Elimina giornata - ".$_REQUEST['giornata']))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'eliminazione della giornata. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Giornata eliminata con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Template dlg trash giornata
+    public function Template_GetSierTrashGiornataDlg($object=null,$giornata="")
+    {
+        $id=$this->id."_TrashSierGiornata_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina giornata", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("giornata"=>$giornata);
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"La seguente giornata verrà eliminata, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"giornata", "header"=>"Data", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteSierGiornata");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"giornata"=>$giornata));
+        
+        return $wnd;
+    }
+
     //Task Aggiungi allegato
     public function Task_AddNewSierAllegato($task)
     {
@@ -1221,7 +1557,7 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    //Template dlg modify provvedimento
+    //Template dlg modify sier
     public function Template_GetSierModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg";
@@ -1917,6 +2253,135 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiungi giornata
+    public function Task_GetSierAddNewGiornataDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Oggetto non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierAddNewGiornataDlg($object)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'oggetto (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task aggiungi dato contabile
+    public function Task_GetSierModifyGiornataDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Oggetto non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'oggetto (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $giornata=$_REQUEST['data'];
+        if($giornata==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Data non valida (".$_REQUEST['data'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetSierModifyGiornataDlg($object,$giornata)->toBase64();
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    //Task aggiungi dato contabile
+    public function Task_GetSierTrashGiornataDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Oggetto non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'oggetto (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $giornata=$_REQUEST['data'];
+        if($giornata==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Data non valida (".$_REQUEST['data'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetSierTrashGiornataDlg($object,$giornata)->toBase64();
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
     //Task aggiungi allegato
     public function Task_GetSierAddNewAllegatoDlg($task)
     {
@@ -2029,7 +2494,7 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    //Task aggiorna allegato
+    //Task elimina allegato
     public function Task_DeleteSierAllegato($task)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -2084,7 +2549,7 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    //Task aggiungi dato contabile
+    //Task modifica allegato
     public function Task_GetSierModifyAllegatoDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -2453,7 +2918,7 @@ Class AA_SierModule extends AA_GenericModule
                 "label"=>"Aggiungi",
                 "align"=>"right",
                 "width"=>120,
-                "tooltip"=>"Aggiungi allegato o link",
+                "tooltip"=>"Aggiungi una giornata",
                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewGiornataDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
             ));
 
@@ -2487,11 +2952,15 @@ Class AA_SierModule extends AA_GenericModule
         $giornate_data=array();
         foreach($object->GetGiornate() as $id_giornata=>$curFlags)
         { 
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashGiornataDlg", params: [{id: "'.$object->GetId().'"},{giornata:"'.$id_giornata.'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyGiornataDlg", params: [{id: "'.$object->GetId().'"},{giornata:"'.$id_giornata.'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashGiornataDlg", params: [{id: "'.$object->GetId().'"},{data:"'.$id_giornata.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyGiornataDlg", params: [{id: "'.$object->GetId().'"},{data:"'.$id_giornata.'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'>&nbsp;</div>";
-            $giornate_data[]=array("data"=>$id_giornata,"affluenza"=>$curFlags['affluenza'],"risultati"=>$curFlags['risultati'],"ops"=>$ops);
+            $affluenza="No";
+            if($curFlags['affluenza']==1) $affluenza="Si";
+            $risultati="No";
+            if($curFlags['risultati']==1) $risultati="Si";
+            $giornate_data[]=array("data"=>$id_giornata,"affluenza"=>$affluenza,"risultati"=>$risultati,"ops"=>$ops);
         }
         $lista->SetProp("data",$giornate_data);
         if(sizeof($giornate_data) > 0) $giornate->AddRow($lista);
