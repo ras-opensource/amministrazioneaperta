@@ -101,6 +101,19 @@ Class AA_Sier extends AA_Object_V2
         return $this->GetProp("Flags");
     }
 
+    //Restituisce le giornate
+    public function GetGiornate()
+    {
+        $value=json_decode($this->GetProp("Giornate"));
+        if(!is_array($value))
+        {
+            AA_Log::Log(__METHOD__." - Errore durante la decodifica delle giornate: ".$this->GetProp("Giornate"),100);
+            return array();
+        }
+
+        return $value;
+    }
+
     //Funzione di clonazione dei dati
     protected function CloneData($idData = 0, $user = null)
     {
@@ -326,6 +339,13 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
         
+        //Verifica se il percorso di upload esiste
+        if($file !="" && !file_exists(AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH))
+        {
+            AA_Log::Log(__METHOD__." - Percorso upload file non esistente.", 100,false,true);
+            return false;
+        }
+
         $this->IsChanged();
 
         //Aggiorna l'elemento e lo versiona se necessario
@@ -686,6 +706,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
             //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CRUSCOTTO_TAB, "value"=>"Cruscotto","tooltip"=>"Cruscotto di gestione","template"=>"TemplateSierDettaglio_Cruscotto_Tab"),
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"Coalizioni e Liste","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Liste_Tab"),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab"),
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab"),
         ));
     }
@@ -853,7 +874,7 @@ Class AA_SierModule extends AA_GenericModule
             {
                 foreach(AA_Sier_Const::GetFlagsForTags() as $key=>$value)
                 {
-                    if($flags & $key) $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
+                    if(($flags & $key) > 0) $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
                 }
             }
         }
@@ -1185,7 +1206,7 @@ Class AA_SierModule extends AA_GenericModule
         if(!$object->AddNewAllegato($allegato, $filespec['tmp_name'], $this->oUser))
         {        
             $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dell'allegato provvedimento. (".AA_Log::$lastErrorLog.")</error>";
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
             $task->SetLog($sTaskLog);
 
             return false;       
@@ -1209,8 +1230,13 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['id']=$object->GetID();
         $form_data['nome']=$object->GetName();
         $form_data['descrizione']=$object->GetDescr();
-        $form_data['Anno']=$object->GetProp("Anno");
-        $form_data['Note']=$object->GetProp("Note");
+
+        $flags=$object->GetAbilitazioni();
+        foreach(AA_Sier_Const::GetFlags() as $key=>$value)
+        {
+            if(($flags & $key) >0) $form_data[$key]=1;
+            else $form_data[$key] = 0;
+        }
 
         foreach($object->GetDbBindings() as $prop=>$field)
         {
@@ -1223,8 +1249,8 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetLabelWidth(120);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(640);
-        $wnd->SetHeight(400);
+        $wnd->SetWidth(1024);
+        $wnd->SetHeight(640);
         
         $anno_fine=date("Y")+5;
         $anno_start=($anno_fine-10);
@@ -1234,10 +1260,10 @@ Class AA_SierModule extends AA_GenericModule
         {
             $options[]=array("id"=>$i, "value"=>$i);
         }
-        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno in cui si dovrebbero svolgere le elezioni.", "placeholder"=>"...","options"=>$options));
+        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"width"=>200,"validateFunction"=>"IsSelected","tooltip"=>"*Indicare l'anno in cui si dovrebbero svolgere le elezioni.", "placeholder"=>"...","options"=>$options));
 
-        //Nome
-        $wnd->AddTextField("nome","Titolo",array("required"=>true, "bottomLabel"=>"*Inserisci il titolo.", "placeholder"=>"es. Nuove elezioni regionali..."));
+        //titolo
+        $wnd->AddTextField("nome","Titolo",array("required"=>true, "bottomLabel"=>"*Inserisci il titolo.", "placeholder"=>"es. Nuove elezioni regionali..."),false);
 
         //Descrizione
         $label="Descrizione";
@@ -1246,6 +1272,31 @@ Class AA_SierModule extends AA_GenericModule
         //Note
         $label="Note";
         $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni.", "placeholder"=>"Inserisci qui le note..."));
+
+        $abilitazioni = new AA_FieldSet("AA_SIER_ABILITAZIONI","Abilitazioni");
+
+        //Accesso operatori
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI,"Accesso operatori",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato accesso operatori comunali."));
+
+        //Modifica info generali
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI,"Info generali",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita la modifica info generali del comune."));
+
+        //Caricamento corpo elettorale
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE,"Corpo elettorale",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dati corpo elettorale."),false);
+
+        //Affluenza
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA,"Affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."));
+
+        //Risultati
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI,"Risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."),false);
+
+        //esportazione Affluenza
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA,"Esporta affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dell'affluenza."));
+
+        //esportazione Risultati
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_EXPORT_RISULTATI,"Esporta risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dei risultati."),false);
+
+        $wnd->AddGenericObject($abilitazioni);
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
@@ -1306,7 +1357,7 @@ Class AA_SierModule extends AA_GenericModule
         $layout->AddRow($riga);
 
         //seconda riga
-        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("gravity"=>1));
+        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->addCol($descr);
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
         {
@@ -1538,6 +1589,21 @@ Class AA_SierModule extends AA_GenericModule
 
             return false;
         }
+
+        $flags=array_keys(AA_Sier_Const::GetFlags());
+        
+        $abilitazioni=0;
+        foreach($_REQUEST as $key=>$value)
+        {
+            if($value==1 && in_array($key,$flags))
+            {
+                $abilitazioni+=$key;
+            } 
+        }
+
+        //AA_Log::Log(__METHOD__." - Flags: ".$abilitazioni,100);
+
+        $_REQUEST['Flags']=$abilitazioni;
         
         return $this->Task_GenericUpdateObject($task,$_REQUEST,true);   
     }
@@ -2370,7 +2436,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         #documenti----------------------------------
         $curId=$id."_Layout_Allegati";
-        $provvedimenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-left"=>"1px solid #dedede !important;")));
+        $giornate=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-left"=>"1px solid #dedede !important;")));
 
         $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -2398,50 +2464,41 @@ Class AA_SierModule extends AA_GenericModule
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         }
 
-        $provvedimenti->AddRow($toolbar);
+        $giornate->AddRow($toolbar);
 
-        $options_documenti=array();
+        $options_giornate=array();
 
         if($canModify)
         {
-            $options_documenti[]=array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true,"css"=>array("text-align"=>"left"));
-            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+            $options_giornate[]=array("id"=>"data", "header"=>"Data", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_giornate[]=array("id"=>"affluenza", "header"=>"Affluenza", "width"=>90,"css"=>array("text-align"=>"center"));
+            $options_giornate[]=array("id"=>"risultati", "header"=>"Risultati", "width"=>90,"css"=>array("text-align"=>"center"));
+            $options_giornate[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
         else
         {
-            $options_documenti[]=array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true,"css"=>array("text-align"=>"left"));
-            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+            $options_giornate[]=array("id"=>"data", "header"=>"Data", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_giornate[]=array("id"=>"affluenza", "header"=>"Affluenza", "width"=>90,"css"=>array("text-align"=>"center"));
+            $options_giornate[]=array("id"=>"risultati", "header"=>"Risultati", "width"=>90,"css"=>array("text-align"=>"center"));
         }
 
-        $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
+        $lista=new AA_JSON_Template_Generic($curId."_Giornate_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_giornate));
 
-        $documenti_data=array();
-        foreach($object->GetAllegati() as $id_doc=>$curDoc)
-        {
-            if($curDoc->GetUrl() == "")
-            {
-                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetFilePublicPath().'&embed=1&id_object='.$object->GetId().'"},"'.$this->id.'")';
-                $view_icon="mdi-floppy";
-            }
-            else 
-            {
-                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetUrl().'"},"'.$this->id.'")';
-                $view_icon="mdi-eye";
-            }
-            
-            
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
-            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-            $documenti_data[]=array("id"=>$id_doc,"estremi"=>$curDoc->GetEstremi(),"ops"=>$ops);
+        $giornate_data=array();
+        foreach($object->GetGiornate() as $id_giornata=>$curFlags)
+        { 
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashGiornataDlg", params: [{id: "'.$object->GetId().'"},{giornata:"'.$id_giornata.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyGiornataDlg", params: [{id: "'.$object->GetId().'"},{giornata:"'.$id_giornata.'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'>&nbsp;</div>";
+            $giornate_data[]=array("data"=>$id_giornata,"affluenza"=>$curFlags['affluenza'],"risultati"=>$curFlags['risultati'],"ops"=>$ops);
         }
-        $documenti->SetProp("data",$documenti_data);
-        if(sizeof($documenti_data) > 0) $provvedimenti->AddRow($documenti);
-        else $provvedimenti->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $lista->SetProp("data",$giornate_data);
+        if(sizeof($giornate_data) > 0) $giornate->AddRow($lista);
+        else $giornate->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         #--------------------------------------
         
-        return $provvedimenti;
+        return $giornate;
     }
 
     //Template dettaglio allegati
@@ -2461,8 +2518,12 @@ Class AA_SierModule extends AA_GenericModule
         $abilitazioni=$object->GetAbilitazioni();
 
         //Abilitazione accesso operatori
-        $value="Disabilitato";
-        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI > 0) $value="Abilitato";
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI) > 0) 
+        {
+            $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        }
         $campo=new AA_JSON_Template_Template($id."_AccessoOperatori",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2473,8 +2534,8 @@ Class AA_SierModule extends AA_GenericModule
         #--------------------------------------
 
         //Abilitazione modifica info generali
-        $value="Disabilitato";
-        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI > 0) $value="Abilitato";
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_DatiGenerali",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2485,8 +2546,8 @@ Class AA_SierModule extends AA_GenericModule
         #--------------------------------------
 
         //Abilitazione caricamento corpo elettorale
-        $value="Disabilitato";
-        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE > 0) $value="Abilitato";
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_CorpoElettorale",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2497,8 +2558,8 @@ Class AA_SierModule extends AA_GenericModule
         #--------------------------------------
         
         //Abilitazione caricamento affluenza
-        $value="Disabilitato";
-        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA > 0) $value="Abilitato";
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Affluenza",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2509,8 +2570,8 @@ Class AA_SierModule extends AA_GenericModule
         #--------------------------------------
 
         //Abilitazione caricamento risultati
-        $value="Disabilitato";
-        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI > 0) $value="Abilitato";
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Risultati",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2521,8 +2582,8 @@ Class AA_SierModule extends AA_GenericModule
         $layout->addCol($campo);
 
         //Abilitazione esportazione affluenza
-        $value="Disabilitato";
-        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA > 0) $value="Abilitato";
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_ExportAffluenza",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2533,8 +2594,9 @@ Class AA_SierModule extends AA_GenericModule
         $layout->addCol($campo);
 
         //Abilitazione esportazione risultati
-        $value="Disabilitato";
-        if($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_RISULTATI > 0) $value="Abilitato";
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        $color="#000000";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_ExportRisultati",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
