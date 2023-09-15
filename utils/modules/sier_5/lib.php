@@ -1841,7 +1841,7 @@ Class AA_SierModule extends AA_GenericModule
             $addnew_btn=new AA_JSON_Template_Generic($id."_AddNewUp_btn",array(
                "view"=>"button",
                 "type"=>"icon",
-                "icon"=>"mdi mdi-account-plus",
+                "icon"=>"mdi mdi-pencil-plus",
                 "label"=>"Aggiungi",
                 "align"=>"right",
                 "width"=>120,
@@ -1903,7 +1903,7 @@ Class AA_SierModule extends AA_GenericModule
             $addnew_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
                "view"=>"button",
                 "type"=>"icon",
-                "icon"=>"mdi mdi-account-plus",
+                "icon"=>"mdi mdi-pencil-plus",
                 "label"=>"Aggiungi",
                 "align"=>"right",
                 "width"=>120,
