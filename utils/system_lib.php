@@ -3245,17 +3245,24 @@ class AA_GenericModule
 
         //AA_Log::Log(__METHOD__." - ".print_r($this->aSectionItemTemplates,true),100);
 
-        $header->addCol(new AA_JSON_Template_Generic($id . "TabBar" . "_$id_org", array(
+        $layout_tab=new AA_JSON_Template_Layout($id . "Layout_TabBar" . "_$id_org",array("type"=>"clean","minWidth"=>500));
+        
+        $gravity_tabbar=sizeof($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]);
+        //if(sizeof($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]) > 1) $gravity_tabbar=sizeof($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]);
+
+        $layout_tab->addCol(new AA_JSON_Template_Generic($id . "TabBar" . "_$id_org", array(
             "view" => "tabbar",
+            "gravity"=>$gravity_tabbar,
             "borderless" => true,
             "value" => $this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL][0]['id'],
             "css" => "AA_Header_TabBar",
-            "width" => 400,
             "multiview" => true,
             "view_id" => $id . "Multiview" . "_$id_org",
             "options" => $this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]
         )));
-        $header->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+        $layout_tab->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer","gravity"=>2/$gravity_tabbar)));
+        $header->addCol($layout_tab);
+
         $header->addCol(new AA_JSON_Template_Generic($id . "Detail" . "_$id_org", array(
             "view" => "template",
             "borderless" => true,
@@ -3265,10 +3272,11 @@ class AA_GenericModule
             "data" => array("detail" => $details, "status" => $status)
         )));
 
+        $layout_toolbar=new AA_JSON_Template_Layout($id . "Layout_TabBar" . "_$id_org",array("type"=>"clean","minWidth"=>500));
+
         $toolbar = new AA_JSON_Template_Toolbar($id . "_Toolbar" . "_$id_org", array(
             "type" => "clean",
-            "css" => array("background" => "#ebf0fa", "border-color" => "transparent"),
-            "width" => 400
+            "css" => array("background" => "#ebf0fa", "border-color" => "transparent")
         ));
 
         //Inserisce il pulsante di pubblicazione
@@ -3393,8 +3401,10 @@ class AA_GenericModule
         $toolbar->addElement($azioni_btn);
         $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 15)));
 
-        $header->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer")));
-        $header->addCol($toolbar);
+        $layout_toolbar->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+        $layout_toolbar->addCol($toolbar);
+
+        $header->addCol($layout_toolbar);
 
         //Content box
         $content = new AA_JSON_Template_Layout(

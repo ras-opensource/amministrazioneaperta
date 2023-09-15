@@ -3503,22 +3503,6 @@ Class AA_SinesModule extends AA_GenericModule
                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetOrganismoAddNewNominaDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
             ));
             
-            //pulsante di filtraggio
-            $saveFilterId=$id;
-            $filterDlgTask="GetOrganismiNomineFilterDlg";
-            $filterClickAction= "try{module=AA_MainApp.getModule('".$this->id."'); if(module.isValid()){module.ui.dlg('".$filterDlgTask."',module.getRuntimeValue(".$saveFilterId.",'filter_data'),'".$this->id."')}}catch(msg){console.error(msg)}";
-
-            $filter_btn = new AA_JSON_Template_Generic($id."_Filter_btn",array(
-                "view"=>"button",
-                "align"=>"right",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-filter",
-                "label"=>"Filtra",
-                "width"=>80,
-                "filter_data"=>$filterData,
-                "tooltip"=>"Imposta un filtro di ricerca",
-                "click"=>$filterClickAction
-            ));
             $toolbar->AddElement(new AA_JSON_Template_Generic());
             $toolbar->AddElement($addnew_btn);
         }

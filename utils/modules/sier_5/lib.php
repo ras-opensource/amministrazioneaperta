@@ -69,6 +69,55 @@ Class AA_Sier_Const extends AA_Const
     }
 }
 
+#Classe Coalizioni
+Class AA_SierCoalizioni
+{
+    protected $aProps=array();
+    
+    //Importa i valori da un array
+    protected function Parse($values=null)
+    {
+        if(is_array($values))
+        {
+            foreach($values as $key=>$value)
+            {
+                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
+            }
+        }
+    }
+    
+    public function __construct($params=null)
+    {
+        //Definisce le proprietà dell'oggetto e i valori di default
+        $this->aProps['id']=0;
+        $this->aProps['id_sier']=0;
+        $this->aProps['nome']="";
+        $this->aProps['nome_candidato']="";
+        $this->aProps['liste']=array();
+
+        if(is_array($params)) $this->Parse($params);
+    }
+
+    //imposta il valore di una propietà
+    public function SetProp($prop="",$value="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
+    }
+
+    //restituisce il valore di una propietà
+    public function GetProp($prop="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
+        else return "";
+    }
+
+    //restituisce tutte le propietà
+    public function GetProps()
+    {
+        return $this->aProps;
+    }
+}
+
 #Classe oggetto elezioni
 Class AA_Sier extends AA_Object_V2
 {
@@ -154,6 +203,12 @@ Class AA_Sier extends AA_Object_V2
                 $this->bValid=false;
             }
         }
+    }
+
+    //Restituisce le coalizioni
+    public function GetCoalizioni($params=array())
+    {
+        return array();
     }
 
     //funzione di ricerca
@@ -713,7 +768,7 @@ Class AA_SierModule extends AA_GenericModule
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
             //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CRUSCOTTO_TAB, "value"=>"Cruscotto","tooltip"=>"Cruscotto di gestione","template"=>"TemplateSierDettaglio_Cruscotto_Tab"),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"Coalizioni e Liste","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Liste_Tab"),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"Coalizioni e Liste","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab"),
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab"),
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab"),
         ));
@@ -1717,68 +1772,202 @@ Class AA_SierModule extends AA_GenericModule
         return $layout;
     }
 
+    //Template dettaglio riepilogo nomine
+    public function TemplateDettaglio_Coalizioni_Riepilogo_Tab($object=null,$id="",$riepilogo_data=array())
+    {
+        //permessi
+        $perms = $object->GetUserCaps($this->oUser);
+        $canModify=false;
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        
+        $riepilogo_layout=new AA_JSON_Template_Layout($id."_Riepilogo_Layout",array("type"=>"clean"));
+
+        if(is_array($riepilogo_data) && sizeof($riepilogo_data) > 0)
+        {
+            $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
+            . "<div><span class='AA_DataView_ItemTitle'>#cognome# #nome#</span><span style='font-size: smaller'>#cf#</span></div>"
+            . "<div><span class='AA_DataView_ItemSubTitle'>#incarichi#</span></div>"
+            . "</div><div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli degli incarichi' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
+            $riepilogo_tab=new AA_JSON_Template_Generic($id."_Riepilogo_Tab",array(
+                "view"=>"dataview",
+                "filtered"=>true,
+                "xCount"=>1,
+                "module_id"=>$this->id,
+                "type"=>array(
+                    "type"=>"tiles",
+                    "height"=>60,
+                    "width"=>"auto",
+                    "css"=>"AA_DataView_Nomine_item",
+                ),
+                "template"=>$riepilogo_template,
+                "data"=>$riepilogo_data
+            ));
+        }
+        else
+        {
+            if($canModify) $riepilogo_tab=new AA_JSON_Template_Template($id."_Riepilogo_Tab",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>Non sono presenti coalizioni, fai click sul pulsante 'Aggiungi' per aggiungerne una.</div></div>"));
+            else $riepilogo_tab=new AA_JSON_Template_Template($id."_Riepilogo_Tab",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>Non sono presenti coalizioni o liste.</div></div>"));
+        }
+        
+        $toolbar_riepilogo=new AA_JSON_Template_Toolbar($id."_Toolbar_Riepilogo",array("height"=>38,"borderless"=>true));
+        
+        //Flag filtri
+        $filter_id=$id."_".$object->GetId();
+        $filter= AA_SessionVar::Get($filter_id);
+        if($filter->isValid())
+        {
+            $label="<div style='display: flex; height: 100%; justify-content: flex-start; align-items: center;'>Mostra:";
+            
+            $values=(array)$filter->GetValue();
+            
+            //tutte
+            $label.="&nbsp;<span class='AA_Label AA_Label_LightBlue'>tutte</span>";
+            
+            $label.="</div>";
+        }
+        else
+        {
+            $label="<div style='display: flex; height: 100%; justify-content: flex-start; align-items: center;'>Mostra:&nbsp;<span class='AA_Label AA_Label_LightBlue'>tutte</span></div>";
+        }
+
+        $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic($id."_Filter_Label",array("view"=>"label","label"=>$label, "width"=>400, "align"=>"left")));
+        
+        $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_Riepilogo_Intestazione",array("view"=>"label","label"=>"<span style='color:#003380'>Riepilogo Coalizioni e Liste</span>", "align"=>"center","width"=>"180")));
+        $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        if($canModify)
+        {            
+            //Pulsante di Aggiunta nomina
+            $addnew_btn=new AA_JSON_Template_Generic($id."_AddNewUp_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-account-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi coalizione",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCoalizioneDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+            ));
+            
+            //pulsante di filtraggio
+            if($filter_id=="") $filter_id=$id;
+            
+            $filterDlgTask="GetSierCoalizioniFilterDlg";
+            $filterClickAction="AA_MainApp.utils.callHandler('dlg',{task: '".$filterDlgTask."', params:[{filter_id: '".$filter_id."'}]},'".$this->id."')";
+
+            $filter_btn = new AA_JSON_Template_Generic($id."_FilterUp_btn",array(
+                "view"=>"button",
+                "align"=>"right",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-filter",
+                "label"=>"Filtra",
+                "width"=>80,
+                "tooltip"=>"Imposta un filtro di ricerca",
+                "click"=>$filterClickAction
+            ));
+            
+            $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>200)));
+            $toolbar_riepilogo->AddElement($filter_btn);
+            $toolbar_riepilogo->AddElement($addnew_btn);
+        }
+        else
+        {
+            $toolbar_riepilogo->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>400)));
+        }
+        
+        $riepilogo_layout->AddRow($toolbar_riepilogo);
+        $riepilogo_layout->AddRow($riepilogo_tab);
+        
+        return $riepilogo_layout;
+    }
+
     //Template section detail, tab liste
-    public function TemplateSierDettaglio_Liste_Tab($object=null)
+    public function TemplateSierDettaglio_Coalizioni_Tab($object=null,$filterData="")
     {
        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX;
 
         if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"borderless"=>true,"width"=>130));
         
-        $rows_fixed_height=50;
+        //permessi
+        $perms = $object->GetUserCaps($this->oUser);
+        $canModify=false;
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
 
-        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
-
-        //Descrizione
-        $value=$object->GetDescr();
-        if($value=="")$value="n.d.";
-        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Descrizione:","value"=>$value)
-        ));
-
-        //anno riferimento
-        $value=$object->GetProp("AnnoRiferimento");
-        if($value=="")$value="n.d.";
-        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Anno:","value"=>$value)
-        ));
-        
-        //estremi
-        $value= $object->GetProp("Estremi");
-        if($value=="") $value="n.d.";
-        $estremi=new AA_JSON_Template_Template($id."_Estremi",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Estremi atto:","value"=>$value)
-        ));
-
-        $modalita=null;
-        $contraente=null;
-        
-        //prima riga
-        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($anno_rif);
-        if($modalita) $riga->AddCol($modalita);
-        if($contraente) $riga->AddCol($contraente);
-        $riga->AddCol($estremi);
-        $layout->AddRow($riga);
-        
-        //seconda riga
-        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","gravity"=>1)));
-        //$riga->addCol($oggetto);
-        //$layout->AddRow($riga);
-
-        //terza riga
-        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
-        $riga->addCol($descr);
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
-        {
-            $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
+        if($canModify)
+        {            
+            //Pulsante di Aggiunta coalizione
+            $addnew_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-account-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi coalizione",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCoalizioneDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+            ));
+            
+            $toolbar->AddElement(new AA_JSON_Template_Generic());
+            $toolbar->AddElement($addnew_btn);
         }
-        else $riga->addCol($this->TemplateDettaglio_Allegati($object,$id));
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic());
+        }
+        
+        $footer=new AA_JSON_Template_Layout($id."_Footer",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
+        
+        $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
+            "view"=>"tabbar",
+            "borderless"=>true,
+            "css"=>"AA_Bottom_TabBar",
+            "multiview"=>true,
+            "optionWidth"=>130,
+            "view_id"=>$id."_Multiview",
+            "type"=>"bottom"
+        ));
+        
+        $footer->AddCol($tabbar);
+        $footer->AddCol($toolbar);
+        
+        $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
+            "type"=>"clean",
+            "css"=>"AA_Detail_Content"
+         ));
 
-        $layout->AddRow($riga);
+        $layout->AddRow($multiview);
+        $layout->addRow($footer);
+        
+        //Array dati riepilogo
+        $riepilogo_data=array();
+        $options=array();
 
+        //Recupero coalizioni
+        $params=array();
+        $filter= AA_SessionVar::Get($id."_".$object->GetId());
+        if($filter->isValid())
+        {
+            $params=(array)$filter->GetValue();
+            //AA_Log::Log(__METHOD__." - ".print_r($params,true),100);
+        }
+        foreach($object->GetCoalizioni($params) as $id_coalizione=>$curCoalizione)
+        {
+
+        }
+        //------------------
+
+         //Riepilogo tab
+         $riepilogo_layout=$this->TemplateDettaglio_Coalizioni_Riepilogo_Tab($object,$id, $riepilogo_data);
+        
+         array_unshift($options,array("id"=>$riepilogo_layout->GetId(), "value"=>"Riepilogo"));
+         
+         $multiview->AddCell($riepilogo_layout,true);
+         
+         $tabbar->SetProp("options",$options);
         return $layout;
     }
 
@@ -3008,7 +3197,7 @@ Class AA_SierModule extends AA_GenericModule
         $campo=new AA_JSON_Template_Template($id."_DatiGenerali",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Modifica info generali:","value"=>$value),
+            "data"=>array("title"=>"Info generali Comune:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $layout->addCol($campo);
@@ -3020,7 +3209,7 @@ Class AA_SierModule extends AA_GenericModule
         $campo=new AA_JSON_Template_Template($id."_CorpoElettorale",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Caricamento corpo elettorale:","value"=>$value),
+            "data"=>array("title"=>"Corpo elettorale:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $layout->addCol($campo);
@@ -3032,7 +3221,7 @@ Class AA_SierModule extends AA_GenericModule
         $campo=new AA_JSON_Template_Template($id."_Affluenza",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Caricamento affluenza:","value"=>$value),
+            "data"=>array("title"=>"Affluenza:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $layout->addCol($campo);
@@ -3044,7 +3233,7 @@ Class AA_SierModule extends AA_GenericModule
         $campo=new AA_JSON_Template_Template($id."_Risultati",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Caricamento risultati:","value"=>$value),
+            "data"=>array("title"=>"Risultati:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         #--------------------------------------
