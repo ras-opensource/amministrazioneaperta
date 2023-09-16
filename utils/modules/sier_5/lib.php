@@ -95,6 +95,7 @@ Class AA_SierCoalizioni
         $this->aProps['denominazione']="";
         $this->aProps['nome_candidato']="";
         $this->aProps['liste']=array();
+        $this->aProps['image']="";
 
         if(is_array($params)) $this->Parse($params);
     }
@@ -209,6 +210,7 @@ Class AA_Sier extends AA_Object_V2
     //Restituisce le coalizioni
     public function GetCoalizioni($params=array())
     {
+        //to do
         return array();
     }
 
