@@ -91,7 +91,7 @@ Class AA_SierCoalizioni
         //Definisce le proprietà dell'oggetto e i valori di default
         $this->aProps['id']=0;
         $this->aProps['id_sier']=0;
-        $this->aProps['nome']="";
+        $this->aProps['denominazione']="";
         $this->aProps['nome_candidato']="";
         $this->aProps['liste']=array();
 
@@ -764,6 +764,10 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSierTrashGiornataDlg");
         $taskManager->RegisterTask("DeleteSierGiornata");
 
+        //Coalizioni
+        $taskManager->RegisterTask("GetSierAddNewCoalizioneDlg");
+        $taskManager->RegisterTask("AddNewSierCoalizione");
+
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
@@ -1158,6 +1162,49 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
         $wnd->SetSaveTask("UpdateSierGiornata");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi Colaizione
+    public function Template_GetSierAddNewCoalizioneDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierAddNewCoalizioneDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi Coalizione", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        //denominazione
+        $wnd->AddTextField("denominazione", "Denominazione", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare la denominazione della coalizione.", "placeholder" => "..."));
+
+        //nome candidato
+        $wnd->AddTextField("nome_candidato", "Presidente", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare il nome e cognome del candidato Presidente.", "placeholder" => "..."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $section=new AA_FieldSet($id."_Section_Url","Scegliere un'immagine per la Coalizione.");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //file
+        $section->AddFileUploadField("CoalizioneImage","", array("bottomLabel"=>"*Caricare solo immagini in formato jpg o png (dimensione max: 1Mb).","accept"=>"image/jpg,image/png"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSierCoalizione");
         
         return $wnd;
     }
@@ -2602,6 +2649,43 @@ Class AA_SierModule extends AA_GenericModule
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
             $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task aggiungi Coalizione
+    public function Task_GetSierAddNewCoalizioneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierAddNewCoalizioneDlg($object)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
             $task->SetLog($sTaskLog);
         
             return false;
