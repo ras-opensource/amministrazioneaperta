@@ -13,8 +13,9 @@ Class AA_Sier_Const extends AA_Const
 {
     const AA_USER_FLAG_SIER="sier";
 
-    //percorso pubblicazione provvedimenti
+    //percorso file
     const AA_SIER_ALLEGATI_PATH="/sier/allegati";
+    const AA_SIER_IMMAGINI_PATH="/sier/immagini";
     const AA_SIER_ALLEGATI_PUBLIC_PATH="/pubblicazioni/sier/docs.php";
 
     //Flags
@@ -1197,7 +1198,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
         //file
-        $section->AddFileUploadField("CoalizioneImage","", array("bottomLabel"=>"*Caricare solo immagini in formato jpg o png (dimensione max: 1Mb).","accept"=>"image/jpg,image/png"));
+        $section->AddFileUploadField("NewCoalizioneImage","", array("bottomLabel"=>"*Caricare solo immagini in formato jpg o png (dimensione max: 1Mb).","accept"=>"image/jpg,image/png"));
         
         $wnd->AddGenericObject($section);
 
@@ -1621,6 +1622,74 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("Parametri non validi occorre indicare un url o un file.");
             $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare un url o un file.</error>";
             $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+        
+        $id_sier=$object->GetIdData();
+        if($object->GetIdDataRev() > 0)
+        {
+            $id_sier=$object->GetIdDataRev();
+        }
+        
+        //Se c'è un file uploadato l'url non viene salvata.
+        if($file->isValid()) $_REQUEST['url']="";
+
+        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url']);
+        
+        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
+        
+        if($file->isValid()) $filespec=$file->GetValue();
+        else $filespec=array();
+        
+        if(!$object->AddNewAllegato($allegato, $filespec['tmp_name'], $this->oUser))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Allegato caricato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task Aggiungi coalizione
+    public function Task_AddNewSierCoalizione($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $file = AA_SessionFileUpload::Get("NewCoalizioneImage");
+        
+        if($file->isValid())
+        {   
+            //salva l'immagine della coalizione
             
             return false;
         }
