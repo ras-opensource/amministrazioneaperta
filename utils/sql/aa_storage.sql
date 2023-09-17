@@ -24,17 +24,19 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Struttura della tabella `aa_sier_coalizioni`
+-- Struttura della tabella `aa_storage`
 --
 
-CREATE TABLE IF NOT EXISTS `aa_sier_coalizioni` (
+CREATE TABLE IF NOT EXISTS `aa_storage` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `id_sier` int(11) UNSIGNED NOT NULL,
-  `denominazione` varchar(255) NOT NULL,
-  `nome_candidato` varchar(255) NOT NULL,
-  `image` text NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `id_elezioni` (`id_sier`)
+  `name` varchar(255) NOT NULL DEFAULT 'new_file',
+  `aggiornamento` varchar(30) NOT NULL,
+  `fileHash` varchar(1024) NOT NULL,
+  `filePath` varchar(1024) NOT NULL,
+  `mime` varchar(255) NOT NULL,
+  `size` varchar(255) NOT NULL,
+  `referencesCount` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 COMMIT;
 

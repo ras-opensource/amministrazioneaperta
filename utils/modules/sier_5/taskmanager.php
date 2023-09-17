@@ -35,7 +35,7 @@ if($taskManager->IsManaged($task))
 {
   if(!$taskManager->RunTask($task))
   {
-    AA_Log::Log("provvedimenti task manager - task: ".$task." - ".$taskManager->GetTaskError($task),100,false,true);
+    AA_Log::Log("sier task manager - task: ".$task." - ".$taskManager->GetTaskError($task),100,false,true);
   }
   die($taskManager->GetTaskLog($task));
 }

@@ -13,18 +13,18 @@ class AA_Storage
 
     //flag di validità
     protected $bValid=false;
+    public function IsValid()
+    {
+        return $this->bValid;
+    }
 
     protected function __construct($user=null)
     {
-        if($user instanceof AA_User && !$user->IsGuest() && !$user->isCurrentUser())
+        if($user instanceof AA_User && $user->isCurrentUser())
         {
-            $this->oUser=AA_User::GetCurrentUser();
+            $this->oUser=$user;
         }
-
-        if(!($user instanceof AA_User))
-        {
-            $this->oUser=AA_User::GetCurrentUser();
-        }
+        else $this->oUser=AA_User::GetCurrentUser();
 
         if(!is_writable(AA_Const::AA_ROOT_STORAGE_PATH))
         {
@@ -242,13 +242,13 @@ class AA_StorageFile
             if(file_exists($props['filePath']))
             {
                 $this->sFilePath=$props['filePath'];
-                if($props['references'] > 0)
+                if($props['referencesCount'] > 0)
                 {
                     $hash=hash_file("sha256",$props['filePath']);
                     if($props['fileHash'] == $hash)
                     {
                         $this->sHash=$props['fileHash'];
-                        $this->nReferences=$props['references'];
+                        $this->nReferences=$props['referencesCount'];
                         $this->nFileSize=filesize($props['filePath']);
                         $this->bValid=true;
                     }    

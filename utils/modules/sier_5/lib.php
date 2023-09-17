@@ -393,7 +393,7 @@ Class AA_Sier extends AA_Object_V2
 
         if(!($newCoalizione instanceof AA_SierCoalizioni))
         {
-            AA_Log::Log(__METHOD__." - Dati Coalizione non valida.", 100,false,true);
+            AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
             return false;
         }
         
@@ -1768,7 +1768,7 @@ Class AA_SierModule extends AA_GenericModule
                 $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type']);
                 if(!$storageFile->isValid())
                 {
-                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file nello storage, immagine non salvata",100);   
+                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file nello storage, immagine non salvata. ".print_r($storageFile,true),100);
                 }
                 else $imageFileHash=$storageFile->GetFileHash();
             }
@@ -1794,14 +1794,14 @@ Class AA_SierModule extends AA_GenericModule
         if(!$object->AddNewCoalizione($newCoalizione, $this->oUser));
         {        
             $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio della coalizione. (".AA_Log::$lastErrorLog.")</error>";
             $task->SetLog($sTaskLog);
 
             return false;       
         }
         
         $sTaskLog="<status id='status'>0</status><content id='content'>";
-        $sTaskLog.= "Allegato caricato con successo.";
+        $sTaskLog.= "Coalizione aggiunta con successo.";
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
