@@ -38,6 +38,9 @@ Class AA_Config
     const AA_MODULES_PATH="utils/modules";
     const AA_PUBLIC_MODULES_PATH="utils/modules";
 
+    //Percorso assoluto root storage
+    const AA_ROOT_STORAGE_PATH="/home/elia/aa_storage";
+
     //Percorso root applicazione
     const AA_WWW_ROOT="/web/amministrazione_aperta";
 
