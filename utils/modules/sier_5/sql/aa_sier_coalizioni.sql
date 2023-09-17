@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Set 12, 2023 alle 09:56
+-- Creato il: Set 17, 2023 alle 17:54
 -- Versione del server: 10.5.21-MariaDB
 -- Versione PHP: 8.2.10
 
@@ -29,11 +29,12 @@ SET time_zone = "+00:00";
 
 CREATE TABLE IF NOT EXISTS `aa_sier_coalizioni` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `id_elezioni` int(11) UNSIGNED NOT NULL,
+  `id_sier` int(11) UNSIGNED NOT NULL,
   `nome` varchar(255) NOT NULL,
-  `presidente` varchar(255) NOT NULL,
+  `nome_candidato` varchar(255) NOT NULL,
+  `image` text NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `id_elezioni` (`id_elezioni`)
+  KEY `id_elezioni` (`id_sier`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 COMMIT;
 

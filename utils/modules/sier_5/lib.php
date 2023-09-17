@@ -126,6 +126,7 @@ Class AA_Sier extends AA_Object_V2
     //tabella dati db
     const AA_DBTABLE_DATA="aa_sier_data";
     const AA_ALLEGATI_DB_TABLE="aa_sier_allegati";
+    const AA_COALIZIONI_DB_TABLE="aa_sier_coalizioni";
 
     //Funzione di cancellazione
     protected function DeleteData($idData = 0, $user = null)
@@ -360,6 +361,73 @@ Class AA_Sier extends AA_Object_V2
         return null;
     }
     
+    //Aggiunge una nuova coalizione
+    public function AddNewCoalizione($newCoalizione=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($newCoalizione instanceof AA_SierCoalizioni))
+        {
+            AA_Log::Log(__METHOD__." - Dati Coalizione non valida.", 100,false,true);
+            return false;
+        }
+        
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Aggiunta nuova coalizione: ".$newCoalizione->GetProp('denominazione')))
+        {
+            return false;
+        }
+
+        $newCoalizione->SetProp('id_sier',$this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $newCoalizione->SetProp('id_sier',$this->nId_Data_Rev);
+        }
+
+        $query="INSERT INTO ".static::AA_COALIZIONI_DB_TABLE." SET id_sier='".$newCoalizione->GetProp('id_sier')."'";
+        $query.=", denominazione='".addslashes($newCoalizione->GetProp('denominazione'))."'";
+        $query.=", nome_candidato='".addslashes($newCoalizione->GetProp('nome_candidato'))."'";
+        $query.=", image='".addslashes($newCoalizione->GetProp('image'))."'";
+        
+        $db= new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        return true;
+    }
 
     //Aggiunge un nuovo allegato
     public function AddNewAllegato($allegato=null, $file="", $user=null)
@@ -1687,13 +1755,24 @@ Class AA_SierModule extends AA_GenericModule
             return false;            
         }
         
-        $file = AA_SessionFileUpload::Get("NewCoalizioneImage");
+        $fileUpload = AA_SessionFileUpload::Get("NewCoalizioneImage");
         
-        if($file->isValid())
+        $imageFileHash="";
+        if($fileUpload->isValid())
         {   
+            $file=$fileUpload->GetValue();
             //salva l'immagine della coalizione
-            
-            return false;
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type']);
+                if(!$storageFile->isValid())
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file nello storage, immagine non salvata",100);   
+                }
+                else $imageFileHash=$storageFile->GetFileHash();
+            }
+            else AA_Log::Log(__METHOD__." - Storage non valido, immagine non salvata",100);
         }
         
         $id_sier=$object->GetIdData();
@@ -1702,17 +1781,17 @@ Class AA_SierModule extends AA_GenericModule
             $id_sier=$object->GetIdDataRev();
         }
         
-        //Se c'è un file uploadato l'url non viene salvata.
-        if($file->isValid()) $_REQUEST['url']="";
+        //Nuova coalizione
+        $params=array(
+            'id_sier'=>$id_sier,
+            'denominazione'=>$_REQUEST['denominazione'],
+            'nome_candidato'=>$_REQUEST['nome_candidato'],
+            'image'=>$imageFileHash
+        );
 
-        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url']);
-        
-        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
-        
-        if($file->isValid()) $filespec=$file->GetValue();
-        else $filespec=array();
-        
-        if(!$object->AddNewAllegato($allegato, $filespec['tmp_name'], $this->oUser))
+        $newCoalizione=new AA_SierCoalizioni($params);
+
+        if(!$object->AddNewCoalizione($newCoalizione, $this->oUser));
         {        
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
