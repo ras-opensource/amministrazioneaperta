@@ -416,7 +416,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", nome_candidato='".addslashes($newCoalizione->GetProp('nome_candidato'))."'";
         $query.=", image='".addslashes($newCoalizione->GetProp('image'))."'";
         
-        $db= new AA_Database();
+        $db = new AA_Database();
         
         //AA_Log::Log(__METHOD__." - query: ".$query, 100);
         
@@ -1791,7 +1791,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $newCoalizione=new AA_SierCoalizioni($params);
 
-        if(!$object->AddNewCoalizione($newCoalizione, $this->oUser));
+        if(!$object->AddNewCoalizione($newCoalizione, $this->oUser))
         {        
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio della coalizione. (".AA_Log::$lastErrorLog.")</error>";
