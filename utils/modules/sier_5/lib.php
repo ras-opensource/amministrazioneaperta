@@ -1758,21 +1758,38 @@ Class AA_SierModule extends AA_GenericModule
         $fileUpload = AA_SessionFileUpload::Get("NewCoalizioneImage");
         
         $imageFileHash="";
+        $compliance=true;
+        
         if($fileUpload->isValid())
         {   
             $file=$fileUpload->GetValue();
-            //salva l'immagine della coalizione
-            $storage=AA_Storage::GetInstance($this->oUser);
-            if($storage->IsValid())
+
+            //Verifica che l'immagine rispetti le specifiche (png o jpg, 1mb max)
+            if($file['type'] != "image/png" && $file['type'] != "image/jpg")
             {
-                $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type']);
-                if(!$storageFile->isValid())
-                {
-                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file nello storage, immagine non salvata. ".print_r($storageFile,true),100);
-                }
-                else $imageFileHash=$storageFile->GetFileHash();
+                $compliance=false;
             }
-            else AA_Log::Log(__METHOD__." - Storage non valido, immagine non salvata",100);
+
+            if(filesize($file['tmp_name']) > 1024*1024)
+            {
+                $compliance=false;
+            }
+
+            if($compliance)
+            {
+                //salva l'immagine della coalizione
+                $storage=AA_Storage::GetInstance($this->oUser);
+                if($storage->IsValid())
+                {
+                    $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type']);
+                    if(!$storageFile->isValid())
+                    {
+                        AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file nello storage, immagine non salvata. ".print_r($storageFile,true),100);
+                    }
+                    else $imageFileHash=$storageFile->GetFileHash();
+                }
+                else AA_Log::Log(__METHOD__." - Storage non valido, immagine non salvata",100);
+            }
         }
         
         $id_sier=$object->GetIdData();
@@ -1801,7 +1818,8 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         $sTaskLog="<status id='status'>0</status><content id='content'>";
-        $sTaskLog.= "Coalizione aggiunta con successo.";
+        if($compliance) $sTaskLog.= "Coalizione aggiunta con successo.";
+        else $sTaskLog.= "Coalizione aggiunta con successo. Immagine non salvata in quanto non conforme alle specifiche.";
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
