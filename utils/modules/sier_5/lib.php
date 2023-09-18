@@ -2191,6 +2191,10 @@ Class AA_SierModule extends AA_GenericModule
             //AA_Log::Log(__METHOD__." - ".print_r($params,true),100);
         }
 
+        //immagine
+        $platform=AA_Platform::GetInstance();
+        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
+
         foreach($object->GetCoalizioni($params) as $id_coalizione=>$curCoalizione)
         {
             $id_detail_coalizione=$id."_CoalizioneDetail_".$id_coalizione;
@@ -2227,19 +2231,17 @@ Class AA_SierModule extends AA_GenericModule
             //------------ Contenuto Coalizione ---------------------
             $coalizione_content_box=new AA_JSON_Template_Layout($id_detail_coalizione."_ContentBox",array("type"=>"clean"));
             
-            //immagine
-            $platform=AA_Platform::GetInstance();
-            $imagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img/coalizioni_placeholder.png";
+            $curImagePath=$DefaultImagePath."/coalizioni_placeholder.png";
             if($curCoalizione->GetProp('image') != "")
             {
-                $imagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
+                $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
             }
-            
+
             $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizioneImage",array(
                 "type"=>"clean",
                 "width"=>100,
                 "height"=>100,
-                "template"=>"<div style='width: 100%,height:100%'><img src='".$imagePath."' width='100%' /></div>"
+                "template"=>"<div style='width: 100%,height:100%'><img src='".$curImagePath."' width='100%' /></div>"
             )));
 
             //Candidato Presidente
@@ -2283,9 +2285,43 @@ Class AA_SierModule extends AA_GenericModule
             $coalizione_liste_box->AddRow($toolbar);
 
             $liste=$curCoalizione->GetListe();
-            foreach($liste as $id_lista=>$curLista)
+            if(sizeof($liste)>0)
             {
+                $dataview_liste_data=array();
+                foreach($liste as $id_lista=>$curLista)
+                {
+                    $curImagePath=$DefaultImagePath."/coalizioni_placeholder.png";
+                    if($curLista->GetProp('image') != "")
+                    {
+                        $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
+                    }
+                    $dataview_liste_data[]=array("id"=>$id_lista,"id_coalizione"=>$curLista->GetProp('id_coalizione'),"denominazione"=>$curLista->GetProp('denominazione'),'image'=>$curImagePath);
+                }
 
+                $liste_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
+                . "<div><img src='#image#' width='100%'/><span class='AA_DataView_ItemTitle'>#denominazione#</span></div>"
+                . "<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli degli incarichi' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
+                
+                $dataview_liste=new AA_JSON_Template_Generic($curId."_Liste",array(
+                    "view"=>"dataview",
+                    "filtered"=>true,
+                    "xCount"=>2,
+                    "module_id"=>$this->id,
+                    "type"=>array(
+                        "type"=>"tiles",
+                        "height"=>60,
+                        "width"=>"auto",
+                        "css"=>"AA_DataView_Nomine_item",
+                    ),
+                    "template"=>$liste_template,
+                    "data"=>$dataview_liste_data
+                ));
+
+                $coalizione_liste_box->AddRow($dataview_liste);
+            }
+            else
+            {
+                $coalizione_liste_box->AddRow(new AA_JSON_Template_Template($curId."_Liste",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti elementi.</span></div>")));
             }
             $layout_dettaglio_coalizione->AddRow($coalizione_liste_box);
             //-------------------------------------------------------
