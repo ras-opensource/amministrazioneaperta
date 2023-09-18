@@ -1802,7 +1802,7 @@ Class AA_SierModule extends AA_GenericModule
                 $storage=AA_Storage::GetInstance($this->oUser);
                 if($storage->IsValid())
                 {
-                    $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type']);
+                    $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type'],1);
                     if(!$storageFile->isValid())
                     {
                         AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file nello storage, immagine non salvata. ".print_r($storageFile,true),100);
@@ -2304,7 +2304,6 @@ Class AA_SierModule extends AA_GenericModule
                 
                 $dataview_liste=new AA_JSON_Template_Generic($curId."_Liste",array(
                     "view"=>"dataview",
-                    "filtered"=>true,
                     "xCount"=>2,
                     "module_id"=>$this->id,
                     "type"=>array(
