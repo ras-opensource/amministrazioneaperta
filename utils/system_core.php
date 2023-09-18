@@ -4971,6 +4971,21 @@ class AA_Platform
         }
     }
 
+    //Restituisce l'url della cartella del modulo
+    public function GetModulePathURL($id_module = "")
+    {
+        if (!$this->IsValid()) {
+            return AA_Const::AA_WWW_ROOT;
+        }
+
+        $module = $this->GetModule($id_module);
+        if ($module == null) {
+            return AA_Const::AA_WWW_ROOT;
+        } else {
+            return AA_Const::AA_PUBLIC_MODULES_PATH . "/" . $module['id_sidebar'] . "_" . $module['id'];
+        }
+    }
+
     protected function __construct($user = null)
     {
         //Verifica utente

@@ -1003,7 +1003,7 @@ class AA_GenericModule
     const AA_UI_TASK_REASSIGN = "GenericReassignObject";
     const AA_UI_TASK_DELETE = "GenericDeleteObject";
     //------------------------------------
-
+    
     protected $taskManagerUrl = "system_ops.php";
     public function GetTaskManagerUrl()
     {

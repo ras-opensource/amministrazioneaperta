@@ -15,7 +15,7 @@ Class AA_Sier_Const extends AA_Const
 
     //percorso file
     const AA_SIER_ALLEGATI_PATH="/sier/allegati";
-    const AA_SIER_IMMAGINI_PATH="/sier/immagini";
+    const AA_SIER_IMMAGINI_PUBLIC_PATH="/img";
     const AA_SIER_ALLEGATI_PUBLIC_PATH="/pubblicazioni/sier/docs.php";
 
     //Flags
@@ -86,7 +86,7 @@ Class AA_SierCoalizioni
             }
         }
     }
-    
+
     public function __construct($params=null)
     {
         //Definisce le proprietà dell'oggetto e i valori di default
@@ -211,8 +211,29 @@ Class AA_Sier extends AA_Object_V2
     //Restituisce le coalizioni
     public function GetCoalizioni($params=array())
     {
-        //to do
-        return array();
+        if(!$this->bValid) return array();
+
+        $db=new AA_Database();
+        $query="SELECT * from ".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."'";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+            return array();
+        }
+
+        $result=array();
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $curCoalizione= new AA_SierCoalizioni($curRow);
+                $result[$curRow['id']]=$curCoalizione;
+            }
+        }
+
+        return $result;
     }
 
     //funzione di ricerca
@@ -2157,7 +2178,7 @@ Class AA_SierModule extends AA_GenericModule
         $layout->AddRow($multiview);
         $layout->addRow($footer);
         
-        //Array dati riepilogo
+        //Array dati riepilogo e opzioni tab
         $riepilogo_data=array();
         $options=array();
 
@@ -2169,9 +2190,107 @@ Class AA_SierModule extends AA_GenericModule
             $params=(array)$filter->GetValue();
             //AA_Log::Log(__METHOD__." - ".print_r($params,true),100);
         }
+
         foreach($object->GetCoalizioni($params) as $id_coalizione=>$curCoalizione)
         {
+            $id_detail_coalizione=$id."_CoalizioneDetail_".$id_coalizione;
+            $layout_dettaglio_coalizione=new AA_JSON_Template_Layout($id_detail_coalizione,array("type"=>"clean"));
+            
+            //-----------header--------------------
+            $toolbar = new AA_JSON_Template_Toolbar($id_detail_coalizione."_Toolbar", array("height" => 38, "css" => array("border-bottom" => "1px solid #dadee0 !important")));
+            $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 120)));
+            $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+            
+            $toolbar->addElement(new AA_JSON_Template_Generic($id_detail_coalizione."_header_content",array("view"=>"label","align"=>"center","label"=>$curCoalizione->GetProp('denominazione'))));
+    
+            $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+    
+            //Pulsante di modifica
+            $canModify = false;
+            if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0) $canModify = true;
+            if ($canModify) {
+                $modify_btn = new AA_JSON_Template_Generic($id_detail_coalizione."_Modify_btn", array(
+                    "view" => "button",
+                    "type" => "icon",
+                    "icon" => "mdi mdi-pencil",
+                    "label" => "Modifica",
+                    "align" => "right",
+                    "width" => 120,
+                    "tooltip" => "Modifica Coalizione",
+                    "click" => "AA_MainApp.utils.callHandler('dlg', {task:\"GetSierModifyCoalizioneDlg\", params: [{id: " . $object->GetId() . "},{id_coalizione:\"".$id_coalizione."\"}]},'$this->id')"
+                ));
+                $toolbar->AddElement($modify_btn);
+            }
+            $layout_dettaglio_coalizione->addRow($toolbar);
+            //-----------------------
+            
+            //------------ Contenuto Coalizione ---------------------
+            $coalizione_content_box=new AA_JSON_Template_Layout($id_detail_coalizione."_ContentBox",array("type"=>"clean"));
+            
+            //immagine
+            $platform=AA_Platform::GetInstance();
+            $imagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img/coalizioni_placeholder.png";
+            if($curCoalizione->GetProp('image') != "")
+            {
+                $imagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
+            }
+            
+            $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizioneImage",array(
+                "type"=>"clean",
+                "width"=>100,
+                "height"=>100,
+                "template"=>"<div style='width: 100%,height:100%'><img src='".$imagePath."' width='100%' /></div>"
+            )));
 
+            //Candidato Presidente
+            $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizionePresidente",array(
+                "type"=>"clean",
+                "template"=>"<div style='width: 100%,height:100%'><span style='font-weight: 900'>Candidato Presidente:</span><div>#presidente#</div></div>",
+                "data"=>array("presidente"=>$curCoalizione->GetProp('nome_candidato'))
+            )));
+            $layout_dettaglio_coalizione->AddRow($coalizione_content_box);
+            //-------------------------------------------------------
+
+            //------------------- Liste -----------------------------
+            $curId=$id_detail_coalizione."_ListeBox";
+            $coalizione_liste_box=new AA_JSON_Template_Layout($curId,array("type"=>"clean"));           
+
+            $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+            $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Liste_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Liste</span>", "align"=>"center")));
+
+            if($canModify)
+            {
+                //Pulsante di aggiunta nuova lista
+                $add_lista_btn=new AA_JSON_Template_Generic($curId."_AddLista_btn",array(
+                "view"=>"button",
+                    "type"=>"icon",
+                    "icon"=>"mdi mdi-file-plus",
+                    "label"=>"Aggiungi",
+                    "align"=>"right",
+                    "width"=>120,
+                    "tooltip"=>"Aggiungi Lista",
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCoalizioniListaDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."}]},'$this->id')"
+                ));
+
+                $toolbar->AddElement($add_lista_btn);
+            }
+            else 
+            {
+                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+            }
+            $coalizione_liste_box->AddRow($toolbar);
+
+            $liste=$curCoalizione->GetListe();
+            foreach($liste as $id_lista=>$curLista)
+            {
+
+            }
+            $layout_dettaglio_coalizione->AddRow($coalizione_liste_box);
+            //-------------------------------------------------------
+            
+            $multiview->addCell($layout_dettaglio_coalizione);
         }
         //------------------
 

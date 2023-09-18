@@ -47,7 +47,7 @@ class AA_Storage
     }
 
     //Aggiunge un file allo storage
-    public function AddFile($filePath=null,$name="new_file",$type="")
+    public function AddFile($filePath=null,$name="new_file",$type="",$bPublic=0)
     {
         if($this->oUser->IsGuest())
         {
@@ -84,9 +84,10 @@ class AA_Storage
                 $props['aggiornamento']=date("Y-m-d");
                 $props['referencesCount']+=1;
                 $props['filePath']=AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$props['filePath'];
+                $props['public']=$bPublic;
                 
                 //Aggiorna il db
-                $query="UPDATE ".static::AA_DBTABLE_STORAGE." set referencesCount=(referencesCount+1),aggiornamento=".date("Y-m-d")." WHERE id='".$props['id']."' LIMIT 1";
+                $query="UPDATE ".static::AA_DBTABLE_STORAGE." set referencesCount=(referencesCount+1),aggiornamento=".date("Y-m-d").", public='".addslashes($bPublic)."' WHERE id='".$props['id']."' LIMIT 1";
                 if(!$db->Query($query))
                 {
                     AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
@@ -116,7 +117,7 @@ class AA_Storage
                     return new AA_StorageFile();
                 }
 
-                $query="INSERT INTO ".static::AA_DBTABLE_STORAGE." SET name='".$name."', mime='".$type."', aggiornamento='".date("Y-m-d")."', fileHash='".$hash."', size='".filesize($NewFilePath)."', referencesCount = 1, filePath='".$dir.DIRECTORY_SEPARATOR.$hash."'";
+                $query="INSERT INTO ".static::AA_DBTABLE_STORAGE." SET name='".$name."', mime='".$type."', aggiornamento='".date("Y-m-d")."', fileHash='".$hash."', size='".filesize($NewFilePath)."', referencesCount = 1, filePath='".$dir.DIRECTORY_SEPARATOR.$hash."', public='".addslashes($bPublic)."'";
                 if(!$db->Query($query))
                 {
                     if(!unlink($NewFilePath))
@@ -135,7 +136,8 @@ class AA_Storage
                     'referencesCount'=>1,
                     'fileHash'=>$hash,
                     'filePath'=>$NewFilePath,
-                    'size'=>filesize($NewFilePath)
+                    'size'=>filesize($NewFilePath),
+                    'public'=>$bPublic
                 );
 
                 return new AA_StorageFile($props);
@@ -149,25 +151,179 @@ class AA_Storage
     //Rimuove un file dallo storage (file può essere un oggetto AA_StorageFile o un hash)
     public function DelFile($file=null)
     {
+        if($this->oUser->IsGuest())
+        {
+            AA_Log::Log(__METHOD__." - L'utente guest non può eliminare files.",100);
+            return new AA_StorageFile();
+        }
 
+        if(!$this->bValid)
+        {
+            AA_Log::Log(__METHOD__." - Storage non inizializzato.",100);
+            return new AA_StorageFile();
+        }
+
+        if($file instanceof AA_StorageFile)
+        {
+            if(!$file->isValid())
+            {
+                AA_Log::Log(__METHOD__." - File non valido: ".print_r($file,true),100);
+                return false;
+            }
+
+            $db=new AA_Database();
+
+            if($file->GetReferences() > 1)
+            {
+                //Aggiorna il db
+                $query="UPDATE ".static::AA_DBTABLE_STORAGE." set referencesCount=(referencesCount-1),aggiornamento=".date("Y-m-d")." WHERE fileHash='".$file->GetFileHash()."' LIMIT 1";
+                if(!$db->Query($query))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+                    return false;
+                }
+
+                return true; 
+            }
+            else
+            {
+                if(!unlink($file->GetFilePath()))
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante l'eliminazione del file: ".print_r($file),100);
+                    return false;
+                }
+
+                //Aggiorna il db
+                $query="DELETE FROM ".static::AA_DBTABLE_STORAGE." WHERE fileHash='".$file->GetFileHash()."' LIMIT 1";
+                if(!$db->Query($query))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+                    return false;
+                }
+
+                return true;
+            }
+        }
+        else
+        {
+            //Verifica se il file è già presente
+            $db=new AA_Database();
+            $query="SELECT * from ".static::AA_DBTABLE_STORAGE." WHERE fileHash = '".addslashes(trim($file))."'";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+                return new AA_StorageFile();
+            }
+
+            //file già presente
+            if($db->GetAffectedRows()>0)
+            {
+                $rs=$db->GetResultSet();
+                $props=$rs[0];
+                $props['filePath']=AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$props['filePath'];
+
+                //Riduce i riferimenti qualora siano maggiori di 1
+                if($props['referencesCount'] > 1)
+                {            
+                    //Aggiorna il db
+                    $query="UPDATE ".static::AA_DBTABLE_STORAGE." set referencesCount=(referencesCount-1),aggiornamento=".date("Y-m-d")." WHERE id='".$props['id']."' LIMIT 1";
+                    if(!$db->Query($query))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+                        return false;
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    if(!unlink($props['filePath']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore durante l'eliminazione del file: ".print_r($file),100);
+                        return false;
+                    }
+
+                    //Aggiorna il db
+                    $query="DELETE FROM ".static::AA_DBTABLE_STORAGE." WHERE id='".$props['id']."' LIMIT 1";
+                    if(!$db->Query($query))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+                        return false;
+                    }
+
+                    return true;
+                }
+            }
+        }
     }
 
     //Restituisce un riferimento al file in base all'hash se è presente nello storage
     public function GetFileByHash($fileHash="")
     {
-        
+        if(!$this->bValid)
+        {
+            AA_Log::Log(__METHOD__." - Storage non inizializzato.",100);
+            return new AA_StorageFile();
+        }
+
+        //Verifica se il file è presente
+        $db=new AA_Database();
+        $query="SELECT * from ".static::AA_DBTABLE_STORAGE." WHERE fileHash = '".addslashes(trim($fileHash))."'";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+            return new AA_StorageFile();
+        }
+
+        //file già presente
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            $props=$rs[0];
+            $props['filePath']=AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$props['filePath'];
+
+            return new AA_StorageFile($props);
+        }
+        else return new AA_StorageFile();
     }
 
     //Restituisce un riferimento al file in base al nome se è presente nello storage
     public function GetFileByName($fileName="")
     {
-        
+        if(!$this->bValid)
+        {
+            AA_Log::Log(__METHOD__." - Storage non inizializzato.",100);
+            return new AA_StorageFile();
+        }
+
+        //Verifica se il file è presente
+        $db=new AA_Database();
+        $query="SELECT * from ".static::AA_DBTABLE_STORAGE." WHERE name = '".addslashes(trim($fileName))."'";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+            return new AA_StorageFile();
+        }
+
+        //file già presente
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            $props=$rs[0];
+            $props['filePath']=AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$props['filePath'];
+
+            return new AA_StorageFile($props);
+        }
+        else return new AA_StorageFile();
     }
 
     //rimuove dal db tutti i riferimenti a file inesistenti
     public function Purge()
     {
-
+        //to do
     }
 }
 
@@ -180,6 +336,14 @@ class AA_StorageFile
     public function GetName()
     {
         return $this->sName;
+    }
+
+    //visibilità pubblica
+    protected $bPublic=0;
+    public function IsPublic()
+    {
+        if($this->bPublic > 0) return true;
+        return false;
     }
 
     //mime type
@@ -219,6 +383,10 @@ class AA_StorageFile
 
     //referenze
     protected $nReferences=0;
+    public function GetReferences()
+    {
+        return $this->nReferences;
+    }
 
     public function __construct($props=null)
     {
@@ -250,6 +418,7 @@ class AA_StorageFile
                         $this->sHash=$props['fileHash'];
                         $this->nReferences=$props['referencesCount'];
                         $this->nFileSize=filesize($props['filePath']);
+                        if(isset($props['public']) && $props['public'] > 0) $this->bPublic=1;
                         $this->bValid=true;
                     }    
                 }
