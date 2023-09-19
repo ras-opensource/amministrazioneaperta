@@ -2204,11 +2204,17 @@ Class AA_SierModule extends AA_GenericModule
             $id_detail_coalizione=$id."_CoalizioneDetail_".$id_coalizione;
             $layout_dettaglio_coalizione=new AA_JSON_Template_Layout($id_detail_coalizione,array("type"=>"clean"));
 
+            $curImagePath=$DefaultImagePath."/coalizioni_placeholder.png";
+            if($curCoalizione->GetProp('image') != "")
+            {
+                $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
+            }
             //-------------- Dati di riepilogo --------------------
             $riepilogo_data[]=array(
                 "id"=>$id_coalizione,
                 "denominazione"=>$curCoalizione->GetProp("denominazione"),
                 "presidente"=>$curCoalizione->GetProp("nome_candidato"),
+                "image"=>$curImagePath,
                 "onclick"=>'$$("'.$tabbar->GetId().'").setValue("'.$id_detail_coalizione.'")'
             );
             $tab_label=$curCoalizione->GetProp("denominazione");
@@ -2262,12 +2268,6 @@ Class AA_SierModule extends AA_GenericModule
             
             //------------ Contenuto Coalizione ---------------------
             $coalizione_content_box=new AA_JSON_Template_Layout($id_detail_coalizione."_ContentBox",array("type"=>"clean"));
-            
-            $curImagePath=$DefaultImagePath."/coalizioni_placeholder.png";
-            if($curCoalizione->GetProp('image') != "")
-            {
-                $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
-            }
 
             $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizioneImage",array(
                 "type"=>"clean",

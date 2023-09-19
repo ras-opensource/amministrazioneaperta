@@ -339,7 +339,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         for (item of multiObjs) {
                             let status = item.getValue();
                             if (AA_MainApp.utils.isDefined(status)) {
-                                console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                                //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
                                 module.setRuntimeValue("multiviewStatus", item.config.id, status);
                             }
                         }
@@ -350,7 +350,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         for (item of tabbarObjs) {
                             let status = item.getValue();
                             if (AA_MainApp.utils.isDefined(status)) {
-                                console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                                //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
                                 module.setRuntimeValue("tabBarStatus", item.config.id, status);
                             }
                         }
@@ -360,7 +360,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     if (Array.isArray(accordionObjs) && accordionObjs.length > 0) {
                         for (item of accordionObjs) {
                             let status = 1;
-                            console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                            //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
                             module.setRuntimeValue("accordionItemStatus", item.config.id, status);
                         }
                     }
@@ -397,7 +397,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     obj = $$(newObj.id);
                     if (obj) {
                         if (obj.config.view == "layout") {
-                            console.log(module.name + "::refreshUiObjectDefault(" + idObj + ") - ricostruisco il layout.")
+                            //console.log(module.name + "::refreshUiObjectDefault(" + idObj + ") - ricostruisco il layout.")
                             obj.reconstruct();
                             /*
                             let tables=obj.queryView({view: "datatable"},"all");
@@ -504,7 +504,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                         item.setValue(status);
                                         view.config.animate = animate;
                                         module.unsetRuntimeValue("tabBarStatus", item.config.id);
-                                        console.log(module.name + "::refreshUiObjectDefault - ripristino lo status del tab (" + item.config.view_id + ")", status);
+                                        //console.log(module.name + "::refreshUiObjectDefault - ripristino lo status del tab (" + item.config.view_id + ")", status);
                                     }
                                 }
                             }
@@ -520,7 +520,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                     if (view) {
                                         item.expand();
                                         module.unsetRuntimeValue("accordionItemStatus", item.config.id);
-                                        console.log(this.name + "::refreshUiObjectDefault - ripristino lo status dell'accordion item (" + item.config.id + ")", status);
+                                        //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status dell'accordion item (" + item.config.id + ")", status);
                                     }
                                 }
                             }
@@ -539,7 +539,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                         item.setValue(status);
                                         view.config.animate = animate;
                                         module.unsetRuntimeValue("multiviewStatus", item.config.id);
-                                        console.log(this.name + "::refreshUiObjectDefault - ripristino lo status del multiview (" + item.config.id + ")", status);
+                                        //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status del multiview (" + item.config.id + ")", status);
                                     }
                                 }
                             }
