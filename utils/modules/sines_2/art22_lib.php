@@ -2882,6 +2882,9 @@ class AA_Organismi extends AA_Object
         $curRecCount=0;
         if(sizeof($rs) > 0)
         {
+            $data_scadenzario=new DateTime($params['data_scadenzario']);
+            //AA_Log::Log(__METHOD__." - params: ".print_r($params,true)." - data scadenzario: ".print_r($data_scadenzario,true),100);
+
             foreach($rs as $curRow)
             {
                 $curResult=new AA_Organismi($curRow['id'],$user);
@@ -2893,14 +2896,57 @@ class AA_Organismi extends AA_Object
                         $nomine=$curResult->GetNomineScadenzario($params);
                         if(sizeof($nomine)>0) 
                         {
-                            if($curRecIndex >= $params['from'] && ($curRecCount < $scadenzario_count || $scadenzario_count=="all"))
+                            $bInsert=false;
+
+                            foreach($nomine as $nomina)
+                            {
+                                foreach($nomina as $curNomina)
+                                {
+                                    $datafine=new DateTime($curNomina->GetDataFine());
+                                
+                                    if($params['in_corso']=="1" && $datafine > $meseProx)
+                                    {
+                                        $bInsert=true;
+                                    }
+                                        
+                                    if($params['in_scadenza']=="1" && $datafine >= $data_scadenzario && $datafine <= $meseProx)
+                                    {
+                                        $bInsert=true;
+                                    }
+                                    
+                                    if($params['recenti']=="1" && $datafine >= $mesePrec && $datafine <= $data_scadenzario)
+                                    {
+                                        $bInsert=true;
+                                        //AA_Log::Log(__METHOD__." - Inserisco: ".$curNomina->GetNome()." - organismo: ".$curResult->GetDenominazione()." - bInsert: ".$bInsert,100);
+                                    }
+                                    
+                                    if($params['scadute']=="1" && $datafine < $mesePrec)
+                                    {
+                                        $bInsert=true;
+                                    }
+                
+                                    if($params['in_corso']=="1" && strpos($curNomina->GetDataFine(),"9999") !== false)
+                                    {
+                                        $bInsert=true;
+                                    }
+                                }
+                            }
+
+                            //if(!$bInsert)
+                            //{
+                            //    AA_Log::Log(__METHOD__." - Escludo: ".$curResult->GetDenominazione(). " - bInsert: ".$bInsert,100);
+                            //} 
+
+                            if($curRecIndex >= $params['from'] && ($curRecCount < $scadenzario_count || $scadenzario_count=="all") && $bInsert)
                             {
                                 $results[$curRow['id']]=$curResult;
                                 $curRecCount++;
                             }
+                            if(!$bInsert) $tot_count--;
+
                             $curRecIndex++;
                         }
-                        else $tot_count--;                                                        
+                        else $tot_count--;
                     }
                     else $results[$curRow['id']]=$curResult;
                 }

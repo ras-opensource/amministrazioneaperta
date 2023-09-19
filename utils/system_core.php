@@ -159,7 +159,8 @@ class AA_Log
                     array_shift($session_log);
                 }
 
-                $newlog = new AA_Log($level, $msg, $time, debug_backtrace(0));
+                //$newlog = new AA_Log($level, $msg, $time, debug_backtrace(0));
+                $newlog = new AA_Log($level, $msg, $time, array());
 
                 try
                 {
