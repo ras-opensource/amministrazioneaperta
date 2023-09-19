@@ -87,6 +87,11 @@ Class AA_SierCoalizioni
         }
     }
 
+    public function GetListe()
+    {
+        return array();
+    }
+
     public function __construct($params=null)
     {
         //Definisce le proprietà dell'oggetto e i valori di default
@@ -2020,10 +2025,9 @@ Class AA_SierModule extends AA_GenericModule
 
         if(is_array($riepilogo_data) && sizeof($riepilogo_data) > 0)
         {
-            $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
-            . "<div><span class='AA_DataView_ItemTitle'>#cognome# #nome#</span><span style='font-size: smaller'>#cf#</span></div>"
-            . "<div><span class='AA_DataView_ItemSubTitle'>#incarichi#</span></div>"
-            . "</div><div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli degli incarichi' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
+            $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div style='display: flex; align-items: center; height: 98%; width: auto%; margin-left: 1em;'>"
+            ."<img src='#image#' width='100px'/><div style='height: 100%; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-evenly; margin-left: 1em;'><span class='AA_DataView_ItemTitle'>#denominazione#</span><span>Presidente: <b>#presidente#</b></span></div></div>"
+            ."<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 120px; padding: 5px'><a title='Visualizza i dettagli degli incarichi' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
             $riepilogo_tab=new AA_JSON_Template_Generic($id."_Riepilogo_Tab",array(
                 "view"=>"dataview",
                 "filtered"=>true,
@@ -2031,7 +2035,7 @@ Class AA_SierModule extends AA_GenericModule
                 "module_id"=>$this->id,
                 "type"=>array(
                     "type"=>"tiles",
-                    "height"=>60,
+                    "height"=>150,
                     "width"=>"auto",
                     "css"=>"AA_DataView_Nomine_item",
                 ),
@@ -2128,6 +2132,16 @@ Class AA_SierModule extends AA_GenericModule
 
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"borderless"=>true,"width"=>130));
         
+        $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
+            "view"=>"tabbar",
+            "borderless"=>true,
+            "css"=>"AA_Bottom_TabBar",
+            "multiview"=>true,
+            "optionWidth"=>130,
+            "view_id"=>$id."_Multiview",
+            "type"=>"bottom"
+        ));
+
         //permessi
         $perms = $object->GetUserCaps($this->oUser);
         $canModify=false;
@@ -2157,16 +2171,6 @@ Class AA_SierModule extends AA_GenericModule
         
         $footer=new AA_JSON_Template_Layout($id."_Footer",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
         
-        $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
-            "view"=>"tabbar",
-            "borderless"=>true,
-            "css"=>"AA_Bottom_TabBar",
-            "multiview"=>true,
-            "optionWidth"=>130,
-            "view_id"=>$id."_Multiview",
-            "type"=>"bottom"
-        ));
-        
         $footer->AddCol($tabbar);
         $footer->AddCol($toolbar);
         
@@ -2180,7 +2184,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //Array dati riepilogo e opzioni tab
         $riepilogo_data=array();
-        $options=array();
+        $options_tabbar=array();
 
         //Recupero coalizioni
         $params=array();
@@ -2199,10 +2203,38 @@ Class AA_SierModule extends AA_GenericModule
         {
             $id_detail_coalizione=$id."_CoalizioneDetail_".$id_coalizione;
             $layout_dettaglio_coalizione=new AA_JSON_Template_Layout($id_detail_coalizione,array("type"=>"clean"));
-            
+
+            //-------------- Dati di riepilogo --------------------
+            $riepilogo_data[]=array(
+                "id"=>$id_coalizione,
+                "denominazione"=>$curCoalizione->GetProp("denominazione"),
+                "presidente"=>$curCoalizione->GetProp("nome_candidato"),
+                "onclick"=>'$$("'.$tabbar->GetId().'").setValue("'.$id_detail_coalizione.'")'
+            );
+            $tab_label=$curCoalizione->GetProp("denominazione");
+            if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina organigramma' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCoalizioneDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione: "'.$id_coalizione.'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
+           
+            //Tab label
+            $options_tabbar[]=array("id"=>$id_detail_coalizione, "value"=>$tab_label);
+            //------------------------------------------------------
+           
             //-----------header--------------------
             $toolbar = new AA_JSON_Template_Toolbar($id_detail_coalizione."_Toolbar", array("height" => 38, "css" => array("border-bottom" => "1px solid #dadee0 !important")));
-            $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 120)));
+            
+            //torna al riepilogo
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Riepilogo_".$id_coalizione."_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-keyboard-backspace",
+                "label"=>"Riepilogo",
+                "align"=>"left",
+                "width"=>120,
+                "tooltip"=>"Torna al riepilogo",
+                "click"=>"$$('".$tabbar->GetId()."').setValue('".$id."_Riepilogo_Layout')"
+            )));
+
+            //$toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 120)));
             $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
             
             $toolbar->addElement(new AA_JSON_Template_Generic($id_detail_coalizione."_header_content",array("view"=>"label","align"=>"center","label"=>$curCoalizione->GetProp('denominazione'))));
@@ -2239,15 +2271,15 @@ Class AA_SierModule extends AA_GenericModule
 
             $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizioneImage",array(
                 "type"=>"clean",
-                "width"=>100,
-                "height"=>100,
-                "template"=>"<div style='width: 100%,height:100%'><img src='".$curImagePath."' width='100%' /></div>"
+                "width"=>120,
+                "height"=>120,
+                "template"=>"<div style='width: 100%;height:100%; display:flex; flex-direction:column; justify-content: center; align-items: center'><img src='".$curImagePath."' width='100px' /></div>"
             )));
 
             //Candidato Presidente
             $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizionePresidente",array(
                 "type"=>"clean",
-                "template"=>"<div style='width: 100%,height:100%'><span style='font-weight: 900'>Candidato Presidente:</span><div>#presidente#</div></div>",
+                "template"=>"<div style='width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; margin-left: 1em'><span style='font-weight: 900'>Presidente:</span><div>#presidente#</div></div>",
                 "data"=>array("presidente"=>$curCoalizione->GetProp('nome_candidato'))
             )));
             $layout_dettaglio_coalizione->AddRow($coalizione_content_box);
@@ -2299,7 +2331,7 @@ Class AA_SierModule extends AA_GenericModule
                 }
 
                 $liste_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
-                . "<div><img src='#image#' width='100%'/><span class='AA_DataView_ItemTitle'>#denominazione#</span></div>"
+                . "<div><img src='#image#' width='90%'/></div><div style='height: 100%;display:flex; align-items: center'><span class='AA_DataView_ItemTitle'>#denominazione#</span></div></div>"
                 . "<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli degli incarichi' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
                 
                 $dataview_liste=new AA_JSON_Template_Generic($curId."_Liste",array(
@@ -2329,14 +2361,14 @@ Class AA_SierModule extends AA_GenericModule
         }
         //------------------
 
-         //Riepilogo tab
-         $riepilogo_layout=$this->TemplateDettaglio_Coalizioni_Riepilogo_Tab($object,$id, $riepilogo_data);
+        //Riepilogo tab
+        $riepilogo_layout=$this->TemplateDettaglio_Coalizioni_Riepilogo_Tab($object,$id, $riepilogo_data);
+    
+        array_unshift($options_tabbar,array("id"=>$riepilogo_layout->GetId(), "value"=>"Riepilogo"));
         
-         array_unshift($options,array("id"=>$riepilogo_layout->GetId(), "value"=>"Riepilogo"));
-         
-         $multiview->AddCell($riepilogo_layout,true);
-         
-         $tabbar->SetProp("options",$options);
+        $multiview->AddCell($riepilogo_layout,true);
+        
+        $tabbar->SetProp("options",$options_tabbar);
         return $layout;
     }
 

@@ -2942,11 +2942,19 @@ class AA_Organismi extends AA_Object
                                 $results[$curRow['id']]=$curResult;
                                 $curRecCount++;
                             }
-                            if(!$bInsert) $tot_count--;
-
+                            if(!$bInsert) 
+                            {
+                                $tot_count--;
+                                $params['from']++;
+                            }
+                            
                             $curRecIndex++;
                         }
-                        else $tot_count--;
+                        else 
+                        {
+                            $tot_count--;
+                            $params['from']++;
+                        }
                     }
                     else $results[$curRow['id']]=$curResult;
                 }
