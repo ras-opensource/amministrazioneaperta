@@ -205,7 +205,7 @@ class AA_Storage
                 $rs=$db->GetResultSet();
                 if($rs[0]['referencesCount']<=0)
                 {
-                    AA_Log::Log(__METHOD__." - Eliminazione del file: ".print_r($file,true),100);
+                    //AA_Log::Log(__METHOD__." - Eliminazione del file: ".print_r($file,true),100);
                     if(!unlink($file->GetFilePath()))
                     {
                         AA_Log::Log(__METHOD__." - Errore durante l'eliminazione del file: ".$file->GetFilePath(),100);
