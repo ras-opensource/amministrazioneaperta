@@ -6574,6 +6574,7 @@ Class AA_OrganismiNomine extends AA_Object
         //Aggiunge i bindings ai campi del db
         $this->oDbBind->AddBind("nIdParent","id_organismo");
         $this->oDbBind->AddBind("nTipologia","tipo_incarico");
+        //$this->oDbBind->AddBind("nFacenteFunzione","facente_funzione");
         $this->oDbBind->AddBind("sDataInizio","data_inizio");
         $this->oDbBind->AddBind("sDataFine","data_fine");
         $this->oDbBind->AddBind("sNome","nome");
@@ -6832,6 +6833,19 @@ Class AA_OrganismiNomine extends AA_Object
     public function SetTipologia($val=0)
     {
         if($val>=0) $this->nTipologia=$val;
+    }
+
+    //Facente funzione
+    protected $nFacenteFunzione=0;
+    public function IsFacenteFunzione()
+    {
+        return $this->nFacenteFunzione;
+        
+    }
+    public function SetFacenteFunzione($val=1)
+    {
+        if($val>0) $this->nFacenteFunzione=1;
+        else $this->nFacenteFunzione=0;
     }
 
     //Note
@@ -7423,6 +7437,9 @@ Class AA_OrganismiNomine extends AA_Object
 
         //Verifica i checkbox 
         if(!isset($data['bNominaRas'])) $this->SetNominaRas(0);
+        
+        //facente funzione
+        if(!isset($data['nFacenteFunzione'])) $this->SetFacenteFunzione(0);
 
         if(!parent::ParseData($data,$user))
         {
