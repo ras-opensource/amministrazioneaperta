@@ -912,7 +912,6 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSierPubblicateFilterDlg");
         $taskManager->RegisterTask("GetSierBozzeFilterDlg");
 
-        
         //provvedimenti
         $taskManager->RegisterTask("GetSierModifyDlg");
         $taskManager->RegisterTask("GetSierAddNewDlg");
