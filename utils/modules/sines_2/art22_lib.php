@@ -137,7 +137,9 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_ORGANIGRAMMA_CONTROLLO=2;
     const AA_ORGANISMI_ORGANIGRAMMA_DIREZIONALE=4;
     const AA_ORGANISMI_ORGANIGRAMMA_CONSULTIVO=8; //2^3
-    const AA_ORGANISMI_ORGANIGRAMMA_MASK=7;
+    const AA_ORGANISMI_ORGANIGRAMMA_INDIRIZZO=16; //2^4
+
+    const AA_ORGANISMI_ORGANIGRAMMA_MASK=31;
 
     //Inizializza gli array
     static private function Initialize()
@@ -270,9 +272,10 @@ class AA_Organismi_Const extends AA_Const
         {
             self::$TIPO_ORGANIGRAMMA=array(
                 self::AA_ORGANISMI_ORGANIGRAMMA_NONE=>"Nessuno",
-                self::AA_ORGANISMI_ORGANIGRAMMA_AMMINISTRATIVO=>"Organo di indirizzo",
+                self::AA_ORGANISMI_ORGANIGRAMMA_INDIRIZZO=>"Organo di indirizzo",
+                self::AA_ORGANISMI_ORGANIGRAMMA_AMMINISTRATIVO=>"Organo di amministrazione",
                 self::AA_ORGANISMI_ORGANIGRAMMA_CONTROLLO=>"Organo di controllo",
-                self::AA_ORGANISMI_ORGANIGRAMMA_DIREZIONALE=>"Organo di amministrazione",
+                self::AA_ORGANISMI_ORGANIGRAMMA_DIREZIONALE=>"Organo di gestione",
                 self::AA_ORGANISMI_ORGANIGRAMMA_CONSULTIVO=>"Organo consultivo",
             );
         }
