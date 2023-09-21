@@ -2735,16 +2735,16 @@ class AA_Organismi extends AA_Object
             //organismi cessati
             if($params['cessati'] != 1) $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 4 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo <> 0 ) OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".stato_organismo = 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".data_fine_impegno > '".$now."'))";
 
-            if(isset($params['raggruppamento']) && $params['raggruppamento']==1) 
+            //if(isset($params['raggruppamento']) && $params['raggruppamento']==1) 
             {
                 $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".denominazione, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".aggiornamento, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome,".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome,".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale, MAX(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_fine) as data_fine_incarico FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
                 $group.=",".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".nome, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".cognome";
             }
-            else
+            /*else/
             {
                 $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".denominazione, ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".aggiornamento, ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".tipo_incarico, MAX(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_fine) as data_fine_incarico FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
                 $group.=",".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".tipo_incarico";
-            }
+            }*/
             
             $join=" LEFT JOIN ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." on ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".id_organismo=".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id";
             
@@ -2770,7 +2770,7 @@ class AA_Organismi extends AA_Object
                 else $having.=" OR data_fine_incarico <= '".$mesePrec->format("Y-m-d")."' ";
             }
             
-            //Scadono entro un mese
+            //In scadenza
             if(isset($params['in_scadenza']) && $params['in_scadenza'] == "1")
             {                                
                 if($having =="") $having.=" HAVING (data_fine_incarico < '".$meseProx->format("Y-m-d")."' AND data_fine_incarico > '". addslashes($params['data_scadenzario'])."') ";
@@ -3155,7 +3155,7 @@ class AA_Organismi extends AA_Object
         }
 
         //Impostazione dei parametri
-        $query="SELECT id, nome, cognome, data_fine, tipo_incarico, nomina_ras from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
+        $query="SELECT id, nome, cognome, data_fine, tipo_incarico, nomina_ras, facente_funzione,data_inizio from ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE." where id_organismo='".$this->GetId()."'";
 
         //Nascondi le nomine scadute
         if($params['scadute']=="0") $query.=" AND (data_fine > NOW())";
@@ -3557,7 +3557,6 @@ class AA_Organismi extends AA_Object
                     //nomina scaduta
                     if($scaduto && !$vacante)
                     {
-
                         //if((!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="") || ( isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al'])) 
                         {
                             $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
@@ -6574,7 +6573,7 @@ Class AA_OrganismiNomine extends AA_Object
         //Aggiunge i bindings ai campi del db
         $this->oDbBind->AddBind("nIdParent","id_organismo");
         $this->oDbBind->AddBind("nTipologia","tipo_incarico");
-        //$this->oDbBind->AddBind("nFacenteFunzione","facente_funzione");
+        $this->oDbBind->AddBind("nFacenteFunzione","facente_funzione");
         $this->oDbBind->AddBind("sDataInizio","data_inizio");
         $this->oDbBind->AddBind("sDataFine","data_fine");
         $this->oDbBind->AddBind("sNome","nome");
@@ -6957,6 +6956,13 @@ Class AA_OrganismiNomine extends AA_Object
         }
 
         $new_nomina->SetID(0);
+        
+        //Se è un facente funzione la data fine è uguale alla data inizio
+        if($new_nomina->IsFacenteFunzione())
+        {
+            $new_nomina->SetDataFine($new_nomina->GetDataInizio());
+        }
+
         if(!$new_nomina->SetParent($parent))
         {
             return null;
@@ -7363,7 +7369,7 @@ Class AA_OrganismiNomine extends AA_Object
         if(trim($this->GetNome())=="") $err.="\r\n- Occorre inserire il nome.";
         if(trim($this->GetCognome())=="") $err.="\r\n- Occorre inserire il cognome.";
         if(trim($this->GetDataInizio())=="" || $this->GetDataInizio()=="0000-00-00") $err.="\r\n- Occorre inserire la data di inizio.";
-        if(trim($this->GetDataFine())=="" || $this->GetDataFine() <= $this->GetDataInizio()) $err.="\r\n- Occorre inserire la data di fine che deve essere maggiore di quella di inizio.";
+        if(trim($this->GetDataFine())=="" || $this->GetDataFine() < $this->GetDataInizio()) $err.="\r\n- Occorre inserire la data di fine che deve essere maggiore o uguale a quella di inizio.";
         if($this->GetTipologia(true)==0) $err.="\r\n- Occorre selezionare un tipo di nomina.";
          
         //Verifica di coerenza dei dati
@@ -7395,6 +7401,12 @@ Class AA_OrganismiNomine extends AA_Object
                 AA_Log::Log(__METHOD__." - utente non valido.", 100,true,true);
                 return false;
             }
+        }
+
+        //Se è un facente funzione la data fine è uguale alla data inizio    
+        if($data['nFacenteFunzione'] == 1)
+        {
+            $data['sDataFine']=$data['sDataInizio'];
         }
 
         return parent::UpdateDb($user,$data);
@@ -7440,6 +7452,11 @@ Class AA_OrganismiNomine extends AA_Object
         
         //facente funzione
         if(!isset($data['nFacenteFunzione'])) $this->SetFacenteFunzione(0);
+
+        if($data['nFacenteFunzione'] == 1)
+        {
+            $data['sDataFine']=$data['sDataInizio'];
+        }
 
         if(!parent::ParseData($data,$user))
         {
@@ -9832,6 +9849,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
             foreach($nomina as $curNomina)
             {
                 $datafine=new DateTime($curNomina->GetDataFine());
+                $datainizio=new DateTime($curNomina->GetDataInizio());
                 
                 $view=false;
                 if($parametri['in_corso']=="1" && $datafine > $meseProx)
@@ -9876,7 +9894,8 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                     if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
                     $nominaRas="";
                     if($curNomina->IsNominaRas()) $nominaRas="<div><span style='font-size: smaller'>nomina Ras</span></div>";
-                    $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div>".$label_scadenza.$curNomina->GetDataFine()." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
+                    if(!$curNomina->IsFacenteFunzione()) $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div>".$label_scadenza.$curNomina->GetDataFine()." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
+                    else $nomine_list[$index][]="<div class='AA_Label AA_Label_LightYellow' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div><span>facente funzione dal:</span><br/><span>".$curNomina->GetDataInizio()."</span> <span style='font-size: smaller'>(".$data_scadenzario->diff($datainizio)->format("%a")." gg)</span></div></div>";
                 }
             }
         }
