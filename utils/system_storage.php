@@ -405,6 +405,33 @@ class AA_Storage
         }
     }
 
+    //Versione statica
+    public function GetByHash($fileHash="",$user=null)
+    {
+        if(!($user instanceof AA_User)) $user=AA_User::GetCurrentUser();
+
+        $storage=static::GetInstance($user);
+        return $storage->GetFileByHash($fileHash);
+    }
+
+    //Versione statica
+    public function GetByName($fileName="",$user=null)
+    {
+        if(!($user instanceof AA_User)) $user=AA_User::GetCurrentUser();
+
+        $storage=static::GetInstance($user);
+        return $storage->GetFileByName($fileName);
+    }
+
+    //Versione statica
+    public function Delete($file="",$user=null)
+    {
+        if(!($user instanceof AA_User)) $user=AA_User::GetCurrentUser();
+
+        $storage=static::GetInstance($user);
+        return $storage->DelFile($file);
+    }
+
     //Restituisce un riferimento al file in base all'hash se è presente nello storage
     public function GetFileByHash($fileHash="")
     {
@@ -414,9 +441,13 @@ class AA_Storage
             return new AA_StorageFile();
         }
 
+        if(strlen($fileHash) != 64) return new AA_StorageFile();
+
+        $fileHash=str_replace("%","",$fileHash);
+
         //Verifica se il file è presente
         $db=new AA_Database();
-        $query="SELECT * from ".static::AA_DBTABLE_STORAGE." WHERE fileHash = '".addslashes(trim($fileHash))."'";
+        $query="SELECT * from ".static::AA_DBTABLE_STORAGE." WHERE fileHash = '".addslashes(trim($fileHash))."' LIMIT 1";
 
         if(!$db->Query($query))
         {
