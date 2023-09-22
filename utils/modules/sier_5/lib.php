@@ -660,7 +660,7 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //Aggiunge un nuovo allegato
-    public function AddNewAllegato($allegato=null, $file="", $user=null)
+    public function AddNewAllegato($allegato=null, $user=null)
     {
         AA_Log::Log(__METHOD__."()");
 
@@ -694,13 +694,6 @@ Class AA_Sier extends AA_Object_V2
             AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
             return false;
         }
-        
-        //Verifica se il percorso di upload esiste
-        if($file !="" && !file_exists(AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH))
-        {
-            AA_Log::Log(__METHOD__." - Percorso upload file non esistente.", 100,false,true);
-            return false;
-        }
 
         $this->IsChanged();
 
@@ -719,6 +712,7 @@ Class AA_Sier extends AA_Object_V2
         $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdSier()."'";
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
+        $query.=", file='".addslashes($allegato->GetFileHash())."'";
         
         $db= new AA_Database();
         
@@ -730,33 +724,11 @@ Class AA_Sier extends AA_Object_V2
             return false;            
         }
         
-        $new_id=$db->GetLastInsertId();
-        
-        if($file !="")
-        {
-            if(is_uploaded_file($file))
-            {
-                if(!move_uploaded_file($file,AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf"))
-                {
-                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file: ".AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf", 100,false,true);
-                    return false;
-                }
-            }
-            else 
-            {   
-                if(!rename($file,AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf"))
-                {
-                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file", 100);
-                    return false;
-                }
-            }
-        }
-        
         return true;
     }
 
     //Aggiorna un allegato esistente
-    public function UpdateAllegato($allegato=null, $file="", $user=null)
+    public function UpdateAllegato($allegato=null, $user=null)
     {
         AA_Log::Log(__METHOD__."()");
 
@@ -808,6 +780,7 @@ Class AA_Sier extends AA_Object_V2
         $query="UPDATE ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdSier()."'";
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
+        $query.=", file='".addslashes($allegato->GetFileHash())."'";
         $query.=" WHERE id='".addslashes($allegato->GetId())."' LIMIT 1";
         
         $db= new AA_Database();
@@ -820,39 +793,6 @@ Class AA_Sier extends AA_Object_V2
             return false;            
         }
         
-        $new_id=$allegato->GetId();
-        
-        if($file !="")
-        {
-            if(is_uploaded_file($file))
-            {
-                if(!move_uploaded_file($file,AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf"))
-                {
-                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file: ".AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf", 100,false,true);
-                    return false;
-                }
-            }
-            else 
-            {   
-                if(!rename($file,AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf"))
-                {
-                    AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file", 100);
-                    return false;
-                }
-            }
-        }
-        else
-        {
-            //Rimuove il file precedentemente caricato
-            if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf"))
-            {
-                if(!unlink(AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf"))
-                {
-                    AA_Log::Log(__METHOD__." - Errore durante l'eliminazione del file precedente: ".AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$new_id.".pdf", 100);
-                }
-            }
-        }
-
         return true;
     }
 
@@ -926,14 +866,16 @@ Class AA_Sier extends AA_Object_V2
             return false;            
         }
         
-        $file=$allegato->GetFilePath();
+        $fileHash=$allegato->GetFileHash();
         
-        if(is_file($file))
+        if($fileHash=="") return true;
+        
+        $storage=AA_Storage::GetInstance($user);
+        if($storage->IsValid())
         {
-            if(!unlink($file))
+            if(!$storage->DelFile($fileHash))
             {
-                AA_Log::Log(__METHOD__." - Errore durante la rimozione del file: ".$file, 100,false,true);
-                return false;
+                AA_Log::Log(__METHOD__." - Errore nella rimozione del file sullo storage. (".$fileHash.")", 100,false,true);
             }
         }
 
@@ -1999,12 +1941,26 @@ Class AA_SierModule extends AA_GenericModule
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
         
         if(!$object->isValid())
         {
             $task->SetError("Identificativo provvedimento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
             $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo provvedimento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
             $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
 
             return false;
         }
@@ -2015,17 +1971,41 @@ Class AA_SierModule extends AA_GenericModule
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare il provvedimento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
             return false;            
         }
         
-        $file = AA_SessionFileUpload::Get("NewAllegatoDoc");
-        
-        if(!$file->isValid() && $_REQUEST['url'] == "")
+        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "")
         {   
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($file,true)." - ".print_r($_REQUEST,true),100);
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
             $task->SetError("Parametri non validi occorre indicare un url o un file.");
             $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare un url o un file.</error>";
             $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
             
             return false;
         }
@@ -2037,16 +2017,42 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         //Se c'è un file uploadato l'url non viene salvata.
-        if($file->isValid()) $_REQUEST['url']="";
+        $fileHash="";
+        if($uploadedFile->isValid()) 
+        {
+            $_REQUEST['url']="";
 
-        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url']);
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $fileHash=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash);
         
         //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
         
-        if($file->isValid()) $filespec=$file->GetValue();
-        else $filespec=array();
-        
-        if(!$object->AddNewAllegato($allegato, $filespec['tmp_name'], $this->oUser))
+        if(!$object->AddNewAllegato($allegato, $this->oUser))
         {        
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
@@ -2086,7 +2092,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     if(!unlink($file['tmp_name']))
                     {
-                        AA_Log::Log(__METHOD__." - Impossibile eliminare il file temporaneo. ".$file['tmp_name'],100);
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                     }
                 }
             }            
@@ -2107,7 +2113,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     if(!unlink($file['tmp_name']))
                     {
-                        AA_Log::Log(__METHOD__." - Impossibile eliminare il file temporaneo. ".$file['tmp_name'],100);
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                     }
                 }
             }     
@@ -2153,7 +2159,7 @@ Class AA_SierModule extends AA_GenericModule
             {
                 if(!unlink($file['tmp_name']))
                 {
-                    AA_Log::Log(__METHOD__." - Impossibile eliminare il file temporaneo. ".$file['tmp_name'],100);
+                    AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                 }
             }
         }
@@ -2215,7 +2221,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     if(!unlink($file['tmp_name']))
                     {
-                        AA_Log::Log(__METHOD__." - Impossibile eliminare il file temporaneo. ".$file['tmp_name'],100);
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                     }
                 }
             }
@@ -2237,7 +2243,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     if(!unlink($file['tmp_name']))
                     {
-                        AA_Log::Log(__METHOD__." - Impossibile eliminare il file temporaneo. ".$file['tmp_name'],100);
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                     }
                 }
             }
@@ -2259,7 +2265,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     if(!unlink($file['tmp_name']))
                     {
-                        AA_Log::Log(__METHOD__." - Impossibile eliminare il file temporaneo. ".$file['tmp_name'],100);
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                     }
                 }
             }
@@ -2285,7 +2291,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     if(!unlink($file['tmp_name']))
                     {
-                        AA_Log::Log(__METHOD__." - Impossibile eliminare il file temporaneo. ".$file['tmp_name'],100);
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                     }
                 }
             }
@@ -2366,7 +2372,7 @@ Class AA_SierModule extends AA_GenericModule
                 //AA_Log::Log(__METHOD__." - Elimino il file temporaneo. ".$file['tmp_name'],100);
                 if(!unlink($file['tmp_name']))
                 {
-                    AA_Log::Log(__METHOD__." - Impossibile eliminare il file temporaneo. ".$file['tmp_name'],100);
+                    AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                 }
             }
         }
@@ -3712,13 +3718,27 @@ Class AA_SierModule extends AA_GenericModule
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $object= new AA_Sier($_REQUEST['id'],$this->oUser);
-        
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
         if(!$object->isValid())
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
             $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
         
             return false;
         }
@@ -3727,8 +3747,21 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
             $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
         
             return true;
         }
@@ -3740,31 +3773,68 @@ Class AA_SierModule extends AA_GenericModule
             $sTaskLog.= "{}";
             $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
             $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
         
             return false;
         }
 
-        $file = AA_SessionFileUpload::Get("NewAllegatoDoc");
-        
-        if(!$file->isValid() && $_REQUEST['url'] == "")
-        {   
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($file,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetError("Parametri non validi occorre indicare un url o un file.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare un url o un file.</error>";
-            $task->SetLog($sTaskLog);
-            
-            return false;
+        //Se c'è un file uploadato l'url non viene salvata.
+        $fileHash="";
+        if($uploadedFile->isValid()) 
+        {
+            $_REQUEST['url']="";
+
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$allegato->GetFileHash();
+                if($oldFile !="")
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $fileHash=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
         }
+
+        $allegato=new AA_SierAllegati(0,$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash);
         
-        $allegato->SetEstremi($_REQUEST['estremi']);
-        $allegato->SetUrl($_REQUEST['url']);
-        
-        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
-        
-        if($file->isValid()) $filespec=$file->GetValue();
-        else $filespec=array();
-        
-        if(!$object->UpdateAllegato($allegato, $filespec['tmp_name'], $this->oUser))
+        if(!$object->UpdateAllegato($allegato, $this->oUser))
         {        
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
@@ -4502,6 +4572,16 @@ Class AA_SierAllegati
         $this->estremi=$val;
     }
 
+    protected $sFile="";
+    public function GetFileHash()
+    {
+        return $this->sFile;
+    }
+    public function SetFileHash($val="")
+    {
+        $this->sFile=$val;
+    }
+
     public function GetFilePath()
     {
         if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf"))
@@ -4537,7 +4617,7 @@ Class AA_SierAllegati
         $this->id_sier=$id;
     }
     
-    public function __construct($id=0,$id_sier=0,$estremi="",$url="")
+    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="")
     {
         //AA_Log::Log(__METHOD__." id: $id, id_organismo: $id_organismo, tipo: $tipo, url: $url",100);
         
@@ -4545,22 +4625,33 @@ Class AA_SierAllegati
         $this->id_sier=$id_sier;
         $this->url=$url;
         $this->estremi=$estremi;
+        $this->sFile=$file;
     }
     
     //Download del documento
     public function Download($embed=false)
     {
-        $filename=$this->GetFilePath();
+        if($this->sFile=="")
+        {
+            die($this->url);
+        }
 
-        if(is_file($filename))
+        $storage=AA_Storage::GetInstance();
+        if(!$storage->IsValid() )
+        {
+            die("file non trovato");
+        }
+
+        $file=$storage->GetFileByHash($this->sFile);
+        if($file->IsValid())
         {
             header("Cache-control: private");
-            header("Content-type: application/pdf");
-            header("Content-Length: ".filesize($filename));
-            if(!$embed) header('Content-Disposition: attachment; filename="'.$this->id.'.pdf"');
+            header("Content-type: ".$file->GetMimeType());
+            header("Content-Length: ".$file->GetFileSize());
+            if(!$embed) header('Content-Disposition: attachment; filename="'.$file->GetName()."'");
 
-            $fd = fopen ($filename, "rb");
-            echo fread ($fd, filesize ($filename));
+            $fd = fopen ($file->GetFilePath(), "rb");
+            echo fread ($fd, filesize ($file->GetFilePath()));
             fclose ($fd);
             die();
         }

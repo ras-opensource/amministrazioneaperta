@@ -154,6 +154,166 @@ class AA_Storage
         return new AA_StorageFile();
     }
 
+    //Aggiunge un file allo storage a pertire da un upload
+    public function AddFileFromUpload($fileUpload=null,$bPublic=0,$bAddReferenceIfExist=true)
+    {
+        if($this->oUser->IsGuest())
+        {
+            AA_Log::Log(__METHOD__." - L'utente guest non può caricare files.",100);
+            return new AA_StorageFile();
+        }
+
+        if(!$this->bValid)
+        {
+            AA_Log::Log(__METHOD__." - Storage non inizializzato.",100);
+            return new AA_StorageFile();
+        }
+
+        if(!($fileUpload instanceof AA_SessionFileUpload))
+        {
+            AA_Log::Log(__METHOD__." - Oggetto file Upload non definito.".print_r($fileUpload,true),100);
+            return new AA_StorageFile();            
+        }
+
+        if(!$fileUpload->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Oggetto file Upload non valido.".print_r($fileUpload,true),100);
+            return new AA_StorageFile();    
+        }
+
+        $file=$fileUpload->GetValue();
+
+        if(file_exists($file['tmp_name']))
+        {
+            $hash=hash_file("sha256",$file['tmp_name']);
+
+            //Verifica se il file è già presente
+            $db=new AA_Database();
+            $query="SELECT * from ".static::AA_DBTABLE_STORAGE." WHERE fileHash = '".$hash."'";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+
+                //rimuove il file temporaneo
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".print_r($file,true),100);
+                }
+                return new AA_StorageFile();
+            }
+
+            //file già presente
+            if($db->GetAffectedRows()>0)
+            {
+                $rs=$db->GetResultSet();
+                $props=$rs[0];
+                $props['filePath']=AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$props['filePath'];
+                $props['public']=$bPublic;
+                if($bAddReferenceIfExist)
+                {
+                    //aumenta i riferimenti e restituisce il riferimento al file    
+                    $props['aggiornamento']=date("Y-m-d");
+                    $props['referencesCount']+=1;    
+                    //Aggiorna il db
+                    $query="UPDATE ".static::AA_DBTABLE_STORAGE." set referencesCount=(referencesCount+1),aggiornamento=".date("Y-m-d").", public='".addslashes($bPublic)."' WHERE id='".$props['id']."' LIMIT 1";
+                    if(!$db->Query($query))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+
+                        //rimuove il file temporaneo
+                        if(!unlink($file['tmp_name']))
+                        {
+                            AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".print_r($file,true),100);
+                        }
+                        return new AA_StorageFile();    
+                    }
+                    
+                    //rimuove il file temporaneo
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".print_r($file,true),100);
+                    }
+
+                    return new AA_StorageFile($props);
+                }
+                else
+                {
+                    //rimuove il file temporaneo
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".print_r($file,true),100);
+                    }
+
+                    return new AA_StorageFile($props);
+                }
+            }
+            else
+            {
+                //Aggiunge il file allo storage
+                $dir=date("Y-m");
+                if(!is_dir(AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$dir))
+                {
+                    //crea la directory
+                    if(!mkdir(AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$dir))
+                    {
+                        AA_Log::Log(__METHOD__." - errore durante la creazione della directory: ".AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$dir,100);
+
+                        //rimuove il file temporaneo
+                        if(!unlink($file['tmp_name']))
+                        {
+                            AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".print_r($file,true),100);
+                        }
+
+                        return new AA_StorageFile();
+                    }
+                }
+
+                $NewFilePath=AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$dir.DIRECTORY_SEPARATOR.$hash;
+                if(!rename($file['tmp_name'],$NewFilePath))
+                {
+                    AA_Log::Log(__METHOD__." - errore durante la copia del file: ".$file['tmp_name']." in ".$NewFilePath,100);
+                    
+                    //rimuove il file temporaneo
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".print_r($file,true),100);
+                    }
+                    
+                    return new AA_StorageFile();
+                }
+
+                $query="INSERT INTO ".static::AA_DBTABLE_STORAGE." SET name='".$file['name']."', mime='".$file['type']."', aggiornamento='".date("Y-m-d")."', fileHash='".$hash."', size='".filesize($NewFilePath)."', referencesCount = 1, filePath='".$dir.DIRECTORY_SEPARATOR.$hash."', public='".addslashes($bPublic)."'";
+                if(!$db->Query($query))
+                {
+                    if(!unlink($NewFilePath))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$NewFilePath,100);
+                    }
+
+                    AA_Log::Log(__METHOD__." - errore nella query: ".$query,100);
+                    return new AA_StorageFile();
+                }
+
+                $props=array(
+                    'name'=>$file['name'],
+                    'mime'=>$file['type'],
+                    'aggiornamento'=>date("Y-m-d"),
+                    'referencesCount'=>1,
+                    'fileHash'=>$hash,
+                    'filePath'=>$NewFilePath,
+                    'size'=>filesize($NewFilePath),
+                    'public'=>$bPublic
+                );
+
+                return new AA_StorageFile($props);
+            }
+        }
+
+        AA_Log::Log(__METHOD__." - file ".$file['tmp_name']." non trovato.",100);
+        return new AA_StorageFile();
+    }
+
     //Rimuove un file dallo storage (file può essere un oggetto AA_StorageFile o un hash)
     public function DelFile($file=null)
     {
