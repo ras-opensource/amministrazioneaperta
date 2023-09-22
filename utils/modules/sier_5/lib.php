@@ -255,6 +255,38 @@ Class AA_Sier extends AA_Object_V2
         return $result;
     }
 
+    public function GetCoalizione($id_coalizione=0)
+    {
+        if(!$this->bValid) return null;
+
+        if($id_coalizione <= 0)
+        {
+            AA_Log::Log(__METHOD__." - id coalizione non valido",100);
+            return null;
+        }
+
+        $db=new AA_Database();
+        $query="SELECT * from ".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."' AND id='".addslashes($id_coalizione)."' LIMIT 1";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+            return null;
+        }
+
+        $result=null;
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $result = new AA_SierCoalizioni($curRow);
+            }
+        }
+
+        return $result;
+    }
+
     //funzione di ricerca
     static public function Search($params=array(),$user=null)
     {
@@ -538,7 +570,7 @@ Class AA_Sier extends AA_Object_V2
         return true;
     }
 
-    //Aggiorna una coalizione esistente
+    //Elimina una coalizione esistente
     public function DeleteCoalizione($coalizione=null, $user=null)
     {
         AA_Log::Log(__METHOD__."()");
@@ -570,8 +602,18 @@ Class AA_Sier extends AA_Object_V2
 
         if(!($coalizione instanceof AA_SierCoalizioni))
         {
-            AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
-            return false;
+            if($coalizione == "" && $coalizione == null)
+            {
+                AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100);
+                return false;
+            }
+            $coalizioni=$this->GetCoalizioni(array('id_coalizione'=>$coalizione));
+            if(isset($coalizioni[$coalizione])) $coalizione=$coalizioni[$coalizione];
+            else
+            {
+                AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100);
+                return false;
+            }
         }
 
         if($coalizione->GetProp('id')<=0)
@@ -593,7 +635,7 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
-        $query="DELETE FROM".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."'";
+        $query="DELETE FROM ".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."'";
         $query.=" AND id='".addslashes($coalizione->GetProp('id'))."' LIMIT 1";
         
         $db = new AA_Database();
@@ -991,7 +1033,7 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSierPubblicateFilterDlg");
         $taskManager->RegisterTask("GetSierBozzeFilterDlg");
 
-        //provvedimenti
+        //elezioni
         $taskManager->RegisterTask("GetSierModifyDlg");
         $taskManager->RegisterTask("GetSierAddNewDlg");
         $taskManager->RegisterTask("GetSierTrashDlg");
@@ -1028,6 +1070,8 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewSierCoalizione");
         $taskManager->RegisterTask("GetSierModifyCoalizioneDlg");
         $taskManager->RegisterTask("UpdateSierCoalizione");
+        $taskManager->RegisterTask("GetSierTrashCoalizioneDlg");
+        $taskManager->RegisterTask("DeleteSierCoalizione");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -1901,6 +1945,54 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
+
+    //Template dlg trash giornata
+    public function Template_GetSierTrashCoalizioneDlg($object=null,$coalizione=null)
+    {
+        $id=$this->id."_TrashSierCoalizione_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina coalizione", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("coalizione"=>$coalizione->GetProp("denominazione"));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"La seguente Coalizione verrà eliminata, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"coalizione", "header"=>"Denominazione", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteSierCoalizione");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_coalizione"=>$coalizione->GetProp("id")));
+        
+        return $wnd;
+    }
+
     //Task Aggiungi allegato
     public function Task_AddNewSierAllegato($task)
     {
@@ -2316,6 +2408,50 @@ Class AA_SierModule extends AA_GenericModule
         
         $task->SetLog($sTaskLog);
         
+        return true;
+    }
+
+    //Task elimina coalizione
+    public function Task_DeleteSierCoalizione($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid() || $object->GetId()<=0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+ 
+        if(!$object->DeleteCoalizione($_REQUEST['id_coalizione'],$this->oUser))
+        {   
+            $task->SetError("Errore durante l'eliminazione della coalizione: ".$_REQUEST['id_coalizione']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore durante l'eliminazione della coalizione: ".$_REQUEST['id_coalizione']."</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Coalizione eliminata con successo.";
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
         return true;
     }
 
@@ -3746,7 +3882,53 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    //Task aggiungi dato contabile
+    //Task sier trash coalizione
+    public function Task_GetSierTrashCoalizioneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid() || $object->GetId()<= 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if($coalizione==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo coalizione non valido (".$_REQUEST['id_coalizione'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetSierTrashCoalizioneDlg($object,$coalizione)->toBase64();
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    //Task trash allegato
     public function Task_GetSierTrashAllegatoDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
