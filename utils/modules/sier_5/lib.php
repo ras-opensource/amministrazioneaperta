@@ -2016,10 +2016,10 @@ Class AA_SierModule extends AA_GenericModule
             $id_sier=$object->GetIdDataRev();
         }
         
-        //Se c'è un file uploadato l'url non viene salvata.
         $fileHash="";
         if($uploadedFile->isValid()) 
         {
+            //Se c'è un file uploadato l'url non viene salvata.
             $_REQUEST['url']="";
 
             $storage=AA_Storage::GetInstance($this->oUser);
