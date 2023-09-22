@@ -9514,7 +9514,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             }
             else 
             {
-                $gab_label="";
+                $gap_label="";
             }
             
             if($curDatocontabile->IsInGbc()) 

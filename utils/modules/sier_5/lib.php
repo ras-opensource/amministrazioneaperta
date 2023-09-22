@@ -469,7 +469,7 @@ Class AA_Sier extends AA_Object_V2
         return true;
     }
 
-    //Aggiorna una nuova coalizione
+    //Aggiorna una coalizione esistente
     public function UpdateCoalizione($newCoalizione=null, $user=null)
     {
         AA_Log::Log(__METHOD__."()");
@@ -533,6 +533,85 @@ Class AA_Sier extends AA_Object_V2
         {
             AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
             return false;            
+        }
+        
+        return true;
+    }
+
+    //Aggiorna una coalizione esistente
+    public function DeleteCoalizione($coalizione=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
+            return false;
+        }
+
+        if($coalizione->GetProp('id')<=0)
+        {
+            AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
+            return false;            
+        }
+
+        if($coalizione->GetProp("image") !="")
+        {
+            $storage=AA_Storage::GetInstance();
+            if($storage->IsValid())
+            {
+                if(!$storage->DelFile($coalizione->GetProp("image")))
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante l'eliminazione dell'immagine della coalizione.", 100);
+                    //return false;      
+                }
+            }
+        }
+
+        $query="DELETE FROM".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."'";
+        $query.=" AND id='".addslashes($coalizione->GetProp('id'))."' LIMIT 1";
+        
+        $db = new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Elimina coalizione: ".$coalizione->GetProp('denominazione')))
+        {
+            return false;
         }
         
         return true;

@@ -160,13 +160,13 @@ class AA_Storage
         if($this->oUser->IsGuest())
         {
             AA_Log::Log(__METHOD__." - L'utente guest non può eliminare files.",100);
-            return new AA_StorageFile();
+            return false;
         }
 
         if(!$this->bValid)
         {
             AA_Log::Log(__METHOD__." - Storage non inizializzato.",100);
-            return new AA_StorageFile();
+            return false;
         }
 
         if(!($file instanceof AA_StorageFile)) $file=$this->GetFileByHash($file);
@@ -197,7 +197,7 @@ class AA_Storage
             if(!$db->Query($query))
             {
                 AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
-                return new AA_StorageFile();
+                return false;
             }
 
             if($db->GetAffectedRows()>0)
