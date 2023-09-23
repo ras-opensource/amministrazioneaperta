@@ -425,7 +425,7 @@ Class AA_Sier extends AA_Object_V2
         if($db->GetAffectedRows() > 0)
         {
             $rs=$db->GetResultSet();
-            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url']);
+            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file']);
             
             return $object;
         }
@@ -924,7 +924,7 @@ Class AA_Sier extends AA_Object_V2
         $rs=$db->GetResultSet();
         foreach($rs as $curRec)
         {   
-            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url']);
+            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file']);
             $result[$curRec['id']]=$allegato;
         }
 
@@ -3832,7 +3832,7 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        $allegato=new AA_SierAllegati(0,$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash);
+        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash);
         
         if(!$object->UpdateAllegato($allegato, $this->oUser))
         {        
@@ -4275,7 +4275,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             if($curDoc->GetUrl() == "")
             {
-                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetFilePublicPath().'&embed=1&id_object='.$object->GetId().'"},"'.$this->id.'")';
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
                 $view_icon="mdi-floppy";
             }
             else 
