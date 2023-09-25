@@ -843,6 +843,16 @@ Class AA_Sier extends AA_Object_V2
             return false;            
         }
 
+        //Elimina le liste
+        foreach($coalizione->GetListe() as $curLista)
+        {
+            if(!$this->DeleteLista($curLista,$coalizione,$user))
+            {
+                return false;
+            }
+        }
+
+        //Elimina l'immagine
         if($coalizione->GetProp("image") !="")
         {
             $storage=AA_Storage::GetInstance();
@@ -873,6 +883,122 @@ Class AA_Sier extends AA_Object_V2
 
         //Aggiorna l'elemento e lo versiona se necessario
         if(!$this->Update($user,true, "Elimina coalizione: ".$coalizione->GetProp('denominazione')))
+        {
+            return false;
+        }
+        
+        return true;
+    }
+
+    //Elimina una lista esistente
+    public function DeleteLista($lista=null,$coalizione=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            if($coalizione == "" && $coalizione == null)
+            {
+                AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100);
+                return false;
+            }
+            $coalizioni=$this->GetCoalizioni(array('id_coalizione'=>$coalizione));
+            if(isset($coalizioni[$coalizione])) $coalizione=$coalizioni[$coalizione];
+            else
+            {
+                AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100);
+                return false;
+            }
+        }
+
+        if($coalizione->GetProp('id')<=0)
+        {
+            AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
+            return false;            
+        }
+
+        $liste=$coalizione->GetListe();
+
+        if(!($lista instanceof AA_SierLista))
+        {
+            if($lista == "" || $lista == null)
+            {
+                AA_Log::Log(__METHOD__." - Dati Lista non validi.", 100,false,true);
+                return false;   
+            }
+                
+            if(!isset($liste[$lista]))
+            {
+                AA_Log::Log(__METHOD__." - Dati Lista non validi.", 100,false,true);
+                return false;                   
+            }
+
+            $lista=$liste[$lista];
+        }
+        else
+        {
+            if(!isset($liste[$lista->GetProp('id')]))
+            {
+                AA_Log::Log(__METHOD__." - Dati Lista non validi.", 100,false,true);
+                return false;                   
+            }
+        }
+
+        if($lista->GetProp("image") !="")
+        {
+            $storage=AA_Storage::GetInstance();
+            if($storage->IsValid())
+            {
+                if(!$storage->DelFile($lista->GetProp("image")))
+                {
+                    AA_Log::Log(__METHOD__." - Errore durante l'eliminazione dell'immagine della lista.", 100);
+                    //return false;      
+                }
+            }
+        }
+
+        $query="DELETE FROM ".static::AA_LISTE_DB_TABLE." WHERE id_coalizione='".addslashes($coalizione->GetProp('id'))."'";
+        $query.=" AND id='".addslashes($lista->GetProp('id'))."' LIMIT 1";
+        
+        $db = new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Elimina la Lista: ".$lista->GetProp('denominazione')))
         {
             return false;
         }
