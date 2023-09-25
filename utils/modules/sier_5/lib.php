@@ -89,7 +89,7 @@ Class AA_SierCoalizioni
 
     public function GetListe()
     {
-        return array();
+        return $this->aProps['liste'];
     }
 
     public function __construct($params=null)
@@ -125,6 +125,59 @@ Class AA_SierCoalizioni
     }
 }
 
+#Classe Lista
+Class AA_SierLista
+{
+    protected $aProps=array();
+    
+    //Importa i valori da un array
+    protected function Parse($values=null)
+    {
+        if(is_array($values))
+        {
+            foreach($values as $key=>$value)
+            {
+                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
+            }
+        }
+    }
+
+    public function GetCandidati($circoscrizione="")
+    {
+        return array();
+    }
+
+    public function __construct($params=null)
+    {
+        //Definisce le proprietà dell'oggetto e i valori di default
+        $this->aProps['id']=0;
+        $this->aProps['id_coalizione']=0;
+        $this->aProps['denominazione']="";
+        $this->aProps['image']="";
+
+        if(is_array($params)) $this->Parse($params);
+    }
+
+    //imposta il valore di una propietà
+    public function SetProp($prop="",$value="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
+    }
+
+    //restituisce il valore di una propietà
+    public function GetProp($prop="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
+        else return "";
+    }
+
+    //restituisce tutte le propietà
+    public function GetProps()
+    {
+        return $this->aProps;
+    }
+}
+
 #Classe oggetto elezioni
 Class AA_Sier extends AA_Object_V2
 {
@@ -132,6 +185,7 @@ Class AA_Sier extends AA_Object_V2
     const AA_DBTABLE_DATA="aa_sier_data";
     const AA_ALLEGATI_DB_TABLE="aa_sier_allegati";
     const AA_COALIZIONI_DB_TABLE="aa_sier_coalizioni";
+    const AA_LISTE_DB_TABLE="aa_sier_liste";
 
     //Funzione di cancellazione
     protected function DeleteData($idData = 0, $user = null)
@@ -247,6 +301,23 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
+                $liste=array();
+                
+                //Recupero liste
+                $query="SELECT * from ".static::AA_LISTE_DB_TABLE." WHERE id_coalizione='".$curRow['id']."'";
+                if(!$db->Query($query))
+                {
+                    AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+                }
+                else
+                {
+                    foreach($db->GetResultSet() as $curLista)
+                    {
+                        $liste[$curLista['id']]=new AA_SierLista($curLista);
+                    }
+                    $curRow['liste']=$liste;
+                }
+
                 $curCoalizione= new AA_SierCoalizioni($curRow);
                 $result[$curRow['id']]=$curCoalizione;
             }
@@ -280,6 +351,23 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
+                $liste=array();
+                
+                //Recupero liste
+                $query="SELECT * from ".static::AA_LISTE_DB_TABLE." WHERE id_coalizione='".$curRow['id']."'";
+                if(!$db->Query($query))
+                {
+                    AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+                }
+                else
+                {
+                    foreach($db->GetResultSet() as $curLista)
+                    {
+                        $liste[$curLista['id']]=new AA_SierLista($curLista);
+                    }
+                    $curRow['liste']=$liste;
+                }
+
                 $result = new AA_SierCoalizioni($curRow);
             }
         }
@@ -433,6 +521,139 @@ Class AA_Sier extends AA_Object_V2
         return null;
     }
     
+    //Aggiunge una nuova lista
+    public function AddNewLista($lista=null, $coalizione=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
+            return false;
+        }
+
+        if(!($lista instanceof AA_SierLista))
+        {
+            AA_Log::Log(__METHOD__." - Dati Lista non validi.", 100,false,true);
+            return false;
+        }
+        
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Aggiunta nuova lista: ".$lista->GetProp('denominazione')))
+        {
+            return false;
+        }
+
+        //AA_Log::Log(__METHOD__." - nuova lista: ".print_r($lista,true), 100);
+
+        $query="INSERT INTO ".static::AA_LISTE_DB_TABLE." SET id_coalizione='".$coalizione->GetProp('id')."'";
+        $query.=", denominazione='".addslashes($lista->GetProp('denominazione'))."'";
+        $query.=", image='".addslashes($lista->GetProp('image'))."'";
+        
+        $db = new AA_Database();
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        return true;
+    }
+
+    //Aggiorna una lista esistente
+    public function UpdateLista($lista=null, $coalizione=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
+            return false;
+        }
+
+        if(!($lista instanceof AA_SierLista))
+        {
+            AA_Log::Log(__METHOD__." - Dati Lista non validi.", 100,false,true);
+            return false;
+        }
+        
+        $query="UPDATE ".static::AA_LISTE_DB_TABLE." SET id_coalizione='".$coalizione->GetProp('id')."'";
+        $query.=", denominazione='".addslashes($lista->GetProp('denominazione'))."'";
+        $query.=", image='".addslashes($lista->GetProp('image'))."'";
+        $query.=" WHERE id='".addslashes($lista->GetProp('id'))."' LIMIT 1";
+        
+        $db = new AA_Database();
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Aggiorna la lista: ".$lista->GetProp('denominazione')))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     //Aggiunge una nuova coalizione
     public function AddNewCoalizione($newCoalizione=null, $user=null)
     {
@@ -1015,6 +1236,12 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSierTrashCoalizioneDlg");
         $taskManager->RegisterTask("DeleteSierCoalizione");
 
+        //Liste
+        $taskManager->RegisterTask("GetSierAddNewListaDlg");
+        $taskManager->RegisterTask("AddNewSierLista");
+        $taskManager->RegisterTask("GetSierModifyListaDlg");
+        $taskManager->RegisterTask("UpdateSierLista");
+
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
@@ -1413,7 +1640,87 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
-    //Template dlg aggiungi Colaizione
+    //Template dlg aggiungi lista
+    public function Template_GetSierAddNewListaDlg($object=null,$coalizione=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierAddNewListaDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("id_coalizione"=>$coalizione->GetProp('id'));
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi una nuova Lista", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(400);
+
+        //denominazione
+        $wnd->AddTextField("denominazione", "Denominazione", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare la denominazione della Lista.", "placeholder" => "..."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $section=new AA_FieldSet($id."_Section_Url","Scegliere un'immagine per la Lista.");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //file
+        $section->AddFileUploadField("NewListaImage","", array("bottomLabel"=>"*Caricare solo immagini in formato jpg o png (dimensione max: 1Mb).","accept"=>"image/jpg,image/png"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSierLista");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi lista
+    public function Template_GetSierModifyListaDlg($object=null,$coalizione=null,$lista=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierModifyListaDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("id_coalizione"=>$coalizione->GetProp('id'),"id_lista"=>$lista->GetProp('id'),"denominazione"=>$lista->GetProp("denominazione"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Modifica Lista", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(400);
+
+        //denominazione
+        $wnd->AddTextField("denominazione", "Denominazione", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare la denominazione della Lista.", "placeholder" => "..."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $section=new AA_FieldSet($id."_Section_Url","Scegliere un'immagine per la Lista.");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //file
+        $section->AddFileUploadField("UpdateListaImage","", array("bottomLabel"=>"*Caricare solo immagini in formato jpg o png (dimensione max: 1Mb).<br>Non selezionare nessun file per mantenere quello corrente.","accept"=>"image/jpg,image/png"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("UpdateSierLista");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi Coaiizione
     public function Template_GetSierAddNewCoalizioneDlg($object=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierAddNewCoalizioneDlg";
@@ -2070,6 +2377,373 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task Aggiungi Lista
+    public function Task_AddNewSierLista($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $fileUpload = AA_SessionFileUpload::Get("NewListaImage");
+
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }            
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+            
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            return false;            
+        }
+
+        //Verifica coalizione
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            $task->SetError("Coalizione non valida");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Coalizione non valida</error>";
+            $task->SetLog($sTaskLog);
+            
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            return false;            
+        }
+        
+        $imageFileHash="";
+        $compliance=true;
+        
+        if($fileUpload->isValid())
+        {   
+            $file=$fileUpload->GetValue();
+
+            //Verifica che l'immagine rispetti le specifiche (png o jpg, 1mb max)
+            if($file['type'] != "image/png" && ($file['type'] != "image/jpeg" && $file['type'] != "image/jpg"))
+            {
+                $compliance=false;
+            }
+
+            if(filesize($file['tmp_name']) > 1024*1024)
+            {
+                $compliance=false;
+            }
+
+            if($compliance)
+            {
+                //salva l'immagine della lista
+                $storage=AA_Storage::GetInstance($this->oUser);
+                if($storage->IsValid())
+                {
+                    $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type'],1);
+                    if(!$storageFile->isValid())
+                    {
+                        AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file nello storage, immagine non salvata. ".print_r($storageFile,true),100);
+                    }
+                    else $imageFileHash=$storageFile->GetFileHash();
+                }
+                else AA_Log::Log(__METHOD__." - Storage non valido, immagine non salvata",100);
+            }
+
+            //elimina il file temporaneo (se presente)
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                }
+            }
+        }
+        
+        //Nuova lista
+        $params=array(
+            'id_coalizione'=>$coalizione->GetProp('id'),
+            'denominazione'=>$_REQUEST['denominazione'],
+            'image'=>$imageFileHash
+        );
+
+        $lista=new AA_SierLista($params);
+        if(!($lista instanceof AA_SierLista))
+        {
+            $task->SetError("dati Lista non validi");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>dati Lista non validi</error>";
+            $task->SetLog($sTaskLog);
+            
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            return false; 
+        }
+
+        if(!$object->AddNewLista($lista,$coalizione,$this->oUser))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio della lista. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        if($compliance) $sTaskLog.= "Lista aggiunta con successo.";
+        else $sTaskLog.= "Lista aggiunta con successo. Immagine non salvata in quanto non conforme alle specifiche.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task aggiorna Lista
+    public function Task_UpdateSierLista($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $fileUpload = AA_SessionFileUpload::Get("UpdateListaImage");
+
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }            
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+            
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            return false;            
+        }
+
+        //Verifica coalizione
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            $task->SetError("Coalizione non valida");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Coalizione non valida</error>";
+            $task->SetLog($sTaskLog);
+            
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            return false;            
+        }
+
+        //verifica lista
+        $liste=$coalizione->GetListe();
+        if(!($liste[$_REQUEST['id_lista']] instanceof AA_SierLista))
+        {
+            $task->SetError("Lista non valida");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Lista non valida</error>";
+            $task->SetLog($sTaskLog);
+            
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            return false;            
+        }
+
+        $lista=$liste[$_REQUEST['id_lista']];
+
+        $imageFileHash=$lista->GetProp("image");
+        $compliance=true;
+        
+        if($fileUpload->isValid())
+        {   
+            $file=$fileUpload->GetValue();
+
+            //Verifica che l'immagine rispetti le specifiche (png o jpg, 1mb max)
+            if($file['type'] != "image/png" && ($file['type'] != "image/jpeg" && $file['type'] != "image/jpg"))
+            {
+                $compliance=false;
+            }
+
+            if(filesize($file['tmp_name']) > 1024*1024)
+            {
+                $compliance=false;
+            }
+
+            if($compliance)
+            {
+                //salva l'immagine della lista
+                $storage=AA_Storage::GetInstance($this->oUser);
+                if($storage->IsValid())
+                {
+                    if($lista->GetProp('image') !="")
+                    {
+                        $oldFile=$storage->GetFileByHash($lista->GetProp('image'));
+                        if($oldFile->IsValid())
+                        {
+                            $storage->DelFile($oldFile);
+                        }
+                    }
+    
+                    $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type'],1);
+                    if(!$storageFile->isValid())
+                    {
+                        AA_Log::Log(__METHOD__." - Errore durante il salvataggio del file nello storage, immagine non salvata. ".print_r($storageFile,true),100);
+                    }
+                    else $imageFileHash=$storageFile->GetFileHash();
+                }
+                else AA_Log::Log(__METHOD__." - Storage non valido, immagine non salvata",100);
+            }
+
+            //elimina il file temporaneo (se presente)
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                }
+            }
+        }
+        
+        //Nuova lista
+        $params=array(
+            'id'=>$lista->GetProp('id'),
+            'id_coalizione'=>$coalizione->GetProp('id'),
+            'denominazione'=>$_REQUEST['denominazione'],
+            'image'=>$imageFileHash
+        );
+
+        $lista=new AA_SierLista($params);
+        if(!($lista instanceof AA_SierLista))
+        {
+            $task->SetError("dati Lista non validi");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>dati Lista non validi</error>";
+            $task->SetLog($sTaskLog);
+            
+            //Elimina il file temporaneo
+            if($fileUpload->isValid())
+            {   
+                $file=$fileUpload->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            return false; 
+        }
+
+        //AA_Log::Log(__METHOD__." - lista: ".print_r($lista,true),100);
+
+        if(!$object->UpdateLista($lista,$coalizione,$this->oUser))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio della lista. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        if($compliance) $sTaskLog.= "Lista aggiornata con successo.";
+        else $sTaskLog.= "Lista aggiornata con successo. Immagine non salvata in quanto non conforme alle specifiche.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
     //Task Aggiungi coalizione
     public function Task_AddNewSierCoalizione($task)
     {
@@ -2128,7 +2802,7 @@ Class AA_SierModule extends AA_GenericModule
             $file=$fileUpload->GetValue();
 
             //Verifica che l'immagine rispetti le specifiche (png o jpg, 1mb max)
-            if($file['type'] != "image/png" && $file['type'] != "image/jpg")
+            if($file['type'] != "image/png" && ($file['type'] != "image/jpeg" && $file['type'] != "image/jpg"))
             {
                 $compliance=false;
             }
@@ -2311,7 +2985,7 @@ Class AA_SierModule extends AA_GenericModule
             $imageFileHash=hash_file("sha256",$file['tmp_name']);
             
             //Verifica che l'immagine rispetti le specifiche (png o jpg, 1mb max)
-            if($file['type'] != "image/png" && $file['type'] != "image/jpg")
+            if($file['type'] != "image/png" && ($file['type'] != "image/jpeg" && $file['type'] != "image/jpg"))
             {
                 AA_Log::Log(__METHOD__." - tipo file non conforme: ".$file['type'],100);
                 $compliance=false;
@@ -2635,7 +3309,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div style='display: flex; align-items: center; height: 98%; width: auto%; margin-left: 1em;'>"
             ."<img src='#image#' width='100px'/><div style='height: 100%; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-evenly; margin-left: 1em;'><span class='AA_DataView_ItemTitle'>#denominazione#</span><span>Presidente: <b>#presidente#</b></span></div></div>"
-            ."<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 120px; padding: 5px'><a title='Visualizza i dettagli degli incarichi' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
+            ."<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 120px; padding: 5px'><a title='Visualizza i dettagli' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-card-account-details'></span>&nbsp;<span>Dettagli</span></a></div></div>";
             $riepilogo_tab=new AA_JSON_Template_Generic($id."_Riepilogo_Tab",array(
                 "view"=>"dataview",
                 "filtered"=>true,
@@ -2745,7 +3419,7 @@ Class AA_SierModule extends AA_GenericModule
             "borderless"=>true,
             "css"=>"AA_Bottom_TabBar",
             "multiview"=>true,
-            "optionWidth"=>130,
+            "optionWidth"=>200,
             "view_id"=>$id."_Multiview",
             "type"=>"bottom"
         ));
@@ -2806,6 +3480,9 @@ Class AA_SierModule extends AA_GenericModule
         //immagine
         $platform=AA_Platform::GetInstance();
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
+
+        $minWidthListeItem=350;
+        $ListeItemsForRow=intval($_REQUEST['vw']/$minWidthListeItem);
 
         foreach($object->GetCoalizioni($params) as $id_coalizione=>$curCoalizione)
         {
@@ -2913,7 +3590,7 @@ Class AA_SierModule extends AA_GenericModule
                     "align"=>"right",
                     "width"=>120,
                     "tooltip"=>"Aggiungi Lista",
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCoalizioniListaDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."}]},'$this->id')"
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewListaDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."}]},'$this->id')"
                 ));
 
                 $toolbar->AddElement($add_lista_btn);
@@ -2925,6 +3602,9 @@ Class AA_SierModule extends AA_GenericModule
             $coalizione_liste_box->AddRow($toolbar);
 
             $liste=$curCoalizione->GetListe();
+            
+            //AA_Log::Log(__METHOD__." - liste: ".print_r($liste,true),100);
+
             if(sizeof($liste)>0)
             {
                 $dataview_liste_data=array();
@@ -2935,16 +3615,28 @@ Class AA_SierModule extends AA_GenericModule
                     {
                         $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
                     }
-                    $dataview_liste_data[]=array("id"=>$id_lista,"id_coalizione"=>$curLista->GetProp('id_coalizione'),"denominazione"=>$curLista->GetProp('denominazione'),'image'=>$curImagePath);
+
+                    if($canModify)
+                    {
+                        $modify="<a title='Modifica' class='AA_Button_Link' onclick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"GetSierModifyListaDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."},{id_lista:".$curLista->GetProp('id')."}]},\"$this->id\")'><span class='mdi mdi-pencil'></span></a>";
+                        $trash="<a title='Elimina' class='AA_Button_Link AA_DataTable_Ops_Button_Red' onclick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"GetSierTrashListaDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."},{id_lista:".$curLista->GetProp('id')."}]},\"$this->id\")'><span class='mdi mdi-trash-can'></span></a>";    
+                    }
+                    else
+                    {
+                        $modify="&nbsp;";
+                        $trash="&nbsp;";
+                    }
+                    
+                    $dataview_liste_data[]=array("id"=>$id_lista,"id_coalizione"=>$curLista->GetProp('id_coalizione'),"denominazione"=>$curLista->GetProp('denominazione'),'image'=>$curImagePath,'modify'=>$modify,'trash'=>$trash);
                 }
 
-                $liste_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
-                . "<div><img src='#image#' width='90%'/></div><div style='height: 100%;display:flex; align-items: center'><span class='AA_DataView_ItemTitle'>#denominazione#</span></div></div>"
-                . "<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli degli incarichi' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
+                $liste_template="<div style='display: flex; align-items: center; height: 100%; justify-content: space-between;'><div style='display: flex; align-items: center; width: 270px; padding: 5px;'>"
+                . "<img src='#image#' width='50px'/><div style='height: 100%;display:flex; align-items: center; justify-content: space-between'><span style='margin-left: 1em; font-weight: 700;'>#denominazione#</span></div></div>"
+                . "<div style='display: flex;  align-items: center; justify-content: space-between; height: 100%; padding: 5px; width: 70px'>#modify#&nbsp;#trash#</div></div>";
                 
                 $dataview_liste=new AA_JSON_Template_Generic($curId."_Liste",array(
                     "view"=>"dataview",
-                    "xCount"=>2,
+                    "xCount"=>$ListeItemsForRow,
                     "module_id"=>$this->id,
                     "type"=>array(
                         "type"=>"tiles",
@@ -3621,6 +4313,117 @@ Class AA_SierModule extends AA_GenericModule
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
             $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task aggiungi Lista
+    public function Task_GetSierAddNewListaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo Coalizione non valido (".$_REQUEST['id_coalizione'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierAddNewListaDlg($object,$coalizione)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task aggiungi Lista
+    public function Task_GetSierModifyListaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo Coalizione non valido (".$_REQUEST['id_coalizione'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $liste=$coalizione->GetListe();
+        //AA_Log::Log(__METHOD__." - liste: ".print_r($liste,true),100);
+
+        if(!isset($liste[$_REQUEST['id_lista']]))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo Lista non valido (".$_REQUEST['id_lista'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        $lista=$liste[$_REQUEST['id_lista']];
+        //AA_Log::Log(__METHOD__." - lista: ".print_r($lista,true),100);
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierModifyListaDlg($object,$coalizione,$lista)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
             $task->SetLog($sTaskLog);
         
             return false;
