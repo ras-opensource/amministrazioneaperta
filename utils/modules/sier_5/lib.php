@@ -235,7 +235,7 @@ Class AA_SierCandidato
         $this->aProps['nome']="";
         $this->aProps['cognome']="";
         $this->aProps['cv']="";
-        $this->aProps['estratto']="";
+        $this->aProps['cg']="";
 
         if(is_array($params)) $this->Parse($params);
     }
