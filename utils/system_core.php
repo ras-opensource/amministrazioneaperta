@@ -933,7 +933,9 @@ class AA_User
 
                     //New stuff
                     AA_Log::Log(get_class() . "->UserAuth($sToken,$sUserName, $sUserPwd) - Autenticazione avvenuta con successo (credenziali corrette).", 50);
-                    $_SESSION['token'] = AA_User::GenerateToken($rs['id'],$remember_me);
+                    $concurrent=false;
+                    if(isset($rs['concurrent']) && $rs['concurrent'] > 0) $concurrent=true;
+                    $_SESSION['token'] = AA_User::GenerateToken($rs['id'],$remember_me,$concurrent);
 
                     if($remember_me)
                     {
@@ -1274,18 +1276,21 @@ class AA_User
     }
 
     //Genera il token di autenticazione
-    static private function GenerateToken($id_user, $remember_me=false)
+    static private function GenerateToken($id_user, $remember_me=false, $concurrent_access=false)
     {
-        AA_Log::Log(get_class() . "->GenerateToken($id_user)");
+        //AA_Log::Log(get_class() . "->GenerateToken($id_user)");
 
         $token = hash("sha256", $id_user . date("Y-m-d H:i:s") . uniqid() . $_SERVER['REMOTE_ADDR']);
 
-        AA_Log::Log(get_class() . "->GenerateToken($id_user) - new token: " . $token);
+        //AA_Log::Log(get_class() . "->GenerateToken($id_user) - new token: " . $token);
 
         $db = new AA_Database();
 
-        $query = "DELETE from tokens where id_utente='" . $id_user . "' and ip_src='" . $_SERVER['REMOTE_ADDR'] . "'";
-        $db->Query($query);
+        if(!$concurrent_access)
+        {
+            $query = "DELETE from tokens where id_utente='" . $id_user . "'";
+            $db->Query($query);    
+        }
 
         $query = "INSERT INTO tokens set token='" . $token . "', id_utente='" . $id_user . "',ip_src='" . $_SERVER['REMOTE_ADDR'] . "'";
 

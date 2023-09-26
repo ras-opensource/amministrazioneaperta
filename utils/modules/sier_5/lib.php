@@ -230,7 +230,9 @@ Class AA_SierCandidato
         //Definisce le proprietà dell'oggetto e i valori di default
         $this->aProps['id']=0;
         $this->aProps['id_lista']=0;
+        $this->aProps['lista']="";
         $this->aProps['id_coalizione']=0;
+        $this->aProps['coalizione']="";
         $this->aProps['circoscrizione']=0;
         $this->aProps['nome']="";
         $this->aProps['cognome']="";
@@ -546,7 +548,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista, from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($coalizione instanceof AA_SierCoalizioni)
         {
@@ -583,7 +585,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista, from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($filter !="")
         {
