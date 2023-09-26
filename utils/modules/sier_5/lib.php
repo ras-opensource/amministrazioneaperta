@@ -1367,6 +1367,8 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewSierLista");
         $taskManager->RegisterTask("GetSierModifyListaDlg");
         $taskManager->RegisterTask("UpdateSierLista");
+        $taskManager->RegisterTask("GetSierTrashListaDlg");
+        $taskManager->RegisterTask("DeleteSierLista");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -2368,6 +2370,53 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg trash lista
+    public function Template_GetSierTrashListaDlg($object=null,$coalizione=null,$lista=null)
+    {
+        $id=$this->id."_TrashSierLista_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina Lista", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("lista"=>$lista->GetProp("denominazione"));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"La seguente Lista verrà eliminata, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"lista", "header"=>"Denominazione", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteSierLista");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_coalizione"=>$coalizione->GetProp("id"),"id_lista"=>$lista->GetProp('id')));
+        
+        return $wnd;
+    }
+
     //Task Aggiungi allegato
     public function Task_AddNewSierAllegato($task)
     {
@@ -3255,6 +3304,50 @@ Class AA_SierModule extends AA_GenericModule
         
         $sTaskLog="<status id='status'>0</status><content id='content'>";
         $sTaskLog.= "Coalizione eliminata con successo.";
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    //Task elimina lista
+    public function Task_DeleteSierLista($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid() || $object->GetId()<=0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+ 
+        if(!$object->DeleteLista($_REQUEST['id_lista'],$_REQUEST['id_coalizione'],$this->oUser))
+        {   
+            $task->SetError("Errore durante l'eliminazione della lista: ".$_REQUEST['id_lista']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore durante l'eliminazione della lista: ".$_REQUEST['id_coalizione']."</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Lista eliminata con successo.";
         $sTaskLog.="</content>";
         $task->SetLog($sTaskLog);
 
@@ -4921,6 +5014,64 @@ Class AA_SierModule extends AA_GenericModule
 
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         $sTaskLog.= $this->Template_GetSierTrashCoalizioneDlg($object,$coalizione)->toBase64();
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    //Task sier trash lista
+    public function Task_GetSierTrashListaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid() || $object->GetId()<= 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if($coalizione==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo Coalizione non valido (".$_REQUEST['id_coalizione'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $liste=$coalizione->GetListe();
+        if(!isset($liste[$_REQUEST['id_lista']]))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo Lista non valido (".$_REQUEST['id_lista'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        $lista=$liste[$_REQUEST['id_lista']];
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetSierTrashListaDlg($object,$coalizione,$lista)->toBase64();
         $sTaskLog.="</content>";
         $task->SetLog($sTaskLog);
 
