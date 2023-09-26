@@ -628,6 +628,15 @@ class AA_User
         $this->oStruct = new AA_Struct();
     }
 
+    //Login multiplo
+    protected $nConcurrent=0;
+    public function IsConcurrentEnabled()
+    {
+        if($this->nConcurrent>0) return true;
+
+        return false;
+    }
+
     //Verifica se l'utente è valido
     public function IsValid()
     {
@@ -756,6 +765,7 @@ class AA_User
             $user->sPhone = $row[0]['phone'];
             $user->sLastLogin = $row[0]['lastlogin'];
             $user->sFlags = $row[0]['flags'];
+            $user->nConcurrent = $row[0]['concurrent'];
             $user->bIsValid = true;
 
             //Popola i dati della struttura
@@ -820,6 +830,7 @@ class AA_User
             $user->sPhone = $row[0]['phone'];
             $user->sFlags = $row[0]['flags'];
             $user->sLastLogin = $row[0]['lastlogin'];
+            $user->nConcurrent = $row[0]['concurrent'];
             $user->bIsValid = true;
 
             //Popola i dati della struttura
@@ -857,6 +868,7 @@ class AA_User
                 $user->sPhone = $curRow['phone'];
                 $user->nDisabled = $curRow['disable'];
                 $user->sLastLogin = $curRow['lastlogin'];
+                $user->nConcurrent = $curRow['concurrent'];
                 $user->bCurrentUser = false;
                 $user->bIsValid = true;
     
@@ -1747,6 +1759,8 @@ class AA_User
         $sql .= ",flags='" . $flags . "'";
         if (isset($params['disable'])) $sql .= ",disable='1'";
         else $sql .= ",disable='0'";
+        if (isset($params['concurrent']) && $params['concurrent']>0) $sql .= ",concurrent='1'";
+        else $sql .= ",concurrent='0'";
 
         if ($db->Query($sql) === false) {
             AA_Log::Log(get_class() . "->AddNewUser($params) - Errore: " . $db->lastError . " - nella query: " . $sql, 100);
@@ -1907,6 +1921,8 @@ class AA_User
             if ($this->IsSuperUser()) $sql .= ",flags='" . $flags . "'";
             if (isset($params['disable'])) $sql .= ",disable='1'";
             else $sql .= ",disable='0'";
+            if (isset($params['concurrent']) && $params['concurrent']>0) $sql .= ",concurrent='1'";
+            else $sql .= ",concurrent='0'";
         }
 
         $sql .= ",nome='" . addslashes($params['nome']) . "'";
@@ -2030,7 +2046,7 @@ class AA_User
         }
 
         //Verifica che non sia l'utente corrente
-        if (!$this->GetID() == $user->GetID()) {
+        if ($this->GetID() == $user->GetID()) {
             AA_Log::Log(get_class() . "->DeleteUser($idUser) - L'utente corrente (" . $this->GetUsername() . ") non può eliminare se stesso", 100);
             return false;
         }
