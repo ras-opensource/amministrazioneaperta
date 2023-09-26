@@ -364,6 +364,16 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             module.setRuntimeValue("accordionItemStatus", item.config.id, status);
                         }
                     }
+
+                    //Salva lo stato delle tabelle
+                    let tableObjs = obj.queryView({ view: "datatable" }, "all");
+                    if (Array.isArray(tableObjs) && tableObjs.length > 0) {
+                        for (item of tableObjs) {
+                            let status = item.getState();
+                            //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                            module.setRuntimeValue("datatableItemStatus", item.config.id, status);
+                        }
+                    }
                 }
 
                 if (bRefreshContent || !$$(idObj).config.initialized) {
@@ -541,6 +551,18 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                         module.unsetRuntimeValue("multiviewStatus", item.config.id);
                                         //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status del multiview (" + item.config.id + ")", status);
                                     }
+                                }
+                            }
+                        }
+
+                        //Ripristina lo status delle tabelle
+                        let tableObjs = obj.queryView({ view: "datatable" }, "all");
+                        if (Array.isArray(tableObjs) && tableObjs.length > 0) {
+                            for (item of tableObjs) {
+                                let status = module.getRuntimeValue("datatableItemStatus", item.config.id);
+                                if (AA_MainApp.utils.isDefined(status)) {
+                                    //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status della tabella (" + item.config.id + ")", status);
+                                    item.setState(status);
                                 }
                             }
                         }

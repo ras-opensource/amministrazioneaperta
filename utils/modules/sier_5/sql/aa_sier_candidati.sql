@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Set 12, 2023 alle 09:55
+-- Creato il: Set 26, 2023 alle 18:19
 -- Versione del server: 10.5.21-MariaDB
 -- Versione PHP: 8.2.10
 
@@ -27,17 +27,38 @@ SET time_zone = "+00:00";
 -- Struttura della tabella `aa_sier_candidati`
 --
 
-CREATE TABLE IF NOT EXISTS `aa_sier_candidati` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+CREATE TABLE `aa_sier_candidati` (
+  `id` int(11) UNSIGNED NOT NULL,
   `id_lista` int(11) UNSIGNED NOT NULL,
   `id_circoscrizione` int(11) UNSIGNED NOT NULL,
   `nome` varchar(255) NOT NULL,
   `cognome` varchar(255) NOT NULL,
   `cf` varchar(30) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `id_lista` (`id_lista`),
-  KEY `id_circoscrizione` (`id_circoscrizione`)
+  `cg` varchar(255) NOT NULL,
+  `cv` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+--
+-- Indici per le tabelle scaricate
+--
+
+--
+-- Indici per le tabelle `aa_sier_candidati`
+--
+ALTER TABLE `aa_sier_candidati`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_lista` (`id_lista`),
+  ADD KEY `id_circoscrizione` (`id_circoscrizione`);
+
+--
+-- AUTO_INCREMENT per le tabelle scaricate
+--
+
+--
+-- AUTO_INCREMENT per la tabella `aa_sier_candidati`
+--
+ALTER TABLE `aa_sier_candidati`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

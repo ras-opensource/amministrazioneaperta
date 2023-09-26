@@ -44,9 +44,8 @@ Class AA_Sier_Const extends AA_Const
                 8=>"Abilita l'esportazione dell'affluenza per la visualizzazione sul sito istituzionale",
                 16=>"Abilita l'esportazione dei risultati per la visualizzazione sul sito istituzionale"
             );
-
-            return static::$aFlags;
         }
+        return static::$aFlags;
     }
 
     static protected $aFlagsForTags=null;
@@ -54,7 +53,7 @@ Class AA_Sier_Const extends AA_Const
     {
         if(static::$aFlagsForTags==null)
         {
-            static::$aFlags=array(
+            static::$aFlagsForTags=array(
                 32=>"accesso",
                 256=>"dati generali",
                 1=>"corpo elettorale",
@@ -64,9 +63,39 @@ Class AA_Sier_Const extends AA_Const
                 8=>"export affluenza",
                 16=>"export risultati"
             );
-
-            return static::$aFlags;
         }
+        return static::$aFlagsForTags;
+    }
+
+    //Circoscrizioni
+    const AA_SIER_CIRCOSCRIZIONE_CAGLIARI=1;
+    const AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS=2;
+    const AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO=4;
+    const AA_SIER_CIRCOSCRIZIONE_NUORO=8;
+    const AA_SIER_CIRCOSCRIZIONE_OGLIASTRA=16;
+    const AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO=32;
+    const AA_SIER_CIRCOSCRIZIONE_ORISTANO=64;
+    const AA_SIER_CIRCOSCRIZIONE_SASSARI=128;
+
+    protected static $aCircoscrizioni=null;
+
+    public static function GetCircoscrizioni()
+    {
+        if(static::$aCircoscrizioni==null)
+        {
+            static::$aCircoscrizioni=array(
+                static::AA_SIER_CIRCOSCRIZIONE_CAGLIARI=>"Cagliari",
+                static::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS=>"Carbonia-Iglesias",
+                static::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO=>"Medio Campidano",
+                static::AA_SIER_CIRCOSCRIZIONE_NUORO=>"Nuoro",
+                static::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA=>"Ogliastra",
+                static::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO=>"Olbia-Tempio",
+                static::AA_SIER_CIRCOSCRIZIONE_ORISTANO=>"Oristano",
+                static::AA_SIER_CIRCOSCRIZIONE_SASSARI=>"Sassari"
+            );
+        }
+
+        return static::$aCircoscrizioni;
     }
 }
 
@@ -154,6 +183,59 @@ Class AA_SierLista
         $this->aProps['id_coalizione']=0;
         $this->aProps['denominazione']="";
         $this->aProps['image']="";
+        $this->aProps['candidati']=array();
+
+        if(is_array($params)) $this->Parse($params);
+    }
+
+    //imposta il valore di una propietà
+    public function SetProp($prop="",$value="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
+    }
+
+    //restituisce il valore di una propietà
+    public function GetProp($prop="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
+        else return "";
+    }
+
+    //restituisce tutte le propietà
+    public function GetProps()
+    {
+        return $this->aProps;
+    }
+}
+
+#Classe CAndidato
+Class AA_SierCandidato
+{
+    protected $aProps=array();
+    
+    //Importa i valori da un array
+    protected function Parse($values=null)
+    {
+        if(is_array($values))
+        {
+            foreach($values as $key=>$value)
+            {
+                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
+            }
+        }
+    }
+
+    public function __construct($params=null)
+    {
+        //Definisce le proprietà dell'oggetto e i valori di default
+        $this->aProps['id']=0;
+        $this->aProps['id_lista']=0;
+        $this->aProps['id_coalizione']=0;
+        $this->aProps['circoscrizione']=0;
+        $this->aProps['nome']="";
+        $this->aProps['cognome']="";
+        $this->aProps['cv']="";
+        $this->aProps['estratto']="";
 
         if(is_array($params)) $this->Parse($params);
     }
@@ -186,6 +268,8 @@ Class AA_Sier extends AA_Object_V2
     const AA_ALLEGATI_DB_TABLE="aa_sier_allegati";
     const AA_COALIZIONI_DB_TABLE="aa_sier_coalizioni";
     const AA_LISTE_DB_TABLE="aa_sier_liste";
+    const AA_CANDIDATI_DB_TABLE="aa_sier_candidati";
+    const AA_COMUNI_DB_TABLE="aa_sier_comuni";
 
     //Funzione di cancellazione
     protected function DeleteData($idData = 0, $user = null)
@@ -198,6 +282,21 @@ Class AA_Sier extends AA_Object_V2
         foreach($this->GetAllegati($idData) as $curAllegato)
         {
             if(!$this->DeleteAllegato($curAllegato,$user))
+            {
+                return false;
+            }
+        }
+
+        //Cancella comuni
+        //to do
+
+        //Cancella candidati
+        //to do
+
+        //Cancella le coalizioni e le liste
+        foreach($this->GetCoalizioni() as $curCoalizione)
+        {
+            if(!$this->DeleteCoalizione($curCoalizione,$user))
             {
                 return false;
             }
@@ -369,6 +468,143 @@ Class AA_Sier extends AA_Object_V2
                 }
 
                 $result = new AA_SierCoalizioni($curRow);
+            }
+        }
+
+        return $result;
+    }
+
+    //Restituisce le liste
+    public function GetListe($coalizione=null)
+    {
+        if(!$this->bValid) return array();
+
+        $db=new AA_Database();
+        $query="SELECT * from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+
+        if($coalizione instanceof AA_SierCoalizioni)
+        {
+            $query.=" AND ".static::AA_COALIZIONI_DB_TABLE.".id='".addslashes($coalizione->GetProp('id'))."'";
+        }
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+            return array();
+        }
+
+        $result=array();
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $result[$curRow['id']]=new AA_SierLista($curRow);
+            }
+        }
+
+        return $result;
+    }
+
+    //restituisce la lista indicata
+    public function GetLista($id_lista="")
+    {
+        if(!$this->bValid) return array();
+
+        $db=new AA_Database();
+        $query="SELECT * from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+
+        if($id_lista > 0)
+        {
+            $query.=" AND ".static::AA_LISTE_DB_TABLE.".id='".addslashes($id_lista)."'";
+        }
+
+        $query.=" LIMIT 1";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+            return null;
+        }
+
+        $result=null;
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $result=new AA_SierLista($curRow);
+            }
+        }
+
+        return $result;
+    }
+
+    //Restituisce i candidati
+    public function GetCandidati($coalizione=null,$lista=null)
+    {
+        if(!$this->bValid) return array();
+
+        $db=new AA_Database();
+        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+
+        if($coalizione instanceof AA_SierCoalizioni)
+        {
+            $query.=" AND ".static::AA_COALIZIONI_DB_TABLE.".id='".addslashes($coalizione->GetProp('id'))."'";
+        }
+
+        if($lista instanceof AA_SierLista)
+        {
+            $query.=" AND ".static::AA_CANDIDATI_DB_TABLE.".id_lista='".addslashes($lista->GetProp('id'))."'";
+        }
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+            return array();
+        }
+
+        $result=array();
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $result[$curRow['id']]=new AA_SierCandidato($curRow);
+            }
+        }
+
+        return $result;
+    }
+
+    //Restituisce un candidato specifico
+    public function GetCandidato($filter="")
+    {
+        if(!$this->bValid) return array();
+
+        $db=new AA_Database();
+        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+
+        if($filter !="")
+        {
+            $query.=" AND (".static::AA_COALIZIONI_DB_TABLE.".nome like '".addslashes($filter)."' OR ".static::AA_COALIZIONI_DB_TABLE.".cognome like '".addslashes($filter)."' OR ".static::AA_COALIZIONI_DB_TABLE.".cf like '".addslashes($filter)."')";
+        }
+
+        $query.=" LIMIT 1";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+            return null;
+        }
+
+        $result=null;
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $result=new AA_SierCandidato($curRow);
             }
         }
 
@@ -3894,64 +4130,139 @@ Class AA_SierModule extends AA_GenericModule
     //Template section detail, tab candidati
     public function TemplateSierDettaglio_Candidati_Tab($object=null)
     {
-       $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX;
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX;
 
         if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
-        $rows_fixed_height=50;
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
-        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
-
-        //Descrizione
-        $value=$object->GetDescr();
-        if($value=="")$value="n.d.";
-        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Descrizione:","value"=>$value)
-        ));
-
-        //anno riferimento
-        $value=$object->GetProp("AnnoRiferimento");
-        if($value=="")$value="n.d.";
-        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Anno:","value"=>$value)
-        ));
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         
-        //estremi
-        $value= $object->GetProp("Estremi");
-        if($value=="") $value="n.d.";
-        $estremi=new AA_JSON_Template_Template($id."_Estremi",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Estremi atto:","value"=>$value)
-        ));
-
-        $modalita=null;
-        $contraente=null;
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         
-        //prima riga
-        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($anno_rif);
-        if($modalita) $riga->AddCol($modalita);
-        if($contraente) $riga->AddCol($contraente);
-        $riga->AddCol($estremi);
-        $layout->AddRow($riga);
-        
-        //seconda riga
-        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","gravity"=>1)));
-        //$riga->addCol($oggetto);
-        //$layout->AddRow($riga);
-
-        //terza riga
-        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
-        $riga->addCol($descr);
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
-        {
-            $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
+        //Pulsante di modifica
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-account-plus",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi un nuovo candidato",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
         }
-        else $riga->addCol($this->TemplateDettaglio_Allegati($object,$id));
+        
+        $layout->addRow($toolbar);        
+        $columns=array(
+            array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"cognome","header"=>array("<div style='text-align: center'>Cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
+            array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"cv","header"=>array("<div style='text-align: center'>Curriculum</div>"),"width"=>60, "css"=>array("text-align"=>"center")),
+            array("id"=>"cg","header"=>array("<div style='text-align: center'>Casellario</div>"),"width"=>60, "css"=>array("text-align"=>"center")),
+            array("id"=>"circoscrizione_desc","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"lista","header"=>array("<div style='text-align: center'>Lista</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"coalizione","header"=>array("<div style='text-align: center'>Coalizione</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text")
+        );
 
-        $layout->AddRow($riga);
+        if($canModify)
+        {
+            $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
+        }
+
+        $data=array();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+
+        $candidati=$object->GetCandidati();
+        foreach($candidati as $curCandidato)
+        {
+            $data[]=$curCandidato->GetProps();
+            $index=sizeof($data)-1;
+
+            //Circoscrizione
+            $data[$index]['circoscrizione_desc']=$circoscrizioni[$curCandidato->GetProp("circoscrizione")];
+
+            //Curriculum
+            if($curCandidato->GetProp('cv') !="")
+            {
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cv').'"},"'.$this->id.'")';
+                $data[$index]['cv']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Consulta' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+                if($canModify)
+                {
+                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                    $data[$index]['cv'].="<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button' title='Elimina' onClick='".$trash."'><span class='mdi mdi-pencil'></span></a>";
+                }
+                $data[$index]['cv'].="</div>";
+            }
+            else
+            {
+                if($canModify)
+                {
+                    $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAddNewCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                    $data['cv'].="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Carica' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                }
+            }
+
+            //Casellario giudiziale
+            if($curCandidato->GetProp('cg') !="")
+            {
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cg').'"},"'.$this->id.'")';
+                $data[$index]['cg']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Consulta' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+                if($canModify)
+                {
+                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                    $data[$index]['cg'].="<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button' title='Elimina' onClick='".$trash."'><span class='mdi mdi-pencil'></span></a>";
+                }
+                $data[$index]['cg'].="</div>";
+            }
+            else
+            {
+                if($canModify)
+                {
+                    $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAddNewCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                    $data['cg'].="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Carica' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                }
+            }
+
+            if($canModify)
+            {
+                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                $data[$index]['ops']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            }
+        }
+
+        if(sizeof($candidati) > 0)
+        {
+            $table=new AA_JSON_Template_Generic($id."_Candidati", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+    
+            $layout->addRow($table);
+        }
+        else
+        {
+            $layout->addRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti candidati.</span></div>")));
+        }
+       
+        //$layout->addRow(new AA_JSON_Template_Generic($id."_spacer"));
 
         return $layout;
     }
