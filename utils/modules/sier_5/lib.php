@@ -3742,6 +3742,8 @@ Class AA_SierModule extends AA_GenericModule
         if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
         $rows_fixed_height=50;
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
 
@@ -3750,7 +3752,8 @@ Class AA_SierModule extends AA_GenericModule
         $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Descrizione:","value"=>$value)
+            "data"=>array("title"=>"Descrizione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
         //anno riferimento
@@ -3777,23 +3780,19 @@ Class AA_SierModule extends AA_GenericModule
 
         //seconda riga
         $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $riga->addCol($descr);
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
-        {
-            $riga->addCol($this->TemplateDettaglio_Giornate($object,$id,true));
-        }
-        else $riga->addCol($this->TemplateDettaglio_Giornate($object,$id));
+        $layout_gen=new AA_JSON_Template_Layout($id."_DescrNoteLayout",array("gravity"=>3,"type"=>"clean"));
+        $layout_gen->addRow($descr);
+        $layout_gen->addRow($note);
+        $riga->addCol($layout_gen);
 
-        $layout->AddRow($riga);
+        $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,$canModify));
+        $riga->addCol($this->TemplateDettaglio_Giornate($object,$id,$canModify));
+
+        //$layout->AddRow($riga);
 
         //terza riga
-        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>1));
-        $riga->addCol($note);
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
-        {
-            $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
-        }
-        else $riga->addCol($this->TemplateDettaglio_Allegati($object,$id));
+        //$riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>1));
+      
 
         $layout->AddRow($riga);
 
@@ -5668,7 +5667,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         #documenti----------------------------------
         $curId=$id."_Layout_Allegati";
-        $provvedimenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-left"=>"1px solid #dedede !important;")));
+        $provvedimenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","gravity"=>4,"css"=>array("border-left"=>"1px solid gray !important;","border-top"=>"1px solid gray !important;")));
 
         $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -5751,7 +5750,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         #documenti----------------------------------
         $curId=$id."_Layout_Allegati";
-        $giornate=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-left"=>"1px solid #dedede !important;")));
+        $giornate=new AA_JSON_Template_Layout($curId,array("type"=>"clean","gravity"=>2,"minWidth"=>400,"css"=>array("border-left"=>"1px solid gray !important;","border-top"=>"1px solid gray !important;")));
 
         $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -6101,9 +6100,7 @@ Class AA_SierAllegati
         $this->estremi=$estremi;
         $this->sFile=$file;
         $this->nTipo=$tipo;
-        if($aggiornamento == "") $this->sAggiornamento=date("Y-m-d");
-        else $this->sAggiornamento=$aggiornamento;
-
+        $this->sAggiornamento=$aggiornamento;
     }
     
     //Download del documento
