@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Set 12, 2023 alle 09:55
+-- Creato il: Set 28, 2023 alle 11:42
 -- Versione del server: 10.5.21-MariaDB
 -- Versione PHP: 8.2.10
 
@@ -27,13 +27,35 @@ SET time_zone = "+00:00";
 -- Struttura della tabella `aa_sier_allegati`
 --
 
-CREATE TABLE IF NOT EXISTS `aa_sier_allegati` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+CREATE TABLE `aa_sier_allegati` (
+  `id` int(11) UNSIGNED NOT NULL,
   `estremi` varchar(255) NOT NULL,
   `url` varchar(255) NOT NULL,
   `id_sier` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`)
+  `file` varchar(255) NOT NULL,
+  `tipo` int(5) NOT NULL DEFAULT 0,
+  `aggiornamento` varchar(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+--
+-- Indici per le tabelle scaricate
+--
+
+--
+-- Indici per le tabelle `aa_sier_allegati`
+--
+ALTER TABLE `aa_sier_allegati`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT per le tabelle scaricate
+--
+
+--
+-- AUTO_INCREMENT per la tabella `aa_sier_allegati`
+--
+ALTER TABLE `aa_sier_allegati`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

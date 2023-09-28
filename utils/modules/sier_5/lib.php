@@ -97,6 +97,28 @@ Class AA_Sier_Const extends AA_Const
 
         return static::$aCircoscrizioni;
     }
+
+    protected static $aTipoAllegati=null;
+    const AA_SIER_ALLEGATO_INFORMAZIONI=1;
+    const AA_SIER_ALLEGATO_NORMATIVA=2;
+    const AA_SIER_ALLEGATO_MODULISTICA=4;
+    const AA_SIER_ALLEGATO_COMUNICAZIONI=8;
+    const AA_SIER_ALLEGATO_RISULTATI=16;
+    public static function GetTipoAllegati()
+    {
+        if(static::$aTipoAllegati==null)
+        {
+            static::$aTipoAllegati=array(
+                static::AA_SIER_ALLEGATO_INFORMAZIONI=>"Informazioni generali",
+                static::AA_SIER_ALLEGATO_NORMATIVA=>"Normativa",
+                static::AA_SIER_ALLEGATO_MODULISTICA=>"Modulistica",
+                static::AA_SIER_ALLEGATO_COMUNICAZIONI=>"Comunicazioni",
+                static::AA_SIER_ALLEGATO_RISULTATI=>"Risultati"
+            );
+        }
+
+        return static::$aTipoAllegati;
+    }
 }
 
 #Classe Coalizioni
@@ -548,7 +570,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista, from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($coalizione instanceof AA_SierCoalizioni)
         {
@@ -585,7 +607,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista, from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($filter !="")
         {
@@ -751,7 +773,7 @@ Class AA_Sier extends AA_Object_V2
         if($db->GetAffectedRows() > 0)
         {
             $rs=$db->GetResultSet();
-            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file']);
+            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento']);
             
             return $object;
         }
@@ -1298,6 +1320,8 @@ Class AA_Sier extends AA_Object_V2
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
         $query.=", file='".addslashes($allegato->GetFileHash())."'";
+        $query.=", tipo='".addslashes($allegato->GetTipo())."'";
+        $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
         
         $db= new AA_Database();
         
@@ -1366,6 +1390,8 @@ Class AA_Sier extends AA_Object_V2
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
         $query.=", file='".addslashes($allegato->GetFileHash())."'";
+        $query.=", tipo='".addslashes($allegato->GetTipo())."'";
+        $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
         $query.=" WHERE id='".addslashes($allegato->GetId())."' LIMIT 1";
         
         $db= new AA_Database();
@@ -1509,7 +1535,7 @@ Class AA_Sier extends AA_Object_V2
         $rs=$db->GetResultSet();
         foreach($rs as $curRec)
         {   
-            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file']);
+            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento']);
             $result[$curRec['id']]=$allegato;
         }
 
@@ -2188,7 +2214,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
-        $form_data=array();
+        $form_data=array("aggiornamento"=>date("Y-m-d"));
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi allegato/link", $this->id,$form_data,$form_data);
         
@@ -2198,7 +2224,16 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(480);
+        $wnd->SetHeight(540);
+
+        //tipo
+        $tipologia=AA_Sier_Const::GetTipoAllegati();
+        $options=array();
+        foreach($tipologia as $id=>$descr)
+        {
+            $options[]=array("id"=>$id,"value"=>$descr);
+        }
+        $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));
 
         //descrizione
         $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
@@ -2236,6 +2271,8 @@ Class AA_SierModule extends AA_GenericModule
         $form_data=array();
         $form_data["estremi"]=$allegato->GetEstremi();
         $form_data["url"]=$allegato->GetUrl();
+        $form_data["tipo"]=$allegato->GetTipo();
+        $form_data["aggiornamento"]=date("Y-m-d");
         
         $wnd=new AA_GenericFormDlg($id, "Modifica allegato/link", $this->id,$form_data,$form_data);
         
@@ -2245,7 +2282,16 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(480);
+        $wnd->SetHeight(540);
+
+        //tipo
+        $tipologia=AA_Sier_Const::GetTipoAllegati();
+        $options=array();
+        foreach($tipologia as $id=>$descr)
+        {
+            $options[]=array("id"=>$id,"value"=>$descr);
+        }
+        $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));
 
         //descrizione
         $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
@@ -2768,7 +2814,9 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash);
+        $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
+        if($aggiornamento=="") $aggiornamento=date("Y-m-d");
+        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento);
         
         //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
         
@@ -5126,7 +5174,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         //Se c'è un file uploadato l'url non viene salvata.
-        $fileHash="";
+        $fileHash=$allegato->GetFileHash();
         if($uploadedFile->isValid()) 
         {
             $_REQUEST['url']="";
@@ -5167,7 +5215,9 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash);
+        $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
+        if($aggiornamento=="") $aggiornamento=date("Y-m-d");
+        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento);
         
         if(!$object->UpdateAllegato($allegato, $this->oUser))
         {        
@@ -5652,16 +5702,20 @@ Class AA_SierModule extends AA_GenericModule
 
         if($canModify)
         {
-            $options_documenti[]=array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
         else
         {
-            $options_documenti[]=array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
 
-        $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
+        $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
 
         $documenti_data=array();
         foreach($object->GetAllegati() as $id_doc=>$curDoc)
@@ -5682,7 +5736,7 @@ Class AA_SierModule extends AA_GenericModule
             $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-            $documenti_data[]=array("id"=>$id_doc,"estremi"=>$curDoc->GetEstremi(),"ops"=>$ops);
+            $documenti_data[]=array("id"=>$id_doc,"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>$curDoc->GetTipoDescr(),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) $provvedimenti->AddRow($documenti);
@@ -5955,6 +6009,23 @@ Class AA_SierAllegati
         $this->url=$url;
     }
     
+    protected $nTipo=0;
+    public function GetTipo()
+    {
+        return $this->nTipo;
+    }
+    public function SetTipo($val=0)
+    {
+        if($val > 0) $this->nTipo=$val;
+    }
+    public function GetTipoDescr()
+    {
+        $tipo=AA_Sier_Const::GetTipoAllegati();
+        
+        if(isset($tipo[$this->nTipo])) return $tipo[$this->nTipo];
+        return "n.d.";
+    }
+
     protected $estremi="";
     public function GetEstremi()
     {
@@ -5963,6 +6034,16 @@ Class AA_SierAllegati
     public function SetEstremi($val="")
     {
         $this->estremi=$val;
+    }
+
+    protected $sAggiornamento="";
+    public function GetAggiornamento()
+    {
+        return $this->sAggiornamento;
+    }
+    public function SetAggiornamento($val="")
+    {
+        $this->sAggiornamento=$val;
     }
 
     protected $sFile="";
@@ -6010,7 +6091,7 @@ Class AA_SierAllegati
         $this->id_sier=$id;
     }
     
-    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="")
+    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="",$tipo=0,$aggiornamento="")
     {
         //AA_Log::Log(__METHOD__." id: $id, id_organismo: $id_organismo, tipo: $tipo, url: $url",100);
         
@@ -6019,6 +6100,10 @@ Class AA_SierAllegati
         $this->url=$url;
         $this->estremi=$estremi;
         $this->sFile=$file;
+        $this->nTipo=$tipo;
+        if($aggiornamento == "") $this->sAggiornamento=date("Y-m-d");
+        else $this->sAggiornamento=$aggiornamento;
+
     }
     
     //Download del documento
