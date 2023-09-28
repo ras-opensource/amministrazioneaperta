@@ -98,6 +98,17 @@ Class AA_Sier_Const extends AA_Const
         return static::$aCircoscrizioni;
     }
 
+    public static function GetCircoscrizione($id=0)
+    {
+        $circoscrizioni=static::GetCircoscrizioni();
+        if(isset($circoscrizioni[$id]))
+        {
+            return array('id'=>$id,"value"=>$circoscrizioni[$id]);
+        }
+
+        return null;
+    }
+
     protected static $aTipoAllegati=null;
     const AA_SIER_ALLEGATO_INFORMAZIONI=1;
     const AA_SIER_ALLEGATO_NORMATIVA=2;
@@ -255,6 +266,7 @@ Class AA_SierCandidato
         $this->aProps['lista']="";
         $this->aProps['id_coalizione']=0;
         $this->aProps['coalizione']="";
+        $this->aProps['id_circoscrizione']=0;
         $this->aProps['circoscrizione']=0;
         $this->aProps['nome']="";
         $this->aProps['cognome']="";
@@ -396,7 +408,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT * from ".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."'";
+        $query="SELECT ".static::AA_COALIZIONI_DB_TABLE.".* from ".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."'";
 
         //eventuali parametri di filtraggio
         if(is_array($params))
@@ -460,7 +472,7 @@ Class AA_Sier extends AA_Object_V2
         }
 
         $db=new AA_Database();
-        $query="SELECT * from ".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."' AND id='".addslashes($id_coalizione)."' LIMIT 1";
+        $query="SELECT ".static::AA_COALIZIONI_DB_TABLE.".* from ".static::AA_COALIZIONI_DB_TABLE." WHERE id_sier='".$this->nId_Data."' AND id='".addslashes($id_coalizione)."' LIMIT 1";
 
         if(!$db->Query($query))
         {
@@ -504,7 +516,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT * from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT ".static::AA_LISTE_DB_TABLE.".* from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($coalizione instanceof AA_SierCoalizioni)
         {
@@ -527,6 +539,8 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
+        AA_Log::Log(__METHOD__." - liste: ".print_r($result,true),100);
+
         return $result;
     }
 
@@ -536,7 +550,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT * from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT ".static::AA_LISTE_DB_TABLE.".* from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($id_lista > 0)
         {
@@ -550,6 +564,8 @@ Class AA_Sier extends AA_Object_V2
             AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
             return null;
         }
+
+        AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=null;
         if($db->GetAffectedRows()>0)
@@ -570,7 +586,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT ".static::AA_CANDIDATI_DB_TABLE.".*,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($coalizione instanceof AA_SierCoalizioni)
         {
@@ -581,6 +597,8 @@ Class AA_Sier extends AA_Object_V2
         {
             $query.=" AND ".static::AA_CANDIDATI_DB_TABLE.".id_lista='".addslashes($lista->GetProp('id'))."'";
         }
+
+        $query.=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".nome, ".static::AA_CANDIDATI_DB_TABLE.".cognome";
 
         if(!$db->Query($query))
         {
@@ -594,6 +612,8 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
+                $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
+                if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
                 $result[$curRow['id']]=new AA_SierCandidato($curRow);
             }
         }
@@ -607,7 +627,7 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT *,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT ".static::AA_CANDIDATI_DB_TABLE.".*,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($filter !="")
         {
@@ -628,6 +648,8 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
+                $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
+                if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
                 $result=new AA_SierCandidato($curRow);
             }
         }
@@ -1266,6 +1288,71 @@ Class AA_Sier extends AA_Object_V2
         return true;
     }
 
+    //Aggiunge un nuovo candidato
+    public function AddNewCandidato($candidato=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($candidato instanceof AA_SierCandidato))
+        {
+            AA_Log::Log(__METHOD__." - Candidato non valido.", 100,false,true);
+            return false;
+        }
+
+        $query="INSERT INTO ".static::AA_CANDIDATI_DB_TABLE." SET id_circoscrizione='".$candidato->GetProp("id_circoscrizione")."'";
+        $query.=", id_lista='".addslashes($candidato->GetProp("id_lista"))."'";
+        $query.=", nome='".addslashes($candidato->GetProp("nome"))."'";
+        $query.=", cognome='".addslashes($candidato->GetProp("cognome"))."'";
+        $query.=", cf='".addslashes($candidato->GetProp("cf"))."'";
+        $query.=", cv='".addslashes($candidato->GetProp("cv"))."'";
+        $query.=", cg='".addslashes($candidato->GetProp("cg"))."'";
+        
+        $db= new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Aggiunta nuovo candidato: ".$candidato->GetProp("nome")." ".$candidato->GetProp("cognome")))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     //Aggiunge un nuovo allegato
     public function AddNewAllegato($allegato=null, $user=null)
     {
@@ -1273,7 +1360,7 @@ Class AA_Sier extends AA_Object_V2
 
         if(!$this->isValid())
         {
-                AA_Log::Log(__METHOD__." - provvedimento non valido.", 100,false,true);
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
                 return false;            
         }
         
@@ -1343,7 +1430,7 @@ Class AA_Sier extends AA_Object_V2
 
         if(!$this->isValid())
         {
-                AA_Log::Log(__METHOD__." - provvedimento non valido.", 100,false,true);
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
                 return false;            
         }
         
@@ -1362,7 +1449,7 @@ Class AA_Sier extends AA_Object_V2
         //Verifica Flags
         if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
         {
-            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare il provvedimento.", 100,false,true);
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'elemento.", 100,false,true);
             return false;
         }
 
@@ -1414,7 +1501,7 @@ Class AA_Sier extends AA_Object_V2
 
         if(!$this->isValid())
         {
-                AA_Log::Log(__METHOD__." - provvedimento non valido.", 100,false,true);
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
                 return false;            
         }
         
@@ -1433,7 +1520,7 @@ Class AA_Sier extends AA_Object_V2
         //Verifica Flags
         if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
         {
-            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare il provvedimento.", 100,false,true);
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'elemento.", 100,false,true);
             return false;
         }
 
@@ -1521,7 +1608,7 @@ Class AA_Sier extends AA_Object_V2
 
         $query.=" id_sier='".$idData."'";
         
-        $query.= " ORDER by id DESC";
+        $query.= " ORDER by aggiornamento DESC, id DESC";
 
         $db=new AA_Database();
         if(!$db->Query($query))
@@ -1633,6 +1720,11 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateSierLista");
         $taskManager->RegisterTask("GetSierTrashListaDlg");
         $taskManager->RegisterTask("DeleteSierLista");
+
+        //candidati
+        $taskManager->RegisterTask("GetSierAddNewCandidatoDlg");
+        $taskManager->RegisterTask("AddNewSierCandidato");
+
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -1856,7 +1948,7 @@ Class AA_SierModule extends AA_GenericModule
                 }
 
                 if(sizeof($ids_final) > 1) $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I seguenti ".sizeof($ids_final)." provvedimenti/accordi verranno pubblicati, vuoi procedere?")));
-                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente provvedimento/accordo verrà pubblicato, vuoi procedere?")));
+                else $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente elemento/accordo verrà pubblicato, vuoi procedere?")));
 
                 $table=new AA_JSON_Template_Generic($id."_Table", array(
                     "view"=>"datatable",
@@ -2203,6 +2295,75 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_coalizione"=>$coalizione->GetProp("id")));
         $wnd->SetSaveTask("UpdateSierCoalizione");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi candidato
+    public function Template_GetSierAddNewCandidatoDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierAddNewCandidatoDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("aggiornamento"=>date("Y-m-d"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi candidato", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(720);
+
+        //Circoscrizione
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        $options=array();
+        foreach($circoscrizioni as $id=>$descr)
+        {
+            $options[]=array("id"=>$id,"value"=>$descr);
+        }
+        $wnd->AddSelectField("id_circoscrizione", "Circoscrizione", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
+
+        //Lista
+        $liste=$object->GetListe();
+        $options=array();
+        foreach($liste as $id=>$lista)
+        {
+            $options[]=array("id"=>$id,"value"=>$lista->GetProp("denominazione"));
+        }
+        $wnd->AddSelectField("id_lista", "Lista", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
+
+        //nome
+        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
+        
+        //Cognome
+        $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome del candidato", "placeholder" => "es. Verdi"));
+
+        //cf
+        $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $section=new AA_FieldSet($id."_Section_Url","Curriculum - Inserire un'url oppure scegliere un file");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewCandidatoCV","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSierCandidato");
         
         return $wnd;
     }
@@ -2711,8 +2872,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if(!$object->isValid())
         {
-            $task->SetError("Identificativo provvedimento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo provvedimento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
             $task->SetLog($sTaskLog);
 
             //Elimina il file temporaneo
@@ -2733,8 +2894,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare il provvedimento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare il provvedimento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             //Elimina il file temporaneo
@@ -2818,7 +2979,7 @@ Class AA_SierModule extends AA_GenericModule
         if($aggiornamento=="") $aggiornamento=date("Y-m-d");
         $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento);
         
-        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($provvedimento, true),100);
+        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($elemento, true),100);
         
         if(!$object->AddNewAllegato($allegato, $this->oUser))
         {        
@@ -2831,6 +2992,170 @@ Class AA_SierModule extends AA_GenericModule
         
         $sTaskLog="<status id='status'>0</status><content id='content'>";
         $sTaskLog.= "Allegato caricato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task Aggiungi candidato
+    public function Task_AddNewSierCandidato($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCV");
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;            
+        }
+        
+        $circoscrizione=AA_Sier_Const::GetCircoscrizione($_REQUEST['id_circoscrizione']);
+        AA_Log::Log(__METHOD__." - circoscrizione: ".print_r($circoscrizione,true),100);
+        if(!is_array($circoscrizione))
+        {
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetError("Parametri non validi occorre indicare una circoscrizione valida.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare una circoscrizione valida.</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            
+            return false;
+        }
+
+        $lista=$object->GetLista($_REQUEST['id_lista']);
+        AA_Log::Log(__METHOD__." - lista: ".print_r($lista,true),100);
+        if(!($lista instanceof AA_SierLista))
+        {
+            AA_Log::Log(__METHOD__." - "."Lista non valida: ".print_r($lista,true)." - parametri".print_r($_REQUEST,true),100);
+            $task->SetError("Occorre indicare una lista valida.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Occorre indicare una lista valida.</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+            
+            return false;
+        }
+
+        $fileHash=$_REQUEST['url'];
+        if($uploadedFile->isValid()) 
+        {
+            //Se c'è un file uploadato l'url non viene salvata.
+            $_REQUEST['url']="";
+
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $fileHash=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        $params=array(
+            "id_circoscrizione"=>$circoscrizione['id'],
+            "id_lista"=>$lista->GetProp("id"),
+            "nome"=>$_REQUEST['nome'],
+            "cognome"=>$_REQUEST['cognome'],
+            "cf"=>$_REQUEST['cf'],
+            "cv"=>$fileHash
+        );
+        $candidato=new AA_SierCandidato($params);
+        
+        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($elemento, true),100);
+        
+        if(!$object->AddNewCandidato($candidato, $this->oUser))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio del candidato. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Candidato caricato con successo.";
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
@@ -4215,12 +4540,12 @@ Class AA_SierModule extends AA_GenericModule
         $columns=array(
             array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"cognome","header"=>array("<div style='text-align: center'>Cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
-            array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"cv","header"=>array("<div style='text-align: center'>Curriculum</div>"),"width"=>60, "css"=>array("text-align"=>"center")),
-            array("id"=>"cg","header"=>array("<div style='text-align: center'>Casellario</div>"),"width"=>60, "css"=>array("text-align"=>"center")),
-            array("id"=>"circoscrizione_desc","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"lista","header"=>array("<div style='text-align: center'>Lista</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"coalizione","header"=>array("<div style='text-align: center'>Coalizione</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text")
+            array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"cv","header"=>array("<div style='text-align: center'>Curriculum</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"cg","header"=>array("<div style='text-align: center'>Casellario</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"circoscrizione_desc","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"width"=>180, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"lista","header"=>array("<div style='text-align: center'>Lista</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"coalizione","header"=>array("<div style='text-align: center'>Coalizione</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text")
         );
 
         if($canModify)
@@ -4229,7 +4554,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $data=array();
-        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        //$circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
 
         $candidati=$object->GetCandidati();
         foreach($candidati as $curCandidato)
@@ -4238,18 +4563,19 @@ Class AA_SierModule extends AA_GenericModule
             $index=sizeof($data)-1;
 
             //Circoscrizione
-            $data[$index]['circoscrizione_desc']=$circoscrizioni[$curCandidato->GetProp("circoscrizione")];
+            $data[$index]['circoscrizione_desc']=$curCandidato->GetProp("circoscrizione");
 
             //Curriculum
             if($curCandidato->GetProp('cv') !="")
             {
-                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cv').'"},"'.$this->id.'")';
-                $data[$index]['cv']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Consulta' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+                if(strpos($curCandidato->GetProp('cv'),"http") === false) $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cv').'"},"'.$this->id.'")';
+                else $view='window.open("'.$curCandidato->GetProp('cv').'")';
+                $data[$index]['cv']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
                 if($canModify)
                 {
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                     $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                    $data[$index]['cv'].="<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button' title='Elimina' onClick='".$trash."'><span class='mdi mdi-pencil'></span></a>";
+                    $data[$index]['cv'].="<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
                 }
                 $data[$index]['cv'].="</div>";
             }
@@ -4258,20 +4584,21 @@ Class AA_SierModule extends AA_GenericModule
                 if($canModify)
                 {
                     $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAddNewCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                    $data['cv'].="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Carica' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                    $data[$index]['cv'].="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Carica' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
             }
 
             //Casellario giudiziale
             if($curCandidato->GetProp('cg') !="")
             {
-                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cg').'"},"'.$this->id.'")';
-                $data[$index]['cg']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Consulta' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+                if(strpos($curCandidato->GetProp('cv'),"http") === false) $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cg').'"},"'.$this->id.'")';
+                else $view='window.open("'.$curCandidato->GetProp('cg').'")';
+                $data[$index]['cg']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
                 if($canModify)
                 {
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                     $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                    $data[$index]['cg'].="<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button' title='Elimina' onClick='".$trash."'><span class='mdi mdi-pencil'></span></a>";
+                    $data[$index]['cg'].="<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
                 }
                 $data[$index]['cg'].="</div>";
             }
@@ -4280,7 +4607,7 @@ Class AA_SierModule extends AA_GenericModule
                 if($canModify)
                 {
                     $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAddNewCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                    $data['cg'].="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Carica' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                    $data[$index]['cg'].="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Carica' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
             }
 
@@ -4291,6 +4618,8 @@ Class AA_SierModule extends AA_GenericModule
                 $data[$index]['ops']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             }
         }
+
+        AA_Log::Log(__METHOD__." - candidati: ".print_r($data,true),100);
 
         if(sizeof($candidati) > 0)
         {
@@ -4487,7 +4816,7 @@ Class AA_SierModule extends AA_GenericModule
         return $this->Task_GenericAddNew($task,$_REQUEST);
     }
 
-    //Task modifica provvedimento
+    //Task modifica elemento
     public function Task_GetSierModifyDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -4862,6 +5191,55 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Task aggiungi allegato
+    public function Task_GetSierAddNewCandidatoDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $liste=$object->GetListe();
+        if(sizeof($liste)==0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'><b>Non sono presenti liste o coalizioni</b>, aggiungere almeno una coalizione e una lista.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierAddNewCandidatoDlg($object)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+
+    //Task aggiungi allegato
     public function Task_GetSierAddNewAllegatoDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -4872,7 +5250,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
             $task->SetLog($sTaskLog);
         
             return false;
@@ -4891,7 +5269,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
             $task->SetLog($sTaskLog);
         
             return false;
@@ -5256,7 +5634,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
             $task->SetLog($sTaskLog);
         
             return true;
@@ -5311,7 +5689,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
             $task->SetLog($sTaskLog);
         
             return false;
@@ -5461,7 +5839,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare il provvedimento (".$object->GetId().").</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
             $task->SetLog($sTaskLog);
         
             return false;
@@ -5559,7 +5937,7 @@ Class AA_SierModule extends AA_GenericModule
         //$dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
         
         //oggetto
-        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del provvedimento/accordo.", "placeholder"=>"Oggetto..."));
+        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del elemento/accordo.", "placeholder"=>"Oggetto..."));
         
         //Struttura
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
@@ -5573,13 +5951,13 @@ Class AA_SierModule extends AA_GenericModule
         {
             $options[]=array("id"=>$key,"value"=>$value);
         }
-        $dlg->AddSelectField("Tipo","Tipo",array("bottomLabel"=>"*filtra in base al tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options));
+        $dlg->AddSelectField("Tipo","Tipo",array("bottomLabel"=>"*filtra in base al tipo di elemento","placeholder"=>"Scegli una voce...","options"=>$options));
 
         //descrizione
-        $dlg->AddTextField("descrizione","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione del provvedimento/accordo.", "placeholder"=>"Descrizione..."));
+        $dlg->AddTextField("descrizione","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione del elemento/accordo.", "placeholder"=>"Descrizione..."));
 
-        //Estremi provvedimento
-        $dlg->AddTextField("Estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del provvedimento/accordo.", "placeholder"=>"Estremi..."));*/
+        //Estremi elemento
+        $dlg->AddTextField("Estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del elemento/accordo.", "placeholder"=>"Estremi..."));*/
         
         $dlg->SetApplyButtonName("Filtra");
 
@@ -5617,7 +5995,7 @@ Class AA_SierModule extends AA_GenericModule
         //$dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
         
         //oggetto
-        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del provvedimento/accordo.", "placeholder"=>"Oggetto..."));
+        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del elemento/accordo.", "placeholder"=>"Oggetto..."));
         
         //Struttura
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
@@ -5630,13 +6008,13 @@ Class AA_SierModule extends AA_GenericModule
         {
             $options[]=array("id"=>$key,"value"=>$value);
         }
-        $dlg->AddSelectField("Tipo","Tipo",array("bottomLabel"=>"*filtra in base al tipo di provvedimento","placeholder"=>"Scegli una voce...","options"=>$options));*/
+        $dlg->AddSelectField("Tipo","Tipo",array("bottomLabel"=>"*filtra in base al tipo di elemento","placeholder"=>"Scegli una voce...","options"=>$options));*/
 
         //descrizione
-        $dlg->AddTextField("descrizione","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione del provvedimento/accordo.", "placeholder"=>"Descrizione..."));
+        $dlg->AddTextField("descrizione","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione del elemento/accordo.", "placeholder"=>"Descrizione..."));
 
-        //Estremi provvedimento
-        $dlg->AddTextField("Estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del provvedimento/accordo.", "placeholder"=>"Estremi..."));
+        //Estremi elemento
+        $dlg->AddTextField("Estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del elemento/accordo.", "placeholder"=>"Estremi..."));
 
         $dlg->SetApplyButtonName("Filtra");
 
