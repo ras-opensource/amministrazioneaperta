@@ -1661,6 +1661,7 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_DETAIL_CANDIDATI_BOX = "Candidati_Box";
     const AA_UI_DETAIL_COMUNI_BOX = "Comuni_Box";
     const AA_UI_DETAIL_CRUSCOTTO_BOX = "Cruscotto_Box";
+    const AA_UI_DETAIL_ALLEGATI_BOX = "Allegati_Box";
 
     public function __construct($user=null,$bDefaultSections=true)
     {
@@ -1733,6 +1734,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab"),
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab"),
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab"),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Allegati e link</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab"),
         ));
     }
     
@@ -4110,7 +4112,7 @@ Class AA_SierModule extends AA_GenericModule
         $layout_gen->addRow($note);
         $riga->addCol($layout_gen);
 
-        $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,$canModify));
+        //$riga->addCol($this->TemplateDettaglio_Allegati($object,$id,$canModify));
         $riga->addCol($this->TemplateDettaglio_Giornate($object,$id,$canModify));
 
         //$layout->AddRow($riga);
@@ -4121,6 +4123,98 @@ Class AA_SierModule extends AA_GenericModule
 
         $layout->AddRow($riga);
 
+        return $layout;
+    }
+
+    //Template section detail, tab generale
+    public function TemplateSierDettaglio_Allegati_Tab($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX;
+
+        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        
+        $rows_fixed_height=50;
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+
+        #documenti----------------------------------
+        $curId=$id;
+        $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","gravity"=>4,"css"=>array("border-left"=>"1px solid gray !important;","border-top"=>"1px solid gray !important;")));
+
+        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Allegati_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Allegati e link</span>", "align"=>"center")));
+
+        if($canModify)
+        {
+            //Pulsante di aggiunta documento
+            $add_documento_btn=new AA_JSON_Template_Generic($curId."_AddAllegato_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-file-plus",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi allegato o link",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewAllegatoDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+            ));
+
+            $toolbar->AddElement($add_documento_btn);
+        }
+        else 
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+
+        $layout->AddRow($toolbar);
+
+        $options_documenti=array();
+
+        if($canModify)
+        {
+            $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+        else
+        {
+            $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+
+        $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
+
+        $documenti_data=array();
+        foreach($object->GetAllegati() as $id_doc=>$curDoc)
+        {
+            if($curDoc->GetUrl() == "")
+            {
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
+                $view_icon="mdi-floppy";
+            }
+            else 
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetUrl().'"},"'.$this->id.'")';
+                $view_icon="mdi-eye";
+            }
+            
+            
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+            $documenti_data[]=array("id"=>$id_doc,"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>$curDoc->GetTipoDescr(),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
+        }
+        $documenti->SetProp("data",$documenti_data);
+        if(sizeof($documenti_data) > 0) $layout->AddRow($documenti);
+        else $layout->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        #--------------------------------------
+        
         return $layout;
     }
 
@@ -4194,6 +4288,7 @@ Class AA_SierModule extends AA_GenericModule
                 "type"=>"icon",
                 "icon"=>"mdi mdi-pencil-plus",
                 "label"=>"Aggiungi",
+                "css"=>"webix_primary",
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi coalizione",
@@ -4266,6 +4361,7 @@ Class AA_SierModule extends AA_GenericModule
                 "type"=>"icon",
                 "icon"=>"mdi mdi-pencil-plus",
                 "label"=>"Aggiungi",
+                "css"=>"webix_primary",
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi coalizione",
@@ -4650,64 +4746,15 @@ Class AA_SierModule extends AA_GenericModule
     {
        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX;
 
-        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+       return new AA_JSON_Template_Template($id,array("template"=>"sezione in fase di sviluppo"));
+
+       if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"oggetto non valido"));
         
-        $rows_fixed_height=50;
+       $rows_fixed_height=50;
 
-        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
+       $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
 
-        //Descrizione
-        $value=$object->GetDescr();
-        if($value=="")$value="n.d.";
-        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Descrizione:","value"=>$value)
-        ));
-
-        //anno riferimento
-        $value=$object->GetProp("AnnoRiferimento");
-        if($value=="")$value="n.d.";
-        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Anno:","value"=>$value)
-        ));
-        
-        //estremi
-        $value= $object->GetProp("Estremi");
-        if($value=="") $value="n.d.";
-        $estremi=new AA_JSON_Template_Template($id."_Estremi",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Estremi atto:","value"=>$value)
-        ));
-
-        $modalita=null;
-        $contraente=null;
-        
-        //prima riga
-        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($anno_rif);
-        if($modalita) $riga->AddCol($modalita);
-        if($contraente) $riga->AddCol($contraente);
-        $riga->AddCol($estremi);
-        $layout->AddRow($riga);
-        
-        //seconda riga
-        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","gravity"=>1)));
-        //$riga->addCol($oggetto);
-        //$layout->AddRow($riga);
-
-        //terza riga
-        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>4));
-        $riga->addCol($descr);
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
-        {
-            $riga->addCol($this->TemplateDettaglio_Allegati($object,$id,true));
-        }
-        else $riga->addCol($this->TemplateDettaglio_Allegati($object,$id));
-
-        $layout->AddRow($riga);
-
-        return $layout;
+       return $layout;
     }
     
     //Task Update Sier
