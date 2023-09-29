@@ -4735,9 +4735,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $layout->addRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti candidati.</span></div>")));
         }
-       
-        //$layout->addRow(new AA_JSON_Template_Generic($id."_spacer"));
-
+        
         return $layout;
     }
 
