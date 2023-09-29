@@ -5092,12 +5092,12 @@ Class AA_SierModule extends AA_GenericModule
             {
                 if(strpos($curCandidato->GetProp('cv'),"http") === false) $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cv').'"},"'.$this->id.'")';
                 else $view='window.open("'.$curCandidato->GetProp('cv').'")';
-                $data[$index]['cv']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+                $data[$index]['cv']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta il curriculum' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
                 if($canModify)
                 {
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                     $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                    $data[$index]['cv'].="<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
+                    $data[$index]['cv'].="<a class='AA_DataTable_Ops_Button' title='Modifica il curriculum' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il curriculum' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
                 }
                 $data[$index]['cv'].="</div>";
             }
@@ -5106,7 +5106,7 @@ Class AA_SierModule extends AA_GenericModule
                 if($canModify)
                 {
                     $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAddNewCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                    $data[$index]['cv'].="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Carica' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                    $data[$index]['cv'].="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Carica il curriculum' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
             }
 
@@ -5115,12 +5115,12 @@ Class AA_SierModule extends AA_GenericModule
             {
                 if(strpos($curCandidato->GetProp('cv'),"http") === false) $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cg').'"},"'.$this->id.'")';
                 else $view='window.open("'.$curCandidato->GetProp('cg').'")';
-                $data[$index]['cg']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+                $data[$index]['cg']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta il casellario' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
                 if($canModify)
                 {
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                     $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                    $data[$index]['cg'].="<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
+                    $data[$index]['cg'].="<a class='AA_DataTable_Ops_Button' title='Modifica il casellario' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il casellario' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
                 }
                 $data[$index]['cg'].="</div>";
             }
@@ -5129,7 +5129,7 @@ Class AA_SierModule extends AA_GenericModule
                 if($canModify)
                 {
                     $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAddNewCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                    $data[$index]['cg'].="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Carica' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                    $data[$index]['cg'].="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Carica il casellario' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
             }
 
@@ -5137,7 +5137,7 @@ Class AA_SierModule extends AA_GenericModule
             {
                 $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
-                $data[$index]['ops']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+                $data[$index]['ops']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica i dati generali del candidato' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il candidato' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             }
         }
 
