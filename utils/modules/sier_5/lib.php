@@ -270,6 +270,7 @@ Class AA_SierCandidato
         $this->aProps['circoscrizione']=0;
         $this->aProps['nome']="";
         $this->aProps['cognome']="";
+        $this->aProps['cf']="";
         $this->aProps['cv']="";
         $this->aProps['cg']="";
 
@@ -539,7 +540,7 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
-        AA_Log::Log(__METHOD__." - liste: ".print_r($result,true),100);
+        //AA_Log::Log(__METHOD__." - liste: ".print_r($result,true),100);
 
         return $result;
     }
@@ -565,7 +566,7 @@ Class AA_Sier extends AA_Object_V2
             return null;
         }
 
-        AA_Log::Log(__METHOD__." - query: ".$query,100);
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=null;
         if($db->GetAffectedRows()>0)
@@ -622,16 +623,16 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //Restituisce un candidato specifico
-    public function GetCandidato($filter="")
+    public function GetCandidato($id="")
     {
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
         $query="SELECT ".static::AA_CANDIDATI_DB_TABLE.".*,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
-        if($filter !="")
+        if($id > 0)
         {
-            $query.=" AND (".static::AA_COALIZIONI_DB_TABLE.".nome like '".addslashes($filter)."' OR ".static::AA_COALIZIONI_DB_TABLE.".cognome like '".addslashes($filter)."' OR ".static::AA_COALIZIONI_DB_TABLE.".cf like '".addslashes($filter)."')";
+            $query.=" AND ".static::AA_CANDIDATI_DB_TABLE.".id ='".addslashes($id)."'";
         }
 
         $query.=" LIMIT 1";
@@ -1291,7 +1292,7 @@ Class AA_Sier extends AA_Object_V2
     //Aggiunge un nuovo candidato
     public function AddNewCandidato($candidato=null, $user=null)
     {
-        AA_Log::Log(__METHOD__."()");
+        //AA_Log::Log(__METHOD__."()");
 
         if(!$this->isValid())
         {
@@ -1346,6 +1347,76 @@ Class AA_Sier extends AA_Object_V2
 
         //Aggiorna l'elemento e lo versiona se necessario
         if(!$this->Update($user,true, "Aggiunta nuovo candidato: ".$candidato->GetProp("nome")." ".$candidato->GetProp("cognome")))
+        {
+            return false;
+        }
+
+        $newId=$db->GetLastInsertId();
+        //AA_Log::Log(__METHOD__." - new id: ".$newId, 100,false,true);
+
+        return $newId;
+    }
+
+    //Aggiorna un candidato
+    public function UpdateCandidato($candidato=null, $user=null,$logMsg="")
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($candidato instanceof AA_SierCandidato))
+        {
+            AA_Log::Log(__METHOD__." - Candidato non valido.", 100,false,true);
+            return false;
+        }
+
+        $query="UPDATE ".static::AA_CANDIDATI_DB_TABLE." SET id_circoscrizione='".$candidato->GetProp("id_circoscrizione")."'";
+        $query.=", id_lista='".addslashes($candidato->GetProp("id_lista"))."'";
+        $query.=", nome='".addslashes($candidato->GetProp("nome"))."'";
+        $query.=", cognome='".addslashes($candidato->GetProp("cognome"))."'";
+        $query.=", cf='".addslashes($candidato->GetProp("cf"))."'";
+        $query.=", cv='".addslashes($candidato->GetProp("cv"))."'";
+        $query.=", cg='".addslashes($candidato->GetProp("cg"))."'";
+        $query.=" WHERE id='".$candidato->GetProp('id')."' LIMIT 1";
+        
+        $db= new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if($logMsg=="") $logMsg="Aggiornamento candidato: ".$candidato->GetProp("nome")." ".$candidato->GetProp("cognome");
+        if(!$this->Update($user,true, $logMsg))
         {
             return false;
         }
@@ -1725,7 +1796,10 @@ Class AA_SierModule extends AA_GenericModule
         //candidati
         $taskManager->RegisterTask("GetSierAddNewCandidatoDlg");
         $taskManager->RegisterTask("AddNewSierCandidato");
-
+        $taskManager->RegisterTask("GetSierAddNewCandidatoCVDlg");
+        $taskManager->RegisterTask("AddNewSierCandidatoCV");
+        $taskManager->RegisterTask("GetSierAddNewCandidatoCGDlg");
+        $taskManager->RegisterTask("AddNewSierCandidatoCG");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -2318,7 +2392,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(720);
+        $wnd->SetHeight(480);
 
         //Circoscrizione
         $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
@@ -2346,10 +2420,54 @@ Class AA_SierModule extends AA_GenericModule
 
         //cf
         $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
-
+        /*
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
         $section=new AA_FieldSet($id."_Section_Url","Curriculum - Inserire un'url oppure scegliere un file");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewCandidatoCV","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);*/
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSierCandidato");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi candidato
+    public function Template_GetSierAddNewCandidatoCVDlg($object=null,$candidato=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierAddNewCandidatoCVDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("aggiornamento"=>date("Y-m-d"),"id_candidato"=>$candidato->GetProp("id"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Imposta cv candidato", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_IntroCvCandidato",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items:center; width: 100%;height:100%'><div>Imposta il curriculum per il candidato: <b>".$candidato->GetProp("nome")." ".$candidato->GetProp("cognome")."</b>.</div></div>")));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
         //url
@@ -2365,7 +2483,51 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
-        $wnd->SetSaveTask("AddNewSierCandidato");
+        $wnd->SetSaveTask("AddNewSierCandidatoCV");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi candidato cg
+    public function Template_GetSierAddNewCandidatoCGDlg($object=null,$candidato=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierAddNewCandidatoCGDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("aggiornamento"=>date("Y-m-d"),"id_candidato"=>$candidato->GetProp("id"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Imposta casellario", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_IntroCgCandidato",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items:center; width: 100%;height:100%'><div>Imposta il casellario giudiziale per il candidato: <b>".$candidato->GetProp("nome")." ".$candidato->GetProp("cognome")."</b>.</div></div>")));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewCandidatoCG","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSierCandidatoCG");
         
         return $wnd;
     }
@@ -3007,6 +3169,91 @@ Class AA_SierModule extends AA_GenericModule
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $circoscrizione=AA_Sier_Const::GetCircoscrizione($_REQUEST['id_circoscrizione']);
+        //AA_Log::Log(__METHOD__." - circoscrizione: ".print_r($circoscrizione,true),100);
+        if(!is_array($circoscrizione))
+        {
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($_REQUEST,true),100);
+            $task->SetError("Parametri non validi occorre indicare una circoscrizione valida.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare una circoscrizione valida.</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+
+        $lista=$object->GetLista($_REQUEST['id_lista']);
+        //AA_Log::Log(__METHOD__." - lista: ".print_r($lista,true),100);
+        if(!($lista instanceof AA_SierLista))
+        {
+            AA_Log::Log(__METHOD__." - "."Lista non valida: ".print_r($lista,true)." - parametri".print_r($_REQUEST,true),100);
+            $task->SetError("Occorre indicare una lista valida.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Occorre indicare una lista valida.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $params=array(
+            "id_circoscrizione"=>$circoscrizione['id'],
+            "id_lista"=>$lista->GetProp("id"),
+            "nome"=>$_REQUEST['nome'],
+            "cognome"=>$_REQUEST['cognome'],
+            "cf"=>$_REQUEST['cf']
+        );
+        $candidato=new AA_SierCandidato($params);
+        
+        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($elemento, true),100);
+        $newId=$object->AddNewCandidato($candidato, $this->oUser);
+        if($newId===false)
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio del candidato. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $params=array(
+            "task"=>"GetSierAddNewCandidatoCVDlg",
+            "params"=>array(
+                "id"=>$object->Getid(),
+                "id_candidato"=>$newId
+            )
+        );
+        $sTaskLog="<status id='status' action='dlg' action_params='".json_encode($params)."'>0</status><content id='content'>";
+        $sTaskLog.= "Candidato caricato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task Update candidato
+    public function Task_AddNewSierCandidatoCV($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCV");
         
         if(!$object->isValid())
@@ -3053,13 +3300,11 @@ Class AA_SierModule extends AA_GenericModule
             return false;            
         }
         
-        $circoscrizione=AA_Sier_Const::GetCircoscrizione($_REQUEST['id_circoscrizione']);
-        AA_Log::Log(__METHOD__." - circoscrizione: ".print_r($circoscrizione,true),100);
-        if(!is_array($circoscrizione))
+        $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
+        if($candidato == null)
         {
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetError("Parametri non validi occorre indicare una circoscrizione valida.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare una circoscrizione valida.</error>";
+            $task->SetError("identificativo Candidato non valido. (".$_REQUEST['id_candidato'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>identificativo Candidato non valido. (".$_REQUEST['id_candidato'].")</error>";
             $task->SetLog($sTaskLog);
 
             //Elimina il file temporaneo
@@ -3074,32 +3319,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                 }
             }     
-            
-            return false;
-        }
 
-        $lista=$object->GetLista($_REQUEST['id_lista']);
-        AA_Log::Log(__METHOD__." - lista: ".print_r($lista,true),100);
-        if(!($lista instanceof AA_SierLista))
-        {
-            AA_Log::Log(__METHOD__." - "."Lista non valida: ".print_r($lista,true)." - parametri".print_r($_REQUEST,true),100);
-            $task->SetError("Occorre indicare una lista valida.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Occorre indicare una lista valida.</error>";
-            $task->SetLog($sTaskLog);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }     
-            
             return false;
         }
 
@@ -3112,6 +3332,16 @@ Class AA_SierModule extends AA_GenericModule
             $storage=AA_Storage::GetInstance($this->oUser);
             if($storage->IsValid())
             {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$candidato->GetProp("cv");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+
                 $file=$uploadedFile->GetValue();
                 $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
                 if($storageFile->IsValid())
@@ -3135,29 +3365,223 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
+        //Elimina il cv precedente se presente
+        if($_REQUEST['url'] !="" && strpos($candidato->GetProp("cv"),"http")===false && $candidato->GetProp("cv") != "")
+        {
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$candidato->GetProp("cv");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+            }
+        }
+
         $params=array(
-            "id_circoscrizione"=>$circoscrizione['id'],
-            "id_lista"=>$lista->GetProp("id"),
-            "nome"=>$_REQUEST['nome'],
-            "cognome"=>$_REQUEST['cognome'],
-            "cf"=>$_REQUEST['cf'],
+            "id"=>$candidato->GetProp('id'),
+            "id_circoscrizione"=>$candidato->GetProp('id_circoscrizione'),
+            "id_lista"=>$candidato->GetProp("id_lista"),
+            "nome"=>$candidato->GetProp('nome'),
+            "cognome"=>$candidato->GetProp('cognome'),
+            "cf"=>$candidato->GetProp('cf'),
+            "cg"=>$candidato->GetProp('cg'),
             "cv"=>$fileHash
         );
         $candidato=new AA_SierCandidato($params);
         
-        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($elemento, true),100);
-        
-        if(!$object->AddNewCandidato($candidato, $this->oUser))
+        //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
+
+        if(!$object->UpdateCandidato($candidato, $this->oUser,"Aggiornamento del curriculum per: ".$candidato->GetProp("nome")." ".$candidato->GetProp("cognome")))
         {        
             $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio del candidato. (".AA_Log::$lastErrorLog.")</error>";
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornameto del curriculum. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $params=array(
+            "task"=>"GetSierAddNewCandidatoCGDlg",
+            "params"=>array(
+                "id"=>$object->Getid(),
+                "id_candidato"=>$candidato->GetProp("id")
+            )
+        );
+        $sTaskLog="<status id='status' action='dlg' action_params='".json_encode($params)."'>0</status><content id='content'>";
+        $sTaskLog.= "Curriculum aggiornato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task aggiungi nuovo casellario candidato
+    public function Task_AddNewSierCandidatoCG($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCG");
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;            
+        }
+        
+        $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
+        if($candidato == null)
+        {
+            $task->SetError("identificativo Candidato non valido. (".$_REQUEST['id_candidato'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>identificativo Candidato non valido. (".$_REQUEST['id_candidato'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        $fileHash=$_REQUEST['url'];
+        if($uploadedFile->isValid()) 
+        {
+            //Se c'è un file uploadato l'url non viene salvata.
+            $_REQUEST['url']="";
+
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$candidato->GetProp("cg");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $fileHash=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        //Elimina il cg precedente se presente
+        if($_REQUEST['url'] !="" && strpos($candidato->GetProp("cg"),"http")===false && $candidato->GetProp("cg") != "")
+        {
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$candidato->GetProp("cg");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+            }
+        }
+
+        $params=array(
+            "id"=>$candidato->GetProp('id'),
+            "id_circoscrizione"=>$candidato->GetProp('id_circoscrizione'),
+            "id_lista"=>$candidato->GetProp("id_lista"),
+            "nome"=>$candidato->GetProp('nome'),
+            "cognome"=>$candidato->GetProp('cognome'),
+            "cf"=>$candidato->GetProp('cf'),
+            "cv"=>$candidato->GetProp('cv'),
+            "cg"=>$fileHash
+        );
+        $candidato=new AA_SierCandidato($params);
+        
+        //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
+
+        if(!$object->UpdateCandidato($candidato, $this->oUser,"Aggiornamento del casellario giudiziale per: ".$candidato->GetProp("nome")." ".$candidato->GetProp("cognome")))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento del casellario. (".AA_Log::$lastErrorLog.")</error>";
             $task->SetLog($sTaskLog);
 
             return false;       
         }
         
         $sTaskLog="<status id='status'>0</status><content id='content'>";
-        $sTaskLog.= "Candidato caricato con successo.";
+        $sTaskLog.= "Casellario aggiornato con successo.";
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
@@ -4658,6 +5082,8 @@ Class AA_SierModule extends AA_GenericModule
             $data[]=$curCandidato->GetProps();
             $index=sizeof($data)-1;
 
+            //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
+
             //Circoscrizione
             $data[$index]['circoscrizione_desc']=$curCandidato->GetProp("circoscrizione");
 
@@ -4715,7 +5141,7 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        AA_Log::Log(__METHOD__." - candidati: ".print_r($data,true),100);
+        //AA_Log::Log(__METHOD__." - candidati: ".print_r($data,true),100);
 
         if(sizeof($candidati) > 0)
         {
@@ -4735,7 +5161,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $layout->addRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti candidati.</span></div>")));
         }
-        
+
         return $layout;
     }
 
@@ -5235,7 +5661,7 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    //Task aggiungi allegato
+    //Task aggiungi cv candidato
     public function Task_GetSierAddNewCandidatoDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -5257,7 +5683,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'><b>Non sono presenti liste o coalizioni</b>, aggiungere almeno una coalizione e una lista.</error>";
+            $sTaskLog.="</content><error id='error'>Non sono presenti Liste da associare al candidato, occorre inserire almeno una Lista per procedere.</error>";
             $task->SetLog($sTaskLog);
         
             return false;
@@ -5283,6 +5709,102 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
+
+    //Task aggiungi cv candidato
+    public function Task_GetSierAddNewCandidatoCVDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
+        if(!($candidato instanceof AA_SierCandidato))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Candidato non valido.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierAddNewCandidatoCVDlg($object,$candidato)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task aggiungi cg candidato
+    public function Task_GetSierAddNewCandidatoCGDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
+        if(!($candidato instanceof AA_SierCandidato))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Candidato non valido.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierAddNewCandidatoCGDlg($object,$candidato)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
 
     //Task aggiungi allegato
     public function Task_GetSierAddNewAllegatoDlg($task)
@@ -5635,6 +6157,26 @@ Class AA_SierModule extends AA_GenericModule
                     AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
                 }
             }
+        }
+
+        //Elimina il file precedentemente associato se viene impostato un url
+        if($_REQUEST['url'] !="" && $allegato->GetFileHash() !="")
+        {
+            $fileHash="";
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$allegato->GetFileHash();
+                if($oldFile !="")
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non eliminato.",100);
         }
 
         $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
