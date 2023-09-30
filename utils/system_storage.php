@@ -344,7 +344,7 @@ class AA_Storage
             AA_Log::Log(__METHOD__." - Riduzione riferimenti del file: ".print_r($file,true),100);
 
             //Aggiorna il db
-            $query="UPDATE ".static::AA_DBTABLE_STORAGE." set referencesCount=(referencesCount-1),aggiornamento=".date("Y-m-d")." WHERE fileHash='".$file->GetFileHash()."' LIMIT 1";
+            $query="UPDATE ".static::AA_DBTABLE_STORAGE." set referencesCount=(referencesCount-1),aggiornamento='".date("Y-m-d")."' WHERE fileHash='".$file->GetFileHash()."' LIMIT 1";
             if(!$db->Query($query))
             {
                 AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
