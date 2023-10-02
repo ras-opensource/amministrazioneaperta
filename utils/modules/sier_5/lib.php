@@ -5714,6 +5714,7 @@ Class AA_SierModule extends AA_GenericModule
                 "filtered"=>true,
                 "xCount"=>1,
                 "module_id"=>$this->id,
+                "tabbar"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX."_TabBar",
                 "type"=>array(
                     "type"=>"tiles",
                     "height"=>150,
@@ -5721,7 +5722,8 @@ Class AA_SierModule extends AA_GenericModule
                     "css"=>"AA_DataView_Nomine_item",
                 ),
                 "template"=>$riepilogo_template,
-                "data"=>$riepilogo_data
+                "data"=>$riepilogo_data,
+                "eventHandlers"=>array("onItemDblClick"=>array("handler"=>"CoalizioneDblClick","module_id"=>$this->GetId()))
             ));
         }
         else
@@ -5900,7 +5902,8 @@ Class AA_SierModule extends AA_GenericModule
                 "denominazione"=>$curCoalizione->GetProp("denominazione"),
                 "presidente"=>$curCoalizione->GetProp("nome_candidato"),
                 "image"=>$curImagePath,
-                "onclick"=>'$$("'.$tabbar->GetId().'").setValue("'.$id_detail_coalizione.'")'
+                "onclick"=>'$$("'.$tabbar->GetId().'").setValue("'.$id_detail_coalizione.'")',
+                "id_view"=>$id_detail_coalizione
             );
             $tab_label=$curCoalizione->GetProp("denominazione");
             if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina organigramma' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCoalizioneDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione: "'.$id_coalizione.'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
