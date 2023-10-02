@@ -6109,7 +6109,8 @@ Class AA_SierModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi un nuovo candidato",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                //"click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                "click"=>"AA_MainApp.utils.callHandler('AddNewCandidato', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."},{table_id:\"".$id."_Candidati\"}]},'".$this->id."')"
             ));
             $toolbar->AddElement($modify_btn);
         }

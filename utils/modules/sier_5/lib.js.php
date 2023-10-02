@@ -56,5 +56,31 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//Handler caricamento candidati con suggerimento della lista, della circoscrizione e della coalizione
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].AddNewCandidato = function() {
+    try 
+    {
+        console.log("eventHandlers.defaultHandlers.CoalizioneDblClick", this, arguments);
+        let task=arguments[0].task;
+        let params=arguments[0].params[1];
+        let table=$$(params.table_id);    
+        console.log("eventHandlers.defaultHandlers.AddNewCandidato",task,params);
+        if(table && task && params)
+        {
+            params.task=task;
+            let circoscrizione=table.getFilter("circoscrizione_desc").value;
+            let lista=table.getFilter("lista").value;
+            
+            params.params=[{circoscrizione_desc:circoscrizione},{lista_desc:lista}];
+
+            console.log("eventHandlers.defaultHandlers.AddNewCandidato",params);
+
+            //AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_SierModule::AA_ID_MODULE?>');
+        }
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.AddNewCandidato", msg, this);
+    }
+};
+
 //Registrazione modulo
 AA_MainApp.registerModule(<?php echo AA_SierModule::AA_ID_MODULE?>);
