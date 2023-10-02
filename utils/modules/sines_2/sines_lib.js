@@ -17,5 +17,23 @@ AA_sines_module.ui.module_content_id = "AA_sines_module_layout";
 //AA_sines_module.eventHandlers['AA_Sines_Pubblicate_List_Box']={};
 //AA_sines_module.eventHandlers['AA_Sines_Pubblicate_List_Box'].onSelectChange=AA_Sines_Pubblicate_SelectionChange;
 
+//Handler doppio click nomina
+AA_sines_module.eventHandlers['defaultHandlers'].NominaDblClick = function() 
+{
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.CoalizioneDblClick", this, arguments);
+        let item=this.getItem(arguments[0]);    
+        let tabbar=$$(this.config.tabbar);
+        console.log("eventHandlers.defaultHandlers.ListaDblClick",tabbar,item);
+        if(tabbar && item)
+        {
+            tabbar.setValue(item.id_view);
+        }
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.NominaDblClick", msg, this);
+    }
+};
+
 //Registrazione modulo
 AA_MainApp.registerModule(AA_sines_module);

@@ -3568,7 +3568,7 @@ Class AA_SinesModule extends AA_GenericModule
         foreach($nomine as $id_intestazione_nomina=>$curNomina)
         {
             //Dati riepilogo
-            $riepilogo_data_item=array("nome"=>trim(current($curNomina)->GetNome()),"cognome"=>trim(current($curNomina)->GetCognome()),"cf"=>"","incarichi"=>"");
+            $riepilogo_data_item=array("nome"=>trim(current($curNomina)->GetNome()),"cognome"=>trim(current($curNomina)->GetCognome()),"cf"=>"","incarichi"=>"","id_view"=>$id."_".$id_intestazione_nomina."_Tab");
             if(trim(current($curNomina)->GetCodiceFiscale()) !="") $riepilogo_data_item['cf']=" (".trim(current($curNomina)->GetCodiceFiscale()).")";
             
             $tab_label=current($curNomina)->GetNome()." ".current($curNomina)->GetCognome();
@@ -4424,6 +4424,7 @@ Class AA_SinesModule extends AA_GenericModule
             "filtered"=>true,
             "xCount"=>1,
             "module_id"=>$this->id,
+            "tabbar"=>static::AA_UI_PREFIX."_Detail_Nomine_Tab_".$object->GetID()."_TabBar",
             "type"=>array(
                 "type"=>"tiles",
                 "height"=>60,
@@ -4431,7 +4432,8 @@ Class AA_SinesModule extends AA_GenericModule
                 "css"=>"AA_DataView_Nomine_item",
             ),
             "template"=>$riepilogo_template,
-            "data"=>$riepilogo_data
+            "data"=>$riepilogo_data,
+            "eventHandlers"=>array("onItemDblClick"=>array("handler"=>"NominaDblClick","module_id"=>$this->GetId()))
         ));
         
         $toolbar_riepilogo=new AA_JSON_Template_Toolbar($id."_Toolbar_Riepilogo",array("height"=>38,"borderless"=>true));
