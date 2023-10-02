@@ -62,6 +62,7 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     {
         console.log("eventHandlers.defaultHandlers.CoalizioneDblClick", this, arguments);
         let task=arguments[0].task;
+        let id_object=arguments[0].params[0];
         let params=arguments[0].params[1];
         let table=$$(params.table_id);    
         console.log("eventHandlers.defaultHandlers.AddNewCandidato",task,params);
@@ -71,11 +72,11 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
             let circoscrizione=table.getFilter("circoscrizione_desc").value;
             let lista=table.getFilter("lista").value;
             
-            params.params=[{circoscrizione_desc:circoscrizione},{lista_desc:lista}];
+            params.params=[{circoscrizione_desc:circoscrizione},{lista_desc:lista},id_object];
 
             console.log("eventHandlers.defaultHandlers.AddNewCandidato",params);
 
-            //AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_SierModule::AA_ID_MODULE?>');
+            AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_SierModule::AA_ID_MODULE?>');
         }
     } catch (msg) {
         console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.AddNewCandidato", msg, this);

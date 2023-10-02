@@ -398,6 +398,10 @@ Class AA_Sier extends AA_Object_V2
                 $this->bValid=false;
             }
         }
+        else
+        {
+            $this->bValid=false;
+        }
     }
 
     //Restituisce le coalizioni
@@ -528,6 +532,8 @@ Class AA_Sier extends AA_Object_V2
             AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
             return array();
         }
+
+        AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=array();
         if($db->GetAffectedRows()>0)
@@ -740,6 +746,9 @@ Class AA_Sier extends AA_Object_V2
             AA_Log::Log(__METHOD__." - Errore: oggetto non valido (".print_r($object,true).").",100);
             return false;
         }
+
+        $object->nId=0;
+        $object->bValid=true;
         //----------------------------------------------
 
         return parent::AddNew($object,$user,$bSaveData);
@@ -2489,7 +2498,7 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template dlg aggiungi candidato
-    public function Template_GetSierAddNewCandidatoDlg($object=null,$lista=null)
+    public function Template_GetSierAddNewCandidatoDlg($object=null,$lista=null,$id_circoscrizione=0)
     {
         $id=static::AA_UI_PREFIX."_GetSierAddNewCandidatoDlg";
         
@@ -2498,7 +2507,12 @@ Class AA_SierModule extends AA_GenericModule
         $form_data=array("aggiornamento"=>date("Y-m-d"));
         if($lista instanceof AA_SierLista)
         {
-            $form_data=array("id_lista"=>$lista->GetProp("id"));
+            $form_data['id_lista']=$lista->GetProp("id");
+        }
+
+        if($id_circoscrizione>0)
+        {
+            $form_data['id_circoscrizione']=$id_circoscrizione;
         }
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi candidato", $this->id,$form_data,$form_data);
@@ -6753,11 +6767,29 @@ Class AA_SierModule extends AA_GenericModule
         {
             $lista=$liste[$_REQUEST['id_lista']];
         }
+
+        //AA_Log::Log(__METHOD__." - lista_desc: ".$_REQUEST['lista_desc']." - ".print_r(array_keys($liste,[$_REQUEST['lista_desc']]),true),100);
+        if($_REQUEST['lista_desc'] !="")
+        {
+            foreach($liste as $curlista)
+            {
+                if($curlista->GetProp("denominazione")==$_REQUEST['lista_desc']) $lista=$curlista;
+            }
+        }
+
+        $id_circoscrizione=0;
+        if($_REQUEST['circoscrizione_desc'] !="")
+        {
+            foreach(AA_Sier_Const::GetCircoscrizioni() as $id=>$curCircoscrizione)
+            {
+                if($curCircoscrizione==$_REQUEST['circoscrizione_desc']) $id_circoscrizione=$id;
+            }
+        }
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetSierAddNewCandidatoDlg($object,$lista)->toBase64();
+            $sTaskLog.= $this->Template_GetSierAddNewCandidatoDlg($object,$lista,$id_circoscrizione)->toBase64();
             $sTaskLog.="</content>";
             $task->SetLog($sTaskLog);
         
