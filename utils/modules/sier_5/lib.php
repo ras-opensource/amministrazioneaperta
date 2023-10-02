@@ -521,6 +521,8 @@ Class AA_Sier extends AA_Object_V2
             $query.=" AND ".static::AA_COALIZIONI_DB_TABLE.".id='".addslashes($coalizione->GetProp('id'))."'";
         }
 
+        $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".denominazione ";
+
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
@@ -596,7 +598,7 @@ Class AA_Sier extends AA_Object_V2
             $query.=" AND ".static::AA_CANDIDATI_DB_TABLE.".id_lista='".addslashes($lista->GetProp('id'))."'";
         }
 
-        $query.=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".nome, ".static::AA_CANDIDATI_DB_TABLE.".cognome";
+        $query.=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome";
 
         if(!$db->Query($query))
         {
@@ -2487,13 +2489,17 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template dlg aggiungi candidato
-    public function Template_GetSierAddNewCandidatoDlg($object=null)
+    public function Template_GetSierAddNewCandidatoDlg($object=null,$lista=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierAddNewCandidatoDlg";
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $form_data=array("aggiornamento"=>date("Y-m-d"));
+        if($lista instanceof AA_SierLista)
+        {
+            $form_data=array("id_lista"=>$lista->GetProp("id"));
+        }
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi candidato", $this->id,$form_data,$form_data);
         
@@ -2523,11 +2529,11 @@ Class AA_SierModule extends AA_GenericModule
         }
         $wnd->AddSelectField("id_lista", "Lista", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
 
-        //nome
-        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
-        
         //Cognome
         $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome del candidato", "placeholder" => "es. Verdi"));
+
+        //nome
+        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
 
         //cf
         $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
@@ -2596,11 +2602,11 @@ Class AA_SierModule extends AA_GenericModule
         }
         $wnd->AddSelectField("id_lista", "Lista", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
 
-        //nome
-        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
-        
         //Cognome
         $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome del candidato", "placeholder" => "es. Verdi"));
+
+        //nome
+        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
 
         //cf
         $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
@@ -5876,9 +5882,8 @@ Class AA_SierModule extends AA_GenericModule
         $platform=AA_Platform::GetInstance();
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
 
-        $minWidthListeItem=350;
+        $minWidthListeItem=400;
         $ListeItemsForRow=intval($_REQUEST['vw']/$minWidthListeItem);
-
         foreach($object->GetCoalizioni($params) as $id_coalizione=>$curCoalizione)
         {
             $id_detail_coalizione=$id."_CoalizioneDetail_".$id_coalizione;
@@ -6013,32 +6018,36 @@ Class AA_SierModule extends AA_GenericModule
 
                     if($canModify)
                     {
+                        $addnew="<a title='Aggiungi candidato' class='AA_Button_Link' onclick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."},{id_lista:".$curLista->GetProp('id')."}]},\"$this->id\")'><span class='mdi mdi-account-plus'></span></a>";
                         $modify="<a title='Modifica' class='AA_Button_Link' onclick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"GetSierModifyListaDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."},{id_lista:".$curLista->GetProp('id')."}]},\"$this->id\")'><span class='mdi mdi-pencil'></span></a>";
-                        $trash="<a title='Elimina' class='AA_Button_Link AA_DataTable_Ops_Button_Red' onclick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"GetSierTrashListaDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."},{id_lista:".$curLista->GetProp('id')."}]},\"$this->id\")'><span class='mdi mdi-trash-can'></span></a>";    
+                        $trash="<a title='Elimina' class='AA_Button_Link AA_DataTable_Ops_Button_Red' style='color: red' onclick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"GetSierTrashListaDlg\", params: [{id: ".$object->GetId()."},{id_coalizione:".$curCoalizione->GetProp('id')."},{id_lista:".$curLista->GetProp('id')."}]},\"$this->id\")'><span class='mdi mdi-trash-can'></span></a>";    
                     }
                     else
                     {
+                        $addnew="&nbsp;";
                         $modify="&nbsp;";
                         $trash="&nbsp;";
                     }
                     
-                    $dataview_liste_data[]=array("id"=>$id_lista,"id_coalizione"=>$curLista->GetProp('id_coalizione'),"denominazione"=>$curLista->GetProp('denominazione'),'image'=>$curImagePath,'modify'=>$modify,'trash'=>$trash);
+                    $dataview_liste_data[]=array("id"=>$id_lista,"id_coalizione"=>$curLista->GetProp('id_coalizione'),"denominazione"=>$curLista->GetProp('denominazione'),'image'=>$curImagePath,'modify'=>$modify,'trash'=>$trash,'addnew'=>$addnew);
                 }
 
-                $liste_template="<div style='display: flex; align-items: center; height: 100%; justify-content: space-between;'><div style='display: flex; align-items: center; width: 270px; padding: 5px;'>"
+                $liste_template="<div style='display: flex; align-items: center; height: 100%; justify-content: space-between;' id_view='".$curId."_Liste"."'><div style='display: flex; align-items: center; width: 270px; padding: 5px;'>"
                 . "<img src='#image#' width='50px'/><div style='height: 100%;display:flex; align-items: center; justify-content: space-between'><span style='margin-left: 1em; font-weight: 700;'>#denominazione#</span></div></div>"
-                . "<div style='display: flex;  align-items: center; justify-content: space-between; height: 100%; padding: 5px; width: 70px'>#modify#&nbsp;#trash#</div></div>";
+                . "<div style='display: flex;  align-items: center; justify-content: space-between; height: 100%; padding: 5px; width: 100px'>#addnew#&nbsp;#modify#&nbsp;#trash#</div></div>";
                 
                 $dataview_liste=new AA_JSON_Template_Generic($curId."_Liste",array(
                     "view"=>"dataview",
                     "xCount"=>$ListeItemsForRow,
                     "module_id"=>$this->id,
+                    "id_object"=>$object->GetId(),
                     "type"=>array(
                         "type"=>"tiles",
                         "height"=>60,
                         "width"=>"auto",
                         "css"=>"AA_DataView_Nomine_item",
                     ),
+                    "on" => array("onItemDblClick" => "AA_MainApp.utils.getEventHandler('ListaDblClick','".$this->GetId()."')"),
                     "template"=>$liste_template,
                     "data"=>$dataview_liste_data
                 ));
@@ -6104,14 +6113,14 @@ Class AA_SierModule extends AA_GenericModule
         
         $layout->addRow($toolbar);        
         $columns=array(
-            array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"cognome","header"=>array("<div style='text-align: center'>Cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
+            array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"cv","header"=>array("<div style='text-align: center'>Curriculum</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"cg","header"=>array("<div style='text-align: center'>Casellario</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"circoscrizione_desc","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"width"=>180, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"lista","header"=>array("<div style='text-align: center'>Lista</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"coalizione","header"=>array("<div style='text-align: center'>Coalizione</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text")
+            array("id"=>"coalizione","header"=>array("<div style='text-align: center'>Coalizione</div>",array("content"=>"selectFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text")
         );
 
         if($canModify)
@@ -6151,7 +6160,7 @@ Class AA_SierModule extends AA_GenericModule
             {
                 if($canModify)
                 {
-                    $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAddNewCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                    $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoCVDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                     $data[$index]['cv'].="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Carica il curriculum' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
             }
@@ -6174,7 +6183,7 @@ Class AA_SierModule extends AA_GenericModule
             {
                 if($canModify)
                 {
-                    $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAddNewCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
+                    $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyCandidatoCGDlg", params: [{id: "'.$object->GetId().'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                     $data[$index]['cg'].="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Carica il casellario' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
             }
@@ -6734,11 +6743,17 @@ Class AA_SierModule extends AA_GenericModule
         
             return false;
         }
+
+        $lista=null;
+        if($_REQUEST['id_lista'] !="" && isset($liste[$_REQUEST['id_lista']]))
+        {
+            $lista=$liste[$_REQUEST['id_lista']];
+        }
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetSierAddNewCandidatoDlg($object)->toBase64();
+            $sTaskLog.= $this->Template_GetSierAddNewCandidatoDlg($object,$lista)->toBase64();
             $sTaskLog.="</content>";
             $task->SetLog($sTaskLog);
         

@@ -2043,7 +2043,7 @@ class AA_GenericModule
                     }
                 }
 
-                if (sizeof($result_error) > 0) {
+                if (is_array($result_error) && sizeof($result_error) > 0) {
                     $id = static::AA_UI_PREFIX . "_ReassignDlg";
                     $wnd = new AA_GenericWindowTemplate($id, "Avviso", $this->id);
                     $wnd->SetWidth("640");

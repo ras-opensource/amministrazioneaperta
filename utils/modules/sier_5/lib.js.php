@@ -13,59 +13,30 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
 <?php echo AA_SierModule::AA_ID_MODULE?>.contentType = "json";
 <?php echo AA_SierModule::AA_ID_MODULE?>.ui.module_content_id = "<?php echo AA_SierModule::AA_UI_MODULE_MAIN_BOX?>";
 
-//Handler del cambio di tipo provvedimento
-<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onTipoProvSelectChange = function() {
-    try {
-        //console.log("eventHandlers.defaultHandlers.onTipoProvSelectChange", this, arguments);
-        let tipo = arguments[0];
-
-        //Accordo
-        if (tipo == "2") {
-            //Visualizza il contraente
-            let contraente = $$(<?php echo AA_SierModule::AA_ID_MODULE?>.id + '_AddNew_Dlg_Field_Contraente');
-            if (contraente) {
-                contraente.show();
-            }
-
-            contraente = $$(<?php echo AA_SierModule::AA_ID_MODULE?>.id + '_Modify_Dlg_Field_Contraente');
-            if (contraente) {
-                contraente.show();
-            }
-
-            //nascondi la modalità di scelta
-            let mod = $$(<?php echo AA_SierModule::AA_ID_MODULE?>.id + '_AddNew_Dlg_Field_Modalita');
-            if (mod) {
-                mod.hide();
-            }
-
-            //nascondi la modalità di scelta
-            mod = $$(<?php echo AA_SierModule::AA_ID_MODULE?>.id + '_Modify_Dlg_Field_Modalita');
-            if (mod) {
-                mod.hide();
-            }
+//Handler doppio click Lista
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ListaDblClick = function() {
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.ListaDblClick", this, arguments[2].firstChild.attributes['id_view']);
+        let id="<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_ID_SECTION_DETAIL."_".AA_SierModule::AA_UI_DETAIL_CANDIDATI_BOX."_Candidati";?>";
+        let candidati_list=$$(id);
+        //console.log("eventHandlers.defaultHandlers.ListaDblClick",id);
+        let item=this.getItem(arguments[0]);
+        if(candidati_list)
+        {
+            //console.log("eventHandlers.defaultHandlers.ListaDblClick",candidati_list,item);
+            let tabbar=$$("<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_ID_SECTION_DETAIL."_TabBar_";?>"+this.config.id_object);
+            //console.log("eventHandlers.defaultHandlers.ListaDblClick",tabbar);
+            if(tabbar)
+            {
+                //console.log("eventHandlers.defaultHandlers.ListaDblClick",tabbar);
+                tabbar.setValue("<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_ID_SECTION_DETAIL."_".AA_SierModule::AA_UI_DETAIL_CANDIDATI_BOX;?>");
+                candidati_list.filter("lista",item.denominazione,false);
+                let filter = candidati_list.getFilter("lista");
+                filter.value=item.denominazione;
+            }            
         }
-        if (tipo == "1") {
-            //nascondi il contraente
-            let contraente = $$(<?php echo AA_SierModule::AA_ID_MODULE?>.id + '_AddNew_Dlg_Field_Contraente');
-            if (contraente) {
-                contraente.hide();
-            }
-            
-            contraente = $$(<?php echo AA_SierModule::AA_ID_MODULE?>.id + '_Modify_Dlg_Field_Contraente');
-            if (contraente) {
-                contraente.hide();
-            }
-            //visualizza la modalità di scelta
-            let mod = $$(<?php echo AA_SierModule::AA_ID_MODULE?>.id + '_AddNew_Dlg_Field_Modalita');
-            if (mod) {
-                mod.show();
-            }
-            
-            mod = $$(<?php echo AA_SierModule::AA_ID_MODULE?>.id + '_Modify_Dlg_Field_Modalita');
-            if (mod) {
-                mod.show();
-            }
-        }
+
     } catch (msg) {
         console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onTipoProvSelectChange", msg, this);
     }
