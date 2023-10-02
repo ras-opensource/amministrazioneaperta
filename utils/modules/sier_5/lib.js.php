@@ -20,7 +20,7 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
         //console.log("eventHandlers.defaultHandlers.ListaDblClick", this, arguments);
         let item=this.getItem(arguments[0]);
        
-        let tabbar=$$("<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_ID_SECTION_DETAIL."_TabBar_";?>"+this.config.id_object);
+        let tabbar=$$(this.config.tabbar);
         //console.log("eventHandlers.defaultHandlers.ListaDblClick",tabbar);
         if(tabbar)
         {

@@ -6043,7 +6043,7 @@ Class AA_SierModule extends AA_GenericModule
                     "view"=>"dataview",
                     "xCount"=>$ListeItemsForRow,
                     "module_id"=>$this->id,
-                    "id_object"=>$object->GetId(),
+                    "tabbar"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_TabBar_".$object->GetId(),
                     "type"=>array(
                         "type"=>"tiles",
                         "height"=>60,
