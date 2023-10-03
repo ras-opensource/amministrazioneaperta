@@ -4662,21 +4662,6 @@ class AA_Object_V2
             }
         }
 
-        //Filtra in base allo stato della scheda
-        if (!isset($params['id']) || $params['id'] == "") {
-            $where .= " AND status ='" . $params['status'] . "' ";
-
-            //filtra in base al nome
-            if (isset($params['nome']) && $params['nome'] != "") {
-                $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".nome like '%" . addslashes($params['nome']) . "%'";
-            }
-
-            //filtra in base alla descrizione
-            if (isset($params['descrizione']) && $params['descrizione'] != "") {
-                $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".descrizione like '%" . addslashes($params['descrizione']) . "%'";
-            }
-        }
-
         //Filtra solo oggetti della RAS
         if ($userStruct->GetTipo() == 0) {
             $join .= " INNER JOIN " . AA_Const::AA_DBTABLE_ASSESSORATI . " ON " . AA_Const::AA_DBTABLE_OBJECTS . ".id_assessorato=" . AA_Const::AA_DBTABLE_ASSESSORATI . ".id ";
@@ -4703,6 +4688,22 @@ class AA_Object_V2
             $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id_servizio = '" . addslashes($params['id_servizio']) . "'";
         }
         //------------------------
+
+        //Filtra in base allo stato della scheda
+        if (!isset($params['id']) || $params['id'] == "")
+        {
+            $where .= " AND status ='" . $params['status'] . "' ";
+
+            //filtra in base al nome
+            if (isset($params['nome']) && $params['nome'] != "") {
+                $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".nome like '%" . addslashes($params['nome']) . "%'";
+            }
+
+            //filtra in base alla descrizione
+            if (isset($params['descrizione']) && $params['descrizione'] != "") {
+                $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".descrizione like '%" . addslashes($params['descrizione']) . "%'";
+            }
+        }
 
         //filtra in base all'id(s)
         if (isset($params['id']) && $params['id'] != "") {
