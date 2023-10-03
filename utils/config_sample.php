@@ -46,6 +46,9 @@ Class AA_Config
 
     //Abilita disabilita il modulo pubblico
     const AA_ENABLE_PUBLIC_MODULE=false;
+
+    //Abilita disabilita la gestione dei dati legacy (gestione strutture, legame struttura-utente, etc.)
+    const AA_ENABLE_LEGACY_DATA=false;
 }
 
 //percorso librerie

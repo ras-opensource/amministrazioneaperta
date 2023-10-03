@@ -595,7 +595,7 @@ class AA_SystemTask_UpdateCurrentUserProfile extends AA_GenericTask
         }
 
         $imageFileName="";
-        
+
         //Recupera il file immagine
         $imgFile=AA_SessionFileUpload::Get("UserProfileImage");
         if($imgFile->IsValid())
@@ -611,7 +611,7 @@ class AA_SystemTask_UpdateCurrentUserProfile extends AA_GenericTask
                 return false;
             }
 
-            if(!isset(AA_Const::AA_ROOT_STORAGE_PATH))
+            if(!isset(AA_Const::AA_ROOT_STORAGE_PATH) || AA_Const::AA_ROOT_STORAGE_PATH == "")
             {
                 //elimina la precedente immagine se è presente
                 if(is_file(AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$user->GetImage()) && $user->GetImage() !="")

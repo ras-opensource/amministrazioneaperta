@@ -651,13 +651,29 @@ class AA_User
     //restituisce l'immagine associata all'utente (percorso pubblico)
     public function GetProfileImagePublicPath()
     {
-        $imgFile=$imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetImage();
-        if(is_file($imgFile))
+        if(!isset(AA_Const::AA_ROOT_STORAGE_PATH) || AA_Const::AA_ROOT_STORAGE_PATH =="")
         {
-            return AA_Const::AA_WWW_ROOT."/immagini/profili/".$this->GetImage();
+            $imgFile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetImage();
+            if(is_file($imgFile))
+            {
+                return AA_Const::AA_WWW_ROOT."/immagini/profili/".$this->GetImage();
+            }
+            else
+            {
+                return AA_Const::AA_WWW_ROOT."/immagini/profili/generic.png";
+            }    
         }
         else
         {
+            $storage=AA_Storage::GetInstance();
+            if($storage->IsValid())
+            {
+                $file=$storage->GetFileByHash($this->GetImage());
+                if($file->IsValid())
+                {
+                    return AA_Const::AA_WWW_ROOT."/storage.php?object=".$this->GetImage();
+                }
+            }
             return AA_Const::AA_WWW_ROOT."/immagini/profili/generic.png";
         }
     }
@@ -665,9 +681,25 @@ class AA_User
     //restituisce l'immagine associata all'utente (percorso locale)
     public function GetProfileImageLocalPath()
     {
-        $imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetImage();
-        if(is_file($imgfile)) return $imgfile;
-        else return AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/generic.png";
+        if(!isset(AA_Const::AA_ROOT_STORAGE_PATH) || AA_Const::AA_ROOT_STORAGE_PATH =="")
+        {
+            $imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetImage();
+            if(is_file($imgfile)) return $imgfile;
+            else return AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/generic.png";    
+        }
+        else
+        {
+            $storage=AA_Storage::GetInstance();
+            if($storage->IsValid())
+            {
+                $file=$storage->GetFileByHash($this->GetImage());
+                if($file->IsValid())
+                {
+                    return AA_Const::AA_ROOT_STORAGE_PATH.DIRECTORY_SEPARATOR.$file->GetFilePath();
+                }
+            }
+            return AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/generic.png";
+        }
     }
 
     //Verifica se l'utente è disabilitato
