@@ -2525,6 +2525,18 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetWidth(640);
         $wnd->SetHeight(480);
 
+        //Imposta il controllo su cui abilitare il focus
+        $wnd->SetDefaultFocusedItem("cognome");
+
+        //Cognome
+        $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome del candidato", "placeholder" => "es. Verdi"));
+
+        //nome
+        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
+
+        //cf
+        $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
+
         //Circoscrizione
         $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         $options=array();
@@ -2542,15 +2554,7 @@ Class AA_SierModule extends AA_GenericModule
             $options[]=array("id"=>$id,"value"=>$lista->GetProp("denominazione"));
         }
         $wnd->AddSelectField("id_lista", "Lista", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
-
-        //Cognome
-        $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome del candidato", "placeholder" => "es. Verdi"));
-
-        //nome
-        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
-
-        //cf
-        $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
+        
         /*
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
@@ -2598,6 +2602,18 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetWidth(640);
         $wnd->SetHeight(480);
 
+        //Imposta il controllo su cui abilitare il focus
+        $wnd->SetDefaultFocusedItem("cognome");
+
+        //Cognome
+        $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome del candidato", "placeholder" => "es. Verdi"));
+
+        //nome
+        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
+
+        //cf
+        $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
+        
         //Circoscrizione
         $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         $options=array();
@@ -2616,14 +2632,6 @@ Class AA_SierModule extends AA_GenericModule
         }
         $wnd->AddSelectField("id_lista", "Lista", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
 
-        //Cognome
-        $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome del candidato", "placeholder" => "es. Verdi"));
-
-        //nome
-        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome del candidato", "placeholder" => "es. Giuseppe"));
-
-        //cf
-        $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
         /*
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         

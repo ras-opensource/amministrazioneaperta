@@ -60,21 +60,41 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
 <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].AddNewCandidato = function() {
     try 
     {
-        console.log("eventHandlers.defaultHandlers.CoalizioneDblClick", this, arguments);
+        //console.log("eventHandlers.defaultHandlers.AddNewCandidato", this, arguments);
         let task=arguments[0].task;
         let id_object=arguments[0].params[0];
         let params=arguments[0].params[1];
         let table=$$(params.table_id);    
-        console.log("eventHandlers.defaultHandlers.AddNewCandidato",task,params);
+        //console.log("eventHandlers.defaultHandlers.AddNewCandidato",task,params);
         if(table && task && params)
         {
             params.task=task;
-            let circoscrizione=table.getFilter("circoscrizione_desc").value;
-            let lista=table.getFilter("lista").value;
+            let circoscrizione_val="";
+            let lista_val="";
             
-            params.params=[{circoscrizione_desc:circoscrizione},{lista_desc:lista},id_object];
+            let circoscrizione=table.getFilter("circoscrizione_desc");
+            if(circoscrizione)
+            {
+                circoscrizione_val=circoscrizione.value;
+            }
+            else
+            {
+                console.log("eventHandlers.defaultHandlers.AddNewCandidato - circoscrizione non valida.",circoscrizione);
+            }
 
-            console.log("eventHandlers.defaultHandlers.AddNewCandidato",params);
+            let lista=table.getFilter("lista");
+            if(lista) 
+            {
+                lista_val=lista.value;
+            }
+            else
+            {
+                console.log("eventHandlers.defaultHandlers.AddNewCandidato - lista non valida.",lista);
+            }
+            
+            params.params=[{circoscrizione_desc:circoscrizione_val},{lista_desc:lista_val},id_object];
+
+            //console.log("eventHandlers.defaultHandlers.AddNewCandidato",params);
 
             AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_SierModule::AA_ID_MODULE?>');
         }

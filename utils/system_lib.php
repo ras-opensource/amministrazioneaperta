@@ -3272,7 +3272,7 @@ class AA_GenericModule
             "data" => array("detail" => $details, "status" => $status)
         )));
 
-        $layout_toolbar=new AA_JSON_Template_Layout($id . "Layout_TabBar" . "_$id_org",array("type"=>"clean","minWidth"=>500));
+        $layout_toolbar=new AA_JSON_Template_Layout($id . "Layout_ToolBar" . "_$id_org",array("type"=>"clean","minWidth"=>500));
 
         $toolbar = new AA_JSON_Template_Toolbar($id . "_Toolbar" . "_$id_org", array(
             "type" => "clean",

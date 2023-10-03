@@ -932,7 +932,7 @@ class AA_GenericWindowTemplate
         $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Wnd_header_box", "view" => "toolbar", "height" => "38", "elements" => array(
             array("id" => $this->id . "_Title", "css" => "AA_Wnd_title", "template" => $this->title),
             array("id" => $this->id . "_btn_resize", "view" => "icon", "icon" => "mdi mdi-fullscreen", "css" => "AA_Wnd_btn_fullscreen", "width" => 24, "height" => 24, "tooltip" => "Mostra la finestra a schermo intero", "click" => $script),
-            array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Wnd_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi la finestra", "click" => "try{if($$('" . $this->id . "_Wnd').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Wnd').close();}catch(msg){console.error(msg)}")
+            array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "hotkey"=>"esc","css" => "AA_Wnd_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi la finestra", "click" => "try{if($$('" . $this->id . "_Wnd').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Wnd').close();}catch(msg){console.error(msg)}")
         )));
 
         $this->wnd = new AA_JSON_Template_Generic($this->id . "_Wnd", array(
@@ -1161,7 +1161,7 @@ class AA_GenericPopupTemplate
                 {
                     $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Popup_header_box", "type"=>"clean", "view" => "toolbar", "height" => "38", "elements" => array(
                         array("view"=>"spacer"),
-                        array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
+                        array("id" => $this->id . "_btn_close", "view" => "icon", "icon" => "mdi mdi-close", "hotkey"=>"esc","css" => "AA_Popup_btn_close", "width" => 24, "height" => 24, "tooltip" => "Chiudi", "click" => "try{if($$('" . $this->id . "_Popup').config.fullscreen){webix.fullscreen.exit();};$$('" . $this->id . "_Popup').close();}catch(msg){console.error(msg)}"),
                         )));    
                 }
             }
@@ -1370,6 +1370,11 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         $this->labelPosition = $val;
     }
+    protected $defaultFocusedItem="right";
+    public function SetDefaultFocusedItem($sVal="")
+    {
+        $this->defaultFocusedItem = $sVal;
+    }
 
     //Gestione pulsanti
     protected $applyButton = null;
@@ -1472,6 +1477,8 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
             $this->form->SetProp("validation", "validateForm");
         }
 
+        if($this->defaultFocusedItem !="") $this->form->SetProp("defaultFocusedItem",$this->id . "_Field_".$this->defaultFocusedItem);
+
         $this->form->SetProp("elementsConfig", $elementsConfig);
 
         if ($this->applyActions == "") {
@@ -1485,7 +1492,9 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
                 $params .= ", data: $$('" . $this->id . "_Form').getValues()}";
                 if ($this->validation) $validate = "if($$('" . $this->id . "_Form').validate())";
                 else $validate = "";
-                $this->applyActions = $validate . "AA_MainApp.utils.callHandler('saveData',$params,'$this->module')";
+                $buttonApply=$this->id."_Button_Bar_Apply";
+                $setTimeout="setTimeout('if($$(\"".$buttonApply."\")) { $$(\"".$buttonApply."\").enable()};',800)";
+                $this->applyActions = $validate.'{$$(\''.$buttonApply."').disable();AA_MainApp.utils.callHandler('saveData',$params,'$this->module');".$setTimeout."}";
             }
         }
 
@@ -1499,7 +1508,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
 
         //reset form button
         if ($this->enableReset && is_array($this->resetData)) {
-            $resetAction = "if($$('" . $this->id . "_Form')) $$('" . $this->id . "_Form').setValues(" . json_encode($this->resetData) . ")";
+            $resetAction = "if($$('" . $this->id . "_Form')) "."{"."$$('".$this->id."_Button_Bar_Apply').enable();$$('" . $this->id . "_Form').setValues(" . json_encode($this->resetData) . ")}";
             $toolbar->addCol(new AA_JSON_Template_Generic($this->id . "_Button_Bar_Reset", array("view" => "button", "width" => 80, "label" => $this->resetButtonName, "tooltip" => "Reimposta i valori di default", "click" => $resetAction)));
         }
 

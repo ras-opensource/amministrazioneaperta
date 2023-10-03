@@ -144,15 +144,28 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                 let wnd = webix.ui(result.content.value);
 
+                wnd.show();
+
                 //Imposta la validazione del form (se presente)
                 let forms = wnd.queryView("form", "all");
-                for (form of forms) {
+                for (let form of forms) {
                     let oldValues = form.getValues();
                     if (AA_MainApp.utils.isDefined(form.config.validation)) {
                         form.config.rules = { $all: AA_MainApp.utils.getEventHandler(form.config.validation, this.id) };
-                    }
+                    } 
+                    
                     form.reconstruct();
                     form.setValues(oldValues);
+                    if($$(form.config.defaultFocusedItem)) $$(form.config.defaultFocusedItem).focus();
+                    /*{
+                        let controls=$$(form.config.defaultFocusedItem).getNode().getElementsByTagName('input');
+                        console.log(this.name + "::dlg - controllo: ",controls,controls.item(0));
+                        if(controls.length > 0)
+                        {
+                            console.log(this.name + "::dlg - imposto il focus sul controllo: "+form.config.defaultFocusedItem);
+                            controls[0].focus();
+                        }
+                    }*/
                 }
 
                 //Imposta lo stato dei sidemenu (se presenti)
@@ -188,8 +201,6 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         }
                     }
                 }
-
-                wnd.show();
 
                 return true;
             } else {
@@ -478,13 +489,18 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                         //imposta la validazione per i form presenti
                         let forms = obj.queryView("form", "all");
-                        for (form of forms) {
+                        for (let form of forms) {
                             let oldValues = form.getValues();
                             if (AA_MainApp.utils.isDefined(form.config.validation)) {
                                 form.config.rules = { $all: AA_MainApp.utils.getEventHandler(form.config.validation, module.id) };
                             }
                             form.reconstruct();
                             form.setValues(oldValues);
+                            if($$(form.config.defaultFocusedItem))
+                            {
+                                //console.log(this.name + "::refreshUiObjectDefault - imposto il focus sul controllo: "+form.config.defaultFocusedItem);
+                                $$(form.config.defaultFocusedItem).focus();
+                            }
                         }
 
                         //Se la sezione è paginata visualizza la pagina visualizzata precedentemente
