@@ -594,6 +594,8 @@ class AA_SystemTask_UpdateCurrentUserProfile extends AA_GenericTask
             return false;
         }
 
+        $imageFileName="";
+        
         //Recupera il file immagine
         $imgFile=AA_SessionFileUpload::Get("UserProfileImage");
         if($imgFile->IsValid())
@@ -609,27 +611,48 @@ class AA_SystemTask_UpdateCurrentUserProfile extends AA_GenericTask
                 return false;
             }
 
-            //elimina la precedente immagine se è presente
-            if(is_file(AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$user->GetImage()) && $user->GetImage() !="")
+            if(!isset(AA_Const::AA_ROOT_STORAGE_PATH))
             {
-                if(!unlink(AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$user->GetImage()))
+                //elimina la precedente immagine se è presente
+                if(is_file(AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$user->GetImage()) && $user->GetImage() !="")
                 {
-                    AA_Log::Log(__METHOD__." - Errore nell'eliminazione dell'immagine del profilo (".$user->GetImage().")",100);
+                    if(!unlink(AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$user->GetImage()))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nell'eliminazione dell'immagine del profilo (".$user->GetImage().")",100);
+                    }
+                }
+
+                $imageFileName=$user->GetId()."_".Date("Ymdhis");
+
+                //copia l'immagine nella cartella dei profili
+                if(!rename($imgFilePath["tmp_name"],AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$imageFileName))
+                {
+                    $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+                    $sTaskLog.= "{}";
+                    $sTaskLog.="</content><error id='error'>Immagine profilo non caricata (3).</error>";
+                    $this->SetLog($sTaskLog);
+
+                    return false;            
                 }
             }
-
-            $imageFileName=$user->GetId()."_".Date("Ymdhis");
-
-            //copia l'immagine nella cartella dei profili
-            if(!rename($imgFilePath["tmp_name"],AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$imageFileName))
+            else
             {
-                $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-                $sTaskLog.= "{}";
-                $sTaskLog.="</content><error id='error'>Immagine profilo non caricata (3).</error>";
-                $this->SetLog($sTaskLog);
-
-                return false;            
-            }    
+                
+                $storage=AA_Storage::GetInstance();
+                if(!$storage->IsValid())
+                {
+                    AA_Log::Log(__METHOD__." - storage non inizializzato.",100);
+                    if(!unlink($imgFilePath["tmp_name"]))
+                    {
+                        AA_Log::Log(__METHOD__." - file temporaneo non eliminato. (".$imgFilePath["tmp_name"].")",100);
+                    }
+                }
+                else
+                {
+                    $imageFile=$storage->AddFile($imgFilePath["tmp_name"],$imgFilePath["name"],$imgFilePath["type"],1);
+                    if($imageFile->IsValid()) $imageFileName=$imageFile->GetFileHash();
+                }
+            }
         }
 
         if(!AA_User::UpdateCurrentUserProfile($_REQUEST,$imageFileName))

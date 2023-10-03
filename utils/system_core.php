@@ -588,6 +588,11 @@ class AA_Struct
 //USER classe
 class AA_User
 {
+    //stato utenti
+    const AA_USER_STATUS_DELETED=-1;
+    const AA_USER_STATUS_DISABLED=0;
+    const AA_USER_STATUS_ENABLED=1;
+
     //Nome
     protected $sNome = "Nessuno";
 
@@ -603,13 +608,13 @@ class AA_User
     //ID utente
     protected $nID = "0";
 
-    //Struttura
+    //Struttura //old stuff
     protected $oStruct = null;
 
     //Flags
     protected $sFlags = "";
 
-    //Livello;
+    //Livello; //old stuff
     protected $nLivello = 3;
 
     //Flag disabilitato;

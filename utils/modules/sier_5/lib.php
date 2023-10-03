@@ -534,7 +534,7 @@ Class AA_Sier extends AA_Object_V2
             return array();
         }
 
-        AA_Log::Log(__METHOD__." - query: ".$query,100);
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=array();
         if($db->GetAffectedRows()>0)
