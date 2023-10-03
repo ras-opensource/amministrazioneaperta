@@ -930,11 +930,11 @@ class AA_User
         $db = new AA_Database();
 
         if ($sUserName != null && $sUserPwd != null) {
-            AA_Log::Log(get_class() . "->UserAuth($sToken,$sUserName, $sUserPwd) - autenticazione in base al nome utente.");
+            AA_Log::Log(__METHOD__." - autenticazione in base al nome utente.");
 
             if (filter_var($sUserName, FILTER_VALIDATE_EMAIL)) {
                 //Login tramite email
-                AA_Log::Log(get_class() . "->UserAuth($sUserName) - autenticazione in base alla mail.");
+                AA_Log::Log(__METHOD__." - autenticazione in base alla mail.");
                 $query_utenti = sprintf("SELECT utenti.*,assessorati.tipo, assessorati.descrizione as assessorato, direzioni.descrizione as direzione, servizi.descrizione as servizio FROM utenti left join assessorati on utenti.id_assessorato=assessorati.id left join direzioni on utenti.id_direzione=direzioni.id left join servizi on utenti.id_servizio=servizi.id WHERE utenti.email = '%s' AND passwd= '%s' ", addslashes($sUserName), addslashes(md5($sUserPwd)));
             } else {
                 //Login ordinario tramite username
@@ -951,11 +951,11 @@ class AA_User
 
             if ($db->GetAffectedRows() > 0) {
                 if ($rs['disable'] == '1') {
-                    AA_Log::Log(get_class() . "->UserAuth($sUserName) - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
+                    AA_Log::Log(__METHOD__." - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
                 }
 
                 if ($rs['eliminato'] == '1') {
-                    AA_Log::Log(get_class() . "->UserAuth($sUserName) - L'utente è stato disattivato permanentemente (id: " . $rs["id"] . ").", 100);
+                    AA_Log::Log(__METHOD__." - L'utente è stato disattivato permanentemente (id: " . $rs["id"] . ").", 100);
                 }
 
                 if ($rs['disable'] == '0' && $rs['eliminato'] == '0') {
@@ -984,7 +984,7 @@ class AA_User
                     AA_Log::LogAction($rs['id'], 0, "Log In"); //old stuff
 
                     //New stuff
-                    AA_Log::Log(get_class() . "->UserAuth($sToken,$sUserName, $sUserPwd) - Autenticazione avvenuta con successo (credenziali corrette).", 50);
+                    AA_Log::Log(__METHOD__." - Autenticazione avvenuta con successo (credenziali corrette).", 50);
                     $concurrent=false;
                     if(isset($rs['concurrent']) && $rs['concurrent'] > 0) $concurrent=true;
                     $_SESSION['token'] = AA_User::GenerateToken($rs['id'],$remember_me,$concurrent);
@@ -1007,7 +1007,180 @@ class AA_User
                 return AA_User::Guest();
             }
 
-            AA_Log::Log(get_class() . "->UserAuth($sUserName) - Autenticazione fallita (credenziali errate).", 100);
+            AA_Log::Log(__METHOD__." - Autenticazione fallita (credenziali errate).", 100);
+            return AA_User::Guest();
+        }
+
+        if ($sToken == null || $sToken == "") 
+        {
+            if(isset($_SESSION['token'])) $sToken = $_SESSION['token'];
+            if($sToken == "" && isset($_COOKIE["AA_AUTH_TOKEN"]))
+            {   
+                $sToken=$_COOKIE["AA_AUTH_TOKEN"];
+                AA_Log::Log(__METHOD__." - auth token login.",100);
+            }
+        }
+
+        if ($sToken != null) {
+            //AA_Log::Log(get_class()."->UserAuth($sToken) - autenticazione in base al token.");
+
+            $token_timeout_m = 30;
+            $query_token = sprintf("SELECT * FROM tokens where (TIMESTAMPDIFF(MINUTE,data_rilascio, NOW()) < '%s' OR remember_me='1') and ip_src = '%s' and token ='%s'", $token_timeout_m, $_SERVER['REMOTE_ADDR'], $sToken);
+
+            if ($db->Query($query_token)) {
+                $result = $db->GetResult();
+                $rs = $result->fetch(PDO::FETCH_ASSOC);
+            } else {
+                AA_Log::Log(__METHOD__ . " - errore nell'accesso al db: " . $db->GetErrorMessage(), 100);
+                return AA_User::Guest();
+            }
+
+            if ($db->GetAffectedRows() > 0) {
+
+                if (strcmp($rs['token'], $sToken) == 0) {
+                    //AA_Log::Log(get_class()."->UserAuth($sToken) - Authenticate token ($sToken) - success", 50);
+
+                    $user = AA_User::LoadUser($rs['id_utente']);
+                    if ($user->IsDisabled()) {
+                        AA_Log::Log(get_class() . "->UserAuth($sToken) - L'utente è disattivato.", 100);
+                        return AA_User::Guest();
+                    }
+
+                     //Old stuff compatibility
+                     $_SESSION['user'] = $user->GetUsername();
+                     $_SESSION['nome'] = $user->GetNome();
+                     $_SESSION['cognome'] = $user->GetCognome();
+                     $_SESSION['email'] = $user->GetEmail();
+                     $_SESSION['user_home'] = "admin/index.php";
+                     $_SESSION['id_user'] = $user->GetId();
+                     $_SESSION['id_utente'] = $user->GetId();
+                     $struct=$user->GetStruct();
+                     $_SESSION['id_assessorato'] = $struct->GetAssessorato(true);
+                     $_SESSION['tipo_struct'] = $struct->GetTipo();
+                     $_SESSION['id_direzione'] = $struct->GetDirezione(true);
+                     $_SESSION['id_servizio'] = $struct->GetServizio(true);
+                     $_SESSION['id_settore'] = 0;
+                     $_SESSION['livello'] = $user->GetLevel();
+                     $_SESSION['level'] = $user->GetLevel();
+                     $_SESSION['assessorato'] = $struct->GetAssessorato();
+                     $_SESSION['direzione'] = $struct->GetDirezione();
+                     $_SESSION['servizio'] = $struct->GetServizio();
+                     $_SESSION['settore'] = "";
+                     $_SESSION['user_flags'] = $user->GetFlags();
+                     $_SESSION['flags'] = $user->GetFlags();
+                    //AA_Log::LogAction($rs['id'], 0, "Log In"); //old stuff
+
+                    //Rinfresco della durata del token
+                    AA_User::RefreshToken($sToken);
+                    $_SESSION['token'] = $sToken;
+
+                    $user->bCurrentUser = true;
+
+                    //update last login time
+                    $db->Query("UPDATE utenti set lastlogin = NOW() WHERE id='".$rs['id_utente']."' LIMIT 1");
+
+                    return $user;
+                }
+            }
+
+            //Old stuff
+            if (isset($log)) AA_Log::LogAction($rs->Get('id'), 0, "Authenticate token ($sToken) - failed");
+            //----------
+
+            AA_Log::Log(get_class() . "->UserAuth($sToken) - Authenticate token ($sToken) - failed", 100);
+            return AA_User::Guest();
+        }
+
+        AA_Log::Log(get_class() . "->UserAuth($sToken,$sUserName) - Autenticazione fallita.", 100);
+        return AA_User::Guest();
+    }
+
+    //Autenticazione legacy (md5 password)
+    static public function legacyUserAuth($sToken = "", $sUserName = "", $sUserPwd = "", $remember_me=false)
+    {
+        //AA_Log::Log(get_class()."->UserAuth($sToken,$sUserName, $sUserPwd)");
+
+        $db = new AA_Database();
+
+        if ($sUserName != null && $sUserPwd != null) {
+            AA_Log::Log(__METHOD__." - autenticazione in base al nome utente.");
+
+            if (filter_var($sUserName, FILTER_VALIDATE_EMAIL)) {
+                //Login tramite email
+                AA_Log::Log(__METHOD__." - autenticazione in base alla mail.");
+                $query_utenti = sprintf("SELECT utenti.*,assessorati.tipo, assessorati.descrizione as assessorato, direzioni.descrizione as direzione, servizi.descrizione as servizio FROM utenti left join assessorati on utenti.id_assessorato=assessorati.id left join direzioni on utenti.id_direzione=direzioni.id left join servizi on utenti.id_servizio=servizi.id WHERE utenti.email = '%s' AND passwd= '%s' ", addslashes($sUserName), addslashes($sUserPwd));
+            } else {
+                //Login ordinario tramite username
+                $query_utenti = sprintf("SELECT utenti.*,assessorati.tipo, assessorati.descrizione as assessorato, direzioni.descrizione as direzione, servizi.descrizione as servizio FROM utenti left join assessorati on utenti.id_assessorato=assessorati.id left join direzioni on utenti.id_direzione=direzioni.id left join servizi on utenti.id_servizio=servizi.id WHERE user = '%s' AND passwd= '%s' ", addslashes($sUserName), addslashes($sUserPwd));
+            }
+
+            if ($db->Query($query_utenti)) {
+                $result = $db->GetResult();
+                $rs = $result->fetch(PDO::FETCH_ASSOC);
+            } else {
+                AA_Log::Log(__METHOD__ . " - errore nell'accesso al db: " . $db->GetErrorMessage(), 100);
+                return AA_User::Guest();
+            }
+
+            if ($db->GetAffectedRows() > 0) {
+                if ($rs['disable'] == '1') {
+                    AA_Log::Log(__METHOD__." - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
+                }
+
+                if ($rs['eliminato'] == '1') {
+                    AA_Log::Log(__METHOD__." - L'utente è stato disattivato permanentemente (id: " . $rs["id"] . ").", 100);
+                }
+
+                if ($rs['disable'] == '0' && $rs['eliminato'] == '0') {
+                    //Old stuff compatibility
+                    $_SESSION['user'] = $rs['user'];
+                    $_SESSION['nome'] = $rs['nome'];
+                    $_SESSION['cognome'] = $rs['cognome'];
+                    $_SESSION['email'] = $rs['email'];
+                    $_SESSION['user_home'] = $rs['home'];
+                    $_SESSION['id_user'] = $rs['id'];
+                    $_SESSION['id_utente'] = $rs['id'];
+                    $_SESSION['id_assessorato'] = $rs['id_assessorato'];
+                    $_SESSION['tipo_struct'] = $rs['tipo'];
+                    $_SESSION['id_direzione'] = $rs['id_direzione'];
+                    $_SESSION['id_servizio'] = $rs['id_servizio'];
+                    $_SESSION['id_settore'] = $rs['id_settore'];
+                    $_SESSION['livello'] = $rs['livello'];
+                    $_SESSION['level'] = $rs['livello'];
+                    $_SESSION['assessorato'] = $rs['assessorato'];
+                    $_SESSION['direzione'] = $rs['direzione'];
+                    $_SESSION['servizio'] = $rs['servizio'];
+                    $_SESSION['settore'] = $rs['settore'];
+                    $_SESSION['user_flags'] = $rs['flags'];
+                    $_SESSION['flags'] = $rs['flags'];
+
+                    //AA_Log::LogAction($rs['id'], 0, "Log In"); //old stuff
+
+                    //New stuff
+                    AA_Log::Log(__METHOD__." - Autenticazione avvenuta con successo (credenziali corrette).", 50);
+                    $concurrent=false;
+                    if(isset($rs['concurrent']) && $rs['concurrent'] > 0) $concurrent=true;
+                    $_SESSION['token'] = AA_User::GenerateToken($rs['id'],$remember_me,$concurrent);
+
+                    if($remember_me)
+                    {
+                        //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
+                        setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
+                    }
+
+                    $user = AA_User::LoadUser($rs['id']);
+                    $user->bCurrentUser = true;
+
+                    //update last login time
+                    $db->Query("UPDATE utenti set lastlogin = NOW() WHERE id='".$rs['id']."' LIMIT 1");
+
+                    return $user;
+                }
+
+                return AA_User::Guest();
+            }
+
+            AA_Log::Log(__METHOD__." - Autenticazione fallita (credenziali errate).", 100);
             return AA_User::Guest();
         }
 
@@ -1156,6 +1329,7 @@ class AA_User
         return false;
     }
 
+    
 
     //Autenticazione via mail OTP - passo 1
     static public function MailOTPAuthSend($email = null, $register = true)

@@ -16,7 +16,7 @@ include_once "libs.php";
 $log=false;
 function UserAuth($user,$pwd,$token)
 {
-    $user=AA_User::UserAuth($token,$user,$pwd);
+    $user=AA_User::legacyUserAuth($token,$user,$pwd);
     
     return $user->IsValid();
 
@@ -3854,7 +3854,7 @@ function AA_XML_ReportArt22($param="")
 
   if($user->IsGuest())
   {
-    $user=AA_User::UserAuth("","aa_user_art22","a0a475cf454cf9a06979034098167b9e");
+    $user=AA_User::UserAuth("","aa_user_art22","Ab123456");
     $bLogOut=true;
   } 
 
