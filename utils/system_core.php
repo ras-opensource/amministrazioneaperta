@@ -651,7 +651,7 @@ class AA_User
     //restituisce l'immagine associata all'utente (percorso pubblico)
     public function GetProfileImagePublicPath()
     {
-        if(!isset(AA_Const::AA_ROOT_STORAGE_PATH) || AA_Const::AA_ROOT_STORAGE_PATH =="")
+        if(AA_Const::AA_ROOT_STORAGE_PATH==null || AA_Const::AA_ROOT_STORAGE_PATH =="")
         {
             $imgFile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetImage();
             if(is_file($imgFile))
@@ -681,7 +681,7 @@ class AA_User
     //restituisce l'immagine associata all'utente (percorso locale)
     public function GetProfileImageLocalPath()
     {
-        if(!isset(AA_Const::AA_ROOT_STORAGE_PATH) || AA_Const::AA_ROOT_STORAGE_PATH =="")
+        if(AA_Const::AA_ROOT_STORAGE_PATH==null || AA_Const::AA_ROOT_STORAGE_PATH =="")
         {
             $imgfile=AA_Const::AA_APP_FILESYSTEM_FOLDER."/immagini/profili/".$this->GetImage();
             if(is_file($imgfile)) return $imgfile;
