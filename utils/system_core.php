@@ -593,6 +593,9 @@ class AA_User
     const AA_USER_STATUS_DISABLED=0;
     const AA_USER_STATUS_ENABLED=1;
 
+    //tabella utenti
+    const AA_DB_TABLE="aa_users";
+
     //Nome
     protected $sNome = "Nessuno";
 
@@ -932,10 +935,10 @@ class AA_User
             if (filter_var($sUserName, FILTER_VALIDATE_EMAIL)) {
                 //Login tramite email
                 AA_Log::Log(get_class() . "->UserAuth($sUserName) - autenticazione in base alla mail.");
-                $query_utenti = sprintf("SELECT utenti.*,assessorati.tipo, assessorati.descrizione as assessorato, direzioni.descrizione as direzione, servizi.descrizione as servizio FROM utenti left join assessorati on utenti.id_assessorato=assessorati.id left join direzioni on utenti.id_direzione=direzioni.id left join servizi on utenti.id_servizio=servizi.id WHERE utenti.email = '%s' AND passwd= '%s' ", addslashes($sUserName), addslashes($sUserPwd));
+                $query_utenti = sprintf("SELECT utenti.*,assessorati.tipo, assessorati.descrizione as assessorato, direzioni.descrizione as direzione, servizi.descrizione as servizio FROM utenti left join assessorati on utenti.id_assessorato=assessorati.id left join direzioni on utenti.id_direzione=direzioni.id left join servizi on utenti.id_servizio=servizi.id WHERE utenti.email = '%s' AND passwd= '%s' ", addslashes($sUserName), addslashes(md5($sUserPwd)));
             } else {
                 //Login ordinario tramite username
-                $query_utenti = sprintf("SELECT utenti.*,assessorati.tipo, assessorati.descrizione as assessorato, direzioni.descrizione as direzione, servizi.descrizione as servizio FROM utenti left join assessorati on utenti.id_assessorato=assessorati.id left join direzioni on utenti.id_direzione=direzioni.id left join servizi on utenti.id_servizio=servizi.id WHERE user = '%s' AND passwd= '%s' ", addslashes($sUserName), addslashes($sUserPwd));
+                $query_utenti = sprintf("SELECT utenti.*,assessorati.tipo, assessorati.descrizione as assessorato, direzioni.descrizione as direzione, servizi.descrizione as servizio FROM utenti left join assessorati on utenti.id_assessorato=assessorati.id left join direzioni on utenti.id_direzione=direzioni.id left join servizi on utenti.id_servizio=servizi.id WHERE user = '%s' AND passwd= '%s' ", addslashes($sUserName), addslashes(md5($sUserPwd)));
             }
 
             if ($db->Query($query_utenti)) {
@@ -1661,150 +1664,206 @@ class AA_User
             return false;
         }
 
-        if ($this->oStruct->GetAssessorato(true) != 0 && $this->oStruct->GetAssessorato(true) != $params['assessorato']) {
-            AA_Log::Log(get_class() . "->AddNewUser($params) - Assessorato diverso", 100);
-            return false;
-        }
-        if ($this->oStruct->GetDirezione(true) != 0 && $this->oStruct->GetDirezione(true) != $params['direzione']) {
-            AA_Log::Log(get_class() . "->AddNewUser($params) - Direzione diversa", 100);
-            return false;
-        }
-        if ($this->oStruct->GetServizio(true) != 0 && $this->oStruct->GetServizio(true) != $params['servizio']) {
-            AA_Log::Log(get_class() . "->AddNewUser($params) - Servizio diverso", 100);
-            return false;
-        }
-
-        //Non si possono istanziare utenti amministratori dello stesso livello gerarchico (super user escluso)
-        if ($this->oStruct->GetServizio(true) == $params['servizio'] && $params['livello'] == 0  && $this->oStruct->GetServizio(true) != 0) {
-            $params['livello'] = "1";
-            AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
-        }
-        if ($this->oStruct->GetDirezione(true) == $params['direzione'] && $params['servizio'] == 0 && $params['livello'] == 0 && $this->oStruct->GetDirezione(true) != 0) {
-            $params['livello'] = "1";
-            AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
-        }
-        if ($this->oStruct->GetAssessorato(true) == $params['assessorato'] && $params['direzione'] == 0 && $params['livello'] == 0 && $this->oStruct->GetAssessorato(true) != 0) {
-            $params['livello'] = "1";
-            AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
-        }
-
         //Verifica se l'utente esiste già
         if (AA_user::UserNameExist($params['user'])) {
             AA_Log::Log(get_class() . "->AddNewUser($params) - nome utente già esistente.", 100);
             return false;
         }
 
-        $flags = "U0|S0";
-        $separatore = "";
+        $db = new AA_Database();
 
-        //Solo admin imposta le flags
-        if ($this->IsSuperUser()) {
-            if (!isset($params['gest_utenti'])) {
-                $flags .= $separatore . "U0";
-                $separatore = "|";
-            }
-            if (!isset($params['gest_struct'])) {
-                $flags .= $separatore . "S0";
-                $separatore = "|";
-            }
-            if (isset($params['gest_polizze'])) {
-                $flags .= $separatore . "polizze";
-                $separatore = "|";
-            }
-            if (isset($params['gest_debitori'])) {
-                $flags .= $separatore . "debitori";
-                $separatore = "|";
-            }
-            if (isset($params['gest_accessi'])) {
-                $flags .= $separatore . "accessi";
-                $separatore = "|";
-            }
-            if (isset($params['admin_gest_accessi'])) {
-                $flags .= $separatore . "admin_accessi";
-                $separatore = "|";
-            }
-            if (isset($params['art12'])) {
-                $flags .= $separatore . "art12";
-                $separatore = "|";
-            }
-            if (isset($params['art14c1a'])) {
-                $flags .= $separatore . "art14c1a|art14";
-                $separatore = "|";
-            }
-            if (isset($params['art14c1c'])) {
-                $flags .= $separatore . "art14c1c|art14";
-                $separatore = "|";
-            }
-            if (isset($params['art14c1bis'])) {
-                $flags .= $separatore . "art14|art14c1bis";
-                $separatore = "|";
-            }
-            if (isset($params['art23'])) {
-                $flags .= $separatore . "art23";
-                $separatore = "|";
-            }
-            if (isset($params['art22'])) {
-                $flags .= $separatore . "art22";
-                $separatore = "|";
-            }
-            if (isset($params['art22_admin'])) {
-                $flags .= $separatore . "art22_admin";
-                $separatore = "|";
-            }
-            if (isset($params['art30'])) {
-                $flags .= $separatore . "art30";
-                $separatore = "|";
-            }
-            if (isset($params['gest_processi'])) {
-                $flags .= $separatore . "processi";
-                $separatore = "|";
-            }
-            if (isset($params['gest_incarichi_titolari'])) {
-                $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;
-                $separatore = "|";
-            }
-            if (isset($params['gest_incarichi'])) {
-                $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI;
-                $separatore = "|";
-            }
-            if (isset($params['patrimonio'])) {
-                $flags .= $separatore . "patrimonio";
-                $separatore = "|";
-            }
-        }
+        $new_id=0;
 
-        //la modifica delle schede pubblicate può essere abilitata anche dagli altri utenti amministratori
-        if (isset($params['unlock']) && $params['livello'] == 0) {
-            $flags .= $separatore . "P1";
-            $separatore = "|";
-        }
+        //Stato utente
+        $status=static::AA_USER_STATUS_ENABLED;
+        if(isset($params['disable']) && $params['disable']>0) $status=static::AA_USER_STATUS_DISABLED;
 
-        //Inserisce l'utente
-        $db = new Database();
-        $sql = "INSERT INTO utenti SET ";
-        $sql .= "id_assessorato='" . $params['assessorato'] . "'";
-        $sql .= ",id_direzione='" . $params['direzione'] . "'";
-        $sql .= ",id_servizio='" . $params['servizio'] . "'";
-        $sql .= ",id_settore='" . $params['settore'] . "'";
-        $sql .= ",user='" . addslashes($params['user']) . "'";
-        if (isset($params['passwd'])) $sql .= ",passwd=MD5('" . $params['passwd'] . "')";
-        else $sql .= ",passwd=MD5('" . date("Y/m/d H:i") . "')";
-        $sql .= ",livello='" . $params['livello'] . "'";
-        $sql .= ",nome='" . addslashes($params['nome']) . "'";
-        $sql .= ",cognome='" . addslashes($params['cognome']) . "'";
-        $sql .= ",email='" . $params['email'] . "'";
-        $sql .= ",flags='" . $flags . "'";
-        if (isset($params['disable'])) $sql .= ",disable='1'";
-        else $sql .= ",disable='0'";
-        if (isset($params['concurrent']) && $params['concurrent']>0) $sql .= ",concurrent='1'";
-        else $sql .= ",concurrent='0'";
+        //new stuff
+        $info=json_encode(array(
+            "nome"=>addslashes(trim($params['nome'])),
+            "cognome"=>addslashes(trim($params['cognome'])),
+            "phone"=>addslashes(trim($params['phone'])),
+            "image"=>addslashes(trim($params['image']))
+        ));
 
-        if ($db->Query($sql) === false) {
-            AA_Log::Log(get_class() . "->AddNewUser($params) - Errore: " . $db->lastError . " - nella query: " . $sql, 100);
+        $sql="INSERT INTO ".static::AA_DB_TABLE." SET ";
+        $sql.="user='".addslashes(trim($params['user']))."'";
+        $sql.=", email='".addslashes(trim($params['email']))."'";
+        $sql.=", flags='".addslashes(trim($params['flags']))."'";
+        $sql.=", info='".addslashes($info)."'";
+        $sql.=", data_abilitazione='".date("Y-m-d")."'";
+        $sql.=", status='".$status."'";
+        if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".password_hash($params['passwd'],PASSWORD_DEFAULT)."'";
+        else $sql.=", passwd='".password_hash(uniqid(date("Y-m-d")),PASSWORD_DEFAULT)."'";
+        if (isset($params['groups']) && $params['groups'] !="") $sql.=", groups='".addslashes($params['groups'])."'";
+        
+        if (!$db->Query($sql)) {
+            AA_Log::Log(__METHOD__ . " - new stuff - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
             return false;
         }
 
-        AA_Log::LogAction($this->GetID(), "1,9," . $db->lastInsertId, Database::$lastQuery); //Old stuff
+        $new_id=$db->GetLastInsertId();
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if ($this->oStruct->GetAssessorato(true) != 0 && $this->oStruct->GetAssessorato(true) != $params['assessorato']) {
+                AA_Log::Log(get_class() . "->AddNewUser($params) - Assessorato diverso", 100);
+                return false;
+            }
+            if ($this->oStruct->GetDirezione(true) != 0 && $this->oStruct->GetDirezione(true) != $params['direzione']) {
+                AA_Log::Log(get_class() . "->AddNewUser($params) - Direzione diversa", 100);
+                return false;
+            }
+            if ($this->oStruct->GetServizio(true) != 0 && $this->oStruct->GetServizio(true) != $params['servizio']) {
+                AA_Log::Log(get_class() . "->AddNewUser($params) - Servizio diverso", 100);
+                return false;
+            }
+    
+            //Non si possono istanziare utenti amministratori dello stesso livello gerarchico (super user escluso)
+            if ($this->oStruct->GetServizio(true) == $params['servizio'] && $params['livello'] == 0  && $this->oStruct->GetServizio(true) != 0) {
+                $params['livello'] = "1";
+                AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
+            }
+            if ($this->oStruct->GetDirezione(true) == $params['direzione'] && $params['servizio'] == 0 && $params['livello'] == 0 && $this->oStruct->GetDirezione(true) != 0) {
+                $params['livello'] = "1";
+                AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
+            }
+            if ($this->oStruct->GetAssessorato(true) == $params['assessorato'] && $params['direzione'] == 0 && $params['livello'] == 0 && $this->oStruct->GetAssessorato(true) != 0) {
+                $params['livello'] = "1";
+                AA_Log::Log(get_class() . "->AddNewUser($params) - L'utente corrente (" . $this->GetUsername() . ") non può istanziare utenti amministratori dello stesso livello gerarchico", 100);
+            }
+
+            $flags = "U0|S0";
+            $separatore = "";
+
+            //Solo admin imposta le flags
+            if ($this->IsSuperUser()) {
+                if (!isset($params['gest_utenti'])) {
+                    $flags .= $separatore . "U0";
+                    $separatore = "|";
+                }
+                if (!isset($params['gest_struct'])) {
+                    $flags .= $separatore . "S0";
+                    $separatore = "|";
+                }
+                if (isset($params['gest_polizze'])) {
+                    $flags .= $separatore . "polizze";
+                    $separatore = "|";
+                }
+                if (isset($params['gest_debitori'])) {
+                    $flags .= $separatore . "debitori";
+                    $separatore = "|";
+                }
+                if (isset($params['gest_accessi'])) {
+                    $flags .= $separatore . "accessi";
+                    $separatore = "|";
+                }
+                if (isset($params['admin_gest_accessi'])) {
+                    $flags .= $separatore . "admin_accessi";
+                    $separatore = "|";
+                }
+                if (isset($params['art12'])) {
+                    $flags .= $separatore . "art12";
+                    $separatore = "|";
+                }
+                if (isset($params['art14c1a'])) {
+                    $flags .= $separatore . "art14c1a|art14";
+                    $separatore = "|";
+                }
+                if (isset($params['art14c1c'])) {
+                    $flags .= $separatore . "art14c1c|art14";
+                    $separatore = "|";
+                }
+                if (isset($params['art14c1bis'])) {
+                    $flags .= $separatore . "art14|art14c1bis";
+                    $separatore = "|";
+                }
+                if (isset($params['art23'])) {
+                    $flags .= $separatore . "art23";
+                    $separatore = "|";
+                }
+                if (isset($params['art22'])) {
+                    $flags .= $separatore . "art22";
+                    $separatore = "|";
+                }
+                if (isset($params['art22_admin'])) {
+                    $flags .= $separatore . "art22_admin";
+                    $separatore = "|";
+                }
+                if (isset($params['art30'])) {
+                    $flags .= $separatore . "art30";
+                    $separatore = "|";
+                }
+                if (isset($params['gest_processi'])) {
+                    $flags .= $separatore . "processi";
+                    $separatore = "|";
+                }
+                if (isset($params['gest_incarichi_titolari'])) {
+                    $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;
+                    $separatore = "|";
+                }
+                if (isset($params['gest_incarichi'])) {
+                    $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI;
+                    $separatore = "|";
+                }
+                if (isset($params['patrimonio'])) {
+                    $flags .= $separatore . "patrimonio";
+                    $separatore = "|";
+                }
+                if (isset($params['concurrent']) && $params['concurrent']>0)
+                {
+                    $flags .= $separatore . "concurrent";
+                    $separatore = "|";
+                }
+            }
+
+            //la modifica delle schede pubblicate può essere abilitata anche dagli altri utenti amministratori
+            if (isset($params['unlock']) && $params['livello'] == 0) {
+                $flags .= $separatore . "P1";
+                $separatore = "|";
+            }
+
+            //Inserisce l'utente
+            $sql = "INSERT INTO utenti SET ";
+            if($new_id > 0) $sql .= "id='".$new_id."', id_assessorato='" . $params['assessorato'] . "'";
+            else $sql .= "id_assessorato='" . $params['assessorato'] . "'";
+            $sql .= ",id_direzione='" . $params['direzione'] . "'";
+            $sql .= ",id_servizio='" . $params['servizio'] . "'";
+            $sql .= ",id_settore='" . $params['settore'] . "'";
+            $sql .= ",user='" . addslashes(trim($params['user'])) . "'";
+            if (isset($params['passwd'])) $sql .= ",passwd=MD5('" . $params['passwd'] . "')";
+            else $sql .= ",passwd=MD5('" . date("Y/m/d H:i") . "')";
+            $sql .= ",livello='" . $params['livello'] . "'";
+            $sql .= ",nome='" . addslashes($params['nome']) . "'";
+            $sql .= ",cognome='" . addslashes($params['cognome']) . "'";
+            $sql .= ",email='" . $params['email'] . "'";
+            $sql .= ",flags='" . $flags . "'";
+            if (isset($params['disable'])) $sql .= ",disable='1'";
+            else $sql .= ",disable='0'";
+            if (isset($params['concurrent']) && $params['concurrent']>0) $sql .= ",concurrent='1'";
+            else $sql .= ",concurrent='0'";
+
+            if (!$db->Query($sql)) {
+                AA_Log::Log(get_class() . "->AddNewUser($params) - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
+                return false;
+            }
+
+            $legacy_data=json_encode(array(
+                "id_assessorato"=>$params['assessorato'],
+                "id_direzione"=>$params['direzione'],
+                "id_servizio"=>$params['servizio'],
+                "id"=>$new_id,
+                "level"=>$params['livello'],
+                "flags"=>explode("|",$flags)
+            ));
+
+            if (isset($params['passwd']) && $params['passwd'] !="") $legacy_data['pwd']=md5($params['passwd']);
+
+            //Aggiorna la nuova tabella
+            if($new_id > 0) $db->Query("UPDATE ".static::AA_DB_TABLE." SET legacy_data='".addslashes($legacy_data)."' WHERE id='".$new_id."' LIMIT 1");
+            
+            AA_Log::LogAction($this->GetID(), "1,9," . $new_id, $sql); //Old stuff
+        }
 
         return true;
     }
@@ -2089,11 +2148,11 @@ class AA_User
         }
 
         //Elimina l'utente indicato
-        $db = new Database();
+        $db = new AA_Database();
         $sql = "UPDATE utenti SET eliminato=1 where id='" . $user->GetID() . "' LIMIT 1";
 
         if ($db->Query($sql) === false) {
-            AA_Log::Log(get_class() . "->DeleteUser($idUser)  - Errore: " . $db->lastError . " - nella query: " . $sql, 100);
+            AA_Log::Log(get_class() . "->DeleteUser($idUser)  - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
             return false;
         }
 
@@ -2111,7 +2170,7 @@ class AA_User
 
         if (is_array($users) && count($users) > 0) {
             $credenziali = "";
-            $db = new Database();
+            $db = new AA_Database();
 
             foreach ($users as $user) {
                 //Verifica che l'utente sia valido
@@ -2142,7 +2201,7 @@ class AA_User
                     $query = "UPDATE utenti set passwd=MD5('" . $newPwd . "') where id='" . $user->GetID() . "' LIMIT 1";
 
                     if (!$db->Query($query)) {
-                        AA_Log::Log(get_class() . "->RecoverPassword($email) - Errore durante l'aggiornamento della password per l'utente: " . $user->GetUserName() . " - " . $db->lastError, 100);
+                        AA_Log::Log(get_class() . "->RecoverPassword($email) - Errore durante l'aggiornamento della password per l'utente: " . $user->GetUserName() . " - " . $db->GetErrorMessage(), 100);
                     } else {
                         if(static::$aResetPasswordEmailParams['bShowStruct']) $credenziali .= '<br>struttura: ' . $struttura;
                         $credenziali .= '

@@ -9,7 +9,7 @@ $EmailOTP_error="";
 
 //utente per l'aggiornamento
 $AA_UserUpdater=AA_User::GetCurrentUser();
-if($AA_UserUpdater->GetUsername() != "smartcv_ras" || !$AA_UserUpdater->IsValid()) $AA_UserUpdater=AA_User::UserAuth('',"smartcv_ras",md5("Ab20210209"));
+if($AA_UserUpdater->GetUsername() != "smartcv_ras" || !$AA_UserUpdater->IsValid()) $AA_UserUpdater=AA_User::UserAuth('',"smartcv_ras","Ab20210209");
 if(!$AA_UserUpdater->IsValid())
 {
   AA_Log::Log('Errore di autenticazione utente smartcv - '.AA_Log::$lastErrorLog,100,false,true);

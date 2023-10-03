@@ -3535,7 +3535,7 @@ async function AA_UserAuth(params = null) {
                                 }
 
                                 //Hashing password
-                                form_data['pwd'] = CryptoJS.MD5(form_data['pwd']).toString();
+                                form_data['pwd'] = form_data['pwd'];
 
                                 //console.log("AA_UserAuth",form_data);
 
