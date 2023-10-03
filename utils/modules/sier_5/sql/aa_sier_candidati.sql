@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Set 26, 2023 alle 18:19
+-- Creato il: Ott 03, 2023 alle 13:54
 -- Versione del server: 10.5.21-MariaDB
 -- Versione PHP: 8.2.10
 
@@ -35,7 +35,8 @@ CREATE TABLE `aa_sier_candidati` (
   `cognome` varchar(255) NOT NULL,
   `cf` varchar(30) NOT NULL,
   `cg` varchar(255) NOT NULL,
-  `cv` varchar(255) NOT NULL
+  `cv` varchar(255) NOT NULL,
+  `ordine` int(2) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 --

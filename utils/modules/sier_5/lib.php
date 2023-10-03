@@ -262,6 +262,7 @@ Class AA_SierCandidato
     {
         //Definisce le proprietà dell'oggetto e i valori di default
         $this->aProps['id']=0;
+        $this->aProps['ordine']=0;
         $this->aProps['id_lista']=0;
         $this->aProps['lista']="";
         $this->aProps['id_coalizione']=0;
@@ -604,7 +605,7 @@ Class AA_Sier extends AA_Object_V2
             $query.=" AND ".static::AA_CANDIDATI_DB_TABLE.".id_lista='".addslashes($lista->GetProp('id'))."'";
         }
 
-        $query.=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome";
+        $query.=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".ordine, ".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome";
 
         if(!$db->Query($query))
         {
@@ -1344,6 +1345,20 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
+        $db= new AA_Database();
+
+        //Calcolo dell'ordine
+        $ordine=0;
+        $query="SELECT count(id) as num FROM ".static::AA_CANDIDATI_DB_TABLE." WHERE id_circoscrizione='".$candidato->GetProp("id_circoscrizione")."' AND id_lista='".addslashes($candidato->GetProp("id_lista"))."'";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+
+        $rs=$db->GetResultSet();
+        $ordine=$rs[0]['num']+1;
+
         $query="INSERT INTO ".static::AA_CANDIDATI_DB_TABLE." SET id_circoscrizione='".$candidato->GetProp("id_circoscrizione")."'";
         $query.=", id_lista='".addslashes($candidato->GetProp("id_lista"))."'";
         $query.=", nome='".addslashes($candidato->GetProp("nome"))."'";
@@ -1351,8 +1366,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", cf='".addslashes($candidato->GetProp("cf"))."'";
         $query.=", cv='".addslashes($candidato->GetProp("cv"))."'";
         $query.=", cg='".addslashes($candidato->GetProp("cg"))."'";
-        
-        $db= new AA_Database();
+        $query.=", ordine='".$ordine."'";
         
         //AA_Log::Log(__METHOD__." - query: ".$query, 100);
         
@@ -1414,11 +1428,12 @@ Class AA_Sier extends AA_Object_V2
 
         $query="UPDATE ".static::AA_CANDIDATI_DB_TABLE." SET id_circoscrizione='".$candidato->GetProp("id_circoscrizione")."'";
         $query.=", id_lista='".addslashes($candidato->GetProp("id_lista"))."'";
-        $query.=", nome='".addslashes($candidato->GetProp("nome"))."'";
-        $query.=", cognome='".addslashes($candidato->GetProp("cognome"))."'";
-        $query.=", cf='".addslashes($candidato->GetProp("cf"))."'";
+        $query.=", nome='".addslashes(trim($candidato->GetProp("nome")))."'";
+        $query.=", cognome='".addslashes(trim($candidato->GetProp("cognome")))."'";
+        $query.=", cf='".addslashes(trim($candidato->GetProp("cf")))."'";
         $query.=", cv='".addslashes($candidato->GetProp("cv"))."'";
         $query.=", cg='".addslashes($candidato->GetProp("cg"))."'";
+        $query.=", ordine='".addslashes(trim($candidato->GetProp("ordine")))."'";
         $query.=" WHERE id='".$candidato->GetProp('id')."' LIMIT 1";
         
         $db= new AA_Database();
@@ -2630,7 +2645,10 @@ Class AA_SierModule extends AA_GenericModule
         {
             $options[]=array("id"=>$id,"value"=>$lista->GetProp("denominazione"));
         }
-        $wnd->AddSelectField("id_lista", "Lista", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
+        $wnd->AddSelectField("id_lista", "Lista", array("required"=>true, "gravity"=>2,"validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
+
+        //ordine
+        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"labelAlign"=>"right","bottomLabel" => "*Posizione nella Lista."),false);
 
         /*
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
@@ -4074,6 +4092,9 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
+        $ordine=$candidato->GetProp('ordine');
+        if($_REQUEST['ordine'] > 0) $ordine=$_REQUEST['ordine'];
+
         $params=array(
             "id"=>$candidato->GetProp('id'),
             "id_circoscrizione"=>$_REQUEST['id_circoscrizione'],
@@ -4082,7 +4103,8 @@ Class AA_SierModule extends AA_GenericModule
             "cognome"=>$_REQUEST['cognome'],
             "cf"=>$_REQUEST['cf'],
             "cv"=>$candidato->GetProp('cv'),
-            "cg"=>$candidato->GetProp('cg')
+            "cg"=>$candidato->GetProp('cg'),
+            "ordine"=>$ordine
         );
         $candidato=new AA_SierCandidato($params);
         
@@ -6139,6 +6161,7 @@ Class AA_SierModule extends AA_GenericModule
         
         $layout->addRow($toolbar);        
         $columns=array(
+            array("id"=>"ordine","header"=>array("<div style='text-align: center'>n.</div>",array("content"=>"selectFilter")),"width"=>50, "sort"=>"int","css"=>array("text-align"=>"center")),
             array("id"=>"cognome","header"=>array("<div style='text-align: center'>Cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
             array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
