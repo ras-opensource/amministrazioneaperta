@@ -29,9 +29,23 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
             let candidati_list=$$(id);
             if(candidati_list)
             {
+                //Resetta le impostazioni attuali del filtro
+                let filter = candidati_list.getFilter("ordine");
+                if(filter) filter.value="";
+                filter = candidati_list.getFilter("cognome");
+                if(filter) filter.value="";
+                filter = candidati_list.getFilter("nome");
+                if(filter) filter.value="";
+                filter = candidati_list.getFilter("cf");
+                if(filter) filter.value="";
+                filter = candidati_list.getFilter("circoscrizione_desc");
+                if(filter) filter.value="";
+                filter = candidati_list.getFilter("coalizione");
+                if(filter) filter.value="";
+                filter = candidati_list.getFilter("lista");
+                if(filter) filter.value=item.denominazione;
+
                 candidati_list.filter("lista",item.denominazione,false);
-                let filter = candidati_list.getFilter("lista");
-                filter.value=item.denominazione;
             }
         }
     } catch (msg) {
