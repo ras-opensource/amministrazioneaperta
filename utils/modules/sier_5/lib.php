@@ -216,6 +216,7 @@ Class AA_SierLista
         $this->aProps['id_coalizione']=0;
         $this->aProps['denominazione']="";
         $this->aProps['image']="";
+        $this->aProps['ordine']=0;
         $this->aProps['candidati']=array();
 
         if(is_array($params)) $this->Parse($params);
@@ -442,7 +443,7 @@ Class AA_Sier extends AA_Object_V2
                 $liste=array();
                 
                 //Recupero liste
-                $query="SELECT * from ".static::AA_LISTE_DB_TABLE." WHERE id_coalizione='".$curRow['id']."'";
+                $query="SELECT * from ".static::AA_LISTE_DB_TABLE." WHERE id_coalizione='".$curRow['id']."' order by ".static::AA_LISTE_DB_TABLE.".ordine, ".static::AA_LISTE_DB_TABLE.".id";
                 if(!$db->Query($query))
                 {
                     AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
@@ -534,7 +535,7 @@ Class AA_Sier extends AA_Object_V2
             return array();
         }
 
-        //AA_Log::Log(__METHOD__." - query: ".$query,100);
+        AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=array();
         if($db->GetAffectedRows()>0)
@@ -865,11 +866,27 @@ Class AA_Sier extends AA_Object_V2
 
         //AA_Log::Log(__METHOD__." - nuova lista: ".print_r($lista,true), 100);
 
+        $db = new AA_Database();
+        
+        //Recupera il numero delle liste
+        $query="SELECT count(id) as num FROM ".static::AA_LISTE_DB_TABLE;
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        $ordine=1;
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            $ordine=$rs[0]['num']+1;
+        }
+        
         $query="INSERT INTO ".static::AA_LISTE_DB_TABLE." SET id_coalizione='".$coalizione->GetProp('id')."'";
         $query.=", denominazione='".addslashes($lista->GetProp('denominazione'))."'";
         $query.=", image='".addslashes($lista->GetProp('image'))."'";
-        
-        $db = new AA_Database();
+        $query.=", ordine='".$ordine."'";
         
         if(!$db->Query($query))
         {
@@ -925,6 +942,7 @@ Class AA_Sier extends AA_Object_V2
         $query="UPDATE ".static::AA_LISTE_DB_TABLE." SET id_coalizione='".$coalizione->GetProp('id')."'";
         $query.=", denominazione='".addslashes($lista->GetProp('denominazione'))."'";
         $query.=", image='".addslashes($lista->GetProp('image'))."'";
+        $query.=", ordine='".addslashes($lista->GetProp('ordine'))."'";
         $query.=" WHERE id='".addslashes($lista->GetProp('id'))."' LIMIT 1";
         
         $db = new AA_Database();
@@ -2384,7 +2402,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
-        $form_data=array("id_coalizione"=>$coalizione->GetProp('id'),"id_lista"=>$lista->GetProp('id'),"denominazione"=>$lista->GetProp("denominazione"));
+        $form_data=array("id_coalizione"=>$coalizione->GetProp('id'),"id_lista"=>$lista->GetProp('id'),"denominazione"=>$lista->GetProp("denominazione"),'ordine'=>$lista->GetProp("ordine"));
         
         $wnd=new AA_GenericFormDlg($id, "Modifica Lista", $this->id,$form_data,$form_data);
         
@@ -2393,14 +2411,17 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetBottomPadding(30);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(640);
+        $wnd->SetWidth(720);
         $wnd->SetHeight(400);
 
         //denominazione
-        $wnd->AddTextField("denominazione", "Denominazione", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare la denominazione della Lista.", "placeholder" => "..."));
+        $wnd->AddTextField("denominazione", "Denominazione", array("required"=>true,"gravity"=>3,"labelWidth"=>150,"bottomLabel" => "*Indicare la denominazione della Lista.", "placeholder" => "..."));
 
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //ordine
+        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"labelAlign"=>"right","bottomLabel" => "*Posizione della Lista."),false);
         
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+       
         $section=new AA_FieldSet($id."_Section_Url","Scegliere un'immagine per la Lista.");
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
@@ -5009,10 +5030,14 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         //Nuova lista
+        $ordine=1;
+        if($_REQUEST['ordine']>0)$ordine=$_REQUEST['ordine'];
+
         $params=array(
             'id'=>$lista->GetProp('id'),
             'id_coalizione'=>$coalizione->GetProp('id'),
             'denominazione'=>$_REQUEST['denominazione'],
+            'ordine'=>$ordine,
             'image'=>$imageFileHash
         );
 
@@ -6083,11 +6108,11 @@ Class AA_SierModule extends AA_GenericModule
                         $trash="&nbsp;";
                     }
                     
-                    $dataview_liste_data[]=array("id"=>$id_lista,"id_coalizione"=>$curLista->GetProp('id_coalizione'),"denominazione"=>$curLista->GetProp('denominazione'),'image'=>$curImagePath,'modify'=>$modify,'trash'=>$trash,'addnew'=>$addnew);
+                    $dataview_liste_data[]=array("id"=>$id_lista,"id_coalizione"=>$curLista->GetProp('id_coalizione'),"denominazione"=>$curLista->GetProp('denominazione'),"n"=>$curLista->GetProp('ordine'),'image'=>$curImagePath,'modify'=>$modify,'trash'=>$trash,'addnew'=>$addnew);
                 }
 
                 $liste_template="<div style='display: flex; align-items: center; height: 100%; justify-content: space-between;' id_view='".$curId."_Liste"."'><div style='display: flex; align-items: center; width: 270px; padding: 5px;'>"
-                . "<img src='#image#' width='50px'/><div style='height: 100%;display:flex; align-items: center; justify-content: space-between'><span style='margin-left: 1em; font-weight: 700;'>#denominazione#</span></div></div>"
+                . "<img src='#image#' width='50px'/><div style='height: 100%;display:flex; align-items: left; justify-content: space-evenly; flex-direction:column'><span style='margin-left: 1em; font-weight: 400;'>Lista n. #n#</span><span style='margin-left: 1em; font-weight: 700;'>#denominazione#</span></div></div>"
                 . "<div style='display: flex;  align-items: center; justify-content: space-between; height: 100%; padding: 5px; width: 100px'>#addnew#&nbsp;#modify#&nbsp;#trash#</div></div>";
                 
                 $dataview_liste=new AA_JSON_Template_Generic($curId."_Liste",array(
@@ -6097,7 +6122,7 @@ Class AA_SierModule extends AA_GenericModule
                     "tabbar"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_TabBar_".$object->GetId(),
                     "type"=>array(
                         "type"=>"tiles",
-                        "height"=>60,
+                        "height"=>80,
                         "width"=>"auto",
                         "css"=>"AA_DataView_Nomine_item",
                     ),
