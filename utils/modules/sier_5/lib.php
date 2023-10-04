@@ -3859,7 +3859,8 @@ Class AA_SierModule extends AA_GenericModule
             "cognome"=>$candidato->GetProp('cognome'),
             "cf"=>$candidato->GetProp('cf'),
             "cg"=>$candidato->GetProp('cg'),
-            "cv"=>$fileHash
+            "cv"=>$fileHash,
+            "ordine"=>$candidato->GetProp('ordine')
         );
         $candidato=new AA_SierCandidato($params);
         
@@ -4033,7 +4034,9 @@ Class AA_SierModule extends AA_GenericModule
             "cognome"=>$candidato->GetProp('cognome'),
             "cf"=>$candidato->GetProp('cf'),
             "cv"=>$candidato->GetProp('cv'),
-            "cg"=>$fileHash
+            "cg"=>$fileHash,
+            "ordine"=>$candidato->GetProp('ordine')
+
         );
         $candidato=new AA_SierCandidato($params);
         
@@ -4271,7 +4274,8 @@ Class AA_SierModule extends AA_GenericModule
             "cognome"=>$candidato->GetProp('cognome'),
             "cf"=>$candidato->GetProp('cf'),
             "cv"=>$candidato->GetProp('cv'),
-            "cg"=>$fileHash
+            "cg"=>$fileHash,
+            "ordine"=>$candidato->GetProp('ordine')
         );
         $candidato=new AA_SierCandidato($params);
         
@@ -4438,7 +4442,8 @@ Class AA_SierModule extends AA_GenericModule
             "cognome"=>$candidato->GetProp('cognome'),
             "cf"=>$candidato->GetProp('cf'),
             "cg"=>$candidato->GetProp('cg'),
-            "cv"=>$fileHash
+            "cv"=>$fileHash,
+            "ordine"=>$candidato->GetProp('ordine')
         );
         $candidato=new AA_SierCandidato($params);
         
@@ -4523,7 +4528,8 @@ Class AA_SierModule extends AA_GenericModule
             "cognome"=>$candidato->GetProp('cognome'),
             "cf"=>$candidato->GetProp('cf'),
             "cg"=>$candidato->GetProp('cg'),
-            "cv"=>""
+            "cv"=>"",
+            "ordine"=>$candidato->GetProp('ordine')
         );
         $candidato=new AA_SierCandidato($params);
         
@@ -4608,7 +4614,8 @@ Class AA_SierModule extends AA_GenericModule
             "cognome"=>$candidato->GetProp('cognome'),
             "cf"=>$candidato->GetProp('cf'),
             "cv"=>$candidato->GetProp('cv'),
-            "cg"=>""
+            "cg"=>"",
+            "ordine"=>$candidato->GetProp('ordine')
         );
         $candidato=new AA_SierCandidato($params);
         
