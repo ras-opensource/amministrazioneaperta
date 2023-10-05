@@ -1108,6 +1108,9 @@ class AA_User
 
             if(AA_Const::AA_ENABLE_LEGACY_DATA)
             {
+                if($user->nStatus==AA_User::AA_USER_STATUS_DISABLED) $user->nDisabled=1;
+                else $user->nDisabled=0;
+
                 $legacy_data=json_decode($row[0]['legacy_data'],true);
                 if(is_array($legacy_data))
                 {
@@ -1126,6 +1129,8 @@ class AA_User
             {
                 $user->nConcurrent=1;
             }
+
+            return $user;
         }
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
@@ -2935,7 +2940,6 @@ class AA_User
             "id_assessorato"=>$params['assessorato'],
             "id_direzione"=>$params['direzione'],
             "id_servizio"=>$params['servizio'],
-            "id"=>$user->GetId(),
             "level"=>$params['livello'],
             "flags"=>explode("|",$flags)
         ));
