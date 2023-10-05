@@ -849,6 +849,13 @@ class AA_User
     const AA_USER_STATUS_DISABLED=0;
     const AA_USER_STATUS_ENABLED=1;
 
+    //built in groups ids
+    const AA_USER_GROUP_SUPERUSER=1;
+    const AA_USER_GROUP_ADMINS=2;
+    const AA_USER_GROUP_OPERATORS=3;
+    const AA_USER_GROUP_USERS=4;
+    const AA_USER_GROUP_SERVEROPERATORS=5;
+
     //tabella utenti
     const AA_DB_TABLE="aa_users";
 
@@ -1001,21 +1008,27 @@ class AA_User
         return $this->sImage;
     } 
 
-    //Verifica se è l'utente amministratore
     public function IsAdmin()
     {
-        return $this->IsSuperUser();
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            return $this->IsSuperUser();
+        }
+        
+        if(array_search(AA_USER::AA_USER_GROUP_ADMINS,$this->GetGroups())) return true;
 
-        /*if($this->IsSuperUser()) return true;
-        else return false;*/
+        return false;
     }
 
     //Verifica se è l'utente super user
     public function IsSuperUser()
     {
-        //$this->nID ==1909
         if ($this->nID == 1) return true;
-        if ($this->HasFlag("SU")) return true;
+        
+        if(AA_Const::AA_ENABLE_LEGACY_DATA && $this->HasFlag("SU")) return true;
+
+        //gruppo super user
+        if(array_search(AA_USER::AA_USER_GROUP_SUPERUSER,$this->GetGroups()) !==false) return true;
 
         return false;
     }
@@ -2067,9 +2080,14 @@ class AA_User
 
         if ($this->IsSuperUser()) return true;
 
-        if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
 
-        if ($this->HasFlag("U0")) return false;
+            if ($this->HasFlag("U0")) return false;    
+        }
+
+        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetGroups()) === false) return false;
 
         return true;
     }
@@ -2077,20 +2095,25 @@ class AA_User
     //Verifica se l'utente corrente può gestire le strutture
     public function CanGestStruct()
     {
-        AA_Log::Log(get_class() . "->CanGestStruct()");
+        //AA_Log::Log(get_class() . "->CanGestStruct()");
 
         if (!$this->bIsValid) return false;
 
         if ($this->IsSuperUser()) return true;
 
-        if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
 
-        if ($this->HasFlag("S0")) return false;
+            if ($this->HasFlag("S0")) return false;    
+        }
+
+        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetGroups()) === false) return false;
 
         return true;
     }
 
-    //Verifica se l'utente corrente può modificare il livello dell'utente indicato 
+    //Verifica se l'utente corrente può modificare il livello dell'utente indicato (legacy)
     public function CanPromoteUserAsAdmin($idUser = null)
     {
         AA_Log::Log(get_class() . "->CanModifyUserLevel($idUser)");
@@ -2145,10 +2168,8 @@ class AA_User
     //Verifica se l'utente corrente può modificare l'utente indicato
     public function CanModifyUser($idUser = null)
     {
-        AA_Log::Log(get_class() . "->CanModifyUser($idUser)");
-
         if (!$this->IsValid()) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - utente corrente non valido: " . $this->GetUsername(), 100);
+            AA_Log::Log(__METHOD__." - utente corrente non valido: " . $this->GetUsername(), 100);
             return false;
         }
 
@@ -2160,7 +2181,7 @@ class AA_User
         } else $user = $idUser;
 
         if (!$user->IsValid()) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - Id utente non valido: $idUser o utente non valido: " . $user->GetUsername(), 100);
+            AA_Log::Log(__METHOD__." - Id utente non valido: $idUser o utente non valido: " . $user->GetUsername(), 100);
             return false;
         }
 
@@ -2169,39 +2190,49 @@ class AA_User
 
         //Controlla se l'utente corrente è abilitato alla gestione utenti
         if (!$this->CanGestUtenti()) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - utente corrente non autorizzato alla gestione utenti: " . $this->GetUsername(), 100);
+            AA_Log::Log(__METHOD__." - utente corrente non autorizzato alla gestione utenti: " . $this->GetUsername(), 100);
             return false;
         }
 
-        if ($this->GetStruct()->GetAssessorato(true) != 0 && $this->GetStruct()->GetAssessorato(true) != $user->GetStruct()->GetAssessorato(true)) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - L'utente corrente non può modificare utenti di altre strutture.", 100);
+        //L'utente root può essere modificato solament da se stesso
+        if($this->nID != 1 && $user->GetID()==1)
+        {
+            AA_Log::Log(__METHOD__." - utente corrente non autorizzato alla modifica dell'utente: " . $user->GetUsername(), 100);
             return false;
         }
 
-        if ($this->GetStruct()->GetDirezione(true) != 0 && $this->GetStruct()->GetDirezione(true) != $user->GetStruct()->GetDirezione(true)) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - L'utente corrente non può modificare utenti di altre strutture.", 100);
-            return false;
-        }
-
-        if ($this->GetStruct()->GetServizio(true) != 0 && $this->GetStruct()->GetServizio(true) != $user->GetStruct()->GetServizio(true)) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - L'utente corrente non può modificare utenti di altre strutture.", 100);
-            return false;
-        }
-
-        //Non può modificare utenti amministratori dello stesso livello gerarchico
-        if ($this->GetStruct()->GetServizio(true) == $user->GetStruct()->GetServizio(true) && $user->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN && $this->GetStruct()->GetServizio(true) != 0) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - L'utente corrente (" . $this . ") non può modificare utenti amministratori dello stesso livello gerarchico (stesso servizio).", 100);
-            return false;
-        }
-
-        if ($this->GetStruct()->GetDirezione(true) == $user->GetStruct()->GetDirezione(true) && $user->GetStruct()->GetServizio(true) == 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN && $this->GetStruct()->GetDirezione(true) != 0) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - L'utente corrente (" . $this . ") non può modificare utenti amministratori dello stesso livello gerarchico (stessa direzione).", 100);
-            return false;
-        }
-
-        if ($this->GetStruct()->GetAssessorato(true) == $user->GetStruct()->GetAssessorato(true) && $user->GetStruct()->GetDirezione(true) == 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN && $this->GetStruct()->GetAssessorato(true) != 0) {
-            AA_Log::Log(get_class() . "->CanModifyUser($idUser) - L'utente corrente (" . $this . ") non può modificare utenti amministratori dello stesso livello gerarchico (stesso assessorato).", 100);
-            return false;
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if ($this->GetStruct()->GetAssessorato(true) != 0 && $this->GetStruct()->GetAssessorato(true) != $user->GetStruct()->GetAssessorato(true)) {
+                AA_Log::Log(__METHOD__." - L'utente corrente non può modificare utenti di altre strutture.", 100);
+                return false;
+            }
+    
+            if ($this->GetStruct()->GetDirezione(true) != 0 && $this->GetStruct()->GetDirezione(true) != $user->GetStruct()->GetDirezione(true)) {
+                AA_Log::Log(__METHOD__." - L'utente corrente non può modificare utenti di altre strutture.", 100);
+                return false;
+            }
+    
+            if ($this->GetStruct()->GetServizio(true) != 0 && $this->GetStruct()->GetServizio(true) != $user->GetStruct()->GetServizio(true)) {
+                AA_Log::Log(__METHOD__." - L'utente corrente non può modificare utenti di altre strutture.", 100);
+                return false;
+            }
+    
+            //Non può modificare utenti amministratori dello stesso livello gerarchico
+            if ($this->GetStruct()->GetServizio(true) == $user->GetStruct()->GetServizio(true) && $user->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN && $this->GetStruct()->GetServizio(true) != 0) {
+                AA_Log::Log(__METHOD__." - L'utente corrente (" . $this . ") non può modificare utenti amministratori dello stesso livello gerarchico (stesso servizio).", 100);
+                return false;
+            }
+    
+            if ($this->GetStruct()->GetDirezione(true) == $user->GetStruct()->GetDirezione(true) && $user->GetStruct()->GetServizio(true) == 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN && $this->GetStruct()->GetDirezione(true) != 0) {
+                AA_Log::Log(__METHOD__." - L'utente corrente (" . $this . ") non può modificare utenti amministratori dello stesso livello gerarchico (stessa direzione).", 100);
+                return false;
+            }
+    
+            if ($this->GetStruct()->GetAssessorato(true) == $user->GetStruct()->GetAssessorato(true) && $user->GetStruct()->GetDirezione(true) == 0 && $user->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN && $this->GetStruct()->GetAssessorato(true) != 0) {
+                AA_Log::Log(__METHOD__." - L'utente corrente (" . $this . ") non può modificare utenti amministratori dello stesso livello gerarchico (stesso assessorato).", 100);
+                return false;
+            }    
         }
 
         return true;
@@ -2257,7 +2288,8 @@ class AA_User
         if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".password_hash($params['passwd'],PASSWORD_DEFAULT)."'";
         else $sql.=", passwd='".AA_Utils::password_hash(uniqid(date("Y-m-d")))."'";
         if (isset($params['groups']) && $params['groups'] !="") $sql.=", groups='".addslashes($params['groups'])."'";
-        
+        else $sql.=", groups='4'";
+
         if (!$db->Query($sql)) {
             AA_Log::Log(__METHOD__ . " - new stuff - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
             return false;
@@ -2471,11 +2503,6 @@ class AA_User
     //Aggiorna L'utente
     public function UpdateUser($idUser, $params)
     {
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            return $this->LegacyUpdateUser($idUser,$params);
-        }
-
         if ($this->IsGuest()) {
             AA_Log::Log(__METHOD__." - utente corrente non valido", 100);
             return false;
@@ -2502,142 +2529,86 @@ class AA_User
             return false;
         }
 
-        //Non si può modificare il livello per utenti amministratori dello stesso livello gerarchico (super user escluso)
-        $struct = $this->oStruct;
-        if ($struct->GetServizio(true) == $params['servizio'] && $params['livello'] == 0 && $struct->GetServizio(true) != 0) {
-            $params['livello'] = "";
-            AA_Log::Log(__METHOD__." - L'utente corrente (" . $this->GetUsername() . ") non può modificare il livello dell'utente indicato: " . $user->GetUsername(), 100);
-        }
-        if ($struct->GetDirezione(true) == $params['direzione'] && $params['servizio'] == 0 && $params['livello'] == 0 && $struct->GetDirezione(true) != 0) {
-            $params['livello'] = "";
-            AA_Log::Log(__METHOD__." - L'utente corrente (" . $this->GetUsername() . ") non può modificare il livello dell'utente indicato: " . $user->GetUsername(), 100);
-        }
-        if ($struct->GetAssessorato(true) == $params['assessorato'] && $params['direzione'] == 0 && $params['livello'] == 0 && $struct->GetAssessorato(true) != 0) {
-            $params['livello'] = "";
-            AA_Log::Log(__METHOD__." - L'utente corrente (" . $this->GetUsername() . ") non può modificare il livello dell'utente indicato: " . $user->GetUsername(), 100);
+        if($params['user'] !="" && $params['user'] !=$user->GetUsername())
+        {
+            if($this->UserNameExist($params['user']))
+            {
+                AA_Log::Log(__METHOD__." - Nome utente già in uso.", 100);
+                return false;
+            }
         }
 
-        $flags = "";
-        $separatore = "";
-
-        //Solo admin imposta le flags
-        if ($this->IsSuperUser()) {
-            if (!isset($params['gest_utenti'])) {
-                $flags .= $separatore . "U0";
-                $separatore = "|";
-            }
-            if (!isset($params['gest_struct'])) {
-                $flags .= $separatore . "S0";
-                $separatore = "|";
-            }
-            if (isset($params['gest_polizze'])) {
-                $flags .= $separatore . "polizze";
-                $separatore = "|";
-            }
-            if (isset($params['gest_debitori'])) {
-                $flags .= $separatore . "debitori";
-                $separatore = "|";
-            }
-            if (isset($params['gest_accessi'])) {
-                $flags .= $separatore . "accessi";
-                $separatore = "|";
-            }
-            if (isset($params['admin_gest_accessi'])) {
-                $flags .= $separatore . "admin_accessi";
-                $separatore = "|";
-            }
-            if (isset($params['art12'])) {
-                $flags .= $separatore . "art12";
-                $separatore = "|";
-            }
-            if (isset($params['art14c1a'])) {
-                $flags .= $separatore . "art14c1a|art14";
-                $separatore = "|";
-            }
-            if (isset($params['art14c1c'])) {
-                $flags .= $separatore . "art14c1c|art14";
-                $separatore = "|";
-            }
-            if (isset($params['art14c1bis'])) {
-                $flags .= $separatore . "art14|art14c1bis";
-                $separatore = "|";
-            }
-            if (isset($params['art23'])) {
-                $flags .= $separatore . "art23";
-                $separatore = "|";
-            }
-            if (isset($params['art22'])) {
-                $flags .= $separatore . "art22";
-                $separatore = "|";
-            }
-            if (isset($params['art22_admin'])) {
-                $flags .= $separatore . "art22_admin";
-                $separatore = "|";
-            }
-            if (isset($params['art30'])) {
-                $flags .= $separatore . "art30";
-                $separatore = "|";
-            } //old
-
-            if (isset($params['gest_processi'])) {
-                $flags .= $separatore . "processi";
-                $separatore = "|";
-            }
-            if (isset($params['gest_incarichi_titolari'])) {
-                $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;
-                $separatore = "|";
-            }
-            if (isset($params['gest_incarichi'])) {
-                $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI;
-                $separatore = "|";
-            }
-            if (isset($params['patrimonio'])) {
-                $flags .= $separatore . "patrimonio";
-                $separatore = "|";
-            }
-
-            //AA_Log::Log(get_class()."->UpdateUser($idUser, $params)", 100, false,true);
+        if($params['user']=="")
+        {
+            $params['user']=$user->GetUsername();
         }
 
-        //la modifica delle schede pubblicate può essere abilitata anche dagli altri utenti amministratori
-        if (isset($params['unlock']) && $params['livello'] == 0) {
-            $flags .= $separatore . "P1";
-            $separatore = "|";
+        //Stato utente
+        $status=static::AA_USER_STATUS_ENABLED;
+        if(isset($params['disable']) && $params['disable']>0) $status=static::AA_USER_STATUS_DISABLED;
+        if(isset($params['eliminato']) && $params['eliminato']>0) $status=static::AA_USER_STATUS_DELETED;
+
+        if($params['nome'] == "")
+        {
+            $params['nome']=$user->GetNome();
         }
 
-        //Aggiorna l'utente
-        $db = new Database();
-        $sql = "UPDATE utenti SET user=user";
-        if ($params['passwd'] != "") $sql .= ",passwd=MD5('" . $params['passwd'] . "')";
-
-        //Dati aggionabili solo se utenti diversi
-        if ($this->GetID() != $user->GetID()) {
-            $sql .= ",id_assessorato='" . $params['assessorato'] . "'";
-            $sql .= ",id_direzione='" . $params['direzione'] . "'";
-            $sql .= ",id_servizio='" . $params['servizio'] . "'";
-            $sql .= ",id_settore='" . $params['settore'] . "'";
-            if ($params['livello'] != "") $sql .= ",livello='" . $params['livello'] . "'";
-            if ($this->IsSuperUser()) $sql .= ",flags='" . $flags . "'";
-            if (isset($params['disable'])) $sql .= ",disable='1'";
-            else $sql .= ",disable='0'";
-            if (isset($params['concurrent']) && $params['concurrent']>0) $sql .= ",concurrent='1'";
-            else $sql .= ",concurrent='0'";
+        if($params['cognome'] == "")
+        {
+            $params['cognome']=$user->GetCognome();
         }
 
-        $sql .= ",nome='" . addslashes($params['nome']) . "'";
-        $sql .= ",cognome='" . addslashes($params['cognome']) . "'";
-        $sql .= ",email='" . $params['email'] . "'";
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if(!$this->LegacyUpdateUser($idUser,$params))
+            {
+                return false;
+            }
+        }
 
-        $sql .= " where id='" . $user->GetID() . "' LIMIT 1";
+        //Verifica gruppi
+        if(isset($params['groups']) && is_array($params['groups']))
+        {
+            $params['groups']=array_uintersect($this->GetGroups(),$params['groups']);
+        }
+        else
+        {
+            $params['groups']=$user->GetGroups();
+        }
+
+        if(sizeof($params['groups'])==0)
+        {
+            //default group (utenti)
+            $params['groups']=array(4);
+        }
+
+        $info=json_encode(array(
+            "nome"=>addslashes(trim($params['nome'])),
+            "cognome"=>addslashes(trim($params['cognome'])),
+            "phone"=>addslashes(trim($params['phone'])),
+            "image"=>addslashes(trim($params['image']))
+        ));
+
+        $sql="UPDATE ".static::AA_DB_TABLE." SET ";
+        $sql.="user='".addslashes(trim($params['user']))."'";
+        $sql.=", email='".addslashes(trim($params['email']))."'";
+        $sql.=", flags='".addslashes(trim($params['flags']))."'";
+        $sql.=", info='".addslashes($info)."'";
+        $sql.=", data_abilitazione='".date("Y-m-d")."'";
+        $sql.=", status='".$status."'";
+        if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".password_hash($params['passwd'],PASSWORD_DEFAULT)."'";
+        else $sql.=", passwd='".AA_Utils::password_hash(uniqid(date("Y-m-d")))."'";
+        $sql.=", groups='".addslashes(implode(",",$params['groups']))."'";
+
+        $db=new AA_Database();
 
         if ($db->Query($sql) === false) {
-            AA_Log::Log(__METHOD__."  - Errore: " . $db->lastError . " - nella query: " . $sql, 100);
+            AA_Log::Log(__METHOD__."  - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
+            AA_Log::Log(__METHOD__."  - Errore nell'aggiornamento dell'utente:  " . $user->GetUsername(), 100);
             return false;
         }
 
-        AA_Log::LogAction($this->GetID(), "2,9," . $user->GetID(), Database::$lastQuery); //Old stuff
-
-        return true;
+       return true;
     }
 
     //Aggiorna L'utente (legacy)
