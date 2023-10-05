@@ -28,8 +28,8 @@ Class AA_Config
     //nome di dominio
     const AA_DOMAIN_NAME="your.domain.name";
 
-    //Cartella di archiviazione uploads (percorso assoluto)
-    const AA_UPLOADS_PATH="/home/sitod/uploads";
+    //Cartella di archiviazione uploads (percorso assoluto) //deprecated
+    const AA_UPLOADS_PATH="<absolute path to uploads folder>";
 
     //Cartella percorso fisico dell'applicazione
     const AA_APP_FILESYSTEM_FOLDER="";
@@ -39,10 +39,10 @@ Class AA_Config
     const AA_PUBLIC_MODULES_PATH="utils/modules";
 
     //Percorso assoluto root storage
-    const AA_ROOT_STORAGE_PATH="/home/elia/aa_storage";
+    const AA_ROOT_STORAGE_PATH="<absolute path to storage folder>";
 
     //Percorso root applicazione
-    const AA_WWW_ROOT="/web/amministrazione_aperta";
+    const AA_WWW_ROOT="<web root app folder without domain part and trailing slash>";
 
     //Abilita disabilita il modulo pubblico
     const AA_ENABLE_PUBLIC_MODULE=false;

@@ -115,20 +115,50 @@ Class AA_Sier_Const extends AA_Const
     const AA_SIER_ALLEGATO_MODULISTICA=4;
     const AA_SIER_ALLEGATO_COMUNICAZIONI=8;
     const AA_SIER_ALLEGATO_RISULTATI=16;
+    const AA_SIER_ALLEGATO_AVVISI=32;
+    //const AA_SIER_ALLEGATO_CIRCOLARI=64;
+    const AA_SIER_ALLEGATO_ISTRUZIONI=128;
+    const AA_SIER_ALLEGATO_MANIFESTI=256;
+
     public static function GetTipoAllegati()
     {
         if(static::$aTipoAllegati==null)
         {
             static::$aTipoAllegati=array(
-                static::AA_SIER_ALLEGATO_INFORMAZIONI=>"Informazioni generali",
-                static::AA_SIER_ALLEGATO_NORMATIVA=>"Normativa",
-                static::AA_SIER_ALLEGATO_MODULISTICA=>"Modulistica",
+                static::AA_SIER_ALLEGATO_AVVISI=>"Avvisi",
+                //static::AA_SIER_ALLEGATO_CIRCOLARI=>"Circolari",
                 static::AA_SIER_ALLEGATO_COMUNICAZIONI=>"Comunicazioni",
+                static::AA_SIER_ALLEGATO_INFORMAZIONI=>"Informazioni generali",
+                static::AA_SIER_ALLEGATO_ISTRUZIONI=>"Istruzioni",
+                static::AA_SIER_ALLEGATO_MANIFESTI=>"Manifesti",
+                static::AA_SIER_ALLEGATO_MODULISTICA=>"Modulistica",
+                static::AA_SIER_ALLEGATO_NORMATIVA=>"Normativa",
                 static::AA_SIER_ALLEGATO_RISULTATI=>"Risultati"
             );
         }
 
         return static::$aTipoAllegati;
+    }
+
+    protected static $aTags=null;
+    const AA_SIER_ALLEGATO_CIRCOLARI=1;
+    const AA_SIER_ALLEGATO_COMUNI=2;
+    const AA_SIER_ALLEGATO_CANDIDATI=4;
+    const AA_SIER_ALLEGATO_PREFETTURE=8;
+
+    public static function GetTags()
+    {
+        if(static::$aTags==null)
+        {
+            static::$aTags=array(
+                static::AA_SIER_ALLEGATO_CANDIDATI=>"Candidati",
+                static::AA_SIER_ALLEGATO_CIRCOLARI=>"Circolari",
+                static::AA_SIER_ALLEGATO_COMUNI=>"Comuni",
+                static::AA_SIER_ALLEGATO_PREFETTURE=>"Prefetture"
+            );
+        }
+
+        return static::$aTags;
     }
 }
 
@@ -806,7 +836,7 @@ Class AA_Sier extends AA_Object_V2
         if($db->GetAffectedRows() > 0)
         {
             $rs=$db->GetResultSet();
-            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento']);
+            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento'],explode(",",$rs[0]['tags']));
             
             return $object;
         }
@@ -1532,6 +1562,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", file='".addslashes($allegato->GetFileHash())."'";
         $query.=", tipo='".addslashes($allegato->GetTipo())."'";
         $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
+        $query.=",tags='".implode(",",$allegato->GetTags())."'";
         
         $db= new AA_Database();
         
@@ -1602,6 +1633,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", file='".addslashes($allegato->GetFileHash())."'";
         $query.=", tipo='".addslashes($allegato->GetTipo())."'";
         $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
+        $query.=", tags='".addslashes(implode(",",$allegato->GetTags()))."'";
         $query.=" WHERE id='".addslashes($allegato->GetId())."' LIMIT 1";
         
         $db= new AA_Database();
@@ -1836,7 +1868,7 @@ Class AA_Sier extends AA_Object_V2
         $rs=$db->GetResultSet();
         foreach($rs as $curRec)
         {   
-            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento']);
+            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento'],explode(",",$curRec['tags']));
             $result[$curRec['id']]=$allegato;
         }
 
@@ -1963,7 +1995,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab"),
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab"),
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab"),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Allegati e link</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab"),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab"),
         ));
     }
     
@@ -2890,8 +2922,8 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetBottomPadding(30);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(640);
-        $wnd->SetHeight(540);
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(680);
 
         //tipo
         $tipologia=AA_Sier_Const::GetTipoAllegati();
@@ -2907,8 +2939,24 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
-        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+        //tags
+        $tags=AA_Sier_Const::GetTags();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Tags","Tags");
+        foreach($tags as $tag=>$descr)
+        {
+            $newLine=false;
+            if(!$curRow%4) $newLine=true;
+            $section->AddCheckBoxField("tag_".$tag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $curRow++;
+        }
+        //----------------------
+        $wnd->AddGenericObject($section);
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        //file upload------------------
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
 
         //url
         $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
@@ -2916,9 +2964,10 @@ Class AA_SierModule extends AA_GenericModule
         $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
 
         //file
-        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 30Mb).","accept"=>"application/pdf,application/zip"));
         
         $wnd->AddGenericObject($section);
+        //---------------------------------
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
@@ -2940,7 +2989,13 @@ Class AA_SierModule extends AA_GenericModule
         $form_data["url"]=$allegato->GetUrl();
         $form_data["tipo"]=$allegato->GetTipo();
         $form_data["aggiornamento"]=date("Y-m-d");
-        
+
+        $tags=$allegato->GetTags();
+        foreach($tags as $curTag)
+        {
+            $form_data["tag_".$curTag]=1;
+        }
+
         $wnd=new AA_GenericFormDlg($id, "Modifica allegato/link", $this->id,$form_data,$form_data);
         
         //$wnd->SetLabelAlign("right");
@@ -2948,8 +3003,8 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetBottomPadding(30);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(640);
-        $wnd->SetHeight(540);
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(720);
 
         //tipo
         $tipologia=AA_Sier_Const::GetTipoAllegati();
@@ -2965,7 +3020,20 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
-        
+        //tags
+        $tags=AA_Sier_Const::GetTags();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Tags","Tags");
+        foreach($tags as $tag=>$descr)
+        {
+            $newLine=false;
+            if(!$curRow%4) $newLine=true;
+            $section->AddCheckBoxField("tag_".$tag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $curRow++;
+        }
+        //----------------------
+        $wnd->AddGenericObject($section);
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+
         $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
@@ -3630,9 +3698,19 @@ Class AA_SierModule extends AA_GenericModule
 
         $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
         if($aggiornamento=="") $aggiornamento=date("Y-m-d");
-        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento);
+
+        //tags
+        $tags=AA_Sier_Const::GetTags();
+        $newTags=array();
+        foreach($tags as $tag=>$descr)
+        {
+            if(isset($_REQUEST['tag_'.$tag]) && $_REQUEST['tag_'.$tag]==1) $newTags[]=$tag;
+        }
+        //----
+
+        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento,$newTags);
         
-        //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($elemento, true),100);
+        //AA_Log::Log(__METHOD__." - "."allegato: ".print_r($allegato, true),100);
         
         if(!$object->AddNewAllegato($allegato, $this->oUser))
         {        
@@ -5696,7 +5774,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
 
-        $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Allegati_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Allegati e link</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Allegati_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Documenti</span>", "align"=>"center")));
 
         if($canModify)
         {
@@ -5728,6 +5806,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tagsDescr","header"=>array("<div style='text-align: center'>Tags</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
             $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
@@ -5735,11 +5814,14 @@ Class AA_SierModule extends AA_GenericModule
         {
             $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tagsDescr","header"=>array("<div style='text-align: center'>Tags</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
             $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
 
         $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
+
+        $tags=AA_Sier_Const::GetTags();
 
         $documenti_data=array();
         foreach($object->GetAllegati() as $id_doc=>$curDoc)
@@ -5760,7 +5842,13 @@ Class AA_SierModule extends AA_GenericModule
             $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-            $documenti_data[]=array("id"=>$id_doc,"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>$curDoc->GetTipoDescr(),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
+            $docTags=array();
+            foreach($curDoc->GetTags() as $curTag)
+            {
+                $docTags[]="<span class='AA_Label AA_Label_LightGreen'>".$tags[$curTag]."</span>";
+            }
+            
+            $documenti_data[]=array("id"=>$id_doc,"tagsDescr"=>implode("&nbsp;",$docTags),"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>$curDoc->GetTipoDescr(),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) $layout->AddRow($documenti);
@@ -7640,7 +7728,16 @@ Class AA_SierModule extends AA_GenericModule
 
         $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
         if($aggiornamento=="") $aggiornamento=date("Y-m-d");
-        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento);
+        //tags
+        $tags=AA_Sier_Const::GetTags();
+        $newTags=array();
+        foreach($tags as $tag=>$descr)
+        {
+            if(isset($_REQUEST['tag_'.$tag]) && $_REQUEST['tag_'.$tag]==1) $newTags[]=$tag;
+        }
+        //----
+
+        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento,$newTags);
         
         if(!$object->UpdateAllegato($allegato, $this->oUser))
         {        
@@ -8449,6 +8546,16 @@ Class AA_SierAllegati
         return "n.d.";
     }
 
+    protected $nTags=array();
+    public function GetTags()
+    {
+        return $this->nTags;
+    }
+    public function SetTags($val=array())
+    {
+        if(is_array($val)) $this->nTipo=$val;
+    }
+
     protected $estremi="";
     public function GetEstremi()
     {
@@ -8456,7 +8563,7 @@ Class AA_SierAllegati
     }
     public function SetEstremi($val="")
     {
-        $this->estremi=$val;
+        $this->estremi=substr($val,0,254);
     }
 
     protected $sAggiornamento="";
@@ -8514,7 +8621,7 @@ Class AA_SierAllegati
         $this->id_sier=$id;
     }
     
-    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="",$tipo=0,$aggiornamento="")
+    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="",$tipo=0,$aggiornamento="",$tags=null)
     {
         //AA_Log::Log(__METHOD__." id: $id, id_organismo: $id_organismo, tipo: $tipo, url: $url",100);
         
@@ -8524,6 +8631,7 @@ Class AA_SierAllegati
         $this->estremi=$estremi;
         $this->sFile=$file;
         $this->nTipo=$tipo;
+        if(is_array($tags)) $this->nTags=$tags;
         $this->sAggiornamento=$aggiornamento;
     }
     

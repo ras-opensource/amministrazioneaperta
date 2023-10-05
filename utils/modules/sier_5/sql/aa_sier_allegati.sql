@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Set 28, 2023 alle 11:42
+-- Creato il: Ott 05, 2023 alle 15:59
 -- Versione del server: 10.5.21-MariaDB
 -- Versione PHP: 8.2.10
 
@@ -34,7 +34,8 @@ CREATE TABLE `aa_sier_allegati` (
   `id_sier` int(11) UNSIGNED NOT NULL DEFAULT 0,
   `file` varchar(255) NOT NULL,
   `tipo` int(5) NOT NULL DEFAULT 0,
-  `aggiornamento` varchar(10) NOT NULL
+  `aggiornamento` varchar(10) NOT NULL,
+  `tags` varchar(512) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 --
