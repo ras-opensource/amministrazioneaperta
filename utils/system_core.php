@@ -892,11 +892,25 @@ class AA_User
     //Flag utente corrente
     private $bCurrentUser = false;
 
-    //gruppi utente
+    //status
+    protected $nStatus=0;
+    public function GetStatus()
+    {
+        return $this->nStatus;
+    }
+
+    //gruppi utente (primari)
     protected $aGroups=array();
     public function GetGroups()
     {
         return $this->aGroups;
+    }
+
+    //gruppi utente compresi quelli secondari 
+    protected $aAllGroups=array();
+    public function GetAllGroups()
+    {
+        return $this->aAllGroups;
     }
 
     public function __construct()
@@ -1060,37 +1074,63 @@ class AA_User
     //Popola i dati dell'utente
     static public function LoadUser($id_user)
     {
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            return static::LegacyLoadUser($id_user);
-        }
-
         //AA_Log::Log(get_class() . "->LoadUser($id_user)");
-
         $user = new AA_User();
         $user->bCurrentUser = false;
 
         $db = new AA_Database();
-        $db->Query("SELECT utenti.* from utenti where id = '" . addslashes($id_user) . "'");
-        if ($db->GetAffectedRows() > 0) {
+        $db->Query("SELECT ".static::AA_DB_TABLE.".* from ".static::AA_DB_TABLE." where id = '" . addslashes($id_user) . "'");
+        if ($db->GetAffectedRows() > 0) 
+        {
             $row = $db->GetResultSet();
+            $info=json_decode($row[0]['info'],true);
+            if($info==null)
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing dei dati info: ".$row[0]['info'],100);
+            }
 
-            $user->nID = $row[0]['id'];
-            $user->sNome = $row[0]['nome'];
-            $user->sCognome = $row[0]['cognome'];
+            $user->nID = ['id'];
+            if(is_array($info))
+            {
+                $user->sNome = $info['nome'];
+                $user->sCognome = $info['cognome'];    
+                $user->sImage = $info['image'];
+                $user->sPhone = $info['phone'];    
+            }
+
             $user->sUser = $row[0]['user'];
             $user->sEmail = $row[0]['email'];
-            $user->nLivello = $row[0]['livello'];
-            $user->nDisabled = $row[0]['disable'];
-            $user->sImage = $row[0]['image'];
-            $user->sPhone = $row[0]['phone'];
+            $user->nStatus= $row[0]['status'];
+            $user->aGroups=explode(",",$row[0]['groups']);
             $user->sLastLogin = $row[0]['lastlogin'];
             $user->sFlags = $row[0]['flags'];
-            $user->nConcurrent = $row[0]['concurrent'];
             $user->bIsValid = true;
 
-            //Popola i dati della struttura
-            $user->oStruct = AA_Struct::GetStruct($row[0]['id_assessorato'], $row[0]['id_direzione'], $row[0]['id_servizio']);
+            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            {
+                $legacy_data=json_decode($row[0]['legacy_data'],true);
+                if(is_array($legacy_data))
+                {
+                    $user->oStruct = AA_Struct::GetStruct($legacy_data['id_assessorato'], $legacy_data['id_direzione'], $legacy_data['id_servizio']);
+                    $user->nLivello=$legacy_data['level'];
+                    $user->sFlags=$legacy_data['flags'];
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nel parsing dei dati legacy: ".$row[0]['legacy_data'],100);
+                }
+            }
+
+            //Concurrent flag
+            if(strpos($user->sFlags,"concurrent")!==false)
+            {
+                $user->nConcurrent=1;
+            }
+        }
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            return static::LegacyLoadUser($id_user);
         }
 
         return $user;
@@ -1326,23 +1366,18 @@ class AA_User
     {
         //AA_Log::Log(get_class()."->UserAuth($sToken,$sUserName, $sUserPwd)");
 
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            return AA_User::legacyUserAuth($sToken,$sUserName,md5($sUserPwd),$remember_me);
-        }
-
         $db = new AA_Database();
+        $user = AA_User::Guest();
 
-        if ($sUserName != null && $sUserPwd != null) {
-            AA_Log::Log(__METHOD__." - autenticazione in base al nome utente.");
-
+        if ($sUserName != null && $sUserPwd != null) 
+        {
             if (filter_var($sUserName, FILTER_VALIDATE_EMAIL)) {
                 //Login tramite email
                 AA_Log::Log(__METHOD__." - autenticazione in base alla mail.");
-                $query_utenti = sprintf("SELECT ".static::AA_DB_TABLE.".* FROM ".static::AA_DB_TABLE." WHERE ".static::AA_DB_TABLE.".email = '%s' AND ".static::AA_DB_TABLE.".passwd= '%s' ", addslashes(trim($sUserName)), addslashes(password_hash(trim($sUserPwd),PASSWORD_DEFAULT)));
+                $query_utenti = sprintf("SELECT ".static::AA_DB_TABLE.".* FROM ".static::AA_DB_TABLE." WHERE ".static::AA_DB_TABLE.".email = '%s' AND ".static::AA_DB_TABLE.".passwd= '%s' ", addslashes(trim($sUserName)), addslashes(AA_Utils::password_hash(trim($sUserPwd))));
             } else {
                 //Login ordinario tramite username
-                $query_utenti = sprintf("SELECT utenti.*,assessorati.tipo, assessorati.descrizione as assessorato, direzioni.descrizione as direzione, servizi.descrizione as servizio FROM utenti left join assessorati on utenti.id_assessorato=assessorati.id left join direzioni on utenti.id_direzione=direzioni.id left join servizi on utenti.id_servizio=servizi.id WHERE user = '%s' AND passwd= '%s' ", addslashes($sUserName), addslashes(md5($sUserPwd)));
+                $query_utenti = sprintf("SELECT ".static::AA_DB_TABLE.".* FROM ".static::AA_DB_TABLE." WHERE ".static::AA_DB_TABLE.".user = '%s' AND status >= 0", addslashes(trim($sUserName)));
             }
 
             if ($db->Query($query_utenti)) {
@@ -1350,69 +1385,86 @@ class AA_User
                 $rs = $result->fetch(PDO::FETCH_ASSOC);
             } else {
                 AA_Log::Log(__METHOD__ . " - errore nell'accesso al db: " . $db->GetErrorMessage(), 100);
-                return AA_User::Guest();
             }
 
-            if ($db->GetAffectedRows() > 0) {
-                if ($rs['disable'] == '1') {
-                    AA_Log::Log(__METHOD__." - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
-                }
-
-                if ($rs['eliminato'] == '1') {
-                    AA_Log::Log(__METHOD__." - L'utente è stato disattivato permanentemente (id: " . $rs["id"] . ").", 100);
-                }
-
-                if ($rs['disable'] == '0' && $rs['eliminato'] == '0') {
-                    //Old stuff compatibility
-                    $_SESSION['user'] = $rs['user'];
-                    $_SESSION['nome'] = $rs['nome'];
-                    $_SESSION['cognome'] = $rs['cognome'];
-                    $_SESSION['email'] = $rs['email'];
-                    $_SESSION['user_home'] = $rs['home'];
-                    $_SESSION['id_user'] = $rs['id'];
-                    $_SESSION['id_utente'] = $rs['id'];
-                    $_SESSION['id_assessorato'] = $rs['id_assessorato'];
-                    $_SESSION['tipo_struct'] = $rs['tipo'];
-                    $_SESSION['id_direzione'] = $rs['id_direzione'];
-                    $_SESSION['id_servizio'] = $rs['id_servizio'];
-                    $_SESSION['id_settore'] = $rs['id_settore'];
-                    $_SESSION['livello'] = $rs['livello'];
-                    $_SESSION['level'] = $rs['livello'];
-                    $_SESSION['assessorato'] = $rs['assessorato'];
-                    $_SESSION['direzione'] = $rs['direzione'];
-                    $_SESSION['servizio'] = $rs['servizio'];
-                    $_SESSION['settore'] = $rs['settore'];
-                    $_SESSION['user_flags'] = $rs['flags'];
-                    $_SESSION['flags'] = $rs['flags'];
-
-                    AA_Log::LogAction($rs['id'], 0, "Log In"); //old stuff
-
-                    //New stuff
-                    AA_Log::Log(__METHOD__." - Autenticazione avvenuta con successo (credenziali corrette).", 50);
-                    $concurrent=false;
-                    if(isset($rs['concurrent']) && $rs['concurrent'] > 0) $concurrent=true;
-                    $_SESSION['token'] = AA_User::GenerateToken($rs['id'],$remember_me,$concurrent);
-
-                    if($remember_me)
-                    {
-                        //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
-                        setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
+            if ($db->GetAffectedRows() > 0) 
+            {
+                if(password_verify($sUserPwd,$rs['passwd']))
+                {
+                    if ($rs['status'] == AA_USER::AA_USER_STATUS_DISABLED) {
+                        AA_Log::Log(__METHOD__." - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
                     }
+    
+                    if ($rs['status'] == AA_User::AA_USER_STATUS_DELETED) {
+                        AA_Log::Log(__METHOD__." - L'utente è stato disattivato permanentemente (id: " . $rs["id"] . ").", 100);
+                    }
+    
+                    if ($rs['status'] == AA_User::AA_USER_STATUS_ENABLED) 
+                    {
+                        $user = AA_User::LoadUser($rs['id']);
+                        $user->bCurrentUser = true;
+    
+                        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                        {
+                            //Old stuff compatibility
+                            $_SESSION['user'] = $user->GetUsername();
+                            $_SESSION['nome'] = $user->GetNome();
+                            $_SESSION['cognome'] = $user->GetCognome();
+                            $_SESSION['email'] = $user->GetEmail();
+                            $_SESSION['user_home'] = "reserved/index.php";
+                            $_SESSION['id_user'] = $user->GetId();
+                            $_SESSION['id_utente'] = $user->GetId();
+    
+                            $struct=$user->GetStruct();
+    
+                            $_SESSION['id_assessorato'] = $struct->GetAssessorato(true);
+                            $_SESSION['tipo_struct'] = $struct->GetTipo();
+                            $_SESSION['id_direzione'] = $struct->GetDirezione(true);
+                            $_SESSION['id_servizio'] = $struct->GetServizio(true);
+                            $_SESSION['id_settore'] = 0;
+                            $_SESSION['livello'] = $user->GetLevel();
+                            $_SESSION['level'] = $user->GetLevel();
+                            $_SESSION['assessorato'] = $struct->GetAssessorato();
+                            $_SESSION['direzione'] = $struct->GetDirezione();
+                            $_SESSION['servizio'] = $struct->GetServizio();
+                            $_SESSION['settore'] = "";
+                            $_SESSION['user_flags'] = $user->GetFlags();
+                            $_SESSION['flags'] = $user->GetFlags();
+                            
+                            AA_Log::LogAction($user->GetId(), 0, "Log In"); //old stuff
+                        }
+    
+                        $concurrent=false;
+                        if($user->IsConcurrentEnabled()) $concurrent=true;
+                        $_SESSION['token'] = AA_User::GenerateToken($user->GetId(),$remember_me,$concurrent);
+    
+                        if($remember_me)
+                        {
+                            //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
+                            setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
+                        }
+    
+                        //update last login time
+                        $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = '".date("Y-m-d")."' WHERE id='".$user->GetId()."' LIMIT 1");
+    
+                        return $user;
+                    }
+                }
+            }
 
-                    $user = AA_User::LoadUser($rs['id']);
-                    $user->bCurrentUser = true;
+            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            {
+                $user=AA_User::legacyUserAuth($sToken,$sUserName,md5($sUserPwd),$remember_me);
 
-                    //update last login time
-                    $db->Query("UPDATE utenti set lastlogin = NOW() WHERE id='".$rs['id']."' LIMIT 1");
+                if($user->IsValid())
+                {
+                    static::MigrateLegacyUser($user, $sUserPwd);
 
                     return $user;
                 }
-
-                return AA_User::Guest();
             }
 
-            AA_Log::Log(__METHOD__." - Autenticazione fallita (credenziali errate).", 100);
-            return AA_User::Guest();
+            return $user;
         }
 
         if ($sToken == null || $sToken == "") 
@@ -1450,29 +1502,34 @@ class AA_User
                         return AA_User::Guest();
                     }
 
-                     //Old stuff compatibility
-                     $_SESSION['user'] = $user->GetUsername();
-                     $_SESSION['nome'] = $user->GetNome();
-                     $_SESSION['cognome'] = $user->GetCognome();
-                     $_SESSION['email'] = $user->GetEmail();
-                     $_SESSION['user_home'] = "admin/index.php";
-                     $_SESSION['id_user'] = $user->GetId();
-                     $_SESSION['id_utente'] = $user->GetId();
-                     $struct=$user->GetStruct();
-                     $_SESSION['id_assessorato'] = $struct->GetAssessorato(true);
-                     $_SESSION['tipo_struct'] = $struct->GetTipo();
-                     $_SESSION['id_direzione'] = $struct->GetDirezione(true);
-                     $_SESSION['id_servizio'] = $struct->GetServizio(true);
-                     $_SESSION['id_settore'] = 0;
-                     $_SESSION['livello'] = $user->GetLevel();
-                     $_SESSION['level'] = $user->GetLevel();
-                     $_SESSION['assessorato'] = $struct->GetAssessorato();
-                     $_SESSION['direzione'] = $struct->GetDirezione();
-                     $_SESSION['servizio'] = $struct->GetServizio();
-                     $_SESSION['settore'] = "";
-                     $_SESSION['user_flags'] = $user->GetFlags();
-                     $_SESSION['flags'] = $user->GetFlags();
-                    //AA_Log::LogAction($rs['id'], 0, "Log In"); //old stuff
+                    if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                    {
+                        //Old stuff compatibility
+                        $_SESSION['user'] = $user->GetUsername();
+                        $_SESSION['nome'] = $user->GetNome();
+                        $_SESSION['cognome'] = $user->GetCognome();
+                        $_SESSION['email'] = $user->GetEmail();
+                        $_SESSION['user_home'] = "admin/index.php";
+                        $_SESSION['id_user'] = $user->GetId();
+                        $_SESSION['id_utente'] = $user->GetId();
+                        $struct=$user->GetStruct();
+                        $_SESSION['id_assessorato'] = $struct->GetAssessorato(true);
+                        $_SESSION['tipo_struct'] = $struct->GetTipo();
+                        $_SESSION['id_direzione'] = $struct->GetDirezione(true);
+                        $_SESSION['id_servizio'] = $struct->GetServizio(true);
+                        $_SESSION['id_settore'] = 0;
+                        $_SESSION['livello'] = $user->GetLevel();
+                        $_SESSION['level'] = $user->GetLevel();
+                        $_SESSION['assessorato'] = $struct->GetAssessorato();
+                        $_SESSION['direzione'] = $struct->GetDirezione();
+                        $_SESSION['servizio'] = $struct->GetServizio();
+                        $_SESSION['settore'] = "";
+                        $_SESSION['user_flags'] = $user->GetFlags();
+                        $_SESSION['flags'] = $user->GetFlags();
+
+                        //update last login time
+                        $db->Query("UPDATE utenti set lastlogin = NOW() WHERE id='".$user->GetId()."' LIMIT 1");
+                    }
 
                     //Rinfresco della durata del token
                     AA_User::RefreshToken($sToken);
@@ -1481,8 +1538,8 @@ class AA_User
                     $user->bCurrentUser = true;
 
                     //update last login time
-                    $db->Query("UPDATE utenti set lastlogin = NOW() WHERE id='".$rs['id_utente']."' LIMIT 1");
-
+                    $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = NOW() WHERE id='".$user->GetId()."' LIMIT 1");
+                    
                     return $user;
                 }
             }
@@ -2053,19 +2110,30 @@ class AA_User
     }
 
     //Verifica se il nome utente esiste già
-    static public function UserNameExist($userName = null)
+    static public function UserNameExist($userName = "")
     {
-        AA_Log::Log(get_class() . "->UserNameExist($userName)");
-        if ($userName == null) return false;
+        //AA_Log::Log(get_class() . "->UserNameExist($userName)");
+        if ($userName == "") return false;
 
         $db = new AA_Database();
-        $sql = "SELECT user FROM utenti where user='" . $userName . "' and eliminato = 0";
+
+        $sql = "SELECT user FROM ".static::AA_DB_TABLE." where user='" . $userName . "' and status >= 0";
         if (!$db->Query($sql)) {
-            AA_Log::Log(get_class() . "->UserNameExist($userName) - Errore nella query: " . $db->GetErrorMessage(), 100);
+            AA_Log::Log(__METHOD__." - Errore nella query: " . $db->GetErrorMessage(), 100);
             return false;
         }
-
         if ($db->GetAffectedRows() > 0) return true;
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $sql = "SELECT user FROM utenti where user='" . $userName . "' and eliminato = 0";
+            if (!$db->Query($sql)) {
+                AA_Log::Log(get_class() . "->UserNameExist($userName) - Errore nella query: " . $db->GetErrorMessage(), 100);
+                return false;
+            } 
+
+            if ($db->GetAffectedRows() > 0) return true;   
+        }
 
         return false;
     }
@@ -2285,7 +2353,7 @@ class AA_User
         $sql.=", info='".addslashes($info)."'";
         $sql.=", data_abilitazione='".date("Y-m-d")."'";
         $sql.=", status='".$status."'";
-        if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".password_hash($params['passwd'],PASSWORD_DEFAULT)."'";
+        if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".AA_Utils::password_hash($params['passwd'])."'";
         else $sql.=", passwd='".AA_Utils::password_hash(uniqid(date("Y-m-d")))."'";
         if (isset($params['groups']) && $params['groups'] !="") $sql.=", groups='".addslashes($params['groups'])."'";
         else $sql.=", groups='4'";
@@ -2300,6 +2368,90 @@ class AA_User
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
             return $this->LegacyAddNewUser($params);
+        }
+
+        return true;
+    }
+
+    //Migra un utente legacy sul nuovo framework
+    static public function MigrateLegacyUser($legacyUser,$legacyPwd)
+    {
+        $user=static::GetCurrentUser();
+        if(!$user->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - utente non valido.",100);
+            return false;
+        }
+
+        if(!($legacyUser instanceof AA_User))
+        {
+            AA_Log::Log(__METHOD__." - utente legacy non valido.",100);
+            return false;
+        }
+
+        if(!$user->CanModifyUser($legacyUser))
+        {
+            AA_Log::Log(__METHOD__." - l'utente  corrente non può modifcare l'utente legacy.",100);
+            return false;
+        }
+
+        $db = new AA_Database();
+        if(!$db->Query("SELECT id from ".AA_User::AA_DB_TABLE." WHERE id='".$legacyUser->GetId()."'"))
+        {
+            AA_Log::Log(__METHOD__." - errore nel recupero dei dati. ".$db->GetErrorMessage(),100);
+            return false;
+        }
+
+        $update=false;
+        if($db->GetAffectedRows()>0)
+        {
+            AA_Log::Log(__METHOD__." - utente già presente, aggiorno i dati ".$db->GetErrorMessage(),100);
+            
+            $update=true;
+        }
+
+        //Stato utente
+        $status=static::AA_USER_STATUS_ENABLED;
+        if($legacyUser->nDisabled>0) $status=static::AA_USER_STATUS_DISABLED;
+
+        //new stuff
+        $info=json_encode(array(
+            "nome"=>addslashes(trim($legacyUser->GetNome())),
+            "cognome"=>addslashes(trim($legacyUser->GetCognome())),
+            "phone"=>addslashes(trim($legacyUser->GetPhone())),
+            "image"=>addslashes(trim($legacyUser->GetImage()))
+        ));
+
+        if(!$update) $sql="INSERT INTO ".static::AA_DB_TABLE." SET id='".$legacyUser->GetId()."' , user='".addslashes(trim($legacyUser->GetUsername()))."'";
+        else $sql="UPDATE ".static::AA_DB_TABLE." SET user='".addslashes(trim($legacyUser->GetUsername()))."'";
+        $sql.=", email='".addslashes(trim($legacyUser->GetEmail()))."'";
+        $sql.=", info='".addslashes($info)."'";
+        $sql.=", data_abilitazione='".date("Y-m-d")."'";
+        $sql.=", status='".$status."'";
+        
+        if($legacyPwd && $legacyPwd !="") $sql.=", passwd='".AA_Utils::password_hash($legacyPwd)."'";
+        
+        if (isset($params['groups']) && $params['groups'] !="") $sql.=", groups='".addslashes($params['groups'])."'";
+        else $sql.=", groups='4'";
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $struct=$legacyUser->GetStruct();
+            $legacy_data=json_encode(array(
+                "id_assessorato"=>$struct->GetAssessorato(true),
+                "id_direzione"=>$struct->GetDirezione(true),
+                "id_servizio"=>$struct->GetServizio(true),
+                "level"=>$legacyUser->nLivello,
+                "flags"=>$legacyUser->sFlags
+            ));
+            $sql.=", legacy_data='".$legacy_data."'";
+        }
+
+        if($update) $sql.=" WHERE id='".$legacyUser->GetId()."' LIMIT 1"; 
+
+        if (!$db->Query($sql)) {
+            AA_Log::Log(__METHOD__ . " - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
+            return false;
         }
 
         return true;
@@ -2487,7 +2639,7 @@ class AA_User
             "id_servizio"=>$params['servizio'],
             "id"=>$new_id,
             "level"=>$params['livello'],
-            "flags"=>explode("|",$flags)
+            "flags"=>$flags
         ));
 
         if (isset($params['passwd']) && $params['passwd'] !="") $legacy_data['pwd']=md5($params['passwd']);
@@ -3096,7 +3248,7 @@ class AA_Utils
             return password_hash($password,PASSWORD_DEFAULT);
         }
 
-        return hash("sha256",$password);
+        return crypt($password,uniqid());
     }
 
     //Formata un numero
