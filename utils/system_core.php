@@ -6271,33 +6271,48 @@ class AA_Platform
             if ($db->GetAffectedRows() > 0) {
                 $userFlags = $this->oUser->GetFlags(true);
 
-                foreach ($db->GetResultSet() as $curMod) {
+                foreach ($db->GetResultSet() as $curMod) 
+                {
                     $admins = explode(",", $curMod['admins']);
                     $mod_flags = json_decode($curMod['flags'], true);
-                    if (!is_array($mod_flags)) {
+                    if (!is_array($mod_flags)) 
+                    {
                         if (json_last_error() > 0) AA_Log::Log(__METHOD__ . " - module flags:" . print_r($mod_flags, true) . " - error: " . json_last_error(), 100);
                         $flags = array();
-                    } else {
+                    } 
+                    else 
+                    {
                         $flags = array_keys($mod_flags);
                         //AA_Log::Log(__METHOD__." - module flags:".print_r($mod_flags,true),100);
                     }
 
-                    if (in_array($this->oUser->GetId(), $admins)) {
+                    if (in_array($this->oUser->GetId(), $admins) || $this->oUser->IsSuperUser()) 
+                    {
                         //Amministratori del modulo
                         $this->aModules[$curMod['id_modulo']] = $curMod;
-                    } else {
+                    } 
+                    else 
+                    {
                         //Utilizzatori del modulo
-                        if ($curMod['enable'] == 1) {
-                            if (sizeof($flags) == 0) {
+                        if ($curMod['enable'] == 1) 
+                        {
+                            if (sizeof($flags) == 0) 
+                            {
                                 //modulo pubblico
                                 $this->aModules[$curMod['id_modulo']] = $curMod;
-                            } else {
+                            } 
+                            else 
+                            {
                                 //Modulo a visibilità limitata
-                                if (sizeof($userFlags) > 0) {
-                                    foreach ($userFlags as $curFlag) {
+                                if (sizeof($userFlags) > 0) 
+                                {
+                                    foreach ($userFlags as $curFlag) 
+                                    {
                                         if (in_array($curFlag, $flags)) $this->aModules[$curMod['id_modulo']] = $curMod;
                                     }
-                                } else {
+                                } 
+                                else 
+                                {
                                     AA_Log::Log(__METHOD__ . " - L'utente corrente (" . $this->oUser->GetUsername() . ") non ha i permessi per accedere al modulo: " . $curMod['id_modulo'] . " - userFlags: " . print_r($userFlags, true) . " - module flags:" . print_r($flags, true), 100);
                                 }
                             }
