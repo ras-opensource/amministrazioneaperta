@@ -3189,7 +3189,7 @@ class AA_User
             $pwd=true;
         }
 
-        $query="UPDATE utenti SET nome='".addSlashes($params['nome'])."',cognome='".addSlashes($params['cognome'])."',phone='".addslashes($params['cellulare'])."'";
+        $query="UPDATE utenti SET nome='".addSlashes($params['nome'])."',cognome='".addSlashes($params['cognome'])."',phone='".addslashes($params['phone'])."'";
         if($pwd) $query.=",passwd=MD5('".addslashes($params['new_pwd'])."')";
         if($imageFileName !="") $query.=", image='".addslashes($imageFileName)."'";
         $query.=" WHERE id='".$user->GetId()."' LIMIT 1";
