@@ -116,7 +116,7 @@ Class AA_Sier_Const extends AA_Const
     const AA_SIER_ALLEGATO_COMUNICAZIONI=8;
     const AA_SIER_ALLEGATO_RISULTATI=16;
     const AA_SIER_ALLEGATO_AVVISI=32;
-    //const AA_SIER_ALLEGATO_CIRCOLARI=64;
+    const AA_SIER_ALLEGATO_CIRCOLARI=64;
     const AA_SIER_ALLEGATO_ISTRUZIONI=128;
     const AA_SIER_ALLEGATO_MANIFESTI=256;
 
@@ -126,7 +126,7 @@ Class AA_Sier_Const extends AA_Const
         {
             static::$aTipoAllegati=array(
                 static::AA_SIER_ALLEGATO_AVVISI=>"Avvisi",
-                //static::AA_SIER_ALLEGATO_CIRCOLARI=>"Circolari",
+                static::AA_SIER_ALLEGATO_CIRCOLARI=>"Circolari",
                 static::AA_SIER_ALLEGATO_COMUNICAZIONI=>"Comunicazioni",
                 static::AA_SIER_ALLEGATO_INFORMAZIONI=>"Informazioni generali",
                 static::AA_SIER_ALLEGATO_ISTRUZIONI=>"Istruzioni",
@@ -140,25 +140,23 @@ Class AA_Sier_Const extends AA_Const
         return static::$aTipoAllegati;
     }
 
-    protected static $aTags=null;
-    const AA_SIER_ALLEGATO_CIRCOLARI=1;
-    const AA_SIER_ALLEGATO_COMUNI=2;
-    const AA_SIER_ALLEGATO_CANDIDATI=4;
-    const AA_SIER_ALLEGATO_PREFETTURE=8;
+    protected static $aDestinatari=null;
+    const AA_SIER_ALLEGATO_COMUNI=1;
+    const AA_SIER_ALLEGATO_CANDIDATI=2;
+    const AA_SIER_ALLEGATO_PREFETTURE=4;
 
-    public static function GetTags()
+    public static function GetDestinatari()
     {
-        if(static::$aTags==null)
+        if(static::$aDestinatari==null)
         {
-            static::$aTags=array(
+            static::$aDestinatari=array(
                 static::AA_SIER_ALLEGATO_CANDIDATI=>"Candidati",
-                static::AA_SIER_ALLEGATO_CIRCOLARI=>"Circolari",
                 static::AA_SIER_ALLEGATO_COMUNI=>"Comuni",
                 static::AA_SIER_ALLEGATO_PREFETTURE=>"Prefetture"
             );
         }
 
-        return static::$aTags;
+        return static::$aDestinatari;
     }
 }
 
@@ -836,7 +834,7 @@ Class AA_Sier extends AA_Object_V2
         if($db->GetAffectedRows() > 0)
         {
             $rs=$db->GetResultSet();
-            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento'],explode(",",$rs[0]['tags']));
+            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento'],$rs[0]['destinatari']);
             
             return $object;
         }
@@ -1562,7 +1560,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", file='".addslashes($allegato->GetFileHash())."'";
         $query.=", tipo='".addslashes($allegato->GetTipo())."'";
         $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
-        $query.=",tags='".implode(",",$allegato->GetTags())."'";
+        $query.=",destinatari='".$allegato->GetDestinatari()."'";
         
         $db= new AA_Database();
         
@@ -1633,7 +1631,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", file='".addslashes($allegato->GetFileHash())."'";
         $query.=", tipo='".addslashes($allegato->GetTipo())."'";
         $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
-        $query.=", tags='".addslashes(implode(",",$allegato->GetTags()))."'";
+        $query.=",destinatari='".$allegato->GetDestinatari()."'";
         $query.=" WHERE id='".addslashes($allegato->GetId())."' LIMIT 1";
         
         $db= new AA_Database();
@@ -1868,7 +1866,7 @@ Class AA_Sier extends AA_Object_V2
         $rs=$db->GetResultSet();
         foreach($rs as $curRec)
         {   
-            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento'],explode(",",$curRec['tags']));
+            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento'],$curRec['destinatari']);
             $result[$curRec['id']]=$allegato;
         }
 
@@ -2923,35 +2921,42 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(720);
-        $wnd->SetHeight(680);
-
-        //tipo
-        $tipologia=AA_Sier_Const::GetTipoAllegati();
-        $options=array();
-        foreach($tipologia as $id=>$descr)
-        {
-            $options[]=array("id"=>$id,"value"=>$descr);
-        }
-        $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));
+        $wnd->SetHeight(720);
 
         //descrizione
         $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
-        //tags
-        $tags=AA_Sier_Const::GetTags();$curRow=1;
-        $section=new AA_FieldSet($id."_Section_Tags","Tags");
-        foreach($tags as $tag=>$descr)
+        //categorie
+        $tipi=AA_Sier_Const::GetTipoAllegati();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
+        $curRow=0;
+        foreach($tipi as $tipo=>$descr)
         {
             $newLine=false;
-            if(!$curRow%4) $newLine=true;
-            $section->AddCheckBoxField("tag_".$tag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("tipo_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
             $curRow++;
         }
-        //----------------------
         $wnd->AddGenericObject($section);
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //----------------------
+
+        //destinatari
+        $destinatari=AA_Sier_Const::GetDestinatari();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Destinatari","Destinatari");
+        $curRow=0;
+        foreach($destinatari as $destinatario=>$descr)
+        {
+            $newLine=false;
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("destinatari_".$destinatario, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $curRow++;
+        }
+        $wnd->AddGenericObject($section);
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //----------------------
         
         //file upload------------------
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
@@ -2990,10 +2995,16 @@ Class AA_SierModule extends AA_GenericModule
         $form_data["tipo"]=$allegato->GetTipo();
         $form_data["aggiornamento"]=date("Y-m-d");
 
-        $tags=$allegato->GetTags();
-        foreach($tags as $curTag)
+        $destinatari=$allegato->GetDestinatari(true);
+        foreach($destinatari as $curDestinatario)
         {
-            $form_data["tag_".$curTag]=1;
+            $form_data["destinatari_".$curDestinatario]=1;
+        }
+
+        $tipi=$allegato->GetTipo(true);
+        foreach($tipi as $curTipo)
+        {
+            $form_data["tipo_".$curTipo]=1;
         }
 
         $wnd=new AA_GenericFormDlg($id, "Modifica allegato/link", $this->id,$form_data,$form_data);
@@ -3004,35 +3015,51 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(720);
-        $wnd->SetHeight(720);
+        $wnd->SetHeight(800);
 
-        //tipo
+        /*//tipo
         $tipologia=AA_Sier_Const::GetTipoAllegati();
         $options=array();
         foreach($tipologia as $id=>$descr)
         {
             $options[]=array("id"=>$id,"value"=>$descr);
         }
-        $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));
+        $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));*/
 
         //descrizione
         $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
-        //tags
-        $tags=AA_Sier_Const::GetTags();$curRow=1;
-        $section=new AA_FieldSet($id."_Section_Tags","Tags");
-        foreach($tags as $tag=>$descr)
+        //categorie
+        $tipi=AA_Sier_Const::GetTipoAllegati();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
+        $curRow=0;
+        foreach($tipi as $tipo=>$descr)
         {
             $newLine=false;
-            if(!$curRow%4) $newLine=true;
-            $section->AddCheckBoxField("tag_".$tag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("tipo_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
             $curRow++;
         }
-        //----------------------
         $wnd->AddGenericObject($section);
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //----------------------
+
+        //destinatari
+        $destinatari=AA_Sier_Const::GetDestinatari();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Destinatari","Destinatari");
+        $curRow=0;
+        foreach($destinatari as $destinatario=>$descr)
+        {
+            $newLine=false;
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("destinatari_".$destinatario, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $curRow++;
+        }
+        $wnd->AddGenericObject($section);
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //----------------------
 
         $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
@@ -3699,16 +3726,25 @@ Class AA_SierModule extends AA_GenericModule
         $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
         if($aggiornamento=="") $aggiornamento=date("Y-m-d");
 
-        //tags
-        $tags=AA_Sier_Const::GetTags();
-        $newTags=array();
-        foreach($tags as $tag=>$descr)
+        //destinatari
+        $destinatari=AA_Sier_Const::GetDestinatari();
+        $newDestinatari=array();
+        foreach($destinatari as $destinatario=>$descr)
         {
-            if(isset($_REQUEST['tag_'.$tag]) && $_REQUEST['tag_'.$tag]==1) $newTags[]=$tag;
+            if(isset($_REQUEST['destinatari_'.$destinatario]) && $_REQUEST['destinatari_'.$destinatario]==1) $newDestinatari[]=$destinatario;
         }
         //----
 
-        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento,$newTags);
+        //tipologia
+        $tipi=AA_Sier_Const::GetTipoAllegati();
+        $newTipo=array();
+        foreach($tipi as $tipo=>$descr)
+        {
+            if(isset($_REQUEST['tipo_'.$tipo]) && $_REQUEST['tipo_'.$tipo]==1) $newTipo[]=$tipo;
+        }
+        //--------------
+
+        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari));
         
         //AA_Log::Log(__METHOD__." - "."allegato: ".print_r($allegato, true),100);
         
@@ -5805,23 +5841,21 @@ Class AA_SierModule extends AA_GenericModule
         if($canModify)
         {
             $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"tagsDescr","header"=>array("<div style='text-align: center'>Tags</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"destinatariDescr","header"=>array("<div style='text-align: center'>Destinatari</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
             $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
         else
         {
             $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"tagsDescr","header"=>array("<div style='text-align: center'>Tags</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"destinatariDescr","header"=>array("<div style='text-align: center'>Destinatari</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
             $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
         }
 
         $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
-
-        $tags=AA_Sier_Const::GetTags();
 
         $storage=AA_Storage::GetInstance();
 
@@ -5860,13 +5894,18 @@ Class AA_SierModule extends AA_GenericModule
             $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-            $docTags=array();
-            foreach($curDoc->GetTags() as $curTag)
+            $docDestinatari=array();
+            foreach($curDoc->GetDestinatariDescr(true) as $curDestinatario)
             {
-                $docTags[]="<span class='AA_Label AA_Label_LightGreen'>".$tags[$curTag]."</span>";
+                $docDestinatari[]="<span class='AA_Label AA_Label_LightGreen'>".$curDestinatario."</span>";
+            }
+            $docTipo=array();
+            foreach($curDoc->GetTipoDescr(true) as $curTipo)
+            {
+                $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$curTipo."</span>";
             }
             
-            $documenti_data[]=array("id"=>$id_doc,"tagsDescr"=>implode("&nbsp;",$docTags),"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>$curDoc->GetTipoDescr(),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
+            $documenti_data[]=array("id"=>$id_doc,"destinatariDescr"=>implode("&nbsp;",$docDestinatari),"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>implode("&nbsp;",$docTipo),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) $layout->AddRow($documenti);
@@ -7746,16 +7785,26 @@ Class AA_SierModule extends AA_GenericModule
 
         $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
         if($aggiornamento=="") $aggiornamento=date("Y-m-d");
-        //tags
-        $tags=AA_Sier_Const::GetTags();
-        $newTags=array();
-        foreach($tags as $tag=>$descr)
+        
+        //destinatari
+        $destinatari=AA_Sier_Const::GetDestinatari();
+        $newDestinatari=array();
+        foreach($destinatari as $destinatario=>$descr)
         {
-            if(isset($_REQUEST['tag_'.$tag]) && $_REQUEST['tag_'.$tag]==1) $newTags[]=$tag;
+            if(isset($_REQUEST['destinatari_'.$destinatario]) && $_REQUEST['destinatari_'.$destinatario]==1) $newDestinatari[]=$destinatario;
         }
         //----
 
-        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,$_REQUEST['tipo'],$aggiornamento,$newTags);
+        //tipologia
+        $tipi=AA_Sier_Const::GetTipoAllegati();
+        $newTipo=array();
+        foreach($tipi as $tipo=>$descr)
+        {
+            if(isset($_REQUEST['tipo_'.$tipo]) && $_REQUEST['tipo_'.$tipo]==1) $newTipo[]=$tipo;
+        }
+        //--------------
+
+        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari));
         
         if(!$object->UpdateAllegato($allegato, $this->oUser))
         {        
@@ -8547,31 +8596,57 @@ Class AA_SierAllegati
         $this->url=$url;
     }
     
-    protected $nTipo=0;
-    public function GetTipo()
+    protected $sTipo="";
+    public function GetTipo($asArray=false)
     {
-        return $this->nTipo;
+        if($asArray) return explode(",",$this->sTipo);
+        return $this->sTipo;
     }
-    public function SetTipo($val=0)
+    public function SetTipo($val="")
     {
-        if($val > 0) $this->nTipo=$val;
+        $this->sTipo=$val;
     }
-    public function GetTipoDescr()
+    public function GetTipoDescr($asArray=false)
     {
-        $tipo=AA_Sier_Const::GetTipoAllegati();
+        $tipi=AA_Sier_Const::GetTipoAllegati();
         
-        if(isset($tipo[$this->nTipo])) return $tipo[$this->nTipo];
-        return "n.d.";
+        $result=array();
+        $tipo=explode(",",$this->sTipo);
+
+        foreach($tipi as $curTipo=>$desc)
+        {
+            if(array_search($curTipo,$tipo)!==false) $result[$curTipo]=$desc;
+        }
+
+        if($asArray) return $result;
+        return implode(",",$result);
     }
 
-    protected $nTags=array();
-    public function GetTags()
+    protected $sDestinatari="";
+    public function GetDestinatari($asArray=false)
     {
-        return $this->nTags;
+        if($asArray) return explode(",",$this->sDestinatari);
+        return $this->sDestinatari;
     }
-    public function SetTags($val=array())
+    public function SetDestinatari($val="")
     {
-        if(is_array($val)) $this->nTipo=$val;
+        if(is_array($val)) $this->sDestinatari=implode(",",$val);
+        else $this->sDestinatari=$val;
+    }
+    public function GetDestinatariDescr($asArray=false)
+    {
+        $destinatari=AA_Sier_Const::GetDestinatari();
+        
+        $result=array();
+        $destinatario=explode(",",$this->sDestinatari);
+
+        foreach($destinatari as $curDestinatario=>$desc)
+        {
+            if(array_search($curDestinatario,$destinatario)!==false) $result[$curDestinatario]=$desc;
+        }
+
+        if($asArray) return $result;
+        return implode(",",$result);
     }
 
     protected $estremi="";
@@ -8639,7 +8714,7 @@ Class AA_SierAllegati
         $this->id_sier=$id;
     }
     
-    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="",$tipo=0,$aggiornamento="",$tags=null)
+    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="",$tipo="",$aggiornamento="",$destinatari="")
     {
         //AA_Log::Log(__METHOD__." id: $id, id_organismo: $id_organismo, tipo: $tipo, url: $url",100);
         
@@ -8648,8 +8723,8 @@ Class AA_SierAllegati
         $this->url=$url;
         $this->estremi=$estremi;
         $this->sFile=$file;
-        $this->nTipo=$tipo;
-        if(is_array($tags)) $this->nTags=$tags;
+        $this->sTipo=$tipo;
+        $this->sDestinatari=$destinatari;
         $this->sAggiornamento=$aggiornamento;
     }
     

@@ -136,14 +136,14 @@ class AA_Log
     static public function Log($msg, $level = 0, $bWithbacktrace = false, $bLogToSession = true, $user = null)
     {
         if ($level >= AA_Log::$nLogLevel || $bWithbacktrace) {
-            $time = date("Y-M-d H:i");
+            $time = date("Y-M-d H:i:s");
 
             //self::$oLog[] = $time . "*" . $level . "*" . $msg . "\n";
 
             //if ($level == 100 || $bWithbacktrace) {
             //    $array = array_keys(self::$oLog);
             //    $id = end($array);
-                //if($bWithbacktrace) self::$oBackTrace[$id]=debug_backtrace();
+            //    self::$oBackTrace[$id]=debug_backtrace();
             //}
 
             if ($level == 100) {
@@ -159,8 +159,8 @@ class AA_Log
                     array_shift($session_log);
                 }
 
-                //$newlog = new AA_Log($level, $msg, $time, debug_backtrace(0));
-                $newlog = new AA_Log($level, $msg, $time, array());
+                if($bWithbacktrace) $newlog = new AA_Log($level, $msg, $time, debug_backtrace(0));
+                else $newlog = new AA_Log($level, $msg, $time, array());
 
                 try
                 {
@@ -183,7 +183,7 @@ class AA_Log
         $this->nLevel = $level;
         $this->sMsg = $msg;
         if (is_array($backtrace)) $this->aBacktrace = $backtrace;
-        if ($user instanceof AA_User) $this->oUser = $user;
+        //if ($user instanceof AA_User) $this->oUser = $user;
     }
 
     static public function toHTML($bWithbacktrace = false)
@@ -625,6 +625,45 @@ class AA_Group
         $this->Parse($props);
     }
 
+    static public function GetDescendants($id_group)
+    {
+        if($id_group <=0)
+        {
+            AA_Log::Log(__METHOD__." - identificativo di gruppo non valido. (".$id_group.")",100);
+            return array();            
+        }
+
+        $result=array();
+        $db=new AA_Database();
+        $query="SELECT GROUP_CONCAT(id) as ids FROM ".static::AA_DB_TABLE." WHERE id_parent='".$id_group."'";
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage()."  - query: ".$query,100);
+            return array();
+        }
+        $rs=$db->GetResultSet();
+
+        $num=0;
+        while($rs[0]['ids'] != "" && $num < 10)
+        {
+            $result=array_merge($result,explode(",",$rs[0]['ids']));
+
+            $query="SELECT GROUP_CONCAT(id) as ids FROM ".static::AA_DB_TABLE." WHERE FIND_IN_SET(id_parent,'".$rs[0]['ids']."')";
+            //AA_Log::Log(__METHOD__." ids: ".$rs[0]['ids']." - result: ".print_r($result,true)." - query: ".$query,100);
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage()."  - query: ".$query,100);
+                return array();
+            }
+            $rs=$db->GetResultSet();
+            $num++;
+        }
+
+        //AA_Log::Log(__METHOD__." - result: ".print_r($result,true),100);
+        return $result;
+    }
+
     //Restituisce il gruppo con l'id specificato
     static public function GetGroup($id="",$user=null)
     {
@@ -892,6 +931,13 @@ class AA_User
     //Flag utente corrente
     private $bCurrentUser = false;
 
+    //legacy data
+    protected $aLegacyData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0,"level"=>3,"flags"=>"");
+    public function GetLegacyData()
+    {
+        return $this->aLegacyData;
+    }
+
     //status
     protected $nStatus=0;
     public function GetStatus()
@@ -908,9 +954,27 @@ class AA_User
 
     //gruppi utente compresi quelli secondari 
     protected $aAllGroups=array();
+    protected $aSecondaryGroups=array();
     public function GetAllGroups()
     {
+        if(sizeof($this->aGroups) > 0 && sizeof($this->aAllGroups) == 0)
+        {
+            $this->LoadAllGroups();
+        }
         return $this->aAllGroups;
+    }
+    protected function LoadAllGroups()
+    {
+        if(sizeof($this->aGroups)==0) return array();
+
+        foreach($this->aGroups as $curGroup)
+        {
+            $this->aSecondaryGroups=array_merge($this->aSecondaryGroups,AA_Group::GetDescendants($curGroup));
+        }
+
+        $this->aAllGroups=array_unique(array_merge($this->aGroups,$this->aSecondaryGroups));
+
+        //AA_Log::Log(__METHOD__." - allGroups: ".print_r($this->aAllGroups,true)." - secondary: ".print_r($this->aSecondaryGroups,true)." - Primary: ".print_r($this->aGroups,true),100);
     }
 
     public function __construct()
@@ -1042,7 +1106,7 @@ class AA_User
         if(AA_Const::AA_ENABLE_LEGACY_DATA && $this->HasFlag("SU")) return true;
 
         //gruppo super user
-        if(array_search(AA_USER::AA_USER_GROUP_SUPERUSER,$this->GetGroups()) !==false) return true;
+        if(array_search(AA_USER::AA_USER_GROUP_SUPERUSER,$this->GetAllGroups()) !==false) return true;
 
         return false;
     }
@@ -1089,7 +1153,7 @@ class AA_User
                 AA_Log::Log(__METHOD__." - errore nel parsing dei dati info: ".$row[0]['info'],100);
             }
 
-            $user->nID = ['id'];
+            $user->nID = $row[0]['id'];
             if(is_array($info))
             {
                 $user->sNome = $info['nome'];
@@ -1102,6 +1166,9 @@ class AA_User
             $user->sEmail = $row[0]['email'];
             $user->nStatus= $row[0]['status'];
             $user->aGroups=explode(",",$row[0]['groups']);
+            
+            $user->LoadAllGroups();
+            
             $user->sLastLogin = $row[0]['lastlogin'];
             $user->sFlags = $row[0]['flags'];
             $user->bIsValid = true;
@@ -1114,9 +1181,11 @@ class AA_User
                 $legacy_data=json_decode($row[0]['legacy_data'],true);
                 if(is_array($legacy_data))
                 {
+                    $user->aLegacyData=$legacy_data;
                     $user->oStruct = AA_Struct::GetStruct($legacy_data['id_assessorato'], $legacy_data['id_direzione'], $legacy_data['id_servizio']);
                     $user->nLivello=$legacy_data['level'];
-                    $user->sFlags=$legacy_data['flags'];
+                    if(is_array($legacy_data['flags']))$user->sFlags=implode("|",$legacy_data['flags']);
+                    else $user->sFlags=$legacy_data['flags'];
                 }
                 else
                 {
@@ -1208,11 +1277,30 @@ class AA_User
     //Popola i dati dell'utente a partire dal nome utente
     static public function LoadUserFromUserName($userName)
     {
+        //AA_Log::Log(get_class() . "LoadUserFromUserName($userName)");
+
+        $user = new AA_User();
+        $user->bCurrentUser = false;
+
+        $db = new AA_Database();
+        $db->Query("SELECT ".static::AA_DB_TABLE.".id from ".static::AA_DB_TABLE." where user = '" . $userName . "' and status >= 0 LIMIT 1");
+        if($db->GetAffectedRows() > 0)
+        {
+            $row = $db->GetResultSet();
+             return static::LoadUser($row[0]['id']);
+        }
+        
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
-            return static::LegacyLoadUserFromUserName($userName);
+             return static::LegacyLoadUserFromUserName($userName);
         }
 
+        return $user;
+    }
+
+    //Popola i dati dell'utente a partire dal nome utente (legacy)
+    static public function LegacyLoadUserFromUserName($userName)
+    {
         //AA_Log::Log(get_class() . "LoadUserFromUserName($userName)");
 
         $user = new AA_User();
@@ -1245,42 +1333,6 @@ class AA_User
         return $user;
     }
 
-    //Popola i dati dell'utente a partire dal nome utente (legacy)
-    static public function LegacyLoadUserFromUserName($userName)
-    {
-        AA_Log::Log(get_class() . "LoadUserFromUserName($userName)");
-
-        $user = new AA_User();
-        $user->bCurrentUser = false;
-
-        $db = new AA_Database();
-        $db->Query("SELECT utenti.* from utenti where user = '" . $userName . "' and eliminato='0'");
-        if($db->GetAffectedRows() > 0)
-        {
-            $row = $db->GetResultSet();
-
-            $user->nID = $row[0]['id'];
-            $user->sNome = $row[0]['nome'];
-            $user->sCognome = $row[0]['cognome'];
-            $user->sUser = $row[0]['user'];
-            $user->sEmail = $row[0]['email'];
-            $user->nLivello = $row[0]['livello'];
-            $user->nDisabled = $row[0]['disable'];
-            $user->sImage = $row[0]['image'];
-            $user->sPhone = $row[0]['phone'];
-            $user->sFlags = $row[0]['flags'];
-            $user->sLastLogin = $row[0]['lastlogin'];
-            $user->nConcurrent = $row[0]['concurrent'];
-            $user->bIsValid = true;
-
-            //Popola i dati della struttura
-            $user->oStruct = AA_Struct::GetStruct($row[0]['id_assessorato'], $row[0]['id_direzione'], $row[0]['id_servizio']);
-        }
-        
-        return $user;
-    }
-
-    //Popola i dati dell'utente a partire dal nome utente
     //Restituisce un array di oggetti AA_User
     static public function LoadUsersFromEmail($email)
     {
@@ -1292,32 +1344,13 @@ class AA_User
         $users = array();
 
         $db = new AA_Database();
-        $db->Query("SELECT utenti.* from utenti where email = '" . addslashes($email) . "' and eliminato='0' and disable='0'");
+        $db->Query("SELECT ".static::AA_DB_TABLE.".id from ".static::AA_DB_TABLE." where email = '" . $email . "' and status > 0 LIMIT 1");
         if($db->GetAffectedRows() > 0)
         {
             $rs = $db->GetResultSet();
             foreach($rs as $curRow)
             {
-                $user = new AA_User();
-
-                $user->nID = $curRow['id'];
-                $user->sNome = $curRow['nome'];
-                $user->sCognome = $curRow['cognome'];
-                $user->sUser = $curRow['user'];
-                $user->sEmail = $curRow['email'];
-                $user->nLivello = $curRow['livello'];
-                $user->sFlags = $curRow['flags'];
-                $user->sImage = $curRow['image'];
-                $user->sPhone = $curRow['phone'];
-                $user->nDisabled = $curRow['disable'];
-                $user->sLastLogin = $curRow['lastlogin'];
-                $user->nConcurrent = $curRow['concurrent'];
-                $user->bCurrentUser = false;
-                $user->bIsValid = true;
-    
-                //Popola i dati della struttura
-                $user->oStruct = AA_Struct::GetStruct($curRow['id_assessorato'], $curRow['id_direzione'], $curRow['id_servizio']);
-    
+                $user = static::LoadUser($curRow['id']);    
                 $users[] = $user;    
             }
         }
@@ -1374,8 +1407,10 @@ class AA_User
         $db = new AA_Database();
         $user = AA_User::Guest();
 
-        if ($sUserName != null && $sUserPwd != null) 
+        if ($sUserName != "" && $sUserPwd != "") 
         {
+            //AA_Log::Log(__METHOD__."($sToken,$sUserName, $sUserPwd)",100);
+
             if (filter_var($sUserName, FILTER_VALIDATE_EMAIL)) {
                 //Login tramite email
                 AA_Log::Log(__METHOD__." - autenticazione in base alla mail.");
@@ -1394,14 +1429,17 @@ class AA_User
 
             if ($db->GetAffectedRows() > 0) 
             {
+                //AA_Log::Log(__METHOD__." - verifica password: ".$rs["passwd"], 100);
                 if(password_verify($sUserPwd,$rs['passwd']))
                 {
                     if ($rs['status'] == AA_USER::AA_USER_STATUS_DISABLED) {
                         AA_Log::Log(__METHOD__." - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
+                        return AA_User::Guest();
                     }
     
                     if ($rs['status'] == AA_User::AA_USER_STATUS_DELETED) {
                         AA_Log::Log(__METHOD__." - L'utente è stato disattivato permanentemente (id: " . $rs["id"] . ").", 100);
+                        return AA_User::Guest();
                     }
     
                     if ($rs['status'] == AA_User::AA_USER_STATUS_ENABLED) 
@@ -1451,9 +1489,11 @@ class AA_User
     
                         //update last login time
                         $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = '".date("Y-m-d")."' WHERE id='".$user->GetId()."' LIMIT 1");
-    
+                        
                         return $user;
                     }
+
+                    return AA_User::Guest();
                 }
             }
 
@@ -1463,6 +1503,7 @@ class AA_User
 
                 if($user->IsValid())
                 {
+                    AA_Log::Log(__METHOD__." - Migrazione utente legacy: ".$user->GetNome()." ".$user->GetCognome()." (".$user->GetId().")",100);
                     static::MigrateLegacyUser($user, $sUserPwd);
 
                     return $user;
@@ -1970,7 +2011,7 @@ class AA_User
     //Genera il token di autenticazione
     static private function GenerateToken($id_user, $remember_me=false, $concurrent_access=false)
     {
-        //AA_Log::Log(get_class() . "->GenerateToken($id_user)");
+        //AA_Log::Log(__METHOD__."($id_user)",100);
 
         $token = hash("sha256", $id_user . date("Y-m-d H:i:s") . uniqid() . $_SERVER['REMOTE_ADDR']);
 
@@ -1980,8 +2021,12 @@ class AA_User
 
         if(!$concurrent_access)
         {
+            AA_Log::Log(__METHOD__." - accesso concorrente disattivato, elimino token precedenti.",100);
             $query = "DELETE from tokens where id_utente='" . $id_user . "'";
-            $db->Query($query);    
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+            }   
         }
 
         $query = "INSERT INTO tokens set token='" . $token . "', id_utente='" . $id_user . "',ip_src='" . $_SERVER['REMOTE_ADDR'] . "'";
@@ -1991,7 +2036,12 @@ class AA_User
             $query.=", remember_me='1'";
         }
 
-        $db->Query($query);
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+        } 
+
+        //AA_Log::Log(__METHOD__." - nuovo token: ".$token,100);
 
         return $token;
     }
@@ -2160,7 +2210,7 @@ class AA_User
             if ($this->HasFlag("U0")) return false;    
         }
 
-        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetGroups()) === false) return false;
+        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetAllGroups()) === false) return false;
 
         return true;
     }
@@ -2181,7 +2231,7 @@ class AA_User
             if ($this->HasFlag("S0")) return false;    
         }
 
-        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetGroups()) === false) return false;
+        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetAllGroups()) === false) return false;
 
         return true;
     }
@@ -2337,6 +2387,16 @@ class AA_User
             return false;
         }
 
+         //Verifica gruppi
+         if(isset($params['groups']) && is_array($params['groups']))
+         {
+             $params['groups']=array_uintersect($this->GetAllGroups(),$params['groups']);
+         }
+         else
+         {
+             $params['groups']=array(3);
+         }
+
         $db = new AA_Database();
 
         //Stato utente
@@ -2360,10 +2420,11 @@ class AA_User
         $sql.=", status='".$status."'";
         if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".AA_Utils::password_hash($params['passwd'])."'";
         else $sql.=", passwd='".AA_Utils::password_hash(uniqid(date("Y-m-d")))."'";
-        if (isset($params['groups']) && $params['groups'] !="") $sql.=", groups='".addslashes($params['groups'])."'";
+        if (isset($params['groups']) && is_array($params['groups'])) $sql.=", groups='".implode(",",$params['groups'])."'";
         else $sql.=", groups='4'";
 
-        if (!$db->Query($sql)) {
+        if (!$db->Query($sql)) 
+        {
             AA_Log::Log(__METHOD__ . " - new stuff - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
             return false;
         }
@@ -2435,9 +2496,14 @@ class AA_User
         $sql.=", status='".$status."'";
         
         if($legacyPwd && $legacyPwd !="") $sql.=", passwd='".AA_Utils::password_hash($legacyPwd)."'";
-        
-        if (isset($params['groups']) && $params['groups'] !="") $sql.=", groups='".addslashes($params['groups'])."'";
-        else $sql.=", groups='4'";
+
+        {
+            $groups=4;
+            if($legacyUser->nLivello==1) $groups=3;
+            if($legacyUser->nLivello==0) $groups=2;
+            if($legacyUser->IsSuperUser()) $groups=1;
+            $sql.=", groups='".$groups."'";
+        }
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -2726,7 +2792,7 @@ class AA_User
         //Verifica gruppi
         if(isset($params['groups']) && is_array($params['groups']))
         {
-            $params['groups']=array_uintersect($this->GetGroups(),$params['groups']);
+            $params['groups']=array_intersect($this->GetAllGroups(),$params['groups']);
         }
         else
         {
@@ -2753,9 +2819,17 @@ class AA_User
         $sql.=", info='".addslashes($info)."'";
         $sql.=", data_abilitazione='".date("Y-m-d")."'";
         $sql.=", status='".$status."'";
-        if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".password_hash($params['passwd'],PASSWORD_DEFAULT)."'";
+        if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".AA_Utils::password_hash($params['passwd'])."'";
         else $sql.=", passwd='".AA_Utils::password_hash(uniqid(date("Y-m-d")))."'";
-        $sql.=", groups='".addslashes(implode(",",$params['groups']))."'";
+
+        if (isset($params['groups']) && is_array($params['groups'])) $sql.=", groups='".addslashes(implode(",",$params['groups']))."'";
+        else 
+        {
+            $groups=4;
+            if($params['livello']==1) $groups=3;
+            if($params['livello']==0) $groups=2;
+            $sql.=", groups='".$groups."'";
+        }
 
         $db=new AA_Database();
 
@@ -2957,11 +3031,6 @@ class AA_User
     //Funzione di aggiornamento del profilo utente corrente
     public static function UpdateCurrentUserProfile($params,$imageFileName="")
     {
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            return static::LegacyUpdateCurrentUserProfile($params,$imageFileName);
-        }
-
         $user=AA_User::GetCurrentUser();
         if ($user->IsGuest()) {
             AA_Log::Log(__METHOD__ . " - Utente corrente non valido", 100);
@@ -2985,20 +3054,6 @@ class AA_User
 
         if($params["old_pwd"] !="" && $params['new_pwd'] !="" && $params["new_pwd_retype"] !="")
         {
-            //verifica che la password attuale sia corretta
-            $query="SELECT id from utenti WHERE email='".addslashes($params['email'])."' AND passwd=MD5('".addslashes($params['old_pwd'])."') LIMIT 1";
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__ . " - Errore nella verifica delle credenziali impostate.", 100);
-                return false;
-            }
-
-            if($db->GetAffectedRows()==0)
-            {
-                AA_Log::Log(__METHOD__ . " - La password corrente è errata.", 100);
-                return false;
-            }
-
             //Verifica che la nuova password abbia almeno 8 caratteri, contenga un numero, una lettera maiuscola e una lettera minuscola e non contenga la vecchia password
             $password_regex = "/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/"; 
             if(preg_match($password_regex, $params['new_pwd'])==0)
@@ -3013,12 +3068,54 @@ class AA_User
                 return false;
             }
 
+            //verifica che la password attuale sia corretta
+            $query="SELECT passwd,info from ".static::AA_DB_TABLE." WHERE id='".addslashes($user->getId())."' LIMIT 1";
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__ . " - Errore nella verifica delle credenziali impostate.", 100);
+                return false;
+            }
+
+            if($db->GetAffectedRows()==0)
+            {
+                AA_Log::Log(__METHOD__ . " - Utente non trovato.", 100);
+
+                if(!static::MigrateLegacyUser($user,$params['new_pwd']))
+                {
+                    return false;
+                }
+
+                if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                {
+                    return static::LegacyUpdateCurrentUserProfile($params,$imageFileName);
+                }
+            }
+
+            $rs=$db->GetResultSet();
+            if(!password_verify($params['old_pwd'],$rs[0]['passwd']))
+            {
+                AA_Log::Log(__METHOD__ . " - Vecchia password errata.", 100);
+                return false;
+            }
+
             $pwd=true;
         }
 
-        $query="UPDATE utenti SET nome='".addSlashes($params['nome'])."',cognome='".addSlashes($params['cognome'])."',phone='".addslashes($params['cellulare'])."'";
-        if($pwd) $query.=",passwd=MD5('".addslashes($params['new_pwd'])."')";
-        if($imageFileName !="") $query.=", image='".addslashes($imageFileName)."'";
+        $info=json_decode($rs[0]['info'],true);
+        if(!is_array($info))
+        {
+            $info=array("nome"=>$params['nome'],"cognome"=>$params['cognome'],"phone"=>$params['phone'],"image"=>$imageFileName);
+        }
+        else
+        {
+            $info['nome']=$params['nome'];
+            $info['cognome']=$params['cognome'];
+            $info['phone']=$params['phone'];
+            $info['image']=$imageFileName;
+        }
+
+        $query="UPDATE ".static::AA_DB_TABLE." SET info='".addSlashes(json_encode($info))."'";
+        if($pwd) $query.=",passwd='".addslashes(AA_Utils::password_hash($params['new_pwd']))."'";
         $query.=" WHERE id='".$user->GetId()."' LIMIT 1";
 
         if(!$db->Query($query))
@@ -3027,7 +3124,10 @@ class AA_User
             return false;
         }
 
-        //AA_Log::Log(__METHOD__ . " - query: ".$query, 100);
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            return static::LegacyUpdateCurrentUserProfile($params,$imageFileName);
+        }
 
         return true;
     }
@@ -3202,7 +3302,6 @@ class AA_User
                     
                     //Reimposta le credenziali dell'utente
                     $query = "UPDATE ".static::AA_DB_TABLE." set passwd='" . AA_Utils::password_hash($newPwd) . "' where id='" . $user->GetID() . "' LIMIT 1";
-
                     if (!$db->Query($query)) {
                         AA_Log::Log(__METHOD__."- Errore durante l'aggiornamento della password per l'utente: " . $user->GetUserName() . " - " . $db->GetErrorMessage(), 100);
                     } else {
@@ -3210,6 +3309,15 @@ class AA_User
                         $credenziali .= '
                         nome utente: <b>' . $user->GetUserName() . '</b>
                         password: <b>' . $newPwd . '</b>';
+                    }
+
+                    if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                    {
+                        $query = "UPDATE utenti set passwd=MD5('" . $newPwd . "') where id='" . $user->GetID() . "' LIMIT 1";
+                        if (!$db->Query($query)) 
+                        {
+                            AA_Log::Log(__METHOD__."- Errore durante l'aggiornamento della password (legacy) per l'utente: " . $user->GetUserName() . " - " . $db->GetErrorMessage(), 100);
+                        }
                     }
                 }
             }
