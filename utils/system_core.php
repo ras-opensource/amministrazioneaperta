@@ -1430,7 +1430,7 @@ class AA_User
             if ($db->GetAffectedRows() > 0) 
             {
                 //AA_Log::Log(__METHOD__." - verifica password: ".$rs["passwd"], 100);
-                if(password_verify($sUserPwd,$rs['passwd']))
+                if(AA_Utils::password_verify($sUserPwd,$rs['passwd']))
                 {
                     if ($rs['status'] == AA_USER::AA_USER_STATUS_DISABLED) {
                         AA_Log::Log(__METHOD__." - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
@@ -3361,6 +3361,19 @@ class AA_Utils
         }
 
         return crypt($password,uniqid());
+    }
+
+    //password_verify
+    static public function password_verify($password="",$hash="")
+    {
+        if(function_exists("password_verify"))
+        {
+            return password_verify($password,PASSWORD_DEFAULT);
+        }
+
+        if(crypt($password,$hash)==$hash) return true;
+    
+        return false;
     }
 
     //Formata un numero

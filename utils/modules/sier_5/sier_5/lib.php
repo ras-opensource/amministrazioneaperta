@@ -1554,21 +1554,6 @@ Class AA_Sier extends AA_Object_V2
             $allegato->SetIdSier($this->nId_Data_Rev);
         }
 
-        $db= new AA_Database();
-
-        $ordine=$allegato->GetOrdine();
-        if($allegato->GetOrdine()==0)
-        {
-            $query="SELECT count(id) as num FROM ".static::AA_ALLEGATI_DB_TABLE;
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__." - Errore nella query: ".$query." - errore: ".$db->GetErrorMessage(), 100,true);
-            }
-
-            $rs=$db->GetAffectedRows();
-            $ordine=$rs[0]['num'];
-        }
-
         $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdSier()."'";
         $query.=", url='".addslashes($allegato->GetUrl())."'";
         $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
@@ -1576,7 +1561,8 @@ Class AA_Sier extends AA_Object_V2
         $query.=", tipo='".addslashes($allegato->GetTipo())."'";
         $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
         $query.=",destinatari='".$allegato->GetDestinatari()."'";
-        $query.=",ordine='".$ordine."'";
+        
+        $db= new AA_Database();
         
         //AA_Log::Log(__METHOD__." - query: ".$query, 100);
         
@@ -1638,21 +1624,6 @@ Class AA_Sier extends AA_Object_V2
         {
             $allegato->SetIdSier($this->nId_Data_Rev);
         }
-
-        $db= new AA_Database();
-
-        $ordine=$allegato->GetOrdine();
-        if($allegato->GetOrdine()==0)
-        {
-            $query="SELECT count(id) as num FROM ".static::AA_ALLEGATI_DB_TABLE;
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__." - Errore nella query: ".$query." - errore: ".$db->GetErrorMessage(), 100,true);
-            }
-
-            $rs=$db->GetAffectedRows();
-            $ordine=$rs[0]['num'];
-        }
         
         $query="UPDATE ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdSier()."'";
         $query.=", url='".addslashes($allegato->GetUrl())."'";
@@ -1661,8 +1632,9 @@ Class AA_Sier extends AA_Object_V2
         $query.=", tipo='".addslashes($allegato->GetTipo())."'";
         $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
         $query.=",destinatari='".$allegato->GetDestinatari()."'";
-        $query.=",ordine='".$ordine."'";
         $query.=" WHERE id='".addslashes($allegato->GetId())."' LIMIT 1";
+        
+        $db= new AA_Database();
         
         //AA_Log::Log(__METHOD__." - query: ".$query, 100);
         
@@ -2939,7 +2911,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
-        $form_data=array("aggiornamento"=>date("Y-m-d"),"ordine"=>0);
+        $form_data=array("aggiornamento"=>date("Y-m-d"));
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi allegato/link", $this->id,$form_data,$form_data);
         
@@ -2952,10 +2924,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetHeight(720);
 
         //descrizione
-        $wnd->AddTextField("estremi", "Descrizione", array("gravity"=>3,"required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
-        
-        //ordine
-        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto"),false);
+        $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
@@ -3060,9 +3029,6 @@ Class AA_SierModule extends AA_GenericModule
         //descrizione
         $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
 
-        //ordine
-        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto"),false);
-        
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
         //categorie
@@ -3778,9 +3744,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         //--------------
 
-        $ordine=0;
-        if(isset($_REQUEST['ordine']) && $_REQUEST['ordine']>0) $ordine=$_REQUEST['ordine'];
-        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari),addslashes($ordine));
+        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari));
         
         //AA_Log::Log(__METHOD__." - "."allegato: ".print_r($allegato, true),100);
         
@@ -3878,8 +3842,7 @@ Class AA_SierModule extends AA_GenericModule
                 "id_candidato"=>$newId
             )
         );
-        //$sTaskLog="<status id='status' action='dlg' action_params='".json_encode($params)."'>0</status><content id='content'>";
-        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog="<status id='status' action='dlg' action_params='".json_encode($params)."'>0</status><content id='content'>";
         $sTaskLog.= "Candidato caricato con successo.";
         $sTaskLog.="</content>";
         
@@ -7841,9 +7804,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         //--------------
 
-        $ordine=0;
-        if(isset($_REQUEST['ordine']) && $_REQUEST['ordine']>0) $ordine=$_REQUEST['ordine'];
-        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari),addslashes($ordine));
+        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari));
         
         if(!$object->UpdateAllegato($allegato, $this->oUser))
         {        
@@ -8752,24 +8713,13 @@ Class AA_SierAllegati
     {
         $this->id_sier=$id;
     }
-
-    protected $nOrdine=0;
-    public function GetOrdine()
-    {
-        return $this->nOrdine;
-    }
-    public function SetOrdine($val=0)
-    {
-        $this->nOrdine=$val;
-    }
     
-    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="",$tipo="",$aggiornamento="",$destinatari="",$ordine=0)
+    public function __construct($id=0,$id_sier=0,$estremi="",$url="",$file="",$tipo="",$aggiornamento="",$destinatari="")
     {
         //AA_Log::Log(__METHOD__." id: $id, id_organismo: $id_organismo, tipo: $tipo, url: $url",100);
         
         $this->id=$id;
         $this->id_sier=$id_sier;
-        $this->nOrdine=$ordine;
         $this->url=$url;
         $this->estremi=$estremi;
         $this->sFile=$file;
