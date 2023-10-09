@@ -10,18 +10,21 @@ webix.protoUI({
 		this.$ready.push(this._require_ckeditor);
 	},
 	defaults:{
-		config:{}
+		config:
+		{
+			cdn: false
+		}
 	},
 	_require_ckeditor:function(){
-		if (this.config.cdn === false){
+		//if (this.config.cdn === false){
 			this._render_ckeditor();
 			return;
-		};
+		//};
 
 		// we use DecoupledEditor only
-		var cdn = this.config.cdn || "https://cdn.ckeditor.com/ckeditor5/18.0.0/decoupled-document";
+		//var cdn = this.config.cdn || "https://cdn.ckeditor.com/ckeditor5/18.0.0/decoupled-document";
 	
-		webix.require([cdn+"/ckeditor.js"])
+		webix.require(["build/ckeditor.js"])
 			.then( webix.bind(this._render_ckeditor, this) )
 			.catch(function(e){
 				console.log(e);
