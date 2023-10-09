@@ -2558,7 +2558,7 @@ class AA_User
         }
 
         //Verifica se l'utente esiste già
-        if (AA_user::UserNameExist($params['user'])) {
+        if (!isset($params['new_id']) && AA_user::UserNameExist($params['user'])) {
             AA_Log::Log(get_class() . "->LegacyAddNewUser($params) - nome utente già esistente.", 100);
             return false;
         }
@@ -2837,6 +2837,7 @@ class AA_User
             if($params['livello']==0) $groups=2;
             $sql.=", groups='".$groups."'";
         }
+        $sql.=" WHERE id='".$$user->GetId()."' LIMIT 1";
 
         $db=new AA_Database();
 

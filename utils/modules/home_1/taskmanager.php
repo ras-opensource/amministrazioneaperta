@@ -26,16 +26,18 @@ if($_REQUEST['task'] == "")
 
 $task=$_REQUEST['task'];
 
-$taskManager = new AA_HomeTaskManager($user);
+$module= AA_HomeModule::GetInstance($user);
+
+$taskManager = $module->GetTaskManager($user);
 
 if($taskManager->IsManaged($task))
 {
   if(!$taskManager->RunTask($task))
   {
-    AA_Log::Log("organismi_ops - task: ".$task." - ".$taskManager->GetTaskError($task),100,false,true);
+    AA_Log::Log("home task manager - task: ".$task." - ".$taskManager->GetTaskError($task),100,false,true);
   }
   die($taskManager->GetTaskLog($task));
 }
 
-die("<status id='status'>-1</status><error id='error'>Task non gestito (2): ".$task.".</error>");
+die("<status id='status'>-1</status><error id='error'>Task non gestito: ".$task.".</error>");
 exit;

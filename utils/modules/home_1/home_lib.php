@@ -298,23 +298,33 @@ Class AA_HomeTask_ActionMenu extends AA_GenericTask
 //Classe per la gestione del modulo home
 Class AA_HomeModule extends AA_GenericModule
 {
+    const AA_UI_PREFIX="AA_Home";
+
+    //Id modulo
+    const AA_ID_MODULE="AA_MODULE_HOME";
+
+    //main ui layout box
+    const AA_UI_MODULE_MAIN_BOX="AA_Home_module_layout";
+
     const AA_UI_SECTION_DESKTOP="AA_Home_Desktop_Content_Box";
 
     //istanza
     protected static $oInstance=null;
     
     //Restituisce l'istanza corrente
-    public static function GetInstance()
+    public static function GetInstance($user=null)
     {
         if(self::$oInstance==null)
         {
-            self::$oInstance=new AA_HomeModule();
+            self::$oInstance=new AA_SierModule($user);
         }
         
         return self::$oInstance;
     }
     
-    public function __construct() {
+    public function __construct($user=null) {
+        parent::__construct($user,false);
+
         $this->SetId("AA_MODULE_HOME");
 
         //Sidebar config
@@ -342,6 +352,8 @@ Class AA_HomeModule extends AA_GenericModule
         $section->SetNavbarTemplate($this->TemplateNavbar_News()->toArray());
         //$this->AddSection($section);
         #-------------------------------------------
+
+
     }
 
     //Template navbar news
