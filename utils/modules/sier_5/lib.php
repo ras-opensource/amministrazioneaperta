@@ -128,7 +128,7 @@ Class AA_Sier_Const extends AA_Const
                 static::AA_SIER_ALLEGATO_AVVISI=>"Avvisi",
                 static::AA_SIER_ALLEGATO_CIRCOLARI=>"Circolari",
                 static::AA_SIER_ALLEGATO_COMUNICAZIONI=>"Comunicazioni",
-                static::AA_SIER_ALLEGATO_INFORMAZIONI=>"Informazioni generali",
+                static::AA_SIER_ALLEGATO_INFORMAZIONI=>"Info generali",
                 static::AA_SIER_ALLEGATO_ISTRUZIONI=>"Istruzioni",
                 static::AA_SIER_ALLEGATO_MANIFESTI=>"Manifesti",
                 static::AA_SIER_ALLEGATO_MODULISTICA=>"Modulistica",
@@ -144,6 +144,8 @@ Class AA_Sier_Const extends AA_Const
     const AA_SIER_ALLEGATO_COMUNI=1;
     const AA_SIER_ALLEGATO_CANDIDATI=2;
     const AA_SIER_ALLEGATO_PREFETTURE=4;
+    const AA_SIER_ALLEGATO_CITTADINI=8;
+
 
     public static function GetDestinatari()
     {
@@ -151,6 +153,7 @@ Class AA_Sier_Const extends AA_Const
         {
             static::$aDestinatari=array(
                 static::AA_SIER_ALLEGATO_CANDIDATI=>"Candidati",
+                static::AA_SIER_ALLEGATO_CITTADINI=>"Cittadini",
                 static::AA_SIER_ALLEGATO_COMUNI=>"Comuni",
                 static::AA_SIER_ALLEGATO_PREFETTURE=>"Prefetture"
             );
@@ -1566,7 +1569,7 @@ Class AA_Sier extends AA_Object_V2
             }
 
             $rs=$db->GetResultSet();
-            $ordine=$rs[0]['num'];
+            $ordine=$rs[0]['num']+1;
         }
 
         $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdSier()."'";
@@ -1651,7 +1654,7 @@ Class AA_Sier extends AA_Object_V2
             }
 
             $rs=$db->GetResultSet();
-            $ordine=$rs[0]['num'];
+            $ordine=$rs[0]['num']+1;
         }
         
         $query="UPDATE ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdSier()."'";

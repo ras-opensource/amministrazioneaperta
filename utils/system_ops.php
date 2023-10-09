@@ -4,24 +4,7 @@ session_start();
 
 $task=$_REQUEST['task'];
 
-//Utente non identificato o sessioen scaduta
-$user=AA_User::GetCurrentUser();
-
 include_once("system_custom.php");
-
-if($user->IsGuest() && $task !="UserAuth" && $task !="UserLogOut" && $task !="struttura-utente" && $task !="ResetPassword")
-{
-  //AA_Log::Log("SmartCV - token: ".$_SESSION['token']);
-  die("<status id='status'>-2</status><error id='error'>Credenziali non impostate o sessione scaduta.</error>");
-  exit;
-}
-
-//Task non impostato
-if($task == "")
-{
-  die("<status id='status'>-1</status><error id='error'>parametro task non impostato.</error>");
-  exit;
-}
 
 //auth
 if($task=="UserAuth")
@@ -32,6 +15,35 @@ if($task=="UserAuth")
         die("<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>");
     }
     else die("<status id='status'>0</status><error id='error'>Autenticazione effettuata con successo.</error>");
+}
+else
+{
+  $user=AA_User::GetCurrentUser();
+}
+
+//log out
+if($task=="UserLogOut")
+{
+    //$user=AA_User::UserAuth("", $_REQUEST['user'],$_REQUEST['pwd']);
+    if($user->IsGuest())
+    {
+      die("<status id='status'>0</status><error id='error'>Logout effettuato con successo.</error>");
+    }
+
+    if($user->IsValid() && $user->isCurrentUser())
+    {
+      $user->LogOut();
+    }
+    
+    die("<status id='status'>0</status><error id='error'>Logout effettuato con successo.</error>");
+}
+
+//Utente non identificato o sessioen scaduta
+if($user->IsGuest() && $task !="struttura-utente")
+{
+  //AA_Log::Log("SmartCV - token: ".$_SESSION['token']);
+  die("<status id='status'>-2</status><error id='error'>Credenziali non impostate o sessione scaduta.</error>");
+  exit;
 }
 
 //recupero credenziali
@@ -50,21 +62,11 @@ if($task=="ResetPassword")
   die("<status id='status'>0</status><content id='content'>Le nuove credenziali sono state inviate alla casella indicata.</content><error id='error'>Le nuove credenziali sono state inviate alla casella indicata.</error>");
 }
 
-//log out
-if($task=="UserLogOut")
+//Task non impostato
+if($task == "")
 {
-    //$user=AA_User::UserAuth("", $_REQUEST['user'],$_REQUEST['pwd']);
-    if($user->IsGuest())
-    {
-      die("<status id='status'>0</status><error id='error'>Logout effettuato con successo.</error>");
-    }
-
-    if($user->IsValid() && $user->isCurrentUser())
-    {
-      $user->LogOut();
-    }
-    
-    die("<status id='status'>0</status><error id='error'>Logout effettuato con successo.</error>");
+  die("<status id='status'>-1</status><error id='error'>parametro task non impostato.</error>");
+  exit;
 }
 
 $taskManager = new AA_SystemTaskManager($user);

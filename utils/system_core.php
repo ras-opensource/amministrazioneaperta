@@ -1165,6 +1165,9 @@ class AA_User
             $user->sUser = $row[0]['user'];
             $user->sEmail = $row[0]['email'];
             $user->nStatus= $row[0]['status'];
+            if($user->nStatus==AA_User::AA_USER_STATUS_DISABLED) $user->nDisabled=1;
+            else $user->nDisabled=0;
+
             $user->aGroups=explode(",",$row[0]['groups']);
             
             $user->LoadAllGroups();
@@ -1495,10 +1498,14 @@ class AA_User
 
                     return AA_User::Guest();
                 }
+
+                AA_Log::Log(__METHOD__." credenziali errate.", 100);
+                return AA_User::Guest();
             }
 
             if(AA_Const::AA_ENABLE_LEGACY_DATA)
             {
+                AA_Log::Log(__METHOD__." - legacy login", 100);
                 $user=AA_User::legacyUserAuth($sToken,$sUserName,md5($sUserPwd),$remember_me);
 
                 if($user->IsValid())
@@ -3368,9 +3375,10 @@ class AA_Utils
     {
         if(function_exists("password_verify"))
         {
-            return password_verify($password,PASSWORD_DEFAULT);
+            return password_verify($password,$hash);
         }
 
+        AA_Log::Log(__METHOD__." - crypt()",100);
         if(crypt($password,$hash)==$hash) return true;
     
         return false;

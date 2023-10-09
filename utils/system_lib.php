@@ -1266,10 +1266,6 @@ class AA_GenericModule
             #-------------------------------------------
         }
 
-        //SectionItemsTemplate
-        //$sectionTemplate="";
-        //$this->SetSectionItemTemplate(static::AA_ID_SECTION_BOZZE,$sectionTemplate);
-        //$this->SetSectionItemTemplate(static::AA_ID_SECTION_PUBBLICATE,$sectionTemplate);
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL, array(array("id" => static::AA_UI_PREFIX . "_" . static::AA_ID_SECTION_DETAIL . "_Generale_Tab", "value" => "Generale", "tooltip" => "Dati generali", "template" => "TemplateGenericDettaglio_Generale_Tab")));
 
         return;
