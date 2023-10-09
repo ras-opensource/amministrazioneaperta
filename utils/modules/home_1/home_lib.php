@@ -298,6 +298,8 @@ Class AA_HomeTask_ActionMenu extends AA_GenericTask
 //Classe per la gestione del modulo home
 Class AA_HomeModule extends AA_GenericModule
 {
+    const AA_UI_SECTION_DESKTOP="AA_Home_Desktop_Content_Box";
+
     //istanza
     protected static $oInstance=null;
     
@@ -314,26 +316,34 @@ Class AA_HomeModule extends AA_GenericModule
     
     public function __construct() {
         $this->SetId("AA_MODULE_HOME");
-        
+
         //Sidebar config
         $this->SetSideBarId("home");
         $this->SetSideBarIcon("mdi mdi-home");
-        $this->SetSideBarTooltip("Home page");
+        $this->SetSideBarTooltip("Home");
         $this->SetSideBarName("Home");
         
         //Sezioni
+
+        //main
+        $section=new AA_GenericModuleSection("home_desktop","Cruscotto",true,static::AA_UI_SECTION_DESKTOP,$this->GetId(),true,true,false,true);
+        $section->SetNavbarTemplate($this->TemplateGenericNavbar_Void(1,true)->toArray());
+        $this->AddSection($section);
+
+        $this->SetSectionItemTemplate(static::AA_UI_SECTION_DESKTOP,"TemplateSection_Desktop");
+
         //news
         $section=new AA_GenericModuleSection("News","News",true,"AA_Home_News_Content_Box",$this->GetId(),true,true,false,true);
         $section->SetNavbarTemplate($this->TemplateNavbar_Faq()->toArray());
-        $this->AddSection($section);
+        //$this->AddSection($section);
         
         //FAQ
         $section=new AA_GenericModuleSection("Faq","FAQ",true,"AA_Home_FAQ_Content_Box",$this->GetId(),false,true,false,true);
         $section->SetNavbarTemplate($this->TemplateNavbar_News()->toArray());
-        $this->AddSection($section);
+        //$this->AddSection($section);
         #-------------------------------------------
     }
-    
+
     //Template navbar news
     public function TemplateNavbar_News()
     {
@@ -342,10 +352,10 @@ Class AA_HomeModule extends AA_GenericModule
         $news = new AA_JSON_Template_Template("AA_Home_Navbar_Link_Main_Content_Box",array(
         "type"=>"clean",
         "css" => "AA_NavbarEventListener",
-        "id_panel"=>"AA_Home_News_Content_Box",
-        "tooltip"=>"Fai click per visualizzare le news",
+        "id_panel"=>"AA_Home_Desktop_Content_Box",
+        "tooltip"=>"Fai click per tornare al cruscotto",
         "module_id"=>"AA_MODULE_HOME",
-        "section_id"=>"News",
+        "section_id"=>"home_desktop",
         "template"=>$template,
         "data"=>array("label"=>"News","icon"=>"mdi mdi-rss", "class"=>"n1 AA_navbar_terminator_left")));
         
@@ -454,6 +464,16 @@ Class AA_HomeModule extends AA_GenericModule
         }
         
         $news_layout->setProp('data',$data);
+        
+        return $news_layout;
+    }
+
+    //Template news content
+    public function TemplateSection_Desktop()
+    {
+        AA_Log::Log(__METHOD__,100);
+        $id=static::AA_UI_SECTION_DESKTOP;
+        $news_layout = new AA_JSON_Template_Template($id,array("type"=>"clean","template"=>"In costruzione"));     
         
         return $news_layout;
     }

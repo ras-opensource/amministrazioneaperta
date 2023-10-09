@@ -2891,6 +2891,26 @@ class AA_GenericModule
         return $navbar;
     }
 
+    //Template navbar void
+    protected function TemplateGenericNavbar_Void($level = 1, $last = false)
+    {
+        $class = "n" . $level;
+        if ($last) $class .= " AA_navbar_terminator_left";
+        $id=static::AA_UI_PREFIX . "_Navbar_Link_Back_Content_Box_".uniqid(time());
+        $navbar =  new AA_JSON_Template_Template(
+            $id,
+            array(
+                "type" => "clean",
+                "css" => "AA_NavbarEventListener",
+                "module_id" => $this->GetId(),
+                "tooltip" => "",
+                "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" .$id."'><span>#label#</span></a></div>",
+                "data" => array("label" => "&nbsp;", "class" => $class)
+            )
+        );
+        return $navbar;
+    }
+
     //Template navbar indietro (da specializzare)
     public function TemplateNavbar_Back($level = 1, $last = false, $refresh_view = true)
     {
