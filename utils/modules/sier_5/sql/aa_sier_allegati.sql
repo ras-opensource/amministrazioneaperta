@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1-1.fc38
+-- version 5.2.1-1.el9
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Ott 05, 2023 alle 15:59
--- Versione del server: 10.5.21-MariaDB
--- Versione PHP: 8.2.10
+-- Creato il: Ott 09, 2023 alle 10:26
+-- Versione del server: 10.5.16-MariaDB
+-- Versione PHP: 8.0.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `amministrazioneaperta`
+-- Database: `monitspese`
 --
 
 -- --------------------------------------------------------
@@ -29,13 +29,14 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `aa_sier_allegati` (
   `id` int(11) UNSIGNED NOT NULL,
-  `estremi` varchar(255) NOT NULL,
-  `url` varchar(255) NOT NULL,
+  `estremi` varchar(255) COLLATE utf8_bin NOT NULL,
+  `url` varchar(255) COLLATE utf8_bin NOT NULL,
   `id_sier` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  `file` varchar(255) NOT NULL,
-  `tipo` int(5) NOT NULL DEFAULT 0,
-  `aggiornamento` varchar(10) NOT NULL,
-  `tags` varchar(512) NOT NULL
+  `file` varchar(255) COLLATE utf8_bin NOT NULL,
+  `tipo` varchar(512) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `aggiornamento` varchar(30) COLLATE utf8_bin NOT NULL,
+  `destinatari` varchar(512) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `ordine` int(2) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 --

@@ -834,7 +834,7 @@ Class AA_Sier extends AA_Object_V2
         if($db->GetAffectedRows() > 0)
         {
             $rs=$db->GetResultSet();
-            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento'],$rs[0]['destinatari']);
+            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento'],$rs[0]['destinatari'],$rs[0]['ordine']);
             
             return $object;
         }
@@ -1565,7 +1565,7 @@ Class AA_Sier extends AA_Object_V2
                 AA_Log::Log(__METHOD__." - Errore nella query: ".$query." - errore: ".$db->GetErrorMessage(), 100,true);
             }
 
-            $rs=$db->GetAffectedRows();
+            $rs=$db->GetResultSet();
             $ordine=$rs[0]['num'];
         }
 
@@ -1650,7 +1650,7 @@ Class AA_Sier extends AA_Object_V2
                 AA_Log::Log(__METHOD__." - Errore nella query: ".$query." - errore: ".$db->GetErrorMessage(), 100,true);
             }
 
-            $rs=$db->GetAffectedRows();
+            $rs=$db->GetResultSet();
             $ordine=$rs[0]['num'];
         }
         
@@ -1894,7 +1894,7 @@ Class AA_Sier extends AA_Object_V2
         $rs=$db->GetResultSet();
         foreach($rs as $curRec)
         {   
-            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento'],$curRec['destinatari']);
+            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento'],$curRec['destinatari'],$curRec['ordine']);
             $result[$curRec['id']]=$allegato;
         }
 
@@ -2949,13 +2949,13 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(720);
-        $wnd->SetHeight(720);
+        $wnd->SetHeight(800);
 
         //descrizione
         $wnd->AddTextField("estremi", "Descrizione", array("gravity"=>3,"required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
         
         //ordine
-        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto"),false);
+        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto","labelAlign"=>"right"),false);
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
@@ -3025,6 +3025,7 @@ Class AA_SierModule extends AA_GenericModule
         $form_data["url"]=$allegato->GetUrl();
         $form_data["tipo"]=$allegato->GetTipo();
         $form_data["aggiornamento"]=date("Y-m-d");
+        $form_data["ordine"]=$allegato->GetOrdine();
 
         $destinatari=$allegato->GetDestinatari(true);
         foreach($destinatari as $curDestinatario)
@@ -3058,11 +3059,11 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));*/
 
         //descrizione
-        $wnd->AddTextField("estremi", "Descrizione", array("required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
+        $wnd->AddTextField("estremi", "Descrizione", array("gravity"=>3,"required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
 
         //ordine
-        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto"),false);
-        
+        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto","labelAlign"=>"right"),false);
+
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
         //categorie
@@ -5877,6 +5878,7 @@ Class AA_SierModule extends AA_GenericModule
 
         if($canModify)
         {
+            $options_documenti[]=array("id"=>"ordine","header"=>array("<div style='text-align: center'>n.</div>",array("content"=>"textFilter")),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int");
             $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
             $options_documenti[]=array("id"=>"destinatariDescr","header"=>array("<div style='text-align: center'>Destinatari</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
@@ -5885,6 +5887,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
+            $options_documenti[]=array("id"=>"ordine","header"=>array("<div style='text-align: center'>n.</div>",array("content"=>"textFilter")),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int");
             $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
             $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
             $options_documenti[]=array("id"=>"destinatariDescr","header"=>array("<div style='text-align: center'>Destinatari</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
@@ -5942,7 +5945,7 @@ Class AA_SierModule extends AA_GenericModule
                 $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$curTipo."</span>";
             }
             
-            $documenti_data[]=array("id"=>$id_doc,"destinatariDescr"=>implode("&nbsp;",$docDestinatari),"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>implode("&nbsp;",$docTipo),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
+            $documenti_data[]=array("id"=>$id_doc,"ordine"=>$curDoc->GetOrdine(),"destinatariDescr"=>implode("&nbsp;",$docDestinatari),"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>implode("&nbsp;",$docTipo),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) $layout->AddRow($documenti);
