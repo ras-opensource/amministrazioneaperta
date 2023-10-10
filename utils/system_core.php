@@ -2122,11 +2122,11 @@ class AA_User
         $flags = explode("|", $this->sFlags);
 
         if (in_array($flag, $flags) || in_array("SU", $flags) || $this->nID == 1) {
-            //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
+            AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
             return true;
         }
 
-        //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") non ha il flag",100, false,true);
+        //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") non ha il flag - ".print_r($flags,true),100, false,true);
         return false;
 
         /*if(strpos($this->sFlags,$flag) !== false || $this->nID==1 || strpos($this->sFlags,"SU") !== false)
@@ -2212,9 +2212,11 @@ class AA_User
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
+            AA_Log::Log(__METHOD__." - Verifica gestione utenti - legacy",100);
+
             if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
 
-            if ($this->HasFlag("U0")) return false;    
+            if (!$this->HasFlag("U0")) return true;
         }
 
         if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetAllGroups()) === false) return false;
@@ -2235,7 +2237,7 @@ class AA_User
         {
             if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
 
-            if ($this->HasFlag("S0")) return false;    
+            if (!$this->HasFlag("S0")) return true;  
         }
 
         if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetAllGroups()) === false) return false;
@@ -2837,7 +2839,7 @@ class AA_User
             if($params['livello']==0) $groups=2;
             $sql.=", groups='".$groups."'";
         }
-        $sql.=" WHERE id='".$$user->GetId()."' LIMIT 1";
+        $sql.=" WHERE id='".$user->GetId()."' LIMIT 1";
 
         $db=new AA_Database();
 
