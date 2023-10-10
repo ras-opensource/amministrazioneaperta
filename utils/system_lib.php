@@ -2730,6 +2730,25 @@ class AA_GenericModule
 
         $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
 
+        //Verifica se il contenuto richiesto è una sezione
+        foreach($this->GetSections() as $curSection)
+        {
+            if($params[$param] == $curSection->GetViewId())
+            {
+                if(is_string($this->aSectionItemTemplates[$curSection->GetId()]) && method_exists($this,$this->aSectionItemTemplates[$curSection->GetId()]))
+                {
+                    $content = array("id" => $curSection->GetViewId(), "content" => $this->{$this->aSectionItemTemplates[$curSection->GetId()]}($params)->toArray());
+                     
+                    //Codifica il contenuto in base64
+                     $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
+                     $task->SetLog($sTaskLog);
+
+                     //AA_Log::Log(__METHOD__." - tasklog: ".$sTaskLog,100);
+                     return true;
+                }
+            }
+        }
+
         switch ($params[$param]) {
             case "Bozze":
             case static::AA_UI_PREFIX . "_" . static::AA_UI_BOZZE_BOX:

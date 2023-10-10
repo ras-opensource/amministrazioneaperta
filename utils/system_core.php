@@ -2107,7 +2107,7 @@ class AA_User
     //Rappresentazione stringa
     public function __toString()
     {
-        AA_Log::Log(get_class() . "->__toString()");
+        //AA_Log::Log(get_class() . "->__toString()");
 
         return $this->toXML();
     }

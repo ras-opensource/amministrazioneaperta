@@ -303,8 +303,11 @@ Class AA_HomeModule extends AA_GenericModule
     //Id modulo
     const AA_ID_MODULE="AA_MODULE_HOME";
 
-    //main ui layout box
-    const AA_UI_MODULE_MAIN_BOX="AA_Home_module_layout";
+    //Id sezione
+    const AA_ID_SECTION_DESKTOP="home_desktop";
+
+    //nome sezione
+    const AA_UI_SECTION_DESKTOP_NAME="Cruscotto";
 
     const AA_UI_SECTION_DESKTOP="AA_Home_Desktop_Content_Box";
 
@@ -316,7 +319,7 @@ Class AA_HomeModule extends AA_GenericModule
     {
         if(self::$oInstance==null)
         {
-            self::$oInstance=new AA_SierModule($user);
+            self::$oInstance=new AA_HomeModule($user);
         }
         
         return self::$oInstance;
@@ -336,11 +339,10 @@ Class AA_HomeModule extends AA_GenericModule
         //Sezioni
 
         //main
-        $section=new AA_GenericModuleSection("home_desktop","Cruscotto",true,static::AA_UI_SECTION_DESKTOP,$this->GetId(),true,true,false,true);
+        $section=new AA_GenericModuleSection(static::AA_ID_SECTION_DESKTOP,static::AA_UI_SECTION_DESKTOP_NAME,true,static::AA_UI_SECTION_DESKTOP,$this->GetId(),true,true,false,true);
         $section->SetNavbarTemplate($this->TemplateGenericNavbar_Void(1,true)->toArray());
         $this->AddSection($section);
-
-        $this->SetSectionItemTemplate(static::AA_UI_SECTION_DESKTOP,"TemplateSection_Desktop");
+        $this->SetSectionItemTemplate(static::AA_ID_SECTION_DESKTOP,"TemplateSection_Desktop");
 
         //news
         $section=new AA_GenericModuleSection("News","News",true,"AA_Home_News_Content_Box",$this->GetId(),true,true,false,true);
@@ -427,23 +429,6 @@ Class AA_HomeModule extends AA_GenericModule
         return $menu;  
     }
     
-    //Template layout
-    public function TemplateLayout()
-    {        
-        $template=new AA_JSON_Template_Multiview("AA_home_module_layout",array("type"=>"clean","fitBiggest"=>"true"));
-        foreach($this->GetSections() as $curSection)
-        {
-            $template->addCell(new AA_JSON_Template_Template($curSection->GetViewId(),array("name"=>$curSection->GetName(),"type"=>"clean","template"=>"","initialized"=>false,"refreshed"=>false)));
-        }
-        
-        //$template->addCell(new AA_JSON_Template_Template("AA_Home_News_Content_Box",array("name"=>"News","type"=>"clean","template"=>"","initialized"=>false,"refreshed"=>false)));
-        //$template->addCell(new AA_JSON_Template_Template("AA_Home_FAQ_Content_Box",array("name"=>"F.A.Q.","type"=>"clean","template"=>"","initialized"=>false,"refreshed"=>false)));
-                
-        //AA_Log::Log("TemplateLayout - ".$template,100);
-        
-        return $template;
-    }
-    
     //Template news content
     public function TemplateSection_News()
     {
@@ -483,9 +468,9 @@ Class AA_HomeModule extends AA_GenericModule
     //Template news content
     public function TemplateSection_Desktop()
     {
-        AA_Log::Log(__METHOD__,100);
+        //AA_Log::Log(__METHOD__,100);
         $id=static::AA_UI_SECTION_DESKTOP;
-        $news_layout = new AA_JSON_Template_Template($id,array("type"=>"clean","template"=>"In costruzione"));     
+        $news_layout = new AA_JSON_Template_Template($id,array("type"=>"clean","name" => static::AA_UI_SECTION_DESKTOP_NAME,"template"=>"In costruzione"));     
         
         return $news_layout;
     }

@@ -102,7 +102,23 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_NOMINA_COMMISSARIO_LIQUIDATORE=20; //16+4
 
     //nomine da pubblicare
-    const AA_NOMINE_NON_PUBBLICARE=146826128;
+    static function GetNomineDaOscurare()
+    {
+        $result= static::AA_ORGANISMI_NOMINA_COMPONENTE_OIV;
+        $result+= static::AA_ORGANISMI_NOMINA_PRESIDENTE_OIV;
+        $result+= static::AA_ORGANISMI_NOMINA_REVISORE_CONTI;
+        $result+= static::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO_REVISORE;
+        $result+= static::AA_ORGANISMI_NOMINA_PRESIDENTE_COLLEGGIO;
+        $result+= static::AA_ORGANISMI_NOMINA_SINDACO_COLLEGGIO;
+        $result+= static::AA_ORGANISMI_NOMINA_COMPONENTE_SUPPLENTE_COLLEGGIO;
+        $result+= static::AA_ORGANISMI_NOMINA_REVISORE_CONTI_SUPPLENTE;
+        $result+= static::AA_ORGANISMI_NOMINA_REVISORE_UNICO;
+        $result+= static::AA_ORGANISMI_NOMINA_LIQUIDATORE_GIUDIZIARIO;
+
+        return $result;
+    }
+    
+    //const AA_NOMINE_NON_PUBBLICARE=146826128;
 
     //Tipo di documenti
     static private $TIPO_DOCS=null;
@@ -10279,9 +10295,10 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
             $num_nomine_ras=0;
             $curDate=date("Y-m-d");
 
+            $nomineNoPub=AA_Organismi_Const::GetNomineDaOscurare();
             foreach($nomine as $id=>$curNomina)
             {
-                if(($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE) == 0 || $full)
+                if(($curNomina->GetTipologia(true)&$nomineNoPub) == 0 || $full)
                 {
                     //AA_Log::Log(__METHOD__." - pubblico: ".$curNomina->GetNome()." ".$curNomina->GetCognome()."  - tipologia: ".$curNomina->GetTipologia()." - verifica: ".($curNomina->GetTipologia(true)&AA_Organismi_Const::AA_NOMINE_NON_PUBBLICARE),100);
                     $color="";
