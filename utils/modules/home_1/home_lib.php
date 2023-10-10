@@ -278,7 +278,8 @@ Class AA_HomeModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__,100);
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_DESKTOP;
-        $layout = new AA_JSON_Template_Template($id,array("type"=>"clean","name" => static::AA_UI_SECTION_DESKTOP_NAME,"template"=>"In costruzione (cruscotto)"));     
+        $layout = new AA_JSON_Template_Layout($id,array("type"=>"clean","name" => static::AA_UI_SECTION_DESKTOP_NAME));
+        $layout->AddRow($this->TemplateSection_News());
         
         return $layout;
     }
