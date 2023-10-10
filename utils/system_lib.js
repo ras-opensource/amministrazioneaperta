@@ -782,7 +782,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             //console.log(this.name+"::menuEventHandlerDefault",arguments,AA_MainApp.ui.MainUI.activeMenu);
             if (AA_MainApp.ui.MainUI.activeMenu) {
                 item = AA_MainApp.ui.MainUI.activeMenu.getItem(arguments[0]);
-                //console.log(this.name+"::menuEventHandlerDefault",this,typeof AA_MainApp.curModule[item.handler]);
+                //console.log(this.name+"::menuEventHandlerDefault",item);
 
                 //Cerca nel modulo
                 if (item.module_id) {
@@ -803,6 +803,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     if (Array.isArray(item.handler_params)) window[item.handler](...item.handler_params);
                     else window[item.handler]();
                 }
+            }
+            else
+            {
+                console.log(this.name+"::menuEventHandlerDefault - Menu non valido",AA_MainApp.ui.MainUI.activeMenu);
             }
             return true;
         } catch (msg) {
