@@ -2128,15 +2128,6 @@ class AA_User
 
         //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") non ha il flag - ".print_r($flags,true),100, false,true);
         return false;
-
-        /*if(strpos($this->sFlags,$flag) !== false || $this->nID==1 || strpos($this->sFlags,"SU") !== false)
-        {
-            AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",50);
-            return true;
-        }
-
-        AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") non ha il flag");
-        return false;*/
     }
 
     //Restituisce il nome
