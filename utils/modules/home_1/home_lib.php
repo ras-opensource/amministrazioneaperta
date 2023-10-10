@@ -296,6 +296,12 @@ Class AA_HomeModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_DESKTOP;
         $layout = new AA_JSON_Template_Layout($id,array("type"=>"clean","name" => static::AA_UI_SECTION_DESKTOP_NAME));
 
+        $second_row=new AA_JSON_Template_Layout($id."_SecondRowBox",array("type"=>"space","css"=>array("background-color"=>"transparent")));
+        $second_row->AddCol($this->TemplateSection_News());
+        $second_row->AddCol($this->TemplateSection_Risorse());
+        
+        $layout->AddRow($second_row);
+
         //Moduli Row
         $platform=AA_Platform::GetInstance($this->oUser);
         if($platform->IsValid())
@@ -308,12 +314,15 @@ Class AA_HomeModule extends AA_GenericModule
                     $moduli_data[]=array("id"=>$curModId,"name"=>$curMod['name'],'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon']);
                 }
             }
-            $minWidthModuliItem=400;
-            $ModuliItemsForRow=intval($_REQUEST['vw']/$minWidthModuliItem);
 
-            $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean"));
+            $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","padding"=>3,"css"=>array("background-color"=>"transparent")));
             if(is_array($moduli_data) && sizeof($moduli_data) > 0)
             {
+                $minHeightModuliItem=intval(($_REQUEST['vh']-174)/2);
+                //$numModuliBoxForrow=intval(sqrt(sizeof($moduli_data)));
+                $WidthModuliItem=intval(($_REQUEST['vw']-103)/4);
+                //$HeightModuliItem=intval(/$numModuliBoxForrow);
+
                 $riepilogo_template="<div style='display: flex; flex-direction: column; justify-content:flex-start; align-items: center; height: 100%'>";
                 //icon
                 $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
@@ -327,13 +336,14 @@ Class AA_HomeModule extends AA_GenericModule
 
                 $moduli_view=new AA_JSON_Template_Generic($id."_moduliView",array(
                     "view"=>"dataview",
+                    "css"=>array("background-color"=>"transparent","border"=>"0px"),
                     "filtered"=>true,
-                    "xCount"=>$ModuliItemsForRow,
+                    "yCount"=>1,
                     "module_id"=>$this->id,
                     "type"=>array(
                         "type"=>"tiles",
-                        "height"=>300,
-                        "width"=>"auto",
+                        "height"=>$minHeightModuliItem,
+                        "width"=>$WidthModuliItem,
                         "css"=>"AA_DataView_Moduli_item",
                     ),
                     "template"=>$riepilogo_template,
@@ -349,11 +359,6 @@ Class AA_HomeModule extends AA_GenericModule
             $moduli_box->addRow($moduli_view);
             $layout->AddRow($moduli_box);
         }
-
-        $second_row=new AA_JSON_Template_Layout($id."_SecondRowBox",array("type"=>"space","css"=>array("background-color"=>"transparent")));
-        $second_row->AddCol($this->TemplateSection_News());
-        $second_row->AddCol($this->TemplateSection_Risorse());
-        $layout->AddRow($second_row);
         
         return $layout;
     }
