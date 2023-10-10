@@ -311,7 +311,8 @@ Class AA_HomeModule extends AA_GenericModule
             {
                 if($curModId != $this->GetId())
                 {
-                    $moduli_data[]=array("id"=>$curModId,"name"=>$curMod['name'],'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon']);
+                    $name="<span style='font-weight:900'>".implode("</span><span>",explode("-",$curMod['tooltip']))."</span>";
+                    $moduli_data[]=array("id"=>$curModId,"name"=>$name,'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon']);
                 }
             }
 
@@ -327,7 +328,7 @@ Class AA_HomeModule extends AA_GenericModule
                 //icon
                 $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
                 //name
-                $riepilogo_template.="<div style='display: flex; align-items: center;font-weight:900; font-size: larger;height: 60px'><span>#name#</span></div>";
+                $riepilogo_template.="<div style='display: flex; align-items: center;justify-content: center; flex-direction: column; font-size: larger;height: 60px'>#name#</div>";
                 //descr
                 $riepilogo_template.="<div style='display: flex; align-items: center;padding: 10px;height: 120px'><span>#descr#</span></div>";
                 //go
