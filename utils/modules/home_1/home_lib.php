@@ -240,13 +240,14 @@ Class AA_HomeModule extends AA_GenericModule
     //Template news content
     public function TemplateSection_News()
     {
-        
+        $news_box=new AA_JSON_Template_Layout("AA_Home_News_Box",array("type"=>"space","css"=>"AA_Desktop_Section_Box"));
         $news_layout = new AA_JSON_Template_Generic("AA_Home_News_Content",
                 array(
                 "view"=>"timeline",
+                "css"=>array("background-color"=>"transparent"),
                 "type"=>array(
                     "height"=>"auto",
-                    "width"=>"800",
+                    "width"=>800,
                     "type"=>"left",
                     "lineColor"=>"skyblue"
                 )
@@ -270,8 +271,23 @@ Class AA_HomeModule extends AA_GenericModule
         
         $news_layout->setProp('data',$data);
         
-        return $news_layout;
+        $news_box->AddRow(new AA_JSON_Template_Generic("HomeNewsBoxTitle",array("view"=>"label","align"=>"center","label"=>"<span class='AA_Desktop_Section_Label'>News</span>")));
+        $news_box->AddRow($news_layout);
+
+        return $news_box;
     }
+
+    //Template risorse content
+    public function TemplateSection_Risorse()
+    {
+        $section_box=new AA_JSON_Template_Layout("AA_Home_Risorse_Box",array("type"=>"space","css"=>"AA_Desktop_Section_Box"));
+        
+        
+        $section_box->AddRow(new AA_JSON_Template_Generic("HomeRisorseBoxTitle",array("view"=>"label","align"=>"center","label"=>"<span class='AA_Desktop_Section_Label'>Risorse</span>")));
+        $section_box->AddRow(new AA_JSON_Template_Generic());
+        return $section_box;
+    }
+
 
     //Template cruscotto content
     public function TemplateSection_Desktop()
@@ -279,7 +295,65 @@ Class AA_HomeModule extends AA_GenericModule
         //AA_Log::Log(__METHOD__,100);
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_DESKTOP;
         $layout = new AA_JSON_Template_Layout($id,array("type"=>"clean","name" => static::AA_UI_SECTION_DESKTOP_NAME));
-        $layout->AddRow($this->TemplateSection_News());
+
+        //Moduli Row
+        $platform=AA_Platform::GetInstance($this->oUser);
+        if($platform->IsValid())
+        {
+            $moduli_data=array();
+            foreach($platform->GetModules() as $curModId => $curMod)
+            {
+                if($curModId != $this->GetId())
+                {
+                    $moduli_data[]=array("id"=>$curModId,"name"=>$curMod['name'],'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon']);
+                }
+            }
+            $minWidthModuliItem=400;
+            $ModuliItemsForRow=intval($_REQUEST['vw']/$minWidthModuliItem);
+
+            $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean"));
+            if(is_array($moduli_data) && sizeof($moduli_data) > 0)
+            {
+                $riepilogo_template="<div style='display: flex; flex-direction: column; justify-content:flex-start; align-items: center; height: 100%'>";
+                //icon
+                $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
+                //name
+                $riepilogo_template.="<div style='display: flex; align-items: center;font-weight:900; font-size: larger;height: 60px'><span>#name#</span></div>";
+                //descr
+                $riepilogo_template.="<div style='display: flex; align-items: center;padding: 10px;height: 120px'><span>#descr#</span></div>";
+                //go
+                //$riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Visualizza i dettagli' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-card-account-details'></span>&nbsp;<span>Dettagli</span></a></div>";
+                $riepilogo_template.="</div>";
+
+                $moduli_view=new AA_JSON_Template_Generic($id."_moduliView",array(
+                    "view"=>"dataview",
+                    "filtered"=>true,
+                    "xCount"=>$ModuliItemsForRow,
+                    "module_id"=>$this->id,
+                    "type"=>array(
+                        "type"=>"tiles",
+                        "height"=>300,
+                        "width"=>"auto",
+                        "css"=>"AA_DataView_Moduli_item",
+                    ),
+                    "template"=>$riepilogo_template,
+                    "data"=>$moduli_data,
+                    "eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId()))
+                ));
+            }
+            else
+            {
+                $moduli_view=new AA_JSON_Template_Template($id."_Riepilogo_Tab",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>Non sono presenti elementi.</div></div>"));
+                
+            }
+            $moduli_box->addRow($moduli_view);
+            $layout->AddRow($moduli_box);
+        }
+
+        $second_row=new AA_JSON_Template_Layout($id."_SecondRowBox",array("type"=>"space","css"=>array("background-color"=>"transparent")));
+        $second_row->AddCol($this->TemplateSection_News());
+        $second_row->AddCol($this->TemplateSection_Risorse());
+        $layout->AddRow($second_row);
         
         return $layout;
     }
