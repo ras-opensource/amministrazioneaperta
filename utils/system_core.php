@@ -2122,7 +2122,7 @@ class AA_User
         $flags = explode("|", $this->sFlags);
 
         if (in_array($flag, $flags) || in_array("SU", $flags) || $this->nID == 1) {
-            AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
+            //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
             return true;
         }
 
