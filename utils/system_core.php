@@ -955,6 +955,38 @@ class AA_User
         return $this->aGroups;
     }
 
+    //ruolo
+    public function GetRuolo($bNumeric=false)
+    {
+        $ruolo=static::AA_USER_GROUP_USERS;
+        if(array_search(static::AA_USER_GROUP_SUPERUSER,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_SUPERUSER;
+
+        if(array_search(static::AA_USER_GROUP_ADMINS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_ADMINS;
+
+        if(array_search(static::AA_USER_GROUP_OPERATORS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_OPERATORS;
+
+        if(array_search(static::AA_USER_GROUP_USERS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_USERS;
+
+        if(array_search(static::AA_USER_GROUP_SERVEROPERATORS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_SERVEROPERATORS;
+
+        if($bNumeric) return $ruolo;
+
+        $ruoli=static::GetDefaultGroups();
+
+        return $ruoli[$ruolo];
+    }
+
+    static public function GetDefaultGroups()
+    {
+        return array(
+            1=>"Super utente",
+            2=>"Amministratore",
+            3=>"Operatore",
+            4=>"Utente",
+            5=>"Operatore server"
+        );
+    }
+
     //gruppi utente compresi quelli secondari 
     protected $aAllGroups=array();
     protected $aSecondaryGroups=array();
@@ -1109,7 +1141,7 @@ class AA_User
         if(AA_Const::AA_ENABLE_LEGACY_DATA && $this->HasFlag("SU")) return true;
 
         //gruppo super user
-        if(array_search(AA_USER::AA_USER_GROUP_SUPERUSER,$this->GetAllGroups()) !==false) return true;
+        if(array_search(AA_USER::AA_USER_GROUP_SUPERUSER,$this->GetGroups()) !==false) return true;
 
         return false;
     }
@@ -2122,8 +2154,8 @@ class AA_User
 
         if ($flag == "") return false;
 
-        if($this->nID==1) return true;
-        
+        if(array_search("1",$this->GetGroups()) !==false || $this->nID==1) return true;
+
         $flags = explode("|", $this->sFlags);
         if (in_array($flag, $flags)) {
             //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
@@ -2176,7 +2208,12 @@ class AA_User
             if($flags!="") $flags.="|".$this->sLegacyFlags;
             else $flags=$this->sLegacyFlags;
         }
-        if ($bArray) return explode("|", $flags);
+        if ($bArray)
+        {
+            if($flags=="") return array();
+            
+            return explode("|", $flags);
+        } 
 
         return $flags;
     }
@@ -2210,6 +2247,65 @@ class AA_User
         return false;
     }
 
+    //Ricerca utenti
+    static public function Search($params=array(),$user=null)
+    {
+        if(!($user instanceof AA_User))
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if(!$user->CanGestUtenti())
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non è abilitato alla gestione utenti.",100);
+            return array();
+        }
+
+        $query="SELECT id from ".static::AA_DB_TABLE;
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA && !$user->IsSuperUser())
+        {
+            $query.=" WHERE status >=0 ";
+            $struct=$user->GetStruct();
+            if($struct->GetAssessorato(true)>0)
+            {
+                $query.=" AND legacy_data like '%\"id_assessorato\":".$struct->GetAssessorato(true)."%'";
+            }
+
+            if($struct->GetDirezione(true)>0)
+            {
+                $query.=" AND legacy_data like '%\"id_direzione\":".$struct->GetDirezione(true)."%'";
+            }
+
+            if($struct->GetServizio(true)>0)
+            {
+                $query.=" AND legacy_data like '%\"id_servizio\":".$struct->GetServizio(true)."%'";
+            }
+        }
+
+        $db=new AA_Database();
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage(),100);
+            return array();
+        }
+
+        $rs=$db->GetResultSet();
+        if(sizeof($rs)>0)
+        {
+            $result=array();
+            foreach($rs as $curRow)
+            {
+                $user=AA_User::LoadUser($curRow['id']);
+                if($user->IsValid()) $result[]=$user;
+            }
+
+            return $result;
+        }
+
+        return array();
+    }
 
     //Verifica se l'utente corrente può gestire gli utenti
     public function CanGestUtenti()

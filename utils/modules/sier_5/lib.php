@@ -6382,7 +6382,7 @@ Class AA_SierModule extends AA_GenericModule
         $layout->addRow($toolbar);        
         $columns=array(
             array("id"=>"ordine","header"=>array("<div style='text-align: center'>n.</div>",array("content"=>"selectFilter")),"width"=>50, "sort"=>"int","css"=>array("text-align"=>"center")),
-            array("id"=>"cognome","header"=>array("<div style='text-align: center'>Cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
+            array("id"=>"cognome","header"=>array("<div style='text-align: center'>Cognome</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"left")),
             array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"cv","header"=>array("<div style='text-align: center'>Curriculum</div>"),"width"=>120, "css"=>array("text-align"=>"center")),

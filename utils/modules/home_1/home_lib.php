@@ -307,8 +307,8 @@ Class AA_HomeModule extends AA_GenericModule
         if($platform->IsValid())
         {
             $platform_modules=$platform->GetModules();
-            //$moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","padding"=>3,"css"=>array("background-color"=>"transparent")));
-            $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","padding"=>3,"css"=>array("background-color"=>"transparent")));
+            if(sizeof($platform_modules) <=5 ) $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","padding"=>3,"css"=>array("background-color"=>"transparent")));
+            else $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","padding"=>3,"css"=>array("background-color"=>"transparent")));
             if(is_array($platform_modules) && sizeof($platform_modules) > 0)
             {
                 $minHeightModuliItem=intval(($_REQUEST['vh']-180)/2);
@@ -316,7 +316,7 @@ Class AA_HomeModule extends AA_GenericModule
                 $WidthModuliItem=intval(($_REQUEST['vw']-110)/4);
                 //$HeightModuliItem=intval(/$numModuliBoxForrow);"css"=>"AA_DataView_Moduli_item","margin"=>10
 
-                $riepilogo_template="<div class='AA_DataView_Moduli_item' style='border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%';>";
+                $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%';>";
                 //icon
                 $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
                 //name
@@ -324,7 +324,7 @@ Class AA_HomeModule extends AA_GenericModule
                 //descr
                 //$riepilogo_template.="<div style='display: flex; align-items: center;padding: 10px;height: 120px'><span>#descr#</span></div>";
                 //go
-                $riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Apri il modulo' onclick=\"#onclick#\" class='AA_Button_Link'><span>Vai</span>&nbsp;<span class='mdi mdi-arrow-right-thick'></span></a></div>";
+                //$riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Apri il modulo' onclick=\"#onclick#\" class='AA_Button_Link'><span>Vai</span>&nbsp;<span class='mdi mdi-arrow-right-thick'></span></a></div>";
                 $riepilogo_template.="</div>";
 
                 /*$moduli_view=new AA_JSON_Template_Generic($id."_moduliView",array(
@@ -346,7 +346,7 @@ Class AA_HomeModule extends AA_GenericModule
 
                 $nSlide=0;
                 $nMod=0;
-                $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean"));
+                $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"space","css"=>array("background-color"=>"transparent")));
                 foreach($platform_modules as $curModId => $curMod)
                 {
                     if($curModId != $this->GetId())
@@ -357,13 +357,14 @@ Class AA_HomeModule extends AA_GenericModule
                         $name="<span style='font-weight:900'>".implode("</span><span>",explode("-",$curMod['tooltip']))."</span>";
                         $onclick="AA_MainApp.utils.callHandler('ModuleBoxClick','".$curModId."')";
                         $moduli_data=array("id"=>$curModId,"name"=>$name,'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon'],"onclick"=>$onclick);
-                        $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
+                        $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
                         
                         if($nMod%4==0)
                         {
-                            $moduli_box->AddSlide($moduli_view);
+                            if(sizeof($platform_modules) <=5) $moduli_box->AddRow($moduli_view);
+                            else $moduli_box->AddSlide($moduli_view);
                             $nSlide++;
-                            $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean"));
+                            $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"space"));
                         }
                     }
                 }
@@ -378,15 +379,16 @@ Class AA_HomeModule extends AA_GenericModule
                     {
                         $moduli_view->addCol(new AA_JSON_Template_Generic());
                     }
-                    $moduli_box->AddSlide($moduli_view);
+                    if(sizeof($platform_modules) <=5 ) $moduli_box->AddRow($moduli_view);
+                    else $moduli_box->AddSlide($moduli_view);
                 }
             }
             else
             {
                 $moduli_view=new AA_JSON_Template_Template($id."_Riepilogo_Tab",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>Non sono presenti elementi.</div></div>"));
-                $moduli_box->AddSlide($moduli_view);
+                $moduli_box->AddRow($moduli_view);
             }
-            
+          
             $layout->AddRow($moduli_box);
         }
         
@@ -396,7 +398,6 @@ Class AA_HomeModule extends AA_GenericModule
     //Template gestutenti content
     public function TemplateSection_GestUtenti()
     {
-        //AA_Log::Log(__METHOD__,100);
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTUTENTI;
         $layout = new AA_JSON_Template_Template($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTUTENTI_NAME,"template"=>"In costruzione (gestione utenti)"));
 
@@ -423,28 +424,72 @@ Class AA_HomeModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi un nuovo utente",
-                //"click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
-                //"click"=>"AA_MainApp.utils.callHandler('AddNewCandidato', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."},{table_id:\"".$id."_Candidati\"}]},'".$this->id."')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeAddNewUserDlg\"},'".$this->id."')"
             ));
             $toolbar->AddElement($modify_btn);
         }
         
         $layout->addRow($toolbar);        
         $columns=array(
-            array("id"=>"ordine","header"=>array("<div style='text-align: center'>n.</div>",array("content"=>"selectFilter")),"width"=>50, "sort"=>"int","css"=>array("text-align"=>"center")),
-            array("id"=>"cognome","header"=>array("<div style='text-align: center'>Cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
-            array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"cv","header"=>array("<div style='text-align: center'>Curriculum</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"cg","header"=>array("<div style='text-align: center'>Casellario</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"circoscrizione_desc","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"width"=>180, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"lista","header"=>array("<div style='text-align: center'>Lista</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"coalizione","header"=>array("<div style='text-align: center'>Coalizione</div>",array("content"=>"selectFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text")
+            array("id"=>"id","header"=>array("<div style='text-align: center'>id</div>",array("content"=>"textFilter")),"width"=>50, "sort"=>"int","css"=>array("text-align"=>"center")),
+            array("id"=>"user","header"=>array("<div style='text-align: center'>User</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
+            array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Nome e cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"flags","header"=>array("<div style='text-align: center'>Abilitazioni</div>",array("content"=>"textFilter")), "fillspace"=>true,"css"=>array("text-align"=>"center"),"sort"=>"text")
         );
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $columns[]=array("id"=>"assessorato","header"=>array("<div style='text-align: center'>Assessorato</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            //$columns[]=array("id"=>"direzione","header"=>array("<div style='text-align: center'>Direzione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            //$columns[]=array("id"=>"servizio","header"=>array("<div style='text-align: center'>Servizio</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+        }
 
         if($canModify)
         {
             $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
+        }
+
+        $utenti=AA_User::Search(null,$this->oUser);
+        $data=array();
+        if(sizeof($utenti) > 0)
+        {
+            foreach($utenti as $curUser)
+            {
+                $flags=$curUser->GetFlags(true);
+                if(sizeof($flags)>0) $flags="<span class='AA_Label AA_Label_LightGreen'>".implode("</span><span class='AA_Label AA_Label_LightGreen'>",$flags)."</span>";
+                else $flags="";
+
+                if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                {
+                    $struct=$curUser->GetStruct();
+                    $assessorato=$struct->GetAssessorato();
+                    $direzione=$struct->GetDirezione();
+                    $servizio=$struct->GetServizio();
+                    $data[]=array("id"=>$curUser->GetId(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags,
+                        "assessorato"=>$assessorato,
+                        "direzione"=>$direzione,
+                        "servizio"=>$servizio
+                    );
+                }
+                else $data[]=array("id"=>$curUser->GetId(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags);
+            }
+            $table=new AA_JSON_Template_Generic($id."_UtentiTable", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+    
+            $layout->addRow($table);
+        }
+        else
+        {
+            $layout->addRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti utenti.</span></div>")));
         }
 
         return $layout;
