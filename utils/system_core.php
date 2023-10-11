@@ -2211,7 +2211,7 @@ class AA_User
         if ($bArray)
         {
             if($flags=="") return array();
-            
+
             return explode("|", $flags);
         } 
 
@@ -2261,25 +2261,47 @@ class AA_User
             return array();
         }
 
-        $query="SELECT id from ".static::AA_DB_TABLE;
+        $query="SELECT id from ".static::AA_DB_TABLE." WHERE id <> '".$user->GetId()."' AND id <> 1";
 
-        if(AA_Const::AA_ENABLE_LEGACY_DATA && !$user->IsSuperUser())
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
-            $query.=" WHERE status >=0 ";
+            if(!$user->IsSuperUser()) $query.=" AND status >=0 ";
+
             $struct=$user->GetStruct();
             if($struct->GetAssessorato(true)>0)
             {
                 $query.=" AND legacy_data like '%\"id_assessorato\":".$struct->GetAssessorato(true)."%'";
+            }
+            else
+            {
+                if($params['id_assessorato']>0)
+                {
+                    $query.=" AND legacy_data like '%\"id_assessorato\":".$params['id_assessorato']."%'";
+                }
             }
 
             if($struct->GetDirezione(true)>0)
             {
                 $query.=" AND legacy_data like '%\"id_direzione\":".$struct->GetDirezione(true)."%'";
             }
+            else
+            {
+                if($params['id_direzione']>0)
+                {
+                    $query.=" AND legacy_data like '%\"id_direzione\":".$params['id_direzione']."%'";
+                }
+            }
 
             if($struct->GetServizio(true)>0)
             {
                 $query.=" AND legacy_data like '%\"id_servizio\":".$struct->GetServizio(true)."%'";
+            }
+            else
+            {
+                if($params['id_servizio']>0)
+                {
+                    $query.=" AND legacy_data like '%\"id_servizio\":".$params['id_servizio']."%'";
+                }
             }
         }
 

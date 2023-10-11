@@ -441,7 +441,7 @@ Class AA_HomeModule extends AA_GenericModule
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
-            $columns[]=array("id"=>"assessorato","header"=>array("<div style='text-align: center'>Assessorato</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            //$columns[]=array("id"=>"assessorato","header"=>array("<div style='text-align: center'>Assessorato</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
             //$columns[]=array("id"=>"direzione","header"=>array("<div style='text-align: center'>Direzione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
             //$columns[]=array("id"=>"servizio","header"=>array("<div style='text-align: center'>Servizio</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
         }
