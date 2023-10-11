@@ -919,6 +919,9 @@ class AA_User
     //Flags
     protected $sFlags = "";
 
+    //legacy Flags
+    protected $sLegacyFlags = "";
+
     //Livello; //old stuff
     protected $nLivello = 3;
 
@@ -1187,8 +1190,8 @@ class AA_User
                     $user->aLegacyData=$legacy_data;
                     $user->oStruct = AA_Struct::GetStruct($legacy_data['id_assessorato'], $legacy_data['id_direzione'], $legacy_data['id_servizio']);
                     $user->nLivello=$legacy_data['level'];
-                    if(is_array($legacy_data['flags']))$user->sFlags=implode("|",$legacy_data['flags']);
-                    else $user->sFlags=$legacy_data['flags'];
+                    if(is_array($legacy_data['flags']))$user->sLegacyFlags=implode("|",$legacy_data['flags']);
+                    else $user->sLegacyFlags=$legacy_data['flags'];
                 }
                 else
                 {
@@ -1197,7 +1200,7 @@ class AA_User
             }
 
             //Concurrent flag
-            if(strpos($user->sFlags,"concurrent")!==false)
+            if(strpos($user->sFlags,"concurrent")!==false || strpos($user->sLegacyFlags,"concurrent")!==false)
             {
                 $user->nConcurrent=1;
             }
@@ -1216,7 +1219,7 @@ class AA_User
     //Popola i dati dell'utente (legacy)
     static public function LegacyLoadUser($id_user)
     {
-        AA_Log::Log(get_class() . "->LoadUser($id_user)");
+        //AA_Log::Log(get_class() . "->LoadUser($id_user)");
 
         $user = new AA_User();
         $user->bCurrentUser = false;
@@ -1236,7 +1239,7 @@ class AA_User
             $user->sImage = $row[0]['image'];
             $user->sPhone = $row[0]['phone'];
             $user->sLastLogin = $row[0]['lastlogin'];
-            $user->sFlags = $row[0]['flags'];
+            $user->sLegacyFlags = $row[0]['flags'];
             $user->nConcurrent = $row[0]['concurrent'];
             $user->bIsValid = true;
 
@@ -1324,7 +1327,7 @@ class AA_User
             $user->nDisabled = $row[0]['disable'];
             $user->sImage = $row[0]['image'];
             $user->sPhone = $row[0]['phone'];
-            $user->sFlags = $row[0]['flags'];
+            $user->sLegacyFlags = $row[0]['flags'];
             $user->sLastLogin = $row[0]['lastlogin'];
             $user->nConcurrent = $row[0]['concurrent'];
             $user->bIsValid = true;
@@ -1384,7 +1387,7 @@ class AA_User
                 $user->sUser = $curRow['user'];
                 $user->sEmail = $curRow['email'];
                 $user->nLivello = $curRow['livello'];
-                $user->sFlags = $curRow['flags'];
+                $user->sLegacyFlags = $curRow['flags'];
                 $user->sImage = $curRow['image'];
                 $user->sPhone = $curRow['phone'];
                 $user->nDisabled = $curRow['disable'];
@@ -2119,11 +2122,21 @@ class AA_User
 
         if ($flag == "") return false;
 
+        if($this->nID==1) return true;
+        
         $flags = explode("|", $this->sFlags);
-
-        if (in_array($flag, $flags) || in_array("SU", $flags) || $this->nID == 1) {
+        if (in_array($flag, $flags)) {
             //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
             return true;
+        }
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $legacy_flags=explode("|", $this->sLegacyFlags);
+            if (in_array($flag, $legacy_flags)) {
+                //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
+                return true;
+            }
         }
 
         //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") non ha il flag - ".print_r($flags,true),100, false,true);
@@ -2157,9 +2170,15 @@ class AA_User
     //Restituisce il nome
     public function GetFlags($bArray = false)
     {
-        if ($bArray) return explode("|", $this->sFlags);
+        $flags=$this->sFlags;
+        if(AA_Const::AA_ENABLE_LEGACY_DATA && $this->sLegacyFlags !="")
+        {
+            if($flags!="") $flags.="|".$this->sLegacyFlags;
+            else $flags=$this->sLegacyFlags;
+        }
+        if ($bArray) return explode("|", $flags);
 
-        return $this->sFlags;
+        return $flags;
     }
 
     //Verifica se il nome utente esiste già
@@ -2594,6 +2613,7 @@ class AA_User
 
         //Solo admin imposta le flags
         if ($this->IsSuperUser()) {
+            $flags="";
             if (!isset($params['gest_utenti'])) {
                 $flags .= $separatore . "U0";
                 $separatore = "|";
@@ -2704,19 +2724,19 @@ class AA_User
             return false;
         }
 
-        $legacy_data=json_encode(array(
+        $legacy_data=array(
             "id_assessorato"=>$params['assessorato'],
             "id_direzione"=>$params['direzione'],
             "id_servizio"=>$params['servizio'],
             "id"=>$new_id,
             "level"=>$params['livello'],
             "flags"=>$flags
-        ));
+        );
 
         if (isset($params['passwd']) && $params['passwd'] !="") $legacy_data['pwd']=md5($params['passwd']);
 
         //Aggiorna la nuova tabella
-        if($new_id > 0) $db->Query("UPDATE ".static::AA_DB_TABLE." SET legacy_data='".addslashes($legacy_data)."' WHERE id='".$new_id."' LIMIT 1");
+        if($new_id > 0) $db->Query("UPDATE ".static::AA_DB_TABLE." SET legacy_data='".addslashes(json_encode($legacy_data))."' WHERE id='".$new_id."' LIMIT 1");
         
         AA_Log::LogAction($this->GetID(), "1,9," . $new_id, $sql); //Old stuff
 
@@ -2846,7 +2866,7 @@ class AA_User
     //Aggiorna L'utente (legacy)
     public function LegacyUpdateUser($idUser, $params)
     {
-        AA_Log::Log(__METHOD__."");
+        //AA_Log::Log(__METHOD__."");
 
         if ($this->IsGuest()) {
             AA_Log::Log(__METHOD__." - utente corrente non valido", 100);
