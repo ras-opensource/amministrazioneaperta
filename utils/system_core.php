@@ -1534,6 +1534,20 @@ class AA_User
                     return AA_User::Guest();
                 }
 
+                if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                {
+                    AA_Log::Log(__METHOD__." - legacy login", 100);
+                    $user=AA_User::legacyUserAuth($sToken,$sUserName,md5($sUserPwd),$remember_me);
+
+                    if($user->IsValid())
+                    {
+                        AA_Log::Log(__METHOD__." - Migrazione utente legacy: ".$user->GetNome()." ".$user->GetCognome()." (".$user->GetId().")",100);
+                        static::MigrateLegacyUser($user, $sUserPwd);
+
+                        return $user;
+                    }
+                }
+
                 AA_Log::Log(__METHOD__." credenziali errate.", 100);
                 return AA_User::Guest();
             }
@@ -2261,7 +2275,8 @@ class AA_User
             return array();
         }
 
-        $query="SELECT id from ".static::AA_DB_TABLE." WHERE id <> '".$user->GetId()."' AND id <> 1";
+        $query="SELECT id from ".static::AA_DB_TABLE." WHERE id <> '".$user->GetId()."' AND id <> 1 ";
+        if(!$user->IsSuperUser()) $query.=" AND (FIND_IN_SET('1',groups) = 0 OR groups like '')";
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -2905,9 +2920,16 @@ class AA_User
         }
 
         //Stato utente
-        $status=static::AA_USER_STATUS_ENABLED;
-        if(isset($params['disable']) && $params['disable']>0) $status=static::AA_USER_STATUS_DISABLED;
-        if(isset($params['eliminato']) && $params['eliminato']>0) $status=static::AA_USER_STATUS_DELETED;
+        $status=static::AA_USER_STATUS_DISABLED;
+        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_ENABLED) $status=static::AA_USER_STATUS_ENABLED;
+        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_DELETED) $status=static::AA_USER_STATUS_DELETED;
+        
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $status=static::AA_USER_STATUS_ENABLED;
+            if(isset($params['disable']) && $params['disable']>0) $status=static::AA_USER_STATUS_DISABLED;
+            if(isset($params['eliminato']) && $params['eliminato']>0) $status=static::AA_USER_STATUS_DELETED;    
+        }
 
         if($params['nome'] == "")
         {
@@ -2964,8 +2986,11 @@ class AA_User
         else 
         {
             $groups=4;
-            if($params['livello']==1) $groups=3;
-            if($params['livello']==0) $groups=2;
+            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            {
+                if($params['livello']==1) $groups=3;
+                if($params['livello']==0) $groups=2;
+            }
             $sql.=", groups='".$groups."'";
         }
         $sql.=" WHERE id='".$user->GetId()."' LIMIT 1";

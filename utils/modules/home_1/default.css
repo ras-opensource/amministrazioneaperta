@@ -1,15 +1,17 @@
 .AA_DataView_Moduli_item {
-    background: #fafafa !important;
+    background: #f5efe8 !important;
     border-color: #5ccce7 !important;
     border-radius: 5px;
     padding: 0px;
     min-height: 60px;
+    color: #0c467f;
 }
 
 .AA_DataView_Moduli_item:hover
 {
     box-shadow: 0px 0px 5px 3px #6398c4 !important;
-    background: #ffffff !important;
+    background: #fdf9f1 !important;
+    color: #1963ad;
 }
 
 .AA_Desktop_Section_Box {
@@ -24,5 +26,6 @@
 {
     font-size:larger;
     font-weight:900;
-    border-bottom: 1px solid #5ccce7
+    border-bottom: 1px solid #5ccce7;
+    color: #0c467f;
 }

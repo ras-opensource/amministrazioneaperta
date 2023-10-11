@@ -307,8 +307,8 @@ Class AA_HomeModule extends AA_GenericModule
         if($platform->IsValid())
         {
             $platform_modules=$platform->GetModules();
-            if(sizeof($platform_modules) <=5 ) $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","padding"=>3,"css"=>array("background-color"=>"transparent")));
-            else $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","padding"=>3,"css"=>array("background-color"=>"transparent")));
+            if(sizeof($platform_modules) <=5 ) $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+            else $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
             if(is_array($platform_modules) && sizeof($platform_modules) > 0)
             {
                 $minHeightModuliItem=intval(($_REQUEST['vh']-180)/2);
@@ -316,7 +316,7 @@ Class AA_HomeModule extends AA_GenericModule
                 $WidthModuliItem=intval(($_REQUEST['vw']-110)/4);
                 //$HeightModuliItem=intval(/$numModuliBoxForrow);"css"=>"AA_DataView_Moduli_item","margin"=>10
 
-                $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%';>";
+                $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 97%; margin:5px;'>";
                 //icon
                 $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
                 //name
@@ -346,7 +346,7 @@ Class AA_HomeModule extends AA_GenericModule
 
                 $nSlide=0;
                 $nMod=0;
-                $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"space","css"=>array("background-color"=>"transparent")));
+                $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
                 foreach($platform_modules as $curModId => $curMod)
                 {
                     if($curModId != $this->GetId())
@@ -354,7 +354,7 @@ Class AA_HomeModule extends AA_GenericModule
                         $nMod++;
                         //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
 
-                        $name="<span style='font-weight:900'>".implode("</span><span>",explode("-",$curMod['tooltip']))."</span>";
+                        $name="<span style='font-weight:900;'>".implode("</span><span>",explode("-",$curMod['tooltip']))."</span>";
                         $onclick="AA_MainApp.utils.callHandler('ModuleBoxClick','".$curModId."')";
                         $moduli_data=array("id"=>$curModId,"name"=>$name,'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon'],"onclick"=>$onclick);
                         $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
