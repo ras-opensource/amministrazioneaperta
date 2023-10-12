@@ -955,6 +955,28 @@ class AA_User
         return $this->aGroups;
     }
 
+    //Restituisce una stringa formattata con i flags
+    public function GetFormatedFlags()
+    {
+        $flags=$this->GetFlags(true);
+        $result="";
+        foreach($flags as $curFlag)
+        {
+            if($curFlag=="accessi") $result.="<span class='AA_Label AA_Label_LightGreen'>RIA</span>&nbsp;";
+            if($curFlag=="admin_accessi") $result.="<span class='AA_Label AA_Label_LightGreen'>RIA(adm)</span>&nbsp;";
+            if($curFlag=="art22") $result.="<span class='AA_Label AA_Label_LightGreen'>SINES</span>&nbsp;";
+            if($curFlag=="art22_admin") $result.="<span class='AA_Label AA_Label_LightGreen'>SINES(adm)</span>&nbsp;";
+            if($curFlag=="art23") $result.="<span class='AA_Label AA_Label_LightGreen'>GESPA</span>&nbsp;";
+            if($curFlag=="patrimonio") $result.="<span class='AA_Label AA_Label_LightGreen'>GESPI</span>&nbsp;";
+            if($curFlag=="sier") $result.="<span class='AA_Label AA_Label_LightGreen'>SIER</span>&nbsp;";
+            if($curFlag=="processi") $result.="<span class='AA_Label AA_Label_LightGreen'>SIMAP</span>&nbsp;";
+            if($curFlag=="incarichi") $result.="<span class='AA_Label AA_Label_LightGreen'>Incarichi</span>&nbsp;";
+            if($curFlag=="titolari") $result.="<span class='AA_Label AA_Label_LightGreen'>Incarichi(adm)</span>&nbsp;";
+        }
+        
+        return $result;
+    }
+
     //ruolo
     public function GetRuolo($bNumeric=false)
     {
@@ -2275,8 +2297,21 @@ class AA_User
             return array();
         }
 
-        $query="SELECT id from ".static::AA_DB_TABLE." WHERE id <> '".$user->GetId()."' AND id <> 1 ";
+        $query="SELECT id from ".static::AA_DB_TABLE." WHERE id <> '".$user->GetId()."'";
+        if($user->GetId() !=1 ) $query.=" AND id <> 1 ";
         if(!$user->IsSuperUser()) $query.=" AND (FIND_IN_SET('1',groups) = 0 OR groups like '')";
+
+        //username
+        if(isset($params['user']) && $params['user']!="")
+        {
+            $query.=" AND user like '%".addslashes($params['user'])."%'";
+        }
+
+        //email
+        if(isset($params['email']) && $params['email']!="")
+        {
+            $query.=" AND email like '%".addslashes($params['email'])."%'";
+        }
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -2285,40 +2320,52 @@ class AA_User
             $struct=$user->GetStruct();
             if($struct->GetAssessorato(true)>0)
             {
-                $query.=" AND legacy_data like '%\"id_assessorato\":".$struct->GetAssessorato(true)."%'";
+                $query.=" AND legacy_data like '%\"id_assessorato\":\"".$struct->GetAssessorato(true)."\"%'";
             }
             else
             {
                 if($params['id_assessorato']>0)
                 {
-                    $query.=" AND legacy_data like '%\"id_assessorato\":".$params['id_assessorato']."%'";
+                    $query.=" AND legacy_data like '%\"id_assessorato\":\"".$params['id_assessorato']."\"%'";
                 }
             }
 
             if($struct->GetDirezione(true)>0)
             {
-                $query.=" AND legacy_data like '%\"id_direzione\":".$struct->GetDirezione(true)."%'";
+                $query.=" AND legacy_data like '%\"id_direzione\":\"".$struct->GetDirezione(true)."\"%'";
             }
             else
             {
                 if($params['id_direzione']>0)
                 {
-                    $query.=" AND legacy_data like '%\"id_direzione\":".$params['id_direzione']."%'";
+                    $query.=" AND legacy_data like '%\"id_direzione\":\"".$params['id_direzione']."\"%'";
                 }
             }
 
             if($struct->GetServizio(true)>0)
             {
-                $query.=" AND legacy_data like '%\"id_servizio\":".$struct->GetServizio(true)."%'";
+                $query.=" AND legacy_data like '%\"id_servizio\":\"".$struct->GetServizio(true)."\"%'";
             }
             else
             {
                 if($params['id_servizio']>0)
                 {
-                    $query.=" AND legacy_data like '%\"id_servizio\":".$params['id_servizio']."%'";
+                    $query.=" AND legacy_data like '%\"id_servizio\":\"".$params['id_servizio']."\"%'";
                 }
             }
         }
+
+        //stato
+        if(isset($params['status']) && $params['status']>-2)
+        {
+            $query.=" AND status='".addslashes($params['status'])."'";
+        }
+
+        if(isset($params['ruolo']) && $params['ruolo'] > 0)
+        {
+            $query.=" AND FIND_IN_SET('".addslashes($params['ruolo'])."',groups) > 0 ";
+        }
+
 
         $db=new AA_Database();
 
@@ -2327,6 +2374,11 @@ class AA_User
             AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage(),100);
             return array();
         }
+
+        //Limita la ricerca ai primi 500
+        $query.=" LIMIT 500";
+
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $rs=$db->GetResultSet();
         if(sizeof($rs)>0)
@@ -2665,7 +2717,7 @@ class AA_User
                 "id_direzione"=>$struct->GetDirezione(true),
                 "id_servizio"=>$struct->GetServizio(true),
                 "level"=>$legacyUser->nLivello,
-                "flags"=>$legacyUser->sFlags
+                "flags"=>$legacyUser->sLegacyFlags
             ));
             $sql.=", legacy_data='".$legacy_data."'";
         }

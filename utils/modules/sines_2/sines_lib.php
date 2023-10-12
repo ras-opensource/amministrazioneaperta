@@ -4268,7 +4268,7 @@ Class AA_SinesModule extends AA_GenericModule
                 //Dati tabella
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoModifyOrganigrammaIncaricoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_organigramma:"'.$curOrganigramma->GetId().'"}]},"'.$this->id.'")';
                 $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoDeleteOrganigrammaIncaricoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_organigramma:"'.$curOrganigramma->GetId().'"}]},"'.$this->id.'")';
-                $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";                
+                $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
                 $ras="No";
                 if($incarico->IsNominaRas())$ras="Si";
                 $opzionale="No";

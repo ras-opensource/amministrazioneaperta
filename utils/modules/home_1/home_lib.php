@@ -72,8 +72,13 @@ Class AA_HomeModule extends AA_GenericModule
     public function __construct($user=null) {
         parent::__construct($user,false);
         
-        //Sezioni
+        #--------------------------------Registrazione dei task-----------------------------
+        $taskManager=$this->GetTaskManager();
+        
+        //Dialoghi di filtraggio
+        $taskManager->RegisterTask("GetHomeUtentiFilterDlg");
 
+        //Sezioni
         $gestutenti=false;
         if($user instanceof AA_User && $user->CanGestUtenti()) $gestutenti =true;
         
@@ -87,7 +92,7 @@ Class AA_HomeModule extends AA_GenericModule
             if($geststrutture) $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1,false)->toArray(),$this->TemplateNavbar_GestStruct(2)->toArray()));
             else $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1)->toArray()));
         }
-        else $section->SetNavbarTemplate($this->TemplateGenericNavbar_Void()->toArray());
+        else $section->SetNavbarTemplate($this->TemplateGenericNavbar_Void(1,true)->toArray());
 
         $this->AddSection($section);
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DESKTOP,"TemplateSection_Desktop");
@@ -119,6 +124,22 @@ Class AA_HomeModule extends AA_GenericModule
         }
         #-------------------------------------------
     }
+
+    //Task filter dlg
+    public function Task_GetHomeUtentiFilterDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $content=$this->TemplateHomeUtentiFilterDlg($_REQUEST);
+        $sTaskLog.= base64_encode($content);
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+    
 
     //Template navbar cruscotto
     protected function TemplateNavbar_Cruscotto($level=1,$last=true)
@@ -399,17 +420,84 @@ Class AA_HomeModule extends AA_GenericModule
     public function TemplateSection_GestUtenti()
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTUTENTI;
-        $layout = new AA_JSON_Template_Template($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTUTENTI_NAME,"template"=>"In costruzione (gestione utenti)"));
 
-        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTUTENTI_NAME));
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTUTENTI_NAME,"filtered"=>true));
         
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $filter="";
         
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if(isset($_REQUEST['id_assessorato']) && $_REQUEST['id_assessorato']>0) $filter="<span class='AA_Label AA_Label_LightOrange'>".$_REQUEST['struct_desc']."</span>&nbsp;";
+            if(isset($_REQUEST['id_direzione']) && $_REQUEST['id_direzione']>0) $filter="<span class='AA_Label AA_Label_LightOrange'>".$_REQUEST['struct_desc']."</span>&nbsp;";
+            if(isset($_REQUEST['id_servizio']) && $_REQUEST['id_servizio']>0) $filter="<span class='AA_Label AA_Label_LightOrange'>".$_REQUEST['struct_desc']."</span>&nbsp;";
+        }
+
+        if(isset($_REQUEST['status']) && $_REQUEST['status'] > -2)
+        {
+            if($_REQUEST['status']==AA_User::AA_USER_STATUS_ENABLED) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti abilitati</span>&nbsp;";
+            if($_REQUEST['status']==AA_User::AA_USER_STATUS_DISABLED) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti disabilitati</span>&nbsp;";
+            if($_REQUEST['status']==AA_User::AA_USER_STATUS_DELETED) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti eliminati</span>&nbsp;";
+        }
+
+        if(isset($_REQUEST['ruolo']) && $_REQUEST['ruolo'] > 0)
+        {
+            if($_REQUEST['ruolo']==AA_User::AA_USER_GROUP_SUPERUSER) $filter.="<span class='AA_Label AA_Label_LightOrange'>solo super utenti</span>&nbsp;";
+            if($_REQUEST['ruolo']==AA_User::AA_USER_GROUP_SERVEROPERATORS) $filter.="<span class='AA_Label AA_Label_LightOrange'>solo operatori server</span>&nbsp;";
+            if($_REQUEST['ruolo']==AA_User::AA_USER_GROUP_ADMINS) $filter.="<span class='AA_Label AA_Label_LightOrange'>solo amministratori</span>&nbsp;";
+            if($_REQUEST['ruolo']==AA_User::AA_USER_GROUP_OPERATORS) $filter.="<span class='AA_Label AA_Label_LightOrange'>solo operatori</span>&nbsp;";
+            if($_REQUEST['ruolo']==AA_User::AA_USER_GROUP_USERS) $filter.="<span class='AA_Label AA_Label_LightOrange'>solo utenti</span>&nbsp;";
+        }
+
+        //filtro username
+        if(isset($_REQUEST['user']) && $_REQUEST['user'] !="")
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>username contiene: ".$_REQUEST['user']."</span>&nbsp;";
+        }
+
+        //filtro email
+        if(isset($_REQUEST['email']) && $_REQUEST['email'] !="")
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>email contiene: ".$_REQUEST['email']."</span>&nbsp;";
+        }
+
+        if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
         
+        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //filtro
+        $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-filter-cog",
+             "label"=>"Filtra",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Opzioni di filtraggio",
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeUtentiFilterDlg\",postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+         ));
+         $toolbar->AddElement($modify_btn);
+
+        //pulsante di importazione utenti legacy (solo super user)
+        if($this->oUser->IsSuperUser() && AA_Const::AA_ENABLE_LEGACY_DATA)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_ImportLegacy_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-application-import",
+                "label"=>"Importa",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Importa utenti legacy",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeImportLegacyUsersDlg\"},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+
         //Pulsante di modifica
         $canModify=false;
         if($this->oUser->CanGestUtenti()) $canModify=true;
@@ -431,12 +519,14 @@ Class AA_HomeModule extends AA_GenericModule
         
         $layout->addRow($toolbar);        
         $columns=array(
-            array("id"=>"id","header"=>array("<div style='text-align: center'>id</div>",array("content"=>"textFilter")),"width"=>50, "sort"=>"int","css"=>array("text-align"=>"center")),
+            array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"selectFilter")),"width"=>100, "sort"=>"text","css"=>array("text-align"=>"left")),
+            array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"user","header"=>array("<div style='text-align: center'>User</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
+            array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
             array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Nome e cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"flags","header"=>array("<div style='text-align: center'>Abilitazioni</div>",array("content"=>"textFilter")), "fillspace"=>true,"css"=>array("text-align"=>"center"),"sort"=>"text")
+            array("id"=>"flags","header"=>array("<div style='text-align: center'>Abilitazioni</div>",array("content"=>"textFilter")), "fillspace"=>true,"css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"struttura","header"=>array("<div style='text-align: center'>Struttura</div>"), "width"=>90,"css"=>array("text-align"=>"center"))
         );
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
@@ -448,32 +538,53 @@ Class AA_HomeModule extends AA_GenericModule
 
         if($canModify)
         {
-            $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
+            $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>120, "css"=>array("text-align"=>"center"));
         }
 
-        $utenti=AA_User::Search(null,$this->oUser);
+        $utenti=AA_User::Search($_REQUEST,$this->oUser);
         $data=array();
         if(sizeof($utenti) > 0)
         {
             foreach($utenti as $curUser)
             {
-                $flags=$curUser->GetFlags(true);
-                if(sizeof($flags)>0) $flags="<span class='AA_Label AA_Label_LightGreen'>".implode("</span><span class='AA_Label AA_Label_LightGreen'>",$flags)."</span>";
-                else $flags="";
+                $flags=$curUser->GetFormatedFlags();
+                $status=$curUser->GetStatus();
+                if($status==AA_User::AA_USER_STATUS_ENABLED) $status="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+                else
+                {
+                    if($status==AA_User::AA_USER_STATUS_DISABLED) $status="<span class='AA_Label AA_Label_LightYellow'>Disabilitato</span>";
+                    else $status="<span class='AA_Label AA_Label_LightRed'>Eliminato</span>";
+                }
+
+                if($canModify)
+                {
+                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeModifyUserDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $send='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeSendUserCredenzialsDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeDeleteUserDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Invia credenziali' onClick='".$send."'><span class='mdi mdi-email-fast'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";    
+                }
+                else $ops="&nbsp;";
 
                 if(AA_Const::AA_ENABLE_LEGACY_DATA)
                 {
                     $struct=$curUser->GetStruct();
-                    $assessorato=$struct->GetAssessorato();
-                    $direzione=$struct->GetDirezione();
-                    $servizio=$struct->GetServizio();
-                    $data[]=array("id"=>$curUser->GetId(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags,
-                        "assessorato"=>$assessorato,
-                        "direzione"=>$direzione,
-                        "servizio"=>$servizio
+                    $id_assessorato=$struct->GetAssessorato(true);
+                    $id_direzione=$struct->GetDirezione(true);
+                    $id_servizio=$struct->GetServizio(true);
+
+                    $struttura=$struct->GetAssessorato();
+                    if($id_direzione>0) $struttura.="<br>".$struct->GetDirezione();
+                    if($id_servizio>0)$struttura.="<br>".$struct->GetServizio();
+                    
+                    $struct_view='<a href="#" onClick=\'let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($struttura).'"));AA_MainApp.ui.modalBox(note,"Struttura")\'><span class="mdi mdi-eye"></span></a>';
+                    $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"stato"=>$status,"lastLogin"=>$curUser->GetLastLogin(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags,
+                        "id_assessorato"=>$id_assessorato,
+                        "id_direzione"=>$id_direzione,
+                        "id_servizio"=>$id_servizio,
+                        "struttura"=>$struct_view
                     );
                 }
-                else $data[]=array("id"=>$curUser->GetId(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags);
+                else $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"lastLogin"=>$curUser->GetLastLogin(),"stato"=>$status,"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags);
             }
             $table=new AA_JSON_Template_Generic($id."_UtentiTable", array(
                 "view"=>"datatable",
@@ -493,6 +604,91 @@ Class AA_HomeModule extends AA_GenericModule
         }
 
         return $layout;
+    }
+
+    //Template filtro di ricerca utenti
+    public function TemplateHomeUtentiFilterDlg()
+    {
+        //Valori runtime
+        $formData=array("status"=>$_REQUEST['status'],"ruolo"=>$_REQUEST['ruolo'],"user"=>$_REQUEST['user'],"email"=>$_REQUEST['email']);
+        if(AA_const::AA_ENABLE_LEGACY_DATA)
+        {
+            $formData['id_assessorato']=$_REQUEST['id_assessorato'];
+            $formData['id_direzione']=$_REQUEST['id_direzione'];
+            $formData['id_servizio']=$_REQUEST['id_servizio'];
+            $formData['struct_desc']=$_REQUEST['struct_desc'];
+
+            if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
+            if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']=0;
+            if($_REQUEST['id_direzione']=="") $formData['id_direzione']=0;
+            if($_REQUEST['id_servizio']=="") $formData['id_servizio']=0;
+        }
+
+        if(!isset($_REQUEST['ruolo'])) $formData['ruolo']=0;
+        if(!isset($_REQUEST['status'])) $formData['status']=-2;
+                
+        //Valori reset
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","status"=>-2,"ruolo"=>0,"email"=>"","user"=>"");
+        
+        //Azioni da eseguire dopo l'applicazione del filtro
+        $applyActions="module.refreshCurSection()";
+        
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Utenti_Filter", "Parametri di filtraggio",$this->GetId(),$formData,$resetData,$applyActions);
+        
+        $dlg->SetHeight(480);
+        
+        //nome utente
+        $dlg->AddTextField("user","Nome utente",array("bottomLabel"=>"*Filtra in base allo username.", "placeholder"=>"..."));
+
+        //email
+        $dlg->AddTextField("email","Email",array("bottomLabel"=>"*Filtra in base alla email.", "placeholder"=>"..."));
+
+        //Struttura
+        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura di incardinamento."));
+        
+        //Ruolo
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        if($this->oUser->IsSuperUser()) 
+        {
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_SUPERUSER,"value"=>"Super utente");
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
+        }
+        else
+        {
+            if($this->oUser->GetRuolo() == AA_User::AA_USER_GROUP_SERVEROPERATORS) 
+            {
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
+            }
+            else
+            {
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
+            }
+        }
+
+        $dlg->AddSelectField("ruolo","Ruolo",array("bottomLabel"=>"*Filtra in base al ruolo dell'utente.","options"=>$options));
+        
+        //stato utente
+        $options=array(array("id"=>"-2","value"=>"Qualunque"));
+        $options[]=array("id"=>"1","value"=>"Abilitato");
+        $options[]=array("id"=>"0","value"=>"Disabilitato");
+        if($this->oUser->IsSuperUser() || $this->oUser->GetRuolo()==AA_User::AA_USER_GROUP_SERVEROPERATORS)
+        {
+            $options[]=array("id"=>"-1","value"=>"Eliminato");
+        }
+        $dlg->AddSelectField("status","Stato",array("bottomLabel"=>"*Filtra in base allo stato dell'utente.","options"=>$options));
+
+        $dlg->SetApplyButtonName("Filtra");
+        $dlg->EnableApplyHotkey();
+
+        return $dlg->GetObject();
     }
 
     //Template gestione strutture content
