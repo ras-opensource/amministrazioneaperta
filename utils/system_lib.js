@@ -2491,7 +2491,7 @@ var AA_MainApp = {
                             return Promise.reject(result.error.value);
                         }
 
-                        console.log("AA_MainApp.ui.MainUI.StructDlg.show", params, result.content.value);
+                        //console.log("AA_MainApp.ui.MainUI.StructDlg.show", params, result.content.value);
 
                         if (typeof result.content.value == "object") {
                             //Imposto la selezione se l'oggetto è un albero
@@ -2529,15 +2529,18 @@ var AA_MainApp = {
                                     }
 
                                     if (params['select']) {
-                                        //console.log("AA_MainApp.ui.MainUI.StructDlg.show.ready", this);
-                                        if (AA_MainApp.ui.MainUI.structDlg.lastSelectedItem['id']) {
-                                            this.select(AA_MainApp.ui.MainUI.structDlg.lastSelectedItem['id']);
+                                        //console.log("AA_MainApp.ui.MainUI.StructDlg.show - lastSelectedItem: ", AA_MainApp.ui.MainUI.structDlg.lastSelectedItem);
+                                        if (AA_MainApp.ui.MainUI.structDlg.lastSelectedItem) {
+                                            //console.log("AA_MainApp.ui.MainUI.StructDlg.show - select: ", String(AA_MainApp.ui.MainUI.structDlg.lastSelectedItem['id']));
+                                            this.select(String(AA_MainApp.ui.MainUI.structDlg.lastSelectedItem['id']));
                                         }
 
                                         let itemSelected = this.getSelectedItem();
                                         if (AA_MainApp.utils.isDefined(itemSelected)) {
                                             //console.log("AA_MainApp.ui.MainUI.StructDlg.show.select", itemSelected);
-                                            this.open(itemSelected.$parent);
+                                            this.open(itemSelected.$parent,true);
+                                            this.showItem(itemSelected.id);
+                                            
                                         }
                                     };
                                 }

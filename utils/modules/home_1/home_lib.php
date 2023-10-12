@@ -74,10 +74,12 @@ Class AA_HomeModule extends AA_GenericModule
         
         #--------------------------------Registrazione dei task-----------------------------
         $taskManager=$this->GetTaskManager();
-        
-        //Dialoghi di filtraggio
-        $taskManager->RegisterTask("GetHomeUtentiFilterDlg");
 
+        //Gestione utenti
+        $taskManager->RegisterTask("GetHomeUtentiFilterDlg");
+        $taskManager->RegisterTask("GetHomeUtentiModifyDlg");
+
+        //----------------------------------------------------------------------------------
         //Sezioni
         $gestutenti=false;
         if($user instanceof AA_User && $user->CanGestUtenti()) $gestutenti =true;
@@ -128,10 +130,49 @@ Class AA_HomeModule extends AA_GenericModule
     //Task filter dlg
     public function Task_GetHomeUtentiFilterDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         $content=$this->TemplateHomeUtentiFilterDlg($_REQUEST);
+        $sTaskLog.= base64_encode($content);
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task modify user dlg
+    public function Task_GetHomeUtentiModifyDlg($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $user=AA_User::LoadUser($_REQUEST['id']);
+        if(!$user->IsValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente specificato non è stato trovato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        if(!$this->oUser->CanModifyUser($user))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'utente specificato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $content=$this->Template_GetHomeUtentiModifyDlg($user);
         $sTaskLog.= base64_encode($content);
         $sTaskLog.="</content>";
         
@@ -493,7 +534,7 @@ Class AA_HomeModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Importa utenti legacy",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeImportLegacyUsersDlg\"},'".$this->id."')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeUtentiLegacyImportDlg\"},'".$this->id."')"
             ));
             $toolbar->AddElement($modify_btn);
         }
@@ -512,7 +553,7 @@ Class AA_HomeModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi un nuovo utente",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeAddNewUserDlg\"},'".$this->id."')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeUtentiAddNewDlg\"},'".$this->id."')"
             ));
             $toolbar->AddElement($modify_btn);
         }
@@ -558,9 +599,9 @@ Class AA_HomeModule extends AA_GenericModule
 
                 if($canModify)
                 {
-                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeModifyUserDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
-                    $send='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeSendUserCredenzialsDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
-                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeDeleteUserDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiModifyDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $send='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiSendCredenzialsDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiDeleteDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
                     $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Invia credenziali' onClick='".$send."'><span class='mdi mdi-email-fast'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";    
                 }
                 else $ops="&nbsp;";
@@ -617,6 +658,13 @@ Class AA_HomeModule extends AA_GenericModule
             $formData['id_direzione']=$_REQUEST['id_direzione'];
             $formData['id_servizio']=$_REQUEST['id_servizio'];
             $formData['struct_desc']=$_REQUEST['struct_desc'];
+            $formData['id_struct_tree_select']=$_REQUEST['id_struct_tree_select'];
+            if($formData['id_struct_tree_select'] == "")
+            {
+                if($formData['id_assessorato']>0) $form_data['id_struct_tree_select']=$formData['id_assessorato'];
+                if($formData['id_direzione']>0) $form_data['id_struct_tree_select'].=".".$formData['id_direzione'];
+                if($formData['id_servizio']>0) $form_data['id_struct_tree_select'].=".".$formData['id_servizio'];
+            }
 
             if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
             if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']=0;
@@ -638,7 +686,7 @@ Class AA_HomeModule extends AA_GenericModule
         $dlg->SetHeight(480);
         
         //nome utente
-        $dlg->AddTextField("user","Nome utente",array("bottomLabel"=>"*Filtra in base allo username.", "placeholder"=>"..."));
+        $dlg->AddTextField("user","Login utente",array("bottomLabel"=>"*Filtra in base al login utente.", "placeholder"=>"..."));
 
         //email
         $dlg->AddTextField("email","Email",array("bottomLabel"=>"*Filtra in base alla email.", "placeholder"=>"..."));
@@ -689,6 +737,160 @@ Class AA_HomeModule extends AA_GenericModule
         $dlg->EnableApplyHotkey();
 
         return $dlg->GetObject();
+    }
+
+    //Template dlg modify user
+    public function Template_GetHomeUtentiModifyDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetHomeUtentiModifyDlg";
+        if(!($object instanceof AA_User)) return new AA_GenericWindowTemplate($id, "Modifica utente", $this->id);
+
+        $form_data['id']=$object->GetID();
+        $form_data['user']=$object->GetUsername();
+        $form_data['email']=$object->GetEmail();
+        $form_data['nome']=$object->GetNome();
+        $form_data['cognome']=$object->GetCognome();
+        $form_data['phone']=$object->GetPhone();
+        $form_data['image']=$object->GetImage();
+        $form_data['ruolo']=$object->GetRuolo();
+        $form_data['status']=$object->GetStatus();
+        if($object->IsConcurrentEnabled()) $form_data['concurrent']=1;
+
+        foreach($object->GetFlags(true,false) as $curFlag)
+        {
+            $form_data['flag_'.$curFlag]=1;
+        }
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            foreach($object->GetLegacyFlags(true) as $curFlag)
+            {
+                $form_data['legacyFlag_'.$curFlag]=1;
+            }
+            
+            $struct=$object->GetStruct();
+            $form_data['id_assessorato']=$struct->GetAssessorato(true);
+            $form_data['id_direzione']=$struct->GetDirezione(true);
+            $form_data['id_servizio']=$struct->GetServizio(true);
+            $form_data['struct_desc']="Nessuna";
+            
+            $form_data['id_struct_tree_select']="root";
+            if($form_data['id_assessorato']>0) $form_data['id_struct_tree_select']=$form_data['id_assessorato'];
+            if($form_data['id_direzione']>0) $form_data['id_struct_tree_select'].=".".$form_data['id_direzione'];
+            if($form_data['id_servizio']>0) $form_data['id_struct_tree_select'].=".".$form_data['id_servizio'];
+
+            if($struct->GetAssessorato(true)>0) $form_data['struct_desc']=$struct->GetAssessorato();
+            if($struct->GetDirezione(true)>0) $form_data['struct_desc']=$struct->GetDirezione();
+            if($struct->GetServizio(true)>0) $form_data['struct_desc']=$struct->GetServizio();
+        }
+
+        $wnd=new AA_GenericFormDlg($id, "Modifica utente", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(160);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(800);
+        
+        //username
+        $wnd->AddTextField("user","Login",array("required"=>true,"gravity"=>2, "bottomLabel"=>"*Login utente", "placeholder"=>"Deve essere univoco e non deve contenere spazi o caratteri speciali."));
+
+        //Ruolo
+        if($this->oUser->IsSuperUser()) 
+        {
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_SUPERUSER,"value"=>"Super utente");
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
+            $options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
+        }
+        else
+        {
+            if($this->oUser->GetRuolo() == AA_User::AA_USER_GROUP_SERVEROPERATORS) 
+            {
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
+            }
+            else
+            {
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
+                $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
+            }
+        }
+        $wnd->AddSelectField("groups","Ruolo",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Ruolo da assegnare all'utente.","options"=>$options),false);
+        
+        //email
+        $wnd->AddTextField("email","Email",array("required"=>true,"gravity"=>2, "validateFunction"=>"IsEmail","bottomLabel"=>"*Email", "placeholder"=>"Email associata all'utente."));
+
+        //stato
+        $wnd->AddSwitchBoxField("status","Stato",array("gravity"=>1,"onLabel"=>"Abilitato","offLabel"=>"Disabilitato","bottomLabel"=>"*stato dell'utente","value"=>1),false);
+
+        //Dati personali
+        $section=new AA_FieldSet($id."_Section_DatiPersonali","Dati personali");
+        $section->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel"=>"*Nome dell'utente", "placeholder"=>"Caio"));
+        $section->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel"=>"*Cognome dell'utente", "placeholder"=>"Sempronio"),false);
+        $section->AddTextField("phone", "Telefono", array("required"=>true,"bottomLabel"=>"*Recapito telefonico", "placeholder"=>"..."));
+        $section->AddSpacer(false);
+        $wnd->AddGenericObject($section);
+        
+        //----------- Ordinary Flags ---------------
+        $section=new AA_FieldSet($id."_Section_Flags","Abilitazioni");
+        $platform=AA_Platform::GetInstance();
+        $moduli=$platform->GetModulesFlags();
+        $curRow=0;
+        foreach($moduli as $curFlag=>$descr)
+        {
+            $newLine=false;
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("flags_".$curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $curRow++;
+        }
+        for($i=$curRow;$i<4;$i++)
+        {
+            $section->AddSpacer(false);
+        }
+
+        $section->AddCheckBoxField("concurrent", "Login concorrente", array("value"=>1,"bottomLabel"=>"Abilita l'accesso concorrente."));
+        $wnd->AddGenericObject($section);
+        //-------------------------------------------
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if($this->oUser->IsSuperUser())
+            {
+                //--------------- Legacy flags --------------
+                $section=new AA_FieldSet($id."_Section_LegacyFlags","Abilitazioni legacy",$wnd->GetFormId());
+                $legacyFlags=$platform->GetLegacyFlags();
+                $curRow=0;
+                foreach($legacyFlags as $curFlag=>$descr)
+                {
+                    $newLine=false;
+                    if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+                    $section->AddCheckBoxField($curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+                    $curRow++;
+                }
+                //-------------------------------------------
+                for($i=$curRow;$i<4;$i++)
+                {
+                    $section->AddSpacer(false);
+                }
+            }
+
+            //Struttura
+            $section->AddStructField(array("targetForm"=>$wnd->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Struttura di incardinamento dell'utente."));
+
+            $wnd->AddGenericObject($section);
+        }
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateUser");
+        
+        return $wnd;
     }
 
     //Template gestione strutture content

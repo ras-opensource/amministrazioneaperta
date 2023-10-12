@@ -1626,7 +1626,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     //Aggiungi un campo per la scelta delle strutture
     public function AddStructField($taskParams = array(), $params = array(), $fieldParams = array(), $newRow = true)
     {
-        $onSearchScript = "try{ if($$('" . $this->id . "_Form').getValues().id_struct_tree_select) AA_MainApp.ui.MainUI.structDlg.lastSelectedItem={id: $$('" . $this->id . "_Form').getValues().id_struct_tree_select}; AA_MainApp.ui.MainUI.structDlg.show(" . json_encode($taskParams) . "," . json_encode($params) . ");}catch(msg){console.error(msg)}";
+        $onSearchScript = "try{ if($$('" . $this->form->GetId()."')){AA_MainApp.ui.MainUI.structDlg.lastSelectedItem={id: $$('" . $this->form->GetId()."').getValues().id_struct_tree_select};}; AA_MainApp.ui.MainUI.structDlg.show(" . json_encode($taskParams) . "," . json_encode($params) . ");}catch(msg){console.error(msg)}";
 
         if ($newRow) {
             $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_".uniqid(time()));
@@ -1846,13 +1846,25 @@ class AA_GenericFilterDlg extends AA_GenericFormDlg
 //Classe gestione set di campi 
 class AA_FieldSet extends AA_JSON_Template_Generic
 {
-    public function __construct($id = "field_set", $label = "Generic field set")
+    protected $formId="";
+    public function GetFormId()
+    {
+        return $this->formId;
+    }
+    public function setFormId($val="")
+    {
+        $this->formId=$val;
+    }
+
+    public function __construct($id = "field_set", $label = "Generic field set",$formId="")
     {
         $this->props['view'] = "fieldset";
         $this->props['label'] = $label;
         $this->props['id']=$id;
         $this->layout = new AA_JSON_Template_Layout($id . "_FieldSet_Layout", array("type" => "clean"));
         $this->addRowToBody($this->layout);
+
+        $this->formId=$formId;
     }
 
     protected $layout = null;
@@ -1972,7 +1984,9 @@ class AA_FieldSet extends AA_JSON_Template_Generic
     //Aggiungi un campo per la scelta delle strutture
     public function AddStructField($taskParams = array(), $params = array(), $fieldParams = array(), $newRow = true)
     {
-        $onSearchScript = "try{ if($$('" . $this->GetId() . "_Form').getValues().id_struct_tree_select) AA_MainApp.ui.MainUI.structDlg.lastSelectedItem={id: $$('" . $this->GetId() . "_Form').getValues().id_struct_tree_select}; AA_MainApp.ui.MainUI.structDlg.show(" . json_encode($taskParams) . "," . json_encode($params) . ");}catch(msg){console.error(msg)}";
+        if($this->formId !="") $form=$this->formId;
+        else $form=$this->GetId() . "_Form";
+        $onSearchScript = "try{ if($$('" . $form."')){AA_MainApp.ui.MainUI.structDlg.lastSelectedItem={id: $$('" . $form."').getValues().id_struct_tree_select};}; AA_MainApp.ui.MainUI.structDlg.show(" . json_encode($taskParams) . "," . json_encode($params) . ");}catch(msg){console.error(msg)}";
 
         if ($newRow) {
             $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row_".uniqid(time()));
