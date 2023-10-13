@@ -18,6 +18,7 @@ Class AA_Config
     const AA_LOCALE="it_IT";
 
     //Parametri server SMTP e invio mail
+    const AA_ENABLE_SENDMAIL=false;
     const AA_SMTP_SERVER="192.168.0.1";
     const AA_SMTP_USERNAME="smtp_user";
     const AA_SMTP_PWD="smtp_pwd";

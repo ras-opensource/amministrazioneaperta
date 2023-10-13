@@ -154,6 +154,10 @@ class AA_GenericTask
     protected $oUser = null;
     protected $taskManager = null;
 
+    const AA_STATUS_FAILED=-1;
+    const AA_STATUS_SUCCESS=0;
+    const AA_STATUS_UNAUTH=-2;
+
     public function GetTaskManager()
     {
         return $this->taskManager;
@@ -219,6 +223,47 @@ class AA_GenericTask
 //Task generico modulo
 class AA_GenericModuleTask extends AA_GenericTask
 {
+    protected $sContentType="";
+    protected $sContentEncode="";
+    protected $sContent="";
+    public function SetContent($val="", $type="json", $encode="base64")
+    {
+        if($val=="" && $type=="json") $val="{}";
+        
+        if($type !="json") $content=$val;
+        else $content=json_encode($val);
+
+        if($encode=="base64") $content=base64_encode($content);
+
+        $this->sContentType=$type;
+        $this->sContentEncode=$encode;
+        $this->sContent=$content;
+    }
+
+    protected $nStatus=-1;
+    public function SetStatus($val=0)
+    {
+        if($val == 0) $this->nStatus=0;
+        if($val == -1) $this->nStatus=-1;
+        if($val == -2) $this->nStatus=-2;
+    }
+
+    protected $sError="";
+    protected $sErrorType="";
+    protected $sErrorEncode="";
+    public function SetError($val="", $type="json", $encode="base64")
+    {
+        if($val=="" && $type=="json") $val="{}";
+        if($type !="json") $content=$val;
+        else $content=json_encode($val);
+
+        if($encode=="base64") $content=base64_encode($content);
+
+        $this->sErrorType=$type;
+        $this->sErrorEncode=$encode;
+        $this->sError=$content;
+    }
+
     protected $taskFunction = "";
     public function __construct($task = "", $user = null, $taskManager = null, $taskFunction = "")
     {
@@ -245,6 +290,17 @@ class AA_GenericModuleTask extends AA_GenericTask
             $this->sTaskLog = "<status id='status'>-1</status><error id='error'>" . __METHOD__ . "() - Task non registrato: " . $this->sTaskName . ".</error>";
             return false;
         }
+    }
+
+    public function GetLog()
+    {
+        if($this->sTaskLog=="")
+        {
+            $this->sTaskLog="<status id='status'>".$this->nStatus."</status><content id='content' type='".$this->sContentType."' encode='".$this->sContentEncode."'>".$this->sContent."</content><error id='error' type='".$this->sErrorType."' encode='".$this->sErrorEncode."'>".$this->sError."</error>";
+        }
+
+        //AA_Log::Log(__METHOD__." - sTaskLog: ".$this->sTaskLog,100);
+        return $this->sTaskLog;
     }
 }
 #--------------------------------------------

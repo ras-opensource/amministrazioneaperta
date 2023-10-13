@@ -78,8 +78,10 @@ Class AA_HomeModule extends AA_GenericModule
         //Gestione utenti
         $taskManager->RegisterTask("GetHomeUtentiFilterDlg");
         $taskManager->RegisterTask("GetHomeUtentiModifyDlg");
-
+        $taskManager->RegisterTask("HomeUtentiUpdate");
+        $taskManager->RegisterTask("HomeUtentiSendCredenzials");
         //----------------------------------------------------------------------------------
+        
         //Sezioni
         $gestutenti=false;
         if($user instanceof AA_User && $user->CanGestUtenti()) $gestutenti =true;
@@ -180,7 +182,126 @@ Class AA_HomeModule extends AA_GenericModule
         
         return true;
     }
-    
+
+    //Task modify user dlg
+    public function Task_HomeUtentiUpdate($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitato alla gestione utenti.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $user=AA_User::LoadUser($_REQUEST['id']);
+        if(!$user->IsValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente specificato non è stato trovato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        if(!$this->oUser->CanModifyUser($user))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'utente specificato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $params['id']=$_REQUEST['id'];
+        if(isset($_REQUEST['user']) && $_REQUEST['user'] !="") $params['user']=$_REQUEST['user'];
+        if(isset($_REQUEST['email']) && $_REQUEST['email'] !="") $params['email']=$_REQUEST['email'];
+        $params['phone']=$_REQUEST['phone'];
+        $params['nome']=$_REQUEST['nome'];
+        $params['cognome']=$_REQUEST['cognome'];
+        
+        //ruolo
+        if(isset($_REQUEST['ruolo']) && $_REQUEST['ruolo']>0) $params['ruolo']=$_REQUEST['ruolo'];
+        else $params['ruolo']=$user->GetRuolo(true);
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if($params['ruolo'] < AA_User::AA_USER_GROUP_OPERATORS) $params['livello']=0;
+            else $params['livello']=1;
+            if($params['ruolo']==AA_User::AA_USER_GROUP_USERS) $params['livello']=2;
+        }
+
+        //stato
+        if(isset($_REQUEST['status']))
+        {
+            //AA_log::Log(__METHOD__." - status: ".$_REQUEST['status'],100);
+            $params['status']=$_REQUEST['status'];
+        } 
+        else $params['status']=$user->GetStatus();
+
+        $userFlags=array();
+
+        //accesso concorrente
+        if(isset($_REQUEST['concurrent']) && $_REQUEST['concurrent'] > 0) 
+        {
+            $userFlags[]="concurrent";
+            if(AA_Const::AA_ENABLE_LEGACY_DATA) $params['concurrent']=1;
+        }
+        else 
+        {
+            if(AA_Const::AA_ENABLE_LEGACY_DATA) $params['concurrent']=0;
+        }
+
+        //flags
+        $modulesFlagsKeys=array_keys(AA_Platform::GetAllModulesFlags());
+        
+        foreach($modulesFlagsKeys as $curFlag)
+        {
+            if(isset($_REQUEST['flag_'.$curFlag]) && $_REQUEST['flag_'.$curFlag]==1)
+            {
+                $userFlags[]=$curFlag;
+            } 
+        }
+        if(sizeof($userFlags)>0)
+        {
+            $params['flags']=implode("|",$userFlags);
+        }
+        
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            //Legacy flags
+            if($user->CanGestUtenti()) $params['gest_utenti']=1;
+            if($user->CanGestStruct()) $params['gest_struct']=1;
+            $params['unlock']=1;
+            
+            $legacyFlags=array_keys(AA_Platform::GetLegacyFlags());
+            foreach($legacyFlags as $curFlag)
+            {
+                if(isset($_REQUEST['legacyFlag_'.$curFlag]) && $_REQUEST['legacyFlag_'.$curFlag]==1) $params['legacyFlag_'.$curFlag]=1;
+            }
+
+            //struttura
+            $struct=$user->GetStruct();
+            if(isset($_REQUEST['id_assessorato'])) $params['assessorato']=$_REQUEST['id_assessorato'];
+            else $params['assessorato']=$struct->GetAssessorato(true);
+            if(isset($_REQUEST['id_direzione'])) $params['direzione']=$_REQUEST['id_direzione'];
+            else $params['direzione']=$struct->GetDirezione(true);
+            if(isset($_REQUEST['id_servizio'])) $params['servizio']=$_REQUEST['id_servizio'];
+            else $params['servizio']=$struct->GetServizio(true);
+        }
+
+        if(!$this->oUser->UpdateUser($user,$params))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dell'utente.","","");
+            return false;      
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Utente aggiornato con successo.","","");
+        
+        return true;
+    }
 
     //Template navbar cruscotto
     protected function TemplateNavbar_Cruscotto($level=1,$last=true)
@@ -600,7 +721,7 @@ Class AA_HomeModule extends AA_GenericModule
                 if($canModify)
                 {
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiModifyDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
-                    $send='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiSendCredenzialsDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $send='AA_MainApp.utils.callHandler("doTask", {task:"HomeUtentiSendCredenzials", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
                     $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiDeleteDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
                     $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Invia credenziali' onClick='".$send."'><span class='mdi mdi-email-fast'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";    
                 }
@@ -752,7 +873,7 @@ Class AA_HomeModule extends AA_GenericModule
         $form_data['cognome']=$object->GetCognome();
         $form_data['phone']=$object->GetPhone();
         $form_data['image']=$object->GetImage();
-        $form_data['ruolo']=$object->GetRuolo();
+        $form_data['ruolo']=$object->GetRuolo(true);
         $form_data['status']=$object->GetStatus();
         if($object->IsConcurrentEnabled()) $form_data['concurrent']=1;
 
@@ -794,7 +915,7 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->SetHeight(800);
         
         //username
-        $wnd->AddTextField("user","Login",array("required"=>true,"gravity"=>2, "bottomLabel"=>"*Login utente", "placeholder"=>"Deve essere univoco e non deve contenere spazi o caratteri speciali."));
+        $wnd->AddTextField("user","Login",array("required"=>true,"gravity"=>2, "disabled"=>true,"bottomLabel"=>"*Login utente", "placeholder"=>"Deve essere univoco e non deve contenere spazi o caratteri speciali."));
 
         //Ruolo
         if($this->oUser->IsSuperUser()) 
@@ -821,7 +942,7 @@ Class AA_HomeModule extends AA_GenericModule
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
             }
         }
-        $wnd->AddSelectField("groups","Ruolo",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Ruolo da assegnare all'utente.","options"=>$options),false);
+        $wnd->AddSelectField("ruolo","Ruolo",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Ruolo da assegnare all'utente.","options"=>$options),false);
         
         //email
         $wnd->AddTextField("email","Email",array("required"=>true,"gravity"=>2, "validateFunction"=>"IsEmail","bottomLabel"=>"*Email", "placeholder"=>"Email associata all'utente."));
@@ -833,7 +954,7 @@ Class AA_HomeModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Section_DatiPersonali","Dati personali");
         $section->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel"=>"*Nome dell'utente", "placeholder"=>"Caio"));
         $section->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel"=>"*Cognome dell'utente", "placeholder"=>"Sempronio"),false);
-        $section->AddTextField("phone", "Telefono", array("required"=>true,"bottomLabel"=>"*Recapito telefonico", "placeholder"=>"..."));
+        $section->AddTextField("phone", "Telefono", array("bottomLabel"=>"*Recapito telefonico", "placeholder"=>"..."));
         $section->AddSpacer(false);
         $wnd->AddGenericObject($section);
         
@@ -846,7 +967,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             $newLine=false;
             if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("flags_".$curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $section->AddCheckBoxField("flag_".$curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
             $curRow++;
         }
         for($i=$curRow;$i<4;$i++)
@@ -864,13 +985,13 @@ Class AA_HomeModule extends AA_GenericModule
             {
                 //--------------- Legacy flags --------------
                 $section=new AA_FieldSet($id."_Section_LegacyFlags","Abilitazioni legacy",$wnd->GetFormId());
-                $legacyFlags=$platform->GetLegacyFlags();
+                $legacyFlags=AA_Platform::GetLegacyFlags();
                 $curRow=0;
                 foreach($legacyFlags as $curFlag=>$descr)
                 {
                     $newLine=false;
                     if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-                    $section->AddCheckBoxField($curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+                    $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
                     $curRow++;
                 }
                 //-------------------------------------------
@@ -888,7 +1009,7 @@ Class AA_HomeModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("UpdateUser");
+        $wnd->SetSaveTask("HomeUtentiUpdate");
         
         return $wnd;
     }
@@ -903,11 +1024,49 @@ Class AA_HomeModule extends AA_GenericModule
         return $layout;
     }
 
+    //Task send credentials
+    public function Task_HomeUtentiSendCredenzials($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente (".$this->oUser->GetUsername().") non è abilitato alla gestione utenti.",100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione utenti.");
+            return false;
+        }
+
+        $user=AA_User::LoadUser($_REQUEST['id']);
+        if(!$user->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - L'utente inidcato non è stato trovato (".$_REQUEST['id'].").",100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente indicato non valido.");
+            return false;
+        }
+
+        if(!$this->oUser->CanModifyUser($user))
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente (".$this->oUser->GetUsername().") non può gestire l'utente indicato.",100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione dell'utente indicato.");
+            return false;
+        }
+
+        if(!AA_User::SendCredentials($user->GetId(),AA_Const::AA_ENABLE_SENDMAIL))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Credenziali reimpostate con successo.");
+        return true;
+    }
+
     //Task action menù
     public function Task_GetActionMenu($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
-
         $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
 
         $content = "";
