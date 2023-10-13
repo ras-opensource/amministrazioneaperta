@@ -228,11 +228,8 @@ class AA_GenericModuleTask extends AA_GenericTask
     protected $sContent="";
     public function SetContent($val="", $type="json", $encode="base64")
     {
-        if($val=="" && $type=="json") $val="{}";
+        $content=$val;
         
-        if($type !="json") $content=$val;
-        else $content=json_encode($val);
-
         if($encode=="base64") $content=base64_encode($content);
 
         $this->sContentType=$type;
@@ -253,9 +250,8 @@ class AA_GenericModuleTask extends AA_GenericTask
     protected $sErrorEncode="";
     public function SetError($val="", $type="json", $encode="base64")
     {
-        if($val=="" && $type=="json") $val="{}";
-        if($type !="json") $content=$val;
-        else $content=json_encode($val);
+    
+        $content=$val;
 
         if($encode=="base64") $content=base64_encode($content);
 

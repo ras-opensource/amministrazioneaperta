@@ -2673,7 +2673,13 @@ class AA_User
         //Verifica gruppi
         if(isset($params['groups']) && is_array($params['groups']))
         {
-            $params['groups']=array_uintersect($this->GetAllGroups(),$params['groups']);
+            $groups=$this->GetAllGroups();
+            if(array_search(static::AA_USER_GROUP_SERVEROPERATORS,$groups) !==false)
+            {
+                $groups=array_unique(array_merge($groups,array(static::AA_USER_GROUP_ADMINS,static::AA_USER_GROUP_OPERATORS,static::AA_USER_GROUP_USERS)));
+            }
+
+            $params['groups']=array_intersect($groups,$params['groups']);
         }
         
         if(sizeof($params['groups'])==0)
@@ -2910,7 +2916,6 @@ class AA_User
 
         //Solo admin imposta le flags
         if ($this->IsSuperUser()) {
-            $flags="";
             if (!isset($params['gest_utenti'])) {
                 $flags .= $separatore . "U0";
                 $separatore = "|";
@@ -2927,11 +2932,11 @@ class AA_User
                 $flags .= $separatore . "debitori";
                 $separatore = "|";
             }
-            if (isset($params['gest_accessi'])) {
+            if (isset($params['gest_accessi']) || (isset($params['legacyFlag_accessi']) && $params['legacyFlag_accessi'] > 0)) {
                 $flags .= $separatore . "accessi";
                 $separatore = "|";
             }
-            if (isset($params['admin_gest_accessi'])) {
+            if (isset($params['admin_gest_accessi']) || (isset($params['legacyFlag_admin_accessi']) && $params['legacyFlag_admin_accessi'] > 0)) {
                 $flags .= $separatore . "admin_accessi";
                 $separatore = "|";
             }
@@ -2966,16 +2971,17 @@ class AA_User
             if (isset($params['art30'])) {
                 $flags .= $separatore . "art30";
                 $separatore = "|";
-            }
-            if (isset($params['gest_processi'])) {
+            } //old
+
+            if (isset($params['gest_processi']) || (isset($params['legacyFlag_processi']) && $params['legacyFlag_processi']>0)) {
                 $flags .= $separatore . "processi";
                 $separatore = "|";
             }
-            if (isset($params['gest_incarichi_titolari'])) {
+            if (isset($params['gest_incarichi_titolari']) || (isset($params['legacyFlag_incarichi_titolari']) && $params['legacyFlag_incarichi_titolari']>0)) {
                 $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;
                 $separatore = "|";
             }
-            if (isset($params['gest_incarichi'])) {
+            if (isset($params['gest_incarichi']) || (isset($params['legacyFlag_incarichi']) && $params['legacyFlag_incarichi']>0)) {
                 $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI;
                 $separatore = "|";
             }
@@ -2983,11 +2989,12 @@ class AA_User
                 $flags .= $separatore . "patrimonio";
                 $separatore = "|";
             }
-            if (isset($params['concurrent']) && $params['concurrent']>0)
-            {
+            if (isset($params['concurrent']) && $params['concurrent']>0) {
                 $flags .= $separatore . "concurrent";
                 $separatore = "|";
             }
+
+            //AA_Log::Log(get_class()."->UpdateUser($idUser, $params)", 100, false,true);
         }
 
         //la modifica delle schede pubblicate può essere abilitata anche dagli altri utenti amministratori
@@ -3002,14 +3009,17 @@ class AA_User
         else $sql .= "id_assessorato='" . $params['assessorato'] . "'";
         $sql .= ",id_direzione='" . $params['direzione'] . "'";
         $sql .= ",id_servizio='" . $params['servizio'] . "'";
-        $sql .= ",id_settore='" . $params['settore'] . "'";
+        $sql .= ",id_settore='0'";
         $sql .= ",user='" . addslashes(trim($params['user'])) . "'";
         if (isset($params['passwd'])) $sql .= ",passwd=MD5('" . $params['passwd'] . "')";
         else $sql .= ",passwd=MD5('" . date("Y/m/d H:i") . "')";
         $sql .= ",livello='" . $params['livello'] . "'";
         $sql .= ",nome='" . addslashes($params['nome']) . "'";
         $sql .= ",cognome='" . addslashes($params['cognome']) . "'";
-        $sql .= ",email='" . $params['email'] . "'";
+        $sql .= ",email='" . addslashes($params['email']) . "'";
+        $sql .= ",phone='" . addslashes($params['phone']) . "'";
+        $sql .= ",image=''";
+        $sql .= ",lastlogin=''";
         $sql .= ",flags='" . $flags . "'";
         if (isset($params['disable'])) $sql .= ",disable='1'";
         else $sql .= ",disable='0'";
@@ -3137,7 +3147,12 @@ class AA_User
         //Verifica gruppi
         if(isset($params['groups']) && is_array($params['groups']))
         {
-            $params['groups']=array_intersect($this->GetAllGroups(),$params['groups']);
+            $groups=$this->GetAllGroups();
+            if(array_search(static::AA_USER_GROUP_SERVEROPERATORS,$groups) !==false)
+            {
+                $groups=array_unique(array_merge($groups,array(static::AA_USER_GROUP_ADMINS,static::AA_USER_GROUP_OPERATORS,static::AA_USER_GROUP_USERS)));
+            }
+            $params['groups']=array_intersect($groups,$params['groups']);
         }
         else
         {
@@ -6849,7 +6864,7 @@ class AA_Platform
     {
         $flags=array();
         $db=new AA_Database();
-        $query="SELECT flags FROM aa_platform_modules ";
+        $query="SELECT flags FROM aa_platform_modules WHERE enable=1";
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
