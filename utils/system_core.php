@@ -2665,23 +2665,23 @@ class AA_User
             return false;
         }
 
-        if(isset($params['ruolo']) && $params['ruolo']>0)
-        {
-            $params['groups']=array($params['ruolo']);
-        }
+        $allUserGroups=$this->GetAllGroups();
 
-        //Verifica gruppi
-        if(isset($params['groups']) && is_array($params['groups']))
-        {
-            $groups=$this->GetAllGroups();
-            if(array_search(static::AA_USER_GROUP_SERVEROPERATORS,$groups) !==false)
-            {
-                $groups=array_unique(array_merge($groups,array(static::AA_USER_GROUP_ADMINS,static::AA_USER_GROUP_OPERATORS,static::AA_USER_GROUP_USERS)));
-            }
+        if(!isset($params['ruolo'])) $params['ruolo']=static::AA_USER_GROUP_USERS;
+        if(!isset($params['groups'])) $params['groups']=array();
 
-            $params['groups']=array_intersect($groups,$params['groups']);
-        }
+        if(array_search($params['ruolo'],$allUserGroups)===false) $params['ruolo']=static::AA_USER_GROUP_USERS;
         
+        $groups=array($params['ruolo']);
+        foreach($params['groups'] as $curGroup)
+        {
+            if($curGroup > 1000 && array_search($curGroup,$allUserGroups) !== false)
+            {
+                $groups[]=$curGroup;
+            }
+        }
+        $params['groups']=$groups;
+
         if(sizeof($params['groups'])==0)
         {
             $params['groups']=array(static::AA_USER_GROUP_USERS);
@@ -3133,35 +3133,22 @@ class AA_User
             }
         }
 
-        if(isset($_REQUEST['ruolo']) && $_REQUEST['ruolo']>0)
-        {
-            if(!isset($params['groups']) || !is_array($params['groups'])) $params['groups']=$user->GetGroups();
-            
-            $groups=array($_REQUEST['ruolo']);
-            foreach($params['groups'] as $curGroup)
-            {
-                if($curGroup > 1000)
-                {
-                    $groups[]=$curGroup;
-                }
-            }
-            $params['groups']=$groups;
-        }
+        $allUserGroups=$this->GetAllGroups();
 
-        //Verifica gruppi
-        if(isset($params['groups']) && is_array($params['groups']))
+        if(!isset($params['ruolo'])) $params['ruolo']=$user->GetRuolo(true);
+        if(!isset($params['groups'])) $params['groups']=$user->GetGroups();
+
+        if(array_search($params['ruolo'],$allUserGroups)===false) $params['ruolo']=static::AA_USER_GROUP_USERS;
+        
+        $groups=array($params['ruolo']);
+        foreach($params['groups'] as $curGroup)
         {
-            $groups=$this->GetAllGroups();
-            if(array_search(static::AA_USER_GROUP_SERVEROPERATORS,$groups) !==false)
+            if($curGroup > 1000 && array_search($curGroup,$allUserGroups) !== false)
             {
-                $groups=array_unique(array_merge($groups,array(static::AA_USER_GROUP_ADMINS,static::AA_USER_GROUP_OPERATORS,static::AA_USER_GROUP_USERS)));
+                $groups[]=$curGroup;
             }
-            $params['groups']=array_intersect($groups,$params['groups']);
         }
-        else
-        {
-            $params['groups']=$user->GetGroups();
-        }
+        $params['groups']=$groups;
 
         if(sizeof($params['groups'])==0)
         {
