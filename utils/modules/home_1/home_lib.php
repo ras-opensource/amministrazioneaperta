@@ -190,20 +190,13 @@ Class AA_HomeModule extends AA_GenericModule
     {
         if(!$this->oUser->CanGestUtenti())
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione utenti.");
             return false; 
         }
 
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        $content=$this->Template_GetHomeUtentiAddNewDlg();
-        $sTaskLog.= base64_encode($content);
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetHomeUtentiAddNewDlg(),true);
         return true;
     }
 
@@ -212,29 +205,23 @@ Class AA_HomeModule extends AA_GenericModule
     {
         if(!$this->oUser->CanGestUtenti())
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitato alla gestione utenti.</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione utenti.");
             return false; 
         }
 
         $user=AA_User::LoadUser($_REQUEST['id']);
         if(!$user->IsValid())
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente specificato non è stato trovato.</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente specificato non è stato trovato.");
             return false; 
         }
 
         if(!$this->oUser->CanModifyUser($user))
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'utente specificato.</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'utente specificato.");
             return false; 
         }
 
@@ -317,12 +304,12 @@ Class AA_HomeModule extends AA_GenericModule
         if(!$this->oUser->UpdateUser($user,$params))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiornamento dell'utente.","","");
+            $task->SetError("Errore nell'aggiornamento dell'utente.");
             return false;      
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent("Utente aggiornato con successo.","","");
+        $task->SetContent("Utente aggiornato con successo.");
         
         return true;
     }
@@ -333,7 +320,7 @@ Class AA_HomeModule extends AA_GenericModule
         if(!$this->oUser->CanGestUtenti())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non è abilitato alla gestione utenti.","","");
+            $task->SetError("L'utente corrente non è abilitato alla gestione utenti.");
             return false; 
         }
 
@@ -419,12 +406,12 @@ Class AA_HomeModule extends AA_GenericModule
         if(!$this->oUser->AddNewUser($params))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiunta dell'utente.","","");
+            $task->SetError("Errore nell'aggiunta dell'utente.");
             return false;      
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent("Utente inserito con successo.","","");
+        $task->SetContent("Utente inserito con successo.");
         
         return true;
     }
@@ -1319,7 +1306,7 @@ Class AA_HomeModule extends AA_GenericModule
         if(!AA_User::SendCredentials($user->GetId(),AA_Const::AA_ENABLE_SENDMAIL))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError(AA_Log::$lastErrorLog);
+            $task->SetError(AA_Log::$lastErrorLog,"");
             return false;
         }
 
