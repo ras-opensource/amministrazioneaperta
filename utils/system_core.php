@@ -987,22 +987,35 @@ class AA_User
             if($this->nLivello==1) $ruolo=static::AA_USER_GROUP_OPERATORS;
         }
 
-        if(array_search(static::AA_USER_GROUP_SUPERUSER,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_SUPERUSER;
-
-        if(array_search(static::AA_USER_GROUP_ADMINS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_ADMINS;
-
-        if(array_search(static::AA_USER_GROUP_OPERATORS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_OPERATORS;
-
         if(array_search(static::AA_USER_GROUP_USERS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_USERS;
-
+        if(array_search(static::AA_USER_GROUP_OPERATORS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_OPERATORS;
+        if(array_search(static::AA_USER_GROUP_ADMINS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_ADMINS;
         if(array_search(static::AA_USER_GROUP_SERVEROPERATORS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_SERVEROPERATORS;
-
-
+        if(array_search(static::AA_USER_GROUP_SUPERUSER,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_SUPERUSER;
+        
         if($bNumeric) return $ruolo;
 
         $ruoli=static::GetDefaultGroups();
 
         return $ruoli[$ruolo];
+    }
+
+    public function IsServerOperator()
+    {
+        if(array_search(static::AA_USER_GROUP_SERVEROPERATORS,$this->aGroups) !==false) return true;
+        return false;
+    }
+
+    public function isAdministrator()
+    {
+        if(array_search(static::AA_USER_GROUP_ADMINS,$this->aGroups) !==false) return true;
+        return false;
+    }
+
+    public function isOperator()
+    {
+        if(array_search(static::AA_USER_GROUP_OPERATORS,$this->aGroups) !==false) return true;
+        return false;
     }
 
     static public function GetDefaultGroups()
