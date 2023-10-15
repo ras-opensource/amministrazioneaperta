@@ -999,6 +999,10 @@ class AA_User
 
         return $ruoli[$ruolo];
     }
+    public function GetRole($bNumeric=false)
+    {
+        return $this->GetRuolo($bNumeric);
+    }
 
     public function IsServerOperator()
     {
