@@ -82,6 +82,9 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("HomeUtentiSendCredenzials");
         $taskManager->RegisterTask("GetHomeUtentiAddNewDlg");
         $taskManager->RegisterTask("HomeUtentiAddNew");
+        $taskManager->RegisterTask("GetHomeUtentiTrashDlg");
+        $taskManager->RegisterTask("HomeUtentiTrash");
+        $taskManager->RegisterTask("HomeUtentiResume");
         //----------------------------------------------------------------------------------
         
         //Sezioni
@@ -177,6 +180,135 @@ Class AA_HomeModule extends AA_GenericModule
 
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         $content=$this->Template_GetHomeUtentiModifyDlg($user);
+        $sTaskLog.= base64_encode($content);
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task trash user
+    public function Task_HomeUtentiTrash($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $user=AA_User::LoadUser($_REQUEST['id']);
+        if(!$user->IsValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente specificato non è stato trovato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        if(!$this->oUser->CanModifyUser($user))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'utente specificato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $trash=true;
+        if($user->GetStatus()==AA_User::AA_USER_STATUS_DELETED) $trash=false;
+        if(!$this->oUser->DeleteUser($user,$trash))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Utente cestinato/eliminato con successo.",false);
+        return true;
+    }
+
+    //Task trash user
+    public function Task_HomeUtentiResume($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $user=AA_User::LoadUser($_REQUEST['id']);
+        if(!$user->IsValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente specificato non è stato trovato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        if(!$this->oUser->CanModifyUser($user))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'utente specificato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        if(!$this->oUser->ResumeUser($user))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Utente ripristinato con successo.",false);
+        return true;
+    }
+
+    //Task trash user dlg
+    public function Task_GetHomeUtentiTrashDlg($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $user=AA_User::LoadUser($_REQUEST['id']);
+        if(!$user->IsValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente specificato non è stato trovato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        if(!$this->oUser->CanModifyUser($user))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'utente specificato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $content=$this->Template_GetHomeUtentiTrashDlg($user);
         $sTaskLog.= base64_encode($content);
         $sTaskLog.="</content>";
         
@@ -585,6 +717,59 @@ Class AA_HomeModule extends AA_GenericModule
     }
 
 
+    //Template dlg trash utente
+    public function Template_GetHomeUtentiTrashDlg($object=null)
+    {
+        $id=$this->id."_HomeUtentiTrash_Dlg";
+        
+        $form_data=array("id"=>$object->GetId());
+        
+        $wnd=new AA_GenericFormDlg($id, "Cestina/elimina utente", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("lastlogin"=>$object->GetLastLogin(),"login"=>$object->GetUsername(),"email"=>$object->GetEmail(),"nome"=>$object->GetNome(),"cognome"=>$object->GetCognome());
+      
+        $label="cestinato";
+        if($object->GetStatus()==AA_User::AA_USER_STATUS_DELETED) $label="<b>eliminato definitivamente</b>";
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente utente verrà ".$label.", vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"login", "header"=>"Login", "width"=>120),
+              array("id"=>"email", "header"=>"Email", "width"=>230),
+              array("id"=>"nome", "header"=>"Nome", "fillspace"=>true),
+              array("id"=>"cognome", "header"=>"Cognome", "fillspace"=>true),
+              array("id"=>"lastlogin", "header"=>"Ultimo login", "width"=>120,"align"=>"center")
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("HomeUtentiTrash");
+        
+        return $wnd;
+    }
+
     //Template cruscotto content
     public function TemplateSection_Desktop()
     {
@@ -713,7 +898,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             if($_REQUEST['status']==AA_User::AA_USER_STATUS_ENABLED) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti abilitati</span>&nbsp;";
             if($_REQUEST['status']==AA_User::AA_USER_STATUS_DISABLED) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti disabilitati</span>&nbsp;";
-            if($_REQUEST['status']==AA_User::AA_USER_STATUS_DELETED) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti eliminati</span>&nbsp;";
+            if($_REQUEST['status']==AA_User::AA_USER_STATUS_DELETED) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti cestinati</span>&nbsp;";
         }
 
         if(isset($_REQUEST['ruolo']) && $_REQUEST['ruolo'] > 0)
@@ -824,19 +1009,38 @@ Class AA_HomeModule extends AA_GenericModule
             {
                 $flags=$curUser->GetFormatedFlags();
                 $status=$curUser->GetStatus();
+                $trash=true;
+                $tip_trash="Cestina";
+                $icon_trash="mdi mdi-trash-can";
+
+                if($status==AA_User::AA_USER_STATUS_DELETED)
+                {
+                    $trash=false;
+                    $tip_trash="Elimina definitivamente";
+                    $icon_trash="mdi mdi-account-remove";
+                }
+
                 if($status==AA_User::AA_USER_STATUS_ENABLED) $status="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
                 else
                 {
                     if($status==AA_User::AA_USER_STATUS_DISABLED) $status="<span class='AA_Label AA_Label_LightYellow'>Disabilitato</span>";
-                    else $status="<span class='AA_Label AA_Label_LightRed'>Eliminato</span>";
+                    else $status="<span class='AA_Label AA_Label_LightRed'>Cestinato</span>";
                 }
 
                 if($canModify)
                 {
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiModifyDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
                     $send='AA_MainApp.utils.callHandler("doTask", {task:"HomeUtentiSendCredenzials", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
-                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiDeleteDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
-                    $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Invia credenziali' onClick='".$send."'><span class='mdi mdi-email-fast'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";    
+                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiTrashDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $resume_op='AA_MainApp.utils.callHandler("doTask", {task:"HomeUtentiResume", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'");AA_MainApp.curModule.refreshCurSection();';
+                    if($trash)
+                    {
+                        $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Invia credenziali' onClick='".$send."'><span class='mdi mdi-email-fast'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='".$tip_trash."' onClick='".$trash_op."'><span class='".$icon_trash."'></span></a></div>";
+                    }
+                    else
+                    {
+                        $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Ripristina l&apos;utente' onClick='".$resume_op."'><span class='mdi mdi-account-reactivate'></span></a><a class='AA_DataTable_Ops_Button_Red' title='".$tip_trash."' onClick='".$trash_op."'><span class='".$icon_trash."'></span></a></div>";
+                    }
                 }
                 else $ops="&nbsp;";
 
@@ -963,7 +1167,7 @@ Class AA_HomeModule extends AA_GenericModule
         $options[]=array("id"=>"0","value"=>"Disabilitato");
         if($this->oUser->IsSuperUser() || $this->oUser->GetRuolo()==AA_User::AA_USER_GROUP_SERVEROPERATORS)
         {
-            $options[]=array("id"=>"-1","value"=>"Eliminato");
+            $options[]=array("id"=>"-1","value"=>"Cestinato");
         }
         $dlg->AddSelectField("status","Stato",array("bottomLabel"=>"*Filtra in base allo stato dell'utente.","options"=>$options));
 

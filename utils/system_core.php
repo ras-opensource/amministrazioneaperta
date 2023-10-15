@@ -2354,7 +2354,7 @@ class AA_User
 
         $db = new AA_Database();
 
-        $sql = "SELECT user FROM ".static::AA_DB_TABLE." where user='" . $userName . "' and status >= 0";
+        $sql = "SELECT user FROM ".static::AA_DB_TABLE." where user='" . $userName . "' ";
         if (!$db->Query($sql)) {
             AA_Log::Log(__METHOD__." - Errore nella query: " . $db->GetErrorMessage(), 100);
             return false;
@@ -2363,7 +2363,7 @@ class AA_User
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
-            $sql = "SELECT user FROM utenti where user='" . $userName . "' and eliminato = 0";
+            $sql = "SELECT user FROM utenti where user='" . $userName . "' AND eliminato=0";
             if (!$db->Query($sql)) {
                 AA_Log::Log(get_class() . "->UserNameExist($userName) - Errore nella query: " . $db->GetErrorMessage(), 100);
                 return false;
@@ -2593,6 +2593,8 @@ class AA_User
 
         //Il super utente può modificare tutto
         if ($this->IsSuperUser()) return true;
+
+        AA_Log::Log(__METHOD__." - utente: " . $idUser. " - ".$this, 100);
 
         if (!($idUser instanceof AA_User)) {
             $user = AA_User::LoadUser($idUser);
@@ -3582,7 +3584,7 @@ class AA_User
     //Elimina l'utente indicato
     public function LegacyDeleteUser($idUser)
     {
-        AA_Log::Log(__METHOD__."");
+        //AA_Log::Log(__METHOD__,100);
 
         if ($this->IsGuest()) {
             AA_Log::Log(__METHOD__." - utente corrente non valido", 100);
@@ -3625,7 +3627,7 @@ class AA_User
             return false;
         }
 
-        AA_Log::LogAction($this->GetID(), "3,9," . $user->GetID(), Database::$lastQuery); //Old stuff
+        //AA_Log::LogAction($this->GetID(), "3,9," . $user->GetID(), Database::$lastQuery); //Old stuff
 
         return true;
     }
@@ -3633,6 +3635,8 @@ class AA_User
     //Elimina l'utente indicato
     public function DeleteUser($idUser,$bOnlyTrash=true)
     {
+        //AA_Log::Log(__METHOD__, 100);
+
         if ($this->IsGuest()) {
             AA_Log::Log(__METHOD__." - utente corrente non valido", 100);
             return false;
@@ -3665,16 +3669,29 @@ class AA_User
             return false;
         }
 
+        $db = new AA_Database();
+
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
-            if(!$this->DeleteUser($user))
+            if(!$bOnlyTrash)
             {
-                return false;
+                if(!$this->LegacyDeleteUser($user))
+                {
+                    return false;
+                }    
+            }
+            else
+            {
+                $sql = "UPDATE utenti SET disable='1' where id='" . $user->GetID() . "' LIMIT 1";
+
+                if ($db->Query($sql) === false) {
+                    AA_Log::Log(__METHOD__." - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
+                    return false;
+                }
             }
         }
 
         //Elimina l'utente indicato
-        $db = new AA_Database();
         if($bOnlyTrash)
         {
             $sql = "UPDATE ".static::AA_DB_TABLE." SET status='".static::AA_USER_STATUS_DELETED."' where id='" . $user->GetID() . "' LIMIT 1";
@@ -3701,6 +3718,56 @@ class AA_User
         }
 
         $sql = "DELETE FROM ".static::AA_DB_TABLE." WHERE id='" . $user->GetID() . "' LIMIT 1";
+
+        if ($db->Query($sql) === false) {
+            AA_Log::Log(__METHOD__." - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
+            return false;
+        }
+    
+        return true;
+    }
+
+    //Ripristina l'utente indicato
+    public function ResumeUser($idUser)
+    {
+        //AA_Log::Log(__METHOD__, 100);
+
+        if ($this->IsGuest()) {
+            AA_Log::Log(__METHOD__." - utente corrente non valido", 100);
+            return false;
+        }
+
+        //Verifica se l'utente corrente può gestire gli utenti
+        if (!$this->isCurrentUser()) {
+            AA_Log::Log(__METHOD__." - utente corrente non autenticato.", 100);
+            return false;
+        }
+
+        if (!($idUser instanceof AA_User)) {
+            $user = AA_User::LoadUser($idUser);
+        } else $user = $idUser;
+
+        if (!$user->IsValid()) {
+            AA_Log::Log(__METHOD__." - Id utente non valido: $idUser o utente non valido: " . $user->GetUsername(), 100);
+            return false;
+        }
+
+        //Verifica se l'utente corrente può modificare l'utente indicato
+        if (!$this->CanModifyUser($user)) {
+            AA_Log::Log(__METHOD__." - L'utente corrente (" . $this->GetUsername() . ") non può modificare l'utente indicato: " . $user->GetUsername(), 100);
+            return false;
+        }
+
+        //Verifica che non sia l'utente corrente
+        if ($this->GetID() == $user->GetID()) {
+            AA_Log::Log(__METHOD__." - L'utente corrente (" . $this->GetUsername() . ") non può modificare lo stato di se stesso.", 100);
+            return false;
+        }
+
+        //Elimina l'utente indicato
+        $db = new AA_Database();
+        
+        $sql = "UPDATE ".static::AA_DB_TABLE." SET status='".static::AA_USER_STATUS_DISABLED."' where id='" . $user->GetID() . "' LIMIT 1";
 
         if ($db->Query($sql) === false) {
             AA_Log::Log(__METHOD__." - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
