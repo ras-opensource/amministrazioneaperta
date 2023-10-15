@@ -1492,7 +1492,7 @@ class AA_User
                         $result = $db->GetResultSet();
                         foreach($result as $curRow)
                         {
-                            if(AA_Utils::password_verify($sUserPwd,$curRow['passwd']))
+                            if(AA_Utils::password_verify($sUserPwd,$curRow['passwd']) || AA_Utils::password_verify($sUserPwd,md5($curRow['passwd'])))
                             {
                                 $rs=$curRow;
                                 break;
@@ -1522,7 +1522,7 @@ class AA_User
                     if($db->GetAffectedRows()>0)
                     {
                         $result = $db->GetResultSet();
-                        if(AA_Utils::password_verify($sUserPwd,$result[0]['passwd']))
+                        if(AA_Utils::password_verify($sUserPwd,$result[0]['passwd']) || AA_Utils::password_verify($sUserPwd,md5($result[0]['passwd'])))
                         {
                             $rs=$result[0];
                         }
@@ -2746,7 +2746,7 @@ class AA_User
     }
 
     //Migra un utente legacy sul nuovo framework
-    static public function MigrateLegacyUser($legacyUser,$legacyPwd)
+    static public function MigrateLegacyUser($legacyUser,$legacyPwd,$oldMd5Pwd="")
     {
         $user=static::GetCurrentUser();
         if(!$user->IsValid())
@@ -2802,6 +2802,10 @@ class AA_User
         $sql.=", status='".$status."'";
         
         if($legacyPwd && $legacyPwd !="") $sql.=", passwd='".AA_Utils::password_hash($legacyPwd)."'";
+        else 
+        {
+            if ($oldMd5Pwd && $oldMd5Pwd !="") $sql.=", passwd='".AA_Utils::password_hash(md5($legacyPwd))."'";
+        }
 
         {
             $groups=AA_USER::AA_USER_GROUP_USERS;
@@ -3432,6 +3436,14 @@ class AA_User
                 return false;
             }
 
+            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            {
+                if(!static::LegacyUpdateCurrentUserProfile($params,$imageFileName))
+                {
+                    return false;
+                }
+            }
+
             //verifica che la password attuale sia corretta
             $query="SELECT passwd,info from ".static::AA_DB_TABLE." WHERE id='".addslashes($user->getId())."' LIMIT 1";
             if(!$db->Query($query))
@@ -3449,10 +3461,7 @@ class AA_User
                     return false;
                 }
 
-                if(AA_Const::AA_ENABLE_LEGACY_DATA)
-                {
-                    return static::LegacyUpdateCurrentUserProfile($params,$imageFileName);
-                }
+                return true;
             }
 
             $rs=$db->GetResultSet();
@@ -3486,11 +3495,6 @@ class AA_User
         {
             AA_Log::Log(__METHOD__ . " - Errore durante l'aggiornamento dei dati.", 100);
             return false;
-        }
-
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            return static::LegacyUpdateCurrentUserProfile($params,$imageFileName);
         }
 
         return true;
