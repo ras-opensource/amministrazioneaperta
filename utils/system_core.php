@@ -1509,7 +1509,7 @@ class AA_User
                         $result = $db->GetResultSet();
                         foreach($result as $curRow)
                         {
-                            if(AA_Utils::password_verify($sUserPwd,$curRow['passwd']) || AA_Utils::password_verify($sUserPwd,md5($curRow['passwd'])))
+                            if(AA_Utils::password_verify($sUserPwd,$curRow['passwd']) || AA_Utils::password_verify(md5($sUserPwd),$curRow['passwd']))
                             {
                                 $rs=$curRow;
                                 break;
@@ -1539,7 +1539,7 @@ class AA_User
                     if($db->GetAffectedRows()>0)
                     {
                         $result = $db->GetResultSet();
-                        if(AA_Utils::password_verify($sUserPwd,$result[0]['passwd']) || AA_Utils::password_verify($sUserPwd,md5($result[0]['passwd'])))
+                        if(AA_Utils::password_verify($sUserPwd,$result[0]['passwd']) || AA_Utils::password_verify(md5($sUserPwd),$result[0]['passwd']))
                         {
                             $rs=$result[0];
                         }
@@ -1564,88 +1564,68 @@ class AA_User
 
             if (is_array($rs)) 
             {
-                //AA_Log::Log(__METHOD__." - verifica password: ".$rs["passwd"], 100);
-                if(AA_Utils::password_verify($sUserPwd,$rs['passwd']))
-                {
-                    if ($rs['status'] == AA_USER::AA_USER_STATUS_DISABLED) {
-                        AA_Log::Log(__METHOD__." - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
-                        return AA_User::Guest();
-                    }
-    
-                    if ($rs['status'] == AA_User::AA_USER_STATUS_DELETED) {
-                        AA_Log::Log(__METHOD__." - L'utente è stato disattivato permanentemente (id: " . $rs["id"] . ").", 100);
-                        return AA_User::Guest();
-                    }
-    
-                    if ($rs['status'] == AA_User::AA_USER_STATUS_ENABLED) 
-                    {
-                        $user = AA_User::LoadUser($rs['id']);
-                        $user->bCurrentUser = true;
-    
-                        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-                        {
-                            //Old stuff compatibility
-                            $_SESSION['user'] = $user->GetUsername();
-                            $_SESSION['nome'] = $user->GetNome();
-                            $_SESSION['cognome'] = $user->GetCognome();
-                            $_SESSION['email'] = $user->GetEmail();
-                            $_SESSION['user_home'] = "reserved/index.php";
-                            $_SESSION['id_user'] = $user->GetId();
-                            $_SESSION['id_utente'] = $user->GetId();
-    
-                            $struct=$user->GetStruct();
-    
-                            $_SESSION['id_assessorato'] = $struct->GetAssessorato(true);
-                            $_SESSION['tipo_struct'] = $struct->GetTipo();
-                            $_SESSION['id_direzione'] = $struct->GetDirezione(true);
-                            $_SESSION['id_servizio'] = $struct->GetServizio(true);
-                            $_SESSION['id_settore'] = 0;
-                            $_SESSION['livello'] = $user->GetLevel();
-                            $_SESSION['level'] = $user->GetLevel();
-                            $_SESSION['assessorato'] = $struct->GetAssessorato();
-                            $_SESSION['direzione'] = $struct->GetDirezione();
-                            $_SESSION['servizio'] = $struct->GetServizio();
-                            $_SESSION['settore'] = "";
-                            $_SESSION['user_flags'] = $user->GetFlags();
-                            $_SESSION['flags'] = $user->GetFlags();
-                            
-                            AA_Log::LogAction($user->GetId(), 0, "Log In"); //old stuff
-                        }
-    
-                        $concurrent=false;
-                        if($user->IsConcurrentEnabled()) $concurrent=true;
-                        $_SESSION['token'] = AA_User::GenerateToken($user->GetId(),$remember_me,$concurrent);
-    
-                        if($remember_me)
-                        {
-                            //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
-                            setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
-                        }
-    
-                        //update last login time
-                        $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = '".date("Y-m-d")."' WHERE id='".$user->GetId()."' LIMIT 1");
-                        
-                        return $user;
-                    }
-
+                if ($rs['status'] == AA_USER::AA_USER_STATUS_DISABLED) {
+                    AA_Log::Log(__METHOD__." - L'utente è disattivato (id: " . $rs["id"] . ").", 100);
                     return AA_User::Guest();
                 }
 
-                if(AA_Const::AA_ENABLE_LEGACY_DATA)
-                {
-                    AA_Log::Log(__METHOD__." - legacy login", 100);
-                    $user=AA_User::legacyUserAuth($sToken,$sUserName,md5($sUserPwd),$remember_me);
-
-                    if($user->IsValid())
-                    {
-                        AA_Log::Log(__METHOD__." - Migrazione utente legacy: ".$user->GetNome()." ".$user->GetCognome()." (".$user->GetId().")",100);
-                        static::MigrateLegacyUser($user, $sUserPwd);
-
-                        return $user;
-                    }
+                if ($rs['status'] == AA_User::AA_USER_STATUS_DELETED) {
+                    AA_Log::Log(__METHOD__." - L'utente è stato disattivato permanentemente (id: " . $rs["id"] . ").", 100);
+                    return AA_User::Guest();
                 }
 
-                AA_Log::Log(__METHOD__." credenziali errate.", 100);
+                if ($rs['status'] == AA_User::AA_USER_STATUS_ENABLED) 
+                {
+                    $user = AA_User::LoadUser($rs['id']);
+                    $user->bCurrentUser = true;
+
+                    if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                    {
+                        //Old stuff compatibility
+                        $_SESSION['user'] = $user->GetUsername();
+                        $_SESSION['nome'] = $user->GetNome();
+                        $_SESSION['cognome'] = $user->GetCognome();
+                        $_SESSION['email'] = $user->GetEmail();
+                        $_SESSION['user_home'] = "reserved/index.php";
+                        $_SESSION['id_user'] = $user->GetId();
+                        $_SESSION['id_utente'] = $user->GetId();
+
+                        $struct=$user->GetStruct();
+
+                        $_SESSION['id_assessorato'] = $struct->GetAssessorato(true);
+                        $_SESSION['tipo_struct'] = $struct->GetTipo();
+                        $_SESSION['id_direzione'] = $struct->GetDirezione(true);
+                        $_SESSION['id_servizio'] = $struct->GetServizio(true);
+                        $_SESSION['id_settore'] = 0;
+                        $_SESSION['livello'] = $user->GetLevel();
+                        $_SESSION['level'] = $user->GetLevel();
+                        $_SESSION['assessorato'] = $struct->GetAssessorato();
+                        $_SESSION['direzione'] = $struct->GetDirezione();
+                        $_SESSION['servizio'] = $struct->GetServizio();
+                        $_SESSION['settore'] = "";
+                        $_SESSION['user_flags'] = $user->GetFlags();
+                        $_SESSION['flags'] = $user->GetFlags();
+                        
+                        AA_Log::LogAction($user->GetId(), 0, "Log In"); //old stuff
+                    }
+
+                    $concurrent=false;
+                    if($user->IsConcurrentEnabled()) $concurrent=true;
+                    $_SESSION['token'] = AA_User::GenerateToken($user->GetId(),$remember_me,$concurrent);
+
+                    if($remember_me)
+                    {
+                        //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
+                        setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
+                    }
+
+                    //update last login time
+                    $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = '".date("Y-m-d")."' WHERE id='".$user->GetId()."' LIMIT 1");
+                    
+                    return $user;
+                }
+
+                AA_Log::Log(__METHOD__." - Errore nel caricamento dei dati utente.", 100);
                 return AA_User::Guest();
             }
 
@@ -2823,7 +2803,7 @@ class AA_User
         if($legacyPwd && $legacyPwd !="") $sql.=", passwd='".AA_Utils::password_hash($legacyPwd)."'";
         else 
         {
-            if ($oldMd5Pwd && $oldMd5Pwd !="") $sql.=", passwd='".AA_Utils::password_hash(md5($legacyPwd))."'";
+            if ($oldMd5Pwd && $oldMd5Pwd !="") $sql.=", passwd='".AA_Utils::password_hash($oldMd5Pwd)."'";
         }
 
         {
