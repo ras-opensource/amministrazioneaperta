@@ -1334,11 +1334,11 @@ class AA_User
         "incipit"=> '<p>Buongiorno,
         E\' stato richiesto il reset della password per l\'accesso alla piattaforma applicativa "Amministrazione Aperta", per le pubblicazioni sul sito istituzionale di cui al d.lgs.33/2013.
                        
-        url: http://sitod.regione.sardegna.it/web/amministrazione_aperta
+        url: https://sitod.regione.sardegna.it/web/amministrazione_aperta
 
         di seguito le credenziali per l\'accesso:',
         "bShowStruct"=>true,
-        "post"=>'E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.
+        "post"=>'<br/>E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.
 
         Le utenze che hanno associato l\'indirizzo email sul proprio profilo possono effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente
 
@@ -7033,14 +7033,17 @@ class AA_Platform
             $rs=$db->GetResultSet();
             foreach($rs as $curFlag)
             {
-                $moduleFlag=json_decode($curFlag['flags'],true);
-                if(is_array($moduleFlag) && sizeof($moduleFlag)>0)
+                if($curFlag !="")
                 {
-                    $flags=array_merge($moduleFlag,$flags);
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - Errore nel parsing del flag: ".$curFlag['flags'],100);
+                    $moduleFlag=json_decode($curFlag['flags'],true);
+                    if(is_array($moduleFlag) && sizeof($moduleFlag)>0)
+                    {
+                        $flags=array_merge($moduleFlag,$flags);
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nel parsing del flag: ".$curFlag['flags'],100);
+                    }    
                 }
             }
         }

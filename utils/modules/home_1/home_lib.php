@@ -1515,7 +1515,8 @@ Class AA_HomeModule extends AA_GenericModule
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent("Credenziali reimpostate con successo.");
+        if(AA_Const::AA_ENABLE_SENDMAIL) $task->SetContent("Credenziali reimpostate e inviate con successo.");
+        else $task->SetContent("Credenziali reimpostate con successo.");
         return true;
     }
 
