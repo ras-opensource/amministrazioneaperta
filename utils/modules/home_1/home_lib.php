@@ -40,6 +40,9 @@ Class AA_HomeModule extends AA_GenericModule
 
     const AA_UI_SECTION_GESTUTENTI="Gestutenti_Content_Box";
 
+    const AA_UI_WND_IMPORT_UTENTI_LEGACY="AA_HomeUtentiLegacyImport_Dlg";
+    const AA_UI_TABLE_IMPORT_UTENTI_LEGACY="DataTable";
+
     const AA_UI_SECTION_GESTUTENTI_ICON="mdi mdi-account-edit";
     //------------------------------
 
@@ -85,6 +88,14 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("GetHomeUtentiTrashDlg");
         $taskManager->RegisterTask("HomeUtentiTrash");
         $taskManager->RegisterTask("HomeUtentiResume");
+        
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $taskManager->RegisterTask("GetHomeUtentiLegacyImportDlg");
+            $taskManager->RegisterTask("HomeUtentiImport");
+        }
+
+        $taskManager->RegisterTask("GetHomeUtentiModifyDlg");
         //----------------------------------------------------------------------------------
         
         //Sezioni
@@ -234,6 +245,60 @@ Class AA_HomeModule extends AA_GenericModule
     }
 
     //Task trash user
+    public function Task_HomeUtentiImport($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $user=AA_User::LegacyLoadUser($_REQUEST['id']);
+        if(!$user->IsValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente specificato non è stato trovato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        if(!$this->oUser->CanModifyUser($user))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'utente specificato.</error>";
+            $task->SetLog($sTaskLog);
+            return false; 
+        }
+
+        $db = new AA_Database();
+        if(!$db->Query("SELECT passwd FROM utenti WHERE id='".$user->GetId()."'"))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore generico di accesso al db.");
+            return false;
+        }
+
+        $rs=$db->GetResultSet();
+
+        if(!AA_User::MigrateLegacyUser($user,"",$rs[0]['passwd']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Utente migrato con successo.",false);
+        return true;
+    }
+
+    //Task trash user
     public function Task_HomeUtentiResume($task)
     {
         if(!$this->oUser->CanGestUtenti())
@@ -329,6 +394,21 @@ Class AA_HomeModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetHomeUtentiAddNewDlg(),true);
+        return true;
+    }
+
+    //Task import legacy user dlg
+    public function Task_GetHomeUtentiLegacyImportDlg($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione utenti.");
+            return false; 
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetHomeUtentiLegacyImportDlg(),true);
         return true;
     }
 
@@ -770,6 +850,108 @@ Class AA_HomeModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg trash utente
+    public function Template_GetHomeUtentiLegacyImportDlg()
+    {
+        $id=static::AA_UI_WND_IMPORT_UTENTI_LEGACY;
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Importa utente legacy", $this->id);
+        
+        $wnd->SetWidth($_REQUEST['vw']);
+        $wnd->SetHeight($_REQUEST['vh']);
+        
+        $wnd->AddView($this->Template_DatatableUtentiLegacy($id));
+        
+        return $wnd;
+    }
+
+    //Template data tabel utenti legacy
+    public function Template_DatatableUtentiLegacy($id="")
+    {
+        $columns=array(
+            array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"selectFilter")),"width"=>100, "sort"=>"text","css"=>array("text-align"=>"left")),
+            array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"user","header"=>array("<div style='text-align: center'>User</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
+            array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Nome e cognome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"flags","header"=>array("<div style='text-align: center'>Abilitazioni</div>",array("content"=>"textFilter")), "fillspace"=>true,"css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"struttura","header"=>array("<div style='text-align: center'>Struttura</div>"), "width"=>90,"css"=>array("text-align"=>"center")),
+            array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>120, "css"=>array("text-align"=>"center"))
+        );
+        
+        $utenti=AA_User::LegacySearch($_REQUEST,$this->oUser);
+        $data=array();
+        if(sizeof($utenti) > 0)
+        {
+            foreach($utenti as $curUser)
+            {
+                $flags=$curUser->GetFormatedFlags();
+                
+                if(!$curUser->IsDisabled()) $status="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+                else
+                {
+                    $status="<span class='AA_Label AA_Label_LightYellow'>Disabilitato</span>";
+                }
+
+                {
+                    $import_op='AA_MainApp.utils.callHandler("ImportLegacyUser", {task:"HomeUtentiImport",refresh: 1,refresh_obj_id:"'.$id."_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY.'",params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'");';
+                    $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Importa utente' onClick='".$import_op."'><span class='mdi mdi-database-import'></span></a><span>&nbsp;</span></div>";
+                }
+
+                if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                {
+                    $struct=$curUser->GetStruct();
+                    $id_assessorato=$struct->GetAssessorato(true);
+                    $id_direzione=$struct->GetDirezione(true);
+                    $id_servizio=$struct->GetServizio(true);
+
+                    $struttura=$struct->GetAssessorato();
+                    if($id_direzione>0) $struttura.="<br>".$struct->GetDirezione();
+                    if($id_servizio>0)$struttura.="<br>".$struct->GetServizio();
+                    
+                    $struct_view='<a href="#" onClick=\'let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($struttura).'"));AA_MainApp.ui.modalBox(note,"Struttura")\'><span class="mdi mdi-eye"></span></a>';
+                    $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"stato"=>$status,"lastLogin"=>$curUser->GetLastLogin(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags,
+                        "id_assessorato"=>$id_assessorato,
+                        "id_direzione"=>$id_direzione,
+                        "id_servizio"=>$id_servizio,
+                        "struttura"=>$struct_view
+                    );
+                }
+                else $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"lastLogin"=>$curUser->GetLastLogin(),"stato"=>$status,"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags);
+            }
+            $table=new AA_JSON_Template_Generic($id."_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY, array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+        }
+        else
+        {
+            $tabel=new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti utenti legacy.</span></div>"));
+        }
+
+        return $table;
+    }
+
+    //Task object content (da specializzare)
+    public function Task_GetObjectContent($task)
+    {
+        if($_REQUEST['object']==static::AA_UI_WND_IMPORT_UTENTI_LEGACY."_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY)
+        {
+            $content = array("id" => static::AA_UI_WND_IMPORT_UTENTI_LEGACY."_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY, "content" => $this->Template_DatatableUtentiLegacy(static::AA_UI_WND_IMPORT_UTENTI_LEGACY)->toArray());
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent(json_encode($content),true);
+            return true;
+        }
+
+        return $this->Task_GetGenericObjectContent($task, $_REQUEST);
+    }
+
     //Template cruscotto content
     public function TemplateSection_Desktop()
     {
@@ -988,13 +1170,6 @@ Class AA_HomeModule extends AA_GenericModule
             array("id"=>"flags","header"=>array("<div style='text-align: center'>Abilitazioni</div>",array("content"=>"textFilter")), "fillspace"=>true,"css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"struttura","header"=>array("<div style='text-align: center'>Struttura</div>"), "width"=>90,"css"=>array("text-align"=>"center"))
         );
-
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            //$columns[]=array("id"=>"assessorato","header"=>array("<div style='text-align: center'>Assessorato</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            //$columns[]=array("id"=>"direzione","header"=>array("<div style='text-align: center'>Direzione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            //$columns[]=array("id"=>"servizio","header"=>array("<div style='text-align: center'>Servizio</div>",array("content"=>"selectFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
-        }
 
         if($canModify)
         {

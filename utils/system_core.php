@@ -2468,6 +2468,115 @@ class AA_User
         return array();
     }
 
+    //Ricerca utenti
+    static public function LegacySearch($params=array(),$user=null,$bOnlyLegacy=true)
+    {
+        if(!($user instanceof AA_User))
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if(!$user->CanGestUtenti())
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non è abilitato alla gestione utenti.",100);
+            return array();
+        }
+
+        $query="SELECT utenti.id as legacyId, ".static::AA_DB_TABLE.".id as nuovoId from utenti ";
+        
+        $query.=" LEFt JOIN ".static::AA_DB_TABLE." on utenti.id=".static::AA_DB_TABLE.".id WHERE utenti.id <> '".$user->GetId()."' AND utenti.eliminato=0";
+
+        //username
+        if(isset($params['user']) && $params['user']!="")
+        {
+            $query.=" AND utenti.user like '%".addslashes($params['user'])."%'";
+        }
+
+        //email
+        if(isset($params['email']) && $params['email']!="")
+        {
+            $query.=" AND utenti.email like '%".addslashes($params['email'])."%'";
+        }
+
+        if(!$user->IsSuperUser()) $query.=" AND eliminato = 0 ";
+
+        $struct=$user->GetStruct();
+        if($struct->GetAssessorato(true)>0)
+        {
+            $query.=" AND utenti.id_assessorato='".$struct->GetAssessorato(true)."'";
+        }
+        else
+        {
+            if($params['id_assessorato']>0)
+            {
+                $query.=" AND utenti.id_assessorato='".$params['id_assessorato']."'";
+            }
+        }
+
+        if($struct->GetDirezione(true)>0)
+        {
+            $query.=" AND utenti.id_direzione='".$struct->GetDirezione(true)."'";
+        }
+        else
+        {
+            if($params['id_direzione']>0)
+            {
+                $query.=" AND utenti.id_direzione='".$params['id_direzione']."'";
+            }
+        }
+
+        if($struct->GetServizio(true)>0)
+        {
+            $query.=" AND utenti.id_servizio='".$struct->GetServizio(true)."'";
+        }
+        else
+        {
+            if($params['id_servizio']>0)
+            {
+                $query.=" AND utenti.id_servizio='".$params['id_servizio']."'";
+            }
+        }
+
+        $db=new AA_Database();
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage()." - ".$query,100);
+            return array();
+        }
+
+        //Limita la ricerca ai primi 500
+        //$query.=" LIMIT 500";
+
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
+
+        $rs=$db->GetResultSet();
+        if(sizeof($rs)>0)
+        {
+            $result=array();
+            foreach($rs as $curRow)
+            {
+                if($bOnlyLegacy)
+                {
+                    if($curRow['nuovoId'] == "")
+                    {
+                        $user=AA_User::LegacyLoadUser($curRow['legacyId']);
+                        if($user->IsValid()) $result[]=$user;        
+                    }
+                }
+                else
+                {
+                    $user=AA_User::LegacyLoadUser($curRow['legacyId']);
+                    if($user->IsValid()) $result[]=$user;
+                }
+            }
+
+            return $result;
+        }
+
+        return array();
+    }
+
     //Verifica se l'utente corrente può gestire gli utenti
     public function CanGestUtenti()
     {
@@ -2803,7 +2912,11 @@ class AA_User
         if($legacyPwd && $legacyPwd !="") $sql.=", passwd='".AA_Utils::password_hash($legacyPwd)."'";
         else 
         {
-            if ($oldMd5Pwd && $oldMd5Pwd !="") $sql.=", passwd='".AA_Utils::password_hash($oldMd5Pwd)."'";
+            if ($oldMd5Pwd && $oldMd5Pwd !="") 
+            {
+                AA_Log::Log(__METHOD__." - legacyPwd: ".$oldMd5Pwd,100);
+                $sql.=", passwd='".AA_Utils::password_hash($oldMd5Pwd)."'";
+            }
         }
 
         {

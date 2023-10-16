@@ -109,7 +109,11 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 }
                 if (AA_MainApp.utils.isDefined(params.wnd_id)) $$(params.wnd_id).close();
                 if (AA_MainApp.utils.isDefined(params.refresh)) {
-                    if (AA_MainApp.utils.isDefined(params.refresh_obj_id)) this.refreshUiObject(params.refresh_obj_id, true);
+                    if (AA_MainApp.utils.isDefined(params.refresh_obj_id)) 
+                    {
+                        console.log("doTask - Refresh ui object: "+params.refresh_obj_id);
+                        this.refreshUiObject(params.refresh_obj_id, true);
+                    }
                     else this.refreshCurSection();
                 }
                 return true;
@@ -385,6 +389,15 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             module.setRuntimeValue("datatableItemStatus", item.config.id, status);
                         }
                     }
+                    else
+                    {
+                        if (obj.config.view=="datatable") 
+                        {
+                            let status = obj.getState();
+                            //console.log(module.name + "::refreshUiObjectDefault - saved status (" + obj.config.id + "): ", status);
+                            module.setRuntimeValue("datatableItemStatus", obj.config.id, status);                        
+                        }    
+                    }
                 }
 
                 if (bRefreshContent || !$$(idObj).config.initialized) {
@@ -582,6 +595,17 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                 }
                             }
                         }
+                        else
+                        {
+                            if (obj.config.view=="datatable") 
+                            {
+                                let status = module.getRuntimeValue("datatableItemStatus", obj.config.id);
+                                if (AA_MainApp.utils.isDefined(status)) {
+                                    //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status della tabella (" + obj.config.id + ")", status);
+                                    obj.setState(status);
+                                }                      
+                            }    
+                        }
 
                         obj.define("initialized", true);
 
@@ -601,7 +625,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
     this.refreshUiObject = this.refreshUiObjectDefault; //funzione di refresh di un oggetto dell'interfaccia
 
     this.refreshCurSection = async function() {
-        console.log("refreshCurSection", this, arguments);
+        //console.log("refreshCurSection", this, arguments);
         await this.refreshSectionUi(true);
     };
 

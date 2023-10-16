@@ -33,5 +33,29 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
     }
 };
 
+//Handler import legacy user
+<?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ImportLegacyUser = async function() {
+    try 
+    {
+        console.log("eventHandlers.defaultHandlers.ImportLegacyUser", this, arguments);
+        if (arguments[0].params && arguments[0].task)
+        {
+            let import_user = await this.doTask(arguments['0']);
+            if(import_user)
+            {
+                //console.log("eventHandlers.defaultHandlers.ImportLegacyUser - refresh");
+                this.refreshCurSection();
+            }
+            else
+            {
+                console.error(this.name + "eventHandlers.defaultHandlers.ImportLegacyUser - errore nell'iportazione dell'utente.", arguments[0].params.id);
+                return false;
+            }
+        }   
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.ImportLegacyUser", msg, this);
+    }
+};
+
 AA_MainApp.registerModule(<?php echo AA_HomeModule::AA_ID_MODULE?>);
 
