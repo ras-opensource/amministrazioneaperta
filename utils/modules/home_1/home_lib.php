@@ -92,6 +92,7 @@ Class AA_HomeModule extends AA_GenericModule
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
             $taskManager->RegisterTask("GetHomeUtentiLegacyImportDlg");
+            $taskManager->RegisterTask("GetHomeUtentiLegacyFilterDlg");
             $taskManager->RegisterTask("HomeUtentiImport");
         }
 
@@ -158,6 +159,19 @@ Class AA_HomeModule extends AA_GenericModule
         return true;
     }
 
+     //Task filter dlg
+     public function Task_GetHomeUtentiLegacyFilterDlg($task)
+     {
+         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+         $content=$this->TemplateHomeUtentiLegacyFilterDlg($_REQUEST);
+         $sTaskLog.= base64_encode($content);
+         $sTaskLog.="</content>";
+         
+         $task->SetLog($sTaskLog);
+         
+         return true;
+     }
+
     //Task modify user dlg
     public function Task_GetHomeUtentiModifyDlg($task)
     {
@@ -218,7 +232,7 @@ Class AA_HomeModule extends AA_GenericModule
             $sTaskLog.= "{}";
             $sTaskLog.="</content><error id='error'>L'utente specificato non è stato trovato.</error>";
             $task->SetLog($sTaskLog);
-            return false; 
+            return false;
         }
 
         if(!$this->oUser->CanModifyUser($user))
@@ -227,7 +241,7 @@ Class AA_HomeModule extends AA_GenericModule
             $sTaskLog.= "{}";
             $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'utente specificato.</error>";
             $task->SetLog($sTaskLog);
-            return false; 
+            return false;
         }
 
         $trash=true;
@@ -868,6 +882,66 @@ Class AA_HomeModule extends AA_GenericModule
     //Template data tabel utenti legacy
     public function Template_DatatableUtentiLegacy($id="")
     {
+        $id.="_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY;
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        $filter="";
+        
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if(isset($_REQUEST['id_assessorato']) && $_REQUEST['id_assessorato']>0) $filter="<span class='AA_Label AA_Label_LightOrange'>".$_REQUEST['struct_desc']."</span>&nbsp;";
+            if(isset($_REQUEST['id_direzione']) && $_REQUEST['id_direzione']>0) $filter="<span class='AA_Label AA_Label_LightOrange'>".$_REQUEST['struct_desc']."</span>&nbsp;";
+            if(isset($_REQUEST['id_servizio']) && $_REQUEST['id_servizio']>0) $filter="<span class='AA_Label AA_Label_LightOrange'>".$_REQUEST['struct_desc']."</span>&nbsp;";
+        }
+
+        if(isset($_REQUEST['status']) && $_REQUEST['status'] > -1)
+        {
+            if($_REQUEST['status']==1) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti abilitati</span>&nbsp;";
+            if($_REQUEST['status']==0) $filter.="<span class='AA_Label AA_Label_LightOrange'>utenti disabilitati</span>&nbsp;";
+        }
+
+        if(isset($_REQUEST['ruolo']) && $_REQUEST['ruolo'] > -1)
+        {
+            if($_REQUEST['ruolo']==0) $filter.="<span class='AA_Label AA_Label_LightOrange'>solo amministratori</span>&nbsp;";
+            if($_REQUEST['ruolo']==1) $filter.="<span class='AA_Label AA_Label_LightOrange'>solo operatori</span>&nbsp;";
+        }
+
+        //filtro username
+        if(isset($_REQUEST['user']) && $_REQUEST['user'] !="")
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>username contiene: ".$_REQUEST['user']."</span>&nbsp;";
+        }
+
+        //filtro email
+        if(isset($_REQUEST['email']) && $_REQUEST['email'] !="")
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>email contiene: ".$_REQUEST['email']."</span>&nbsp;";
+        }
+
+        if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
+        
+        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //filtro
+        $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-filter-cog",
+             "label"=>"Filtra",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Opzioni di filtraggio",
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeUtentiLegacyFilterDlg\",postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+         ));
+         $toolbar->AddElement($modify_btn);
+        
+        $layout->addRow($toolbar);
+
         $columns=array(
             array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"selectFilter")),"width"=>100, "sort"=>"text","css"=>array("text-align"=>"left")),
             array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
@@ -895,7 +969,7 @@ Class AA_HomeModule extends AA_GenericModule
                 }
 
                 {
-                    $import_op='AA_MainApp.utils.callHandler("ImportLegacyUser", {task:"HomeUtentiImport",refresh: 1,refresh_obj_id:"'.$id."_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY.'",params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'");';
+                    $import_op='AA_MainApp.utils.callHandler("ImportLegacyUser", {task:"HomeUtentiImport",refresh: 1,refresh_obj_id:"'.$id.'",params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'");';
                     $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Importa utente' onClick='".$import_op."'><span class='mdi mdi-database-import'></span></a><span>&nbsp;</span></div>";
                 }
 
@@ -920,7 +994,7 @@ Class AA_HomeModule extends AA_GenericModule
                 }
                 else $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"lastLogin"=>$curUser->GetLastLogin(),"stato"=>$status,"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetNome()." ".$curUser->GetCognome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags);
             }
-            $table=new AA_JSON_Template_Generic($id."_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY, array(
+            $table=new AA_JSON_Template_Generic($id."_View", array(
                 "view"=>"datatable",
                 "scrollX"=>false,
                 "select"=>false,
@@ -932,10 +1006,11 @@ Class AA_HomeModule extends AA_GenericModule
         }
         else
         {
-            $tabel=new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti utenti legacy.</span></div>"));
+            $table=new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti utenti legacy.</span></div>"));
         }
 
-        return $table;
+        $layout->AddRow($table);
+        return $layout;
     }
 
     //Task object content (da specializzare)
@@ -1135,7 +1210,7 @@ Class AA_HomeModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Importa utenti legacy",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeUtentiLegacyImportDlg\"},'".$this->id."')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeUtentiLegacyImportDlg\"},'".$this->id."');$$('".$id."_ImportLegacy_btn').disable();setTimeout(function(){ $$('".$id."_ImportLegacy_btn').enable();},5000);"
             ));
             $toolbar->AddElement($modify_btn);
         }
@@ -1352,6 +1427,72 @@ Class AA_HomeModule extends AA_GenericModule
         return $dlg->GetObject();
     }
 
+    //Template filtro di ricerca utenti
+    public function TemplateHomeUtentiLegacyFilterDlg()
+    {
+        //Valori runtime
+        $formData=array("status"=>$_REQUEST['status'],"ruolo"=>$_REQUEST['ruolo'],"user"=>$_REQUEST['user'],"email"=>$_REQUEST['email']);
+        if(AA_const::AA_ENABLE_LEGACY_DATA)
+        {
+            $formData['id_assessorato']=$_REQUEST['id_assessorato'];
+            $formData['id_direzione']=$_REQUEST['id_direzione'];
+            $formData['id_servizio']=$_REQUEST['id_servizio'];
+            $formData['struct_desc']=$_REQUEST['struct_desc'];
+            $formData['id_struct_tree_select']=$_REQUEST['id_struct_tree_select'];
+            if($formData['id_struct_tree_select'] == "")
+            {
+                if($formData['id_assessorato']>0) $form_data['id_struct_tree_select']=$formData['id_assessorato'];
+                if($formData['id_direzione']>0) $form_data['id_struct_tree_select'].=".".$formData['id_direzione'];
+                if($formData['id_servizio']>0) $form_data['id_struct_tree_select'].=".".$formData['id_servizio'];
+            }
+
+            if($_REQUEST['struct_desc']=="") $formData['struct_desc']="Qualunque";
+            if($_REQUEST['id_assessorato']=="") $formData['id_assessorato']=0;
+            if($_REQUEST['id_direzione']=="") $formData['id_direzione']=0;
+            if($_REQUEST['id_servizio']=="") $formData['id_servizio']=0;
+        }
+
+        if(!isset($_REQUEST['ruolo'])) $formData['ruolo']=-1;
+        if(!isset($_REQUEST['status'])) $formData['status']=-1;
+                
+        //Valori reset
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","status"=>-1,"ruolo"=>-1,"email"=>"","user"=>"");
+        
+        //Azioni da eseguire dopo l'applicazione del filtro
+        $applyActions="AA_MainApp.curModule.refreshUiObject('".static::AA_UI_WND_IMPORT_UTENTI_LEGACY."_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY."',true)";
+        
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_UtentiLegacy_Filter", "Parametri di filtraggio",$this->GetId(),$formData,$resetData,$applyActions,static::AA_UI_WND_IMPORT_UTENTI_LEGACY."_".static::AA_UI_TABLE_IMPORT_UTENTI_LEGACY);
+        
+        $dlg->SetHeight(480);
+        
+        //nome utente
+        $dlg->AddTextField("user","Login utente",array("bottomLabel"=>"*Filtra in base al login utente.", "placeholder"=>"..."));
+
+        //email
+        $dlg->AddTextField("email","Email",array("bottomLabel"=>"*Filtra in base alla email.", "placeholder"=>"..."));
+
+        //Struttura
+        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura di incardinamento."));
+        
+        //Ruolo
+        $options=array(array("id"=>"-1","value"=>"Qualunque"));
+        $options[]=array("id"=>"0","value"=>"Amministratore");
+        $options[]=array("id"=>"1","value"=>"Operatore");
+
+        $dlg->AddSelectField("ruolo","Ruolo",array("bottomLabel"=>"*Filtra in base al ruolo dell'utente.","options"=>$options));
+        
+        //stato utente
+        $options=array(array("id"=>"-1","value"=>"Qualunque"));
+        $options[]=array("id"=>"1","value"=>"Abilitato");
+        $options[]=array("id"=>"0","value"=>"Disabilitato");
+        $dlg->AddSelectField("status","Stato",array("bottomLabel"=>"*Filtra in base allo stato dell'utente.","options"=>$options));
+
+        $dlg->SetApplyButtonName("Filtra");
+        $dlg->EnableApplyHotkey();
+
+        return $dlg->GetObject();
+    }
+
     //Template dlg modify user
     public function Template_GetHomeUtentiModifyDlg($object=null)
     {
@@ -1510,7 +1651,7 @@ Class AA_HomeModule extends AA_GenericModule
     {
         $id=static::AA_UI_PREFIX."_GetHomeUtentiAddNewDlg";
 
-        $form_data['ruolo']=AA_User::AA_USER_GROUP_USERS;
+        $form_data['ruolo']=AA_User::AA_USER_GROUP_OPERATORS;
         $form_data['status']=AA_User::AA_USER_STATUS_ENABLED;
         
         if(AA_Const::AA_ENABLE_LEGACY_DATA)

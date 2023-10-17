@@ -2498,7 +2498,7 @@ class AA_User
             $query.=" AND utenti.email like '%".addslashes($params['email'])."%'";
         }
 
-        if(!$user->IsSuperUser()) $query.=" AND eliminato = 0 ";
+        $query.=" AND eliminato = 0 ";
 
         $struct=$user->GetStruct();
         if($struct->GetAssessorato(true)>0)
@@ -2535,6 +2535,20 @@ class AA_User
             {
                 $query.=" AND utenti.id_servizio='".$params['id_servizio']."'";
             }
+        }
+
+        //ruolo
+        if(isset($params['ruolo']))
+        {
+            if($params['ruolo']==0) $query.=" AND utenti.livello='0'";
+            if($params['ruolo']==1) $query.=" AND utenti.livello='1'";
+        }
+
+        //stato
+        if(isset($params['status']))
+        {
+            if($params['status']==0) $query.=" AND utenti.disable='1'";
+            if($params['status']==1) $query.=" AND utenti.disable='0'";
         }
 
         $db=new AA_Database();
@@ -4022,6 +4036,12 @@ class AA_User
                     if (!SendMail(array($user->GetEmail()), array(), $oggetto, nl2br($corpo) . $firma, array(), 1)) {
                         AA_Log::Log(__METHOD__."- Errore nell'invio della email a: " . $user->GetEmail(), 100);
                         return false;
+                    }
+
+                    //invio notifica a se stesso
+                    if(!SendMail(array("amministrazioneaperta@regione.sardegna.it"),array(),"Notifica reinvio creenziali utente: ". $user->GetUserName()." - email: ".$user->GetEmail(),"Reinvio credenziali all'utente:<br>login: ".$user->GetUsername()."<br>email: ".$user->GetEmail()."<br>Data: ".date("Y-m-d"),$firma,1))
+                    {
+                        AA_Log::Log(__METHOD__."- Errore nell'invio notifica", 100);
                     }
                 }
                 else
