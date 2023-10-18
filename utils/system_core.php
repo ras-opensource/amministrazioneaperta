@@ -3228,13 +3228,18 @@ class AA_User
             $params['email']=$user->GetEmail();
         }
 
-        //Stato utente
         $status=static::AA_USER_STATUS_DISABLED;
         if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_ENABLED) $status=static::AA_USER_STATUS_ENABLED;
         if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_DELETED) $status=static::AA_USER_STATUS_DELETED;
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
+            if(!isset($params['status']))
+            {
+                if(isset($params['disable']) && $params['disable']==1) $status=static::AA_USER_STATUS_DISABLED;
+                else $status=static::AA_USER_STATUS_ENABLED;
+            }
+
             if($status==static::AA_USER_STATUS_DISABLED) $params['disable']=1;
             if($status==static::AA_USER_STATUS_DELETED) $params['eliminato']=1;
             if(isset($params['disable']) && $params['disable']>0) $status=static::AA_USER_STATUS_DISABLED;
@@ -3257,6 +3262,12 @@ class AA_User
             {
                 return false;
             }
+        }
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if(isset($params['livello']) && $params['livello']==1) $params['ruolo']=static::AA_USER_GROUP_OPERATORS;
+            if(isset($params['livello']) && $params['livello']==0) $params['ruolo']=static::AA_USER_GROUP_ADMINS;
         }
 
         $allUserGroups=$this->GetAllGroups();
@@ -3282,6 +3293,11 @@ class AA_User
             $params['groups']=array(static::AA_USER_GROUP_USERS);
         }
 
+        if(!isset($params['flags']))
+        {
+            $params['flags']=$user->GetFlags(false,false);
+        }
+
         $info=json_encode(array(
             "nome"=>addslashes(trim($params['nome'])),
             "cognome"=>addslashes(trim($params['cognome'])),
@@ -3300,14 +3316,6 @@ class AA_User
 
         $groups=static::AA_USER_GROUP_USERS;
         if (isset($params['groups']) && is_array($params['groups'])) $groups=addslashes(implode(",",$params['groups']));
-        else 
-        {
-            if(AA_Const::AA_ENABLE_LEGACY_DATA)
-            {
-                if($params['livello']==1) $groups=static::AA_USER_GROUP_OPERATORS;
-                if($params['livello']==0) $groups=static::AA_USER_GROUP_ADMINS;
-            }
-        }
         $sql.=", groups='".$groups."'";
 
         $sql.=" WHERE id='".$user->GetId()."' LIMIT 1";
@@ -3501,7 +3509,7 @@ class AA_User
             "flags"=>$flags
         ));
 
-        if (isset($params['passwd']) && $params['passwd'] !="") $legacy_data['pwd']=md5($params['passwd']);
+        //if (isset($params['passwd']) && $params['passwd'] !="") $legacy_data['pwd']=md5($params['passwd']);
 
         //Aggiorna la nuova tabella
         $db->Query("UPDATE ".static::AA_DB_TABLE." SET legacy_data='".addslashes($legacy_data)."' WHERE id='".$user->GetId()."' LIMIT 1");
