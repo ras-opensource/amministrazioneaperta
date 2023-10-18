@@ -2789,12 +2789,35 @@ class AA_User
 
         $allUserGroups=$this->GetAllGroups();
 
-        if(!isset($params['ruolo'])) $params['ruolo']=static::AA_USER_GROUP_USERS;
-        if(!isset($params['groups'])) $params['groups']=array();
+        //------------- Ruolo -----------------
+        if(!isset($params['ruolo'])) 
+        {
+            $ruolo=static::AA_USER_GROUP_OPERATORS;
+            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            {
+                if(isset($params['livello']) && $params['livello']==1) $ruolo=static::AA_USER_GROUP_OPERATORS;
+                if(isset($params['livello']) && $params['livello']==0) $ruolo=static::AA_USER_GROUP_ADMINS;    
+            }
+        }
+        else
+        {
+            $ruolo=$params['ruolo'];
+        }
 
-        if(array_search($params['ruolo'],$allUserGroups)===false) $params['ruolo']=static::AA_USER_GROUP_USERS;
+        if(array_search($ruolo,$allUserGroups)===false)
+        {
+            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            {
+                $params['livello']==2;
+            }   
+            $ruolo=static::AA_USER_GROUP_USERS;
+        } 
+        //-------------------------------------
+
+        //--------------- Gruppi --------------
+        if(!isset($params['groups'])) $params['groups']=array();
         
-        $groups=array($params['ruolo']);
+        $groups=array($ruolo);
         foreach($params['groups'] as $curGroup)
         {
             if($curGroup > 1000 && array_search($curGroup,$allUserGroups) !== false)
@@ -2802,34 +2825,36 @@ class AA_User
                 $groups[]=$curGroup;
             }
         }
-        $params['groups']=$groups;
 
-        if(sizeof($params['groups'])==0)
+        if(sizeof($groups)==0)
         {
-            $params['groups']=array(static::AA_USER_GROUP_USERS);
+            //default group (utenti)
+            $groups=array(static::AA_USER_GROUP_USERS);
         }
+        //-------------------------------------
+
+        //--------------- Status --------------
+        $status=static::AA_USER_STATUS_DISABLED;
+        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_ENABLED) $status=static::AA_USER_STATUS_ENABLED;
+        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_DELETED) $status=static::AA_USER_STATUS_DELETED;
+        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_DISABLED) $status=static::AA_USER_STATUS_DISABLED;
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
-            $params['livello']=2;
-            if(array_search(static::AA_USER_GROUP_ADMINS,$params['groups']) !==false) $params['livello']=0;
-            if(array_search(static::AA_USER_GROUP_OPERATORS,$params['groups']) !==false) $params['livello']=1;
-        }
-
-        $db = new AA_Database();
-
-        //Stato utente
-        if(isset($params['status'])) $status=$params['status'];
-        else $status=static::AA_USER_STATUS_DISABLED;
-
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            if(isset($params['disable']) && $params['disable']>0 || $status==static::AA_USER_STATUS_DISABLED)
+            if(isset($params['status']))
             {
-                $status=static::AA_USER_STATUS_DISABLED;
-                $params['disable']=1;
+                if($status==static::AA_USER_STATUS_DISABLED) $params['disable']=1;
+                if($status==static::AA_USER_STATUS_DELETED) $params['eliminato']=1;
+            }
+            else
+            {   $status=static::AA_USER_STATUS_ENABLED;
+                if(isset($params['disable']) && $params['disable'] > 0) $status=static::AA_USER_STATUS_DISABLED;
+                if(isset($params['eliminato']) && $params['eliminato'] > 0) $status=static::AA_USER_STATUS_DELETED;
             }
         }
+        //--------------------------------------
+
+        $db = new AA_Database();
 
         //new stuff
         $info=json_encode(array(
@@ -2848,9 +2873,8 @@ class AA_User
         $sql.=", status='".$status."'";
         if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".AA_Utils::password_hash($params['passwd'])."'";
         else $sql.=", passwd='".AA_Utils::password_hash(uniqid(date("Y-m-d")))."'";
-        if (isset($params['groups']) && is_array($params['groups'])) $sql.=", groups='".implode(",",$params['groups'])."'";
-        else $sql.=", groups='4'";
-
+        $sql.=", groups='".implode(",",$groups)."'";
+        
         if (!$db->Query($sql)) 
         {
             AA_Log::Log(__METHOD__ . " - new stuff - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
@@ -3228,24 +3252,6 @@ class AA_User
             $params['email']=$user->GetEmail();
         }
 
-        $status=static::AA_USER_STATUS_DISABLED;
-        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_ENABLED) $status=static::AA_USER_STATUS_ENABLED;
-        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_DELETED) $status=static::AA_USER_STATUS_DELETED;
-
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            if(!isset($params['status']))
-            {
-                if(isset($params['disable']) && $params['disable']==1) $status=static::AA_USER_STATUS_DISABLED;
-                else $status=static::AA_USER_STATUS_ENABLED;
-            }
-
-            if($status==static::AA_USER_STATUS_DISABLED) $params['disable']=1;
-            if($status==static::AA_USER_STATUS_DELETED) $params['eliminato']=1;
-            if(isset($params['disable']) && $params['disable']>0) $status=static::AA_USER_STATUS_DISABLED;
-            if(isset($params['eliminato']) && $params['eliminato']>0) $status=static::AA_USER_STATUS_DELETED;    
-        }
-
         if(!isset($params['nome']) || $params['nome'] == "")
         {
             $params['nome']=$user->GetNome();
@@ -3256,28 +3262,37 @@ class AA_User
             $params['cognome']=$user->GetCognome();
         }
 
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            if(!$this->LegacyUpdateUser($idUser,$params))
-            {
-                return false;
-            }
-        }
-
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            if(isset($params['livello']) && $params['livello']==1) $params['ruolo']=static::AA_USER_GROUP_OPERATORS;
-            if(isset($params['livello']) && $params['livello']==0) $params['ruolo']=static::AA_USER_GROUP_ADMINS;
-        }
-
         $allUserGroups=$this->GetAllGroups();
 
-        if(!isset($params['ruolo'])) $params['ruolo']=$user->GetRuolo(true);
-        if(!isset($params['groups'])) $params['groups']=$user->GetGroups();
+        //------------- Ruolo -----------------
+        if(!isset($params['ruolo'])) 
+        {
+            $ruolo=$user->GetRuolo(true);
+            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            {
+                if(isset($params['livello']) && $params['livello']==1) $ruolo=static::AA_USER_GROUP_OPERATORS;
+                if(isset($params['livello']) && $params['livello']==0) $ruolo=static::AA_USER_GROUP_ADMINS;    
+            }
+        }
+        else
+        {
+            $ruolo=$params['ruolo'];
+        }
 
-        if(array_search($params['ruolo'],$allUserGroups)===false) $params['ruolo']=static::AA_USER_GROUP_USERS;
+        if(array_search($ruolo,$allUserGroups)===false)
+        {
+            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            {
+                $params['livello']==2;
+            }   
+            $ruolo=static::AA_USER_GROUP_USERS;
+        } 
+        //-------------------------------------
+
+        //--------------- Gruppi --------------
+        if(!isset($params['groups'])) $params['groups']=$user->GetGroups();
         
-        $groups=array($params['ruolo']);
+        $groups=array($ruolo);
         foreach($params['groups'] as $curGroup)
         {
             if($curGroup > 1000 && array_search($curGroup,$allUserGroups) !== false)
@@ -3285,13 +3300,39 @@ class AA_User
                 $groups[]=$curGroup;
             }
         }
-        $params['groups']=$groups;
 
-        if(sizeof($params['groups'])==0)
+        if(sizeof($groups)==0)
         {
             //default group (utenti)
-            $params['groups']=array(static::AA_USER_GROUP_USERS);
+            $groups=array(static::AA_USER_GROUP_USERS);
         }
+        //-------------------------------------
+
+        //--------------- Status --------------
+        $status=$user->GetStatus();
+        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_ENABLED) $status=static::AA_USER_STATUS_ENABLED;
+        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_DELETED) $status=static::AA_USER_STATUS_DELETED;
+        if(isset($params['status']) && $params['status']==static::AA_USER_STATUS_DISABLED) $status=static::AA_USER_STATUS_DISABLED;
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if(isset($params['status']))
+            {
+                if($status==static::AA_USER_STATUS_DISABLED) $params['disable']=1;
+                if($status==static::AA_USER_STATUS_DELETED) $params['eliminato']=1;
+            }
+            else
+            {   
+                if(isset($params['disable']) && $params['disable'] > 0) $status=static::AA_USER_STATUS_DISABLED;
+                if(isset($params['eliminato']) && $params['eliminato'] > 0) $status=static::AA_USER_STATUS_DELETED;
+            }
+
+            if(!$this->LegacyUpdateUser($idUser,$params))
+            {
+                return false;
+            }
+        }
+        //--------------------------------------
 
         if(!isset($params['flags']))
         {
@@ -3314,9 +3355,7 @@ class AA_User
         $sql.=", status='".$status."'";
         if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".AA_Utils::password_hash($params['passwd'])."'";
 
-        $groups=static::AA_USER_GROUP_USERS;
-        if (isset($params['groups']) && is_array($params['groups'])) $groups=addslashes(implode(",",$params['groups']));
-        $sql.=", groups='".$groups."'";
+        $sql.=", groups='".addslashes(implode(",",$groups))."'";
 
         $sql.=" WHERE id='".$user->GetId()."' LIMIT 1";
 
