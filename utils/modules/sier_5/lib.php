@@ -6692,11 +6692,11 @@ Class AA_SierModule extends AA_GenericModule
             //--------- risultati ---------
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta i risultati delle consultazioni' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
-            if($canModify)
-            {
-                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiModifyDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-                $data[$index]['risultati'].="<a class='AA_DataTable_Ops_Button' title='Modifica i risultati delle consultazioni' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a>";
-            }
+            //if($canModify)
+            //{
+            //    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiModifyDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            //    $data[$index]['risultati'].="<a class='AA_DataTable_Ops_Button' title='Modifica i risultati delle consultazioni' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a>";
+            //}
             $data[$index]['risultati'].="</div>";
             //------------------------------
 
