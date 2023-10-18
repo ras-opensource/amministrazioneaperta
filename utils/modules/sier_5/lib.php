@@ -330,6 +330,66 @@ Class AA_SierCandidato
     }
 }
 
+#Classe Comune
+Class AA_SierComune
+{
+    protected $aProps=array();
+    
+    //Importa i valori da un array
+    protected function Parse($values=null)
+    {
+        if(is_array($values))
+        {
+            foreach($values as $key=>$value)
+            {
+                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
+            }
+        }
+    }
+
+    public function __construct($params=null)
+    {
+        //Definisce le proprietà dell'oggetto e i valori di default
+        $this->aProps['id']=0;
+        $this->aProps['id_sier']=0;
+        $this->aProps['id_circoscrizione']=0;
+        $this->aProps['circoscrizione']=0;
+        $this->aProps['denominazione']="";
+        $this->aProps['pec']="";
+        $this->aProps['contatti']="";
+        $this->aProps['indirizzo']="";
+        $this->aProps['sezioni']=0;
+        $this->aProps['elettori_m']=0;
+        $this->aProps['elettori_f']=0;
+        $this->aProps['affluenza']="";
+        $this->aProps['risultati']="";
+        $this->aProps['rendiconti']="";
+        $this->aProps['operatori']="";
+        $this->aProps['lastupdate']="";
+
+        if(is_array($params)) $this->Parse($params);
+    }
+
+    //imposta il valore di una propietà
+    public function SetProp($prop="",$value="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
+    }
+
+    //restituisce il valore di una propietà
+    public function GetProp($prop="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
+        else return "";
+    }
+
+    //restituisce tutte le propietà
+    public function GetProps()
+    {
+        return $this->aProps;
+    }
+}
+
 #Classe oggetto elezioni
 Class AA_Sier extends AA_Object_V2
 {
@@ -690,6 +750,73 @@ Class AA_Sier extends AA_Object_V2
                 $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
                 $result=new AA_SierCandidato($curRow);
+            }
+        }
+
+        return $result;
+    }
+
+    //Restituisce i comuni
+    public function GetComuni($circoscrizione=null)
+    {
+        if(!$this->bValid) return array();
+
+        $db=new AA_Database();
+        $query="SELECT ".static::AA_COMUNI_DB_TABLE.".* from ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+
+        $query.=" ORDER by ".static::AA_COMUNI_DB_TABLE.".denominazione";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+            return array();
+        }
+
+        $result=array();
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
+                if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
+                $result[$curRow['id']]=new AA_SierComune($curRow);
+            }
+        }
+
+        return $result;
+    }
+
+    //Restituisce un comune specifico
+    public function GetComune($id="")
+    {
+        if(!$this->bValid || $id<=0 || $id=="") return null;
+
+        $db=new AA_Database();
+        $query="SELECT ".static::AA_COMUNI_DB_TABLE.".* from ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+
+        if($id > 0)
+        {
+            $query.=" AND ".static::AA_COMUNI_DB_TABLE.".id ='".addslashes($id)."'";
+        }
+
+        $query.=" LIMIT 1";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
+            return null;
+        }
+
+        $result=null;
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
+                if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
+                $result=new AA_SierComune($curRow);
             }
         }
 
@@ -6494,15 +6621,127 @@ Class AA_SierModule extends AA_GenericModule
     {
        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX;
 
-       return new AA_JSON_Template_Template($id,array("template"=>"sezione in fase di sviluppo"));
+        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
 
-       if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"oggetto non valido"));
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
-       $rows_fixed_height=50;
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
-       $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //Pulsante di modifica
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-account-plus",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi un nuovo comune",
+                //"click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                "click"=>"AA_MainApp.utils.callHandler('AddNewComune', {task:\"GetSierAddNewComuneDlg\", params: [{id: ".$object->GetId()."},{table_id:\"".$id."_Comuni\"}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        
+        $layout->addRow($toolbar);        
+        $columns=array(
+            array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Comune</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
+            array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"int"),
+            array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"rendiconti","header"=>array("<div style='text-align: center'>Rendiconti</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"operatori","header"=>array("<div style='text-align: center'>Operatori</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
+        );
 
-       return $layout;
+        if($canModify)
+        {
+            $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
+        }
+
+        $data=array();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+
+        $comuni=$object->GetComuni();
+        foreach($comuni as $curComune)
+        {
+            $data[]=$curComune->GetProps();
+            $index=sizeof($data)-1;
+
+            //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
+
+            //Circoscrizione
+            $data[$index]['circoscrizione_desc']=$circoscrizioni[$curComune->GetProp("id_circoscrizione")];
+
+            //--------- Affluenza ---------
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAffluenzaViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $data[$index]['affluenza']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta il dato dell&apos;affluenza alle urne' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['affluenza'].="</div>";
+            //------------------------------
+
+            //--------- risultati ---------
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta i risultati delle consultazioni' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            if($canModify)
+            {
+                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiModifyDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+                $data[$index]['risultati'].="<a class='AA_DataTable_Ops_Button' title='Modifica i risultati delle consultazioni' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a>";
+            }
+            $data[$index]['risultati'].="</div>";
+            //------------------------------
+
+            //--------- rendiconti ---------
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRendicontiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $data[$index]['rendiconti']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta i rendiconti' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['rendiconti'].="</div>";
+            //------------------------------
+
+            //--------- operatori ---------
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOperatoriViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $data[$index]['operatori']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta la lista degli operatori abilitati' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['affluenza'].="</div>";
+            //------------------------------
+            
+            if($canModify)
+            {
+                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashComuneDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyComuneDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+                $data[$index]['ops']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica i dati generali del Comune' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            }
+        }
+
+        //AA_Log::Log(__METHOD__." - candidati: ".print_r($data,true),100);
+
+        if(sizeof($comuni) > 0)
+        {
+            $table=new AA_JSON_Template_Generic($id."_Comuni", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+    
+            $layout->addRow($table);
+        }
+        else
+        {
+            $layout->addRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti comuni.</span></div>")));
+        }
+
+        return $layout;
     }
     
     //Task Update Sier
