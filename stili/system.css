@@ -574,6 +574,7 @@ div.AA_Footer_Gradient {
 
 .AA_DataTable_Ops_Button {
     color: #1ca1c1;
+    cursor: pointer;
 }
 
 .AA_DataTable_Ops_Button:hover {
@@ -582,10 +583,20 @@ div.AA_Footer_Gradient {
 
 .AA_DataTable_Ops_Button_Red {
     color: #cc0000;
+    cursor: pointer;
 }
 
 .AA_DataTable_Ops_Button_Red:hover {
     color: #ff0000;
+}
+
+.AA_DataTable_Ops_Button_Yellow {
+    color: #ffb52c;
+    cursor: pointer;
+}
+
+.AA_DataTable_Ops_Button_Yellow:hover {
+    color: #ffb52c;
 }
 
 .AA_Header_DataTable .webix_hcell {

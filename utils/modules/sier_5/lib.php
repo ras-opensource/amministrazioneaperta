@@ -6656,12 +6656,13 @@ Class AA_SierModule extends AA_GenericModule
         $columns=array(
             array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Comune</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
             array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"int"),
+            array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data e ora di aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"dati_generali","header"=>array("<div style='text-align: center'>Dati Generali</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"int"),
             array("id"=>"rendiconti","header"=>array("<div style='text-align: center'>Rendiconti</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"operatori","header"=>array("<div style='text-align: center'>Operatori</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
         );
 
         if($canModify)
@@ -6683,15 +6684,39 @@ Class AA_SierModule extends AA_GenericModule
             //Circoscrizione
             $data[$index]['circoscrizione_desc']=$circoscrizioni[$curComune->GetProp("id_circoscrizione")];
 
+            //--------- Dati generali ---------
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierDatiGeneraliViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $data[$index]['dati_generali']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati generali e del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['dati_generali'].="</div>";
+            //------------------------------
+
             //--------- Affluenza ---------
+            $class="AA_DataTable_Ops_Button";
+            $icon="mdi mdi-eye";
+            $text="Vedi e gestisci i dati sull&apos;affluenza alle urne";
+            if($object->GetProp("affluenza") == "") 
+            {
+                $class="AA_DataTable_Ops_Button";
+                $icon="mdi mdi-upload";
+                $text="Gestisci i dati sull&apos;affluenza alle urne";
+            }
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAffluenzaViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-            $data[$index]['affluenza']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta il dato dell&apos;affluenza alle urne' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['affluenza']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             $data[$index]['affluenza'].="</div>";
             //------------------------------
 
             //--------- risultati ---------
+            $class="AA_DataTable_Ops_Button";
+            $icon="mdi mdi-eye";
+            $text="Vedi e gestisci i risultati delle consultazioni";
+            if($object->GetProp("ricultati") == "") 
+            {
+                $class="AA_DataTable_Ops_Button";
+                $icon="mdi mdi-upload";
+                $text="Gestisci i risultati delle consultazioni";
+            }
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-            $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta i risultati delle consultazioni' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             //if($canModify)
             //{
             //    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiModifyDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
@@ -6701,22 +6726,41 @@ Class AA_SierModule extends AA_GenericModule
             //------------------------------
 
             //--------- rendiconti ---------
+            $class="AA_DataTable_Ops_Button";
+            $icon="mdi mdi-eye";
+            $text="Vedi e gestisci i rendiconti";
+            if($object->GetProp("rendiconti") == "") 
+            {
+                $class="AA_DataTable_Ops_Button";
+                $icon="mdi mdi-upload";
+                $text="Gestisci i rendiconti";
+            }
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRendicontiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-            $data[$index]['rendiconti']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta i rendiconti' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['rendiconti']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             $data[$index]['rendiconti'].="</div>";
             //------------------------------
 
             //--------- operatori ---------
+            $class="AA_DataTable_Ops_Button";
+            $icon="mdi mdi-eye";
+            $text="Vedi e gestisci gli operatori comunali abilitati";
+            if($object->GetProp("operatori") == "") 
+            {
+                $class="AA_DataTable_Ops_Button";
+                $icon="mdi mdi-upload";
+                $text="Gestisci gli operatori comunali abilitati";
+            }
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOperatoriViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-            $data[$index]['operatori']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta la lista degli operatori abilitati' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
-            $data[$index]['affluenza'].="</div>";
+            $data[$index]['operatori']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
+            $data[$index]['operatori'].="</div>";
             //------------------------------
             
             if($canModify)
             {
                 $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashComuneDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyComuneDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-                $data[$index]['ops']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica i dati generali del Comune' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+                //$data[$index]['ops']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica i dati generali del Comune' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+                $data[$index]['ops']="<div class='AA_DataTable_Ops'>&nbsp;<a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
             }
         }
 
