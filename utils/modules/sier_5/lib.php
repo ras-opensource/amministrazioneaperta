@@ -6660,7 +6660,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"dati_generali","header"=>array("<div style='text-align: center'>Dati Generali</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"int"),
+            array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>"),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"int"),
             array("id"=>"rendiconti","header"=>array("<div style='text-align: center'>Rendiconti</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"operatori","header"=>array("<div style='text-align: center'>Operatori</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
         );
@@ -6709,12 +6709,28 @@ Class AA_SierModule extends AA_GenericModule
             $class="AA_DataTable_Ops_Button";
             $icon="mdi mdi-eye";
             $text="Vedi e gestisci i risultati delle consultazioni";
-            if($object->GetProp("ricultati") == "") 
+            if($object->GetProp("risultati") == "") 
             {
                 $class="AA_DataTable_Ops_Button";
                 $icon="mdi mdi-upload";
                 $text="Gestisci i risultati delle consultazioni";
+                $completamento=0;
             }
+            else
+            {
+                $risultati=json_decode($object->GetProp("risultati"),true);
+                if($risultati)
+                {
+                    $sezioni_scrutinate=intval($risultati['sezioni_scrutinate']);
+                    if($object->GetProp("sezioni")>0)$completamento=round($sezioni_scrutinate/$object->GetProp("sezioni"));
+                    else $completamento=0;
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__," - Errore nel parsing dei risultati: ".$object->GetProp("risultati"),100);
+                }
+            }
+            $data[$index]['completamento']=$completamento;
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             //if($canModify)
