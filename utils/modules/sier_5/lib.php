@@ -353,7 +353,7 @@ Class AA_SierComune
         $this->aProps['id']=0;
         $this->aProps['id_sier']=0;
         $this->aProps['id_circoscrizione']=0;
-        $this->aProps['circoscrizione']=0;
+        $this->aProps['circoscrizione']="";
         $this->aProps['denominazione']="";
         $this->aProps['pec']="";
         $this->aProps['contatti']="";
@@ -1259,6 +1259,85 @@ Class AA_Sier extends AA_Object_V2
         return true;
     }
 
+    //Aggiorna un comune esistente
+    public function UpdateComune($newComune=null, $user=null)
+    {
+        AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($newComune instanceof AA_SierComune))
+        {
+            AA_Log::Log(__METHOD__." - Dati Comune non validi.", 100,false,true);
+            return false;
+        }
+        
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Modifica comune: ".$newComune->GetProp('denominazione')))
+        {
+            return false;
+        }
+
+        $newComune->SetProp('id_sier',$this->nId_Data);
+        if($this->nId_Data_Rev > 0)
+        {
+            $newComune->SetProp('id_sier',$this->nId_Data_Rev);
+        }
+
+        $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET id_sier='".$newComune->GetProp('id_sier')."'";
+        $query.=", id_circoscrizione='".addslashes($newComune->GetProp('id_circoscrizione'))."'";
+        $query.=", denominazione='".addslashes($newComune->GetProp('denominazione'))."'";
+        $query.=", pec='".addslashes($newComune->GetProp('pec'))."'";
+        $query.=", indirizzo='".addslashes($newComune->GetProp('indirizzo'))."'";
+        $query.=", contatti='".addslashes($newComune->GetProp('contatti'))."'";
+        $query.=", indirizzo='".addslashes($newComune->GetProp('indirizzo'))."'";
+        $query.=", sezioni='".addslashes($newComune->GetProp('sezioni'))."'";
+        $query.=", elettori_m='".addslashes($newComune->GetProp('elettori_m'))."'";
+        $query.=", elettori_f='".addslashes($newComune->GetProp('elettori_f'))."'";
+        $query.=", affluenza='".addslashes($newComune->GetProp('affluenza'))."'";
+        $query.=", risultati='".addslashes($newComune->GetProp('risultati'))."'";
+        $query.=", operatori='".addslashes($newComune->GetProp('operatori'))."'";
+        $query.=", lastupdate='".date("Y-m-d H:i:s")."'";
+        $query.=" WHERE id='".$newComune->GetProp('id')."' LIMIT 1";
+        
+        $db = new AA_Database();
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+        
+        return true;
+    }
+
     //Elimina una coalizione esistente
     public function DeleteCoalizione($coalizione=null, $user=null)
     {
@@ -2069,7 +2148,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         parent::__construct($user,$bDefaultSections);
         
-        #--------------------------------Registrazione dei task-----------------------------
+        #-------------------------------- Registrazione dei task -----------------------------
         $taskManager=$this->GetTaskManager();
         
         //Dialoghi di filtraggio
@@ -2143,6 +2222,10 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("DeleteSierCandidatoCV");
         $taskManager->RegisterTask("GetSierTrashCandidatoDlg");
         $taskManager->RegisterTask("DeleteSierCandidato");
+
+        //comune
+        $taskManager->RegisterTask("GetSierDatiGeneraliViewDlg");
+        $taskManager->RegisterTask("UpdateSierComuneDatiGenerali");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -6722,7 +6805,7 @@ Class AA_SierModule extends AA_GenericModule
                 if($risultati)
                 {
                     $sezioni_scrutinate=intval($risultati['sezioni_scrutinate']);
-                    if($object->GetProp("sezioni")>0)$completamento=round($sezioni_scrutinate/$object->GetProp("sezioni"));
+                    if($object->GetProp("sezioni")>0) $completamento=round($sezioni_scrutinate/$object->GetProp("sezioni"));
                     else $completamento=0;
                 }
                 else
@@ -7937,6 +8020,78 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
+    //Task modifica Comune
+    public function Task_GetSierDatiGeneraliViewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierDatiGeneraliViewDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task modifica dati generali Comune
+    public function Task_UpdateSierComuneDatiGenerali($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(isset($_REQUEST['id_circoscrizione']) && $_REQUEST['id_circoscrizione']>0) $comune->SetProp("id_circoscrizione",$_REQUEST['id_circoscrizione']);
+        if(isset($_REQUEST['denominazione']) && $_REQUEST['denominazione'] !="") $comune->SetProp("denominazione",$_REQUEST['denominazione']);
+        if(isset($_REQUEST['pec']) && $_REQUEST['pec'] !="") $comune->SetProp("pec",$_REQUEST['pec']);
+        if(isset($_REQUEST['indirizzo']) && $_REQUEST['indirizzo'] !="") $comune->SetProp("indirizzo",$_REQUEST['indirizzo']);
+        if(isset($_REQUEST['contatti']) && $_REQUEST['contatti'] !="") $comune->SetProp("contatti",$_REQUEST['contatti']);
+        if(isset($_REQUEST['sezioni']) && $_REQUEST['sezioni'] > 0) $comune->SetProp("sezioni",$_REQUEST['sezioni']);
+        if(isset($_REQUEST['elettori_m']) && $_REQUEST['elettori_m'] > 0) $comune->SetProp("elettori_m",$_REQUEST['elettori_m']);
+        if(isset($_REQUEST['elettori_f']) && $_REQUEST['elettori_f'] > 0) $comune->SetProp("elettori_f",$_REQUEST['elettori_f']);
+
+        if(!$object->UpdateComune($comune,$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati generali aggiornati con successo.",false);
+
+        return true;
+    }
+
+
     //Task modifica Coalizione
     public function Task_GetSierModifyCoalizioneDlg($task)
     {
@@ -8749,6 +8904,78 @@ Class AA_SierModule extends AA_GenericModule
         #--------------------------------------
         
         return $giornate;
+    }
+
+    //Template dlg modify user
+    public function Template_GetSierDatiGeneraliViewDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierDatiGeneraliViewDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+            $form_data['id_circoscrizione']=$comune->GetProp('id_circoscrizione');
+            $form_data['denominazione']=$comune->GetProp('denominazione');
+            $form_data['pec']=$comune->GetProp('pec');
+            $form_data['contatti']=$comune->GetProp('contatti');
+            $form_data['indirizzo']=$comune->GetProp('indirizzo');
+            $form_data['sezioni']=$comune->GetProp('sezioni');
+            $form_data['elettori_m']=$comune->GetProp('elettori_m');
+            $form_data['elettori_f']=$comune->GetProp('elettori_f');
+    
+            $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
+            
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(120);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(800);
+            $wnd->SetHeight(600);
+            
+            //circoscrizione
+            $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+            foreach($circoscrizioni as $key=>$value)
+            {
+                $options[]=array("id"=>$key,"value"=>$value);
+            }
+            $wnd->AddSelectField("id_circoscrizione","Circoscrizione",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Seleziona la circoscrizione di cui fa parte il comune.","options"=>$options),false);
+    
+            //denominazione
+            $wnd->AddTextField("denominazione","Denominazione",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Denominazione del comune"));
+    
+            //pec
+            $wnd->AddTextField("pec","Pec",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsMail", "bottomLabel"=>"*Indirizzo di posta certificata."));
+    
+            //indirizzo
+            $wnd->AddTextField("indirizzo","Indirizzo",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Via e numero civico."));
+    
+            //contatti
+            $wnd->AddTextareaField("contatti","Note e contatti",array("gravity"=>1, "bottomLabel"=>"*Eventuali informazioni di recapito utili."));
+    
+            //Dati corpo elettorale
+            $section=new AA_FieldSet($id."_Section_DatiCorpoElettorale","Corpo elettorale");
+            $section->AddTextField("sezioni", "Sezioni", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di sezioni"));
+            $section->AddTextField("elettori_m", "Maschi", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero elettori."),false);
+            $section->AddTextField("elettori_f", "Femmine", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero elettrici."),false);
+            $wnd->AddGenericObject($section);
+                    
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            $wnd->enableRefreshOnSuccessfulSave();
+            $wnd->SetSaveTask("UpdateSierComuneDatiGenerali");
+            
+            return $wnd;    
+        }
+        else
+        {
+            //to do view only
+            $wnd = new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+
+            return $wnd;
+        }
     }
 
     //Template dettaglio allegati

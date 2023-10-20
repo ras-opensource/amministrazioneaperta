@@ -5612,8 +5612,17 @@ class AA_Object_V2
             }
         } else $user = AA_User::GetCurrentUser();
 
-        if ($this->sLog != "") $this->sLog .= "\n";
-        $this->sLog .= Date("Y-m-d H:i:s") . "|" . $user->GetUsername() . "|" . $actionType . "|" . $log;
+        
+        $logs=explode("\n",$this->sLog);
+        $logs[]=Date("Y-m-d H:i:s") . "|" . $user->GetUsername() . "|" . $actionType . "|" . $log;
+
+        if(sizeof($logs)>100)
+        {
+            //lascia solo gli ultimi 100 log
+            $logs=array_slice($logs, -500);
+        }
+
+        $this->sLog = implode("\n",$logs);
     }
 
     //resetta il log
