@@ -9043,9 +9043,9 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Risultati:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
-        #--------------------------------------
         $layout->addCol($campo);
-
+        #--------------------------------------
+        
         //Abilitazione caricamento rendicontazione
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
         if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
