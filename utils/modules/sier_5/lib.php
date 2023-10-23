@@ -9056,7 +9056,7 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $layout->addCol($campo);
-        #--------------------------------------
+        #----------------------------------------
 
         //Abilitazione esportazione affluenza
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
@@ -9067,7 +9067,7 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Esportazione affluenza:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
-        #--------------------------------------
+        #----------------------------------------
         $layout->addCol($campo);
 
         //Abilitazione esportazione risultati
