@@ -27,7 +27,7 @@ Class AA_Sier_Const extends AA_Const
     const AA_SIER_FLAG_EXPORT_AFFLUENZA=8;
     const AA_SIER_FLAG_EXPORT_RISULTATI=16;
     const AA_SIER_FLAG_ACCESSO_OPERATORI=32;
-    const AA_SIER_FLAG_CARICAMENTO_RESOCONTI=64;
+    const AA_SIER_FLAG_CARICAMENTO_RENDICONTI=64;
 
     static protected $aFlags=null;
     public static function GetFlags()
@@ -59,7 +59,7 @@ Class AA_Sier_Const extends AA_Const
                 1=>"corpo elettorale",
                 2=>"affluenza",
                 4=>"risultati",
-                64=>"resoconti",
+                64=>"rendiconti",
                 8=>"export affluenza",
                 16=>"export risultati"
             );
@@ -9021,18 +9021,6 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $layout->addCol($campo);
         #--------------------------------------
-
-        //Abilitazione caricamento corpo elettorale
-        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
-        $campo=new AA_JSON_Template_Template($id."_CorpoElettorale",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "gravity"=>1,
-            "data"=>array("title"=>"Corpo elettorale:","value"=>$value),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
-        ));
-        $layout->addCol($campo);
-        #--------------------------------------
         
         //Abilitazione caricamento affluenza
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
@@ -9058,6 +9046,18 @@ Class AA_SierModule extends AA_GenericModule
         #--------------------------------------
         $layout->addCol($campo);
 
+        //Abilitazione caricamento rendicontazione
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        $campo=new AA_JSON_Template_Template($id."_Rendiconti",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Rendiconti:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $layout->addCol($campo);
+        #--------------------------------------
+
         //Abilitazione esportazione affluenza
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
         if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
@@ -9080,6 +9080,7 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Esportazione risultati:","value"=>$value)
         ));
         #--------------------------------------
+
         $layout->addCol($campo);
 
         return $layout;
