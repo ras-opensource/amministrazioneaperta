@@ -347,6 +347,23 @@ Class AA_SierComune
         }
     }
 
+    public function GetOperatori($bAsObject=false)
+    {
+        if(!isset($this->aProps['operatori'])) return "";
+        if($bAsObject && isset($this->aProps['operatori']) && $this->aProps['operatori'] !="")
+        {
+            $ret=json_decode($this->aProps['operatori'],true);
+            if($ret) return $ret;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'importazione degli operatori del comune: ".$this->aProps['id'],100);
+                return array();
+            }
+        }
+
+        return $this->aProps['operatori'];
+    }
+
     public function __construct($params=null)
     {
         //Definisce le proprietà dell'oggetto e i valori di default
@@ -2135,6 +2152,10 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_TASK_ADDNEW_DLG="GetSierAddNewDlg";
     const AA_UI_TASK_MODIFY_DLG="GetSierModifyDlg";
     //------------------------------------
+
+    //Dialoghi
+    const AA_UI_WND_OPERATORI_COMUNALI="OperatoriComunaliWnd";
+    const AA_UI_LAYOUT_OPERATORI_COMUNALI="OperatoriComunaliLayout";
 
     //section ui ids
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
@@ -8976,6 +8997,100 @@ Class AA_SierModule extends AA_GenericModule
 
             return $wnd;
         }
+    }
+
+    //Template dlg modify user
+    public function Template_GetSierComuneOperatoriViewDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI;
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
+
+
+        $wnd = new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
+
+        $id.="_".static::AA_UI_LAYOUT_OPERATORI_COMUNALI;
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        $filter="";
+
+        if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
+        
+        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //filtro
+        $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-filter-cog",
+             "label"=>"Filtra",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Opzioni di filtraggio",
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOperatoriComunaliFilterDlg\",postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        //$toolbar->AddElement($modify_btn);
+
+                 //filtro
+        $modify_btn=new AA_JSON_Template_Generic($id."_AddNewOperatore_btn",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-account-plus",
+             "label"=>"Aggiungi",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Aggiungi nuovo operatore",
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOperatoriComunaliAddNewDlg\", postParams: {refresh: 1,refresh_obj_id:\"'.$id.'\"},module: \"" . $this->id . "\"},'".$this->id."')"
+         ));
+         $toolbar->AddElement($modify_btn);
+
+        
+        $layout->addRow($toolbar);
+
+        $columns=array(
+            array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Cognome e nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
+            array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>120, "css"=>array("text-align"=>"center"))
+        );
+        
+        $utenti=$comune->GetOperatori(true);
+        $data=array();
+        if(sizeof($utenti) > 0)
+        {
+            foreach($utenti as $curUser)
+            {
+                {
+                    $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOperatoriComunaliModifyDlg",postParams: [{cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}]},"'.$this->id.'");';
+                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOperatoriComunaliTrashDlg",postParams: [{cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}]},"'.$this->id.'");';
+                    $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica operatore' onClick='".$modify_op."'><span class='mdi mdi-user-pencil'></span></a><a class='AA_DataTable_Ops_Button' title='Elimina operatore' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
+                }
+                $data[]=array("id"=>$curUser['cf'],"ops"=>$ops, "lastLogin"=>$curUser['lastlogin'],"email"=>$curUser['email'],"denominazione"=>$curUser['cognome']." ".$curUser['cognome'],"ruolo"=>$curUser['ruolo']);
+            }
+            $table=new AA_JSON_Template_Generic($id."_View", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+        }
+        else
+        {
+            $table=new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti operatori.</span></div>"));
+        }
+
+        $layout->AddRow($table);
+        $wnd->AddView($layout);
+        return $wnd;
     }
 
     //Template dettaglio allegati
