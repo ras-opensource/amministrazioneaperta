@@ -1520,7 +1520,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         $this->body->AddRow($toolbar);
         $this->body->AddRow(new AA_JSON_Template_Generic("", array("view" => "spacer", "height" => 10)));
         $this->applyButton->SetProp("click", $this->applyActions);
-        AA_log::log(__METHOD__." - apply: ".$this->applyActions,100);
+        //AA_log::log(__METHOD__." - apply: ".$this->applyActions,100);
         parent::Update();
     }
 
