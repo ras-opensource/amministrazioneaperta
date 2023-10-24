@@ -349,8 +349,11 @@ Class AA_SierComune
 
     public function GetOperatori($bAsObject=false)
     {
-        if(!isset($this->aProps['operatori'])) return "";
-        if($bAsObject && isset($this->aProps['operatori']) && $this->aProps['operatori'] !="")
+        $ret="";
+        if($bAsObject) $ret=array();
+        if(!isset($this->aProps['operatori']) || $this->aProps['operatori']=="") return $ret;
+        
+        if($bAsObject)
         {
             $ret=json_decode($this->aProps['operatori'],true);
             if($ret) return $ret;
@@ -2245,8 +2248,10 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("DeleteSierCandidato");
 
         //comune
-        $taskManager->RegisterTask("GetSierDatiGeneraliViewDlg");
+        $taskManager->RegisterTask("GetSierComuneDatiGeneraliViewDlg");
         $taskManager->RegisterTask("UpdateSierComuneDatiGenerali");
+        $taskManager->RegisterTask("GetSierComuneOperatoriViewDlg");
+        $taskManager->RegisterTask("GetSierComuneOperatoriAddNewDlg");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -2908,6 +2913,58 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template dlg aggiungi candidato
+    public function Template_GetSierComuneOperatoriAddNewDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneOperatoriAddNewDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("aggiornamento"=>date("Y-m-d"),"id_comune"=>$comune->GetProp("id"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi operatore", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        //Imposta il controllo su cui abilitare il focus
+        $wnd->SetDefaultFocusedItem("cognome");
+
+        //Cognome
+        $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome dell'operatore", "placeholder" => "es. Verdi"));
+
+        //nome
+        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome dell'operatore", "placeholder" => "es. Giuseppe"));
+
+        //cf
+        $wnd->AddTextField("cf", "Codice fiscale", array("required"=>true,"bottomLabel" => "*Indicare il codice fiscale dell'operatore, se presente."));
+
+        //email
+        $wnd->AddTextField("email", "Email", array("required"=>true,"bottomLabel" => "*Indicare l'email dell'operatore", "placeholder" => "giuseppe@verdi.it"));
+
+        //Ruolo
+        $options=array();
+        $options[]=array("id"=>"1","value"=>"Caricamento dati");
+        $options[]=array("id"=>"2","value"=>"Caricamento resoconti");
+        $options[]=array("id"=>"3","value"=>"Qualunque");
+        
+        $wnd->AddSelectField("ruolo", "Ruolo", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSierComuneOperatore");
+        
+        return $wnd;
+    }
+    
+    //Template dlg modifica candidato
     public function Template_GetSierModifyCandidatoDlg($object=null,$candidato=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierModifyCandidatoDlg";
@@ -6789,7 +6846,7 @@ Class AA_SierModule extends AA_GenericModule
             $data[$index]['circoscrizione_desc']=$circoscrizioni[$curComune->GetProp("id_circoscrizione")];
 
             //--------- Dati generali ---------
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierDatiGeneraliViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneDatiGeneraliViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['dati_generali']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati generali e del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
             $data[$index]['dati_generali'].="</div>";
             //------------------------------
@@ -6804,7 +6861,7 @@ Class AA_SierModule extends AA_GenericModule
                 $icon="mdi mdi-upload";
                 $text="Gestisci i dati sull&apos;affluenza alle urne";
             }
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAffluenzaViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['affluenza']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             $data[$index]['affluenza'].="</div>";
             //------------------------------
@@ -6835,7 +6892,7 @@ Class AA_SierModule extends AA_GenericModule
                 }
             }
             $data[$index]['completamento']=$completamento;
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             //if($canModify)
             //{
@@ -6855,7 +6912,7 @@ Class AA_SierModule extends AA_GenericModule
                 $icon="mdi mdi-upload";
                 $text="Gestisci i rendiconti";
             }
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRendicontiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRendicontiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['rendiconti']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             $data[$index]['rendiconti'].="</div>";
             //------------------------------
@@ -6870,7 +6927,7 @@ Class AA_SierModule extends AA_GenericModule
                 $icon="mdi mdi-upload";
                 $text="Gestisci gli operatori comunali abilitati";
             }
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOperatoriViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['operatori']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             $data[$index]['operatori'].="</div>";
             //------------------------------
@@ -8042,7 +8099,7 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Task modifica Comune
-    public function Task_GetSierDatiGeneraliViewDlg($task)
+    public function Task_GetSierComuneDatiGeneraliViewDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -8064,9 +8121,64 @@ Class AA_SierModule extends AA_GenericModule
         }
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetSierDatiGeneraliViewDlg($object,$comune),true);
+        $task->SetContent($this->Template_GetSierComuneDatiGeneraliViewDlg($object,$comune),true);
         return true;
     }
+
+    //Task aggiungi operatore comunale
+    public function Task_GetSierComuneOperatoriAddNewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneOperatoriAddNewDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task modifica Comune
+    public function Task_GetSierComuneOperatoriViewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneOperatoriViewDlg($object,$comune),true);
+        return true;
+    }
+
 
     //Task modifica dati generali Comune
     public function Task_UpdateSierComuneDatiGenerali($task)
@@ -8928,9 +9040,9 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template dlg modify user
-    public function Template_GetSierDatiGeneraliViewDlg($object=null,$comune=null)
+    public function Template_GetSierComuneDatiGeneraliViewDlg($object=null,$comune=null)
     {
-        $id=static::AA_UI_PREFIX."_GetSierDatiGeneraliViewDlg";
+        $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliViewDlg";
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
 
@@ -9032,7 +9144,7 @@ Class AA_SierModule extends AA_GenericModule
              "align"=>"right",
              "width"=>120,
              "tooltip"=>"Opzioni di filtraggio",
-             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOperatoriComunaliFilterDlg\",postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneOperatoriFilterDlg\",postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         //$toolbar->AddElement($modify_btn);
 
@@ -9042,10 +9154,11 @@ Class AA_SierModule extends AA_GenericModule
              "type"=>"icon",
              "icon"=>"mdi mdi-account-plus",
              "label"=>"Aggiungi",
+             "css"=>"webix_primary",
              "align"=>"right",
              "width"=>120,
              "tooltip"=>"Aggiungi nuovo operatore",
-             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOperatoriComunaliAddNewDlg\", postParams: {refresh: 1,refresh_obj_id:\"'.$id.'\"},module: \"" . $this->id . "\"},'".$this->id."')"
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneOperatoriAddNewDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
          ));
          $toolbar->AddElement($modify_btn);
 
