@@ -2248,7 +2248,8 @@ class AA_User
         if(array_search("1",$this->GetGroups()) !==false || $this->nID==1) return true;
 
         $flags = explode("|", $this->sFlags);
-        if (in_array($flag, $flags)) {
+        if (in_array($flag, $flags)) 
+        {
             //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
             return true;
         }
@@ -2324,7 +2325,6 @@ class AA_User
 
         return $flags;
     }
-
 
     //Verifica se il nome utente esiste già
     static public function UserNameExist($userName = "")

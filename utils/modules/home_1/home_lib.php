@@ -1724,8 +1724,8 @@ Class AA_HomeModule extends AA_GenericModule
 
         //Dati personali
         $section=new AA_FieldSet($id."_Section_DatiPersonali","Dati personali");
-        $section->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel"=>"*Nome dell'utente", "placeholder"=>"Caio"));
-        $section->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel"=>"*Cognome dell'utente", "placeholder"=>"Sempronio"),false);
+        $section->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel"=>"*Nome dell'utente", "placeholder"=>"nome"));
+        $section->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel"=>"*Cognome dell'utente", "placeholder"=>"cognome"),false);
         $section->AddTextField("phone", "Telefono", array("bottomLabel"=>"*Recapito telefonico", "placeholder"=>"..."));
         $section->AddSpacer(false);
         $wnd->AddGenericObject($section);

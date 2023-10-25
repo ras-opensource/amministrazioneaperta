@@ -367,6 +367,22 @@ Class AA_SierComune
         return $this->aProps['operatori'];
     }
 
+    public function SetOperatori($operatori="")
+    {
+        if(is_array($operatori))
+        {
+            $operatori=json_encode($operatori);
+            if($operatori===false)
+            {
+                AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($operatori,true),100);
+                return false;
+            }
+        }
+
+        $this->SetProp("operatori",$operatori);
+        return true;
+    }
+
     public function __construct($params=null)
     {
         //Definisce le proprietà dell'oggetto e i valori di default
@@ -1280,7 +1296,7 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //Aggiorna un comune esistente
-    public function UpdateComune($newComune=null, $user=null)
+    public function UpdateComune($newComune=null, $user=null,$AppendLog="")
     {
         AA_Log::Log(__METHOD__."()");
 
@@ -1318,7 +1334,9 @@ Class AA_Sier extends AA_Object_V2
         $this->IsChanged();
 
         //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true, "Modifica comune: ".$newComune->GetProp('denominazione')))
+        $log="Modifica comune: ".$newComune->GetProp('denominazione');
+        if($AppendLog !="") $log.= " - ".$AppendLog;
+        if(!$this->Update($user,true,$log))
         {
             return false;
         }
@@ -2159,6 +2177,10 @@ Class AA_SierModule extends AA_GenericModule
     //Dialoghi
     const AA_UI_WND_OPERATORI_COMUNALI="OperatoriComunaliWnd";
     const AA_UI_LAYOUT_OPERATORI_COMUNALI="OperatoriComunaliLayout";
+    const AA_UI_WND_RENDICONTI_COMUNALI="RendicontiComunaliWnd";
+    const AA_UI_LAYOUT_RENDICONTI_COMUNALI="RendicontiComunaliLayout";
+    const AA_UI_WND_RISULTATI_COMUNALI="RisultatiComunaliWnd";
+    const AA_UI_LAYOUT_RISULTATI_COMUNALI="RisultatiComunaliLayout";
 
     //section ui ids
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
@@ -2252,6 +2274,12 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateSierComuneDatiGenerali");
         $taskManager->RegisterTask("GetSierComuneOperatoriViewDlg");
         $taskManager->RegisterTask("GetSierComuneOperatoriAddNewDlg");
+        $taskManager->RegisterTask("AddNewSierComuneOperatore");
+        $taskManager->RegisterTask("GetSierComuneOperatoriModifyDlg");
+        $taskManager->RegisterTask("UpdateSierComuneOperatore");
+        $taskManager->RegisterTask("GetSierComuneOperatoriTrashDlg");
+        $taskManager->RegisterTask("TrashSierComuneOperatore");
+
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -2912,7 +2940,7 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
-    //Template dlg aggiungi candidato
+    //Template dlg aggiungi operatore
     public function Template_GetSierComuneOperatoriAddNewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneOperatoriAddNewDlg";
@@ -2964,6 +2992,68 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
     
+    //Template dlg modifca operatore
+    public function Template_GetSierComuneOperatoriModifyDlg($object=null,$comune=null,$operatore=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneOperatoriModifyDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("aggiornamento"=>date("Y-m-d"),"id_comune"=>$comune->GetProp("id"));
+
+        if($operatore)
+        {
+            $form_data["nome"]=$operatore['nome'];
+            $form_data["cognome"]=$operatore['cognome'];
+            $form_data["cf"]=$operatore['cf'];
+            $form_data["ruolo"]=$operatore['ruolo'];
+            $form_data["email"]=$operatore['email'];
+            $form_data["lastlogin"]=$operatore['lastlogin'];
+        }
+
+        $wnd=new AA_GenericFormDlg($id, "Modifica operatore", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        //Imposta il controllo su cui abilitare il focus
+        $wnd->SetDefaultFocusedItem("cognome");
+
+        //Cognome
+        $wnd->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel" => "*Indicare il cognome dell'operatore", "placeholder" => "es. Verdi"));
+
+        //nome
+        $wnd->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel" => "*Indicare il nome dell'operatore", "placeholder" => "es. Giuseppe"));
+
+        //cf
+        $wnd->AddTextField("cf", "Codice fiscale", array("required"=>true,"bottomLabel" => "*Indicare il codice fiscale dell'operatore, se presente."));
+
+        //email
+        $wnd->AddTextField("email", "Email", array("required"=>true,"bottomLabel" => "*Indicare l'email dell'operatore", "placeholder" => "giuseppe@verdi.it"));
+
+        //Ruolo
+        $options=array();
+        $options[]=array("id"=>"1","value"=>"Caricamento dati");
+        $options[]=array("id"=>"2","value"=>"Caricamento resoconti");
+        $options[]=array("id"=>"3","value"=>"Qualunque");
+        
+        $wnd->AddSelectField("ruolo", "Ruolo", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("UpdateSierComuneOperatore");
+        
+        return $wnd;
+    }
+
     //Template dlg modifica candidato
     public function Template_GetSierModifyCandidatoDlg($object=null,$candidato=null)
     {
@@ -3558,7 +3648,7 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
-    //Template dlg trash casellario
+    //Template dlg trash candidato
     public function Template_GetSierTrashCandidatoDlg($object=null,$candidato=null)
     {
         $id=$this->id."_TrashCandidato_Dlg";
@@ -3601,6 +3691,57 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("DeleteSierCandidato");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_candidato"=>$candidato->GetProp('id')));
+        
+        return $wnd;
+    }
+
+    //Template dlg trash candidato
+    public function Template_GetSierComuneOperatoriTrashDlg($object=null,$comune=null,$operatore=null)
+    {
+        $id=$this->id."_TrashComuneOperatori_Dlg";
+        
+        $form_data=$operatore;
+        $form_data["id_comune"]=$comune->GetProp('id');
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina operatore", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("denominazione"=>$operatore["nome"]." ".$operatore["cognome"],"cf"=>$operatore["cf"],"email"=>$operatore["email"]);
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Le informazioni del seguente candidato verrànno eliminate, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"denominazione", "header"=>"Candidato", "fillspace"=>true),
+              array("id"=>"cf", "header"=>"cf", "width"=>150),
+              array("id"=>"email", "header"=>"email", "width"=>150)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        $wnd->SetSaveTask("TrashSierComuneOperatore");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
         
         return $wnd;
     }
@@ -6891,8 +7032,9 @@ Class AA_SierModule extends AA_GenericModule
                     AA_Log::Log(__METHOD__," - Errore nel parsing dei risultati: ".$object->GetProp("risultati"),100);
                 }
             }
+            $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_RISULTATI_COMUNALI."_".static::AA_UI_LAYOUT_RISULTATI_COMUNALI;
             $data[$index]['completamento']=$completamento;
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             //if($canModify)
             //{
@@ -6912,7 +7054,8 @@ Class AA_SierModule extends AA_GenericModule
                 $icon="mdi mdi-upload";
                 $text="Gestisci i rendiconti";
             }
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRendicontiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI;
+            $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRendicontiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['rendiconti']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             $data[$index]['rendiconti'].="</div>";
             //------------------------------
@@ -6927,7 +7070,8 @@ Class AA_SierModule extends AA_GenericModule
                 $icon="mdi mdi-upload";
                 $text="Gestisci gli operatori comunali abilitati";
             }
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI."_".static::AA_UI_LAYOUT_OPERATORI_COMUNALI;
+            $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['operatori']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             $data[$index]['operatori'].="</div>";
             //------------------------------
@@ -8152,6 +8296,78 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica operatore comunale
+    public function Task_GetSierComuneOperatoriModifyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        $operatori=$comune->GetOperatori(true);
+        if(!isset($operatori[$_REQUEST['cf']]))
+        {
+            AA_Log::Log(__METHOD__." - operatore non valido: ".print_r($operatori,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneOperatoriModifyDlg($object,$comune,$operatori[$_REQUEST['cf']]),true);
+        return true;
+    }
+
+    //Task modifica operatore comunale
+    public function Task_GetSierComuneOperatoriTrashDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        $operatori=$comune->GetOperatori(true);
+        if(!isset($operatori[$_REQUEST['cf']]))
+        {
+            AA_Log::Log(__METHOD__." - operatore non valido: ".print_r($operatori,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneOperatoriTrashDlg($object,$comune,$operatori[$_REQUEST['cf']]),true);
+        return true;
+    }
+
     //Task modifica Comune
     public function Task_GetSierComuneOperatoriViewDlg($task)
     {
@@ -8179,6 +8395,205 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiunta operatore Comune
+    public function Task_AddNewSierComuneOperatore($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+    
+        //Verifica
+        if(!isset($_REQUEST['nome']) || trim($_REQUEST['nome'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare il nome dell'operatore.",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['cognome']) || trim($_REQUEST['cognome'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare il cognome dell'operatore.",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['cf']) || trim($_REQUEST['cf'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare il cf dell'operatore.",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['email']) || trim($_REQUEST['email'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare l'email dell'operatore.",false);
+            return false;
+        }
+
+        $operatori=$comune->GetOperatori(true);
+        if(!is_array($operatori)) $operatori=array();
+        $operatori[$_REQUEST['cf']]=array("cf"=>$_REQUEST['cf'],"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>"","ruolo"=>$_REQUEST['ruolo']);
+        $comune->SetOperatori($operatori);
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiunta operatore: ".$_REQUEST['cf']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento degli operatori.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
+    //Task modifica operatore Comune
+    public function Task_UpdateSierComuneOperatore($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+    
+        //Verifica
+        if(!isset($_REQUEST['nome']) || trim($_REQUEST['nome'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare il nome dell'operatore.",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['cognome']) || trim($_REQUEST['cognome'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare il cognome dell'operatore.",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['cf']) || trim($_REQUEST['cf'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare il cf dell'operatore.",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['email']) || trim($_REQUEST['email'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare l'email dell'operatore.",false);
+            return false;
+        }
+
+        $operatori=$comune->GetOperatori(true);
+        if(!is_array($operatori)) $operatori=array();
+        $operatori[$_REQUEST['cf']]=array("cf"=>$_REQUEST['cf'],"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>$_REQUEST['lastlogin'],"ruolo"=>$_REQUEST['ruolo']);
+        $comune->SetOperatori($operatori);
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica operatore: ".$_REQUEST['cf']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento degli operatori.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
+    //Task modifica operatore Comune
+    public function Task_TrashSierComuneOperatore($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+    
+        //Verifica
+        $operatori=$comune->GetOperatori(true);
+        if(!isset($operatori[$_REQUEST['cf']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        unset($operatori[$_REQUEST['cf']]);
+        $comune->SetOperatori($operatori);
+        if(!$object->UpdateComune($comune,$this->oUser,"Elimina operatore: ".$_REQUEST['cf']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento degli operatori.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
 
     //Task modifica dati generali Comune
     public function Task_UpdateSierComuneDatiGenerali($task)
@@ -8211,7 +8626,7 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['elettori_m']) && $_REQUEST['elettori_m'] > 0) $comune->SetProp("elettori_m",$_REQUEST['elettori_m']);
         if(isset($_REQUEST['elettori_f']) && $_REQUEST['elettori_f'] > 0) $comune->SetProp("elettori_f",$_REQUEST['elettori_f']);
 
-        if(!$object->UpdateComune($comune,$this->oUser))
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica dati generali"))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError(AA_Log::$lastErrorLog,false);
@@ -9121,6 +9536,30 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd = new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
 
+        $layout=$this->Template_GetSierComuneOperatoriViewLayout($object,$comune,$id);
+        $wnd->AddView($layout);
+        return $wnd;
+    }
+
+    //Template layout operatori comune
+    public function Template_GetSierComuneOperatoriViewLayout($object=null,$comune=null,$id="")
+    {
+        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object->isValid())
+        {
+            $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero della lista degli operatori.</span></div>")));
+            return $layout;
+        }
+
+        if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero della lista degli operatori.</span></div>")));
+            return $layout;
+        }
+
         $id.="_".static::AA_UI_LAYOUT_OPERATORI_COMUNALI;
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
         
@@ -9166,25 +9605,27 @@ Class AA_SierModule extends AA_GenericModule
         $layout->addRow($toolbar);
 
         $columns=array(
-            array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Cognome e nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"cf","header"=>array("<div style='text-align: center'>Codice fiscale</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
-            array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>120, "css"=>array("text-align"=>"center"))
         );
         
         $utenti=$comune->GetOperatori(true);
+        $ruolo=array(1=>"Caricamento dati",2=>"Caricamento rendiconti",3=>"Qualunque");
         $data=array();
         if(sizeof($utenti) > 0)
         {
             foreach($utenti as $curUser)
             {
                 {
-                    $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOperatoriComunaliModifyDlg",postParams: [{cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}]},"'.$this->id.'");';
-                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOperatoriComunaliTrashDlg",postParams: [{cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}]},"'.$this->id.'");';
-                    $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica operatore' onClick='".$modify_op."'><span class='mdi mdi-user-pencil'></span></a><a class='AA_DataTable_Ops_Button' title='Elimina operatore' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
+                    $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriModifyDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
+                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
+                    $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica operatore' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina operatore' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
                 }
-                $data[]=array("id"=>$curUser['cf'],"ops"=>$ops, "lastLogin"=>$curUser['lastlogin'],"email"=>$curUser['email'],"denominazione"=>$curUser['cognome']." ".$curUser['cognome'],"ruolo"=>$curUser['ruolo']);
+                $data[]=array("id"=>$curUser['cf'],"ops"=>$ops, "lastLogin"=>$curUser['lastlogin'],"email"=>$curUser['email'],"denominazione"=>$curUser['cognome']." ".$curUser['cognome'],"cf"=>$curUser['cf'],"ruolo"=>$ruolo[$curUser['ruolo']]);
             }
             $table=new AA_JSON_Template_Generic($id."_View", array(
                 "view"=>"datatable",
@@ -9202,8 +9643,21 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $layout->AddRow($table);
-        $wnd->AddView($layout);
-        return $wnd;
+        return $layout;
+    }
+
+    //Task object content (da specializzare)
+    public function Task_GetObjectContent($task)
+    {
+        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI."_".static::AA_UI_LAYOUT_OPERATORI_COMUNALI)
+        {
+            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI."_".static::AA_UI_LAYOUT_OPERATORI_COMUNALI, "content" => $this->Template_GetSierComuneOperatoriViewLayout(null,null,static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI)->toArray());
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent(json_encode($content),true);
+            return true;
+        }
+
+        return $this->Task_GetGenericObjectContent($task, $_REQUEST);
     }
 
     //Template dettaglio allegati
