@@ -1035,7 +1035,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         //Verifica se ci sono ulteriori azioni da intraprendere
                         if (AA_MainApp.utils.isDefined(result.status.action)) {
                             console.log(this.name + "eventHandlers.defaultHandlers.saveData", result.status);
-                            AA_MainApp.utils.callHandler(result.status.action, JSON.parse(result.status.action_params), this.id);
+                            if(AA_MainApp.utils.isDefined(result.status.action_params)) AA_MainApp.utils.callHandler(result.status.action, JSON.parse(result.status.action_params), this.id);
+                            else AA_MainApp.utils.callHandler(result.status.action, null, this.id);
                         }
                         return true;
                     } else {

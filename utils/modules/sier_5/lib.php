@@ -371,12 +371,16 @@ Class AA_SierComune
     {
         if(is_array($operatori))
         {
-            $operatori=json_encode($operatori);
-            if($operatori===false)
+            if(sizeof($operatori)>0)
             {
-                AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($operatori,true),100);
-                return false;
+                $operatori=json_encode($operatori);
+                if($operatori===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($operatori,true),100);
+                    return false;
+                }    
             }
+            else $operatori="";
         }
 
         $this->SetProp("operatori",$operatori);
@@ -793,12 +797,35 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //Restituisce i comuni
-    public function GetComuni($circoscrizione=null)
+    public function GetComuni($circoscrizione=null,$params=null)
     {
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
         $query="SELECT ".static::AA_COMUNI_DB_TABLE.".* from ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+
+        if(is_array($params))
+        {
+            if(isset($params['senza_operatori']) && $params['senza_operatori']==1)
+            {
+                $query.=" AND operatori like ''";
+            }
+
+            if(isset($params['senza_affluenza']) && $params['senza_affluenza']==1)
+            {
+                $query.=" AND affluenza like ''";
+            }
+
+            if(isset($params['senza_risultati']) && $params['senza_risultati']==1)
+            {
+                $query.=" AND risultati like ''";
+            }
+
+            if(isset($params['senza_rendiconti']) && $params['senza_rendiconti']==1)
+            {
+                $query.=" AND rendiconti like ''";
+            }
+        }
 
         $query.=" ORDER by ".static::AA_COMUNI_DB_TABLE.".denominazione";
 
@@ -2279,7 +2306,7 @@ Class AA_SierModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateSierComuneOperatore");
         $taskManager->RegisterTask("GetSierComuneOperatoriTrashDlg");
         $taskManager->RegisterTask("TrashSierComuneOperatore");
-
+        $taskManager->RegisterTask("GetSierComuneFilterDlg");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -2977,8 +3004,8 @@ Class AA_SierModule extends AA_GenericModule
         //Ruolo
         $options=array();
         $options[]=array("id"=>"1","value"=>"Caricamento dati");
-        $options[]=array("id"=>"2","value"=>"Caricamento resoconti");
-        $options[]=array("id"=>"3","value"=>"Qualunque");
+        $options[]=array("id"=>"2","value"=>"Caricamento rendiconti");
+        $options[]=array("id"=>"3","value"=>"Caricamento dati e rendiconti");
         
         $wnd->AddSelectField("ruolo", "Ruolo", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
 
@@ -3039,8 +3066,8 @@ Class AA_SierModule extends AA_GenericModule
         //Ruolo
         $options=array();
         $options[]=array("id"=>"1","value"=>"Caricamento dati");
-        $options[]=array("id"=>"2","value"=>"Caricamento resoconti");
-        $options[]=array("id"=>"3","value"=>"Qualunque");
+        $options[]=array("id"=>"2","value"=>"Caricamento rendiconti");
+        $options[]=array("id"=>"3","value"=>"Caricamento dati e rendiconti");
         
         $wnd->AddSelectField("ruolo", "Ruolo", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una voce dal menu a tendina", "options"=>$options));
 
@@ -6923,17 +6950,76 @@ Class AA_SierModule extends AA_GenericModule
     {
        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX;
 
-        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Sier))
+        {
+            if(isset($_REQUEST['id']))
+            {
+                $object=new AA_Sier($_REQUEST['id'],$this->oUser);
+                if(!$object->IsValid())
+                {
+                    return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+                }
+            }
+            else return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        }
 
-        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","filtered"=>true,"filter_id"=>$id));
         
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        //pulsante di filtro
+        $filter="";
+
+        $session_params=AA_SessionVar::Get($id);
+        if($session_params->IsValid())
+        {
+            $params=(array)$session_params->GetValue();
+            //AA_Log::Log(__METHOD__." - session var: ".$id." - value: ".print_r($params,true),100);
+        }
+        foreach($params as $key=>$curParam)
+        {
+            if(isset($_REQUEST[$key])) $params[$key]=$_REQUEST[$key];
+        }
+
+        if(isset($params['senza_operatori']) && $params['senza_operatori'])
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con operatori non caricati</span>&nbsp;";
+        }
+
+        if(isset($params['senza_affluenza']) && $params['senza_affluenza'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con affluenza non caricata</span>&nbsp;";
+        }
+
+        if(isset($params['senza_risultati']) && $params['senza_risultati'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con risultati non caricati</span>&nbsp;";
+        }
+
+        if(isset($params['senza_rendiconti']) && $params['senza_rendiconti'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con rendiconti non caricati</span>&nbsp;";
+        }
+
+        if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
         
+        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        
+        //filtro
+        $modify_btn=new AA_JSON_Template_Generic($id."_FilterComuni_btn",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-filter-cog",
+             "label"=>"Filtra",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Opzioni di filtraggio",
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneFilterDlg\",params: {id: ".$object->GetId()."},postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+         ));
+         $toolbar->AddElement($modify_btn);
+
         //Pulsante di modifica
         $canModify=false;
         if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
@@ -6949,7 +7035,7 @@ Class AA_SierModule extends AA_GenericModule
                 "width"=>120,
                 "tooltip"=>"Aggiungi un nuovo comune",
                 //"click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
-                "click"=>"AA_MainApp.utils.callHandler('AddNewComune', {task:\"GetSierAddNewComuneDlg\", params: [{id: ".$object->GetId()."},{table_id:\"".$id."_Comuni\"}]},'".$this->id."')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewComuneDlg\", params: [{id: ".$object->GetId()."},{table_id:\"".$id."_Comuni\"}]},'".$this->id."')"
             ));
             $toolbar->AddElement($modify_btn);
         }
@@ -6975,7 +7061,7 @@ Class AA_SierModule extends AA_GenericModule
         $data=array();
         $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
 
-        $comuni=$object->GetComuni();
+        $comuni=$object->GetComuni(null,$params);
         foreach($comuni as $curComune)
         {
             $data[]=$curComune->GetProps();
@@ -7107,6 +7193,58 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         return $layout;
+    }
+
+    //Template filtro di ricerca comuni
+    public function Template_GetSierComuneFilterDlg()
+    {
+        $session_params=AA_SessionVar::Get(static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX);
+        if($session_params->IsValid())
+        {
+            $formData=(array)$session_params->GetValue();
+            //AA_Log::Log(__METHOD__." - session var: ".$id." - value: ".print_r($params,true),100);
+            foreach($formData as $key=>$curParam)
+            {
+                if(isset($_REQUEST[$key])) $formData[$key]=$_REQUEST[$key];
+            }
+            if(isset($_REQUEST['id']) && $_REQUEST['id'] > 0) $formData['id']=$_REQUEST['id'];
+        }
+        else
+        {
+            //Valori runtime
+            $formData=array("id"=>$_REQUEST['id'],"senza_operatori"=>$_REQUEST['senza_operatori'],"senza_affluenza"=>$_REQUEST['senza_affluenza'],"senza_risultati"=>$_REQUEST['senza_risultati'],"senza_rendiconti"=>$_REQUEST['senza_rendiconti']);
+        }
+                
+        //Valori reset
+        $resetData=array("senza_operatori"=>0,"senza_affluenza"=>0,"senza_risultati"=>0,"senza_rendiconti"=>0);
+        
+        //Azioni da eseguire dopo l'applicazione del filtro
+        $applyActions="AA_MainApp.curModule.refreshUiObject('".static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX."',true)";
+        
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Comune_Filter", "Parametri di filtraggio",$this->GetId(),$formData,$resetData,$applyActions,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX);
+        
+        $dlg->SetHeight(480);
+        $dlg->SetLabelWidth(250);
+        
+        //Senza operatori
+        $dlg->AddSwitchBoxField("senza_operatori","Comuni senza operatori",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza operatori."));
+
+        //Senza affluenza
+        $dlg->AddSwitchBoxField("senza_affluenza","Comuni senza affluenza",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza affluenza."));
+
+        //Senza risultati
+        $dlg->AddSwitchBoxField("senza_risultati","Comuni senza risultati",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza risultati."));
+
+        //Senza rendiconti
+        $dlg->AddSwitchBoxField("senza_rendiconti","Comuni senza rendiconti",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza rendiconti."));
+
+        //Enable session save
+        $dlg->EnableSessionSave();
+
+        $dlg->SetApplyButtonName("Filtra");
+        $dlg->EnableApplyHotkey();
+
+        return $dlg->GetObject();
     }
     
     //Task Update Sier
@@ -8465,6 +8603,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction("refreshCurSection");
         $task->SetContent("Dati aggiornati con successo.",false);
         return true;
     }
@@ -9150,6 +9289,17 @@ Class AA_SierModule extends AA_GenericModule
         
         return true;
     }
+
+     //Task filter comune dlg
+     public function Task_GetSierComuneFilterDlg($task)
+     {
+         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+         
+         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+         $task->SetContent($this->Template_GetSierComuneFilterDlg($_REQUEST),true);
+         
+         return true;
+     }
     
     //Task NavBarContent
     public function Task_GetNavbarContent($task)
@@ -9534,7 +9684,7 @@ Class AA_SierModule extends AA_GenericModule
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
 
 
-        $wnd = new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
+        $wnd = new AA_GenericWindowTemplate($id, "Gestione operatori comune di ".$comune->GetProp("denominazione"), $this->id);
 
         $layout=$this->Template_GetSierComuneOperatoriViewLayout($object,$comune,$id);
         $wnd->AddView($layout);
@@ -9609,12 +9759,12 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Cognome e nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"cf","header"=>array("<div style='text-align: center'>Codice fiscale</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
-            array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>120, "css"=>array("text-align"=>"center"))
         );
         
         $utenti=$comune->GetOperatori(true);
-        $ruolo=array(1=>"Caricamento dati",2=>"Caricamento rendiconti",3=>"Qualunque");
+        $ruolo=array(1=>"Caricamento dati",2=>"Caricamento rendiconti",3=>"Caricamento dati e rendiconti");
         $data=array();
         if(sizeof($utenti) > 0)
         {
@@ -9625,7 +9775,7 @@ Class AA_SierModule extends AA_GenericModule
                     $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
                     $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica operatore' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina operatore' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
                 }
-                $data[]=array("id"=>$curUser['cf'],"ops"=>$ops, "lastLogin"=>$curUser['lastlogin'],"email"=>$curUser['email'],"denominazione"=>$curUser['cognome']." ".$curUser['cognome'],"cf"=>$curUser['cf'],"ruolo"=>$ruolo[$curUser['ruolo']]);
+                $data[]=array("id"=>$curUser['cf'],"ops"=>$ops, "lastLogin"=>$curUser['lastlogin'],"email"=>$curUser['email'],"denominazione"=>$curUser['cognome']." ".$curUser['nome'],"cf"=>$curUser['cf'],"ruolo"=>$ruolo[$curUser['ruolo']]);
             }
             $table=new AA_JSON_Template_Generic($id."_View", array(
                 "view"=>"datatable",
@@ -9652,6 +9802,16 @@ Class AA_SierModule extends AA_GenericModule
         if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI."_".static::AA_UI_LAYOUT_OPERATORI_COMUNALI)
         {
             $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI."_".static::AA_UI_LAYOUT_OPERATORI_COMUNALI, "content" => $this->Template_GetSierComuneOperatoriViewLayout(null,null,static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI)->toArray());
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent(json_encode($content),true);
+            return true;
+        }
+
+        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX)
+        {
+            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
+
+            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "content" => $this->TemplateSierDettaglio_Comuni_Tab()->toArray());
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
             $task->SetContent(json_encode($content),true);
             return true;

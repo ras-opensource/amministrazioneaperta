@@ -244,6 +244,21 @@ class AA_GenericModuleTask extends AA_GenericTask
         if($val == -1) $this->nStatus=-1;
         if($val == -2) $this->nStatus=-2;
     }
+    protected $sStatusAction="";
+    public function SetStatusAction($action="",$params=null,$json_encode=false)
+    {
+        $this->sStatusAction=$action;
+        $this->SetStatusActionParams($params,$json_encode);
+    }
+    protected $sStatusActionParams="";
+    public function SetStatusActionParams($params=null,$json_encode=false)
+    {
+        if($json_encode && $params)
+        {
+            $this->sStatusActionParams=json_encode($params);
+        }
+        else $this->sStatusActionParams=$params;
+    }
 
     protected $sError="";
     protected $sErrorType="";
@@ -292,7 +307,7 @@ class AA_GenericModuleTask extends AA_GenericTask
     {
         if($this->sTaskLog=="")
         {
-            $this->sTaskLog="<status id='status'>".$this->nStatus."</status><content id='content' type='".$this->sContentType."' encode='".$this->sContentEncode."'>".$this->sContent."</content><error id='error' type='".$this->sErrorType."' encode='".$this->sErrorEncode."'>".$this->sError."</error>";
+            $this->sTaskLog="<status id='status' action='".$this->sStatusAction."' action_params='".$this->sStatusActionParams."'>".$this->nStatus."</status><content id='content' type='".$this->sContentType."' encode='".$this->sContentEncode."'>".$this->sContent."</content><error id='error' type='".$this->sErrorType."' encode='".$this->sErrorEncode."'>".$this->sError."</error>";
         }
 
         //AA_Log::Log(__METHOD__." - sTaskLog: ".$this->sTaskLog,100);
