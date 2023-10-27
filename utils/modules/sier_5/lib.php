@@ -12,6 +12,7 @@ include_once "system_lib.php";
 Class AA_Sier_Const extends AA_Const
 {
     const AA_USER_FLAG_SIER="sier";
+    const AA_USER_FLAG_SIER_OC="sier_oc";
 
     //percorso file
     const AA_SIER_ALLEGATI_PATH="/sier/allegati";
@@ -924,7 +925,7 @@ Class AA_Sier extends AA_Object_V2
         //------------local checks---------------
 
         //Se l'utente non ha il flag può al massimo visualizzare la scheda
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) && !$user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $perms = AA_Const::AA_PERMS_READ;
         }
@@ -2418,7 +2419,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         $is_enabled= false;
        
-        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $is_enabled=true;
         }
@@ -2437,13 +2438,21 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $content=$this->TemplateGenericSection_Bozze($params,false);
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        {
+            $content->EnableAddNew(false);
+            $content->EnablePublish(false);
+            $content->EnableReassign(false);
+            $content->EnableTrash(false);
+        } 
+
         return $content->toObject();
     }
     
     //Restituisce i dati delle bozze
     public function GetDataSectionBozze_List($params=array())
     {
-        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) && !$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             AA_Log::Log(__METHOD__." - ERRORE: l'utente corrente: ".$this->oUser->GetUserName()." non è abilitato alla visualizzazione delle bozze.",100);
             return array();
@@ -6220,8 +6229,11 @@ Class AA_SierModule extends AA_GenericModule
         //Gestione dei tab
         //$id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$params['id'];
         //$params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"));
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $params['readonly']=true;
         
-        return $this->TemplateGenericSection_Detail($params);
+        $detail = $this->TemplateGenericSection_Detail($params);
+
+        return $detail;
     }   
     
     //Template section detail, tab generale
@@ -6233,9 +6245,9 @@ Class AA_SierModule extends AA_GenericModule
         
         $rows_fixed_height=50;
         $canModify=false;
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $canModify=true;
 
-        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id);
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,null,$canModify);
 
         //Descrizione
         $value=$object->GetDescr();

@@ -503,6 +503,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             $params['flags']=implode("|",$userFlags);
         }
+        else $params['flags']="";
         
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {

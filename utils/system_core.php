@@ -1334,7 +1334,7 @@ class AA_User
         "incipit"=> '<p>Buongiorno,
         E\' stato richiesto il reset della password per l\'accesso alla piattaforma applicativa "Amministrazione Aperta", per le pubblicazioni sul sito istituzionale di cui al d.lgs.33/2013.
                        
-        url: https://sitod.regione.sardegna.it/web/amministrazione_aperta
+        url: https://'.AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT.'
 
         di seguito le credenziali per l\'accesso:',
         "bShowStruct"=>true,
@@ -1348,7 +1348,7 @@ class AA_User
         <div>Presidentzia</div>
         <div>Presidenza</div>
         <div>V.le Trento, 69 - 09123 Cagliari</div>
-        <img src="https://sitod.regione.sardegna.it/web/logo.jpg" data-mce-src="https://sitod.regione.sardegna.it/web/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
+        <img src="https://'.AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT.'/immagini/logo.jpg" data-mce-src="https://'.AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT.'/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
     );
     public static function SetResetPwdEmailParams($params=array())
     {

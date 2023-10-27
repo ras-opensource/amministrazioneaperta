@@ -3355,9 +3355,11 @@ class AA_GenericModule
         }
 
         $perms = $object->GetUserCaps($this->oUser);
+        if($params['readonly']) $perms=AA_Const::AA_PERMS_READ;
+        
         $id_org = $object->GetID();
 
-        if (($perms & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
+        if (($perms & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'oggetto\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
 
         $header = new AA_JSON_Template_Layout($id . "Header" . "_$id_org", array("type" => "clean", "height" => 38, "css" => "AA_SectionContentHeader"));
 
@@ -3605,7 +3607,7 @@ class AA_GenericModule
     }
 
     //Template generic section detail, tab generale header
-    public function TemplateGenericDettaglio_Header_Generale_Tab($object = null, $id = "",$header_content=null)
+    public function TemplateGenericDettaglio_Header_Generale_Tab($object = null, $id = "",$header_content=null,$bModify=null)
     {
         if (!($object instanceof AA_Object_V2)) return new AA_JSON_Template_Template($id, array("template" => "Dati non validi"));
 
@@ -3622,8 +3624,12 @@ class AA_GenericModule
         $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
 
         //Pulsante di modifica
-        $canModify = false;
-        if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0) $canModify = true;
+        if(!isset($bModify))
+        {
+            $canModify = false;
+            if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0) $canModify = true;    
+        }
+        else $canModify=$bModify;
         if ($canModify) {
             $modify_btn = new AA_JSON_Template_Generic($id . "_Modify_btn", array(
                 "view" => "button",
@@ -4698,18 +4704,22 @@ class AA_GenericPagedSectionTemplate
     public function ViewDetail($bVal = true)
     {
         $this->detailView = $bVal;
+        $this->detailEnable = $bVal;
     }
     public function HideDetail()
     {
         $this->detailEnable = false;
+        $this->detailView = false;
     }
     public function EnableDetail($bVal = true)
     {
         $this->detailEnable = $bVal;
+        $this->detailView = $bVal;
     }
     public function DisableDetail()
     {
         $this->detailEnable = false;
+        $this->detailView = false;
     }
 
     //cestino
@@ -4720,18 +4730,23 @@ class AA_GenericPagedSectionTemplate
     public function ViewTrash($bVal = true)
     {
         $this->trashView = $bVal;
+        $this->trashEnable = $bVal;
     }
     public function HideTrash()
     {
         $this->trashView = false;
+        $this->trashEnable = false;
     }
     public function EnableTrash($bVal = true)
     {
         $this->trashEnable = $bVal;
+        $this->trashView = $bVal;
+
     }
     public function DisableTrash()
     {
         $this->trashEnable = false;
+        $this->trashView = false;
     }
     public function SetTrashHandler($handler = null, $params = null)
     {
@@ -4750,18 +4765,22 @@ class AA_GenericPagedSectionTemplate
     public function ViewDelete($bVal = true)
     {
         $this->deleteView = $bVal;
+        $this->deleteEnable = $bVal;
     }
     public function HideDelete()
     {
         $this->deleteView = false;
+        $this->deleteEnable = false;
     }
     public function EnableDelete($bVal = true)
     {
         $this->deleteEnable = $bVal;
+        $this->deleteView = $bVal;
     }
     public function DisableDelete()
     {
         $this->deleteEnable = false;
+        $this->deleteView = false;
     }
     protected $deleteHandler = "sectionActionMenu.delete";
     protected $deleteHandlerParams = "";
@@ -4781,18 +4800,22 @@ class AA_GenericPagedSectionTemplate
     public function ViewReassign($bVal = true)
     {
         $this->reassignView = $bVal;
+        $this->reassignEnable = $bVal;
     }
     public function HideReassign()
     {
         $this->reassignView = false;
+        $this->reassignEnable = false;
     }
     public function EnableReassign($bVal = true)
     {
         $this->reassignEnable = $bVal;
+        $this->reassignView = $bVal;
     }
     public function DisableReassign()
     {
         $this->reassignEnable = false;
+        $this->reassignView = false;
     }
     protected $reassignHandler = "sectionActionMenu.reassign";
     protected $reassignHandlerParams = "";
@@ -4813,18 +4836,22 @@ class AA_GenericPagedSectionTemplate
     public function ViewResume($bVal = true)
     {
         $this->resumeView = $bVal;
+        $this->resumeEnable = $bVal;
     }
     public function HideResume()
     {
         $this->resumeView = false;
+        $this->resumeEnable = false;
     }
     public function EnableResume($bVal = true)
     {
         $this->resumeEnable = $bVal;
+        $this->resumeView = $bVal;
     }
     public function DisableResume()
     {
         $this->resumeEnable = false;
+        $this->resumeView = false;
     }
     protected $resumeHandler = "sectionActionMenu.resume";
     protected $resumeHandlerParams = "";
@@ -4845,18 +4872,23 @@ class AA_GenericPagedSectionTemplate
     public function ViewPublish($bVal = true)
     {
         $this->publishView = $bVal;
+        $this->publishEnable = $bVal;
     }
     public function HidePublish()
     {
         $this->publishView = false;
+        $this->publishEnable = false;
     }
     public function EnablePublish($bVal = true)
     {
         $this->publishEnable = $bVal;
+        $this->publishView=$bVal;
     }
     public function DisablePublish()
     {
         $this->publishEnable = false;
+        $this->publishView=false;
+
     }
     protected $publishHandler = "sectionActionMenu.publish";
     protected $publishHandlerParams = "";
