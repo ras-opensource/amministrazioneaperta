@@ -530,7 +530,7 @@ Class AA_HomeModule extends AA_GenericModule
         if(!$this->oUser->UpdateUser($user,$params))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiornamento dell'utente.");
+            $task->SetError(AA_log::$lastErrorLog);
             return false;      
         }
 
@@ -632,7 +632,7 @@ Class AA_HomeModule extends AA_GenericModule
         if(!$this->oUser->AddNewUser($params))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiunta dell'utente.");
+            $task->SetError(AA_Log::$lastErrorLog);
             return false;      
         }
 

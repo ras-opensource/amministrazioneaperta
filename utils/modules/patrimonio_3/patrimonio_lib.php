@@ -2729,12 +2729,34 @@ Class AA_PatrimonioModule extends AA_GenericModule
                         //merge subalterno
                         if($data[$cespite]['Subalterno'] != "" && $curDataValues['Subalterno'] > 0 && strpos($data[$cespite]['Subalterno'],$curDataValues['Subalterno']) === false) $data[$cespite]['Subalterno'].=",".$curDataValues['Subalterno'];
                         if($data[$cespite]['Subalterno'] == "" && $curDataValues['Subalterno'] > 0) $data[$cespite]['Subalterno'] = $curDataValues['Subalterno'];
-    
                     }
                 }
             }
             $curRowNum++;
         }
+
+        /*//normalizza
+        foreach($data as $key=>$curData)
+        {
+            foreach($curData as $cespite=>$val)
+            {
+                $subcespite=array_unique(explode(",",$data[$cespite]['Subcespite']));
+                sort($subcespite);
+                $data[$cespite]['Subcespite']=implode(",",$subcespite);
+
+                $subcespite=array_unique(explode(",",$data[$cespite]['FoglioCatasto']));
+                sort($subcespite);
+                $data[$cespite]['FoglioCatasto']=implode(",",$subcespite);
+
+                $subcespite=array_unique(explode(",",$data[$cespite]['ParticellaCatasto']));
+                sort($subcespite);
+                $data[$cespite]['ParticellaCatasto']=implode(",",$subcespite);
+                
+                $subcespite=array_unique(explode(",",$data[$cespite]['Subalterno']));
+                sort($subcespite);
+                $data[$cespite]['Subalterno']=implode(",",$subcespite);
+            }
+        }*/
 
         AA_SessionVar::Set("PatrimonioMultiFromCSV_ParsedData",$data,false);
         

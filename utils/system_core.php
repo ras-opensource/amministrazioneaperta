@@ -6804,7 +6804,7 @@ class AA_SessionVar
         return $this->bValid;
     }
 
-    public function UnsetVar($name="")
+    static public function UnsetVar($name="")
     {
         if (isset($_SESSION['SessionVars'][$name]) && $name != "") 
         {
