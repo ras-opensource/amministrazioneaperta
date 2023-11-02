@@ -961,7 +961,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             foreach($utenti as $curUser)
             {
-                $flags=$curUser->GetFormatedFlags();
+                $flags=$curUser->GetLabelFlags();
                 
                 if(!$curUser->IsDisabled()) $status="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
                 else
@@ -1258,7 +1258,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             foreach($utenti as $curUser)
             {
-                $flags=$curUser->GetFormatedFlags();
+                $flags=$curUser->GetLabelFlags();
                 $status=$curUser->GetStatus();
                 $trash=true;
                 $tip_trash="Cestina";

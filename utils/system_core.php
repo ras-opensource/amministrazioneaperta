@@ -956,22 +956,24 @@ class AA_User
     }
 
     //Restituisce una stringa formattata con i flags
-    public function GetFormatedFlags()
+    public function GetLabelFlags()
     {
         $flags=$this->GetFlags(true);
+        $platformFlags=AA_Platform::GetAllModulesFlags();
         $result="";
         foreach($flags as $curFlag)
         {
             if($curFlag=="accessi") $result.="<span class='AA_Label AA_Label_LightGreen'>RIA</span>&nbsp;";
             if($curFlag=="admin_accessi") $result.="<span class='AA_Label AA_Label_LightGreen'>RIA(adm)</span>&nbsp;";
-            if($curFlag=="art22") $result.="<span class='AA_Label AA_Label_LightGreen'>SINES</span>&nbsp;";
-            if($curFlag=="art22_admin") $result.="<span class='AA_Label AA_Label_LightGreen'>SINES(adm)</span>&nbsp;";
-            if($curFlag=="art23") $result.="<span class='AA_Label AA_Label_LightGreen'>GESPA</span>&nbsp;";
-            if($curFlag=="patrimonio") $result.="<span class='AA_Label AA_Label_LightGreen'>GESPI</span>&nbsp;";
-            if($curFlag=="sier") $result.="<span class='AA_Label AA_Label_LightGreen'>SIER</span>&nbsp;";
+            //($curFlag=="art22") $result.="<span class='AA_Label AA_Label_LightGreen'>SINES</span>&nbsp;";
+            //if($curFlag=="art22_admin") $result.="<span class='AA_Label AA_Label_LightGreen'>SINES(adm)</span>&nbsp;";
+            //if($curFlag=="art23") $result.="<span class='AA_Label AA_Label_LightGreen'>GESPA</span>&nbsp;";
+            //if($curFlag=="patrimonio") $result.="<span class='AA_Label AA_Label_LightGreen'>GESPI</span>&nbsp;";
+            //if($curFlag=="sier") $result.="<span class='AA_Label AA_Label_LightGreen'>SIER</span>&nbsp;";
             if($curFlag=="processi") $result.="<span class='AA_Label AA_Label_LightGreen'>SIMAP</span>&nbsp;";
             if($curFlag=="incarichi") $result.="<span class='AA_Label AA_Label_LightGreen'>Incarichi</span>&nbsp;";
             if($curFlag=="incarichi_titolari") $result.="<span class='AA_Label AA_Label_LightGreen'>Incarichi(adm)</span>&nbsp;";
+            if(isset($platformFlags[$curFlag])) $result.="<span class='AA_Label AA_Label_LightGreen'>".$platformFlags[$curFlag]."</span>&nbsp;";
         }
         
         return $result;
@@ -1331,25 +1333,17 @@ class AA_User
     //Reset password email params
     protected static $aResetPasswordEmailParams=array(
         "oggetto"=>'Amministrazione Aperta - Reset della password.',
-        "incipit"=> '<p>Buongiorno,
-        E\' stato richiesto il reset della password per l\'accesso alla piattaforma applicativa "Amministrazione Aperta", per le pubblicazioni sul sito istituzionale di cui al d.lgs.33/2013.
-                       
-        url: https://'.AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT.'
-
-        di seguito le credenziali per l\'accesso:',
+        "incipit"=>"<p>Buongiorno,<br>è stato richiesto il reset della password per l'accesso alla piattaforma applicativa \"Amministrazione Aperta\", per le pubblicazioni sul sito istituzionale di cui al d.lgs.33/2013.<br>url: https://#www#<br>di seguito le credenziali per l'accesso:",
         "bShowStruct"=>true,
-        "post"=>'<br/>E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.
-
-        Le utenze che hanno associato l\'indirizzo email sul proprio profilo possono effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente
-
-        Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
+        "post"=>'<br/>E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.<br>Le utenze che hanno associato l\'indirizzo email sul proprio profilo possono effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente<br>Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
         "firma"=>'<div>--
         <div><strong>Amministrazione Aperta</strong></div>
         <div>Presidentzia</div>
         <div>Presidenza</div>
         <div>V.le Trento, 69 - 09123 Cagliari</div>
-        <img src="https://'.AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT.'/immagini/logo.jpg" data-mce-src="https://'.AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT.'/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
+        <img src="https://#www#/immagini/logo.jpg" data-mce-src="https://#www#/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
     );
+
     public static function SetResetPwdEmailParams($params=array())
     {
         foreach($params as $key=>$val)
@@ -4076,11 +4070,12 @@ class AA_User
             if ($credenziali != "") {
                 $oggetto = static::$aResetPasswordEmailParams['oggetto'];
 
-                $corpo = static::$aResetPasswordEmailParams['incipit'].$credenziali.static::$aResetPasswordEmailParams['post'];
-                $firma = static::$aResetPasswordEmailParams['firma'];
+                $corpo = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,static::$aResetPasswordEmailParams['incipit']).$credenziali.static::$aResetPasswordEmailParams['post'];
+                $firma = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,static::$aResetPasswordEmailParams['firma']);
 
                 if ($bSendEmail) {
-                    if (!SendMail(array($user->GetEmail()), array(), $oggetto, nl2br($corpo) . $firma, array(), 1)) {
+                    if (!SendMail(array($user->GetEmail()), array(), $oggetto, nl2br($corpo) . $firma, array(), 1)) 
+                    {
                         AA_Log::Log(__METHOD__."- Errore nell'invio della email a: " . $user->GetEmail(), 100);
                         return false;
                     }
