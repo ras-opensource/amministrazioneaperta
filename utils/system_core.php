@@ -1509,8 +1509,11 @@ class AA_User
                                 break;
                             }
                         }
-                        AA_Log::Log(__METHOD__." - Credenziali errate.", 100);
-                        return AA_User::Guest();
+                        if(!is_array($rs))
+                        {
+                            AA_Log::Log(__METHOD__." - Credenziali errate.", 100);
+                            return AA_User::Guest();    
+                        }
                     }
                     else
                     {
@@ -2903,7 +2906,7 @@ class AA_User
 
         if(!$user->CanModifyUser($legacyUser))
         {
-            AA_Log::Log(__METHOD__." - l'utente  corrente non può modifcare l'utente legacy.",100);
+            AA_Log::Log(__METHOD__." - l'utente  corrente non può modificare l'utente legacy.",100);
             return false;
         }
 
@@ -2917,7 +2920,7 @@ class AA_User
         $update=false;
         if($db->GetAffectedRows()>0)
         {
-            AA_Log::Log(__METHOD__." - utente già presente, aggiorno i dati ".$db->GetErrorMessage(),100);
+            AA_Log::Log(__METHOD__." - utente già presente, aggiorno i dati ".$db->GetErrorMessage(),100,true);
             
             $update=true;
         }
@@ -3457,11 +3460,11 @@ class AA_User
                 $flags .= $separatore . "art14|art14c1bis";
                 $separatore = "|";
             }
-            if (isset($params['art23'])) {
+            if (isset($params['art23']) || (isset($params['flag_art23']) && $params['flag_art23'] > 0)) {
                 $flags .= $separatore . "art23";
                 $separatore = "|";
             }
-            if (isset($params['art22'])) {
+            if (isset($params['art22']) || (isset($params['flag_art22']) && $params['flag_art22'] > 0)) {
                 $flags .= $separatore . "art22";
                 $separatore = "|";
             }
@@ -3486,7 +3489,7 @@ class AA_User
                 $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI;
                 $separatore = "|";
             }
-            if (isset($params['patrimonio'])) {
+            if (isset($params['patrimonio']) || (isset($params['flag_patrimonio']) && $params['flag_patrimonio'] > 0)) {
                 $flags .= $separatore . "patrimonio";
                 $separatore = "|";
             }

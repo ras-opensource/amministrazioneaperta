@@ -16,8 +16,27 @@ include_once "libs.php";
 $log=false;
 function UserAuth($user,$pwd,$token)
 {
-    $user=AA_User::legacyUserAuth($token,$user,$pwd);
+    $user=AA_User::UserAuth($token,$user,$pwd);
     
+    if(!$user->IsValid())
+    {
+      $user=AA_User::legacyUserAuth($token,$user,$pwd);
+      if($user->IsValid())
+      {
+        AA_User::MigrateLegacyUser($user,"",$pwd);
+
+        return true;
+      }
+
+      $user=AA_User::legacyUserAuth($token,$user,md5($pwd));
+      if($user->IsValid())
+      {
+        AA_User::MigrateLegacyUser($user,$pwd);
+
+        return true;
+      }
+    }
+
     return $user->IsValid();
 
     /*
