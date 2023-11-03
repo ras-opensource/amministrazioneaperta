@@ -2969,12 +2969,12 @@ class AA_User
         $modulesFlags=array_keys(AA_Platform::GetAllModulesFlags());
         //AA_Log::Log(__METHOD__." - modulesFlagsKeys: ".print_r($modulesFlags,true),100);
 
-        $userFlags=array();
+        $userFlags=$legacyUser->GetFlags(true,false);
         foreach($legacyflags as $curFlag)
         {
             if(array_search($curFlag,$modulesFlags) !==false) $userFlags[]=$curFlag;
         }
-        if(sizeof($userFlags)>0) $userFlags=implode("|",$userFlags);
+        if(sizeof($userFlags)>0) $userFlags=implode("|",array_unique($userFlags));
         else $userFlags="";
         $sql.=", flags='".addslashes($userFlags)."' ";
 
