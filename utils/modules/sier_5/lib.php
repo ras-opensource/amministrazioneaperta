@@ -2327,7 +2327,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $user=AA_User::GetCurrentUser();
         }
-        
+
         #-------------------------------- Verifica se è un operatore comunale ----------------
         if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1 && isset($_SESSION['oc_sier_object']) && $_SESSION['oc_sier_object'] > 0 && $user->IsValid() && $user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
@@ -2442,6 +2442,11 @@ Class AA_SierModule extends AA_GenericModule
             $oc=AA_SierOperatoreComunale::GetInstance();
             if(!$oc->IsLogged())
             {
+                //login tasks
+                $taskManager->RegisterTask("OCLogin");
+                $taskManager->RegisterTask("GetOCLoginVerifyDlg");
+                $taskManager->RegisterTask("OCLoginVerify");
+
                 //login
                 $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_LOGIN,"Login operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_LOGIN,$this->GetId(),true,true,false,true);
                 $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1)->toArray()));
@@ -6381,6 +6386,71 @@ Class AA_SierModule extends AA_GenericModule
     public function TemplateSierDettaglio_Generale_Tab($object=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX;
+
+        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        
+        $rows_fixed_height=50;
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $canModify=true;
+
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,null,$canModify);
+
+        //Descrizione
+        $value=$object->GetDescr();
+        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Descrizione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //anno riferimento
+        $value=$object->GetProp("Anno");
+        if($value=="")$value="n.d.";
+        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Anno:","value"=>$value)
+        ));
+        
+        //note
+        $value = $object->GetProp("Note");
+        $note=new AA_JSON_Template_Template($id."_Note",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Note:","value"=>$value)
+        ));
+        
+        //prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($anno_rif);
+        $riga->AddCol($this->TemplateDettaglio_Abilitazioni($object,$id."_Abilitazioni"));
+        $layout->AddRow($riga);
+
+        //seconda riga
+        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $layout_gen=new AA_JSON_Template_Layout($id."_DescrNoteLayout",array("gravity"=>3,"type"=>"clean"));
+        $layout_gen->addRow($descr);
+        $layout_gen->addRow($note);
+        $riga->addCol($layout_gen);
+
+        //$riga->addCol($this->TemplateDettaglio_Allegati($object,$id,$canModify));
+        $riga->addCol($this->TemplateDettaglio_Giornate($object,$id,$canModify));
+
+        //$layout->AddRow($riga);
+
+        //terza riga
+        //$riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>1));
+      
+
+        $layout->AddRow($riga);
+
+        return $layout;
+    }
+
+    //Template section oc login
+    public function TemplateSection_OC_Login($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_LOGIN."_".static::AA_UI_SECTION_OC_LOGIN;
 
         if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
