@@ -551,11 +551,13 @@ class AA_Struct
             if (sizeof($ass['direzioni']) > 0 && (!isset($params['hideDirs']) || $params['hideDirs'] !=1)) $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0, "data" => array());
             else $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0);
 
+            AA_Log::Log(__METHOD__." - curAssessorato: ".print_r($curAssessorato,true),100);
+
             if ((!isset($params['hideDirs']) || $params['hideDirs'] !=1)) {
                 foreach ($ass['direzioni'] as $id_dir => $dir) {
                     //AA_Log::Log(get_class()."->toArray() - direzione: ".$dir['descrizione'],100);
 
-                    if (sizeof($dir['servizi']) && (!isset($params['hideServices']) || $params['hideServices'] !=1)) $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso'], "data" => array());
+                    if (sizeof($dir['servizi']) > 0 && (!isset($params['hideServices']) || $params['hideServices'] !=1)) $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso'], "data" => array());
                     else $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso']);
                     if ((!isset($params['hideServices']) || $params['hideServices'] !=1)) {
                         foreach ($dir['servizi'] as $id_ser => $ser) {

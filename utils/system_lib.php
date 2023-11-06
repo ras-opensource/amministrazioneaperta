@@ -3915,8 +3915,8 @@ class AA_GenericStructDlg extends AA_GenericWindowTemplate
         $tree = new AA_JSON_Template_Tree($this->id . "_Tree", array(
             "data" => $struct->toArray($options),
             "select" => true,
-            "filterMode" => array("showSubItems" => false, "level" => $filterLevel, "openParents" => false),
-            "template" => "{common.icon()} {common.folder()} <span>#value#</span>"
+            //"filterMode" => array("showSubItems" => false, "level" => $filterLevel, "openParents" => false),
+            "template" => "{common.icon()}&nbsp;{common.folder()}&nbsp;<span>#value#</span>"
         ));
 
         //Filtra in base al testo

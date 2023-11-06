@@ -6314,9 +6314,9 @@ Class AA_SierModule extends AA_GenericModule
 
         #documenti----------------------------------
         $curId=$id;
-        $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","gravity"=>4,"css"=>array("border-left"=>"1px solid gray !important;","border-top"=>"1px solid gray !important;")));
+        $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","gravity"=>4));
 
-        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_allegati",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
 
         $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Allegati_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Documenti</span>", "align"=>"center")));
@@ -6546,7 +6546,10 @@ Class AA_SierModule extends AA_GenericModule
 
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
 
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"borderless"=>true,"width"=>130));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_Coalizioni_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Coalizioni e lista</span>", "align"=>"center")));
         
         $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
             "view"=>"tabbar",
@@ -6823,9 +6826,8 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_Candidati_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Candidati</span>", "align"=>"center")));
         
         //Pulsante di modifica
         $canModify=false;
