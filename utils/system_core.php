@@ -551,7 +551,7 @@ class AA_Struct
             if (sizeof($ass['direzioni']) > 0 && (!isset($params['hideDirs']) || $params['hideDirs'] !=1)) $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0, "data" => array());
             else $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0);
 
-            AA_Log::Log(__METHOD__." - curAssessorato: ".print_r($curAssessorato,true),100);
+            //AA_Log::Log(__METHOD__." - curAssessorato: ".print_r($curAssessorato,true),100);
 
             if ((!isset($params['hideDirs']) || $params['hideDirs'] !=1)) {
                 foreach ($ass['direzioni'] as $id_dir => $dir) {

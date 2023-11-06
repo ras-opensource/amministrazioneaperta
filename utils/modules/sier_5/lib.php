@@ -2177,6 +2177,91 @@ Class AA_Sier extends AA_Object_V2
     }
 }
 
+#Classe operatore comunale
+Class AA_SierOperatoreComunale
+{
+    protected $oInstance=null;
+    protected function __construct()
+    {
+       
+    }
+
+    static public function GetInstance()
+    {
+        if(static::$oInstance instanceof AA_SierOperatoreComunale) return static::$oInstance;
+
+        if(isset($_SESSION['oc_object']) && static::$oInstance == null)
+        {
+            static::$oInstance=unserialize($_SESSION['oc_object']);
+
+            if(static::$oInstance instanceof AA_SierOperatoreComunale) return static::$oInstance;
+            else return new AA_SierOperatoreComunale();
+        }
+
+        return new AA_SierOperatoreComunale();
+    }
+
+    #funzioni di autenticazione
+    public function ChallengeLogin($cf="",$objectId=0)
+    {
+        return false;
+    }
+    public function VerifyLogin($token="")
+    {
+
+        return false;
+    }
+    #----------------------------
+
+    protected $sOperatoreComunaleName="Nessuno";
+    protected $sOperatoreComunaleCf="";
+    protected $sOperatoreComunaleEmail="";
+    protected $bOperatoreComunaleLogged=false;
+    protected $nOperatoreComunaleComune=0;
+    protected $nOperatoreComunaleObjectId=0;
+    protected $bValid=false;
+    public function IsValid()
+    {
+        return $this->bValid;
+    }
+    public function IsLogged()
+    {
+        return $this->bOperatoreComunaleLogged;
+    }
+    public function GetOperatoreComunaleName()
+    {
+        return $this->sOperatoreComunaleName;
+    }
+    protected function SetOperatoreComunaleName($val="")
+    {
+        $this->sOperatoreComunaleName=$val;
+    }
+    public function GetOperatoreComunaleCf()
+    {
+        return $this->sOperatoreComunaleCf;
+    }
+    protected function SetOperatoreComunaleCf($val="")
+    {
+        $this->sOperatoreComunaleCf=$val;
+    }
+    public function GetOperatoreComunaleComune()
+    {
+        return $this->nOperatoreComunaleComune;
+    }
+    protected function SetOperatoreComunaleComune($val=0)
+    {
+        $this->nOperatoreComunaleComune=$val;
+    }
+    public function GetOperatoreComunaleObjectId()
+    {
+        return $this->nOperatoreComunaleObjectId;
+    }
+    protected function SetOperatoreComunaleObject($val=0)
+    {
+        $this->nOperatoreComunaleObjectId=$val;
+    }
+}
+
 #Classe per il modulo art23 - provvedimenti dirigenziali e accordi
 Class AA_SierModule extends AA_GenericModule
 {
@@ -2210,6 +2295,10 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_WND_RISULTATI_COMUNALI="RisultatiComunaliWnd";
     const AA_UI_LAYOUT_RISULTATI_COMUNALI="RisultatiComunaliLayout";
 
+    //Section id
+    const AA_ID_SECTION_OC_LOGIN="OperatoriComunaliLogin";
+    const AA_ID_SECTION_OC_DESKTOP= "OperatoriComunaliDesktop";
+
     //section ui ids
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
     const AA_UI_DETAIL_LISTE_BOX = "Liste_Box";
@@ -2217,107 +2306,159 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_DETAIL_COMUNI_BOX = "Comuni_Box";
     const AA_UI_DETAIL_CRUSCOTTO_BOX = "Cruscotto_Box";
     const AA_UI_DETAIL_ALLEGATI_BOX = "Allegati_Box";
+    const AA_UI_SECTION_OC_LOGIN = "OperatoriComunaliLoginBox";
+    const AA_UI_SECTION_OC_DESKTOP= "OperatoriComunaliDesktopBox";
+
+    protected $bOperatoreComunaleInterface=false;
+    public function IsOperatoreComunaleUIEnabled()
+    {
+        return $this->bOperatoreComunaleInterface;
+    }
+    
+    public function EnableOperatoreComunaleInterface($val=true)
+    {
+        if($val) $this->bOperatoreComunaleInterface=true;
+        else $this->bOperatoreComunaleInterface=false;
+    }
 
     public function __construct($user=null,$bDefaultSections=true)
     {
-        parent::__construct($user,$bDefaultSections);
+        if(!($user instanceof AA_user))
+        {
+            $user=AA_User::GetCurrentUser();
+        }
         
+        #-------------------------------- Verifica se è un operatore comunale ----------------
+        if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1 && isset($_SESSION['oc_sier_object']) && $_SESSION['oc_sier_object'] > 0 && $user->IsValid() && $user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $this->bOperatoreComunaleInterface=true;
+            $bDefaultSections=false;
+        }
+        #-------------------------------------------------------------------------------------
+
+        parent::__construct($user,$bDefaultSections);
+
         #-------------------------------- Registrazione dei task -----------------------------
         $taskManager=$this->GetTaskManager();
         
-        //Dialoghi di filtraggio
-        $taskManager->RegisterTask("GetSierPubblicateFilterDlg");
-        $taskManager->RegisterTask("GetSierBozzeFilterDlg");
+        if(!$this->IsOperatoreComunaleUIEnabled())
+        {
+            //Dialoghi di filtraggio
+            $taskManager->RegisterTask("GetSierPubblicateFilterDlg");
+            $taskManager->RegisterTask("GetSierBozzeFilterDlg");
 
-        //elezioni
-        $taskManager->RegisterTask("GetSierModifyDlg");
-        $taskManager->RegisterTask("GetSierAddNewDlg");
-        $taskManager->RegisterTask("GetSierTrashDlg");
-        $taskManager->RegisterTask("TrashSier");
-        $taskManager->RegisterTask("GetSierDeleteDlg");
-        $taskManager->RegisterTask("DeleteSier");
-        $taskManager->RegisterTask("GetSierResumeDlg");
-        $taskManager->RegisterTask("ResumeSier");
-        $taskManager->RegisterTask("GetSierReassignDlg");
-        $taskManager->RegisterTask("GetSierPublishDlg");
-        $taskManager->RegisterTask("ReassignSier");
-        $taskManager->RegisterTask("AddNewSier");
-        $taskManager->RegisterTask("UpdateSier");
-        $taskManager->RegisterTask("PublishSier");
+            //elezioni
+            $taskManager->RegisterTask("GetSierModifyDlg");
+            $taskManager->RegisterTask("GetSierAddNewDlg");
+            $taskManager->RegisterTask("GetSierTrashDlg");
+            $taskManager->RegisterTask("TrashSier");
+            $taskManager->RegisterTask("GetSierDeleteDlg");
+            $taskManager->RegisterTask("DeleteSier");
+            $taskManager->RegisterTask("GetSierResumeDlg");
+            $taskManager->RegisterTask("ResumeSier");
+            $taskManager->RegisterTask("GetSierReassignDlg");
+            $taskManager->RegisterTask("GetSierPublishDlg");
+            $taskManager->RegisterTask("ReassignSier");
+            $taskManager->RegisterTask("AddNewSier");
+            $taskManager->RegisterTask("UpdateSier");
+            $taskManager->RegisterTask("PublishSier");
 
-        //Allegati
-        $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
-        $taskManager->RegisterTask("AddNewSierAllegato");
-        $taskManager->RegisterTask("GetSierModifyAllegatoDlg");
-        $taskManager->RegisterTask("UpdateSierAllegato");
-        $taskManager->RegisterTask("GetSierTrashAllegatoDlg");
-        $taskManager->RegisterTask("DeleteSierAllegato");
+            //Allegati
+            $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
+            $taskManager->RegisterTask("AddNewSierAllegato");
+            $taskManager->RegisterTask("GetSierModifyAllegatoDlg");
+            $taskManager->RegisterTask("UpdateSierAllegato");
+            $taskManager->RegisterTask("GetSierTrashAllegatoDlg");
+            $taskManager->RegisterTask("DeleteSierAllegato");
 
-        //giornate
-        $taskManager->RegisterTask("GetSierAddNewGiornataDlg");
-        $taskManager->RegisterTask("AddNewSierGiornata");
-        $taskManager->RegisterTask("GetSierModifyGiornataDlg");
-        $taskManager->RegisterTask("UpdateSierGiornata");
-        $taskManager->RegisterTask("GetSierTrashGiornataDlg");
-        $taskManager->RegisterTask("DeleteSierGiornata");
+            //giornate
+            $taskManager->RegisterTask("GetSierAddNewGiornataDlg");
+            $taskManager->RegisterTask("AddNewSierGiornata");
+            $taskManager->RegisterTask("GetSierModifyGiornataDlg");
+            $taskManager->RegisterTask("UpdateSierGiornata");
+            $taskManager->RegisterTask("GetSierTrashGiornataDlg");
+            $taskManager->RegisterTask("DeleteSierGiornata");
 
-        //Coalizioni
-        $taskManager->RegisterTask("GetSierAddNewCoalizioneDlg");
-        $taskManager->RegisterTask("AddNewSierCoalizione");
-        $taskManager->RegisterTask("GetSierModifyCoalizioneDlg");
-        $taskManager->RegisterTask("UpdateSierCoalizione");
-        $taskManager->RegisterTask("GetSierTrashCoalizioneDlg");
-        $taskManager->RegisterTask("DeleteSierCoalizione");
+            //Coalizioni
+            $taskManager->RegisterTask("GetSierAddNewCoalizioneDlg");
+            $taskManager->RegisterTask("AddNewSierCoalizione");
+            $taskManager->RegisterTask("GetSierModifyCoalizioneDlg");
+            $taskManager->RegisterTask("UpdateSierCoalizione");
+            $taskManager->RegisterTask("GetSierTrashCoalizioneDlg");
+            $taskManager->RegisterTask("DeleteSierCoalizione");
 
-        //Liste
-        $taskManager->RegisterTask("GetSierAddNewListaDlg");
-        $taskManager->RegisterTask("AddNewSierLista");
-        $taskManager->RegisterTask("GetSierModifyListaDlg");
-        $taskManager->RegisterTask("UpdateSierLista");
-        $taskManager->RegisterTask("GetSierTrashListaDlg");
-        $taskManager->RegisterTask("DeleteSierLista");
+            //Liste
+            $taskManager->RegisterTask("GetSierAddNewListaDlg");
+            $taskManager->RegisterTask("AddNewSierLista");
+            $taskManager->RegisterTask("GetSierModifyListaDlg");
+            $taskManager->RegisterTask("UpdateSierLista");
+            $taskManager->RegisterTask("GetSierTrashListaDlg");
+            $taskManager->RegisterTask("DeleteSierLista");
 
-        //candidati
-        $taskManager->RegisterTask("GetSierAddNewCandidatoDlg");
-        $taskManager->RegisterTask("AddNewSierCandidato");
-        $taskManager->RegisterTask("GetSierModifyCandidatoDlg");
-        $taskManager->RegisterTask("UpdateSierCandidato");
-        $taskManager->RegisterTask("GetSierAddNewCandidatoCVDlg");
-        $taskManager->RegisterTask("AddNewSierCandidatoCV");
-        $taskManager->RegisterTask("GetSierAddNewCandidatoCGDlg");
-        $taskManager->RegisterTask("AddNewSierCandidatoCG");
-        $taskManager->RegisterTask("GetSierModifyCandidatoCVDlg");
-        $taskManager->RegisterTask("UpdateSierCandidatoCV");
-        $taskManager->RegisterTask("GetSierModifyCandidatoCGDlg");
-        $taskManager->RegisterTask("UpdateSierCandidatoCG");
-        $taskManager->RegisterTask("GetSierTrashCandidatoCGDlg");
-        $taskManager->RegisterTask("DeleteSierCandidatoCG");
-        $taskManager->RegisterTask("GetSierTrashCandidatoCVDlg");
-        $taskManager->RegisterTask("DeleteSierCandidatoCV");
-        $taskManager->RegisterTask("GetSierTrashCandidatoDlg");
-        $taskManager->RegisterTask("DeleteSierCandidato");
+            //candidati
+            $taskManager->RegisterTask("GetSierAddNewCandidatoDlg");
+            $taskManager->RegisterTask("AddNewSierCandidato");
+            $taskManager->RegisterTask("GetSierModifyCandidatoDlg");
+            $taskManager->RegisterTask("UpdateSierCandidato");
+            $taskManager->RegisterTask("GetSierAddNewCandidatoCVDlg");
+            $taskManager->RegisterTask("AddNewSierCandidatoCV");
+            $taskManager->RegisterTask("GetSierAddNewCandidatoCGDlg");
+            $taskManager->RegisterTask("AddNewSierCandidatoCG");
+            $taskManager->RegisterTask("GetSierModifyCandidatoCVDlg");
+            $taskManager->RegisterTask("UpdateSierCandidatoCV");
+            $taskManager->RegisterTask("GetSierModifyCandidatoCGDlg");
+            $taskManager->RegisterTask("UpdateSierCandidatoCG");
+            $taskManager->RegisterTask("GetSierTrashCandidatoCGDlg");
+            $taskManager->RegisterTask("DeleteSierCandidatoCG");
+            $taskManager->RegisterTask("GetSierTrashCandidatoCVDlg");
+            $taskManager->RegisterTask("DeleteSierCandidatoCV");
+            $taskManager->RegisterTask("GetSierTrashCandidatoDlg");
+            $taskManager->RegisterTask("DeleteSierCandidato");
 
-        //comune
-        $taskManager->RegisterTask("GetSierComuneDatiGeneraliViewDlg");
-        $taskManager->RegisterTask("UpdateSierComuneDatiGenerali");
-        $taskManager->RegisterTask("GetSierComuneOperatoriViewDlg");
-        $taskManager->RegisterTask("GetSierComuneOperatoriAddNewDlg");
-        $taskManager->RegisterTask("AddNewSierComuneOperatore");
-        $taskManager->RegisterTask("GetSierComuneOperatoriModifyDlg");
-        $taskManager->RegisterTask("UpdateSierComuneOperatore");
-        $taskManager->RegisterTask("GetSierComuneOperatoriTrashDlg");
-        $taskManager->RegisterTask("TrashSierComuneOperatore");
-        $taskManager->RegisterTask("GetSierComuneFilterDlg");
+            //comune
+            $taskManager->RegisterTask("GetSierComuneDatiGeneraliViewDlg");
+            $taskManager->RegisterTask("UpdateSierComuneDatiGenerali");
+            $taskManager->RegisterTask("GetSierComuneOperatoriViewDlg");
+            $taskManager->RegisterTask("GetSierComuneOperatoriAddNewDlg");
+            $taskManager->RegisterTask("AddNewSierComuneOperatore");
+            $taskManager->RegisterTask("GetSierComuneOperatoriModifyDlg");
+            $taskManager->RegisterTask("UpdateSierComuneOperatore");
+            $taskManager->RegisterTask("GetSierComuneOperatoriTrashDlg");
+            $taskManager->RegisterTask("TrashSierComuneOperatore");
+            $taskManager->RegisterTask("GetSierComuneFilterDlg");
 
-        //template dettaglio
-        $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
-            //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CRUSCOTTO_TAB, "value"=>"Cruscotto","tooltip"=>"Cruscotto di gestione","template"=>"TemplateSierDettaglio_Cruscotto_Tab"),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab"),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab"),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab"),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab"),
-        ));
+            //template dettaglio
+            $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
+                //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CRUSCOTTO_TAB, "value"=>"Cruscotto","tooltip"=>"Cruscotto di gestione","template"=>"TemplateSierDettaglio_Cruscotto_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab"),
+            ));
+        }
+        else
+        {
+            $oc=AA_SierOperatoreComunale::GetInstance();
+            if(!$oc->IsLogged())
+            {
+                //login
+                $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_LOGIN,"Login operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_LOGIN,$this->GetId(),true,true,false,true);
+                $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1)->toArray()));
+
+                $this->AddSection($section);
+                $this->SetSectionItemTemplate(static::AA_UI_SECTION_OC_LOGIN,"TemplateSection_OC_Login");
+            }
+            else
+            {
+                //desktop
+                $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_DESKTOP,"Desktop operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP,$this->GetId(),true,true,false,true);
+                $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1)->toArray()));
+
+                $this->AddSection($section);
+                $this->SetSectionItemTemplate(static::AA_UI_SECTION_OC_DESKTOP,"TemplateSection_OC_Desktop");
+            }
+        }
     }
     
     //istanza
