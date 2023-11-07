@@ -4,6 +4,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+session_start();
 include_once("lib.php");
 ?>
 //modulo
@@ -117,18 +118,23 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
-//Registrazione modulo
-AA_MainApp.registerModule(<?php echo AA_SierModule::AA_ID_MODULE?>);
-
 <?php
 //parte operatori comunali
 if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1)
 {
     echo "AA_MainApp.defaultModule='".AA_SierModule::AA_ID_MODULE."';";
     echo "AA_MainApp.defaultSidebarModule='sier';";
-    echo "AA_MainApp.userAuth: location.reload;";
-    echo "AA_MainApp.logIn: location.reload;";
-    echo "AA_MainApp.resetPwd: AA_LogOut;";
-    echo "AA_MainApp.register: location.reload;";
+    echo "AA_MainApp.userAuth=location.reload;";
+    echo "AA_MainApp.logIn=location.reload;";
+    echo "AA_MainApp.resetPwd=AA_LogOut;";
+    echo "AA_MainApp.register=location.reload;";
+}
+else
+{
+    AA_Log::Log(__METHOD__." - variabile di sessione non impostata",100);
 }
 ?>
+
+//Registrazione modulo
+AA_MainApp.registerModule(<?php echo AA_SierModule::AA_ID_MODULE?>);
+

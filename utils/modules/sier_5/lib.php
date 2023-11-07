@@ -2180,7 +2180,7 @@ Class AA_Sier extends AA_Object_V2
 #Classe operatore comunale
 Class AA_SierOperatoreComunale
 {
-    protected $oInstance=null;
+    protected static $oInstance=null;
     protected function __construct()
     {
        
@@ -2449,10 +2449,10 @@ Class AA_SierModule extends AA_GenericModule
 
                 //login
                 $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_LOGIN,"Login operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_LOGIN,$this->GetId(),true,true,false,true);
-                $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1)->toArray()));
+                $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1,true)->toArray()));
 
                 $this->AddSection($section);
-                $this->SetSectionItemTemplate(static::AA_UI_SECTION_OC_LOGIN,"TemplateSection_OC_Login");
+                $this->SetSectionItemTemplate(static::AA_ID_SECTION_OC_LOGIN,"TemplateSection_OC_Login");
             }
             else
             {
@@ -6450,9 +6450,16 @@ Class AA_SierModule extends AA_GenericModule
     //Template section oc login
     public function TemplateSection_OC_Login($object=null)
     {
-        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_LOGIN."_".static::AA_UI_SECTION_OC_LOGIN;
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_LOGIN;
 
-        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Desktop operatore comunale"));
+        if(!($object instanceof AA_Sier))
+        {
+            $object=new AA_Sier($_SESSION['oc_sier_object']);
+            if(!$object->IsValid())
+            {
+                return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Desktop operatore comunale"));
+            }
+        } 
         
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name"=>"Desktop operatore comunale"));
 
@@ -6460,26 +6467,24 @@ Class AA_SierModule extends AA_GenericModule
         $sier_flags=$object->GetAbilitazioni();
         if(($sier_flags&AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI)==0)
         {
-            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='dispaly: flex; justify-content:center align-items: center'><div>Accesso operatori temporaneamente disabilitato.</div></div>")));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='display: flex; justify-content:center align-items: center'><div>Accesso operatori temporaneamente disabilitato.</div></div>")));
             return $layout;
         }
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
         {
-            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='dispaly: flex; justify-content:center align-items: center'><div>L'utente corrente non è abilitato all'accesso come operatore comunale.</div></div>")));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='display: flex; justify-content:center align-items: center'><div>L'utente corrente non è abilitato all'accesso come operatore comunale.</div></div>")));
             return $layout;
         }
 
         $form=new AA_JSON_Template_Form($id."_LoginOCForm",array(
-            //"css"=>array("background-color"=>"#f7fdf8 !important", "border"=>"solid 1px gray","border-radius"=>"5px !important", "font-size"=>"smaller"),
             "elementsConfig"=>array("labelWidth"=>180, "labelAlign"=>"left", "labelPosition"=>"top","bottomPadding"=>15),
             "padding"=>15,
             "validation"=>"validateForm",
-            "borderless"=>true,
-            "css"=>array("background-color"=>"transparent !important")
+            "css"=>array("background-color"=>"#F3FAFD !important", "border"=>"solid 1px 1198FF","border-radius"=>"5px !important", "font-size"=>"smaller")
         ));
 
-        $formBox=new AA_JSON_Template_Layout($id."_FormBox",array("type"=>"clean"));
+        $formBox=new AA_JSON_Template_Layout($id."_FormBox",array("type"=>"space","maxWidth"=>400,"css"=>array("background-color"=>"transparent")));
         $form->AddElement(new AA_JSON_Template_Text($id."LoginOC_cf",array("required"=>true,"name"=>"cf","label"=>"<b>Codice fiscale</b>")));
 
         $params = "{task: 'OCLogin'";
@@ -6489,8 +6494,18 @@ Class AA_SierModule extends AA_GenericModule
 
         $form_button_layout=new AA_JSON_Template_Layout($id."_LoginButton",array("type"=>"clean","autoheight"=>true,"css"=>array("background-color"=>"transparent")));
         $form_button_layout->AddCol(new AA_JSON_Template_Generic(""));
-        $template="<div class='loginOC_btn'><a href='#' onclick=\"".$script."\" title='Accesso'>Accesso</a></div>";
-        $form_button_layout->AddCol(new AA_JSON_Template_Template($id."_LoginButtonApply",array("gravity"=>7, "autoheight"=>true,"type"=>"clean","css"=>array("background-color"=>"transparent"), "template"=>$template)));
+        $btn_login=new AA_JSON_Template_Generic($id."_Accedi_btn",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-login",
+             "label"=>"Accedi",
+             "css"=>"webix_primary",
+             "align"=>"center",
+             "width"=>120,
+             "tooltip"=>"Accedi",
+             "click"=>$script
+         ));
+        $form_button_layout->AddCol($btn_login);
         $form_button_layout->AddCol(new AA_JSON_Template_Generic(""));
         $form->AddElement($form_button_layout);
         
@@ -10037,6 +10052,50 @@ Class AA_SierModule extends AA_GenericModule
 
         return $this->Task_GetGenericObjectContent($task, $_REQUEST);
     }
+
+    //Task action menù
+    public function Task_GetActionMenu($task)
+    {
+        $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+
+        $content = "";
+
+        switch ($_REQUEST['section']) {
+            case static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_OC_LOGIN:
+                $content = $this->TemplateActionMenu_OC_Login();
+                break;
+            default:
+                return parent::Task_GetActionMenu($task);
+                break;
+        }
+
+        if ($content != "") $sTaskLog .= $content->toBase64();
+
+        $sTaskLog .= "</content>";
+
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+     //Template OC login context menu
+     public function TemplateActionMenu_OC_Login()
+     {
+         $menu=new AA_JSON_Template_Generic(
+             static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_LOGIN."_ActionMenu",array(
+             "view"=>"contextmenu",
+             "data"=>array(array(
+                    "id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_LOGIN."_ActionMenuItem_Aggiorna",
+                    "value"=>"Aggiorna",
+                    "icon"=>"mdi mdi-reload",
+                    "module_id" => $this->GetId(),
+                    "handler"=>"refreshUiObject",
+                    "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_LOGIN,true)
+                 ))
+             ));
+         
+         return $menu;  
+     }
 
     //Template dettaglio allegati
     public function TemplateDettaglio_Abilitazioni($object=null,$id="")
