@@ -6452,62 +6452,55 @@ Class AA_SierModule extends AA_GenericModule
     {
         $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_LOGIN."_".static::AA_UI_SECTION_OC_LOGIN;
 
-        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Desktop operatore comunale"));
         
-        $rows_fixed_height=50;
-        $canModify=false;
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $canModify=true;
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name"=>"Desktop operatore comunale"));
 
-        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,null,$canModify);
+        //login disabilitato
+        $sier_flags=$object->GetAbilitazioni();
+        if(($sier_flags&AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI)==0)
+        {
+            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='dispaly: flex; justify-content:center align-items: center'><div>Accesso operatori temporaneamente disabilitato.</div></div>")));
+            return $layout;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='dispaly: flex; justify-content:center align-items: center'><div>L'utente corrente non è abilitato all'accesso come operatore comunale.</div></div>")));
+            return $layout;
+        }
 
-        //Descrizione
-        $value=$object->GetDescr();
-        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "gravity"=>1,
-            "data"=>array("title"=>"Descrizione:","value"=>$value),
-            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        $form=new AA_JSON_Template_Form($id."_LoginOCForm",array(
+            //"css"=>array("background-color"=>"#f7fdf8 !important", "border"=>"solid 1px gray","border-radius"=>"5px !important", "font-size"=>"smaller"),
+            "elementsConfig"=>array("labelWidth"=>180, "labelAlign"=>"left", "labelPosition"=>"top","bottomPadding"=>15),
+            "padding"=>15,
+            "validation"=>"validateForm",
+            "borderless"=>true,
+            "css"=>array("background-color"=>"transparent !important")
         ));
 
-        //anno riferimento
-        $value=$object->GetProp("Anno");
-        if($value=="")$value="n.d.";
-        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "gravity"=>1,
-            "data"=>array("title"=>"Anno:","value"=>$value)
-        ));
+        $formBox=new AA_JSON_Template_Layout($id."_FormBox",array("type"=>"clean"));
+        $form->AddElement(new AA_JSON_Template_Text($id."LoginOC_cf",array("required"=>true,"name"=>"cf","label"=>"<b>Codice fiscale</b>")));
+
+        $params = "{task: 'OCLogin'";
+        $params .= ", data: $$('" . $id . "_LoginOCForm').getValues()}";
+        $script="if($$('" . $id . "_LoginOCForm').validate())";
+        $script.=" AA_MainApp.utils.callHandler('saveData',$params,'".$this->GetId()."')";
+
+        $form_button_layout=new AA_JSON_Template_Layout($id."_LoginButton",array("type"=>"clean","autoheight"=>true,"css"=>array("background-color"=>"transparent")));
+        $form_button_layout->AddCol(new AA_JSON_Template_Generic(""));
+        $template="<div class='loginOC_btn'><a href='#' onclick=\"".$script."\" title='Accesso'>Accesso</a></div>";
+        $form_button_layout->AddCol(new AA_JSON_Template_Template($id."_LoginButtonApply",array("gravity"=>7, "autoheight"=>true,"type"=>"clean","css"=>array("background-color"=>"transparent"), "template"=>$template)));
+        $form_button_layout->AddCol(new AA_JSON_Template_Generic(""));
+        $form->AddElement($form_button_layout);
         
-        //note
-        $value = $object->GetProp("Note");
-        $note=new AA_JSON_Template_Template($id."_Note",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Note:","value"=>$value)
-        ));
-        
-        //prima riga
-        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($anno_rif);
-        $riga->AddCol($this->TemplateDettaglio_Abilitazioni($object,$id."_Abilitazioni"));
-        $layout->AddRow($riga);
+        $formBox->AddRow(new AA_JSON_Template_Generic());
+        $formBox->AddRow($form);
+        $formBox->AddRow(new AA_JSON_Template_Generic());
 
-        //seconda riga
-        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $layout_gen=new AA_JSON_Template_Layout($id."_DescrNoteLayout",array("gravity"=>3,"type"=>"clean"));
-        $layout_gen->addRow($descr);
-        $layout_gen->addRow($note);
-        $riga->addCol($layout_gen);
-
-        //$riga->addCol($this->TemplateDettaglio_Allegati($object,$id,$canModify));
-        $riga->addCol($this->TemplateDettaglio_Giornate($object,$id,$canModify));
-
-        //$layout->AddRow($riga);
-
-        //terza riga
-        //$riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>1));
-      
-
-        $layout->AddRow($riga);
+        $layout->AddCol(new AA_JSON_Template_Generic());
+        $layout->AddCol($formBox);
+        $layout->AddCol(new AA_JSON_Template_Generic());
 
         return $layout;
     }
