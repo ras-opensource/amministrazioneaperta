@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1-1.fc38
+-- version 5.2.1-1.el9
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Ott 03, 2023 alle 20:20
--- Versione del server: 10.5.21-MariaDB
--- Versione PHP: 8.2.10
+-- Creato il: Nov 08, 2023 alle 07:50
+-- Versione del server: 10.5.16-MariaDB
+-- Versione PHP: 8.0.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `amministrazioneaperta`
+-- Database: `monitspese`
 --
 
 -- --------------------------------------------------------
@@ -27,32 +27,25 @@ SET time_zone = "+00:00";
 -- Struttura della tabella `aa_groups`
 --
 
-CREATE TABLE `aa_groups` (
-  `id` int(11) UNSIGNED NOT NULL,
-  `descr` varchar(255) NOT NULL,
-  `parent` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+CREATE TABLE IF NOT EXISTS `aa_groups` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `descr` varchar(255) COLLATE utf8_bin NOT NULL,
+  `id_parent` int(11) NOT NULL DEFAULT 0,
+  `system` int(2) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `parent` (`id_parent`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 --
--- Indici per le tabelle scaricate
+-- Dump dei dati per la tabella `aa_groups`
 --
 
---
--- Indici per le tabelle `aa_groups`
---
-ALTER TABLE `aa_groups`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `parent` (`parent`);
-
---
--- AUTO_INCREMENT per le tabelle scaricate
---
-
---
--- AUTO_INCREMENT per la tabella `aa_groups`
---
-ALTER TABLE `aa_groups`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+INSERT INTO `aa_groups` (`id`, `descr`, `id_parent`, `system`) VALUES
+(1, 'Super User', 0, 1),
+(2, 'Amministratori', 1, 1),
+(3, 'Operatori', 2, 1),
+(4, 'Utenti', 3, 1),
+(5, 'Operatori di sistema', 1, 1);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

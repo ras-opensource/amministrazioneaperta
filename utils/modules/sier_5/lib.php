@@ -852,9 +852,9 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //Restituisce un comune specifico
-    public function GetComune($id="")
+    public function GetComune($id="",$cf_oc="")
     {
-        if(!$this->bValid || $id<=0 || $id=="") return null;
+        if(!$this->bValid || (($id<=0 || $id=="") && $cf_oc=="")) return null;
 
         $db=new AA_Database();
         $query="SELECT ".static::AA_COMUNI_DB_TABLE.".* from ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
@@ -864,6 +864,11 @@ Class AA_Sier extends AA_Object_V2
             $query.=" AND ".static::AA_COMUNI_DB_TABLE.".id ='".addslashes($id)."'";
         }
 
+        if($cf_oc !="")
+        {
+            $query.=" AND (".static::AA_COMUNI_DB_TABLE.".operatori like '%\"cf\":\"".addslashes($cf_oc)."\"%' OR ".static::AA_COMUNI_DB_TABLE.".operatori like '%\"cf\":\"".addslashes(strtoupper($cf_oc)).")";
+        }
+
         $query.=" LIMIT 1";
 
         if(!$db->Query($query))
@@ -871,6 +876,8 @@ Class AA_Sier extends AA_Object_V2
             AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
             return null;
         }
+
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=null;
         if($db->GetAffectedRows()>0)
@@ -2204,16 +2211,118 @@ Class AA_SierOperatoreComunale
     #funzioni di autenticazione
     public function ChallengeLogin($cf="",$objectId=0)
     {
+        $object= new AA_Sier($objectId);
+        if(!$object->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Oggetto SIER non valido.",100);
+            return false;
+        }
+
+        $comune=$object->GetComune("",$cf);
+        if($comune == null)
+        {
+            AA_Log::Log(__METHOD__." - Operatore non abilitato.",100);
+            return false;
+        }
+
+        $operatori=$comune->GetOperatori(true);
+        $operatore=$operatori[$cf];
+        if(!is_array($operatore))
+        {
+            AA_Log::Log(__METHOD__." - Operatore non valido.",100);
+            return false;
+        }
+
+        $this->nOperatoreComunaleComune=$comune->GetProp("id");
+        $this->nOperatoreComunaleObjectId=$object->GetId();
+        $this->sOperatoreComunaleCf=$operatore['cf'];
+        $this->sOperatoreComunaleEmail=$operatore['email'];
+        $this->sOperatoreComunaleNome=$operatore['nome'];
+        $this->sOperatoreComunaleCognome=$operatore['cognome'];
+        $this->sOperatoreComunaleRuolo=$operatore['ruolo'];
+        $this->sOperatoreComunaleLastlogin=$operatore['lastlogin'];
+        $this->bValid=true;
+
+        //auth token
+        $token="";
+        for($i=0;$i<4;$i++)
+        {
+            $token.=random_int(10,99);
+        }
+        //AA_Log::Log(__METHOD__." - operatore comunale: ".$cf." - token: ".$token,100);
+
+        $_SESSION['oc_auth_token']=$token;
+
+        $_SESSION['oc_object']=serialize($this);
+
+        //invia l'email
+
+        $object="Amministrazione Aperta - autenticazione operatore comunale.";
+        $corpo="Ciao ".$this->GetOperatoreComunaleNome().",<br>";
+        $corpo.="di seguito il codice per l'accesso all'area operatori comunali della piattaforma 'Amministrazione Aperta', modulo SIER - Sistema Informativo Elettorale Regionale, per il caricamento dei dati elettorali e la rispettiva redincontazione.";
+        $corpo.="<div style='text-align: center;'><div style='border: 1px solid gray'><b>".$token."</b></div></div>";
+        $corpo.="Inserisci il codice sull'apposita finestra a video e fai click sul pulsante 'Verifica' per accedere al cruscotto applicativo.";
+        $corpo.="<p>Per ogni eventuale richiesta di supporto o segnalazione di malfunzionamenti è disponibile la casella: amministrazioneaperta@regione.sardegna.it</p>";
+        $corpo.="Cordiali Saluti.";
+        
+        $mailparams=AA_User::GetResetPwdEmailParams();
+
+        if(AA_Const::AA_ENABLE_SENDMAIL)
+        {
+            if(!SendMail(array($operatore['email']),"",$object,$corpo.$mailparams['firma'],null,1))
+            {
+                AA_Log::Log(__METHoD__." - Errore nell'invio della email a: ".$operatore['email'],100);
+                return false;
+            }
+            return true;
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - cf: ".$cf." - auth token: ".$token,100);
+            return true;
+        }
+
         return false;
     }
     public function VerifyLogin($token="")
     {
+        if(!$this->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Operatore non valido.",100);
+            return false;
+        }
 
-        return false;
+        if($token=="" || strlen($token) != 8)
+        {
+            AA_Log::Log(__METHOD__." - Token non valido.",100);
+            return false;
+        }
+
+        if(!isset($_SESSION['oc_auth_token']))
+        {
+            AA_Log::Log(__METHOD__." - Token non valido (2).",100);
+            return false;
+        }
+
+        if($_SESSION['oc_auth_token']!=$token)
+        {
+            AA_Log::Log(__METHOD__." - Il codice indicato non corrisponde a quello inviato via email.",100);
+            return false;
+        }
+
+        unset($_SESSION['oc_auth_token']);
+
+        $this->bOperatoreComunaleLogged=true;
+        $this->sOperatoreComunaleLastlogin=date("Y-m-d");
+        $_SESSION['oc_object']=serialize($this);
+        return true;
     }
     #----------------------------
 
-    protected $sOperatoreComunaleName="Nessuno";
+    protected $sOperatoreComunaleNome="Nessuno";
+    protected $sOperatoreComunaleCognome="";
+    protected $sOperatoreComunaleRuolo=0;
+    protected $sOperatoreComunaleLastlogin="";
     protected $sOperatoreComunaleCf="";
     protected $sOperatoreComunaleEmail="";
     protected $bOperatoreComunaleLogged=false;
@@ -2228,13 +2337,37 @@ Class AA_SierOperatoreComunale
     {
         return $this->bOperatoreComunaleLogged;
     }
-    public function GetOperatoreComunaleName()
+    public function GetOperatoreComunaleNome()
     {
-        return $this->sOperatoreComunaleName;
+        return $this->sOperatoreComunaleNome;
     }
-    protected function SetOperatoreComunaleName($val="")
+    protected function SetOperatoreComunaleNome($val="")
     {
-        $this->sOperatoreComunaleName=$val;
+        $this->sOperatoreComunaleNome=$val;
+    }
+    public function GetOperatoreComunaleCognome()
+    {
+        return $this->sOperatoreComunaleCognome;
+    }
+    protected function SetOperatoreComunaleCognome($val="")
+    {
+        $this->sOperatoreComunaleCognome=$val;
+    }
+    public function GetOperatoreComunaleRuolo()
+    {
+        return $this->sOperatoreComunaleRuolo;
+    }
+    protected function SetOperatoreComunaleRuolo($val=0)
+    {
+        $this->sOperatoreComunaleRuolo=$val;
+    }
+    public function GetOperatoreComunaleLastlogin()
+    {
+        return $this->sOperatoreComunaleLastlogin;
+    }
+    protected function SetOperatoreComunaleLastlogin($val="")
+    {
+        $this->sOperatoreComunaleLastlogin=$val;
     }
     public function GetOperatoreComunaleCf()
     {
@@ -2440,29 +2573,25 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $oc=AA_SierOperatoreComunale::GetInstance();
+            //AA_Log::Log(__METHOD__." - operatore: ".print_r($oc,true),100);
+            $template="TemplateSection_OC_Desktop";
+
             if(!$oc->IsLogged())
             {
                 //login tasks
                 $taskManager->RegisterTask("OCLogin");
                 $taskManager->RegisterTask("GetOCLoginVerifyDlg");
-                $taskManager->RegisterTask("OCLoginVerify");
+                $taskManager->RegisterTask("OCVerifyLogin");
 
-                //login
-                $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_LOGIN,"Login operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_LOGIN,$this->GetId(),true,true,false,true);
-                $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1,true)->toArray()));
-
-                $this->AddSection($section);
-                $this->SetSectionItemTemplate(static::AA_ID_SECTION_OC_LOGIN,"TemplateSection_OC_Login");
+                $template="TemplateSection_OC_Login";
             }
-            else
-            {
-                //desktop
-                $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_DESKTOP,"Desktop operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP,$this->GetId(),true,true,false,true);
-                $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1)->toArray()));
 
-                $this->AddSection($section);
-                $this->SetSectionItemTemplate(static::AA_UI_SECTION_OC_DESKTOP,"TemplateSection_OC_Desktop");
-            }
+            //desktop
+            $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_DESKTOP,"Desktop operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP,$this->GetId(),true,true,false,true);
+            $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1,true)->toArray()));
+
+            $this->AddSection($section);
+            $this->SetSectionItemTemplate(static::AA_ID_SECTION_OC_DESKTOP,$template);
         }
     }
     
@@ -2514,22 +2643,10 @@ Class AA_SierModule extends AA_GenericModule
     //Personalizza il filtro delle schede pubblicate per il modulo corrente
     protected function GetDataSectionPubblicate_CustomFilter($params = array())
     {
-       //Tipo
-       if($params['Tipo'] > 0)
-       {
-           $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".tipo = '".addslashes($params['Tipo'])."'";
-       }
-
         //anno rif
-        if($params['AnnoRiferimento'] > 0)
+        if($params['Anno'] > 0)
         {
-            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".anno_rif = '".addslashes($params['AnnoRiferimento'])."'";
-        }
-
-        //Estremi
-        if($params['Estremi'] !="")
-        {
-            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".estremi_atto like '%".addslashes($params['Estremi'])."%'";
+            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".anno = '".addslashes($params['AnnoRiferimento'])."'";
         }
        
        return $params;
@@ -3312,6 +3429,40 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_candidato"=>$candidato->GetProp('id')));
         $wnd->SetSaveTask("UpdateSierCandidato");
+        
+        return $wnd;
+    }
+
+    //Template dlg modifica candidato
+    public function Template_GetOCVerifyLoginDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetOCVerifyLoginDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("aggiornamento"=>date("Y-m-d"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Codice di verifica operatore", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        //Imposta il controllo su cui abilitare il focus
+        $wnd->SetDefaultFocusedItem("codice");
+
+        //Cognome
+        $wnd->AddTextField("codice", "Codice", array("required"=>true,"bottomLabel" => "*Indicare il codice di 8 cifre pervenuto via email."));
+
+        $wnd->SetApplyButtonName("Verifica");
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("OCVerifyLogin");
         
         return $wnd;
     }
@@ -6450,7 +6601,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template section oc login
     public function TemplateSection_OC_Login($object=null)
     {
-        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_LOGIN;
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP;
 
         if(!($object instanceof AA_Sier))
         {
@@ -6467,13 +6618,13 @@ Class AA_SierModule extends AA_GenericModule
         $sier_flags=$object->GetAbilitazioni();
         if(($sier_flags&AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI)==0)
         {
-            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='display: flex; justify-content:center align-items: center'><div>Accesso operatori temporaneamente disabilitato.</div></div>")));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='display: flex; justify-content:center; align-items: center;width:100%;height:100%; font-weight: bold'><span>Accesso operatori temporaneamente disabilitato.</span></div>")));
             return $layout;
         }
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
         {
-            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='display: flex; justify-content:center align-items: center'><div>L'utente corrente non è abilitato all'accesso come operatore comunale.</div></div>")));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='display: flex; justify-content:center; align-items: center'><div>L'utente corrente non è abilitato all'accesso come operatore comunale.</div></div>")));
             return $layout;
         }
 
@@ -6517,6 +6668,288 @@ Class AA_SierModule extends AA_GenericModule
         $layout->AddCol($formBox);
         $layout->AddCol(new AA_JSON_Template_Generic());
 
+        return $layout;
+    }
+
+    //Template section oc login
+    public function TemplateSection_OC_Desktop($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP;
+
+        if(!($object instanceof AA_Sier))
+        {
+            $object=new AA_Sier($_SESSION['oc_sier_object']);
+            if(!$object->IsValid())
+            {
+                return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Desktop operatore comunale"));
+            }
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        $intestazione="Desktop operatore comunale";
+        if($comune instanceof AA_SierComune)
+        {
+            $intestazione.=" - ".$comune->GetProp("denominazione");     
+        }
+        
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name"=>$intestazione));
+
+        $sier_flags=$object->GetAbilitazioni();
+        $sections=array(
+            array("id"=>$id."_Generale_".$operatore->GetOperatoreComunaleComune(),"value"=>"Dati generali e corpo elettorale","icon"=>"mdi mdi-information-variant-circle"),
+            array("id"=>$id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),"value"=>"Dati affluenza","icon"=>"mdi mdi-vote"),
+            array("id"=>$id."_Risultati_".$operatore->GetOperatoreComunaleComune(),"value"=>"Risultati","icon"=>"mdi mdi-stack-overflow"),
+            array("id"=>$id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),"value"=>"Rendicontazione","icon"=>"mdi mdi-cash-sync")
+        );
+
+        $multiview = new AA_JSON_Template_Multiview($id . "_Multiview_".$object->GetId(), array(
+            "type" => "clean",
+            "css" => "AA_Detail_Content",
+            "value" => $id."_OC_PreviewBox".$operatore->GetOperatoreComunaleComune()
+        ));
+
+        $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 97%; margin:5px;'>";
+        //icon
+        $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
+        //name
+        $riepilogo_template.="<div style='display: flex; align-items: center;justify-content: center; flex-direction: column; font-size: larger;height: 60px'>#name#</div>";
+        $riepilogo_template.="</div>";
+
+        $nMod=0;
+        $moduli_view=new AA_JSON_Template_Layout($id."_OC_PreviewBox".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+        foreach($sections as $curModId=>$curMod)
+        {
+            $nMod++;
+            //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+            $name="<span style='font-weight:900;'>".implode("</span><span>",explode("-",$curMod['value']))."</span>";
+            $onclick="AA_MainApp.utils.callHandler('OC_SectionBoxClick','".$curMod['id']."','".$this->GetId()."')";
+            $moduli_data=array("id"=>$curModId,"name"=>$name,'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon'],"onclick"=>$onclick);
+            $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data))));
+        }
+        $preview_layout=new AA_JSON_Template_Layout($id."_PreviewBox_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean","minHeight"=>300));
+        $preview_layout->AddRow(new AA_JSON_Template_Generic());
+        $preview_layout->AddRow($moduli_view);
+        $preview_layout->AddRow(new AA_JSON_Template_Generic());
+        $multiview->AddCell($preview_layout);
+
+        //------------- header ------------------
+        $header = new AA_JSON_Template_Layout($id . "_Header" . "_".$object->GetId(), array("type" => "clean", "height" => 38, "css" => "AA_SectionContentHeader"));
+        $canModify=false;
+        $layout_tab=new AA_JSON_Template_Layout($id . "_Layout_TabBar_".$object->GetId(),array("type"=>"clean","minWidth"=>500));
+        $gravity_tabbar=4;
+        $layout_tab->AddCol(new AA_JSON_Template_Generic($id . "_TabBar_".$object->GetId(), array(
+            "view" => "tabbar",
+            "gravity"=>$gravity_tabbar,
+            "borderless" => true,
+            "value" => $id."_Generale_".$operatore->GetOperatoreComunaleComune(),
+            "css" => "AA_Header_TabBar",
+            "multiview" => true,
+            "view_id" => $id . "_Multiview_".$object->GetId(),
+            "options" => array(
+                array("id"=>$id."_Generale_".$operatore->GetOperatoreComunaleComune(),"value"=>"Dati generali e corpo elettorale"),
+                array("id"=>$id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),"value"=>"Dati affluenza"),
+                array("id"=>$id."_Risultati_".$operatore->GetOperatoreComunaleComune(),"value"=>"Risultati"),
+                array("id"=>$id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),"value"=>"Rendicontazione"),
+            )
+        )));
+        $header->AddCol($layout_tab);
+        //$layout->AddRow($layout_tab);
+        //-------------------------------------------------------
+
+        //-------------------   Scheda generale  ------------------------------
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0) $canModify=true;
+        $layout_generale=new AA_JSON_Template_Layout($id."_Generale_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        
+        //torna al riepilogo
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Generale_Back".$operatore->GetOperatoreComunaleComune()."_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-keyboard-backspace",
+            "label"=>"Riepilogo",
+            "align"=>"left",
+            "width"=>120,
+            "tooltip"=>"Torna al riepilogo",
+            "click"=>"$$('".$id."_PreviewBox_".$operatore->GetOperatoreComunaleComune()."').show()"
+        )));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati generali e corpo elettorale</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Generale_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica dati generali e corpo elettorale",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyDatiGeneraliDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+        
+        $layout_generale->addRow($toolbar);
+        $layout_generale->addRow(new AA_JSON_Template_Generic());
+
+        //to do
+
+        $multiview->addCell($layout_generale);
+        //----------------------------------------------------------------------------
+
+        //-------------------   Affluenza  ------------------------------
+        $canModify=false;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0) $canModify=true;
+        $layout_generale=new AA_JSON_Template_Layout($id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        //torna al riepilogo
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Affluenza_Back_".$operatore->GetOperatoreComunaleComune()."_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-keyboard-backspace",
+            "label"=>"Riepilogo",
+            "align"=>"left",
+            "width"=>120,
+            "tooltip"=>"Torna al riepilogo",
+            "click"=>"$$('".$id."_PreviewBox_".$operatore->GetOperatoreComunaleComune()."').show()"
+        )));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Affluenza_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati affluenza alle urne</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Affluenza_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica dati affluenza",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyDatiAffluenzaDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+        
+        $layout_generale->addRow($toolbar);
+        $layout_generale->addRow(new AA_JSON_Template_Generic());
+
+        //to do
+
+        $multiview->addCell($layout_generale);
+        //----------------------------------------------------------------------------
+
+        //-------------------   Risultati  ------------------------------
+        $canModify=false;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0) $canModify=true;
+        $layout_generale=new AA_JSON_Template_Layout($id."_Risultati_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        //torna al riepilogo
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Risultati_Back_".$operatore->GetOperatoreComunaleComune()."_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-keyboard-backspace",
+            "label"=>"Riepilogo",
+            "align"=>"left",
+            "width"=>120,
+            "tooltip"=>"Torna al riepilogo",
+            "click"=>"$$('".$id."_PreviewBox_".$operatore->GetOperatoreComunaleComune()."').show()"
+        )));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Risultati_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati risultati consultazioni</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Risultati_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica risultati consultazioni",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyRisultatiDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+        
+        $layout_generale->addRow($toolbar);
+        $layout_generale->addRow(new AA_JSON_Template_Generic());
+
+        //to do
+
+        $multiview->addCell($layout_generale);
+        //----------------------------------------------------------------------------
+
+        //-------------------   Rendiconti  ------------------------------
+        $canModify=false;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0) $canModify=true;
+        $layout_generale=new AA_JSON_Template_Layout($id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        //torna al riepilogo
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Rendiconti_Back".$operatore->GetOperatoreComunaleComune()."_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-keyboard-backspace",
+            "label"=>"Riepilogo",
+            "align"=>"left",
+            "width"=>120,
+            "tooltip"=>"Torna al riepilogo",
+            "click"=>"$$('".$id."_PreviewBox_".$operatore->GetOperatoreComunaleComune()."').show()"
+        )));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Rendiconti_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Rendicontazione spese e rimborsi</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Rendiconti_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica rendicontazioni",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyRendicontiDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+        
+        $layout_generale->addRow($toolbar);
+        $layout_generale->addRow(new AA_JSON_Template_Generic());
+
+        //to do
+
+        $multiview->addCell($layout_generale);
+        //----------------------------------------------------------------------------
+
+        $layout->AddRow($multiview);
+    
         return $layout;
     }
 
@@ -7585,6 +8018,92 @@ Class AA_SierModule extends AA_GenericModule
         
         return $this->Task_GenericAddNew($task,$_REQUEST);
     }
+
+
+    //Task login operatore comunale 
+    public function Task_OCLogin($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SiER non valido.",false);
+            return false;
+        }
+
+        $cf=$_REQUEST['cf'];
+        if($cf == "")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Codice fiscale errato",false);
+            return false;
+        }
+
+        $comune=$object->GetComune("",$cf);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non abilitato.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->ChallengeLogin($cf,$object->GetId()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction("dlg",array("task"=>"GetOCLoginVerifyDlg","postParams"=>array("id"=>$object->GetId())),true);
+
+        $task->SetContent("Token di autenticazione inviato alla email dell'operatore.",false);
+        return true;
+    }
+
+    //Task login operatore comunale 
+    public function Task_OCVerifyLogin($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->VerifyLogin($_REQUEST['codice']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Autenticazione avvenuta con successo.",false);
+        return true;
+    }
+
 
     //Task modifica elemento
     public function Task_GetSierModifyDlg($task)
@@ -8736,6 +9255,33 @@ Class AA_SierModule extends AA_GenericModule
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierComuneOperatoriTrashDlg($object,$comune,$operatori[$_REQUEST['cf']]),true);
+        return true;
+    }
+
+    //Task operatore comunale auth token verify dlg operatore comunale
+    public function Task_GetOCLoginVerifyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        if(isset($_SESSION['oc_sier_object'])) $object=new AA_Sier($_SESSION['oc_sier_object'],$this->oUser);
+        else $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetOCVerifyLoginDlg($object),true);
         return true;
     }
 
@@ -10061,8 +10607,8 @@ Class AA_SierModule extends AA_GenericModule
         $content = "";
 
         switch ($_REQUEST['section']) {
-            case static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_OC_LOGIN:
-                $content = $this->TemplateActionMenu_OC_Login();
+            case static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_OC_DESKTOP:
+                $content = $this->TemplateActionMenu_OC_Desktop();
                 break;
             default:
                 return parent::Task_GetActionMenu($task);
@@ -10079,18 +10625,18 @@ Class AA_SierModule extends AA_GenericModule
     }
 
      //Template OC login context menu
-     public function TemplateActionMenu_OC_Login()
+     public function TemplateActionMenu_OC_Desktop()
      {
          $menu=new AA_JSON_Template_Generic(
-             static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_LOGIN."_ActionMenu",array(
+             static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_DESKTOP."_ActionMenu",array(
              "view"=>"contextmenu",
              "data"=>array(array(
-                    "id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_LOGIN."_ActionMenuItem_Aggiorna",
+                    "id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_OC_DESKTOP."_ActionMenuItem_Aggiorna",
                     "value"=>"Aggiorna",
                     "icon"=>"mdi mdi-reload",
                     "module_id" => $this->GetId(),
                     "handler"=>"refreshUiObject",
-                    "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_LOGIN,true)
+                    "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP,true)
                  ))
              ));
          

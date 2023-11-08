@@ -3814,7 +3814,8 @@ async function AA_LogOut(params = null) {
         if (result.status.value == 0) {
 
             //ricarica la pagina
-            window.location.reload();
+            console.log("AA_LogOut - Reload page");
+            setTimeout(function(){location.reload(true)},1000);
 
             return;
         } else {

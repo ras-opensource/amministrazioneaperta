@@ -71,6 +71,17 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//Handler operatore comunale click preview
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].OC_SectionBoxClick = function() {
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.OC_SectionBoxClick", this, arguments);
+        if($$(arguments[0])) $$(arguments[0]).show(); 
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.CoalizioneDblClick", msg, this);
+    }
+};
+
 //Handler caricamento candidati con suggerimento della lista, della circoscrizione e della coalizione
 <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].AddNewCandidato = function() {
     try 

@@ -1335,9 +1335,9 @@ class AA_User
     //Reset password email params
     protected static $aResetPasswordEmailParams=array(
         "oggetto"=>'Amministrazione Aperta - Reset della password.',
-        "incipit"=>"<p>Buongiorno,<br>è stato richiesto il reset della password per l'accesso alla piattaforma applicativa \"Amministrazione Aperta\", per le pubblicazioni sul sito istituzionale di cui al d.lgs.33/2013.<br>url: https://#www#<br>di seguito le credenziali per l'accesso:",
+        "incipit"=>"<p>Buongiorno,<br>è stato richiesto il reset della password per l'accesso alla piattaforma applicativa \"Amministrazione Aperta\".<br>url: https://#www#<br>di seguito le credenziali per l'accesso:",
         "bShowStruct"=>true,
-        "post"=>'<br/>E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.<br>Le utenze che hanno associato l\'indirizzo email sul proprio profilo possono effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente<br>Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
+        "post"=>'<br/>E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.<br>E&apos; anche possibile effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente.<br>Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
         "firma"=>'<div>--
         <div><strong>Amministrazione Aperta</strong></div>
         <div>Presidentzia</div>
@@ -1352,6 +1352,17 @@ class AA_User
         {
             if(isset(static::$aResetPasswordEmailParams[$key])) static::$aResetPasswordEmailParams[$key]=$val;
         }
+    }
+
+    public static function GetResetPwdEmailParams()
+    {
+        $params=static::$aResetPasswordEmailParams;
+        foreach($params as $key=>$param)
+        {
+            $params[$key]=str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT,$param);
+        }
+
+        return $params;
     }
 
     //Popola i dati dell'utente a partire dal nome utente
@@ -6973,7 +6984,7 @@ class AA_Platform
     //restituisce l'istanza unica
     static public function GetInstance($user = null)
     {
-        if (self::$oInstance == null) {
+        if (self::$oInstance == null || !self::$oInstance->bValid) {
             self::$oInstance = new AA_Platform($user);
 
             //AA_Log::Log(__METHOD__." - istanzio l'istanza: ".print_r(self::$oInstance,true),100);
