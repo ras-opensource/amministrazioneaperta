@@ -1950,6 +1950,7 @@ var AA_MainApp = {
                     module = AA_MainApp.curModule;
                     if (this.config && this.config.module_id) module = AA_MainApp.getModule(this.config.module_id);
                 } else module = AA_MainApp.getModule(module_id);
+                if(!module) module = AA_MainApp.curModule;
 
                 //Modulo non valido
                 if (!module.isValid()) {
