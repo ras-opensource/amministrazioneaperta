@@ -866,7 +866,7 @@ Class AA_Sier extends AA_Object_V2
 
         if($cf_oc !="")
         {
-            $query.=" AND (".static::AA_COMUNI_DB_TABLE.".operatori like '%\"cf\":\"".addslashes($cf_oc)."\"%' OR ".static::AA_COMUNI_DB_TABLE.".operatori like '%\"cf\":\"".addslashes(strtoupper($cf_oc)).")";
+            $query.=" AND (".static::AA_COMUNI_DB_TABLE.".operatori like '%\"cf\":\"".addslashes(strtolower($cf_oc))."\"%' OR ".static::AA_COMUNI_DB_TABLE.".operatori like '%\"cf\":\"".addslashes(strtoupper($cf_oc))."\"%')";
         }
 
         $query.=" LIMIT 1";
@@ -877,7 +877,7 @@ Class AA_Sier extends AA_Object_V2
             return null;
         }
 
-        //AA_Log::Log(__METHOD__." - query: ".$query,100);
+        AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=null;
         if($db->GetAffectedRows()>0)
@@ -2226,11 +2226,15 @@ Class AA_SierOperatoreComunale
         }
 
         $operatori=$comune->GetOperatori(true);
-        $operatore=$operatori[$cf];
+        $operatore=$operatori[strtolower($cf)];
         if(!is_array($operatore))
         {
-            AA_Log::Log(__METHOD__." - Operatore non valido.",100);
-            return false;
+            $operatore=$operatori[strtoupper($cf)];
+            if(!is_array($operatore))
+            {
+                AA_Log::Log(__METHOD__." - Operatore non valido.",100);
+                return false;
+            }
         }
 
         $this->nOperatoreComunaleComune=$comune->GetProp("id");
@@ -2260,7 +2264,7 @@ Class AA_SierOperatoreComunale
         $object="Amministrazione Aperta - autenticazione operatore comunale.";
         $corpo="Ciao ".$this->GetOperatoreComunaleNome().",<br>";
         $corpo.="di seguito il codice per l'accesso all'area operatori comunali della piattaforma 'Amministrazione Aperta', modulo SIER - Sistema Informativo Elettorale Regionale, per il caricamento dei dati elettorali e la rispettiva redincontazione.";
-        $corpo.="<div style='text-align: center;'><div style='border: 1px solid gray'><b>".$token."</b></div></div>";
+        $corpo.="<div style='text-align: center;border: 1px solid gray; width: 400px; font-size:larger'><span><b>".$token."</b></span></div>";
         $corpo.="Inserisci il codice sull'apposita finestra a video e fai click sul pulsante 'Verifica' per accedere al cruscotto applicativo.";
         $corpo.="<p>Per ogni eventuale richiesta di supporto o segnalazione di malfunzionamenti è disponibile la casella: amministrazioneaperta@regione.sardegna.it</p>";
         $corpo.="Cordiali Saluti.";
@@ -9372,7 +9376,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $operatori=$comune->GetOperatori(true);
         if(!is_array($operatori)) $operatori=array();
-        $operatori[$_REQUEST['cf']]=array("cf"=>$_REQUEST['cf'],"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>"","ruolo"=>$_REQUEST['ruolo']);
+        $operatori[$_REQUEST['cf']]=array("cf"=>strtolower(trim($_REQUEST['cf'])),"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>"","ruolo"=>$_REQUEST['ruolo']);
         $comune->SetOperatori($operatori);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiunta operatore: ".$_REQUEST['cf']))
         {
@@ -9447,7 +9451,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $operatori=$comune->GetOperatori(true);
         if(!is_array($operatori)) $operatori=array();
-        $operatori[$_REQUEST['cf']]=array("cf"=>$_REQUEST['cf'],"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>$_REQUEST['lastlogin'],"ruolo"=>$_REQUEST['ruolo']);
+        $operatori[$_REQUEST['cf']]=array("cf"=>strtolower(trim($_REQUEST['cf'])),"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>$_REQUEST['lastlogin'],"ruolo"=>$_REQUEST['ruolo']);
         $comune->SetOperatori($operatori);
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica operatore: ".$_REQUEST['cf']))
         {
