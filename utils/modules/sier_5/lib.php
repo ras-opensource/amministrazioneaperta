@@ -9213,16 +9213,21 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $operatori=$comune->GetOperatori(true);
-        if(!isset($operatori[$_REQUEST['cf']]))
+        $operatore=$operatori[strtolower(trim($_REQUEST['cf']))];
+        if(!isset($operatori[strtolower(trim($_REQUEST['cf']))]))
         {
-            AA_Log::Log(__METHOD__." - operatore non valido: ".print_r($operatori,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Operatore non valido",false);
-            return false;
+            $operatore=$operatori[strtoupper(trim($_REQUEST['cf']))];
+            if(!isset($operatori[strtoupper(trim($_REQUEST['cf']))]))
+            {
+                AA_Log::Log(__METHOD__." - operatore non valido: ".print_r($operatori,true)." - ".print_r($_REQUEST,true),100);
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Operatore non valido",false);
+                return false;    
+            }
         }
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetSierComuneOperatoriModifyDlg($object,$comune,$operatori[$_REQUEST['cf']]),true);
+        $task->SetContent($this->Template_GetSierComuneOperatoriModifyDlg($object,$comune,$operatore),true);
         return true;
     }
 
@@ -9249,16 +9254,21 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $operatori=$comune->GetOperatori(true);
-        if(!isset($operatori[$_REQUEST['cf']]))
+        $operatore=$operatori[strtolower(trim($_REQUEST['cf']))];
+        if(!isset($operatori[strtolower(trim($_REQUEST['cf']))]))
         {
-            AA_Log::Log(__METHOD__." - operatore non valido: ".print_r($operatori,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Operatore non valido",false);
-            return false;
+            $operatore=$operatori[strtoupper(trim($_REQUEST['cf']))];
+            if(!isset($operatori[strtoupper(trim($_REQUEST['cf']))]))
+            {
+                AA_Log::Log(__METHOD__." - operatore non valido: ".print_r($operatori,true)." - ".print_r($_REQUEST,true),100);
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Operatore non valido",false);
+                return false;    
+            }
         }
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetSierComuneOperatoriTrashDlg($object,$comune,$operatori[$_REQUEST['cf']]),true);
+        $task->SetContent($this->Template_GetSierComuneOperatoriTrashDlg($object,$comune,$operatore),true);
         return true;
     }
 
@@ -9451,7 +9461,9 @@ Class AA_SierModule extends AA_GenericModule
 
         $operatori=$comune->GetOperatori(true);
         if(!is_array($operatori)) $operatori=array();
-        $operatori[$_REQUEST['cf']]=array("cf"=>strtolower(trim($_REQUEST['cf'])),"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>$_REQUEST['lastlogin'],"ruolo"=>$_REQUEST['ruolo']);
+        if(isset($operatori[strtoupper(trim($_REQUEST['cf']))])) unset($operatori[strtoupper(trim($_REQUEST['cf']))]);
+        $operatori[strtolower(trim($_REQUEST['cf']))]=array("cf"=>strtolower(trim($_REQUEST['cf'])),"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>$_REQUEST['lastlogin'],"ruolo"=>$_REQUEST['ruolo']);
+        
         $comune->SetOperatori($operatori);
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica operatore: ".$_REQUEST['cf']))
         {
@@ -9496,14 +9508,17 @@ Class AA_SierModule extends AA_GenericModule
     
         //Verifica
         $operatori=$comune->GetOperatori(true);
-        if(!isset($operatori[$_REQUEST['cf']]))
+        if(!isset($operatori[strtolower(trim($_REQUEST['cf']))]))
         {
+            if(!isset($operatori[strtoupper(trim($_REQUEST['cf']))]))
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Operatore non valido.",false);
             return false;
         }
 
-        unset($operatori[$_REQUEST['cf']]);
+        if(isset($operatori[strtolower(trim($_REQUEST['cf']))])) unset($operatori[strtolower(trim($_REQUEST['cf']))]);
+        if(isset($operatori[strtoupper(trim($_REQUEST['cf']))])) unset($operatori[strtoupper(trim($_REQUEST['cf']))]);
+
         $comune->SetOperatori($operatori);
         if(!$object->UpdateComune($comune,$this->oUser,"Elimina operatore: ".$_REQUEST['cf']))
         {
