@@ -877,7 +877,7 @@ Class AA_Sier extends AA_Object_V2
             return null;
         }
 
-        AA_Log::Log(__METHOD__." - query: ".$query,100);
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=null;
         if($db->GetAffectedRows()>0)
@@ -3308,7 +3308,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $form_data["nome"]=$operatore['nome'];
             $form_data["cognome"]=$operatore['cognome'];
-            $form_data["cf"]=$operatore['cf'];
+            $form_data["cf"]=strtoupper($operatore['cf']);
             $form_data["ruolo"]=$operatore['ruolo'];
             $form_data["email"]=$operatore['email'];
             $form_data["lastlogin"]=$operatore['lastlogin'];
@@ -4055,7 +4055,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetApplyButtonName("Procedi");
                 
         $tabledata=array();
-        $tabledata[]=array("denominazione"=>$operatore["nome"]." ".$operatore["cognome"],"cf"=>$operatore["cf"],"email"=>$operatore["email"]);
+        $tabledata[]=array("denominazione"=>$operatore["nome"]." ".$operatore["cognome"],"cf"=>strtoupper($operatore["cf"]),"email"=>$operatore["email"]);
       
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Le informazioni del seguente candidato verrànno eliminate, vuoi procedere?")));
 
@@ -9508,12 +9508,11 @@ Class AA_SierModule extends AA_GenericModule
     
         //Verifica
         $operatori=$comune->GetOperatori(true);
-        if(!isset($operatori[strtolower(trim($_REQUEST['cf']))]))
+        if(!isset($operatori[strtolower(trim($_REQUEST['cf']))]) && !isset($operatori[strtoupper(trim($_REQUEST['cf']))]))
         {
-            if(!isset($operatori[strtoupper(trim($_REQUEST['cf']))]))
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Operatore non valido.",false);
-            return false;
+            return false;    
         }
 
         if(isset($operatori[strtolower(trim($_REQUEST['cf']))])) unset($operatori[strtolower(trim($_REQUEST['cf']))]);
@@ -10569,11 +10568,11 @@ Class AA_SierModule extends AA_GenericModule
             foreach($utenti as $curUser)
             {
                 {
-                    $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriModifyDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
-                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', cf: "'.$curUser['cf'].'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
+                    $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriModifyDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', cf: "'.strtolower($curUser['cf']).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
+                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneOperatoriTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', cf: "'.strtolower($curUser['cf']).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
                     $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica operatore' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina operatore' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
                 }
-                $data[]=array("id"=>$curUser['cf'],"ops"=>$ops, "lastLogin"=>$curUser['lastlogin'],"email"=>$curUser['email'],"denominazione"=>$curUser['cognome']." ".$curUser['nome'],"cf"=>$curUser['cf'],"ruolo"=>$ruolo[$curUser['ruolo']]);
+                $data[]=array("id"=>$curUser['cf'],"ops"=>$ops, "lastLogin"=>$curUser['lastlogin'],"email"=>$curUser['email'],"denominazione"=>$curUser['cognome']." ".$curUser['nome'],"cf"=>strtoupper($curUser['cf']),"ruolo"=>$ruolo[$curUser['ruolo']]);
             }
             $table=new AA_JSON_Template_Generic($id."_View", array(
                 "view"=>"datatable",
