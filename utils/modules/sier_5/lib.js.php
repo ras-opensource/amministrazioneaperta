@@ -146,10 +146,10 @@ if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1)
 {
     echo "AA_MainApp.defaultModule='".AA_SierModule::AA_ID_MODULE."';";
     echo "AA_MainApp.defaultSidebarModule='sier';";
-    echo "AA_MainApp.userAuth=location.reload;";
-    echo "AA_MainApp.logIn=location.reload;";
+    echo "AA_MainApp.userAuth=function(){location.reload(true)};";
+    echo "AA_MainApp.logIn=function(){location.reload(true)};";
     echo "AA_MainApp.resetPwd=AA_LogOut;";
-    echo "AA_MainApp.register=location.reload;";
+    echo "AA_MainApp.register=function(){location.reload(true)};";
 }
 else
 {
