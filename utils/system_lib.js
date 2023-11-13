@@ -806,14 +806,24 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             //console.log(this.name+"::menuEventHandlerDefault",arguments,AA_MainApp.ui.MainUI.activeMenu);
             if (AA_MainApp.ui.MainUI.activeMenu) {
                 item = AA_MainApp.ui.MainUI.activeMenu.getItem(arguments[0]);
-                //console.log(this.name+"::menuEventHandlerDefault",item);
+                ///console.log(this.name+"::menuEventHandlerDefault",item);
 
                 //Cerca nel modulo
+                let handler=item.handler;
                 if (item.module_id) {
                     module = AA_MainApp.getModule(item.module_id);
                     if (module.isValid() && typeof module[item.handler] == "function") {
                         if (Array.isArray(item.handler_params)) module[item.handler](...item.handler_params);
                         else module[item.handler]();
+                    }
+                    else
+                    {
+                        if (module.isValid() && typeof module.eventHandlers["defaultHandlers"][handler] == "function")
+                        {
+                            if (Array.isArray(item.handler_params)) module.eventHandlers["defaultHandlers"][handler](...item.handler_params);
+                            else module.eventHandlers["defaultHandlers"][handler]();
+                        }
+                        else console.log("menuEventHandlerDefault - funzione non trovata: "+handler);
                     }
                 } else {
                     if (typeof AA_MainApp.curModule[item.handler] == "function") {
@@ -824,6 +834,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                 //Cerca nelle funzioni globali
                 if (typeof window[item.handler] == "function") {
+                    console.log("menuEventHandlerDefault - funzione: "+item.handler);
                     if (Array.isArray(item.handler_params)) window[item.handler](...item.handler_params);
                     else window[item.handler]();
                 }

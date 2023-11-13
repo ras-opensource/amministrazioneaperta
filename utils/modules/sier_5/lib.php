@@ -2589,6 +2589,11 @@ Class AA_SierModule extends AA_GenericModule
 
                 $template="TemplateSection_OC_Login";
             }
+            else
+            {
+                $taskManager->RegisterTask("GetSierOCModifyDatiGeneraliDlg");
+                $taskManager->RegisterTask("Update_OC_ComuneDatiGenerali");
+            }
 
             //desktop
             $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_DESKTOP,"Desktop operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP,$this->GetId(),true,true,false,true);
@@ -6732,7 +6737,11 @@ Class AA_SierModule extends AA_GenericModule
             $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data))));
         }
         $preview_layout=new AA_JSON_Template_Layout($id."_PreviewBox_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean","minHeight"=>300));
-        $preview_layout->AddRow(new AA_JSON_Template_Generic());
+        $preview_header_box=new AA_JSON_Template_Layout($id."_PreviewHeaderBox_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean","minHeight"=>300));
+        $preview_header_box->AddRow(new AA_JSON_Template_Generic());
+        $preview_header_box->AddRow(new AA_JSON_Template_Generic($id."_PreviewHeaderTitle",array("view"=>"label","label"=>"<span style='font-size: 24px; color:#006699'>".$object->GetName()."</span>","align"=>"center")));
+        $preview_header_box->AddRow(new AA_JSON_Template_Template($id."_PreviewHeaderContent",array("template"=>"<div style='display: flex; justify-content:center; align-center: center; width: 100%; height:100%'><p>Ciao <b>".$operatore->GetOperatoreComunaleNome()."</b>, fai click su uno dei box sottostanti per accedere alla relativa sezione.</p></div>")));
+        $preview_layout->AddRow($preview_header_box);
         $preview_layout->AddRow($moduli_view);
         $preview_layout->AddRow(new AA_JSON_Template_Generic());
         $multiview->AddCell($preview_layout);
@@ -6764,7 +6773,7 @@ Class AA_SierModule extends AA_GenericModule
         //-------------------   Scheda generale  ------------------------------
         if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Generale_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         
         //torna al riepilogo
@@ -6779,7 +6788,7 @@ Class AA_SierModule extends AA_GenericModule
             "click"=>"$$('".$id."_PreviewBox_".$operatore->GetOperatoreComunaleComune()."').show()"
         )));
 
-        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati generali e corpo elettorale</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati generali</span>", "align"=>"center")));
         
         //Pulsante di modifica
         if($canModify)
@@ -6803,10 +6812,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         $layout_generale->addRow($toolbar);
-        $layout_generale->addRow(new AA_JSON_Template_Generic());
-
-        //to do
-
+        $layout_generale->addRow($this->Template_OC_Generale($id,$object,$comune));
         $multiview->addCell($layout_generale);
         //----------------------------------------------------------------------------
 
@@ -6954,6 +6960,132 @@ Class AA_SierModule extends AA_GenericModule
 
         $layout->AddRow($multiview);
     
+        return $layout;
+    }
+
+    //Template OC generale
+    public function Template_OC_Generale($id,$object=null,$comune=null,$modify=false)
+    {
+        $id.=$id."_Generale_Content";
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+        
+        //Descrizione
+        $value=$comune->GetProp("denominazione");
+        $descr=new AA_JSON_Template_Template($id."_Denominazione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Denominazione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //Circoscrizione
+        $value=$comune->GetProp("circoscrizione");
+        $circoscrizione=new AA_JSON_Template_Template($id."_Circoscrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Circoscrizione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //Pec
+        $value=$comune->GetProp("pec");
+        $pec=new AA_JSON_Template_Template($id."_Pec",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Pec:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        
+        //Indirizzo
+        $value=$comune->GetProp("indirizzo");
+        $indirizzo=new AA_JSON_Template_Template($id."_Indirizzo",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Indirizzo:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //note
+        $value = $comune->GetProp("contatti");
+        $note=new AA_JSON_Template_Template($id."_Contatti",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Note e contatti:","value"=>$value)
+        ));
+
+        //sezioni
+        $value = $comune->GetProp("sezioni");
+        $sezioni=new AA_JSON_Template_Template($id."_Sezioni",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Sezioni:","value"=>$value)
+        ));
+
+        //elettori maschi
+        $value = $comune->GetProp("elettori_m");
+        $elettori_m=new AA_JSON_Template_Template($id."_Elettori_m",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Elettori maschi:","value"=>$value)
+        ));
+
+        //elettori femmine
+        $value = $comune->GetProp("elettori_f");
+        $elettori_f=new AA_JSON_Template_Template($id."_Elettori_f",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Elettori femmine:","value"=>$value)
+        ));
+        
+        $rows_fixed_height=60;
+        
+        //prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($descr);
+        $riga->AddCol($circoscrizione);
+        $layout->AddRow($riga);
+
+        //seconda riga
+        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($indirizzo);
+        $riga->AddCol($pec);
+        $layout->AddRow($riga);
+
+        //terza riga
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("type"=>"clean","height"=>80,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($note);
+        $layout->AddRow($riga);
+
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Corpo elettorale</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Generale_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica dati generali e corpo elettorale",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyDatiGeneraliDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+
+        $layout->AddRow($toolbar);
+        //corpo elettorale
+        $riga=new AA_JSON_Template_Layout($id."_QuadRow",array("type"=>"clean"));
+        $riga->AddCol($sezioni);
+        $riga->AddCol($elettori_m);
+        $riga->AddCol($elettori_f);
+        $layout->AddRow($riga);
+
         return $layout;
     }
 
@@ -8108,6 +8240,101 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task login operatore comunale 
+    public function Task_GetSierOCModifyDatiGeneraliDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_OC_DatiGeneraliModifyDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task login operatore comunale 
+    public function Task_Update_OC_ComuneDatiGenerali($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $comune->SetProp("pec",$_REQUEST['pec']);
+        $comune->SetProp("contatti",$_REQUEST['contatti']);
+        $comune->SetProp("indirizzo",$_REQUEST['indirizzo']);
+        if(isset($_REQUEST['sezioni']) && $_REQUEST['sezioni']>0) $comune->SetProp("sezioni",$_REQUEST['sezioni']);
+        if(isset($_REQUEST['elettori_m']) && $_REQUEST['elettori_m']>0) $comune->SetProp("elettori_m",$_REQUEST['elettori_m']);
+        if(isset($_REQUEST['elettori_f']) && $_REQUEST['elettori_f']>0) $comune->SetProp("elettori_f",$_REQUEST['elettori_f']);
+
+        if(!$object->UpdateComune($comune,$this->oUser," - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati generali e corpo elettorale aggiornati con successo.",false);
+        return true;
+    }
 
     //Task modifica elemento
     public function Task_GetSierModifyDlg($task)
@@ -10474,6 +10701,77 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template dlg modify user
+    public function Template_OC_DatiGeneraliModifyDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliModifyDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+            $form_data['id_circoscrizione']=$comune->GetProp('id_circoscrizione');
+            $form_data['denominazione']=$comune->GetProp('denominazione');
+            $form_data['pec']=$comune->GetProp('pec');
+            $form_data['contatti']=$comune->GetProp('contatti');
+            $form_data['indirizzo']=$comune->GetProp('indirizzo');
+            $form_data['sezioni']=$comune->GetProp('sezioni');
+            $form_data['elettori_m']=$comune->GetProp('elettori_m');
+            $form_data['elettori_f']=$comune->GetProp('elettori_f');
+
+            $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
+            
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(120);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(800);
+            $height=0;
+
+            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI)>0)
+            {
+                $height+=350;
+                //pec
+                $wnd->AddTextField("pec","Pec",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsMail", "bottomLabel"=>"*Indirizzo di posta certificata."));
+
+                //indirizzo
+                $wnd->AddTextField("indirizzo","Indirizzo",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Via e numero civico."));
+
+                //contatti
+                $wnd->AddTextareaField("contatti","Note e contatti",array("gravity"=>1, "bottomLabel"=>"*Eventuali informazioni di recapito utili."));
+            }
+
+            //Dati corpo elettorale
+            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
+            {
+                $height+=300;
+                $section=new AA_FieldSet($id."_Section_DatiCorpoElettorale","Corpo elettorale");
+                $section->AddTextField("sezioni", "Sezioni", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di sezioni"));
+                $section->AddTextField("elettori_m", "Maschi", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero elettori."),false);
+                $section->AddTextField("elettori_f", "Femmine", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero elettrici."),false);
+                $wnd->AddGenericObject($section);
+            }
+                    
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            $wnd->enableRefreshOnSuccessfulSave();
+            $wnd->SetSaveTask("Update_OC_ComuneDatiGenerali");
+            $wnd->SetHeight($height);
+
+            return $wnd;    
+        }
+        else
+        {
+            //to do view only
+            $wnd = new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+
+            return $wnd;
+        }
+    }
+
+
+    //Template dlg modify user
     public function Template_GetSierComuneOperatoriViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI;
@@ -10653,12 +10951,12 @@ Class AA_SierModule extends AA_GenericModule
                     "value"=>"Aggiorna",
                     "icon"=>"mdi mdi-reload",
                     "module_id" => $this->GetId(),
-                    "handler"=>"refreshUiObject",
+                    "handler"=>"OC_RefreshSection",
                     "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP,true)
                  ))
              ));
          
-         return $menu;  
+         return $menu;
      }
 
     //Template dettaglio allegati
@@ -10700,6 +10998,18 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
             "data"=>array("title"=>"Info generali Comune:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $layout->addCol($campo);
+        #--------------------------------------
+
+        //Abilitazione modifica corpo elettorale
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        $campo=new AA_JSON_Template_Template($id."_DatiGenerali",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Corpo elettorale:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $layout->addCol($campo);

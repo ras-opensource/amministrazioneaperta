@@ -82,6 +82,17 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//OC refresh view
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].OC_RefreshSection = function() {
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.OC_RefreshSection", this, arguments);
+        window.location.reload(true);
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.OC_RefreshSection", msg, this);
+    }
+};
+
 //Handler caricamento candidati con suggerimento della lista, della circoscrizione e della coalizione
 <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].AddNewCandidato = function() {
     try 
