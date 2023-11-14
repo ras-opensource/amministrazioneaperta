@@ -6617,11 +6617,11 @@ Class AA_SierModule extends AA_GenericModule
             $object=new AA_Sier($_SESSION['oc_sier_object']);
             if(!$object->IsValid())
             {
-                return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Desktop operatore comunale"));
+                return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Accesso operatore comunale"));
             }
         } 
         
-        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name"=>"Desktop operatore comunale"));
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name"=>"Accesso operatore comunale"));
 
         //login disabilitato
         $sier_flags=$object->GetAbilitazioni();
@@ -6667,9 +6667,13 @@ Class AA_SierModule extends AA_GenericModule
          ));
         $form_button_layout->AddCol($btn_login);
         $form_button_layout->AddCol(new AA_JSON_Template_Generic(""));
+
         $form->AddElement($form_button_layout);
-        
-        $formBox->AddRow(new AA_JSON_Template_Generic());
+        $header_layout=new AA_JSON_Template_Layout($id."_Header_box",array("type"=>"clean"));
+        $header_layout->AddRow(new AA_JSON_Template_Generic());
+        $header_layout->AddRow(new AA_JSON_Template_Generic($id."_PreviewHeaderTitle",array("view"=>"label","label"=>"<span style='font-size: 24px; color:#006699'>".$object->GetName()."</span>","align"=>"center")));
+        $header_layout->AddRow(new AA_JSON_Template_Generic());
+        $formBox->AddRow($header_layout);
         $formBox->AddRow($form);
         $formBox->AddRow(new AA_JSON_Template_Generic());
 
