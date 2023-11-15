@@ -6638,13 +6638,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $form=new AA_JSON_Template_Form($id."_LoginOCForm",array(
+            "maxWidth"=>400,
             "elementsConfig"=>array("labelWidth"=>180, "labelAlign"=>"left", "labelPosition"=>"top","bottomPadding"=>15),
             "padding"=>15,
             "validation"=>"validateForm",
             "css"=>array("background-color"=>"#F3FAFD !important", "border"=>"solid 1px 1198FF","border-radius"=>"5px !important", "font-size"=>"smaller")
         ));
 
-        $formBox=new AA_JSON_Template_Layout($id."_FormBox",array("type"=>"space","maxWidth"=>400,"css"=>array("background-color"=>"transparent")));
+        $formBox=new AA_JSON_Template_Layout($id."_FormBox",array("type"=>"space","css"=>array("background-color"=>"transparent")));
         $form->AddElement(new AA_JSON_Template_Text($id."LoginOC_cf",array("required"=>true,"name"=>"cf","label"=>"<b>Codice fiscale</b>")));
 
         $params = "{task: 'OCLogin'";
@@ -6671,15 +6672,15 @@ Class AA_SierModule extends AA_GenericModule
         $form->AddElement($form_button_layout);
         $header_layout=new AA_JSON_Template_Layout($id."_Header_box",array("type"=>"clean"));
         $header_layout->AddRow(new AA_JSON_Template_Generic());
-        $header_layout->AddRow(new AA_JSON_Template_Generic($id."_PreviewHeaderTitle",array("view"=>"label","label"=>"<span style='font-size: 24px; color:#006699'>".$object->GetName()."</span>","align"=>"center")));
+        $header_layout->AddRow(new AA_JSON_Template_Template($id."_PreviewHeaderTitle",array("template"=>"<div style='display:flex;justify-content:center; align-items:center;'><span style='font-size: 24px; color:#006699'>".$object->GetName()."</span></div>","align"=>"center")));
         $header_layout->AddRow(new AA_JSON_Template_Generic());
-        $formBox->AddRow($header_layout);
-        $formBox->AddRow($form);
-        $formBox->AddRow(new AA_JSON_Template_Generic());
+        $formBox->AddCol(new AA_JSON_Template_Generic());
+        $formBox->AddCol($form);
+        $formBox->AddCol(new AA_JSON_Template_Generic());
 
-        $layout->AddCol(new AA_JSON_Template_Generic());
-        $layout->AddCol($formBox);
-        $layout->AddCol(new AA_JSON_Template_Generic());
+        $layout->AddRow($header_layout);
+        $layout->AddRow($formBox);
+        $layout->AddRow(new AA_JSON_Template_Generic());
 
         return $layout;
     }

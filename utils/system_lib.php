@@ -4196,7 +4196,7 @@ class AA_GenericPagedSectionTemplate
         $this->id = $id;
         $this->content_box = $content_box;
         $this->contentBoxTemplate = "<div class='AA_DataView_ItemContent'>"
-            . "<div><span class='AA_Label AA_Label_Orange'>#pretitolo#</span></div>"
+            . "<div><span class='AA_Label AA_Label_Blue_Simo'>#pretitolo#</span></div>"
             . "<div><span class='AA_DataView_ItemTitle'>#denominazione#</span></div>"
             . "<div>#tags#</div>"
             . "<div><span class='AA_DataView_ItemSubTitle'>#sottotitolo#</span></div>"
