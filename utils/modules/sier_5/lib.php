@@ -2596,7 +2596,7 @@ Class AA_SierModule extends AA_GenericModule
             }
 
             //desktop
-            $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_DESKTOP,"Desktop operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP,$this->GetId(),true,true,false,true);
+            $section=new AA_GenericModuleSection(static::AA_ID_SECTION_OC_DESKTOP,"Cruscotto operatore comunale",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP,$this->GetId(),true,true,false,true);
             $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Void(1,true)->toArray()));
 
             $this->AddSection($section);
@@ -6695,16 +6695,16 @@ Class AA_SierModule extends AA_GenericModule
             $object=new AA_Sier($_SESSION['oc_sier_object']);
             if(!$object->IsValid())
             {
-                return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Desktop operatore comunale"));
+                return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Accesso operatore comunale"));
             }
         }
 
         $operatore=AA_SierOperatoreComunale::GetInstance();
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        $intestazione="Desktop operatore comunale";
+        $intestazione="Curscotto operatore - comune di ";
         if($comune instanceof AA_SierComune)
         {
-            $intestazione.=" - ".$comune->GetProp("denominazione");     
+            $intestazione.=$comune->GetProp("denominazione");     
         }
         
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name"=>$intestazione));
