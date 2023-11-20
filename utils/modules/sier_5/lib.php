@@ -368,6 +368,28 @@ Class AA_SierComune
         return $this->aProps['operatori'];
     }
 
+    public function GetAffluenza($bAsObject=false)
+    {
+        $ret="";
+        if($bAsObject) $ret=array();
+        if(!isset($this->aProps['affluenza']) || $this->aProps['affluenza']=="") return $ret;
+        
+        if($bAsObject)
+        {
+            $ret=json_decode($this->aProps['affluenza'],true);
+            //AA_Log::Log(__METHOD__." - affluenza: ".print_r($ret,true),100);
+
+            if($ret) return $ret;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'importazione dell'affluenza del comune: ".$this->aProps['id'],100);
+                return array();
+            }
+        }
+
+        return $this->aProps['affluenza'];
+    }
+
     public function SetOperatori($operatori="")
     {
         if(is_array($operatori))
@@ -385,6 +407,26 @@ Class AA_SierComune
         }
 
         $this->SetProp("operatori",$operatori);
+        return true;
+    }
+
+    public function SetAffluenza($val="")
+    {
+        if(is_array($val))
+        {
+            if(sizeof($val)>0)
+            {
+                $affluenza=json_encode($val);
+                if($affluenza===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($affluenza,true),100);
+                    return false;
+                }    
+            }
+            else $affluenza="";
+        }
+
+        $this->SetProp("affluenza",$affluenza);
         return true;
     }
 
@@ -2557,8 +2599,13 @@ Class AA_SierModule extends AA_GenericModule
             //comune
             $taskManager->RegisterTask("GetSierComuneDatiGeneraliViewDlg");
             $taskManager->RegisterTask("UpdateSierComuneDatiGenerali");
+
             $taskManager->RegisterTask("GetSierComuneAffluenzaViewDlg");
             $taskManager->RegisterTask("GetSierComuneAffluenzaAddNewDlg");
+            $taskManager->RegisterTask("AddNewSierComuneAffluenza");
+            $taskManager->RegisterTask("GetSierComuneAffluenzaModifyDlg");
+            $taskManager->RegisterTask("UpdateSierComuneAffluenza");
+
             $taskManager->RegisterTask("GetSierComuneOperatoriViewDlg");
             $taskManager->RegisterTask("GetSierComuneOperatoriAddNewDlg");
             $taskManager->RegisterTask("AddNewSierComuneOperatore");
@@ -7899,7 +7946,8 @@ Class AA_SierModule extends AA_GenericModule
                 $icon="mdi mdi-upload";
                 $text="Gestisci i dati sull&apos;affluenza alle urne";
             }
-            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE."_".static::AA_UI_LAYOUT_AFFLUENZA_COMUNALE;
+            $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['affluenza']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             $data[$index]['affluenza'].="</div>";
             //------------------------------
@@ -9453,6 +9501,48 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+     //Task affluenza modify affluenza
+     public function Task_GetSierComuneAffluenzaModifyDlg($task)
+     {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['giornata']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Giornata non valida",false);
+            return false;
+        }
+        $giornate=$comune->GetAffluenza(true);
+        if(!isset($giornate[$_REQUEST['giornata']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Giornata non valida",false);
+            return false;
+        }
+        $giornata = $_REQUEST['giornata'];
+     
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneAffluenzaModifyDlg($object,$comune,$giornata),true);
+        return true;
+     }
+
     //Task aggiungi operatore comunale
     public function Task_GetSierComuneOperatoriAddNewDlg($task)
     {
@@ -9613,6 +9703,122 @@ Class AA_SierModule extends AA_GenericModule
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierComuneOperatoriViewDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task aggiunta operatore Comune
+    public function Task_AddNewSierComuneAffluenza($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+    
+        //Verifica
+        if(!isset($_REQUEST['giornata']) || trim($_REQUEST['giornata'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la giornata.",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['ore_12']) || $_REQUEST['ore_12'] == "") $_REQUEST['ore_12']=0;
+        if(!isset($_REQUEST['ore_19']) || $_REQUEST['ore_19'] == "") $_REQUEST['ore_19']=0;
+        if(!isset($_REQUEST['ore_22']) || $_REQUEST['ore_22'] == "") $_REQUEST['ore_22']=0;
+
+        $affluenza=$comune->GetAffluenza(true);
+        if(!is_array($affluenza)) $affluenza=array();
+        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>strtolower(trim($_REQUEST['ore_12'])),"ore_19"=>strtolower(trim($_REQUEST['ore_19'])),"ore_22"=>strtolower(trim($_REQUEST['ore_22'])));
+        $comune->SetAffluenza($affluenza);
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiunta affluenza per la giornata: ".$_REQUEST['giornata']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dell'affluenza.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction("refreshCurSection");
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
+    //Task modifica operatore Comune
+    public function Task_UpdateSierComuneAffluenza($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+    
+        //Verifica
+        if(!isset($_REQUEST['giornata']) || trim($_REQUEST['giornata'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la giornata.",false);
+            return false;
+        }
+
+        if(!isset($_REQUEST['ore_12']) || $_REQUEST['ore_12'] == "") $_REQUEST['ore_12']=0;
+        if(!isset($_REQUEST['ore_19']) || $_REQUEST['ore_19'] == "") $_REQUEST['ore_19']=0;
+        if(!isset($_REQUEST['ore_22']) || $_REQUEST['ore_22'] == "") $_REQUEST['ore_22']=0;
+
+        $affluenza=$comune->GetAffluenza(true);
+        if(!is_array($affluenza)) $affluenza=array();
+        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>strtolower(trim($_REQUEST['ore_12'])),"ore_19"=>strtolower(trim($_REQUEST['ore_19'])),"ore_22"=>strtolower(trim($_REQUEST['ore_22'])));
+        $comune->SetAffluenza($affluenza);
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento affluenza per la giornata: ".$_REQUEST['giornata']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dell'affluenza.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction("refreshCurSection");
+        $task->SetContent("Dati aggiornati con successo.",false);
         return true;
     }
 
@@ -10779,12 +10985,12 @@ Class AA_SierModule extends AA_GenericModule
             $wnd=new AA_GenericFormDlg($id, "Nuovo dato affluenza", $this->id,$form_data,$form_data);
             
             $wnd->SetLabelAlign("right");
-            $wnd->SetLabelWidth(80);
+            $wnd->SetLabelWidth(120);
             $wnd->SetBottomPadding(32);
             $wnd->EnableValidation();
             
-            $wnd->SetWidth(350);
-            $wnd->SetHeight(350);
+            $wnd->SetWidth(450);
+            $wnd->SetHeight(450);
             
             $giornate=$object->GetGiornate();
             if(sizeof($giornate)>0)
@@ -10806,20 +11012,18 @@ Class AA_SierModule extends AA_GenericModule
                     return $wnd;
                 }
                 $wnd->AddSelectField("giornata","Giornata",array("gravity"=>1,"required"=>true, "bottomLabel"=>"*Seleziona la giornata di riferimento.","options"=>$data));
-
-                //ore
-                $ore=array(
-                    array("id"=>12,"value"=>12),
-                    array("id"=>19,"value"=>19),
-                    array("id"=>22,"value"=>22)
-                );
-                $wnd->AddSelectField("ora","Ora",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Seleziona l'ora di riferimento.","options"=>$ore));
         
-                //votanti
-                $wnd->AddTextField("votanti","Votanti",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti"));
+                //votanti ore 12
+                $wnd->AddTextField("ore_12","Votanti ore 12",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti ore 12"));
+                //votanti ore 19
+                $wnd->AddTextField("ore_19","Votanti ore 19",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti ore 19"));
+                //votanti ore 22
+                $wnd->AddTextField("ore_22","Votanti ore 22",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti ore 22"));
                             
                 $wnd->EnableCloseWndOnSuccessfulSave();
-                $wnd->enableRefreshOnSuccessfulSave();
+                if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+                if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
                 $wnd->SetSaveTask("AddNewSierComuneAffluenza");
             }
             else
@@ -10841,69 +11045,73 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template dlg modify affluenza comune
-    public function Template_GetSierComuneAffluenzaModifyDlg($object=null,$comune=null,$giornata="",$ora="",$votanti="")
+    public function Template_GetSierComuneAffluenzaModifyDlg($object=null,$comune=null,$giornata="")
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneAffluenzaModifyDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Affluenza", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Affluenza", $this->id);
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica affluenza", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica affluenza", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
             $form_data['id']=$object->GetId();
             $form_data['id_sier']=$object->GetId();
             $form_data['id_comune']=$comune->GetProp('id');
+            
+            $affluenza=$comune->GetAffluenza(true);
             $form_data['giornata']=$giornata;
-            $form_data['ora']=$ora;
-            $form_data['votanti']=$votanti;
+            if(isset($affluenza[$giornata]))
+            {
+                $form_data['ore_12']=$affluenza[$giornata]['ore_12'];
+                $form_data['ore_19']=$affluenza[$giornata]['ore_19'];
+                $form_data['ore_22']=$affluenza[$giornata]['ore_22'];
+            }
     
-            $wnd=new AA_GenericFormDlg($id, "Affluenza", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Modifica affluenza", $this->id,$form_data,$form_data);
             
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(120);
+            $wnd->SetBottomPadding(32);
             $wnd->EnableValidation();
             
-            $wnd->SetWidth(350);
-            $wnd->SetHeight(350);
+            $wnd->SetWidth(450);
+            $wnd->SetHeight(450);
             
             $giornate=$object->GetGiornate();
             if(sizeof($giornate)>0)
             {
                 //giornate
                 $data=array();
-                foreach($giornate as $data=>$curGiornata)
+                foreach($giornate as $giornata=>$curGiornata)
                 {
                     if($curGiornata["affluenza"]>0)
                     {
-                        $data[]=array("id"=>$data,"value"=>$data);
+                        $data[]=array("id"=>$giornata,"value"=>$giornata);
                     }
                 }
                 if(sizeof($data)==0)
                 {
-                    $wnd = new AA_GenericWindowTemplate($id, "Affluenza", $this->id);
+                    $wnd = new AA_GenericWindowTemplate($id, "Modifica affluenza", $this->id);
                     $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non sono presenti giornate per le quali inserire l'affluenza.")));
 
                     return $wnd;
                 }
                 $wnd->AddSelectField("giornata","Giornata",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Seleziona la giornata di riferimento.","options"=>$data));
 
-                //ore
-                $ore=array(
-                    array("id"=>12,"value"=>12),
-                    array("id"=>19,"value"=>19),
-                    array("id"=>22,"value"=>22)
-                );
-                $wnd->AddSelectField("ora","Ora",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Seleziona l'ora di riferimento.","options"=>$ore));
-        
-                //votanti
-                $wnd->AddTextField("votanti","Votanti",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsInteger","bottomLabel"=>"*numero dei votanti"));
+                //votanti ore 12
+                $wnd->AddTextField("ore_12","Votanti ore 12",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti ore 12"));
+                //votanti ore 19
+                $wnd->AddTextField("ore_19","Votanti ore 19",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti ore 19"));
+                //votanti ore 22
+                $wnd->AddTextField("ore_22","Votanti ore 22",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti ore 22"));
                             
                 $wnd->EnableCloseWndOnSuccessfulSave();
-                $wnd->enableRefreshOnSuccessfulSave();
+                if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+                if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
                 $wnd->SetSaveTask("UpdateSierComuneAffluenza");
             }
             else
             {
-                $wnd = new AA_GenericWindowTemplate($id, "Affluenza", $this->id);
+                $wnd = new AA_GenericWindowTemplate($id, "Modifica affluenza", $this->id);
                 $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non sono presenti giornate per le quali inserire l'affluenza.")));
             }
             
@@ -11047,37 +11255,25 @@ Class AA_SierModule extends AA_GenericModule
 
         $columns=array(
             array("id"=>"giornata","header"=>array("<div style='text-align: center'>Giornata</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"ora","header"=>array("<div style='text-align: center'>Ora</div>",array("content"=>"textFilter")),"fillspace"=>90, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"votanti","header"=>array("<div style='text-align: center'>Votanti</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"ore_12","header"=>array("<div style='text-align: center'>Votanti ore 12</div>",array("content"=>"textFilter")),"fillspace"=>90, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"ore_19","header"=>array("<div style='text-align: center'>Votanti ore 19</div>",array("content"=>"textFilter")),"fillspace"=>90, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"ore_22","header"=>array("<div style='text-align: center'>Votanti ore 22</div>",array("content"=>"textFilter")),"fillspace"=>90, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>120, "css"=>array("text-align"=>"center"))
         );
 
         $data=array();
-        $affluenza=$comune->GetProp("affuenza");
-        if($affluenza != "")
-        {
-            $affluenza=json_decode($affluenza,true);
-            if(!is_array($affluenza))
-            {
-                AA_Log::Log(__METHOD__." - Errore nel parsing dei dati sull'affluenza. (".$comune->GetProp("affluenza").")",100);
-                $affluenza=array();
-            }
-        }
-        else
-        {
-            $affluenza=array();
-        }
-
+        $affluenza=$comune->GetAffluenza(true);
         if(sizeof($affluenza) > 0)
         {
-            foreach($affluenza as $data=>$curAffluenza)
+            foreach($affluenza as $giornata=>$curAffluenza)
             {
+                AA_Log::Log(__METHOD__." - ".print_r($curAffluenza,true),100);
                 {
-                    $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaModifyDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($data).'",ora: "'.strtolower($curAffluenza['ora']).'",votanti: "'.strtolower($curAffluenza['votanti']).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
-                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($data).'",ora: "'.strtolower($curAffluenza['ora']).'",votanti: "'.strtolower($curAffluenza['votanti']).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
+                    $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaModifyDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($giornata).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
+                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($giornata).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
                     $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica dato' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina dato' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
                 }
-                $data[]=array("id"=>$data,"ops"=>$ops, "giornata"=>$data,"ora"=>$curAffluenza['ora'],"votanti"=>$curAffluenza['votanti']);
+                $data[]=array("id"=>$giornata,"ops"=>$ops, "giornata"=>$giornata,"ore_12"=>$curAffluenza['ore_12'],"ore_19"=>$curAffluenza['ore_19'],"ore_22"=>$curAffluenza['ore_22']);
             }
             $table=new AA_JSON_Template_Generic($id."_View", array(
                 "view"=>"datatable",
@@ -11231,7 +11427,7 @@ Class AA_SierModule extends AA_GenericModule
 
         if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE."_".static::AA_UI_LAYOUT_AFFLUENZA_COMUNALE)
         {
-            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE."_".static::AA_UI_LAYOUT_AFFLUENZA_COMUNALE, "content" => $this->Template_GetSierComuneOperatoriViewLayout(null,null,static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE)->toArray());
+            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE."_".static::AA_UI_LAYOUT_AFFLUENZA_COMUNALE, "content" => $this->Template_GetSierComuneAffluenzaViewLayout(null,null,static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE)->toArray());
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
             $task->SetContent(json_encode($content),true);
             return true;
