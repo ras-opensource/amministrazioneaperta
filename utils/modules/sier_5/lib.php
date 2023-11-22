@@ -390,6 +390,28 @@ Class AA_SierComune
         return $this->aProps['affluenza'];
     }
 
+    public function GetRisultati($bAsObject=false)
+    {
+        $ret="";
+        if($bAsObject) $ret=array();
+        if(!isset($this->aProps['risultati']) || $this->aProps['risultati']=="") return $ret;
+        
+        if($bAsObject)
+        {
+            $ret=json_decode($this->aProps['risultati'],true);
+            //AA_Log::Log(__METHOD__." - affluenza: ".print_r($ret,true),100);
+
+            if($ret) return $ret;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'importazione dei risultati del comune: ".$this->aProps['id'],100);
+                return array();
+            }
+        }
+
+        return $this->aProps['rsultati'];
+    }
+
     public function SetOperatori($operatori="")
     {
         if(is_array($operatori))
@@ -2605,6 +2627,8 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("AddNewSierComuneAffluenza");
             $taskManager->RegisterTask("GetSierComuneAffluenzaModifyDlg");
             $taskManager->RegisterTask("UpdateSierComuneAffluenza");
+
+            $taskManager->RegisterTask("GetSierComuneRisultatiViewDlg");
 
             $taskManager->RegisterTask("GetSierComuneOperatoriViewDlg");
             $taskManager->RegisterTask("GetSierComuneOperatoriAddNewDlg");
@@ -7145,6 +7169,132 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template OC generale
+    public function Template_OC_Risultati($id,$object=null,$comune=null,$modify=false)
+    {
+        $id.=$id."_Generale_Content";
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+        
+        //Descrizione
+        $value=$comune->GetProp("denominazione");
+        $descr=new AA_JSON_Template_Template($id."_Denominazione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Denominazione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //Circoscrizione
+        $value=$comune->GetProp("circoscrizione");
+        $circoscrizione=new AA_JSON_Template_Template($id."_Circoscrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Circoscrizione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //Pec
+        $value=$comune->GetProp("pec");
+        $pec=new AA_JSON_Template_Template($id."_Pec",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Pec:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        
+        //Indirizzo
+        $value=$comune->GetProp("indirizzo");
+        $indirizzo=new AA_JSON_Template_Template($id."_Indirizzo",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Indirizzo:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //note
+        $value = $comune->GetProp("contatti");
+        $note=new AA_JSON_Template_Template($id."_Contatti",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Note e contatti:","value"=>$value)
+        ));
+
+        //sezioni
+        $value = $comune->GetProp("sezioni");
+        $sezioni=new AA_JSON_Template_Template($id."_Sezioni",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Sezioni:","value"=>$value)
+        ));
+
+        //elettori maschi
+        $value = $comune->GetProp("elettori_m");
+        $elettori_m=new AA_JSON_Template_Template($id."_Elettori_m",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Elettori maschi:","value"=>$value)
+        ));
+
+        //elettori femmine
+        $value = $comune->GetProp("elettori_f");
+        $elettori_f=new AA_JSON_Template_Template($id."_Elettori_f",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Elettori femmine:","value"=>$value)
+        ));
+        
+        $rows_fixed_height=60;
+        
+        //prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($descr);
+        $riga->AddCol($circoscrizione);
+        $layout->AddRow($riga);
+
+        //seconda riga
+        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($indirizzo);
+        $riga->AddCol($pec);
+        $layout->AddRow($riga);
+
+        //terza riga
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("type"=>"clean","height"=>80,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($note);
+        $layout->AddRow($riga);
+
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Corpo elettorale</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Generale_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica dati generali e corpo elettorale",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyDatiGeneraliDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+
+        $layout->AddRow($toolbar);
+        //corpo elettorale
+        $riga=new AA_JSON_Template_Layout($id."_QuadRow",array("type"=>"clean"));
+        $riga->AddCol($sezioni);
+        $riga->AddCol($elettori_m);
+        $riga->AddCol($elettori_f);
+        $layout->AddRow($riga);
+
+        return $layout;
+    }
+
+    //Template OC affuenza
     public function Template_OC_Affluenza($id,$object=null,$comune=null,$modify=false)
     {
         $id.=$id."_Affluenza_Content";
@@ -9788,7 +9938,7 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    //Task modifica Comune
+    //Task operatori view
     public function Task_GetSierComuneOperatoriViewDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -9812,6 +9962,33 @@ Class AA_SierModule extends AA_GenericModule
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierComuneOperatoriViewDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task risultati Comune view
+    public function Task_GetSierComuneRisultatiViewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRisultatiViewDlg($object,$comune),true);
         return true;
     }
 
@@ -11453,6 +11630,289 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
+    //Template layout risultati
+    public function Template_GetSierComuneRisultatiViewLayout($object=null,$comune=null,$id="")
+    {
+        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object->isValid())
+        {
+            $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati.</span></div>")));
+            return $layout;
+        }
+
+        if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati del comune.</span></div>")));
+            return $layout;
+        }
+
+        $risultati=$comune->GetRisultati(true);
+        $rows_fixed_height=50;
+
+        $id.="_".static::AA_UI_LAYOUT_RISULTATI_COMUNALI;
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
+            "type" => "clean",
+            "css" => "AA_Detail_Content",
+            "value" => $id."_RisultatiGeneraleBox")
+        );
+
+        //---------------------------- header --------------------------------
+        $header = new AA_JSON_Template_Layout($id . "_Header" . "_".$object->GetId(), array("type" => "clean", "height" => 38, "css" => "AA_SectionContentHeader"));
+        $canModify=false;
+        $layout_tab=new AA_JSON_Template_Layout($id . "_Layout_TabBar_".$object->GetId(),array("type"=>"clean","minWidth"=>500));
+        $gravity_tabbar=4;
+        $layout_tab->AddCol(new AA_JSON_Template_Generic($id . "_TabBar_".$object->GetId(), array(
+            "view" => "tabbar",
+            "gravity"=>$gravity_tabbar,
+            "borderless" => true,
+            "value" => $id."_RisultatiGeneraleBox",
+            "css" => "AA_Header_TabBar",
+            "multiview" => true,
+            "view_id" => $id . "_Multiview_".$object->GetId(),
+            "options" => array(
+                array("id"=>$id."_RisultatiGeneraleBox","value"=>"Risultati generali"),
+                array("id"=>$id."_RisultatiCoalizioniBox","value"=>"Risultati voti coalizioni"),
+                array("id"=>$id."_RisultatiListeBox","value"=>"Risultati voti di lista"),
+                array("id"=>$id."_RisultatiPreferenzeBox","value"=>"Risultati preferenze"),
+            )
+        )));
+        $header->AddCol($layout_tab);
+        $layout->AddRow($header);
+        //---------------------------------------------------------------------
+        $layout->AddRow($multiview);
+        
+        //--------------------------- Dati generali ----------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiGeneraleBox",array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        {
+            
+            $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiGenerali_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica dati generali dei risultati",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRisultatiDatiGeneraliModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+        }
+        $generaleLayout->addRow($toolbar);
+
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div>";
+        
+        //Sezioni scrutinate
+        if(isset($risultati['sezioni_scrutinate']))$value=$risultati['sezioni_scrutinate'];
+        else $value=0;
+        $sezioni=new AA_JSON_Template_Template($id."_SezioniScrutinate",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Sezioni scrutinate:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
+        //votanti maschi
+        if(isset($risultati['votanti_m']))$value=$risultati['votanti_m'];
+        else $value=0;
+        $votanti_m=new AA_JSON_Template_Template($id."_VotantiM",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Votanti maschi:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
+        //votanti femmine
+        if(isset($risultati['votanti_f']))$value=$risultati['votanti_f'];
+        else $value=0;
+        $votanti_f=new AA_JSON_Template_Template($id."_VotantiF",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Votanti femmine:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
+        $riga=new AA_JSON_Template_Layout($id."_DatiGeneraliRow",array("css"=>array("border-bottom"=>"1px solid #dadee0 !important","type"=>"clean")));
+        $riga->AddRow($sezioni);
+        $riga->AddRow($votanti_m);
+        $riga->AddRow($votanti_f);
+        //$generaleLayout->AddRow($riga);
+
+        //Voti contestati non assegnati
+        if(isset($risultati['voti_contestati_na']))$value=$risultati['voti_contestati_na'];
+        else $value=0;
+        $voti_contestati=new AA_JSON_Template_Template($id."_VotiContestatiNA",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Voti contestati non assegnati:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
+        //Schede nulle
+        if(isset($risultati['schede_nulle']))$value=$risultati['schede_nulle'];
+        else $value=0;
+        $schede_nulle=new AA_JSON_Template_Template($id."_SchedeNulle",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Schede nulle:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
+        //Schede bianche
+        if(isset($risultati['schede_bianche']))$value=$risultati['schede_bianche'];
+        else $value=0;
+        $schede_bianche=new AA_JSON_Template_Template($id."_SchedeBianche",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Schede bianche:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
+        //Schede contenenti esclusivamente voti nulli
+        if(isset($risultati['schede_voti_nulli']))$value=$risultati['schede_voti_nulli'];
+        else $value=0;
+        $schede_voti_nulli=new AA_JSON_Template_Template($id."_SchedeVotiNulli",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Schede contenenti esclusivamente voti nulli:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
+        //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddRow($voti_contestati);
+        $riga->AddRow($schede_nulle);
+        //$generaleLayout->AddRow($riga);
+
+        //$riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddRow($schede_voti_nulli);
+        $riga->AddRow($schede_bianche);
+        //$generaleLayout->AddCol(new AA_JSON_Template_Generic());
+        $generaleLayout->AddRow($riga);
+        $generaleLayout->AddRow(new AA_JSON_Template_Generic("",array("height"=>38,"css"=>array("border-top"=>"1px solid #dadee0"))));
+
+        //$generaleLayout->AddRow(new AA_JSON_Template_Generic());
+        $multiview->AddRow($generaleLayout);
+        //-------------------------------------------------------------------------------------
+
+        //----------------------------- Risultati voti coalizioni -----------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiCoalizioniBox",array("type"=>"clean"));
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        {
+            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiCoalizioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+    
+           
+            $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiCoalizioni_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-pencil",
+                 "label"=>"Modifica",
+                 "css"=>"webix_primary",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Modifica dati delle coalizioni",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRisultatiCoalizioniModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+            $generaleLayout->addRow($toolbar);
+        }
+
+        $generaleLayout->AddRow(new AA_JSON_Template_Generic());
+        $multiview->AddRow($generaleLayout);
+        //-------------------------------------------------------------------------------------
+
+        //------------------------------- Risultati voti liste --------------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiListeBox",array("type"=>"clean"));
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        {
+            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiListe",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+
+            $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiListe_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-pencil",
+                 "label"=>"Modifica",
+                 "css"=>"webix_primary",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Modifica dati generali dei risultati",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRisultatiListeModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+            $generaleLayout->addRow($toolbar);
+        }
+
+        $generaleLayout->AddRow(new AA_JSON_Template_Generic());
+        $multiview->AddRow($generaleLayout);
+        //-------------------------------------------------------------------------------------
+
+        //------------------------------ Risultati preferenze ---------------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiPreferenzeBox",array("type"=>"clean"));
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        {
+            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiPreferenze",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+    
+           
+            $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiPreferenze_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-pencil",
+                 "label"=>"Modifica",
+                 "css"=>"webix_primary",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Modifica dati generali dei risultati",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRisultatiPreferenzeModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+            $generaleLayout->addRow($toolbar);
+        }
+
+        $generaleLayout->AddRow(new AA_JSON_Template_Generic());
+        $multiview->AddRow($generaleLayout);
+        //-------------------------------------------------------------------------------------
+
+        return $layout;
+    }
+
+    //Template dlg risutati user
+    public function Template_GetSierComuneRisultatiViewDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_RISULTATI_COMUNALI;
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Gestione risultati", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Gestione risultati", $this->id);
+
+        $wnd = new AA_GenericWindowTemplate($id, "Gestione risultati comune di ".$comune->GetProp("denominazione"), $this->id);
+
+        $layout=$this->Template_GetSierComuneRisultatiViewLayout($object,$comune,$id);
+        $wnd->AddView($layout);
+        return $wnd;
+    }
+ 
     //Template dlg affluenza user
     public function Template_GetSierComuneAffluenzaViewDlg($object=null,$comune=null)
     {
