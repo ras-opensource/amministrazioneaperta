@@ -6884,7 +6884,7 @@ Class AA_SierModule extends AA_GenericModule
         //-------------------   Scheda generale  ------------------------------
         if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Generale_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         
         //torna al riepilogo
@@ -6931,7 +6931,7 @@ Class AA_SierModule extends AA_GenericModule
         $canModify=false;
         if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         //torna al riepilogo
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Affluenza_Back_".$operatore->GetOperatoreComunaleComune()."_btn",array(
@@ -6976,7 +6976,7 @@ Class AA_SierModule extends AA_GenericModule
         $canModify=false;
         if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Risultati_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //torna al riepilogo
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Risultati_Back_".$operatore->GetOperatoreComunaleComune()."_btn",array(
             "view"=>"button",
@@ -7202,7 +7202,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $id.="_".static::AA_UI_LAYOUT_RISULTATI_COMUNALI;
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
-        $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
+        $multiview=new AA_JSON_Template_Multiview($id . "_Multiview_".$object->GetId(),array(
             "type" => "clean",
             "css" => "AA_Detail_Content",
             "value" => $id."_RisultatiGeneraleBox")
@@ -7523,7 +7523,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($affluenza as $giornata=>$curAffluenza)
             {
-                AA_Log::Log(__METHOD__." - ".print_r($curAffluenza,true),100);
+                //AA_Log::Log(__METHOD__." - ".print_r($curAffluenza,true),100);
                 {
                     $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOCAffluenzaModifyDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($giornata).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
                     $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOCAffluenzaTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($giornata).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
@@ -12400,7 +12400,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $id.="_".static::AA_UI_LAYOUT_RISULTATI_COMUNALI;
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
-        $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
+        $multiview=new AA_JSON_Template_Multiview($id."_Multiview_".$object->GetId(),array(
             "type" => "clean",
             "css" => "AA_Detail_Content",
             "value" => $id."_RisultatiGeneraleBox")
