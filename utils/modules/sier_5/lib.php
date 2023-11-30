@@ -7306,7 +7306,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         $generaleLayout->addRow($toolbar);
 
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div>";
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px; text-align: right; padding-right:50px;'>#value#</div></div>";
         
         //Sezioni scrutinate
         if(isset($risultati['sezioni_scrutinate']))$value=$risultati['sezioni_scrutinate'];
@@ -7437,7 +7437,7 @@ Class AA_SierModule extends AA_GenericModule
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
 
         $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div></div>";
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div class='AA_DataView_Sier_item' style='display: flex; align-items: center; max-height:80px'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px; text-align: right; padding-right: 50px'>#value#</div></div></div>";
         $coalizioni=$object->GetCoalizioni();
         if(sizeof($coalizioni)>0)
         {
@@ -7487,15 +7487,65 @@ Class AA_SierModule extends AA_GenericModule
                  "css"=>"webix_primary",
                  "align"=>"right",
                  "width"=>120,
-                 "tooltip"=>"Modifica dati generali dei risultati",
-                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRisultatiListeModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+                 "tooltip"=>"Modifica voti Liste circoscrizionali",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyRisultatiListeDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
             ));
 
             $toolbar->AddElement($modify_btn);
             $generaleLayout->addRow($toolbar);
         }
 
-        $generaleLayout->AddRow(new AA_JSON_Template_Generic());
+        $platform=AA_Platform::GetInstance($this->oUser);
+        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
+
+        $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+        $template="<div style='display: flex; align-items:center;justify-content: space-between; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700; width: 250px'>#title#</div><div style='width: 80px; text-align:center'>#value#</div></div>";
+        
+        $liste=$object->GetListe();
+        //AA_Log::Log(__METHOD__." - liste: ".print_r($liste,true),100);
+        if(sizeof($liste)>0)
+        {
+            $liste_data=array();
+            foreach($liste as $idLista=>$curLista)
+            {
+                if($curLista->GetProp('image') != "")
+                {
+                    $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
+                }
+                else
+                {
+                    $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+                }
+
+                $value=0;
+                if(isset($risultati['voti_lista']) && isset($risultati['voti_lista'][$idLista]) && $risultati['voti_lista'][$idLista]>0) $value=intVal($risultati['voti_lista'][$idLista]);
+                $liste_data[]=array("id"=>$idLista,"title"=>$curLista->GetProp("denominazione"),"value"=>$value,"image"=>$curImagePath);
+            }
+            
+            AA_Log::Log(__METHOD__." - liste: ".print_r($liste_data,true),100);
+
+            $dataview_liste=new AA_JSON_Template_Generic($id."_ListeDataView",array(
+                "view"=>"dataview",
+                "xCount"=>4,
+                "module_id"=>$this->id,
+                "type"=>array(
+                    "type"=>"tiles",
+                    "height"=>80,
+                    "width"=>"auto",
+                    "css"=>"AA_DataView_Sier_item",
+                ),
+                //"on" => array("onItemDblClick" => "AA_MainApp.utils.getEventHandler('ListaDblClick','".$this->GetId()."')"),
+                "template"=>$template,
+                "data"=>$liste_data
+            ));
+            $generaleLayout->AddRow($dataview_liste);
+        }
+        else
+        {
+            $generaleLayout->AddRow(new AA_JSON_Template_Template($id."_FakeListe",array("template"=>"non ci sono liste definite.")));
+        }
+
+        $generaleLayout->AddRow(new AA_JSON_Template_Generic("",array("height"=>38,"css"=>array("border-top"=>"1px solid #dadee0 !important"))));
         $multiview->AddRow($generaleLayout);
         //-------------------------------------------------------------------------------------
 
@@ -12504,7 +12554,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         $generaleLayout->addRow($toolbar);
 
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div>";
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px; text-align: right;padding-right: 50px'>#value#</div></div>";
         
         //Sezioni scrutinate
         if(isset($risultati['sezioni_scrutinate']))$value=$risultati['sezioni_scrutinate'];
@@ -12635,7 +12685,7 @@ Class AA_SierModule extends AA_GenericModule
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
 
         $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div></div>";
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div class='AA_DataView_Sier_item' style='display: flex; align-items: center; max-height:80px'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px; text-align: right; padding-right: 50px'>#value#</div></div></div>";
         $coalizioni=$object->GetCoalizioni();
         if(sizeof($coalizioni)>0)
         {
@@ -12697,7 +12747,7 @@ Class AA_SierModule extends AA_GenericModule
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
 
         $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div></div>";
+        $template="<div style='display: flex; align-items:center;justify-content: space-between; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700; width: 250px'>#title#</div><div style='width: 80px; text-align:center'>#value#</div></div>";
         
         $liste=$object->GetListe();
         //AA_Log::Log(__METHOD__." - liste: ".print_r($liste,true),100);
@@ -12730,7 +12780,7 @@ Class AA_SierModule extends AA_GenericModule
                     "type"=>"tiles",
                     "height"=>80,
                     "width"=>"auto",
-                    "css"=>"AA_DataView_Nomine_item",
+                    "css"=>"AA_DataView_Sier_item",
                 ),
                 //"on" => array("onItemDblClick" => "AA_MainApp.utils.getEventHandler('ListaDblClick','".$this->GetId()."')"),
                 "template"=>$template,
