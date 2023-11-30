@@ -7223,9 +7223,9 @@ Class AA_SierModule extends AA_GenericModule
             "view_id" => $id . "_Multiview_".$object->GetId(),
             "options" => array(
                 array("id"=>$id."_RisultatiGeneraleBox","value"=>"Risultati generali"),
-                array("id"=>$id."_RisultatiCoalizioniBox","value"=>"Risultati voti coalizioni"),
-                array("id"=>$id."_RisultatiListeBox","value"=>"Risultati voti di lista"),
-                array("id"=>$id."_RisultatiPreferenzeBox","value"=>"Risultati preferenze"),
+                array("id"=>$id."_RisultatiCoalizioniBox","value"=>"Voti candidati Presidente"),
+                array("id"=>$id."_RisultatiListeBox","value"=>"Voti Liste"),
+                array("id"=>$id."_RisultatiPreferenzeBox","value"=>"Voti candidati Consiglio Regionale"),
             )
         )));
         $header->AddCol($layout_tab);
@@ -12421,9 +12421,9 @@ Class AA_SierModule extends AA_GenericModule
             "view_id" => $id . "_Multiview_".$object->GetId(),
             "options" => array(
                 array("id"=>$id."_RisultatiGeneraleBox","value"=>"Risultati generali"),
-                array("id"=>$id."_RisultatiCoalizioniBox","value"=>"Risultati voti coalizioni"),
-                array("id"=>$id."_RisultatiListeBox","value"=>"Risultati voti di lista"),
-                array("id"=>$id."_RisultatiPreferenzeBox","value"=>"Risultati preferenze"),
+                array("id"=>$id."_RisultatiCoalizioniBox","value"=>"Voti candidati Presidente"),
+                array("id"=>$id."_RisultatiListeBox","value"=>"Voti Liste"),
+                array("id"=>$id."_RisultatiPreferenzeBox","value"=>"Voti candidati Consiglio regionale"),
             )
         )));
         $header->AddCol($layout_tab);
@@ -12752,8 +12752,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiCoalizioniModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica risultati coalizioni", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica risultati coalizioni", $this->id);
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
         $coalizioni=$object->GetCoalizioni();
 
         if(sizeof($coalizioni)==0)
@@ -12778,7 +12778,7 @@ Class AA_SierModule extends AA_GenericModule
                 if(isset($form_data[$key])) $form_data[$key]=$val;
             }
 
-            $wnd=new AA_GenericFormDlg($id, "Modifica risultati coalizioni", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati Presidente", $this->id,$form_data,$form_data);
                 
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(230);
@@ -12786,7 +12786,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->EnableValidation();
             
             $wnd->SetWidth(450);
-            $wnd->SetHeight(120*sizeof($coalizioni));
+            $wnd->SetHeight(120+90*sizeof($coalizioni));
             
             foreach($coalizioni as $idCoalizione=>$curCoalizione)
             {
@@ -12803,8 +12803,8 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $wnd = new AA_GenericWindowTemplate($id,"Modifica risultati coalizioni", $this->id);
-            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono coalizioni impostate.")));
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti Presidente", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono colaizioni impostate.")));
 
             return $wnd;
         }
@@ -12882,8 +12882,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCModifyRisultatiCoalizioniDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiCoalizioniDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica risultati coalizioni", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica risultati coalizioni", $this->id);
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
         $coalizioni=$object->GetCoalizioni();
 
         if(sizeof($coalizioni)==0)
@@ -12908,7 +12908,7 @@ Class AA_SierModule extends AA_GenericModule
                 if(isset($form_data[$key])) $form_data[$key]=$val;
             }
 
-            $wnd=new AA_GenericFormDlg($id, "Modifica risultati coalizioni", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati Presidente", $this->id,$form_data,$form_data);
                 
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(230);
@@ -12916,7 +12916,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->EnableValidation();
             
             $wnd->SetWidth(450);
-            $wnd->SetHeight(120*sizeof($coalizioni));
+            $wnd->SetHeight(120+90*sizeof($coalizioni));
             
             foreach($coalizioni as $idCoalizione=>$curCoalizione)
             {
@@ -12932,7 +12932,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $wnd = new AA_GenericWindowTemplate($id,"Modifica risultati coalizioni", $this->id);
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti Presidente", $this->id);
             $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono coalizioni impostate.")));
 
             return $wnd;
