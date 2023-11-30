@@ -755,7 +755,7 @@ Class AA_Sier extends AA_Object_V2
             return array();
         }
 
-        AA_Log::Log(__METHOD__." - query: ".$query,100);
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=array();
         if($db->GetAffectedRows()>0)
@@ -7437,7 +7437,7 @@ Class AA_SierModule extends AA_GenericModule
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
 
         $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div>";
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div></div>";
         $coalizioni=$object->GetCoalizioni();
         if(sizeof($coalizioni)>0)
         {
@@ -12635,7 +12635,7 @@ Class AA_SierModule extends AA_GenericModule
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
 
         $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div>";
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div></div>";
         $coalizioni=$object->GetCoalizioni();
         if(sizeof($coalizioni)>0)
         {
@@ -12693,7 +12693,57 @@ Class AA_SierModule extends AA_GenericModule
             $generaleLayout->addRow($toolbar);
         }
 
-        $generaleLayout->AddRow(new AA_JSON_Template_Generic());
+        $platform=AA_Platform::GetInstance($this->oUser);
+        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL($this->id)."/img";
+
+        $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px'>#value#</div></div>";
+        
+        $liste=$object->GetListe();
+        //AA_Log::Log(__METHOD__." - liste: ".print_r($liste,true),100);
+        if(sizeof($liste)>0)
+        {
+            $liste_data=array();
+            foreach($liste as $idLista=>$curLista)
+            {
+                if($curLista->GetProp('image') != "")
+                {
+                    $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
+                }
+                else
+                {
+                    $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+                }
+
+                $value=0;
+                if(isset($risultati['voti_lista']) && isset($risultati['voti_lista'][$idLista]) && $risultati['voti_lista'][$idLista]>0) $value=intVal($risultati['voti_lista'][$idLista]);
+                $liste_data[]=array("id"=>$idLista,"title"=>$curLista->GetProp("denominazione"),"value"=>$value,"image"=>$curImagePath);
+            }
+            
+            AA_Log::Log(__METHOD__." - liste: ".print_r($liste_data,true),100);
+
+            $dataview_liste=new AA_JSON_Template_Generic($id."_ListeDataView",array(
+                "view"=>"dataview",
+                "xCount"=>4,
+                "module_id"=>$this->id,
+                "type"=>array(
+                    "type"=>"tiles",
+                    "height"=>80,
+                    "width"=>"auto",
+                    "css"=>"AA_DataView_Nomine_item",
+                ),
+                //"on" => array("onItemDblClick" => "AA_MainApp.utils.getEventHandler('ListaDblClick','".$this->GetId()."')"),
+                "template"=>$template,
+                "data"=>$liste_data
+            ));
+            $generaleLayout->AddRow($dataview_liste);
+        }
+        else
+        {
+            $generaleLayout->AddRow(new AA_JSON_Template_Template($id."_FakeListe",array("template"=>"non ci sono liste definite.")));
+        }
+
+        $generaleLayout->AddRow(new AA_JSON_Template_Generic("",array("height"=>38,"css"=>array("border-top"=>"1px solid #dadee0 !important"))));
         $multiview->AddRow($generaleLayout);
         //-------------------------------------------------------------------------------------
 
@@ -12797,7 +12847,7 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
-    //Template dlg modify risultati generali comune
+    //Template dlg modify risultati coalizioni comune
     public function Template_GetSierComuneRisultatiCoalizioniModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg";
@@ -12807,7 +12857,10 @@ Class AA_SierModule extends AA_GenericModule
 
         if(sizeof($coalizioni)==0)
         {
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti candidati Presidente", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono coalizioni impostate.")));
 
+            return $wnd;
         }
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -12847,6 +12900,74 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
             if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
             $wnd->SetSaveTask("UpdateSierComuneRisultatiCoalizioni");
+
+            return $wnd;    
+        }
+        else
+        {
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti Presidente", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono colaizioni impostate.")));
+
+            return $wnd;
+        }
+    }
+
+    //Template dlg modify risultati coalizioni comune
+    public function Template_GetSierComuneRisultatiListeModifyDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiListeModifyDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti voti Liste circoscrizionali", $this->id);
+        $liste=$object->GetListe();
+
+        if(sizeof($liste)==0)
+        {
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti Liste circoscrizionali", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono liste impostate.")));
+
+            return $wnd;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+            
+            foreach($liste as $idLista=>$curLista)
+            {
+                $form_data["lista_".$idLista]=0;
+            }
+
+            $risultati=$comune->GetRisultati(true);
+            foreach($risultati['voti_lista'] as $key=>$val)
+            {
+                if(isset($form_data["lista_".$key])) $form_data["lista_".$key]=$val;
+            }
+
+            $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati liste circoscrizionali", $this->id,$form_data,$form_data);
+                
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(230);
+            $wnd->SetBottomPadding(32);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(1280);
+            $wnd->SetHeight(120+25*sizeof($liste));
+            
+            $numforRow=4;
+            $curNumRow=0;
+            foreach($liste as $idLista=>$curLista)
+            {
+                //coalizioni
+                if($curNumRow%4) $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire solo il numero dei voti validi."),false);
+                else $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire solo il numero dei voti validi."));
+            }
+           
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+            if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+            $wnd->SetSaveTask("UpdateSierComuneRisultatiListe");
 
             return $wnd;    
         }
