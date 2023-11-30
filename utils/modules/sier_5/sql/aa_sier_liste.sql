@@ -1,23 +1,24 @@
 -- phpMyAdmin SQL Dump
--- version 3.5.2.2
--- http://www.phpmyadmin.net
+-- version 5.2.1-1.fc38
+-- https://www.phpmyadmin.net/
 --
--- Host: localhost:3307
--- Generato il: Set 25, 2023 alle 16:54
--- Versione del server: 5.5.21
--- Versione PHP: 5.3.16
+-- Host: localhost
+-- Creato il: Nov 30, 2023 alle 18:55
+-- Versione del server: 10.5.23-MariaDB
+-- Versione PHP: 8.2.13
 
-SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
 SET time_zone = "+00:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `monitspese`
+-- Database: `amministrazioneaperta`
 --
 
 -- --------------------------------------------------------
@@ -26,14 +27,43 @@ SET time_zone = "+00:00";
 -- Struttura della tabella `aa_sier_liste`
 --
 
-CREATE TABLE IF NOT EXISTS `aa_sier_liste` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `id_coalizione` int(11) unsigned NOT NULL,
-  `denominazione` varchar(255) COLLATE utf8_bin NOT NULL,
-  `image` varchar(255) COLLATE utf8_bin NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `id_coalizione` (`id_coalizione`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin AUTO_INCREMENT=3 ;
+CREATE TABLE `aa_sier_liste` (
+  `id` int(11) UNSIGNED NOT NULL,
+  `id_coalizione` int(11) UNSIGNED NOT NULL,
+  `denominazione` varchar(255) NOT NULL,
+  `image` varchar(255) NOT NULL,
+  `ordine` int(2) NOT NULL DEFAULT 0,
+  `ordine_1` int(2) NOT NULL DEFAULT 0,
+  `ordine_2` int(2) NOT NULL DEFAULT 0,
+  `ordine_4` int(2) NOT NULL DEFAULT 0,
+  `ordine_8` int(2) NOT NULL DEFAULT 0,
+  `ordine_16` int(2) NOT NULL DEFAULT 0,
+  `ordine_32` int(2) NOT NULL DEFAULT 0,
+  `ordine_64` int(2) NOT NULL DEFAULT 0,
+  `ordine_128` int(2) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+--
+-- Indici per le tabelle scaricate
+--
+
+--
+-- Indici per le tabelle `aa_sier_liste`
+--
+ALTER TABLE `aa_sier_liste`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_coalizione` (`id_coalizione`);
+
+--
+-- AUTO_INCREMENT per le tabelle scaricate
+--
+
+--
+-- AUTO_INCREMENT per la tabella `aa_sier_liste`
+--
+ALTER TABLE `aa_sier_liste`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
