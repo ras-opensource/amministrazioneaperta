@@ -11209,7 +11209,7 @@ Class AA_SierModule extends AA_GenericModule
         if(sizeof($coalizioni)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Non sono presenti coalizioni.",false);
+            $task->SetError("Non sono presenti candidati Presidente.",false);
             return false;
         }
 
@@ -11228,17 +11228,17 @@ Class AA_SierModule extends AA_GenericModule
         if($voti_totali>($votanti+$voti_non_validi))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il totale dei voti coalizione non possono essere maggiori del numero di voti validi (num. votanti - voti non validi).",false);
+            $task->SetError("Il totale dei voti candidati Presidente non possono essere maggiori del numero di voti validi (num. votanti - voti non validi).",false);
             return false;
         }
         
         $risultati['voti_presidente']=$voti_presidente;
 
         $comune->SetRisultati($risultati);
-        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti presidente - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento voti Presidente - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiornamento dei risultati coalizioni.",false);
+            $task->SetError("Errore nell'aggiornamento dei voti candidati Presidente.",false);
             return false;
         }
 
