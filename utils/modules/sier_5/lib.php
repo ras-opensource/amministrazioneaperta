@@ -13244,7 +13244,7 @@ Class AA_SierModule extends AA_GenericModule
             foreach($liste as $idLista=>$curLista)
             {
                 //liste
-                if($curNumRow%4) $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"),false);
+                if($curNumRow%$numforRow) $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"),false);
                 else $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"));
                 $curNumRow++;
             }
