@@ -7527,7 +7527,7 @@ Class AA_SierModule extends AA_GenericModule
                 $liste_data[]=array("id"=>$idLista,"title"=>$curLista->GetProp("denominazione"),"value"=>$value,"image"=>$curImagePath);
             }
             
-            AA_Log::Log(__METHOD__." - liste: ".print_r($liste_data,true),100);
+            //AA_Log::Log(__METHOD__." - liste: ".print_r($liste_data,true),100);
 
             $dataview_liste=new AA_JSON_Template_Generic($id."_ListeDataView",array(
                 "view"=>"dataview",
@@ -13004,7 +13004,7 @@ Class AA_SierModule extends AA_GenericModule
                 $liste_data[]=array("id"=>$idLista,"title"=>$curLista->GetProp("denominazione"),"value"=>$value,"image"=>$curImagePath);
             }
             
-            AA_Log::Log(__METHOD__." - liste: ".print_r($liste_data,true),100);
+            //AA_Log::Log(__METHOD__." - liste: ".print_r($liste_data,true),100);
 
             $dataview_liste=new AA_JSON_Template_Generic($id."_ListeDataView",array(
                 "view"=>"dataview",
