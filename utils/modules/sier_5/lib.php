@@ -747,7 +747,8 @@ Class AA_Sier extends AA_Object_V2
             $query.=" AND ".static::AA_COALIZIONI_DB_TABLE.".id='".addslashes($coalizione->GetProp('id'))."'";
         }
 
-        $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".denominazione ";
+        if($orderedForCircoscrizione==0) $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".denominazione ";
+        else $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".ordine_".$orderedForCircoscrizione;
 
         if(!$db->Query($query))
         {
@@ -2667,6 +2668,8 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSierComuneRisultatiGenerali");
             $taskManager->RegisterTask("GetSierComuneRisultatiCoalizioniModifyDlg");
             $taskManager->RegisterTask("UpdateSierComuneRisultatiCoalizioni");
+            $taskManager->RegisterTask("GetSierComuneRisultatiListeModifyDlg");
+            $taskManager->RegisterTask("UpdateSierComuneRisultatiListe");
 
             $taskManager->RegisterTask("GetSierComuneOperatoriViewDlg");
             $taskManager->RegisterTask("GetSierComuneOperatoriAddNewDlg");
@@ -2712,6 +2715,8 @@ Class AA_SierModule extends AA_GenericModule
                 $taskManager->RegisterTask("Update_OC_ComuneRisultatiGenerali");
                 $taskManager->RegisterTask("GetSierOCModifyRisultatiCoalizioniDlg");
                 $taskManager->RegisterTask("Update_OC_ComuneRisultatiCoalizioni");
+                $taskManager->RegisterTask("GetSierOCModifyRisultatiListeDlg");
+                $taskManager->RegisterTask("Update_OC_ComuneRisultatiListe");
             }
 
             //desktop
@@ -10211,6 +10216,33 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica risultati coalizioni comunale
+    public function Task_GetSierComuneRisultatiListeModifyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRisultatiListeModifyDlg($object,$comune),true);
+        return true;
+    }
+
     //Task modifica dati generali comunale (OC)
     public function Task_GetSierOCModifyRisultatiGeneraliDlg($task)
     {
@@ -10276,6 +10308,40 @@ Class AA_SierModule extends AA_GenericModule
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierOCModifyRisultatiCoalizioniDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task modifica risultati liste (OC)
+    public function Task_GetSierOCModifyRisultatiListeDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierOCModifyRisultatiListeDlg($object,$comune),true);
         return true;
     }
 
@@ -10546,13 +10612,6 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Modifica risultati non abilitata.",false);
-            return false;
-        }
-
         //controlli
         if(!isset($_REQUEST['sezioni_scrutinate']) || $_REQUEST['sezioni_scrutinate']==0 || $_REQUEST['sezioni_scrutinate'] =="")
         {
@@ -10659,13 +10718,6 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Modifica risultati non abilitata.",false);
-            return false;
-        }
-
         //controlli
         $risultati=$comune->GetRisultati(true);
 
@@ -10713,6 +10765,188 @@ Class AA_SierModule extends AA_GenericModule
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Errore nell'aggiornamento dei risultati coalizioni.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
+    //Task aggiornamento risultati coalizioni
+    public function Task_UpdateSierComuneRisultatiListe($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+
+        //controlli
+        $risultati=$comune->GetRisultati(true);
+
+        $votanti=0;
+        if(isset($risultati['votanti_m'])) $votanti+=$risultati['votanti_m'];
+        if(isset($risultati['votanti_f'])) $votanti+=$risultati['votanti_f'];
+
+        $voti_non_validi=0;
+        if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
+        if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
+        if(isset($risultati['voti_contestati_na']) && $risultati['voti_contestati_na']>0) $voti_non_validi+=$risultati['voti_contestati_na'];
+        if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
+
+        $liste=$object->GetListe();
+        if(sizeof($liste)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono presenti liste.",false);
+            return false;
+        }
+
+        $voti_liste=array();
+        $voti_totali=0;
+        foreach($liste as $idLista=>$curCoalizione)
+        {
+            $voti_liste[$idLista]=0;
+            if(isset($_REQUEST["lista_".$idLista]) && $_REQUEST["lista_".$idLista]>0)
+            {
+                $voti_liste[$idLista]=$_REQUEST["lista_".$idLista];
+                $voti_totali+=$_REQUEST["lista_".$idLista];
+            }
+        }
+
+        if($voti_totali>($votanti+$voti_non_validi))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il totale dei voti di lista non possono essere maggiori del numero di voti validi (num. votanti - voti non validi).",false);
+            return false;
+        }
+        
+        $risultati['voti_lista']=$voti_liste;
+
+        $comune->SetRisultati($risultati);
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti lista"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei risultati lista.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
+    //Task aggiornamento risultati coalizioni
+    public function Task_Update_OC_ComuneRisultatiListe($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Modifica risultati non abilitata.",false);
+            return false;
+        }
+
+        //controlli
+        $risultati=$comune->GetRisultati(true);
+
+        $votanti=0;
+        if(isset($risultati['votanti_m'])) $votanti+=$risultati['votanti_m'];
+        if(isset($risultati['votanti_f'])) $votanti+=$risultati['votanti_f'];
+
+        $voti_non_validi=0;
+        if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
+        if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
+        if(isset($risultati['voti_contestati_na']) && $risultati['voti_contestati_na']>0) $voti_non_validi+=$risultati['voti_contestati_na'];
+        if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
+
+        $liste=$object->GetListe(null,$comune->GetProp("id_circoscrizione"));
+        if(sizeof($liste)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono presenti liste.",false);
+            return false;
+        }
+
+        $voti_liste=array();
+        $voti_totali=0;
+        foreach($liste as $idLista=>$curCoalizione)
+        {
+            $voti_liste[$idLista]=0;
+            if(isset($_REQUEST["lista_".$idLista]) && $_REQUEST["lista_".$idLista]>0)
+            {
+                $voti_liste[$idLista]=$_REQUEST["lista_".$idLista];
+                $voti_totali+=$_REQUEST["lista_".$idLista];
+            }
+        }
+
+        if($voti_totali>($votanti+$voti_non_validi))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il totale dei voti di lista non possono essere maggiori del numero di voti validi (num. votanti - voti non validi).",false);
+            return false;
+        }
+        
+        $risultati['voti_lista']=$voti_liste;
+
+        $comune->SetRisultati($risultati);
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti lista - operatore: ".$operatore->GetOperatoreComunaleCf()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei risultati lista.",false);
             return false;
         }
 
@@ -12998,22 +13232,24 @@ Class AA_SierModule extends AA_GenericModule
             $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati liste circoscrizionali", $this->id,$form_data,$form_data);
                 
             $wnd->SetLabelAlign("right");
-            $wnd->SetLabelWidth(230);
-            $wnd->SetBottomPadding(32);
+            $wnd->SetLabelWidth(200);
+            $wnd->SetBottomPadding(18);
             $wnd->EnableValidation();
-            
-            $wnd->SetWidth(1280);
-            $wnd->SetHeight(120+25*sizeof($liste));
+            if(sizeof($liste)>=4) $wnd->SetWidth(1280);
+            else $wnd->SetWidth(300*sizeof($liste));
+            $wnd->SetHeight(130+25*sizeof($liste));
             
             $numforRow=4;
             $curNumRow=0;
             foreach($liste as $idLista=>$curLista)
             {
-                //coalizioni
-                if($curNumRow%4) $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire solo il numero dei voti validi."),false);
-                else $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire solo il numero dei voti validi."));
+                //liste
+                if($curNumRow%4) $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"),false);
+                else $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"));
+                $curNumRow++;
             }
            
+            $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_BottomNote",array("type"=>"clean","template"=>"<span style='font-size: smaller'>*Inserire solo il numero dei voti validi.</span>")));
             $wnd->EnableCloseWndOnSuccessfulSave();
             if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
             if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
@@ -13023,8 +13259,8 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti Presidente", $this->id);
-            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono colaizioni impostate.")));
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti Liste circoscrizionali", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"L'utente corrente non può modificare l'oggetto.")));
 
             return $wnd;
         }
@@ -13108,7 +13344,10 @@ Class AA_SierModule extends AA_GenericModule
 
         if(sizeof($coalizioni)==0)
         {
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti candidati Presidente", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono coalizioni impostate.")));
 
+            return $wnd;
         }
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -13154,6 +13393,75 @@ Class AA_SierModule extends AA_GenericModule
         {
             $wnd = new AA_GenericWindowTemplate($id,"Modifica voti Presidente", $this->id);
             $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non ci sono coalizioni impostate.")));
+
+            return $wnd;
+        }
+    }
+
+    //Template dlg modify risultati liste comune (OC)
+    public function Template_GetSierOCModifyRisultatiListeDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiListeDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
+        $liste=$object->Getliste(null,$comune->GetProp("id_circoscrizione"));
+
+        if(sizeof($liste)==0)
+        {
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti liste circoscrizionali", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Non sono presenti liste.")));
+
+            return $wnd;
+        }
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+        
+            foreach($liste as $idLista=>$curLista)
+            {
+                $form_data["lista_".$idLista]=0;
+            }
+
+            $risultati=$comune->GetRisultati(true);
+            foreach($risultati['voti_lista'] as $key=>$val)
+            {
+                if(isset($form_data["lista_".$key])) $form_data["lista_".$key]=$val;
+            }
+
+            $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati liste circoscrizionali", $this->id,$form_data,$form_data);
+                
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(190);
+            $wnd->SetBottomPadding(18);
+            $wnd->EnableValidation();
+            if(sizeof($liste)>=4) $wnd->SetWidth(1280);
+            else $wnd->SetWidth(300*sizeof($liste));
+            $wnd->SetHeight(130+25*sizeof($liste));
+            
+            $numforRow=4;
+            $curNumRow=0;
+            foreach($liste as $idLista=>$curLista)
+            {
+                //liste
+                if($curNumRow%4) $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"),false);
+                else $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"));
+                $curNumRow++;
+            }
+           
+            $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_BottomNote",array("type"=>"clean","template"=>"<span style='font-size: smaller'>*Inserire solo il numero dei voti validi.</span>")));
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            $wnd->enableRefreshOnSuccessfulSave();
+            $wnd->SetSaveTask("Update_OC_ComuneRisultatiListe");
+
+            return $wnd;    
+        }
+        else
+        {
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica voti lite circoscrizionali", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"Modifica risultati disabilitata.")));
 
             return $wnd;
         }
