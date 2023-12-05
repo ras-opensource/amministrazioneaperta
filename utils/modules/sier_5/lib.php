@@ -2677,6 +2677,8 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSierComuneRisultatiListe");
             $taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeModifyDlg");
             $taskManager->RegisterTask("UpdateSierComuneRisultatiPreferenze");
+            $taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeTrashDlg");
+            $taskManager->RegisterTask("TrashSierComuneRisultatiPreferenze");
 
             $taskManager->RegisterTask("GetSierComuneOperatoriViewDlg");
             $taskManager->RegisterTask("GetSierComuneOperatoriAddNewDlg");
@@ -4243,6 +4245,56 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
         if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
         $wnd->SetSaveTask("TrashSierComuneOperatore");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        
+        return $wnd;
+    }
+
+    //Template dlg trash candidato
+    public function Template_GetSierComuneRisultatiPreferenzeTrashDlg($object=null,$comune=null,$candidato=null)
+    {
+        $id=$this->id."_TrashComuneRisultatiPreferenze_Dlg";
+        
+        $form_data=array("id_candidato"=>$candidato->GetProp("id"));
+        $form_data["id_comune"]=$comune->GetProp('id');
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina preferenze candidato", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("denominazione"=>$candidato->GetProp("cognome")." ".$candidato->GetProp("nome"),"lista"=>$candidato->GetProp("lista"));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"I voti attribuiti al seguente candidato verrànno eliminati, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"denominazione", "header"=>"Candidato", "fillspace"=>true),
+              array("id"=>"lista", "header"=>"Lista", "width"=>150)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        $wnd->SetSaveTask("TrashSierComuneRisultatiPreferenze");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
         
         return $wnd;
@@ -9649,6 +9701,8 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
+    
+
     //Task elimina cg candidato
     public function Task_GetSierTrashCandidatoCVDlg($task)
     {
@@ -10275,6 +10329,41 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierComuneRisultatiPreferenzeModifyDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task trash risultati preferenze comunale
+    public function Task_GetSierComuneRisultatiPreferenzeTrashDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
+        if($candidato == null)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Candidato non valido",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRisultatiPreferenzeTrashDlg($object,$comune,$candidato),true);
         return true;
     }
 
@@ -11043,6 +11132,62 @@ Class AA_SierModule extends AA_GenericModule
 
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti candidato."))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei voti candidato.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
+    //Task aggiornamento risultati preferenze
+    public function Task_TrashSierComuneRisultatiPreferenze($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+
+        //controlli
+        $risultati=$comune->GetRisultati(true);
+
+        $voti_candidato=$risultati['voti_candidato'];
+        if(is_array($voti_candidato)) $voti_candidato=array();
+
+
+        if(isset($candidati[$_REQUEST['id_candidato']]) && isset($voti_candidato[$_REQUEST['id_candidato']]))
+        {
+            unset($voti_candidato[$_REQUEST['id_candidato']]);
+        }
+
+        $risultati['voti_candidato']=$voti_candidato;
+
+        $comune->SetRisultati($risultati);
+        if(!$object->UpdateComune($comune,$this->oUser,"Rimozione voti candidato."))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Errore nell'aggiornamento dei voti candidato.",false);
