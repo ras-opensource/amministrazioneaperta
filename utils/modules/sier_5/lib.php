@@ -6922,7 +6922,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $operatore=AA_SierOperatoreComunale::GetInstance();
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        $intestazione="Curscotto operatore - comune di ";
+        $intestazione="Cruscotto operatore - comune di ";
         if($comune instanceof AA_SierComune)
         {
             $intestazione.=$comune->GetProp("denominazione");     
