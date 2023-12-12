@@ -2128,6 +2128,137 @@ Class AA_Sier extends AA_Object_V2
         return $newId;
     }
 
+    //Aggiunge un nuovo comune
+    public function AddNewComune($comune=null, $user=null)
+    {
+        //AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!($comune instanceof AA_SierComune))
+        {
+            AA_Log::Log(__METHOD__." - Comune non valido.", 100,false,true);
+            return false;
+        }
+
+        $db= new AA_Database();
+
+        $rs=$db->GetResultSet();
+
+        //denominazione|indirizzo|contatti|risultati|affluenza|operatori|sezioni|elettori_m|elettori_f|id_circoscrizione|rendiconti|pec|lastupdate
+
+        $query="INSERT INTO ".static::AA_COMUNI_DB_TABLE." SET id_circoscrizione='".$comune->GetProp("id_circoscrizione")."'";
+        $query.=", denominazione='".addslashes($comune->GetProp("denominazione"))."'";
+        $query.=", indirizzo='".addslashes($comune->GetProp("indirizzo"))."'";
+        $query.=", contatti='".addslashes($comune->GetProp("contatti"))."'";
+        $query.=", risultati='".addslashes($comune->GetProp("risultati"))."'";
+        $query.=", affluenza='".addslashes($comune->GetProp("affluenza"))."'";
+        $query.=", operatori='".addslashes($comune->GetProp("operatori"))."'";
+        $query.=", sezioni='".addslashes($comune->GetProp("sezioni"))."'";
+        $query.=", elettori_m='".addslashes($comune->GetProp("elettori_m"))."'";
+        $query.=", elettori_f='".addslashes($comune->GetProp("elettori_f"))."'";
+        $query.=", rendiconti='".addslashes($comune->GetProp("rendiconti"))."'";
+        $query.=", pec='".addslashes($comune->GetProp("pec"))."'";
+        $query.=", lastupdate='".addslashes($comune->GetProp("lastupdate"))."'";
+        $query.=", id_sier='".addslashes($this->GetIdData())."'";
+        
+        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            return false;            
+        }
+
+        $this->IsChanged();
+
+        //Aggiorna l'elemento e lo versiona se necessario
+        if(!$this->Update($user,true, "Aggiunta nuovo comune: ".$comune->GetProp("denominazione")))
+        {
+            return false;
+        }
+
+        $newId=$db->GetLastInsertId();
+        //AA_Log::Log(__METHOD__." - new id: ".$newId, 100,false,true);
+
+        return $newId;
+    }
+
+    //Aggiunge un nuovo comune
+    public function AddNewComuneMulti($data=array(), $user=null)
+    {
+        //AA_Log::Log(__METHOD__."()");
+
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
+            return false;
+        }
+
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - Dati non non valido.", 100,false,true);
+            return false;
+        }
+
+        $result=array(0,0);
+        foreach($data as $curComune)
+        {
+            if(is_array($curComune))
+            {
+                if($this->AddNewComune(new AA_SierComune($curComune,$user))===false)
+                {
+                    $result[1]+=1;
+                }
+                else $result[0]+=1;
+            }
+        }
+    
+        return $result;
+    }
+
     //Aggiorna un candidato
     public function UpdateCandidato($candidato=null, $user=null,$logMsg="")
     {
@@ -2901,8 +3032,8 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierComuneAddNewMultiDlg");
             $taskManager->RegisterTask("GetSierComuneAddNewMultiPreviewCalc");
             $taskManager->RegisterTask("GetSierComuneAddNewMultiPreviewDlg");
-            //$taskManager->RegisterTask("GetSierComuneAddNewMulti");
-            //$taskManager->RegisterTask("GetSierComuneAddNewMultiResultDlg");
+            $taskManager->RegisterTask("SierComuneAddNewMulti");
+            $taskManager->RegisterTask("GetSierComuneAddNewMultiResultDlg");
 
             //elezioni
             $taskManager->RegisterTask("GetSierModifyDlg");
@@ -3174,9 +3305,10 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd->enableRefreshOnSuccessfulSave(false);
 
-        $wnd->SetApplyButtonName("Anteprima");
+        $wnd->SetApplyButtonName("Procedi");
 
         $wnd->SetSaveTask("GetSierComuneAddNewMultiPreviewCalc");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
         
         return $wnd;
     }
@@ -3245,7 +3377,31 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd->SetApplyButtonName("Importa");
 
-        $wnd->SetSaveTask("GetSierComuneAddNewMulti");
+        $wnd->SetSaveTask("SierComuneAddNewMulti");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        
+        return $wnd;
+    }
+
+    //Template dlg addnew comune multi result
+    public function Template_GetSierComuneAddNewMultiResultDlg($object=null,$count=array(0,0))
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneAddNewMultiResultDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 3 di 3", $this->id);
+
+        $wnd=new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 3 di 3");
+        
+        //$wnd->SetLabelAlign("right");
+        //$wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(350);
+        //$wnd->SetBottomPadding(36);
+        //$wnd->EnableValidation();
+
+        $desc="<p>Sono state inseriti <b>".$count[0]." Comuni</b>.</p>";
+        if($count[1] > 0) $desc.="<p>Sono state scartati <b>".$count[1]." Comuni</b>.</p>";
+        $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
         
         return $wnd;
     }
@@ -5303,6 +5459,25 @@ Class AA_SierModule extends AA_GenericModule
         
         $task->SetLog($sTaskLog);
         
+        return true;
+    }
+
+    //Task Aggiungi candidato
+    public function Task_GetSierComuneAddNewMultiResultDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneAddNewMultiResultDlg($object,json_decode($_REQUEST['count'],true)),true);
         return true;
     }
 
@@ -9394,6 +9569,62 @@ Class AA_SierModule extends AA_GenericModule
         
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetStatusAction('dlg',array("task"=>"GetSierComuneAddNewMultiPreviewDlg","params"=>array("id"=>$object->GetId())),true);
+        $task->SetContent("Csv elaborato.",false);
+                
+        return true;
+    }
+
+    //Task aggiunta comuni da csv, passo 3 di 3
+    public function Task_SierComuneAddNewMulti($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
+
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);        
+            return false;
+        }
+
+        $data=AA_SessionVar::Get("SierComuneMultiFromCSV_ParsedData")->GetValue();
+
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array();
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono stati trovati dati da inserire.",false);        
+            return false;
+        }
+
+        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
+
+        $count=$object->AddNewComuneMulti($data,$this->oUser);
+
+        if($count===false)
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array();
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("dati csv non validi.",false);
+            return false;
+        }
+
+        //elimina le variabili di sessione
+        AA_SessionVar::UnsetVar("SierComuneMultiFromCSV_ParsedData");
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction('dlg',array("task"=>"GetSierComuneAddNewMultiResultDlg","params"=>array("id"=>$object->GetId(),"count"=>json_encode($count))),true);
         $task->SetContent("Csv elaborato.",false);
                 
         return true;
