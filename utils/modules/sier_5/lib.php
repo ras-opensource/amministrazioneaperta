@@ -2843,6 +2843,7 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_LAYOUT_RISULTATI_COMUNALI="RisultatiComunaliLayout";
     const AA_UI_WND_AFFLUENZA_COMUNALE="AffluenzaComunaleWnd";
     const AA_UI_LAYOUT_AFFLUENZA_COMUNALE="AffluenzaComunaleLayout";
+    const AA_UI_TASK_ADDNEWMULTI_DLG="GetSierComuneAddNewMultiDlg";
 
     //Section id
     const AA_ID_SECTION_OC_LOGIN="OperatoriComunaliLogin";
@@ -2895,6 +2896,13 @@ Class AA_SierModule extends AA_GenericModule
             //Dialoghi di filtraggio
             $taskManager->RegisterTask("GetSierPubblicateFilterDlg");
             $taskManager->RegisterTask("GetSierBozzeFilterDlg");
+
+            //caricamento multiplo
+            $taskManager->RegisterTask("GetSierComuneAddNewMultiDlg");
+            $taskManager->RegisterTask("GetSierComuneAddNewMultiPreviewCalc");
+            $taskManager->RegisterTask("GetSierComuneAddNewMultiPreviewDlg");
+            //$taskManager->RegisterTask("GetSierComuneAddNewMulti");
+            //$taskManager->RegisterTask("GetSierComuneAddNewMultiResultDlg");
 
             //elezioni
             $taskManager->RegisterTask("GetSierModifyDlg");
@@ -3130,6 +3138,118 @@ Class AA_SierModule extends AA_GenericModule
         return $data;
      }
 
+    //Template dlg addnew patrimonio
+    public function Template_GetSierComuneAddNewMultiDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneAddNewMultiDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
+
+        $form_data=array("id"=>$object->GetId());
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(600);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+
+        $descr="<ul>Il file csv deve avere le seguenti caratteristiche:";
+        $descr.="<li>la prima riga deve contenere i nomi dei campi;</li>";
+        $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8;</li>";
+        $descr.="<li>usare il carattere \"|\" (pipe) come separatore dei campi;</li>";
+        $descr.="</ul>";
+        $descr.="<p>Tramite il seguente <a href='docs/sier_comuni_multi.ods' target='_blank'>link</a> è possibile scaricare un foglio elettronico da utilizzarsi come base per la predisposizione del file csv.</p>";
+        $descr.="<p>Per la generazione del file csv si consiglia l'utilizzo del software opensource <a href='https://www.libreoffice.org' target='_blank'>Libreoffice</a> in quanto consente di impostare il carattere di delimitazione dei campi e la codifica dei caratteri in fase di esportazione senza dover apportare modifiche al sistema.</p>";
+        $descr.="<hr/>";
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di caricare più comuni tramite importazione da file csv.".$descr."</div>")));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
+
+        //csv
+        $wnd->AddFileUploadField("SierComuneMultiCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 2Mb).","accept"=>"application/csv"));
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        $wnd->enableRefreshOnSuccessfulSave(false);
+
+        $wnd->SetApplyButtonName("Anteprima");
+
+        $wnd->SetSaveTask("GetSierComuneAddNewMultiPreviewCalc");
+        
+        return $wnd;
+    }
+
+    //Template dlg addnew multi preview comuni
+    public function Template_GetSierComuneAddNewMultiPreviewDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneAddNewMultiPreviewDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
+
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        //$wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(1280);
+        $wnd->SetHeight(720);
+        //$wnd->SetBottomPadding(36);
+        //$wnd->EnableValidation();
+        //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
+        $columns=array(
+            array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Denominazione</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"indirizzo","header"=>array("<div style='text-align: center'>Indirizzo</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"pec","header"=>array("<div style='text-align: center'>Pec</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"sezioni","header"=>array("<div style='text-align: center'>Sezioni</div>",array("content"=>"textFilter")),"width"=>90, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"elettori_m","header"=>array("<div style='text-align: center'>Elett. M</div>",array("content"=>"textFilter")),"width"=>90, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"elettori_f","header"=>array("<div style='text-align: center'>Elett. F</div>",array("content"=>"textFilter")),"width"=>90, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"contatti","header"=>array("<div style='text-align: center'>Contatti</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"right"),"sort"=>"text")
+        );
+
+        $data=AA_SessionVar::Get("SierComuneMultiFromCSV_ParsedData")->GetValue();
+
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array();
+        }
+
+        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
+
+        $desc="<p>Sono stati riconosciuti <b>".sizeof((array)$data)." Comuni</b> differenti.</p>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+
+        $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
+            "type"=>"clean",
+            "view"=>"scrollview",
+            "scroll"=>"x"
+        ));
+        $table=new AA_JSON_Template_Generic($id."_CsvImportPreviewTable", array(
+            "view"=>"datatable",
+            "css"=>"AA_Header_DataTable",
+            "hover"=>"AA_DataTable_Row_Hover",
+            "columns"=>$columns,
+            "data"=>array_values($data)
+        ));
+        $scrollview->addRowToBody($table);
+
+        $wnd->AddGenericObject($scrollview);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        //$wnd->enableRefreshOnSuccessfulSave();
+
+        $wnd->SetApplyButtonName("Importa");
+
+        $wnd->SetSaveTask("GetSierComuneAddNewMulti");
+        
+        return $wnd;
+    }
+
     //Template sezione bozze (da specializzare)
     public function TemplateSection_Bozze($params=array())
     {
@@ -3160,7 +3280,7 @@ Class AA_SierModule extends AA_GenericModule
             $content->EnablePublish(false);
             $content->EnableReassign(false);
             $content->EnableTrash(false);
-        } 
+        }
 
         return $content->toObject();
     }
@@ -8818,8 +8938,28 @@ Class AA_SierModule extends AA_GenericModule
              "width"=>120,
              "tooltip"=>"Opzioni di filtraggio",
              "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneFilterDlg\",params: {id: ".$object->GetId()."},postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
-         ));
-         $toolbar->AddElement($modify_btn);
+        ));
+        $toolbar->AddElement($modify_btn);
+
+        //-------- Importazione da csv (solo super user) ------------------
+        if($this->oUser->IsSuperUser())
+        {
+            $addnewMultiClickAction = "try{module=AA_MainApp.getModule('" . $this->id . "'); if(module.isValid()){module.dlg({task:'" . static::AA_UI_TASK_ADDNEWMULTI_DLG . "',params: {id: ".$object->GetId()."},module:'" . $this->id . "'})}}catch(msg){console.error(msg)}";
+
+            $addnewmulti_btn = new AA_JSON_Template_Generic($this->id . "_AddNewMulti_btn", array(
+                "view" => "button",
+                "align" => "right",
+                "type" => "icon",
+                "icon" => "mdi mdi-plus-box-multiple",
+                "label" => "da CSV",
+                "width" => 110,
+                "tooltip" => "Caricamento multiplo da file CSV",
+                "click" => $addnewMultiClickAction
+            ));
+    
+            $toolbar->AddElement($addnewmulti_btn);    
+        }
+        //---------------------------------------------------------------
 
         //Pulsante di modifica
         $canModify=false;
@@ -9136,6 +9276,127 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         return $this->Task_GenericDeleteObject($task,$_REQUEST);
+    }
+
+    //Task aggiunta comuni da csv, passo 2 di 3
+    public function Task_GetSierComuneAddNewMultiPreviewCalc($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
+
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);        
+            return false;
+        }
+
+        $csvFile=AA_SessionFileUpload::Get("SierComuneMultiCSV");
+        if(!$csvFile->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non valido",false);        
+            return false;
+        }
+
+        $csv=$csvFile->GetValue();
+        if(!is_file($csv["tmp_name"]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non valido (1)",false);
+            return false;
+        }
+
+        $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        //Elimina il file temporaneo
+        if(is_file($csv["tmp_name"]))
+        {
+            unlink($csv["tmp_name"]);
+        }
+
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        
+        //Parsing della posizione dei campi
+        //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
+        $fieldPos=array(
+            "denominazione"=>-1,
+            "indirizzo"=>-1,
+            "contatti"=>-1,
+            "risultati"=>-1,
+            "affluenza"=>-1,
+            "operatori"=>-1,
+            "sezioni"=>-1,
+            "elettori_m"=>-1,
+            "elettori_f"=>-1,
+            "id_circoscrizione"=>-1,
+            "rendiconti"=>-1,
+            "pec"=>-1,
+            "lastupdate"=>-1
+        );
+        
+        $recognizedFields=0;
+        foreach(explode("|",$csvRows[0]) as $pos=>$curFieldName)
+        {
+            if($fieldPos[trim(strtolower($curFieldName))] == -1)
+            {
+                $fieldPos[trim(strtolower($curFieldName))] = $pos;
+                $recognizedFields++;
+            }
+        }
+        //----------------------------------------
+
+        if($fieldPos['denominazione']==-1 || $fieldPos['id_circoscrizione'] ==-1)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono stati trovati tutti i campi relativi a: denominazione,id_circoscrizione. Verificare che il file csv sia strutturato correttamente e riprovare",false);
+            return false;
+        }
+
+        //parsing dei dati
+        $data=array();
+        $curRowNum=0;
+        foreach($csvRows as $curCsvRow)
+        {
+            //salta la prima riga
+            if($curRowNum > 0 && $curCsvRow !="")
+            {
+                $csvValues=explode("|",$curCsvRow);
+                if(sizeof($csvValues) >= $recognizedFields)
+                {
+                    $curDataValues=array();
+                    foreach($fieldPos as $fieldName=>$pos)
+                    {
+                        if($pos>=0)
+                        {
+                            $curDataValues[$fieldName]=trim($csvValues[$pos]);
+                            if($fieldName=="id_circoscrizione")
+                            {
+                                $curDataValues['circoscrizione']=$circoscrizioni[intVal($csvValues[$pos])];
+                            }
+                        }
+                    }
+                    $data[]=$curDataValues;
+                }
+            }
+            $curRowNum++;
+        }
+
+        AA_SessionVar::Set("SierComuneMultiFromCSV_ParsedData",$data,false);
+        
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction('dlg',array("task"=>"GetSierComuneAddNewMultiPreviewDlg","params"=>array("id"=>$object->GetId())),true);
+        $task->SetContent("Csv elaborato.",false);
+                
+        return true;
     }
     
     //Task Aggiungi provvedimenti
@@ -10457,6 +10718,44 @@ Class AA_SierModule extends AA_GenericModule
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierComuneAffluenzaViewDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task add new Comune
+    public function Task_GetSierComuneAddNewMultiDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneAddNewMultiDlg($object),true);
+        return true;
+    }
+
+    //Task add new Comune multi dlg preview
+    public function Task_GetSierComuneAddNewMultiPreviewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneAddNewMultiPreviewDlg($object),true);
         return true;
     }
 
