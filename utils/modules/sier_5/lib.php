@@ -3399,8 +3399,8 @@ Class AA_SierModule extends AA_GenericModule
         //$wnd->SetBottomPadding(36);
         //$wnd->EnableValidation();
 
-        $desc="<p>Sono state inseriti <b>".$count[0]." Comuni</b>.</p>";
-        if($count[1] > 0) $desc.="<p>Sono state scartati <b>".$count[1]." Comuni</b>.</p>";
+        $desc="<p>Sono stati inseriti <b>".$count[0]." Comuni</b>.</p>";
+        if($count[1] > 0) $desc.="<p>Sono stati scartati <b>".$count[1]." Comuni</b>.</p>";
         $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
         
         return $wnd;
