@@ -1133,12 +1133,12 @@ Class AA_Sier extends AA_Object_V2
             $query.=" AND ".static::AA_CANDIDATI_DB_TABLE.".id_lista='".addslashes($lista->GetProp('id'))."'";
         }
 
-        if($circoscrizione>0)
+        if($circoscrizione > 0)
         {
             $query.=" AND ".static::AA_CANDIDATI_DB_TABLE.".id_circoscrizione='".addslashes($circoscrizione)."'";
         }
 
-        $query.=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".ordine, ".static::AA_CANDIDATI_DB_TABLE.".id,".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome";
+        $query.=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome, ".static::AA_CANDIDATI_DB_TABLE.".ordine, ".static::AA_CANDIDATI_DB_TABLE.".id";
 
         if(!$db->Query($query))
         {
@@ -11340,17 +11340,6 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("Comune non valido.",false);
             return false;
         }
-
-        $votanti=0;
-        if(isset($risultati['votanti_m'])) $votanti+=$risultati['votanti_m'];
-        if(isset($risultati['votanti_f'])) $votanti+=$risultati['votanti_f'];
-        
-        if($votanti==0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Non sono presenti votanti, caricare prima i dati generali.",false);
-            return false;
-        }
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierOCModifyRisultatiGeneraliDlg($object,$comune),true);
@@ -12543,6 +12532,13 @@ Class AA_SierModule extends AA_GenericModule
         if(!isset($_REQUEST['ore_12']) || $_REQUEST['ore_12'] == "") $_REQUEST['ore_12']=0;
         if(!isset($_REQUEST['ore_19']) || $_REQUEST['ore_19'] == "") $_REQUEST['ore_19']=0;
         if(!isset($_REQUEST['ore_22']) || $_REQUEST['ore_22'] == "") $_REQUEST['ore_22']=0;
+
+        if($_REQUEST['ore_19'] > $_REQUEST['ore_22'] || $_REQUEST['ore_12'] > $_REQUEST['ore_22'] || $_REQUEST['ore_12'] > $_REQUEST['ore_19'])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la giornata.",false);
+            return false;
+        }
 
         $operatore=AA_SierOperatoreComunale::GetInstance();
 
