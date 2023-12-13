@@ -6620,7 +6620,7 @@ class AA_Object_V2
 
         $userStruct = $user->GetStruct();
 
-        if ($params['class'] == "AA_Object_V2" && !$public) {
+        if (!$public) {
             if ($params['gestiti'] != "" || ($params['status'] & (AA_Const::AA_STATUS_BOZZA + AA_Const::AA_STATUS_CESTINATA + AA_Const::AA_STATUS_REVISIONATA) > 0)) {
                 //Visualizza solo quelle della sua struttura
                 if ($userStruct->GetAssessorato(true) > 0) {
