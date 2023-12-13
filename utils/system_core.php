@@ -6488,7 +6488,7 @@ class AA_Object_V2
 
                 //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true)." - this: ".print_r($this,true),100);
             } else {
-                AA_Log::Log(__METHOD__ . " - Errore oggetto non valido", 100);
+                AA_Log::Log(__METHOD__ . " - Errore oggetto non valido - ".print_r($object,true), 100);
             }
         } else {
             $this->bValid = true;
