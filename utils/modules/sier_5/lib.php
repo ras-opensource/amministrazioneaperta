@@ -1054,7 +1054,7 @@ Class AA_Sier extends AA_Object_V2
         }
 
         if($orderedForCircoscrizione==0) $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".denominazione ";
-        else $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".ordine_".$orderedForCircoscrizione;
+        else $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".ordine_".$orderedForCircoscrizione.",".static::AA_LISTE_DB_TABLE.".denominazione";
 
         if(!$db->Query($query))
         {
@@ -11776,6 +11776,21 @@ Class AA_SierModule extends AA_GenericModule
         if(!isset($_REQUEST['ore_19']) || $_REQUEST['ore_19'] == "") $_REQUEST['ore_19']=0;
         if(!isset($_REQUEST['ore_22']) || $_REQUEST['ore_22'] == "") $_REQUEST['ore_22']=0;
 
+        $elettori=intVal($comune->GetProp('elettori_m'))+intVal($comune->GetProp('elettori_f'));
+        if($_REQUEST['ore_12'] > $elettori || $_REQUEST['ore_19'] > $elettori || $_REQUEST['ore_22'] > $elettori)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("I votanti non possono superare gli elettori.",false);
+            return false;
+        }
+
+        if(($_REQUEST['ore_19'] > $_REQUEST['ore_22'] && $_REQUEST['ore_22'] > 0) || ($_REQUEST['ore_12'] > $_REQUEST['ore_22'] && $_REQUEST['ore_22']>0) || ($_REQUEST['ore_12'] > $_REQUEST['ore_19'] && $_REQUEST['ore_19']>0))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("il dato dell'affluenza deve essere progressivo, ove maggiore di 0, (votanti ore 12 <= votanti ore 19 <= votanti ore 22).",false);
+            return false;
+        }
+
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
         $affluenza[$_REQUEST['giornata']]=array("ore_12"=>strtolower(trim($_REQUEST['ore_12'])),"ore_19"=>strtolower(trim($_REQUEST['ore_19'])),"ore_22"=>strtolower(trim($_REQUEST['ore_22'])));
@@ -12110,7 +12125,8 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na']) && $risultati['voti_contestati_na']>0) $voti_non_validi+=$risultati['voti_contestati_na'];
+        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
+        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         if($votanti==0)
@@ -12275,7 +12291,8 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na']) && $risultati['voti_contestati_na']>0) $voti_non_validi+=$risultati['voti_contestati_na'];
+        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
+        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         $liste=$object->GetListe(null,$comune->GetProp("id_circoscrizione"));
@@ -12373,7 +12390,8 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na']) && $risultati['voti_contestati_na']>0) $voti_non_validi+=$risultati['voti_contestati_na'];
+        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
+        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         if($votanti==0)
@@ -12395,11 +12413,35 @@ Class AA_SierModule extends AA_GenericModule
         if(!is_array($voti_candidato)) $voti_candidato=array();
 
 
-        if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>0)
+        $candidati=$object->GetCandidati(null,null,$comune->GetProp("id_circoscrizione"));
+        if(sizeof($candidati)==0)
         {
-            $candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
-            $candidato['voti']=$_REQUEST['voti'];
-            $voti_candidato[$_REQUEST['id_candidato']]=$candidato;
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono presenti candidati.",false);
+            return false;
+        }
+
+        $voti_candidato=$risultati['voti_candidato'];
+        if(!is_array($voti_candidato)) $voti_candidato=array();
+
+        $candidato=null;
+        if($_REQUEST['id_candidato'] !="" && $_REQUEST['voti']>0)
+        {
+            foreach($candidati as $idCandidato=>$curCandidato)
+            {
+                //AA_Log::Log(__METHOD__." - curCandidato: ".print_r($curCandidato,true),100);
+                if($curCandidato->GetProp('cognome')." ".$curCandidato->GetProp("nome")." (".$curCandidato->GetProp("lista").")" == $_REQUEST['id_candidato'])
+                {
+                    //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
+                    $candidato=$curCandidato->GetProps();
+                }
+            }
+
+            if(is_array($candidato))
+            {
+                $candidato['voti']=$_REQUEST['voti'];
+                $voti_candidato[$candidato['id']]=$candidato;
+            }
         }
 
         $risultati['voti_candidato']=$voti_candidato;
@@ -12592,10 +12634,18 @@ Class AA_SierModule extends AA_GenericModule
         if(!isset($_REQUEST['ore_19']) || $_REQUEST['ore_19'] == "") $_REQUEST['ore_19']=0;
         if(!isset($_REQUEST['ore_22']) || $_REQUEST['ore_22'] == "") $_REQUEST['ore_22']=0;
 
-        if($_REQUEST['ore_19'] > $_REQUEST['ore_22'] || $_REQUEST['ore_12'] > $_REQUEST['ore_22'] || $_REQUEST['ore_12'] > $_REQUEST['ore_19'])
+        $elettori=intVal($comune->GetProp('elettori_m'))+intVal($comune->GetProp('elettori_f'));
+        if($_REQUEST['ore_12'] > $elettori || $_REQUEST['ore_19'] > $elettori || $_REQUEST['ore_22'] > $elettori)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Occorre indicare la giornata.",false);
+            $task->SetError("I votanti non possono superare gli elettori.",false);
+            return false;
+        }
+
+        if(($_REQUEST['ore_19'] > $_REQUEST['ore_22'] && $_REQUEST['ore_22'] > 0) || ($_REQUEST['ore_12'] > $_REQUEST['ore_22'] && $_REQUEST['ore_22']>0) || ($_REQUEST['ore_12'] > $_REQUEST['ore_19'] && $_REQUEST['ore_19']>0))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("il dato dell'affluenza deve essere progressivo, ove maggiore di 0, (votanti ore 12 <= votanti ore 19 <= votanti ore 22).",false);
             return false;
         }
 
@@ -12671,7 +12721,8 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na']) && $risultati['voti_contestati_na']>0) $voti_non_validi+=$risultati['voti_contestati_na'];
+        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
+        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         $coalizioni=$object->GetCoalizioni();
@@ -14488,7 +14539,7 @@ Class AA_SierModule extends AA_GenericModule
 
             $dataview_liste=new AA_JSON_Template_Generic($id."_ListeDataView",array(
                 "view"=>"dataview",
-                "xCount"=>4,
+                "xCount"=>3,
                 "module_id"=>$this->id,
                 "type"=>array(
                     "type"=>"tiles",
@@ -14867,7 +14918,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetHeight(340);
 
             //Candidato
-            $wnd->AddSelectField("id_candidato","Candidato",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il nominativo del candidato.", "placeholder"=>"...","options"=>$lista_candidati));
+            $wnd->AddTextField("id_candidato","Candidato",array("required"=>true,"bottomLabel"=>"*Inserire il nominativo del candidato.", "placeholder"=>"...","suggest"=>array("template"=>"#denominazione#","url"=>$this->taskManagerUrl."?task=GetSierListaCandidati&id=".$object->GetId())));
             
             //voti
             $wnd->AddTextField("voti","Voti",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire soli il numero dei voti validi."));
@@ -14928,17 +14979,31 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetBottomPadding(18);
             $wnd->EnableValidation();
             if(sizeof($liste)>=3) $wnd->SetWidth(1280);
-            else $wnd->SetWidth(350*sizeof($liste));
-            $wnd->SetHeight(130+25*sizeof($liste));
+            else $wnd->SetWidth(400*sizeof($liste));
+            $wnd->SetHeight(180+20*sizeof($liste));
             
             $numforRow=3;
             $curNumRow=0;
+            $curCol=0;
             foreach($liste as $idLista=>$curLista)
             {
                 //liste
-                if($curNumRow%$numforRow) $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"),false);
-                else $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"));
+                if($curNumRow%$numforRow) 
+                {
+                    $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"),false);
+                    $curCol++;
+                }
+                else 
+                {
+                    $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"));
+                    $curCol=1;
+                }
                 $curNumRow++;
+            }
+
+            for($curCol;$curCol<$numforRow;$curCol++)
+            {
+                $wnd->AddSpacer(false);
             }
            
             $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_BottomNote",array("type"=>"clean","template"=>"<span style='font-size: smaller'>*Inserire solo il numero dei voti validi.</span>")));
@@ -15133,14 +15198,28 @@ Class AA_SierModule extends AA_GenericModule
             else $wnd->SetWidth(300*sizeof($liste));
             $wnd->SetHeight(130+25*sizeof($liste));
             
-            $numforRow=4;
+            $numforRow=3;
             $curNumRow=0;
+            $curCol=0;
             foreach($liste as $idLista=>$curLista)
             {
                 //liste
-                if($curNumRow%$numforRow) $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"),false);
-                else $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"));
+                if($curNumRow%$numforRow) 
+                {
+                    $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"),false);
+                    $curCol++;
+                }
+                else 
+                {
+                    $wnd->AddTextField("lista_".$idLista,$curLista->GetProp("denominazione"),array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive"));
+                    $curCol=1;
+                }
                 $curNumRow++;
+            }
+
+            for($curCol;$curCol<$numforRow;$curCol++)
+            {
+                $wnd->AddSpacer(false);
             }
            
             $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_BottomNote",array("type"=>"clean","template"=>"<span style='font-size: smaller'>*Inserire solo il numero dei voti validi.</span>")));
