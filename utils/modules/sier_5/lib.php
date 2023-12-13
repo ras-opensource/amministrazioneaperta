@@ -11873,21 +11873,21 @@ Class AA_SierModule extends AA_GenericModule
         if($votanti>$elettori)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("il numero di votanti non possono superare il numero di elettori.",false);
+            $task->SetError("I votanti non possono superare il numero di elettori.",false);
             return false;
         }
 
         if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>$comune->GetProp('elettori_m'))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("il numero di votanti maschi non possono superare il numero di elettori maschi.",false);
+            $task->SetError("I votanti maschi non possono superare il numero di elettori maschi.",false);
             return false;
         }
 
         if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>$comune->GetProp('elettori_f'))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("il numero di votanti femmine non possono superare il numero di elettori femmine.",false);
+            $task->SetError("Le votanti femmine non possono superare il numero di elettrici femmine.",false);
             return false;
         }
 
@@ -12538,21 +12538,21 @@ Class AA_SierModule extends AA_GenericModule
         if($votanti>$elettori)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("il numero di votanti non possono superare il numero di elettori.",false);
+            $task->SetError("I votanti non possono superare il numero di elettori.",false);
             return false;
         }
 
         if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>$comune->GetProp('elettori_m'))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("il numero di votanti maschi non possono superare il numero di elettori maschi.",false);
+            $task->SetError("I votanti maschi non possono superare il numero di elettori maschi.",false);
             return false;
         }
 
         if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>$comune->GetProp('elettori_f'))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("il numero di votanti femmine non possono superare il numero di elettori femmine.",false);
+            $task->SetError("Le votanti femmine non possono superare il numero di elettrici femmine.",false);
             return false;
         }
 
