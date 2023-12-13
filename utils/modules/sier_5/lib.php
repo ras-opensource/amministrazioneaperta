@@ -3136,6 +3136,7 @@ Class AA_SierModule extends AA_GenericModule
 
             //feed
             $taskManager->RegisterTask("GetSierFeedRisultatiAffluenza");
+            $taskManager->RegisterTask("GetSierListaCandidati");
 
             //template dettaglio
             $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -9647,6 +9648,43 @@ Class AA_SierModule extends AA_GenericModule
         return $this->Task_GenericAddNew($task,$_REQUEST);
     }
 
+    //Task aggiunta organismo
+    public function Task_GetSierListaCandidati($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        $filter=$_REQUEST["filter"];
+
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            die("[]");
+        }
+        
+        if($object->IsReadOnly())
+        {
+            die("[]");    
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if($comune instanceof AA_SierComune)
+        {
+           $circoscrizione=$comune->GetProp("id_circoscrizione");
+        }
+
+        $candidati=$object->GetCandidati(null,null,$circoscrizione);
+
+        $result=array();
+        $count=1;
+        foreach($candidati as $curCandidato)
+        {
+            $result[]=array("id"=>$curCandidato->GetProp('id'),"denominazione"=>$curCandidato->GetProp('cognome')." ".$curCandidato->GetProp('nome')." (".$curCandidato->GetProp('lista').")","value"=>$curCandidato->GetProp('cognome')." ".$curCandidato->GetProp('nome')." (".$curCandidato->GetProp('lista').")");
+            $count++;
+        }
+
+        die(json_encode($result));
+    }
 
     //Task login operatore comunale 
     public function Task_OCLogin($task)
@@ -12084,12 +12122,24 @@ Class AA_SierModule extends AA_GenericModule
         $voti_candidato=$risultati['voti_candidato'];
         if(!is_array($voti_candidato)) $voti_candidato=array();
 
-
-        if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>0)
+        $candidato=null;
+        if($_REQUEST['id_candidato'] !="" && $_REQUEST['voti']>0)
         {
-            $candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
-            $candidato['voti']=$_REQUEST['voti'];
-            $voti_candidato[$_REQUEST['id_candidato']]=$candidato;
+            foreach($candidati as $idCandidato=>$curCandidato)
+            {
+                //AA_Log::Log(__METHOD__." - curCandidato: ".print_r($curCandidato,true),100);
+                if($curCandidato->GetProp('cognome')." ".$curCandidato->GetProp("nome")." (".$curCandidato->GetProp("lista").")" == $_REQUEST['id_candidato'])
+                {
+                    //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
+                    $candidato=$curCandidato->GetProps();
+                }
+            }
+
+            if(is_array($candidato))
+            {
+                $candidato['voti']=$_REQUEST['voti'];
+                $voti_candidato[$candidato['id']]=$candidato;
+            }
         }
 
         $risultati['voti_candidato']=$voti_candidato;
@@ -14692,6 +14742,7 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['voti']=0;
             foreach($candidati as $idCandidato=>$curCandidato)
             {
+
                 $lista_candidati[]=array("id"=>$idCandidato,"value"=>$curCandidato->GetProp("cognome")." ".$curCandidato->GetProp("nome"));
             }
 
@@ -14699,7 +14750,8 @@ Class AA_SierModule extends AA_GenericModule
 
             if(isset($_REQUEST['id_candidato']) && $_REQUEST['id_candidato']>0)
             {
-                $form_data['id_candidato']=$_REQUEST['id_candidato'];
+                $candidato=$candidati[$_REQUEST['id_candidato']];
+                $form_data['id_candidato']=$candidato->GetProp('cognome')." ".$candidato->GetProp('nome')." (".$candidato->GetProp('lista').")";
                 if(isset($risultati['voti_candidato']) && isset($risultati['voti_candidato'][$_REQUEST['id_candidato']]))
                 {
                     $form_data['voti']=$risultati['voti_candidato'][$_REQUEST['id_candidato']]['voti'];
@@ -14717,7 +14769,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetHeight(340);
 
             //Candidato
-            $wnd->AddSelectField("id_candidato","Candidato",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il nominativo del candidato.", "placeholder"=>"...","options"=>$lista_candidati));
+            $wnd->AddTextField("id_candidato","Candidato",array("required"=>true,"bottomLabel"=>"*Inserire il nominativo del candidato.", "placeholder"=>"...","suggest"=>array("template"=>"#denominazione#","url"=>$this->taskManagerUrl."?task=GetSierListaCandidati&id=".$object->GetId())));
             
             //voti
             $wnd->AddTextField("voti","Voti",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire soli il numero dei voti validi."));
@@ -14816,7 +14868,7 @@ Class AA_SierModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiListeModifyDlg";
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti voti Liste circoscrizionali", $this->id);
-        $liste=$object->GetListe();
+        $liste=$object->GetListe(null,$comune->GetProp('id_circoscrizione'));
 
         if(sizeof($liste)==0)
         {
@@ -14846,14 +14898,14 @@ Class AA_SierModule extends AA_GenericModule
             $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati liste circoscrizionali", $this->id,$form_data,$form_data);
                 
             $wnd->SetLabelAlign("right");
-            $wnd->SetLabelWidth(200);
+            $wnd->SetLabelWidth(300);
             $wnd->SetBottomPadding(18);
             $wnd->EnableValidation();
-            if(sizeof($liste)>=4) $wnd->SetWidth(1280);
-            else $wnd->SetWidth(300*sizeof($liste));
+            if(sizeof($liste)>=3) $wnd->SetWidth(1280);
+            else $wnd->SetWidth(350*sizeof($liste));
             $wnd->SetHeight(130+25*sizeof($liste));
             
-            $numforRow=4;
+            $numforRow=3;
             $curNumRow=0;
             foreach($liste as $idLista=>$curLista)
             {
