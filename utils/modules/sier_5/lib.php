@@ -8018,14 +8018,25 @@ Class AA_SierModule extends AA_GenericModule
         $riga->AddRow($votanti_f);
         //$generaleLayout->AddRow($riga);
 
-        //Voti contestati non assegnati
-        if(isset($risultati['voti_contestati_na']))$value=$risultati['voti_contestati_na'];
+        //Voti contestati non assegnati Presidente
+        if(isset($risultati['voti_contestati_na_pre']))$value=$risultati['voti_contestati_na_pre'];
         else $value=0;
-        $voti_contestati=new AA_JSON_Template_Template($id."_VotiContestatiNA",array(
+        $voti_contestati_pre=new AA_JSON_Template_Template($id."_VotiContestatiNA_pre",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Voti contestati non assegnati:","value"=>$value),
+            "data"=>array("title"=>"Voti contestati non assegnati (Presidente):","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
+        //Voti contestati non assegnati liste
+        if(isset($risultati['voti_contestati_na_liste']))$value=$risultati['voti_contestati_na_liste'];
+        else $value=0;
+        $voti_contestati_liste=new AA_JSON_Template_Template($id."_VotiContestatiNA_liste",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Voti contestati non assegnati (Liste):","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
@@ -8065,7 +8076,8 @@ Class AA_SierModule extends AA_GenericModule
         //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddRow($schede_bianche);
         $riga->AddRow($schede_nulle);
-        $riga->AddRow($voti_contestati);
+        $riga->AddRow($voti_contestati_pre);
+        $riga->AddRow($voti_contestati_liste);
         //$generaleLayout->AddRow($riga);
 
         //$riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
@@ -8172,7 +8184,7 @@ Class AA_SierModule extends AA_GenericModule
         $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
         $template="<div style='display: flex; align-items:center;justify-content: space-between; width:99%;height:100%;padding-left:1%;'><div style='display: flex; align-items: center; justify-content: center; height: 60px; width: 60px; border-radius: 50%; overflow: clip; margin-right: 1em;'><img src='#image#' height='100%'/></div><div style='font-weight:700; width: 250px'>#title#</div><div style='width: 80px; text-align:center'>#value#</div></div>";
         
-        $liste=$object->GetListe();
+        $liste=$object->GetListe(null,$comune->GetProp('id_circoscrizione'));
         //AA_Log::Log(__METHOD__." - liste: ".print_r($liste,true),100);
         if(sizeof($liste)>0)
         {
@@ -8197,7 +8209,7 @@ Class AA_SierModule extends AA_GenericModule
 
             $dataview_liste=new AA_JSON_Template_Generic($id."_ListeDataView",array(
                 "view"=>"dataview",
-                "xCount"=>4,
+                "xCount"=>3,
                 "module_id"=>$this->id,
                 "type"=>array(
                     "type"=>"tiles",
@@ -9240,7 +9252,7 @@ Class AA_SierModule extends AA_GenericModule
                 }
                 else
                 {
-                    AA_Log::Log(__METHOD__," - risultati non presenti: ".$object->GetProp("risultati"),100);
+                    AA_Log::Log(__METHOD__," - risultati non presenti: ".$curComune->GetProp("risultati"),100);
                 }
             }
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_RISULTATI_COMUNALI."_".static::AA_UI_LAYOUT_RISULTATI_COMUNALI;
@@ -12547,7 +12559,8 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($_REQUEST['schede_bianche']) && $_REQUEST['schede_bianche']>0) $voti_non_validi+=$_REQUEST['schede_bianche'];
         if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>0) $voti_non_validi+=$_REQUEST['schede_nulle'];
-        if(isset($_REQUEST['voti_contestati_na']) && $_REQUEST['voti_contestati_na']>0) $voti_non_validi+=$_REQUEST['voti_contestati_na'];
+        if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>0) $voti_non_validi+=$_REQUEST['voti_contestati_na_pre'];
+        if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>0) $voti_non_validi+=$_REQUEST['voti_contestati_na_liste'];
         if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>0) $voti_non_validi+=$_REQUEST['schede_voti_nulli'];
     
         if($voti_non_validi>$votanti)
@@ -12564,7 +12577,8 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>=0) $risultati['votanti_f']=intVal($_REQUEST['votanti_f']);
         if(isset($_REQUEST['schede_bianche']) && $_REQUEST['schede_bianche']>=0) $risultati['schede_bianche']=intVal($_REQUEST['schede_bianche']);
         if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>=0) $risultati['schede_nulle']=intVal($_REQUEST['schede_nulle']);
-        if(isset($_REQUEST['voti_contestati_na']) && $_REQUEST['voti_contestati_na']>=0) $risultati['voti_contestati_na']=intVal($_REQUEST['voti_contestati_na']);
+        if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>=0) $risultati['voti_contestati_na_pre']=intVal($_REQUEST['voti_contestati_na_pre']);
+        if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>=0) $risultati['voti_contestati_na_liste']=intVal($_REQUEST['voti_contestati_na_liste']);
         if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>=0) $risultati['schede_voti_nulli']=intVal($_REQUEST['schede_voti_nulli']);
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati generali - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
@@ -15040,7 +15054,8 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['votanti_f']=0;
         $form_data['schede_bianche']=0;
         $form_data['schede_nulle']=0;
-        $form_data['voti_contestati_na']=0;
+        $form_data['voti_contestati_na_pre']=0;
+        $form_data['voti_contestati_na_liste']=0;
         $form_data['schede_voti_nulli']=0;
 
         $risultati=$comune->GetRisultati(true);
@@ -15069,8 +15084,10 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddTextField("schede_bianche","Schede bianche",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede bianche."));
         //schede nulle
         $wnd->AddTextField("schede_nulle","Schede nulle",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede nulle."));
-        //voti contestati non assegnati
-        $wnd->AddTextField("voti_contestati_na","Voti contestati non assegnati",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati."));
+        //voti contestati non assegnati presidente
+        $wnd->AddTextField("voti_contestati_na_pre","Voti contestati n.a. Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (voti Presidente)."));
+        //voti contestati non assegnati liste
+        $wnd->AddTextField("voti_contestati_na_liste","Voti contestati n.a. Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (voti di Lista)."));
         //schede contenenti voti nulli
         $wnd->AddTextField("schede_voti_nulli","Schede con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
 
@@ -15194,9 +15211,9 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetLabelWidth(190);
             $wnd->SetBottomPadding(18);
             $wnd->EnableValidation();
-            if(sizeof($liste)>=4) $wnd->SetWidth(1280);
-            else $wnd->SetWidth(300*sizeof($liste));
-            $wnd->SetHeight(130+25*sizeof($liste));
+            if(sizeof($liste)>=3) $wnd->SetWidth(1280);
+            else $wnd->SetWidth(400*sizeof($liste));
+            $wnd->SetHeight(180+20*sizeof($liste));
             
             $numforRow=3;
             $curNumRow=0;
