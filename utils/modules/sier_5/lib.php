@@ -11901,7 +11901,7 @@ Class AA_SierModule extends AA_GenericModule
         if($voti_non_validi>$votanti)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il numero totale dei votanti non può essere minore del numero dei voti non validi (schede bianche+schede nulle+voti contestati+voti nulli).",false);
+            $task->SetError("Il numero di voti NON validi (schede bianche+schede nulle+voti contestati+voti nulli) non può superare il numero dei votanti.",false);
             return false;
         }
 
@@ -12566,7 +12566,7 @@ Class AA_SierModule extends AA_GenericModule
         if($voti_non_validi>$votanti)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il numero totale dei votanti non può essere minore del numero dei voti non validi (schede bianche+schede nulle+voti contestati+voti nulli).",false);
+            $task->SetError("Il numero di voti non validi (schede bianche+schede nulle+voti contestati+voti nulli) non può superare il numero dei votanti.",false);
             return false;
         }
 
