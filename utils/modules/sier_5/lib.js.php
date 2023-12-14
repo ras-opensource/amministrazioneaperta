@@ -54,6 +54,31 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//Handler modifica massiva
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RisultatiPreferenzeModifyAll = function() {
+    try 
+    {
+        console.log("eventHandlers.defaultHandlers.RisultatiPreferenzeModifyAll", this, arguments);
+
+        let id=arguments[0].postParams['refresh_obj_id']+"_PreferenzeCandidati";
+        let candidati_list=$$(id);
+        if(candidati_list)
+        {
+            filter = candidati_list.getFilter("lista");
+        
+            arguments[0].postParams['lista_desc']=filter.value;
+
+            AA_MainApp.utils.callHandler('dlg',arguments[0],'<?php echo AA_SierModule::AA_ID_MODULE?>');
+        }
+        else
+        {
+            console.log("eventHandlers.defaultHandlers.RisultatiPreferenzeModifyAll - lista candidati non trovata", id);
+        }
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.ListaDblClick", msg, this);
+    }
+};
+
 //Handler doppio click coalizione
 <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].CoalizioneDblClick = function() {
     try 
