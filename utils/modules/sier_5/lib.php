@@ -1127,6 +1127,7 @@ Class AA_Sier extends AA_Object_V2
         if($coalizione instanceof AA_SierCoalizioni)
         {
             $query.=" AND ".static::AA_COALIZIONI_DB_TABLE.".id='".addslashes($coalizione->GetProp('id'))."'";
+            $order=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".id_lista, ".static::AA_CANDIDATI_DB_TABLE.".ordine, ".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome";
         }
 
         if($lista instanceof AA_SierLista)
