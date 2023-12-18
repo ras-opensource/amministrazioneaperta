@@ -12620,7 +12620,7 @@ Class AA_SierModule extends AA_GenericModule
                 $dati_candidato=$curCandidato->GetProps();
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
-                $tot_voti_candidato+=intVal($_REQUEST['voti']);
+                $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
             }
         }
 
@@ -12999,7 +12999,7 @@ Class AA_SierModule extends AA_GenericModule
                 $dati_candidato=$curCandidato->GetProps();
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
-                $tot_voti_candidato+=intVal($_REQUEST['voti']);
+                $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
             }
         }
 
@@ -15360,9 +15360,9 @@ Class AA_SierModule extends AA_GenericModule
         //schede nulle
         $wnd->AddTextField("schede_nulle","Schede nulle",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede nulle."));
         //voti contestati non assegnati pre
-        $wnd->AddTextField("voti_contestati_na_pre","Voti contestati na (Presidente)",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (Presidente)."));
+        $wnd->AddTextField("voti_contestati_na_pre","Voti contestati n.a. (Presidente)",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (Presidente)."));
         //voti contestati non assegnati liste
-        $wnd->AddTextField("voti_contestati_na_liste","Voti contestati na (Liste)",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (Liste)."));
+        $wnd->AddTextField("voti_contestati_na_liste","Voti contestati n.a. (Liste)",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (Liste)."));
         //schede contenenti voti nulli
         $wnd->AddTextField("schede_voti_nulli","Schede con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
 
@@ -15618,7 +15618,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddTextField("voti","Voti",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire soli il numero dei voti validi."));
            
             $wnd->SetDefaultFocusedItem("voti");
-            
+
             $wnd->EnableCloseWndOnSuccessfulSave();
             $wnd->enableRefreshOnSuccessfulSave();
             //if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
@@ -15849,7 +15849,7 @@ Class AA_SierModule extends AA_GenericModule
         //voti contestati non assegnati presidente
         $wnd->AddTextField("voti_contestati_na_pre","Voti contestati n.a. Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (voti Presidente)."));
         //voti contestati non assegnati liste
-        $wnd->AddTextField("voti_contestati_na_liste","Voti contestati n.a. Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (voti di Lista)."));
+        $wnd->AddTextField("voti_contestati_na_liste","Voti contestati n.a. Liste ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (voti di Lista)."));
         //schede contenenti voti nulli
         $wnd->AddTextField("schede_voti_nulli","Schede con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
 
