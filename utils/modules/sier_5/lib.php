@@ -564,7 +564,7 @@ Class AA_Sier extends AA_Object_V2
     //Verifica se ci sono delle anomalie sui risultati
     public function AnalizeRisultati($risultati=null,$circoscrizione=0)
     {
-        $result=array(false,array());
+        $result=array(false,array(),false);
         if(!is_array($risultati))
         {
             $result[0]=true;
@@ -649,7 +649,6 @@ Class AA_Sier extends AA_Object_V2
         {
             $result[0]=true;
             $result[1][]="Non ci sono voti per le Liste nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']).")";
-            $result[2]=false;
         }
 
         if($voti_lista > ($voti_validi-$risultati['voti_contestati_na_liste']))
@@ -670,7 +669,6 @@ Class AA_Sier extends AA_Object_V2
         {
             $result[0]=true;
             $result[1][]="Non ci sono preferenze nonostante siano presenti voti validi (".$voti_validi.")";
-            $risultati[2]=false;
         }
 
         if($voti_candidato > ($voti_validi*2))
@@ -15346,7 +15344,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetBottomPadding(32);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(450);
+        $wnd->SetWidth(540);
         $wnd->SetHeight(750);
         
         //Sezioni scrutinate
