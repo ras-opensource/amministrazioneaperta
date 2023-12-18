@@ -8192,7 +8192,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Voti contestati non assegnati (Presidente):","value"=>$value),
+            "data"=>array("title"=>"Schede contestate non assegnate (Presidente):","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
@@ -8203,7 +8203,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Voti contestati non assegnati (Liste):","value"=>$value),
+            "data"=>array("title"=>"Schede contestate non assegnate (Liste):","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
@@ -12249,7 +12249,7 @@ Class AA_SierModule extends AA_GenericModule
         if($voti_non_validi>$votanti)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il numero di voti NON validi (schede bianche+schede nulle+voti contestati+voti nulli) non può superare il numero dei votanti.",false);
+            $task->SetError("Il numero di voti NON validi (schede bianche+schede nulle+schede contestate+voti nulli) non può superare il numero dei votanti.",false);
             return false;
         }
 
@@ -13118,7 +13118,7 @@ Class AA_SierModule extends AA_GenericModule
         if($voti_non_validi>$votanti)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il numero di voti non validi (schede bianche+schede nulle+voti contestati+voti nulli) non può superare il numero dei votanti.",false);
+            $task->SetError("Il numero di voti non validi (schede bianche+schede nulle+schede contestate+voti nulli) non può superare il numero dei votanti.",false);
             return false;
         }
 
@@ -14942,7 +14942,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Voti contestati non assegnati (Presidente):","value"=>$value),
+            "data"=>array("title"=>"Schede contestate non assegnate (Presidente):","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
@@ -14953,7 +14953,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Voti contestati non assegnati (Liste):","value"=>$value),
+            "data"=>array("title"=>"Schede contestate non assegnate (Liste):","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
@@ -15360,9 +15360,9 @@ Class AA_SierModule extends AA_GenericModule
         //schede nulle
         $wnd->AddTextField("schede_nulle","Schede nulle",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede nulle."));
         //voti contestati non assegnati pre
-        $wnd->AddTextField("voti_contestati_na_pre","Voti contestati n.a. (Presidente)",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (Presidente)."));
+        $wnd->AddTextField("voti_contestati_na_pre","Schede contestate n.a. (Presidente)",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contestate non assegnate (Presidente)."));
         //voti contestati non assegnati liste
-        $wnd->AddTextField("voti_contestati_na_liste","Voti contestati n.a. (Liste)",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (Liste)."));
+        $wnd->AddTextField("voti_contestati_na_liste","Schede contestate n.a. (Liste)",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contestate non assegnate (Liste)."));
         //schede contenenti voti nulli
         $wnd->AddTextField("schede_voti_nulli","Schede con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
 
@@ -15847,9 +15847,9 @@ Class AA_SierModule extends AA_GenericModule
         //schede nulle
         $wnd->AddTextField("schede_nulle","Schede nulle",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede nulle."));
         //voti contestati non assegnati presidente
-        $wnd->AddTextField("voti_contestati_na_pre","Voti contestati n.a. Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (voti Presidente)."));
+        $wnd->AddTextField("voti_contestati_na_pre","Schede contestate n.a. Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contestate non assegnate (voti Presidente)."));
         //voti contestati non assegnati liste
-        $wnd->AddTextField("voti_contestati_na_liste","Voti contestati n.a. Liste ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di voti contestati non assegnati (voti di Lista)."));
+        $wnd->AddTextField("voti_contestati_na_liste","Schede contestate n.a. Liste ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contestate non assegnate (voti di Lista)."));
         //schede contenenti voti nulli
         $wnd->AddTextField("schede_voti_nulli","Schede con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
 
