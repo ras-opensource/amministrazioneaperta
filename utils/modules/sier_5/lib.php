@@ -5357,7 +5357,7 @@ Class AA_SierModule extends AA_GenericModule
         
         $form_data=array();
         
-        $wnd=new AA_GenericWindowTemplate($id, "Analisi anomalie risultati", $this->id);
+        $wnd=new AA_GenericWindowTemplate($id, "Analisi criticità risultati", $this->id);
         
         $wnd->SetWidth(580);
         $wnd->SetHeight(280);
@@ -5369,16 +5369,16 @@ Class AA_SierModule extends AA_GenericModule
 
         if($analisi[0]==true)
         {
-            $content="<div style='display: flex; justify-content: center; align-items: center; padding-right: 1em;'><ul>Sono state trovate le seguenti anomalie:";
+            $content="<div style='display: flex; justify-content: flex-start; align-items: center; padding-right: 1em; width: 90%'><ul>Sono state riscontrate le seguenti criticità:";
             foreach($analisi[1] as $curError)
             {
-                $content.="<li style='font-weight:bold; margin-bottom:.3em;'>".$curError."</li>";
+                $content.="<li style='font-weight:bold; margin-top: 1em;'>".$curError."</li>";
             }
             $content.="</ul></div>";
         }
         else
         {
-            $content="<div style='display: flex; justify-content: center; align-items: center'><p>I dati sono coerenti.</p></div>";
+            $content="<div style='display: flex; justify-content: flex-start; align-items: center; width: 90%'><p>I dati sono coerenti.</p></div>";
         }
         
         $wnd->AddView(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","template"=>$content)));
