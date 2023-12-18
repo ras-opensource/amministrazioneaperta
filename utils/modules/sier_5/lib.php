@@ -561,6 +561,128 @@ Class AA_Sier extends AA_Object_V2
         return parent::DeleteData($idData,$user);
     }
 
+    //Verifica se ci sono delle anomalie sui risultati
+    public function AnalizeRisultati($risultati=null,$circoscrizione=0)
+    {
+        $result=array(false,array());
+        if(!is_array($risultati))
+        {
+            $result[0]=true;
+            $result[1][]='Risultati non presenti (1)';
+            $result[2]=true;
+            return $result;
+        }
+        
+        if(sizeof($risultati)==0)
+        {
+            $result[0]=true;
+            $result[1][]='Risultati non presenti (2)';
+            $result[2]=true;
+            return $result;
+        }
+
+        $votanti=intVal($risultati['votanti_m']+$risultati['votanti_f']);
+        $sezioni_scrutinate=intVal($risultati['sezioni_scrutinate']);
+        $voti_non_validi=intVal($risultati['schede_nulle']+$risultati['schede_bianche']+$risultati['schede_voti_nulli']);
+
+        if($votanti > 0 && $sezioni_scrutinate==0)
+        {
+            $result[0]=true;
+            $result[1][]="Non ci sono sezioni scrutinate nonostante i votanti siano maggiori di zero.";
+            $result[2]=true;
+        }
+
+        if($votanti < ($voti_non_validi+max($risultati['voti_contestati_na_pre'],$risultati['voti_contestati_na_liste'])))
+        {
+            $result[0]=true;
+            $result[1][]="I voti non validi sono maggiori o uguali al numero dei votanti";
+            $result[2]=true;
+        }
+
+        $voti_validi=$votanti-$voti_non_validi;
+
+        $voti_presidente=0;
+        $coalizioni=$this->GetCoalizioni();
+        foreach($coalizioni as $idPresidente=>$curPresidente)
+        {
+            if(isset($risultati['voti_presidente'][$idPresidente]))
+            {
+                $voti_presidente+=intVal($risultati['voti_presidente'][$idPresidente]);
+            }
+        }
+
+        if($voti_presidente == 0 && $voti_validi > 0)
+        {
+            $result[0]=true;
+            $result[1][]="Non ci sono voti per i candidati Presidente nonostante siano presenti voti validi (".$voti_validi.")";
+            $result[2]=true;
+        }
+
+        if($voti_presidente != ($voti_validi-$risultati['voti_contestati_na_pre']) && $voti_presidente > 0 && $voti_validi > 0)
+        {
+            $result[0]=true;
+            $result[1][]="La somma dei voti per i candidati Presidente (".$voti_presidente.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
+            $result[2]=true;
+        }
+
+        if($voti_presidente > ($voti_validi-$risultati['voti_contestati_na_pre']))
+        {
+            $result[0]=true;
+            $result[1][]="La somma dei voti per i candidati Presidente (".$voti_presidente.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
+            $result[2]=true;
+        }
+
+        $liste=$this->GetListe();
+        $voti_lista=0;
+        foreach($liste as $idLista=>$curLista)
+        {
+            if(isset($risultati['voti_lista']))
+            {
+                if(isset($risultati['voti_lista'][$idLista]))
+                {
+                    $voti_lista+=intVal($risultati['voti_lista'][$idLista]);
+                }
+            } 
+        }
+
+        if($voti_lista == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']) > 0)
+        {
+            $result[0]=true;
+            $result[1][]="Non ci sono voti per le Liste nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']).")";
+            $result[2]=false;
+        }
+
+        if($voti_lista > ($voti_validi-$risultati['voti_contestati_na_liste']))
+        {
+            $result[0]=true;
+            $result[1][]="La somma dei voti di Lista (".$voti_lista.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']).")";
+            $result[2]=true;
+        }
+
+        $candidati=$this->GetCandidati(null,null,$circoscrizione);
+        $voti_candidato=0;
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            if(isset($risultati['voti_candidato'][$idCandidato])) $voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
+        }
+
+        if($voti_candidato == 0 && $voti_validi > 0)
+        {
+            $result[0]=true;
+            $result[1][]="Non ci sono preferenze nonostante siano presenti voti validi (".$voti_validi.")";
+            $risultati[2]=false;
+        }
+
+        if($voti_candidato > ($voti_validi*2))
+        {
+            $result[0]=true;
+            $result[1][]="Il numero totale di preferenze (".$voti_candidato.") è superiore al doppio dei voti validi (".($voti_validi*2).")";
+            $result[2]=true;
+        }
+        
+        return $result;
+    }
+
     //Restituisce le abilitazioni
     public function GetAbilitazioni()
     {
@@ -3127,6 +3249,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSierComuneRisultatiPreferenze");
             $taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeModifyMultiDlg");
             $taskManager->RegisterTask("UpdateSierComuneRisultatiPreferenzeMulti");
+            $taskManager->RegisterTask("GetSierAnalisiRisultatiDlg");
 
             //$taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeTrashDlg");
             //$taskManager->RegisterTask("TrashSierComuneRisultatiPreferenze");
@@ -5224,6 +5347,42 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetSaveTask("DeleteSierLista");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_coalizione"=>$coalizione->GetProp("id"),"id_lista"=>$lista->GetProp('id')));
         
+        return $wnd;
+    }
+
+    //Template dlg modal msg
+    public function Template_GetSierAnalisiRisultatiDlg($object=null,$comune=null)
+    {
+        $id=$this->id."_GetSierAnalisiRisultatiDlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Analisi anomalie risultati", $this->id);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+      
+        $risultati=$comune->GetRisultati(true);
+        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"));
+
+        //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true)." - risultati: ".print_r($risultati,true),100);
+
+        if($analisi[0]==true)
+        {
+            $content="<div style='display: flex; justify-content: center; align-items: center; padding-right: 1em;'><ul>Sono state trovate le seguenti anomalie:";
+            foreach($analisi[1] as $curError)
+            {
+                $content.="<li style='font-weight:bold; margin-bottom:.3em;'>".$curError."</li>";
+            }
+            $content.="</ul></div>";
+        }
+        else
+        {
+            $content="<div style='display: flex; justify-content: center; align-items: center'><p>I dati sono coerenti.</p></div>";
+        }
+        
+        $wnd->AddView(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","template"=>$content)));
+
         return $wnd;
     }
 
@@ -9173,8 +9332,9 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data e ora di aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"dati_generali","header"=>array("<div style='text-align: center'>Dati Generali</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"completamento_a","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
             array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>"),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"int"),
+            array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
             array("id"=>"rendiconti","header"=>array("<div style='text-align: center'>Rendiconti</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"operatori","header"=>array("<div style='text-align: center'>Operatori</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
         );
@@ -9213,7 +9373,17 @@ Class AA_SierModule extends AA_GenericModule
                 $class="AA_DataTable_Ops_Button";
                 $icon="mdi mdi-upload";
                 $text="Gestisci i dati sull&apos;affluenza alle urne";
+                $completamento_a=0;
             }
+            else
+            {
+                $affluenza=$curComune->GetAffluenza(true);
+                if(current($affluenza)['ore_12'] > 0) $completamento_a=33;
+                if(current($affluenza)['ore_19'] > 0) $completamento_a=66;
+                if(current($affluenza)['ore_22'] > 0) $completamento_a=100;
+
+            }
+            $data[$index]['completamento_a']=$completamento_a;
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE."_".static::AA_UI_LAYOUT_AFFLUENZA_COMUNALE;
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['affluenza']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
@@ -9224,41 +9394,41 @@ Class AA_SierModule extends AA_GenericModule
             $class="AA_DataTable_Ops_Button";
             $icon="mdi mdi-eye";
             $text="Vedi e gestisci i risultati delle consultazioni";
+            $color="green";
+            
             if($curComune->GetProp("risultati") == "") 
             {
                 $class="AA_DataTable_Ops_Button";
                 $icon="mdi mdi-upload";
                 $text="Gestisci i risultati delle consultazioni";
                 $completamento=0;
+                $analisi=array(true,"Risultati non presenti",false);
             }
             else
             {
                 $risultati=$curComune->GetRisultati(true);
-                if(isset($risultati['sezioni_scrutinate']))
+                if(isset($risultati['sezioni_scrutinate']) && $risultati['sezioni_scrutinate'] > 0 && intVal($curComune->GetProp('sezioni'))>0)
                 {
-                    $sezioni_scrutinate=intVal($risultati['sezioni_scrutinate']);
-                    if($curComune->GetProp("sezioni") > 0) 
-                    {
-                        $completamento=round($sezioni_scrutinate*100/$curComune->GetProp("sezioni"));
-                    }
-                    else 
-                    {
-                        AA_Log::Log(__METHOD__," - sezioni scrutinate: ".$risultati->GetProp("sezioni_scrutinate"),100);
-                        $completamento=0;
-                    }
+                    $completamento=round($risultati['sezioni_scrutinate']*100/intVal($curComune->GetProp('sezioni')));
                 }
-                else
+
+                $analisi=$object->AnalizeRisultati($risultati,$curComune->GetProp("id_circoscrizione"));
+                //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true),100);
+                if($analisi[0] == true)
                 {
-                    AA_Log::Log(__METHOD__," - risultati non presenti: ".$curComune->GetProp("risultati"),100);
+                    $color="orange";
+                    if($analisi[2] == true) $color="red";
                 }
             }
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_RISULTATI_COMUNALI."_".static::AA_UI_LAYOUT_RISULTATI_COMUNALI;
+            $view_analisi_risultati='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAnalisiRisultatiDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['completamento']=$completamento;
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-            $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
+            if($analisi[0]==false) $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a></div>";
+            else $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza i risultati delle analisi dei risultati' onClick='".$view_analisi_risultati."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a></div>";
             //if($canModify)
             //{
-            //    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiModifyDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            //    $view_analisi_risultati='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiModifyDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             //    $data[$index]['risultati'].="<a class='AA_DataTable_Ops_Button' title='Modifica i risultati delle consultazioni' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a>";
             //}
             $data[$index]['risultati'].="</div>";
@@ -11140,6 +11310,33 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modal msg
+    public function Task_GetSierAnalisiRisultatiDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierAnalisiRisultatiDlg($object,$comune),true);
+        return true;
+    }
+
     //Task modifica operatore comunale
     public function Task_GetSierComuneOperatoriModifyDlg($task)
     {
@@ -12118,7 +12315,7 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na']) && $risultati['voti_contestati_na']>0) $voti_non_validi+=$risultati['voti_contestati_na'];
+        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         AA_Log::Log(__METHOD__." - votanti: ".$votanti." - voti non validi: ".$voti_non_validi,100);
@@ -12204,7 +12401,7 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na']) && $risultati['voti_contestati_na']>0) $voti_non_validi+=$risultati['voti_contestati_na'];
+        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         $liste=$object->GetListe();
@@ -12311,14 +12508,32 @@ Class AA_SierModule extends AA_GenericModule
         if(!is_array($voti_candidato)) $voti_candidato=array();
 
         $candidato=null;
-        if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>0)
+        $tot_voti_candidati=0;
+        foreach($voti_candidato as $idCandidato=>$curCandidato)
         {
-            $candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
+            if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
+            else $tot_voti_candidati+=intVal($_REQUEST['voti']);
+        }
 
-            if(is_array($candidato))
+        if($tot_voti_candidati > 2*($votanti -$voti_non_validi))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Le preferenze totali non possono superare il doppio dei voti validi.",false);
+            return false;
+        }
+
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            
+            if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>0)
             {
-                $candidato['voti']=$_REQUEST['voti'];
-                $voti_candidato[$candidato['id']]=$candidato;
+                $candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
+    
+                if(is_array($candidato))
+                {
+                    $candidato['voti']=intVal($_REQUEST['voti']);
+                    $voti_candidato[$candidato['id']]=$candidato;
+                }
             }
         }
 
@@ -12397,7 +12612,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $voti_candidato=$risultati['voti_candidato'];
         if(!is_array($voti_candidato)) $voti_candidato=array();
-
+        $tot_voti_candidato=0;
         foreach($candidati as $idCandidato=>$curCandidato)
         {
             if(isset($_REQUEST['candidato_'.$idCandidato]))
@@ -12405,7 +12620,15 @@ Class AA_SierModule extends AA_GenericModule
                 $dati_candidato=$curCandidato->GetProps();
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
+                $tot_voti_candidato+=intVal($_REQUEST['voti']);
             }
+        }
+
+        if($tot_voti_candidato > 2*($votanti -$voti_non_validi))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Le preferenze totali non possono superare il doppio dei voti validi.",false);
+            return false;
         }
 
         $risultati['voti_candidato']=$voti_candidato;
@@ -12532,7 +12755,6 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
         if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
@@ -12631,8 +12853,6 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
-        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         if($votanti==0)
@@ -12654,22 +12874,32 @@ Class AA_SierModule extends AA_GenericModule
         if(!is_array($voti_candidato)) $voti_candidato=array();
 
         $candidato=null;
-        if($_REQUEST['id_candidato'] !="" && $_REQUEST['voti']>0)
+        $tot_voti_candidati=0;
+        foreach($voti_candidato as $idCandidato=>$curCandidato)
         {
-            foreach($candidati as $idCandidato=>$curCandidato)
-            {
-                //AA_Log::Log(__METHOD__." - curCandidato: ".print_r($curCandidato,true),100);
-                if($curCandidato->GetProp('cognome')." ".$curCandidato->GetProp("nome")." (".$curCandidato->GetProp("lista").")" == $_REQUEST['id_candidato'])
-                {
-                    //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
-                    $candidato=$curCandidato->GetProps();
-                }
-            }
+            if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
+            else $tot_voti_candidati+=intVal($_REQUEST['voti']);
+        }
 
-            if(is_array($candidato))
+        if($tot_voti_candidati > 2*($votanti -$voti_non_validi))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Le preferenze totali non possono superare il doppio dei voti validi.",false);
+            return false;
+        }
+
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            
+            if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>0)
             {
-                $candidato['voti']=$_REQUEST['voti'];
-                $voti_candidato[$candidato['id']]=$candidato;
+                $candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
+    
+                if(is_array($candidato))
+                {
+                    $candidato['voti']=intVal($_REQUEST['voti']);
+                    $voti_candidato[$candidato['id']]=$candidato;
+                }
             }
         }
 
@@ -12741,8 +12971,6 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
-        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         if($votanti==0)
@@ -12763,6 +12991,7 @@ Class AA_SierModule extends AA_GenericModule
         $voti_candidato=$risultati['voti_candidato'];
         if(!is_array($voti_candidato)) $voti_candidato=array();
 
+        $tot_voti_candidato=0;
         foreach($candidati as $idCandidato=>$curCandidato)
         {
             if(isset($_REQUEST['candidato_'.$idCandidato]))
@@ -12770,7 +12999,15 @@ Class AA_SierModule extends AA_GenericModule
                 $dati_candidato=$curCandidato->GetProps();
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
+                $tot_voti_candidato+=intVal($_REQUEST['voti']);
             }
+        }
+
+        if($tot_voti_candidato > 2*($votanti -$voti_non_validi))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Le preferenze totali non possono superare il doppio dei voti validi.",false);
+            return false;
         }
 
         $risultati['voti_candidato']=$voti_candidato;
@@ -12876,8 +13113,6 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($_REQUEST['schede_bianche']) && $_REQUEST['schede_bianche']>0) $voti_non_validi+=$_REQUEST['schede_bianche'];
         if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>0) $voti_non_validi+=$_REQUEST['schede_nulle'];
-        if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>0) $voti_non_validi+=$_REQUEST['voti_contestati_na_pre'];
-        if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>0) $voti_non_validi+=$_REQUEST['voti_contestati_na_liste'];
         if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>0) $voti_non_validi+=$_REQUEST['schede_voti_nulli'];
     
         if($voti_non_validi>$votanti)
@@ -13053,7 +13288,6 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
         if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
-        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         $coalizioni=$object->GetCoalizioni();
@@ -13678,6 +13912,8 @@ Class AA_SierModule extends AA_GenericModule
 
         return true;
     }
+
+    
 
     //Task sier trash coalizione
     public function Task_GetSierTrashCoalizioneDlg($task)
@@ -14615,10 +14851,24 @@ Class AA_SierModule extends AA_GenericModule
         //---------------------------------------------------------------------
         $layout->AddRow($multiview);
         
+        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"));
+        if($analisi[0]==true)
+        {
+            $color="orange";
+            if($analisi[2]==true) $color="red";
+            $onClick="AA_MainApp.utils.callHandler('dlg', {task:'GetSierAnalisiRisultatiDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:'".$id."'},module: '" . $this->id . "'},'".$this->id."')";
+            $warning='<div><span class="mdi mdi-alert" style="color:'.$color.'"></span>&nbsp;<a href="#" onClick="'.$onClick.'">Sono presenti delle criticità, fai click qui per visualizzarle.</span></div>';
+        }
+        else
+        {
+            $warning='<div><span class="mdi mdi-check-circle" style="color:green"></span>&nbsp;<span>Le informazioni sono congruenti.</span></div>';
+        }
+
         //--------------------------- Dati generali ----------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiGeneraleBox",array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
@@ -14637,6 +14887,11 @@ Class AA_SierModule extends AA_GenericModule
 
             $toolbar->AddElement($modify_btn);
         }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+
         $generaleLayout->addRow($toolbar);
 
         $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px; text-align: right;padding-right: 50px'>#value#</div></div>";
@@ -14757,7 +15012,8 @@ Class AA_SierModule extends AA_GenericModule
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiCoalizioniBox",array("type"=>"clean"));
 
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiCoalizioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning_Coalizioni",array("view"=>"label","label"=>$warning,"align"=>"center")));
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {  
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiCoalizioni_btn",array(
@@ -14773,6 +15029,10 @@ Class AA_SierModule extends AA_GenericModule
             ));
 
             $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         }
 
         $generaleLayout->addRow($toolbar);
@@ -14819,7 +15079,8 @@ Class AA_SierModule extends AA_GenericModule
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiListeBox",array("type"=>"clean"));
 
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiListe",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning_Liste",array("view"=>"label","label"=>$warning,"align"=>"center")));
         
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
@@ -14836,6 +15097,10 @@ Class AA_SierModule extends AA_GenericModule
             ));
 
             $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         }
         $generaleLayout->addRow($toolbar);
 
@@ -14896,7 +15161,8 @@ Class AA_SierModule extends AA_GenericModule
         //------------------------------ Risultati preferenze ---------------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiPreferenzeBox",array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiPreferenze",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning_Preferenze",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {   
@@ -14912,6 +15178,10 @@ Class AA_SierModule extends AA_GenericModule
                  "click"=>"AA_MainApp.utils.callHandler('RisultatiPreferenzeModifyAll', {task:\"GetSierComuneRisultatiPreferenzeModifyMultiDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
             ));
             $toolbar->addElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         }
             
         $generaleLayout->addRow($toolbar);
@@ -15216,6 +15486,8 @@ Class AA_SierModule extends AA_GenericModule
             //voti
             $wnd->AddTextField("voti","Voti",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire solo il numero dei voti validi."));
            
+            $wnd->SetDefaultFocusedItem("voti");
+
             $wnd->EnableCloseWndOnSuccessfulSave();
             if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
             if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
@@ -15345,6 +15617,8 @@ Class AA_SierModule extends AA_GenericModule
             //voti
             $wnd->AddTextField("voti","Voti",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*Inserire soli il numero dei voti validi."));
            
+            $wnd->SetDefaultFocusedItem("voti");
+            
             $wnd->EnableCloseWndOnSuccessfulSave();
             $wnd->enableRefreshOnSuccessfulSave();
             //if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
@@ -15466,9 +15740,12 @@ Class AA_SierModule extends AA_GenericModule
             }
 
             $risultati=$comune->GetRisultati(true);
-            foreach($risultati['voti_lista'] as $key=>$val)
+            if(isset($risultati['voti_lista']))
             {
-                if(isset($form_data["lista_".$key])) $form_data["lista_".$key]=$val;
+                foreach($risultati['voti_lista'] as $key=>$val)
+                {
+                    if(isset($form_data["lista_".$key])) $form_data["lista_".$key]=$val;
+                }    
             }
 
             $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati liste circoscrizionali", $this->id,$form_data,$form_data);
