@@ -805,6 +805,56 @@ Class AA_Sier extends AA_Object_V2
         return $result;
     }
 
+    //costruisce il feed dei candidati
+    public function BuildCandidatiFeed($params=array())
+    {
+        if(!$this->bValid) return false;
+
+        $feed=array("aggiornamento"=>date("Y-m-d H:i:s"),"candidati"=>array());
+
+        $candidati=$this->GetCandidati();
+        $liste=$this->GetListe();
+        $coalizioni=$this->GetCoalizioni();
+        $platform=AA_Platform::GetInstance();
+        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
+
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            $curLista=$liste[$curCandidato->GetProp("id_lista")];
+            $curCoalizione=$coalizioni[$curLista->GetProp("id_coalizione")];
+            $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+            if($curLista->GetProp('image') != "")
+            {
+                $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
+            }
+            $curCoalizioneImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+            if($curCoalizione->GetProp('image') != "")
+            {
+                $curCoalizioneImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
+            }
+            
+            if($curCandidato->GetProp("cv")!="") $cvPath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCandidato->GetProp("cv");
+            else $cvPath="";
+            if($curCandidato->GetProp("cg")!="") $cgPath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCandidato->GetProp("cg");
+            else $cgPath="";
+            
+            $feed['candidati'][$idCandidato]=array("nome"=>$curCandidato->GetProp("nome"),
+                "cognome"=>$curCandidato->GetProp("cognome"),
+                "cv"=>$cvPath,
+                "cg"=>$cgPath,
+                "circoscrizione"=>$curCandidato->GetProp("circoscrizione"),
+                "id_lista"=>$curCandidato->GetProp("id_lista"),
+                "lista"=>$curCandidato->GetProp("lista"),
+                "id_presidente"=>$curCandidato->GetProp("id_coalizione"),
+                "presidente"=>$curCoalizione->GetProp("nome_candidato"),
+                "image_lista"=>$curImagePath,
+                "image_presidente"=>$curCoalizioneImagePath
+            );
+        }
+
+        return $feed;
+    }
+
     //Costruisce il feed dei risultati
     public function BuildRisultatiAffluenzaFeed($params=array())
     {
@@ -3275,6 +3325,7 @@ Class AA_SierModule extends AA_GenericModule
 
             //feed
             $taskManager->RegisterTask("GetSierFeedRisultatiAffluenza");
+            $taskManager->RegisterTask("GetSierFeedCandidati");
             $taskManager->RegisterTask("GetSierListaCandidati");
 
             //template dettaglio
@@ -11998,7 +12049,7 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    //Task operatori view
+    //Task feed risultati
     public function Task_GetSierFeedRisultatiAffluenza($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -12014,6 +12065,28 @@ Class AA_SierModule extends AA_GenericModule
     
         header('Content-Type: application/json');
         die(json_encode($object->BuildRisultatiAffluenzaFeed()));
+
+        //$task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        //$task->SetContent($this->Template_GetSierComuneOperatoriViewDlg($object,$comune),false);
+        return true;
+    }
+
+    //Task feed candidati
+    public function Task_GetSierFeedCandidati($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+    
+        header('Content-Type: application/json');
+        die(json_encode($object->BuildCandidatiFeed()));
 
         //$task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         //$task->SetContent($this->Template_GetSierComuneOperatoriViewDlg($object,$comune),false);
