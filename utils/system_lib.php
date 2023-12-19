@@ -3616,12 +3616,21 @@ class AA_GenericModule
         $toolbar = new AA_JSON_Template_Toolbar($id . "_Toolbar", array("height" => 38, "css" => array("border-bottom" => "1px solid #dadee0 !important")));
 
         $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 120)));
-        $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
-        
-        if($header_content instanceof AA_JSON_Template_Generic) $toolbar->addElement($header_content);
-        if(is_string($header_content)) $toolbar->addElement(new AA_JSON_Template_Template($id."_header_content",array("type"=>"clean","template"=>$header_content)));
-
-        $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+        if($header_content)
+        {
+            if($header_content instanceof AA_JSON_Template_Generic) $toolbar->addElement($header_content);
+            if(is_string($header_content))
+            {
+                $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+                $toolbar->addElement(new AA_JSON_Template_Template($id."_header_content",array("type"=>"clean","template"=>$header_content)));
+                $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+            } 
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+        }
 
         //Pulsante di modifica
         if(!isset($bModify))
@@ -3637,6 +3646,7 @@ class AA_GenericModule
                 "icon" => "mdi mdi-pencil",
                 "label" => "Modifica",
                 "align" => "right",
+                "css"=>"webix_primary",
                 "width" => 120,
                 "tooltip" => "Modifica le informazioni generali",
                 "click" => "AA_MainApp.utils.callHandler('dlg', {task:\"" . static::AA_UI_TASK_MODIFY_DLG . "\", params: [{id: " . $object->GetId() . "}]},'$this->id')"
