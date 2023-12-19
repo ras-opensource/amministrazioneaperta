@@ -820,6 +820,8 @@ Class AA_Sier extends AA_Object_V2
 
         $voti_validi_regione=0;
         $voti_validi_circoscrizione=array();
+        $voti_liste_validi_regione=0;
+        $voti_liste_validi_circoscrizione=array();
 
         $platform=AA_Platform::GetInstance();
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
@@ -894,8 +896,8 @@ Class AA_Sier extends AA_Object_V2
                 $feed['stats']['regionale']['risultati']['votanti_m'] +=$risultati['votanti_m'];
                 $feed['stats']['regionale']['risultati']['votanti_f'] +=$risultati['votanti_f'];
 
-                $voti_validi_regione+=$risultati['votanti_f']+$risultati['votanti_m']-$risultati['schede_bianche']-$risultati['schede_nulle']-$risultati['voti_contestati_na_presidente']-$risultati['voti_contestati_na_liste']-$risultati['schede_voti_nulli'];
-                $voti_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]+=$risultati['votanti_f']+$risultati['votanti_m']-$risultati['schede_bianche']-$risultati['schede_nulle']-$risultati['voti_contestati_na_presidente']-$risultati['voti_contestati_na_liste']-$risultati['schede_voti_nulli'];
+                //$voti_validi_regione+=$risultati['votanti_f']+$risultati['votanti_m']-$risultati['schede_bianche']-$risultati['schede_nulle']-$risultati['voti_contestati_na_pre']-$risultati['schede_voti_nulli'];
+                //$voti_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]+=$risultati['votanti_f']+$risultati['votanti_m']-$risultati['schede_bianche']-$risultati['schede_nulle']-$risultati['voti_contestati_na_pre']-$risultati['schede_voti_nulli'];
                 
                 $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['sezioni_scrutinate'] +=$risultati['sezioni_scrutinate'];
                 $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_m'] +=$risultati['votanti_m'];
@@ -917,8 +919,13 @@ Class AA_Sier extends AA_Object_V2
                 
                 if(isset($risultati['voti_presidente'][$idCoalizione]))
                 {
-
                     $feed['stats']['regionale']['risultati']['voti_presidente'][$idCoalizione]['voti']+=$risultati['voti_presidente'][$idCoalizione];
+                    
+                    //stats
+                    $voti_validi_regione+=$risultati['voti_presidente'][$idCoalizione];
+                    $voti_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]+=$risultati['voti_presidente'][$idCoalizione];
+                    //---------
+
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$idCoalizione]['voti']+=$risultati['voti_presidente'][$idCoalizione];
                     $feed['comuni'][$idComune]['risultati']['voti_presidente'][$idCoalizione]=array("denominazione"=>$curCoalizione->GetProp('nome_candidato'),"voti"=>$risultati['voti_presidente'][$idCoalizione],"image"=>$curImagePath);
                 }
@@ -936,20 +943,25 @@ Class AA_Sier extends AA_Object_V2
                 {
                     $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
                 }
-                if(!isset($feed['stats']['regionale']['risultati']['voti_lista'][$idLista])) $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"voti"=>0,"image"=>$curImagePath);
-                if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$idLista])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"voti"=>0,"image"=>$curImagePath);
+                $coalizione=$coalizioni[$curLista->GetProp("id_coalizione")];
+                if(!isset($feed['stats']['regionale']['risultati']['voti_lista'][$idLista])) $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"id_presidente"=>$curLista->GetProp('id_coalizione'),"presidente"=>$coalizione->GetProp("nome_candidato"),"voti"=>0,"image"=>$curImagePath);
+                if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$idLista])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"id_presidente"=>$curLista->GetProp('id_coalizione'),"presidente"=>$coalizione->GetProp("nome_candidato"),"voti"=>0,"image"=>$curImagePath);
                 
                 if(isset($risultati['voti_lista'][$idLista]))
                 {
 
                     $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['voti']+=$risultati['voti_lista'][$idLista];
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$idLista]['voti']+=$risultati['voti_lista'][$idLista];
+                    //stats 
+                    $voti_liste_validi_regione+=$risultati['voti_lista'][$idLista];
+                    $voti_liste_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]+=$risultati['voti_lista'][$idLista];
+                    //--------- 
 
-                    $feed['comuni'][$idComune]['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"voti"=>$risultati['voti_lista'][$idLista],"image"=>$curImagePath);
+                    $feed['comuni'][$idComune]['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"id_presidente"=>$curLista->GetProp('id_coalizione'),"presidente"=>$coalizione->GetProp("nome_candidato"),"voti"=>$risultati['voti_lista'][$idLista],"image"=>$curImagePath);
                 }
                 else
                 {
-                    $feed['comuni'][$idComune]['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"voti"=>0,"image"=>$curImagePath);
+                    $feed['comuni'][$idComune]['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"id_presidente"=>$curLista->GetProp('id_coalizione'),"presidente"=>$coalizione->GetProp("nome_candidato"),"voti"=>0,"image"=>$curImagePath);
                 }
             }
 
@@ -969,13 +981,13 @@ Class AA_Sier extends AA_Object_V2
 
                     if(!isset($feed['stats']['regionale']['risultati']['voti_candidato'][$idCandidato]))
                     {
-                        $feed['stats']['regionale']['risultati']['voti_candidato'][$idCandidato]=array("denominazione"=>$curCandidato->GetProp('cognome')." ".$curCandidato->GetProp('nome'),$risultati['voti_candidato'][$idCandidato]['id_lista'],$risultati['voti_candidato'][$idCandidato]['lista'],"id_presidente"=>$risultati['voti_candidato'][$idCandidato]['id_coalizione'],"presidente"=>$coalizione->GetProp("nome_candidato"),"image"=>$curImagePath,"voti"=>$risultati['voti_candidato'][$idCandidato]['voti']);
+                        $feed['stats']['regionale']['risultati']['voti_candidato'][$idCandidato]=array("denominazione"=>$curCandidato->GetProp('cognome')." ".$curCandidato->GetProp('nome'),"id_lista"=>$risultati['voti_candidato'][$idCandidato]['id_lista'],"lista"=>$risultati['voti_candidato'][$idCandidato]['lista'],"id_presidente"=>$risultati['voti_candidato'][$idCandidato]['id_coalizione'],"presidente"=>$coalizione->GetProp("nome_candidato"),"image"=>$curImagePath,"voti"=>$risultati['voti_candidato'][$idCandidato]['voti']);
                     }
                     else $feed['stats']['regionale']['risultati']['voti_candidato'][$idCandidato]['voti'] += $risultati['voti_candidato'][$idCandidato]['voti'];
 
                     if(!isset($feed['stats']['circoscrizionale'][$curCandidato->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$idCandidato]))
                     {
-                        $feed['stats']['circoscrizionale'][$curCandidato->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$idCandidato]=array("denominazione"=>$curCandidato->GetProp('cognome')." ".$curCandidato->GetProp('nome'),$risultati['voti_candidato'][$idCandidato]['id_lista'],$risultati['voti_candidato'][$idCandidato]['lista'],"id_presidente"=>$risultati['voti_candidato'][$idCandidato]['id_coalizione'],"presidente"=>$coalizione->GetProp("nome_candidato"),"image"=>"","voti"=>$risultati['voti_candidato'][$idCandidato]['voti']);
+                        $feed['stats']['circoscrizionale'][$curCandidato->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$idCandidato]=array("denominazione"=>$curCandidato->GetProp('cognome')." ".$curCandidato->GetProp('nome'),"id_lista"=>$risultati['voti_candidato'][$idCandidato]['id_lista'],"lista"=>$risultati['voti_candidato'][$idCandidato]['lista'],"id_presidente"=>$risultati['voti_candidato'][$idCandidato]['id_coalizione'],"presidente"=>$coalizione->GetProp("nome_candidato"),"image"=>$curImagePath,"voti"=>$risultati['voti_candidato'][$idCandidato]['voti']);
                     }
                     else $feed['stats']['circoscrizionale'][$curCandidato->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$idCandidato]['voti']+=$risultati['voti_candidato'][$idCandidato]['voti'];
 
@@ -1010,16 +1022,16 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
-        if($total_percent_coalizioni < 100 && $max_percent_coalizioni > 0)
+        if($total_percent_coalizioni < 100 && $total_percent_coalizioni > 99.8 && $max_percent_coalizioni > 0)
         {
-            $feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']+=100-$total_percent_coalizioni;
+            $feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']+=round(100-$total_percent_coalizioni,1);
         }
 
         foreach($liste as $idLista=>$curLista)
         {
             if($voti_validi_regione > 0) 
             {
-                $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($voti_validi_regione)),1);
+                $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($voti_liste_validi_regione)),1);
             }
         }
 
@@ -1031,25 +1043,25 @@ Class AA_Sier extends AA_Object_V2
             foreach($coalizioni as $idPresidente=>$curPresidente)
             {
                 $voti=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['voti'];
-                AA_Log::Log(__METHOD__." - voti: ".print_r($voti,true),100);
+                //AA_Log::Log(__METHOD__." - voti: ".print_r($voti,true),100);
                 if($voti_validi_regione > 0) 
                 {
-                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']=round($voti*100/(intVal($voti_validi_regione)),1);
+                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']=round($voti*100/(intVal($voti_validi_circoscrizione[$idCircoscrizione])),1);
                     $total_percent_coalizioni+=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent'];
                     if($max_percent_coalizioni==0 || $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']>$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']) $max_percent_coalizioni=$idPresidente;
                 }
             }
 
-            if($total_percent_coalizioni < 100 && $max_percent_coalizioni > 0)
+            if($total_percent_coalizioni < 100 && $total_percent_coalizioni > 99.8 && $max_percent_coalizioni > 0)
             {
-                $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']+=100-$total_percent_coalizioni;
+                $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']+=round(100-$total_percent_coalizioni,1);
             }
 
             foreach($liste as $idLista=>$curLista)
             {
                 if($voti_validi_regione > 0) 
                 {
-                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($voti_validi_regione)),1);
+                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($voti_liste_validi_circoscrizione[$idCircoscrizione])),1);
                 }
             }
         }
