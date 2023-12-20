@@ -13475,7 +13475,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $operatori=$comune->GetOperatori(true);
         if(!is_array($operatori)) $operatori=array();
-        $operatori[$_REQUEST['cf']]=array("cf"=>strtolower(trim($_REQUEST['cf'])),"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>"","ruolo"=>$_REQUEST['ruolo']);
+        $operatori[strtolower(trim($_REQUEST['cf']))]=array("cf"=>strtolower(trim($_REQUEST['cf'])),"email"=>$_REQUEST['email'],"nome"=>$_REQUEST['nome'],"cognome"=>$_REQUEST['cognome'],"lastlogin"=>"","ruolo"=>$_REQUEST['ruolo']);
         $comune->SetOperatori($operatori);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiunta operatore: ".$_REQUEST['cf']))
         {
