@@ -1491,7 +1491,7 @@ class AA_User
         return $users;
     }
     //Autenticazione
-    static public function UserAuth($sToken = "", $sUserName = "", $sUserPwd = "", $remember_me=false)
+    static public function UserAuth($sToken = "", $sUserName = "", $sUserPwd = "", $remember_me=false,$bTemporary=false)
     {
         //AA_Log::Log(get_class()."->UserAuth($sToken,$sUserName, $sUserPwd)");
 
@@ -1589,6 +1589,12 @@ class AA_User
                     $user = AA_User::LoadUser($rs['id']);
                     $user->bCurrentUser = true;
 
+                    if($bTemporary)
+                    {
+                        static::$oCurrentUser=$user;
+                        return $user;
+                    }
+
                     if(AA_Const::AA_ENABLE_LEGACY_DATA)
                     {
                         //Old stuff compatibility
@@ -1632,6 +1638,8 @@ class AA_User
                     //update last login time
                     $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = '".date("Y-m-d")."' WHERE id='".$user->GetId()."' LIMIT 1");
                     
+                    static::$oCurrentUser=$user;
+                    
                     return $user;
                 }
 
@@ -1658,6 +1666,8 @@ class AA_User
 
         if ($sToken == null || $sToken == "") 
         {
+            if(static::$oCurrentUser instanceof AA_User) return static::$oCurrentUser;
+
             if(isset($_SESSION['token'])) $sToken = $_SESSION['token'];
             if($sToken == "" && isset($_COOKIE["AA_AUTH_TOKEN"]))
             {   
@@ -2202,15 +2212,10 @@ class AA_User
     }
 
     //Restituisce l'utente attualmente loggato (guest se non c'è nessun utente loggato)
+    static protected $oCurrentUser=null;
     static public function GetCurrentUser()
     {
-        //AA_Log::Log(get_class()."->GetCurrentUser()");
-        $platform = AA_Platform::GetInstance();
-
-        if ($platform->isValid()) {
-            //AA_Log::Log(__METHOD__." - ".print_r($platform,true),100);
-            return $platform->GetCurrentUser();
-        }
+        if(static::$oCurrentUser instanceof AA_User) return static::$oCurrentUser;
 
         return AA_User::UserAuth();
     }
@@ -2283,6 +2288,11 @@ class AA_User
         return $this->sNome;
     }
 
+    //Restituisce il nome
+    public function GetName()
+    {
+        return $this->sNome;
+    }
     //Restituisce il cognome
     public function GetCognome()
     {
@@ -7326,7 +7336,7 @@ class AA_Platform
     public function GetCurrentUser()
     {
         if ($this->bValid) return $this->oUser;
-        else return AA_User::UserAuth();
+        else return AA_User::GetCurrentUser();
     }
 
     //Autenticazione

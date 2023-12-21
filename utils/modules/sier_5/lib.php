@@ -890,6 +890,7 @@ Class AA_Sier extends AA_Object_V2
             $feed['stats']['regionale']['sezioni']+=$curComune->GetProp('sezioni');
             $feed['stats']['regionale']['elettori_m']+=$curComune->GetProp('elettori_m');
             $feed['stats']['regionale']['elettori_f']+=$curComune->GetProp('elettori_f');
+            $feed['stats']['regionale']['elettori_tot']+=$curComune->GetProp('elettori_f')+$curComune->GetProp('elettori_m');
 
             if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]=array();
             if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['sezioni'])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['sezioni']=0;
@@ -899,34 +900,35 @@ Class AA_Sier extends AA_Object_V2
             $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['sezioni']+=$curComune->GetProp('sezioni');
             $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_m']+=$curComune->GetProp('elettori_m');
             $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_f']+=$curComune->GetProp('elettori_f');
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_tot']+=$curComune->GetProp('elettori_f')+$curComune->GetProp('elettori_m');
         
             //affluenza
             foreach($giornateAffluenza as $giornata=>$giornataValues)
             {
                 if($giornataValues['affluenza']==1)
                 {
-                    if(!isset($feed['stats']['regionale']['affluenza'][$giornata])) $feed['stats']['regionale']['affluenza'][$giornata]=array("ore_12"=>0,"ore_19"=>0,"ore_22"=>0);
+                    if(!isset($feed['stats']['regionale']['affluenza'][$giornata])) $feed['stats']['regionale']['affluenza'][$giornata]=array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
                     if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]=array("affluenza"=>array(),"risultati"=>array("sezioni_scrutinate"=>0,"votanti_m"=>0,"votanti_f"=>0));
-                    if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]=array("ore_12"=>0,"ore_19"=>0,"ore_22"=>0);
+                    if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]=array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
 
                     if(sizeof($affluenza)>0)
                     {
                         if(isset($affluenza[$giornata]))
                         {    
-                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']+=$affluenza[$giornata]['ore_12'];
-                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']+=$affluenza[$giornata]['ore_19'];
-                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']+=$affluenza[$giornata]['ore_22'];
+                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']+=$affluenza[$giornata]['ore_12'];
+                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$affluenza[$giornata]['ore_19'];
+                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$affluenza[$giornata]['ore_22'];
 
-                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']+=$affluenza[$giornata]['ore_12'];
-                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']+=$affluenza[$giornata]['ore_19'];
-                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']+=$affluenza[$giornata]['ore_22'];
+                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$affluenza[$giornata]['ore_12'];
+                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$affluenza[$giornata]['ore_19'];
+                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$affluenza[$giornata]['ore_22'];
 
                             $feed['comuni'][$idComune]['affluenza']=$affluenza;
                         }
                     }
                     else
                     {
-                        $feed['comuni'][$idComune]['affluenza']=array($giornata=>array("ore_12"=>-1,"ore_19"=>-1,"ore_22"=>-1));
+                        $feed['comuni'][$idComune]['affluenza']=array($giornata=>array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0)));
                     }
                 }
             }
@@ -939,7 +941,7 @@ Class AA_Sier extends AA_Object_V2
             if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']=array();
             if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato']=array();
 
-            $feed['comuni'][$idComune]['risultati']=array('sezioni_scrutinate'=>0,"votanti_m"=>0,"votanti_f"=>0);
+            $feed['comuni'][$idComune]['risultati']=array('sezioni_scrutinate'=>0,"votanti_m"=>0,"votanti_f"=>0,"votanti_tot"=>0,"votanti_percent"=>0);
 
             //risultati generali
             if(isset($risultati['sezioni_scrutinate']))
@@ -947,6 +949,7 @@ Class AA_Sier extends AA_Object_V2
                 $feed['stats']['regionale']['risultati']['sezioni_scrutinate'] +=$risultati['sezioni_scrutinate'];
                 $feed['stats']['regionale']['risultati']['votanti_m'] +=$risultati['votanti_m'];
                 $feed['stats']['regionale']['risultati']['votanti_f'] +=$risultati['votanti_f'];
+                $feed['stats']['regionale']['risultati']['votanti_tot'] +=$risultati['votanti_f']+$risultati['votanti_m'];
 
                 //$voti_validi_regione+=$risultati['votanti_f']+$risultati['votanti_m']-$risultati['schede_bianche']-$risultati['schede_nulle']-$risultati['voti_contestati_na_pre']-$risultati['schede_voti_nulli'];
                 //$voti_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]+=$risultati['votanti_f']+$risultati['votanti_m']-$risultati['schede_bianche']-$risultati['schede_nulle']-$risultati['voti_contestati_na_pre']-$risultati['schede_voti_nulli'];
@@ -954,8 +957,8 @@ Class AA_Sier extends AA_Object_V2
                 $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['sezioni_scrutinate'] +=$risultati['sezioni_scrutinate'];
                 $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_m'] +=$risultati['votanti_m'];
                 $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_f'] +=$risultati['votanti_f'];
-
-                $feed['comuni'][$idComune]['risultati']=array('sezioni_scrutinate'=>$risultati['sezioni_scrutinate'],"votanti_m"=>$risultati['votanti_m'],"votanti_f"=>$risultati['votanti_f']);
+                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_tot'] +=$risultati['votanti_f']+$risultati['votanti_m'];
+                $feed['comuni'][$idComune]['risultati']=array('sezioni_scrutinate'=>$risultati['sezioni_scrutinate'],"votanti_m"=>$risultati['votanti_m'],"votanti_f"=>$risultati['votanti_f'],"votanti_tot"=>$risultati['votanti_f']+$risultati['votanti_m']);
             }
 
             //coalizioni
@@ -1055,6 +1058,7 @@ Class AA_Sier extends AA_Object_V2
                     $feed['comuni'][$idComune]['risultati']['voti_candidato'][$idCandidato]["id_circoscrizione"]=$risultati['voti_candidato'][$idCandidato]['id_circoscrizione'];
                     $feed['comuni'][$idComune]['risultati']['voti_candidato'][$idCandidato]["circoscrizione"]=$risultati['voti_candidato'][$idCandidato]['circoscrizione'];
                     $feed['comuni'][$idComune]['risultati']['voti_candidato'][$idCandidato]["voti"]=$risultati['voti_candidato'][$idCandidato]['voti'];
+                    $feed['comuni'][$idComune]['risultati']['voti_candidato'][$idCandidato]["percent"]=0;
                 }
             }
         }
@@ -5161,8 +5165,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
             $task->SetLog($sTaskLog);
 
             return false;            
@@ -5223,8 +5227,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
             $task->SetLog($sTaskLog);
 
             return false;            
@@ -5293,8 +5297,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
             $task->SetLog($sTaskLog);
 
             return false;            
@@ -5542,8 +5546,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             //Elimina il file temporaneo
@@ -5686,8 +5690,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             return false;            
@@ -5805,8 +5809,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             //Elimina il file temporaneo
@@ -5980,8 +5984,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             //Elimina il file temporaneo
@@ -6135,8 +6139,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             return false;            
@@ -6220,8 +6224,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             //Elimina il file temporaneo
@@ -6388,8 +6392,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             //Elimina il file temporaneo
@@ -6542,8 +6546,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             return false;            
@@ -6628,8 +6632,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             return false;            
@@ -6714,8 +6718,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
 
             return false;            
@@ -6780,8 +6784,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
             
             //Elimina il file temporaneo
@@ -6951,8 +6955,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
             
             //Elimina il file temporaneo
@@ -7158,8 +7162,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
             $task->SetLog($sTaskLog);
             
             //Elimina il file temporaneo
@@ -7288,8 +7292,8 @@ Class AA_SierModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->Getid());
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'elemento: ".$object->GetId()."</error>";
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->Getid());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetId()."</error>";
             $task->SetLog($sTaskLog);
             
             //Elimina il file temporaneo
