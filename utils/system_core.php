@@ -1490,6 +1490,13 @@ class AA_User
 
         return $users;
     }
+
+    //temporary auth (autenticazione valida solamente per questa esecuzione dello script)
+    static public function TemporaryUserAuth($sUserName = "", $sUserPwd = "")
+    {
+        return static::UserAuth("",$sUserName,$sUserPwd,false,true);
+    }
+
     //Autenticazione
     static public function UserAuth($sToken = "", $sUserName = "", $sUserPwd = "", $remember_me=false,$bTemporary=false)
     {
@@ -1663,6 +1670,8 @@ class AA_User
 
             return $user;
         }
+
+        if($bTemporary) return AA_User::Guest();
 
         if ($sToken == null || $sToken == "") 
         {
