@@ -880,7 +880,7 @@ Class AA_Sier extends AA_Object_V2
 
         foreach($comuni as $idComune=>$curComune)
         {
-            $feed["comuni"][$idComune]=array("denominazione"=>$curComune->GetProp('denominazione'),"circoscrizione"=>$curComune->GetProp('circoscrizione'),"sezioni"=>$curComune->GetProp('sezioni'),"elettori_m"=>$curComune->GetProp('elettori_m'),"elettori_f"=>$curComune->GetProp('elettori_f'));
+            $feed["comuni"][$idComune]=array("denominazione"=>$curComune->GetProp('denominazione'),"circoscrizione"=>$curComune->GetProp('circoscrizione'),"sezioni"=>$curComune->GetProp('sezioni'),"elettori_m"=>$curComune->GetProp('elettori_m'),"elettori_f"=>$curComune->GetProp('elettori_f'),"elettori_tot"=>$curComune->GetProp('elettori_f')+$curComune->GetProp('elettori_m'));
             $affluenza=$curComune->GetAffluenza(true);
 
             //dati generali
@@ -910,7 +910,7 @@ Class AA_Sier extends AA_Object_V2
                     if(!isset($feed['stats']['regionale']['affluenza'][$giornata])) $feed['stats']['regionale']['affluenza'][$giornata]=array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
                     if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]=array("affluenza"=>array(),"risultati"=>array("sezioni_scrutinate"=>0,"votanti_m"=>0,"votanti_f"=>0));
                     if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]=array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
-
+                    if(!isset($feed['comuni'][$idComune]['affluenza'])) $feed['comuni'][$idComune]['affluenza']=array($giornata=>array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0)));
                     if(sizeof($affluenza)>0)
                     {
                         if(isset($affluenza[$giornata]))
@@ -923,7 +923,9 @@ Class AA_Sier extends AA_Object_V2
                             $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$affluenza[$giornata]['ore_19'];
                             $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$affluenza[$giornata]['ore_22'];
 
-                            $feed['comuni'][$idComune]['affluenza']=$affluenza;
+                            $feed['comuni'][$idComune]['affluenza'][$giornata]['ore_12']['count']=$affluenza[$giornata]['ore_12'];
+                            $feed['comuni'][$idComune]['affluenza'][$giornata]['ore_19']['count']=$affluenza[$giornata]['ore_19'];
+                            $feed['comuni'][$idComune]['affluenza'][$giornata]['ore_22']['count']=$affluenza[$giornata]['ore_22'];
                         }
                     }
                     else
@@ -3254,6 +3256,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
             $taskManager->RegisterTask("AddNewSierAllegato");
             $taskManager->RegisterTask("GetSierModifyAllegatoDlg");
+            $taskManager->RegisterTask("GetSierCopyAllegatoDlg");
             $taskManager->RegisterTask("UpdateSierAllegato");
             $taskManager->RegisterTask("GetSierTrashAllegatoDlg");
             $taskManager->RegisterTask("DeleteSierAllegato");
@@ -4796,6 +4799,110 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato->GetId()));
         $wnd->SetSaveTask("UpdateSierAllegato");
+        
+        return $wnd;
+    }
+
+    //Template dlg copia allegato/link
+    public function Template_GetSierCopyAllegatoDlg($object=null,$allegato=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierCopyAllegatoDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array();
+        $form_data["estremi"]=$allegato->GetEstremi();
+        $form_data["url"]=$allegato->GetUrl();
+        $form_data["tipo"]=$allegato->GetTipo();
+        $form_data["aggiornamento"]=date("Y-m-d");
+        $form_data["ordine"]=$allegato->GetOrdine();
+
+        $destinatari=$allegato->GetDestinatari(true);
+        foreach($destinatari as $curDestinatario)
+        {
+            $form_data["destinatari_".$curDestinatario]=1;
+        }
+
+        $tipi=$allegato->GetTipo(true);
+        foreach($tipi as $curTipo)
+        {
+            $form_data["tipo_".$curTipo]=1;
+        }
+
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi nuovo allegato/link", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(800);
+
+        /*//tipo
+        $tipologia=AA_Sier_Const::GetTipoAllegati();
+        $options=array();
+        foreach($tipologia as $id=>$descr)
+        {
+            $options[]=array("id"=>$id,"value"=>$descr);
+        }
+        $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));*/
+
+        //descrizione
+        $wnd->AddTextField("estremi", "Descrizione", array("gravity"=>3,"required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
+
+        //ordine
+        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto","labelAlign"=>"right"),false);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        //categorie
+        $tipi=AA_Sier_Const::GetTipoAllegati();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
+        $curRow=0;
+        foreach($tipi as $tipo=>$descr)
+        {
+            $newLine=false;
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("tipo_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $curRow++;
+        }
+        $wnd->AddGenericObject($section);
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //----------------------
+
+        //destinatari
+        $destinatari=AA_Sier_Const::GetDestinatari();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Destinatari","Destinatari");
+        $curRow=0;
+        foreach($destinatari as $destinatario=>$descr)
+        {
+            $newLine=false;
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("destinatari_".$destinatario, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $curRow++;
+        }
+        $wnd->AddGenericObject($section);
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //----------------------
+
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSierAllegato");
         
         return $wnd;
     }
@@ -8733,7 +8840,7 @@ Class AA_SierModule extends AA_GenericModule
             $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
             $options_documenti[]=array("id"=>"destinatariDescr","header"=>array("<div style='text-align: center'>Destinatari</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
             $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>120,"css"=>array("text-align"=>"center"));
         }
         else
         {
@@ -8782,7 +8889,8 @@ Class AA_SierModule extends AA_GenericModule
             
             $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
             $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
-            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetSierCopyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
             $docDestinatari=array();
             foreach($curDoc->GetDestinatariDescr(true) as $curDestinatario)
@@ -14175,7 +14283,51 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    
+    //Task copia allegato
+    public function Task_GetSierCopyAllegatoDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
+        if($allegato==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo allegato ca clonare non valido (".$_REQUEST['id_allegato'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetSierCopyAllegatoDlg($object,$allegato)->toBase64();
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
 
     //Task sier trash coalizione
     public function Task_GetSierTrashCoalizioneDlg($task)

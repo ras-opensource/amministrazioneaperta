@@ -4276,8 +4276,8 @@ class AA_Utils
     static public function GetSessionLog()
     {
         $return = "";
-
-        $session_log = array_reverse(unserialize($_SESSION['log']));
+        if(!isset($_SESSION['log'])) $session_log=array();
+        else $session_log = array_reverse(unserialize($_SESSION['log']));
 
         foreach ($session_log as $key => $curLogString) {
             if(is_string($curLogString)) $curLog=unserialize($curLogString);
