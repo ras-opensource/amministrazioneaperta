@@ -399,8 +399,14 @@ class AA_SystemTaskManager extends AA_GenericTaskManager
         //Restituisce la finestra dei log di un oggetto
         $this->RegisterTask("GetLogDlg", "AA_SystemTask_GetLogDlg");
 
+        //Aggiorna la password dell'utente corrente
+        $this->RegisterTask("GetChangeCurrentUserPwdDlg","AA_SystemTask_GetChangeCurrentUserPwdDlg");
+
         //Aggiorna il profilo dell'utente corrente
         $this->RegisterTask("UpdateCurrentUserProfile","AA_SystemTask_UpdateCurrentUserProfile");
+
+        //Aggiorna la password dell'utente corrente
+        $this->RegisterTask("UpdateCurrentUserPwd","AA_SystemTask_UpdateCurrentUserPwd");
     }
 }
 
@@ -739,6 +745,80 @@ class AA_SystemTask_UpdateCurrentUserProfile extends AA_GenericTask
     }
 }
 
+//Task per l'aggiornamento di un profilo utente
+class AA_SystemTask_UpdateCurrentUserPwd extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("UpdateCurrentUserPwd", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
+
+        $sTaskLog = "<status id='status'>0</status><content id='content'>";
+
+        $user=AA_User::GetCurrentUser();
+        if($user->IsGuest())
+        {
+            $sTaskLog = "<status id='status'>-1</status><error id='error'>Utente non valido o sessione scaduta</error>";
+            $this->SetLog($sTaskLog);
+            
+            return false;
+        }
+
+        if(!$user->ChangePwd($_REQUEST))
+        {
+            $sTaskLog = "<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";
+            $this->SetLog($sTaskLog);
+            
+            return false;
+        }
+
+        //Profilo aggiornato
+        $sTaskLog .= "Password aggiornata con successo.</content>";
+
+        $this->SetLog($sTaskLog);
+
+        return true;
+    }
+}
+
+//Task per l'aggiornamento di un profilo utente
+class AA_SystemTask_GetChangeCurrentUserPwdDlg extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("GetChangeCurrentUserPwdDlg", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
+
+        $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+
+        $user=AA_User::GetCurrentUser();
+        if($user->IsGuest())
+        {
+            $sTaskLog = "<status id='status'>-1</status><error id='error'>Utente non valido o sessione scaduta</error>";
+            $this->SetLog($sTaskLog);
+            
+            return false;
+        }
+
+        //Profilo aggiornato
+        $dlg = new AA_SystemChangeCurrentUserPwdDlg("AA_SystemChangeCurrentUserPwdDlg","Cambio password utente");
+        $sTaskLog .= $dlg->toBase64()."</content>";
+
+        $this->SetLog($sTaskLog);
+
+        return true;
+    }
+}
 
 //Classe per la gestione dei feed xml
 class AA_XML_FEED

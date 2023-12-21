@@ -3568,6 +3568,83 @@ class AA_User
         return true;
     }
 
+    //Aggiornamento della password utente
+    public function ChangePwd($params=null)
+    {
+        if(!$this->isCurrentUser() || !$this->IsValid() || !is_array($params))
+        {
+            AA_Log::Log(__METHOD__." - Utente o parametri non validi",100);
+            return false;
+        }
+
+        $newPwd=str_replace(array(",",";","'",'"',"+","-"," "),"",trim($params['new_user_pwd']));
+        $reNewPwd=str_replace(array(",",";","'",'"',"+","-"," "),"",trim($params['re_new_user_pwd']));
+        $oldPwd=trim($params['old_user_pwd']);
+
+        //Verifica che la nuova password abbia almeno 12 caratteri, contenga un numero, una lettera maiuscola e una lettera minuscola e non contenga la vecchia password
+        $password_regex = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/"; 
+
+        if(preg_match($password_regex, $newPwd)==0 || $newPwd == "")
+        {
+            AA_Log::Log(__METHOD__ . " - La nuova password deve contenere:<br>almeno 12 caratteri<br>almeno una lettera maiuscola<br>almeno un numero<br>almeno una lettera minuscola<br>almeno uno dei seguenti simboli: @$!%*?&", 100);
+            return false;
+        }
+
+        if($newPwd != $reNewPwd)
+        {
+           AA_Log::Log(__METHOD__ . " - La nuova password deve coincidere con quella ridigitata.", 100);
+           return false;
+        }
+
+        if($newPwd == $oldPwd)
+        {
+           AA_Log::Log(__METHOD__ . " - La nuova password deve essere diversa da quella vecchia.", 100);
+           return false;
+        }
+
+        //verifica vecchia password
+        $db=new AA_Database();
+        $query="SELECT passwd FROM ".AA_User::AA_DB_TABLE." WHERE id='".$this->nID."' LIMIT 1";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__ . " - Errore query db. ".$query, 100);
+            return false;
+        }
+
+        if($db->GetAffectedRows()==0)
+        {
+            AA_Log::Log(__METHOD__ . " - Utente non trovato.", 100);
+            return false;
+        }
+
+        $rs=$db->GetResultSet();
+        if(!password_verify($oldPwd,$rs[0]['passwd']))
+        {
+            AA_Log::Log(__METHOD__ . " - Password attuale errata.", 100);
+            return false;
+        }
+
+        //salva la nuova password
+        $query = "UPDATE ".static::AA_DB_TABLE." set passwd='" . AA_Utils::password_hash($newPwd) . "' where id='" . $this->GetID() . "' LIMIT 1";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__ . " - Errore query db. ".$query, 100);
+            return false;
+        }
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $query = "UPDATE utenti set passwd='" .md5($newPwd)."' where id='" . $this->GetID() . "' LIMIT 1";
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__ . " - Errore query db. ".$query, 100);
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     //Funzione di aggiornamento del profilo utente corrente
     public static function UpdateCurrentUserProfile($params,$imageFileName="")
     {
@@ -3595,10 +3672,10 @@ class AA_User
         if($params["old_pwd"] !="" && $params['new_pwd'] !="" && $params["new_pwd_retype"] !="")
         {
             //Verifica che la nuova password abbia almeno 8 caratteri, contenga un numero, una lettera maiuscola e una lettera minuscola e non contenga la vecchia password
-            $password_regex = "/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$/"; 
+            $password_regex = "/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{12,}$/"; 
             if(preg_match($password_regex, $params['new_pwd'])==0)
             {
-                AA_Log::Log(__METHOD__ . " - La nuova password deve avere almeno 8 caratteri, almeno una lettera maiuscola e almeno una lettera minuscola.", 100);
+                AA_Log::Log(__METHOD__ . " - La nuova password deve avere almeno 12 caratteri, almeno una lettera maiuscola e almeno una lettera minuscola.", 100);
                 return false;
             }
 

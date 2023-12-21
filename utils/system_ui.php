@@ -1468,6 +1468,12 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         if (is_array($params)) $this->saveTaskParams = $params;
     }
+
+    protected $sTaskManager = "";
+    public function SetTaskManager($var="")
+    {
+        $this->sTaskManager = $var;
+    }
     #-----------------------------------------------------
         
     protected function Update()
@@ -1484,6 +1490,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         if ($this->applyActions == "") {
             if ($this->saveTask != "") {
                 $params = "{task: '$this->saveTask'";
+                if($this->sTaskManager !="") $params .= ", taskManager: ".$this->sTaskManager;
                 if (sizeof($this->saveTaskParams) > 0) $params .= ", taskParams: " . json_encode(array($this->saveTaskParams));
                 if ($this->closeWnd) $params .= ", wnd_id: '" . $this->id . "_Wnd'";
                 if ($this->refresh) $params .= ", refresh: true";
@@ -2066,5 +2073,34 @@ class AA_FieldSet extends AA_JSON_Template_Generic
 
             $this->curRow->AddCol($obj);
         }
+    }
+}
+
+class AA_SystemChangeCurrentUserPwdDlg extends AA_GenericFormDlg
+{
+    public function __construct($id = "", $title = "", $formData = array(), $resetData = array(), $applyActions = "", $save_formdata_id = "")
+    {
+        parent::__construct($id, $title,"",$formData,$resetData,$applyActions,$save_formdata_id);
+
+        //AA_Log::Log(__METHOD__." - ".$module,100);
+
+        $this->SetWidth("480");
+        $this->SetHeight("480");
+
+        $this->SetLabelWidth(150);
+        $this->EnableValidation();
+
+        $this->AddTextField("old_user_pwd","Password attuale",array("required"=>true,"type"=>"password","bottomLabel"=>"Inserisci la tua password attuale."));
+        $this->AddTextField("new_user_pwd","Nuova password",array("required"=>true,"type"=>"password","bottomLabel"=>"Inserisci la nuova password."));
+        $this->AddTextField("re_new_user_pwd","Ridigita la nuova password",array("required"=>true,"type"=>"password","bottomLabel"=>"Reinserisci la nuova password."));
+
+        $this->AddSpacer();
+        $this->AddGenericObject(new AA_JSON_Template_Template($id."_ChangeUserPwdTips",array("type"=>"clean","autoheight"=>"true","template"=>"<div style='display: flex; flex-direction: column;'><span>La nuova password deve contenere:</span><ul><li>almeno 12 caratteri</li><li>almeno un numero</li><li>almeno una lettera maiuscola</li><li>almeno una lettera minuscola</li><li>almeno uno dei seguenti caratteri speciali: @$!%*?&</li><li>deve essere diversa dalla vecchia password</li></ul></div>")));
+        $this->AddSpacer();
+
+        $this->SetSaveTask("UpdateCurrentUserPwd");
+        $this->SetTaskManager("AA_MainApp.taskManager");
+        $this->enableRefreshOnSuccessfulSave(false);
+        $this->EnableCloseWndOnSuccessfulSave();
     }
 }

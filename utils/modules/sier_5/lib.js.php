@@ -175,6 +175,7 @@ if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1)
     echo "AA_MainApp.logIn=function(){window.location.reload(true)};";
     echo "AA_MainApp.resetPwd=AA_LogOut;";
     echo "AA_MainApp.register=function(){window.location.reload(true)};";
+    echo "AA_MainApp.ui.MainUI.UserChangePwdDlg=function(){return true};";
 }
 else
 {

@@ -2592,6 +2592,26 @@ var AA_MainApp = {
                     }
                 },
                 lastSelectedItem: {}
+            },
+
+            UserChangePwdDlg: async function(taskParams = "", params = ""){
+                try 
+                {
+                    let result = await AA_VerboseTask("GetChangeCurrentUserPwdDlg", AA_MainApp.taskManager, taskParams);
+                    if (result.status.value != 0) {
+                        console.error("AA_MainApp.ui.MainUI.UserChangePwdDlg.show", params, result.error.value);
+                        AA_MainApp.ui.alert(result.error.value);
+                        return false;
+                    }
+
+                    console.log("AA_MainApp.ui.MainUI.UserChangePwdDlg",result.content.value);
+                    webix.ui(result.content.value).show();
+                    
+                } catch (msg) {
+                    console.error("AA_MainApp.ui.MainUI.UserChangePwdDlg", params, msg);
+                    AA_MainApp.ui.alert(msg);
+                    return Promise.reject(msg);
+                }
             }
         },
         SearchDlg: {
@@ -2612,7 +2632,7 @@ var AA_MainApp = {
             refreshItemView: AA_RefreshAccordionItemView
         }
     },
-
+    
     accordionBoxParams: {
         id: "AA_MainAccordionBox",
         curActiveAccordionItem: 0,
@@ -3103,7 +3123,7 @@ async function AA_SetupMainUi() {
                     { view: "label", label: AA_MainApp.ui.MainUI.appTitle, align: "center", minWidth: 500 },
                     {},
                     { view: "spacer", width: "36" },
-                    { id: "AA_icon_user", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-account" },
+                    { id: "AA_icon_user", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-account", click:AA_MainApp.ui.MainUI.UserChangePwdDlg },
                     { id: "AA_icon_logout", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-logout", tooltip: "Esci", click: AA_MainApp.logOut },
                     { view: "spacer", width: "44" }
                 ]

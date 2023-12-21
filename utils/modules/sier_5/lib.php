@@ -146,6 +146,7 @@ Class AA_Sier_Const extends AA_Const
     const AA_SIER_ALLEGATO_CANDIDATI=2;
     const AA_SIER_ALLEGATO_PREFETTURE=4;
     const AA_SIER_ALLEGATO_CITTADINI=8;
+    const AA_SIER_ALLEGATO_SEGGI=16;
 
 
     public static function GetDestinatari()
@@ -156,7 +157,8 @@ Class AA_Sier_Const extends AA_Const
                 static::AA_SIER_ALLEGATO_CANDIDATI=>"Candidati",
                 static::AA_SIER_ALLEGATO_CITTADINI=>"Cittadini",
                 static::AA_SIER_ALLEGATO_COMUNI=>"Comuni",
-                static::AA_SIER_ALLEGATO_PREFETTURE=>"Prefetture"
+                static::AA_SIER_ALLEGATO_PREFETTURE=>"Prefetture",
+                static::AA_SIER_ALLEGATO_SEGGI=>"Seggi"
             );
         }
 
@@ -1094,11 +1096,15 @@ Class AA_Sier extends AA_Object_V2
             {
                 $voti=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['voti'];
                 //AA_Log::Log(__METHOD__." - voti: ".print_r($voti,true),100);
-                if($voti_validi_regione > 0) 
+                if($voti_validi_circoscrizione[$idCircoscrizione] > 0) 
                 {
                     $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']=round($voti*100/(intVal($voti_validi_circoscrizione[$idCircoscrizione])),1);
                     $total_percent_coalizioni+=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent'];
                     if($max_percent_coalizioni==0 || $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']>$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']) $max_percent_coalizioni=$idPresidente;
+                }
+                else
+                {
+                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']=0;
                 }
             }
 
@@ -1109,9 +1115,13 @@ Class AA_Sier extends AA_Object_V2
 
             foreach($liste as $idLista=>$curLista)
             {
-                if($voti_validi_regione > 0) 
+                if($voti_liste_validi_circoscrizione[$idCircoscrizione] > 0) 
                 {
                     $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($voti_liste_validi_circoscrizione[$idCircoscrizione])),1);
+                }
+                else
+                {
+                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']=0;
                 }
             }
         }
@@ -12161,9 +12171,25 @@ Class AA_SierModule extends AA_GenericModule
         if(!isset($_REQUEST['ore_19']) || $_REQUEST['ore_19'] == "") $_REQUEST['ore_19']=0;
         if(!isset($_REQUEST['ore_22']) || $_REQUEST['ore_22'] == "") $_REQUEST['ore_22']=0;
 
+        $elettori=intVal($comune->GetProp('elettori_m'))+intVal($comune->GetProp('elettori_f'));
+        if($_REQUEST['ore_12'] > $elettori || $_REQUEST['ore_19'] > $elettori || $_REQUEST['ore_22'] > $elettori)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("I votanti non possono superare gli elettori.",false);
+            return false;
+        }
+
+        if(($_REQUEST['ore_19'] > $_REQUEST['ore_22'] && $_REQUEST['ore_22'] > 0) || ($_REQUEST['ore_12'] > $_REQUEST['ore_22'] && $_REQUEST['ore_22']>0) || ($_REQUEST['ore_12'] > $_REQUEST['ore_19'] && $_REQUEST['ore_19']>0))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("il dato dell'affluenza deve essere progressivo, ove maggiore di 0, (votanti ore 12 <= votanti ore 19 <= votanti ore 22).",false);
+            return false;
+        }
+
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
-        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>strtolower(trim($_REQUEST['ore_12'])),"ore_19"=>strtolower(trim($_REQUEST['ore_19'])),"ore_22"=>strtolower(trim($_REQUEST['ore_22'])));
+
+        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>intVal(strtolower(trim($_REQUEST['ore_12']))),"ore_19"=>intVal(strtolower(trim($_REQUEST['ore_19']))),"ore_22"=>intVal(strtolower(trim($_REQUEST['ore_22']))));
         $comune->SetAffluenza($affluenza);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiunta affluenza per la giornata: ".$_REQUEST['giornata']))
         {
@@ -12236,7 +12262,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
-        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>strtolower(trim($_REQUEST['ore_12'])),"ore_19"=>strtolower(trim($_REQUEST['ore_19'])),"ore_22"=>strtolower(trim($_REQUEST['ore_22'])));
+        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>intVal(strtolower(trim($_REQUEST['ore_12']))),"ore_19"=>intVal(strtolower(trim($_REQUEST['ore_19']))),"ore_22"=>intVal(strtolower(trim($_REQUEST['ore_22']))));
         $comune->SetAffluenza($affluenza);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento affluenza per la giornata: ".$_REQUEST['giornata']))
         {
