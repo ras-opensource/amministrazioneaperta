@@ -106,6 +106,10 @@ Class AA_HomeModule extends AA_GenericModule
         $geststrutture=false;
         if($user instanceof AA_User && $user->CanGestStruct() && AA_Const::AA_ENABLE_LEGACY_DATA) $geststrutture=true;
 
+        //Gestione Gruppi
+        $gestGruppi=false;
+        if($user instanceof AA_User && $user->CanGestUtenti()) $gestGruppi =true;
+
         //main
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_DESKTOP,static::AA_UI_SECTION_DESKTOP_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_DESKTOP,$this->GetId(),true,true,false,true);
         if($gestutenti) 
