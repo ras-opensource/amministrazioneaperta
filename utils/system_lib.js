@@ -3504,6 +3504,12 @@ async function AA_RefreshNavbarContent(idModule = "", updateUI = true, updateOnl
             return "";
         }
 
+        if(!$$("AA_navbar_box"))
+        {
+            console.log("AA_RefreshNavbarContent() - navbar box non presente.");
+            return "";
+        }
+
         if (!updateOnlyUI) {
             //let params=[{section: module.getActiveView()}];
             //let params="section="+module.getActiveView();
