@@ -2236,15 +2236,29 @@ var AA_MainApp = {
         },
         sidemenu: {
             bInitialized: false,
+            aMenuData: [{ id: "1", value: "Placeholder", icon: "mdi mdi-home", section: "AA_MODULE_PLACEHOLDER" }],
+            sType: "module", //section: visualizza le sezioni del modulo corrente, module: visualizza i moduli
             initialize: function() {
                 console.log("AA_MainApp.ui.sidemenu.initialize - Inizializzazione sidemenu");
 
                 if (!AA_MainApp.ui.sidemenu.bInitialized) webix.ui(AA_MainApp.ui.sidemenu.content);
 
-                for (i = 0; i < AA_MainApp.ui.sidemenu.content.body.data.length; i++) {
-                    if (AA_MainApp.ui.sidemenu.content.body.data[i].section == AA_MainApp.curModule.curSection.id) {
-                        AA_MainApp.ui.sidemenu.itemSelected = AA_MainApp.ui.sidemenu.content.body.data[i].id;
-                    }
+                if(this.sType=="section")
+                {
+                    this.aMenuData=[{ id: "1", value: "Desktop", icon: "mdi mdi-home", section: "home_desktop" }];
+                    for (i = 0; i < AA_MainApp.ui.sidemenu.content.body.data.length; i++) {
+                        if (AA_MainApp.ui.sidemenu.content.body.data[i].section == AA_MainApp.curModule.curSection.id) {
+                            AA_MainApp.ui.sidemenu.itemSelected = AA_MainApp.ui.sidemenu.content.body.data[i].id;
+                        }
+                    }    
+                }
+                else
+                {
+                    for (i = 0; i < AA_MainApp.ui.sidemenu.content.body.data.length; i++) {
+                        if (AA_MainApp.ui.sidemenu.content.body.data[i].section == AA_MainApp.curModule.id) {
+                            AA_MainApp.ui.sidemenu.itemSelected = AA_MainApp.ui.sidemenu.content.body.data[i].id;
+                        }
+                    }    
                 }
 
                 if (AA_MainApp.ui.sidemenu.itemSelected > 0 && $$("AA_MainSidemenu")) {
@@ -2267,11 +2281,8 @@ var AA_MainApp = {
                     css: "AA_SidemenuList",
                     borderless: true,
                     scroll: false,
-                    template: "<span class='webix_icon mdi mdi-#icon#'></span> #value#",
-                    data: [
-                        { id: 1, value: "Home", icon: "home", section: "SERVIZI_HOME" },
-                        { id: 2, value: "Servizi fiscali", icon: "account", section: "SERVIZI_FISCALI" },
-                    ],
+                    template: "<span class='#icon#'></span> #value#",
+                    data: [{ id: "1", value: "Placeholder", icon: "mdi mdi-home", section: "AA_MODULE_PLACEHOLDER" }],
                     select: true,
                     type: {
                         height: 40
@@ -2282,6 +2293,11 @@ var AA_MainApp = {
                                 let sidemenu = $$("AA_MainSidemenu");
 
                                 item = sidemenu.getItem(id);
+                                if(!item)
+                                {
+                                    console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - item non valido.");
+                                    return false;
+                                }
 
                                 //Nascondi il pulsante torna alla home se siamo già nella home
                                 if (id == 1) {
@@ -2292,16 +2308,50 @@ var AA_MainApp = {
 
                                 //console.log("AA_MainApp.sidebar.onAfterSelect("+id+")",item,AA_MainApp.ui.sidemenu.itemSelected);
 
-                                if (AA_MainApp.ui.sidemenu.itemSelected == null) AA_MainApp.ui.sidemenu.itemSelected = item.id;
-
-                                if (AA_MainApp.ui.sidemenu.itemSelected != item.id && AA_MainApp.ui.sidemenu.itemSelected != null && item.type == "section" && item.section != AA_MainApp.curModule.curSection.id) {
-                                    AA_MainApp.ui.sidemenu.itemSelected = item.id;
-                                    let result = await AA_MainApp.curModule.setCurrentSection(item.section);
-
-                                    if (sidemenu.isVisible()) AA_MainApp.ui.sidemenu.toggle();
+                                if(AA_MainApp.ui.sidemenu.sType=="section")
+                                {
+                                    if (AA_MainApp.ui.sidemenu.itemSelected != item.id && item.type == "section" && item.section != AA_MainApp.curModule.curSection.id) {
+                                        AA_MainApp.ui.sidemenu.itemSelected = item.id;
+                                        let result = null;
+                                        await AA_MainApp.curModule.setCurrentSection(item.section);
+    
+                                        if (sidemenu.isVisible()) AA_MainApp.ui.sidemenu.toggle();
+                                        return true;
+                                    }
+                                    else
+                                    {
+                                        if(AA_MainApp.ui.sidemenu.itemSelected == item.id) 
+                                        {
+                                            console.log("sidemenu (section) - afterSelect - menu già selezionato", item);
+                                            return true;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (AA_MainApp.ui.sidemenu.itemSelected != item.id && item.type == "section" && item.section != AA_MainApp.curModule.id) 
+                                    {
+                                        AA_MainApp.ui.sidemenu.itemSelected = item.id;
+                                        let result = null;
+                                        await AA_MainApp.setCurrentModule(item.section);
+    
+                                        if (sidemenu.isVisible()) AA_MainApp.ui.sidemenu.toggle();
+                                        return false;
+                                    }
+                                    else
+                                    {
+                                        if(AA_MainApp.ui.sidemenu.itemSelected == item.id) 
+                                        {
+                                            console.log("sidemenu (module) - afterSelect - menu già selezionato", item);
+                                            return false;
+                                        }
+                                    }
                                 }
 
-                                if (AA_MainApp.ui.sidemenu.itemSelected != item.id && AA_MainApp.ui.sidemenu.itemSelected != null && item.type == "task") {
+                                if (AA_MainApp.ui.sidemenu.itemSelected == null) AA_MainApp.ui.sidemenu.itemSelected = item.id;
+
+                                if (AA_MainApp.ui.sidemenu.itemSelected != item.id && AA_MainApp.ui.sidemenu.itemSelected != null && item.type == "task") 
+                                {
                                     //let result = await AA_MainApp.curModule.setCurrentSection(item.section);
                                     //this.itemSelected=item.id;
                                     //console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - task: "+item.task);
@@ -2379,31 +2429,56 @@ var AA_MainApp = {
                         return false;
                     }
 
-                    let sidemenucontent = await AA_VerboseTask("GetSideMenuContent", AA_MainApp.curModule.taskManager);
-
+                    let taskManager = AA_MainApp.taskManager;
+                    if(AA_MainApp.ui.sidebar.sType=="section") taskManager=AA_MainApp.curModule.taskManager;
+                    let sidemenucontent = await AA_VerboseTask("GetSideMenuContent", taskManager);
+                
                     if (sidemenucontent.status.value != 0) {
                         console.error("AA_MainApp.ui.sidemenu.refresh", sidemenucontent.error.content);
                         return false;
                     }
 
+                    AA_MainApp.ui.sidemenu.aMenuData=sidemenucontent.content.value;
+                    //console.log("AA_MainApp.ui.sidemenu.refresh",sidemenucontent.content.value);
+
                     let curItemSelected = sidemenu.getSelectedId();
-                    sidemenu.parse(sidemenucontent.content.value);
+                    sidemenu.parse(sidemenucontent.content.value,'json',true);
 
                     if (curItemSelected) {
-                        //console.log("AA_MainApp.ui.sidemenu.refresh - curItemSelected: "+curItemSelected);
+                        console.log("AA_MainApp.ui.sidemenu.refresh - curItemSelected: "+curItemSelected);
                         sidemenu.select(curItemSelected);
                     } else {
                         if (AA_MainApp.ui.sidebar.itemSelected) {
-                            //console.log("AA_MainApp.ui.sidemenu.refresh - sidebar.ItemSelected: "+AA_MainApp.ui.sidebar.itemSelected);
+                            console.log("AA_MainApp.ui.sidemenu.refresh - sidebar.ItemSelected: "+AA_MainApp.ui.sidebar.itemSelected);
                             sidemenu.select(AA_MainApp.ui.sidebar.itemSelected);
                         } else {
-                            for (i = 0; i < sidemenu.config.data.length; i++) {
-                                if (sidemenu.config.data[i].section == AA_MainApp.curModule.curSection.id) {
-                                    AA_MainApp.ui.sidemenu.itemSelected = AA_MainApp.ui.sidemenu.content.body.data[i].id;
-                                }
+                            if(AA_MainApp.ui.sidebar.sType=="section")
+                            {
+                                for (i = 0; i < sidemenucontent.content.value.length; i++) {
+                                    if (sidemenucontent.content.value[i].section == AA_MainApp.curModule.curSection.id) {
+                                        AA_MainApp.ui.sidemenu.itemSelected = sidemenucontent.content.value[i].id;
+                                    }
+                                }    
+                            }
+                            else
+                            {
+                                for (i = 0; i < sidemenucontent.content.value.length; i++) {
+                                    //console.log("AA_MainApp.ui.sidemenu.refresh - curModule: "+AA_MainApp.curModule.id+" - curItem: ",sidemenucontent.content.value[i]);
+                                    if (sidemenucontent.content.value[i].section == AA_MainApp.curModule.id) {
+                                        AA_MainApp.ui.sidemenu.itemSelected = sidemenucontent.content.value[i].id;
+                                    }
+                                }    
                             }
 
-                            if (AA_MainApp.ui.sidemenu.itemSelected > 0) sidemenu.select(AA_MainApp.ui.sidemenu.itemSelected);
+                            if (AA_MainApp.ui.sidemenu.itemSelected != null)
+                            {
+                                console.log("AA_MainApp.ui.sidemenu.refresh - seleziono l'item: "+AA_MainApp.ui.sidemenu.itemSelected);
+                                sidemenu.select(AA_MainApp.ui.sidemenu.itemSelected);
+                            }
+                            else
+                            {
+                                console.log("AA_MainApp.ui.sidemenu.refresh - nessun item selezionato");
+                            }
                         }
                     }
 
@@ -3074,6 +3149,18 @@ async function AA_SetupMainUi() {
         ]
     };
 
+    let toggleMenuOrSidebar=function()
+    {
+        if(AA_MainApp.ui.enableSidemenu)
+        {
+            AA_MainApp.ui.sidemenu.toggle();
+        }
+        else
+        {
+            $$("AA_MainSidebar").toggle();
+        }    
+    }
+
     navbar_template = {
         id: "AA_navbar_box",
         view: "layout",
@@ -3088,8 +3175,8 @@ async function AA_SetupMainUi() {
                 width: 44,
                 align: "left",
                 css: "AA_App_button",
-                tooltip: "Mostra/nascondi la sidebar",
-                click: function() { $$("AA_MainSidebar").toggle(); }
+                tooltip: "Mostra/nascondi la sidebar/menu",
+                click: toggleMenuOrSidebar
             },
             { id: "AA_navbar_path", view: "layout", minwidth: 130, cols: [{ id: "navbar_placeholder", view: "spacer" }], type: "clean", align: "left" },
             { id: "AA_navbar_module_title", view: "template", type: "clean", minWidth: 520, template: "<div class='AA_header_module_title'><span class='#icon#'></span><span>#title#</span></div>", data: { icon: "mdi mdi-home", title: "Titolo" } },

@@ -112,6 +112,7 @@ Class AA_HomeModule extends AA_GenericModule
 
         //main
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_DESKTOP,static::AA_UI_SECTION_DESKTOP_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_DESKTOP,$this->GetId(),true,true,false,true);
+        $section->SetIcon(static::AA_UI_SECTION_DESKTOP_ICON);
         if($gestutenti) 
         {
             if($geststrutture) $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1,false)->toArray(),$this->TemplateNavbar_GestStruct(2)->toArray()));
@@ -126,6 +127,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             //Gestione utenti
             $section=new AA_GenericModuleSection(static::AA_ID_SECTION_GESTUTENTI,static::AA_UI_SECTION_GESTUTENTI_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTUTENTI,$this->GetId(),false,true,false,true);
+            $section->SetIcon(static::AA_UI_SECTION_GESTUTENTI_ICON);
             if($geststrutture)
             {
                 $section->SetNavbarTemplate(array($this->TemplateNavbar_Cruscotto(1,false)->toArray(),$this->TemplateNavbar_Geststruct(2)->toArray()));
@@ -139,6 +141,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             //Gestione strutture
             $section=new AA_GenericModuleSection(static::AA_ID_SECTION_GESTSTRUCT,static::AA_UI_SECTION_GESTSTRUCT_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTSTRUCT,$this->GetId(),false,true,false,true);
+            $section->SetIcon(static::AA_UI_SECTION_GESTSTRUCT_ICON);
             if($gestutenti)
             {
                 $section->SetNavbarTemplate(array($this->TemplateNavbar_Cruscotto(1,false)->toArray(),$this->TemplateNavbar_Gestutenti(2)->toArray()));

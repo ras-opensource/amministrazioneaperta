@@ -381,6 +381,9 @@ class AA_SystemTaskManager extends AA_GenericTaskManager
         //Restituisce lo stato dell piattaforma
         $this->RegisterTask("GetAppStatus", "AA_SystemTask_GetAppStatus");
 
+        //Restituisce il contenuto del sidemenu
+        $this->RegisterTask("GetSideMenuContent", "AA_SystemTask_GetSideMenuContent");
+
         //Registrazione task per la finestra dell'albero delle strutture utente (nuova versione)
         $this->RegisterTask("GetStructDlg", "AA_SystemTask_GetStructDlg");
 
@@ -634,6 +637,49 @@ class AA_SystemTask_GetAppStatus extends AA_GenericTask
     }
 }
 #--------------------------------------------
+
+//Task che restituisce lo stato corrente della piattaforma (utente loggato e sidebar)
+class AA_SystemTask_GetSideMenuContent extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("GetSideMenuContent", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        AA_Log::Log(__METHOD__ . "() - task: " . $this->GetName());
+
+        $this->sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+
+        //registered mods
+        $platform = AA_Platform::GetInstance($this->oUser);
+
+        //AA_Log::Log(__METHOD__." - ".print_r($_REQUEST,true),100);
+
+        if ($platform->IsValid()) {
+            $sideBarContent = array();
+            $mods = $platform->GetModules();
+
+            $itemSelected="";
+            foreach ($mods as $curMod) {
+
+                $sideMenuContent[] = array("id" => $curMod['id_sidebar'], "icon" => $curMod['icon'], "value" => $curMod['name'], "tooltip" => $curMod['tooltip'], "type"=>"section", "module" => $curMod['id_modulo'], "section"=>$curMod['id_modulo']);
+            }
+
+            //configurazione moduli
+            $this->sTaskLog .= base64_encode(json_encode($sideMenuContent));
+            #------------------------
+
+            $this->sTaskLog .= "</content>";
+
+            return true;
+        }
+    }
+}
+#--------------------------------------------
+
 
 //Task per l'aggiornamento di un profilo utente
 class AA_SystemTask_UpdateCurrentUserProfile extends AA_GenericTask
@@ -1385,6 +1431,7 @@ class AA_GenericModule
         $taskManager->RegisterTask("GetLayout");
         $taskManager->RegisterTask("GetActionMenu");
         $taskManager->RegisterTask("GetNavbarContent");
+        $taskManager->RegisterTask("GetSideMenuContent");
         $taskManager->RegisterTask("GetSectionContent");
         $taskManager->RegisterTask("GetObjectContent");
         $taskManager->RegisterTask("GetObjectData");
@@ -1680,6 +1727,32 @@ class AA_GenericModule
     public function Task_GetNavbarContent($task)
     {
         return $this->Task_GetGenericNavbarContent($task, $_REQUEST);
+    }
+
+    //Task get side menu content
+    public function Task_GetSideMenuContent($task)
+    {
+        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+
+        $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+
+        $content = array();
+        $num=1;
+        foreach($this->sections as $curSection)
+        {
+            $content[]=array("id"=>$num,"value"=>$curSection->GetName(),"icon"=>$curSection->GetIcon(),"type"=>"section","section"=>$curSection->GetId());
+            $num++;
+        }
+
+        //logout
+        $content[]=array("id"=>$num,"value"=>"Esci","icon"=>"mdi mdi-logout","type"=>"task","task"=>"logout");
+        
+        //Codifica il contenuto in base64
+        $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
+
+        $task->SetLog($sTaskLog);
+
+        return true;
     }
 
     //Task Generico di aggiunta elemento

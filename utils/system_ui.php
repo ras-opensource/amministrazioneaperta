@@ -1393,7 +1393,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         $this->enableReset = $bVal;
     }
-    protected $applyButtonStyle="";
+    protected $applyButtonStyle="AA_Button_primary";
     public function SetApplybuttonStyle($sStyle="")
     {
         $this->applyButtonStyle = $sStyle;
@@ -1507,7 +1507,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
 
         //Apply button
         if($this->bEnableApplyHotkey) $this->applyButton = new AA_JSON_Template_Generic($this->id . "_Button_Bar_Apply", array("view" => "button", "width" => 80, "css"=>"webix_primary ".$this->applyButtonStyle,"hotkey"=>$this->sApplyHotkey,"label" => $this->applyButtonName));
-        else $this->applyButton = new AA_JSON_Template_Generic($this->id . "_Button_Bar_Apply", array("view" => "button", "width" => 80, "css"=>"webix_primary".$this->applyButtonStyle,"label" => $this->applyButtonName));
+        else $this->applyButton = new AA_JSON_Template_Generic($this->id . "_Button_Bar_Apply", array("view" => "button", "width" => 80, "css"=>"webix_primary ".$this->applyButtonStyle,"label" => $this->applyButtonName));
 
         //Toolbar
         $toolbar = new AA_JSON_Template_Layout($this->id . "_Button_Bar", array("height" => 38));
@@ -1516,7 +1516,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         //reset form button
         if ($this->enableReset && is_array($this->resetData)) {
             $resetAction = "if($$('" . $this->id . "_Form')) "."{"."$$('".$this->id."_Button_Bar_Apply').enable();$$('" . $this->id . "_Form').setValues(" . json_encode($this->resetData) . ")}";
-            $toolbar->addCol(new AA_JSON_Template_Generic($this->id . "_Button_Bar_Reset", array("view" => "button", "width" => 80, "label" => $this->resetButtonName, "tooltip" => "Reimposta i valori di default", "click" => $resetAction)));
+            $toolbar->addCol(new AA_JSON_Template_Generic($this->id . "_Button_Bar_Reset", array("view" => "button", "width" => 80, "label" => $this->resetButtonName, "tooltip" => "Reimposta i valori di default", "css"=>"AA_Button_secondary","click" => $resetAction)));
         }
 
         if($this->applyButtonPosition != "left") $toolbar->addCol(new AA_JSON_Template_Generic());
@@ -2100,6 +2100,7 @@ class AA_SystemChangeCurrentUserPwdDlg extends AA_GenericFormDlg
 
         $this->SetSaveTask("UpdateCurrentUserPwd");
         $this->SetTaskManager("AA_MainApp.taskManager");
+        //$this->SetApplybuttonStyle("AA_Button_primary");
         $this->enableRefreshOnSuccessfulSave(false);
         $this->EnableCloseWndOnSuccessfulSave();
     }
