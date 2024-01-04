@@ -745,6 +745,30 @@ Class AA_Sier extends AA_Object_V2
         return $value;
     }
 
+    //Restituisce il control pannel
+    public function GetControlPannel()
+    {
+
+        $value=json_decode($this->GetProp("ControlPannel"),true);
+        if(!is_array($value))
+        {
+            AA_Log::Log(__METHOD__." - Errore durante la decodifica del pannello di controllo: ".$this->GetProp("ControlPannel")." - ".print_r($value,true),100);
+            return array();
+        }
+
+        return $value;
+    }
+
+    //imposta i valori del control pannel
+    public function SetControlPannel($val=null)
+    {
+        if(is_array($val))
+        {
+            $this->SetProp("ControlPannel",json_encode($val));
+        }
+        else $this->SetProp("ControlPannel",json_encode(array()));
+    }
+
     //Funzione di clonazione dei dati
     protected function CloneData($idData = 0, $user = null)
     {
@@ -766,6 +790,7 @@ Class AA_Sier extends AA_Object_V2
         $this->SetBind("Flags","flags");
         $this->SetBind("Anno","anno");
         $this->SetBind("Giornate","giornate");
+        $this->SetBind("ControlPannel","cp");
 
         //Valori iniziali
         $this->SetProp("IdData",0);
@@ -3463,6 +3488,10 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSier");
             $taskManager->RegisterTask("PublishSier");
 
+            //control pannel
+            $taskManager->RegisterTask("GetSierControlPannelDlg");
+            $taskManager->RegisterTask("UpdateSierControlPannel");
+
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
             $taskManager->RegisterTask("AddNewSierAllegato");
@@ -5791,6 +5820,63 @@ Class AA_SierModule extends AA_GenericModule
         
         $sTaskLog="<status id='status'>0</status><content id='content'>";
         $sTaskLog.= "Giornata aggiornata con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task modifica control pannel
+    public function Task_UpdateSierControlPannel($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $cp=$object->GetControlPannel();
+
+        // --------- Esportazione risultati --------------------
+        if(isset($_REQUEST['risultati_voti_presidente_check']) && $_REQUEST['risultati_voti_presidente_check'] > 0) $cp['risultati_voti_presidente_check']=1;
+        else $cp['risultati_voti_presidente_check']=0;
+
+        if(isset($_REQUEST['risultati_voti_lista_check']) && $_REQUEST['risultati_voti_lista_check'] > 0) $cp['risultati_voti_lista_check']=1;
+        else $cp['risultati_voti_lista_check']=0;
+
+        if(isset($_REQUEST['risultati_voti_candidato_check']) && $_REQUEST['risultati_voti_candidato_check'] > 0) $cp['risultati_voti_candidato_check']=1;
+        else $cp['risultati_voti_candidato_check']=0;
+        //-------------------------------------------------------
+
+        $object->SetControlPannel($cp);
+        if(!$object->Update($this->oUser,true,"Modifica pannelo di controllo"))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nella modifica del pannello di controllo. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "dati aggiornati con successo.";
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
@@ -8650,6 +8736,49 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }  
 
+    //Template dlg tools
+    public function Template_GetSierControlPannelDlg($object=null)
+    {
+        $id=$this->GetId()."_ControlPannel_Dlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Pannello di controllo", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+
+        $cp=$object->GetControlPannel();
+
+        $section=new AA_FieldSet($id."_Section_CP","Opzioni di esportazione dei risultati comunali sul feed pubblico generale");
+        
+        $form_data['risultati_voti_presidente_check']=0;
+        if(isset($cp['risultati_voti_presidente_check']) && $cp['risultati_voti_presidente_check']>0)$form_data['risultati_voti_presidente_check']=$cp['risultati_voti_presidente_check'];
+        $section->AddSwitchBoxField("risultati_voti_presidente_check","Risultati con criticità sui voti Presidente",array("onLabel"=>"includi nel feed","offLabel"=>"escludi dal feed","labelWidth"=>500));
+
+        $form_data['risultati_voti_lista_check']=0;
+        if(isset($cp['risultati_voti_lista_check']) && $cp['risultati_voti_lista_check']>0)$form_data['risultati_voti_lista_check']=$cp['risultati_voti_lista_check'];
+        $section->AddSwitchBoxField("risultati_voti_lista_check","Risultati con criticità sui voti di Lista",array("onLabel"=>"includi nel feed","offLabel"=>"escludi dal feed","labelWidth"=>500));
+
+        $form_data['risultati_voti_candidato_check']=0;
+        if(isset($cp['risultati_voti_candidato_check']) && $cp['risultati_voti_candidato_check']>0)$form_data['risultati_voti_candidato_check']=$cp['risultati_voti_candidato_check'];
+        $section->AddSwitchBoxField("risultati_voti_candidato_check","Risultati con criticità sui voti candidato Consigliere",array("onLabel"=>"includi nel feed","offLabel"=>"escludi dal feed","labelWidth"=>500));
+        
+        $wnd=new AA_GenericFormDlg($id, "Pannello di controllo", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(1024);
+        $wnd->SetHeight(640);
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        //$wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateSierControlPannel");
+        
+        return $wnd;
+    }
+
     //Template detail (da specializzare)
     public function TemplateSection_Detail($params)
     {
@@ -8674,7 +8803,20 @@ Class AA_SierModule extends AA_GenericModule
         $canModify=false;
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $canModify=true;
 
-        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,null,$canModify);
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>32,"type"=>"clean","borderless"=>true));
+        $modify_btn=new AA_JSON_Template_Generic($id."_GeneraleOtions_btn",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-tools",
+             "label"=>"Strumenti",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Pannello di controllo",
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierControlPannelDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $toolbar->AddElement(new AA_JSON_Template_Generic());
+        $toolbar->AddElement($modify_btn);
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
 
         //Descrizione
         $value=$object->GetDescr();
@@ -11599,6 +11741,43 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
             $sTaskLog.= $this->Template_GetSierModifyDlg($object)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task modifica elemento
+    public function Task_GetSierControlPannelDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modifcare l'elemento.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierControlPannelDlg($object)->toBase64();
             $sTaskLog.="</content>";
         }
         
