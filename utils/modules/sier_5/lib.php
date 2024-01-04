@@ -39,10 +39,10 @@ Class AA_Sier_Const extends AA_Const
                 32=>"Abilita l'accesso da parte degli operatori comunali",
                 256=>"Abilita l'aggiornamento dei dati generali dei comuni da parte degli operatori",
                 1=>"Abilita l'aggiornamento dei dati del corpo elettorale dei comuni da parte degli operatori",
+                128=>"Abilita l'aggiornamento delle comunicazioni da parte degli operatori",
                 2=>"Abilita l'aggiornamento dei dati sull'affluenza da parte degli operatori",
                 4=>"Abilita l'aggiornamento dei risultati elettorali da parte degli operatori",
                 64=>"Abilita l'aggiornamento dei resoconti dei comuni da parte degli operatori",
-                8=>"Abilita l'esportazione dell'affluenza per la visualizzazione sul sito istituzionale",
                 16=>"Abilita l'esportazione dei risultati per la visualizzazione sul sito istituzionale"
             );
         }
@@ -197,6 +197,8 @@ Class AA_SierCoalizioni
         $this->aProps['nome_candidato']="";
         $this->aProps['liste']=array();
         $this->aProps['image']="";
+        $this->aProps['cv']="";
+        $this->aProps['cg']="";
 
         if(is_array($params)) $this->Parse($params);
     }
@@ -374,6 +376,26 @@ Class AA_SierComune
         return $this->aProps['operatori'];
     }
 
+    public function GetComunicazioni($bAsObject=false)
+    {
+        $ret="";
+        if($bAsObject) $ret=array();
+        if(!isset($this->aProps['comunicazioni']) || $this->aProps['comunicazioni']=="") return $ret;
+        
+        if($bAsObject)
+        {
+            $ret=json_decode($this->aProps['comunicazioni'],true);
+            if($ret) return $ret;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'importazione delle comunicazioni del comune: ".$this->aProps['id'],100);
+                return array();
+            }
+        }
+
+        return $this->aProps['comunicazioni'];
+    }
+
     public function GetAffluenza($bAsObject=false)
     {
         $ret="";
@@ -438,6 +460,26 @@ Class AA_SierComune
         return true;
     }
 
+    public function SetComunicazioni($comunicazioni="")
+    {
+        if(is_array($comunicazioni))
+        {
+            if(sizeof($comunicazioni)>0)
+            {
+                $comunicazioni=json_encode($comunicazioni);
+                if($comunicazioni===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($comunicazioni,true),100);
+                    return false;
+                }    
+            }
+            else $comunicazioni="";
+        }
+
+        $this->SetProp("comunicazioni",$comunicazioni);
+        return true;
+    }
+
     public function SetAffluenza($val="")
     {
         if(is_array($val))
@@ -496,6 +538,7 @@ Class AA_SierComune
         $this->aProps['risultati']="";
         $this->aProps['rendiconti']="";
         $this->aProps['operatori']="";
+        $this->aProps['comunicazioni']="";
         $this->aProps['lastupdate']="";
 
         if(is_array($params)) $this->Parse($params);
@@ -812,13 +855,24 @@ Class AA_Sier extends AA_Object_V2
     {
         if(!$this->bValid) return false;
 
-        $feed=array("aggiornamento"=>date("Y-m-d H:i:s"),"candidati"=>array());
+        $feed=array("aggiornamento"=>date("Y-m-d H:i:s"),"candidati"=>array(),"coalizioni"=>array());
 
         $candidati=$this->GetCandidati();
         $liste=$this->GetListe();
         $coalizioni=$this->GetCoalizioni();
         $platform=AA_Platform::GetInstance();
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
+
+        foreach($coalizioni as $idCoalizione=>$curCoalizione)
+        {
+            $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+            $curCoalizioneImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+            if($curCoalizione->GetProp('image') != "")
+            {
+                $curCoalizioneImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
+            }
+            $feed['coalizioni'][$idCoalizione]=array("denominazione"=>$curCoalizione->GetProp("denominazione"),"image"=>$curCoalizioneImagePath,"presidente"=>$curCoalizione->GetProp("nome_candidato"),"cv"=>$curCoalizione->GetProp("cv"),"cg"=>$curCoalizione->GetProp("cg"));
+        }
 
         foreach($candidati as $idCandidato=>$curCandidato)
         {
@@ -2021,7 +2075,7 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //Aggiorna una coalizione esistente
-    public function UpdateCoalizione($newCoalizione=null, $user=null)
+    public function UpdateCoalizione($newCoalizione=null, $user=null,$log="")
     {
         AA_Log::Log(__METHOD__."()");
 
@@ -2059,7 +2113,9 @@ Class AA_Sier extends AA_Object_V2
         $this->IsChanged();
 
         //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true, "Modifica coalizione: ".$newCoalizione->GetProp('denominazione')))
+        if($log=="") $log="Modifica coalizione: ".$newCoalizione->GetProp('denominazione');
+        else $log="Modifica coalizione: ".$newCoalizione->GetProp('denominazione')." - ".$log;
+        if(!$this->Update($user,true, $log))
         {
             return false;
         }
@@ -2074,6 +2130,8 @@ Class AA_Sier extends AA_Object_V2
         $query.=", denominazione='".addslashes($newCoalizione->GetProp('denominazione'))."'";
         $query.=", nome_candidato='".addslashes($newCoalizione->GetProp('nome_candidato'))."'";
         $query.=", image='".addslashes($newCoalizione->GetProp('image'))."'";
+        $query.=", cv='".addslashes($newCoalizione->GetProp('cv'))."'";
+        $query.=", cg='".addslashes($newCoalizione->GetProp('cg'))."'";
         $query.=" WHERE id='".$newCoalizione->GetProp('id')."' LIMIT 1";
         
         $db = new AA_Database();
@@ -2154,6 +2212,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", elettori_f='".addslashes($newComune->GetProp('elettori_f'))."'";
         $query.=", affluenza='".addslashes($newComune->GetProp('affluenza'))."'";
         $query.=", risultati='".addslashes($newComune->GetProp('risultati'))."'";
+        $query.=", comunicazioni='".addslashes($newComune->GetProp('comunicazioni'))."'";
         $query.=", operatori='".addslashes($newComune->GetProp('operatori'))."'";
         $query.=", lastupdate='".date("Y-m-d H:i:s")."'";
         $query.=" WHERE id='".$newComune->GetProp('id')."' LIMIT 1";
@@ -2527,6 +2586,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", risultati='".addslashes($comune->GetProp("risultati"))."'";
         $query.=", affluenza='".addslashes($comune->GetProp("affluenza"))."'";
         $query.=", operatori='".addslashes($comune->GetProp("operatori"))."'";
+        $query.=", comunicazioni='".addslashes($comune->GetProp("comunicazioni"))."'";
         $query.=", sezioni='".addslashes($comune->GetProp("sezioni"))."'";
         $query.=", elettori_m='".addslashes($comune->GetProp("elettori_m"))."'";
         $query.=", elettori_f='".addslashes($comune->GetProp("elettori_f"))."'";
@@ -3324,6 +3384,8 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_LAYOUT_RISULTATI_COMUNALI="RisultatiComunaliLayout";
     const AA_UI_WND_AFFLUENZA_COMUNALE="AffluenzaComunaleWnd";
     const AA_UI_LAYOUT_AFFLUENZA_COMUNALE="AffluenzaComunaleLayout";
+    const AA_UI_WND_COMUNICAZIONI_COMUNALE="ComunicazioniComunaleWnd";
+    const AA_UI_LAYOUT_COMUNICAZIONI_COMUNALE="ComunicazioniComunaleLayout";
     const AA_UI_TASK_ADDNEWMULTI_DLG="GetSierComuneAddNewMultiDlg";
 
     //Section id
@@ -3425,6 +3487,14 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSierCoalizione");
             $taskManager->RegisterTask("GetSierTrashCoalizioneDlg");
             $taskManager->RegisterTask("DeleteSierCoalizione");
+            $taskManager->RegisterTask("GetSierModifyPresidenteCVDlg");
+            $taskManager->RegisterTask("UpdateSierPresidenteCV");
+            $taskManager->RegisterTask("GetSierModifyPresidenteCGDlg");
+            $taskManager->RegisterTask("UpdateSierPresidenteCG");
+            $taskManager->RegisterTask("GetSierTrashPresidenteCGDlg");
+            $taskManager->RegisterTask("DeleteSierPresidenteCG");
+            $taskManager->RegisterTask("GetSierTrashPresidenteCVDlg");
+            $taskManager->RegisterTask("DeleteSierPresidenteCV");
 
             //Liste
             $taskManager->RegisterTask("GetSierAddNewListaDlg");
@@ -3457,6 +3527,9 @@ Class AA_SierModule extends AA_GenericModule
             //comune
             $taskManager->RegisterTask("GetSierComuneDatiGeneraliViewDlg");
             $taskManager->RegisterTask("UpdateSierComuneDatiGenerali");
+
+            $taskManager->RegisterTask("GetSierComuneComunicazioniViewDlg");
+            $taskManager->RegisterTask("UpdateSierComuneComunicazioni");
 
             $taskManager->RegisterTask("GetSierComuneAffluenzaViewDlg");
             $taskManager->RegisterTask("GetSierComuneAffluenzaAddNewDlg");
@@ -3525,6 +3598,8 @@ Class AA_SierModule extends AA_GenericModule
             {
                 $taskManager->RegisterTask("GetSierOCModifyDatiGeneraliDlg");
                 $taskManager->RegisterTask("Update_OC_ComuneDatiGenerali");
+                $taskManager->RegisterTask("GetSierOCModifyComunicazioniDlg");
+                $taskManager->RegisterTask("Update_OC_ComuneComunicazioni");
                 $taskManager->RegisterTask("GetSierOCAffluenzaAddNewDlg");
                 $taskManager->RegisterTask("Update_OC_ComuneAffluenza");
                 $taskManager->RegisterTask("GetSierOCModifyRisultatiGeneraliDlg");
@@ -4632,6 +4707,94 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg aggiungi curriculum presidente candidato
+    public function Template_GetSierModifyPresidenteCVDlg($object=null,$coalizione=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierModifyPresidenteCVDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("aggiornamento"=>date("Y-m-d"),"id_coalizione"=>$coalizione->GetProp("id"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Imposta cv candidato Presidente", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_IntroCvCandidato",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items:center; width: 100%;height:100%'><div>Imposta il curriculum per il candidato presidente: <b>".$coalizione->GetProp("nome_candidato")."</b>.</div></div>")));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewCandidatoCV","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("UpdateSierPresidenteCV");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi casellario presidente candidato
+    public function Template_GetSierModifyPresidenteCGDlg($object=null,$coalizione=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierModifyPresidenteCGDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array("aggiornamento"=>date("Y-m-d"),"id_coalizione"=>$coalizione->GetProp("id"));
+        
+        $wnd=new AA_GenericFormDlg($id, "Imposta cv candidato Presidente", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_IntroCvCandidato",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items:center; width: 100%;height:100%'><div>Imposta il casellario per il candidato presidente: <b>".$coalizione->GetProp("nome_candidato")."</b>.</div></div>")));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewCandidatoCG","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("UpdateSierPresidenteCG");
+        
+        return $wnd;
+    }
+
     //Template dlg modifica candidato cv
     public function Template_GetSierModifyCandidatoCVDlg($object=null,$candidato=null)
     {
@@ -5202,6 +5365,106 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("DeleteSierCandidatoCG");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_candidato"=>$candidato->GetProp('id')));
+        
+        return $wnd;
+    }
+
+    //Template dlg trash casellario Presidente
+    public function Template_GetSierTrashPresidenteCGDlg($object=null,$coalizione=null)
+    {
+        $id=$this->id."_TrashPresidenteCG_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina casellario", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tipo_doc="link";
+        if(strpos($coalizione->GetProp("cg"),"http")===false) $tipo_doc="file";
+        $tabledata[]=array("denominazione"=>$coalizione->GetProp("nome_candidato"),"tipo_doc"=>$tipo_doc);
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il casellario per il seguente candidato Presidente verrà eliminato, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"denominazione", "header"=>"Candidato", "fillspace"=>true),
+              array("id"=>"tipo_doc", "header"=>"tipo doc", "width"=>150)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteSierPresidenteCG");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_coalizione"=>$coalizione->GetProp('id')));
+        
+        return $wnd;
+    }
+
+    //Template dlg trash casellario Presidente
+    public function Template_GetSierTrashPresidenteCVDlg($object=null,$coalizione=null)
+    {
+        $id=$this->id."_TrashPresidenteCG_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina curriculum", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tipo_doc="link";
+        if(strpos($coalizione->GetProp("cg"),"http")===false) $tipo_doc="file";
+        $tabledata[]=array("denominazione"=>$coalizione->GetProp("nome_candidato"),"tipo_doc"=>$tipo_doc);
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il curriculum per il seguente candidato Presidente verrà eliminato, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"denominazione", "header"=>"Candidato", "fillspace"=>true),
+              array("id"=>"tipo_doc", "header"=>"tipo doc", "width"=>150)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteSierPresidenteCV");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_coalizione"=>$coalizione->GetProp('id')));
         
         return $wnd;
     }
@@ -6784,6 +7047,336 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica cv candidato Presidente
+    public function Task_UpdateSierPresidenteCV($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCV");
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;            
+        }
+        
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if($coalizione == null)
+        {
+            $task->SetError("identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        if(trim($_REQUEST['url']=="") && !$uploadedFile->isValid())
+        {
+            $task->SetError("identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Occorre indicare un url o selezionare un file.</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+
+        $fileHash=$_REQUEST['url'];
+        if($uploadedFile->isValid()) 
+        {
+            //Se c'è un file uploadato l'url non viene salvata.
+            $_REQUEST['url']="";
+
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$coalizione->GetProp("cv");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $fileHash=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        //Elimina il cg precedente se presente
+        if($_REQUEST['url'] !="" && strpos($coalizione->GetProp("cv"),"http")===false && $coalizione->GetProp("cv") != "")
+        {
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$coalizione->GetProp("cv");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+            }
+        }
+
+        $coalizione->SetProp('cv',$fileHash);
+        //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
+
+        if(!$object->UpdateCoalizione($coalizione, $this->oUser,"Aggiornamento del curriculum per: ".$coalizione->GetProp("nome_candidato")))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento del curriculum. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Curriculum aggiornato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task modifica cg candidato Presidente
+    public function Task_UpdateSierPresidenteCG($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCG");
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;            
+        }
+        
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if($coalizione == null)
+        {
+            $task->SetError("identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        if(trim($_REQUEST['url']=="") && !$uploadedFile->isValid())
+        {
+            $task->SetError("identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Occorre indicare un url o selezionare un file.</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+
+        $fileHash=$_REQUEST['url'];
+        if($uploadedFile->isValid()) 
+        {
+            //Se c'è un file uploadato l'url non viene salvata.
+            $_REQUEST['url']="";
+
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$coalizione->GetProp("cg");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $fileHash=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        //Elimina il cg precedente se presente
+        if($_REQUEST['url'] !="" && strpos($coalizione->GetProp("cg"),"http")===false && $coalizione->GetProp("cg") != "")
+        {
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$coalizione->GetProp("cg");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+            }
+        }
+
+        $coalizione->SetProp('cg',$fileHash);
+        //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
+
+        if(!$object->UpdateCoalizione($coalizione, $this->oUser,"Aggiornamento del casellario per: ".$coalizione->GetProp("nome_candidato")))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento del casellario. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Casellario aggiornato con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
     //Task elimina cv candidato
     public function Task_DeleteSierCandidatoCV($task)
     {
@@ -6949,6 +7542,152 @@ Class AA_SierModule extends AA_GenericModule
         
         $sTaskLog="<status id='status'>0</status><content id='content'>";
         $sTaskLog.= "Casellario rimosso con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task elimina cg candidato Presidente
+    public function Task_DeleteSierPresidenteCG($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if($coalizione == null)
+        {
+            $task->SetError("identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        //Elimina il cg precedente se presente
+        if(strpos($coalizione->GetProp("cg"),"http")===false && $coalizione->GetProp("cg") != "")
+        {
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$coalizione->GetProp("cg");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+            }
+        }
+
+        $coalizione->SetProp("cg","");
+        
+        if(!$object->UpdateCoalizione($coalizione, $this->oUser,"Rimozione del casellario per: ".$coalizione->GetProp("nome_candidato")))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nella rimozione del casellario. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Casellario rimosso con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task elimina cv candidato Presidente
+    public function Task_DeleteSierPresidenteCV($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if($coalizione == null)
+        {
+            $task->SetError("identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>identificativo Coalizione non valido. (".$_REQUEST['id_coalizione'].")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        //Elimina il cg precedente se presente
+        if(strpos($coalizione->GetProp("cv"),"http")===false && $coalizione->GetProp("cv") != "")
+        {
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$coalizione->GetProp("cv");
+                if($oldFile !="" && strpos($oldFile,"http") === false)
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+                }
+            }
+        }
+
+        $coalizione->SetProp("cv","");
+        
+        if(!$object->UpdateCoalizione($coalizione, $this->oUser,"Rimozione del curriculum per: ".$coalizione->GetProp("nome_candidato")))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nella rimozione del curriculum. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Curriculum rimosso con successo.";
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
@@ -7706,7 +8445,9 @@ Class AA_SierModule extends AA_GenericModule
             'id'=>$_REQUEST['id_coalizione'],
             'id_sier'=>$id_sier,
             'denominazione'=>$_REQUEST['denominazione'],
-            'nome_candidato'=>$_REQUEST['nome_candidato']
+            'nome_candidato'=>$_REQUEST['nome_candidato'],
+            'cv'=>$coalizione->GetProp("cv"),
+            'cg'=>$coalizione->GetProp("cg"),
         );
 
         $params['image'] = $imageFileHash;
@@ -7885,14 +8626,17 @@ Class AA_SierModule extends AA_GenericModule
         //Caricamento corpo elettorale
         $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE,"Corpo elettorale",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dati corpo elettorale."),false);
 
+        //comunicazioni
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI,"Comunicazioni",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento delle comunicazioni."));
+
         //Affluenza
-        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA,"Affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."));
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA,"Affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."),false);
 
         //Risultati
-        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI,"Risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI,"Risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."));
 
         //esportazione Affluenza
-        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA,"Esporta affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dell'affluenza."));
+        //$abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA,"Esporta affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dell'affluenza."));
 
         //esportazione Risultati
         $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_EXPORT_RISULTATI,"Esporta risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dei risultati."),false);
@@ -8089,6 +8833,7 @@ Class AA_SierModule extends AA_GenericModule
         $sier_flags=$object->GetAbilitazioni();
         $sections=array(
             array("id"=>$id."_Generale_".$operatore->GetOperatoreComunaleComune(),"value"=>"Dati generali e corpo elettorale","icon"=>"mdi mdi-information-variant-circle"),
+            array("id"=>$id."_Comunicazioni_".$operatore->GetOperatoreComunaleComune(),"value"=>"Comunicazioni","icon"=>"mdi mdi-send-check"),
             array("id"=>$id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),"value"=>"Dati affluenza","icon"=>"mdi mdi-vote"),
             array("id"=>$id."_Risultati_".$operatore->GetOperatoreComunaleComune(),"value"=>"Risultati","icon"=>"mdi mdi-stack-overflow"),
             array("id"=>$id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),"value"=>"Rendicontazione","icon"=>"mdi mdi-cash-sync")
@@ -8195,6 +8940,53 @@ Class AA_SierModule extends AA_GenericModule
         
         $layout_generale->addRow($toolbar);
         $layout_generale->addRow($this->Template_OC_Generale($id,$object,$comune));
+        $multiview->addCell($layout_generale);
+        //----------------------------------------------------------------------------
+
+        //-------------------  Comunicazioni  ------------------------------
+        $canModify=false;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0) $canModify=true;
+        $layout_generale=new AA_JSON_Template_Layout($id."_Comunicazioni_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
+        //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        
+        //torna al riepilogo
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Comunicazioni_Back".$operatore->GetOperatoreComunaleComune()."_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-keyboard-backspace",
+            "label"=>"Riepilogo",
+            "align"=>"left",
+            "width"=>120,
+            "tooltip"=>"Torna al riepilogo",
+            "click"=>"$$('".$id."_PreviewBox_".$operatore->GetOperatoreComunaleComune()."').show()"
+        )));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Comunicazioni</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Comunicazioni_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica dati generali e corpo elettorale",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyComunicazioniDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+        
+        $layout_generale->addRow($toolbar);
+        $layout_generale->addRow($this->Template_OC_Comunicazioni($id,$object,$comune));
         $multiview->addCell($layout_generale);
         //----------------------------------------------------------------------------
 
@@ -8426,6 +9218,162 @@ Class AA_SierModule extends AA_GenericModule
                 "width"=>120,
                 "tooltip"=>"Modifica dati generali e corpo elettorale",
                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyDatiGeneraliDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+
+        $layout->AddRow($toolbar);
+        //corpo elettorale
+        $riga=new AA_JSON_Template_Layout($id."_QuadRow",array("type"=>"clean"));
+        $riga->AddCol($sezioni);
+        $riga->AddCol($elettori_m);
+        $riga->AddCol($elettori_f);
+        $layout->AddRow($riga);
+
+        return $layout;
+    }
+
+    //Template OC generale
+    public function Template_OC_Comunicazioni($id,$object=null,$comune=null,$modify=false)
+    {
+        $id.=$id."_Comunicazioni_Content";
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+        
+        $giornate=$object->GetGiornate();
+        $comunicazioni=$comune->GetComunicazioni(true);
+        $first=true;
+        foreach($giornate as $giornata=>$curGiornata)
+        {
+            $col=new AA_JSON_Template_Layout($id."_col_".$giornata,array("type"=>"clean"));
+            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Comunicazioni_Title_".$giornata,array("view"=>"label","label"=>"<span style='color:#003380'>Giornata del ".$giornata."</span>", "align"=>"center")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+            $col->addRow($toolbar);
+
+            if($first) $values=array("title_inizio"=>"Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale","value_inizio"=>"non comunicata","title_fine"=>"Chiusura operazioni uffici elettorali di sezione","value_fine"=>"non comunicata");
+            else $values=array("title_inizio"=>"Apertura operazioni uffici elettorali di sezione ","value_inizio"=>"non comunicata","title_fine"=>"Chiusura operazioni uffici elettorali di sezione","value_fine"=>"non comunicata");
+
+            if(isset($comunicazioni[$giornata]) && $comunicazioni[$giornata]['inizio']>0) $values['value_inizio']="comunicata";
+            if(isset($comunicazioni[$giornata]) && $comunicazioni[$giornata]['fine']>0) $values['value_fine']="comunicata";
+
+            $row=new AA_JSON_Template_Template($id."_".$giornata,array(
+                "template"=>"<div style='display: flex; align-items:center; height: 42px;'><span style='display: inline-block; font-weight:700;width: 70%'>#title_inizio#</span><span>#value_inizio#</span></div><div style='display: flex; align-items:center; height: 42px;'><span style='display: inline-block;font-weight:700;width: 70%'>#title_fine#</span><span>#value_fine#</span></div>",
+                "gravity"=>1,
+                "data"=>$values
+            ));
+            $col->AddRow($row);
+            $layout->AddCol($col);
+            $first=false;
+        }
+
+        return $layout;
+
+        //Descrizione
+        $value=$comune->GetProp("denominazione");
+        $descr=new AA_JSON_Template_Template($id."_Denominazione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Denominazione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //Circoscrizione
+        $value=$comune->GetProp("circoscrizione");
+        $circoscrizione=new AA_JSON_Template_Template($id."_Circoscrizione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Circoscrizione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //Pec
+        $value=$comune->GetProp("pec");
+        $pec=new AA_JSON_Template_Template($id."_Pec",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Pec:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        
+        //Indirizzo
+        $value=$comune->GetProp("indirizzo");
+        $indirizzo=new AA_JSON_Template_Template($id."_Indirizzo",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Indirizzo:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //note
+        $value = $comune->GetProp("contatti");
+        $note=new AA_JSON_Template_Template($id."_Contatti",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Note e contatti:","value"=>$value)
+        ));
+
+        //sezioni
+        $value = $comune->GetProp("sezioni");
+        $sezioni=new AA_JSON_Template_Template($id."_Sezioni",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Sezioni:","value"=>$value)
+        ));
+
+        //elettori maschi
+        $value = $comune->GetProp("elettori_m");
+        $elettori_m=new AA_JSON_Template_Template($id."_Elettori_m",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Elettori maschi:","value"=>$value)
+        ));
+
+        //elettori femmine
+        $value = $comune->GetProp("elettori_f");
+        $elettori_f=new AA_JSON_Template_Template($id."_Elettori_f",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Elettori femmine:","value"=>$value)
+        ));
+        
+        $rows_fixed_height=60;
+        
+        //prima riga
+        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($descr);
+        $riga->AddCol($circoscrizione);
+        $layout->AddRow($riga);
+
+        //seconda riga
+        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($indirizzo);
+        $riga->AddCol($pec);
+        $layout->AddRow($riga);
+
+        //terza riga
+        $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("type"=>"clean","height"=>80,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga->AddCol($note);
+        $layout->AddRow($riga);
+
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Corpo elettorale</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Generale_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica dati generali e corpo elettorale",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyComunicazioniDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
             ));
             $toolbar->AddElement($modify_btn);
         }
@@ -9322,7 +10270,53 @@ Class AA_SierModule extends AA_GenericModule
             //-----------------------
             
             //------------ Contenuto Coalizione ---------------------
+            //AA_Log::Log(__METHOD__." - coalizione: ".print_r($curCoalizione,true),100);
             $coalizione_content_box=new AA_JSON_Template_Layout($id_detail_coalizione."_ContentBox",array("type"=>"clean"));
+            $coalizione_ops=array();
+            //Curriculum
+            if($curCoalizione->GetProp('cv') !=""){
+                //AA_Log::Log(__METHOD__." - coalizione 2: ".print_r($curCoalizione,true),100);
+                if(strpos($curCoalizione->GetProp('cv'),"http") === false) $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCoalizione->GetProp('cv').'"},"'.$this->id.'")';
+                else $view='window.open("'.$curCoalizione->GetProp('cv').'")';
+                $coalizione_ops['cv']="<div class='AA_DataTable_Ops' style='justify-content: space-between'><span style='font-weight: 700'>cv:</span> <a class='AA_DataTable_Ops_Button' title='Consulta il curriculum' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+                if($canModify)
+                {
+                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyPresidenteCVDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
+                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashPresidenteCVDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
+                    $coalizione_ops['cv'].="<a class='AA_DataTable_Ops_Button' title='Modifica il curriculum' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il curriculum' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
+                }
+                $coalizione_ops['cv'].="</div>";
+            }else{
+                //AA_Log::Log(__METHOD__." - coalizione 3: ".print_r($curCoalizione,true),100);
+                if($canModify)
+                {
+                    $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyPresidenteCVDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
+                    $coalizione_ops['cv']="<div class='AA_DataTable_Ops' style='justify-content: space-between'><span style='font-weight: 700'>cv:</span><a class='AA_DataTable_Ops_Button' title='Carica il curriculum' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                }
+            }
+
+            //Casellario giudiziale
+            if($curCoalizione->GetProp('cg') !="")
+            {
+                if(strpos($curCoalizione->GetProp('cg'),"http") === false) $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCoalizione->GetProp('cg').'"},"'.$this->id.'")';
+                else $view='window.open("'.$curCoalizione->GetProp('cg').'")';
+                $coalizione_ops['cg']="<div class='AA_DataTable_Ops' style='justify-content: space-between'><span style='font-weight: 700'>cg:</span> <a class='AA_DataTable_Ops_Button' title='Consulta il casellario' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+                if($canModify)
+                {
+                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyPresidenteCGDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
+                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashPresidenteCGDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
+                    $coalizione_ops['cg'].="<a class='AA_DataTable_Ops_Button' title='Modifica il casellario' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il casellario' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
+                }
+                $coalizione_ops['cg'].="</div>";
+            }
+            else
+            {
+                if($canModify)
+                {
+                    $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyPresidenteCGDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
+                    $coalizione_ops['cg'].="<div class='AA_DataTable_Ops' style='justify-content: space-between'><span style='font-weight: 700'>cg:</span> <a class='AA_DataTable_Ops_Button' title='Carica il casellario' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                }
+            }
 
             $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizioneImage",array(
                 "type"=>"clean",
@@ -9331,12 +10325,15 @@ Class AA_SierModule extends AA_GenericModule
                 "template"=>"<div style='width: 100%;height:100%; display:flex; flex-direction:column; justify-content: center; align-items: center'><img src='".$curImagePath."' width='100px' /></div>"
             )));
 
+            $coalizione_ops['presidente']=$curCoalizione->GetProp('nome_candidato');
+
             //Candidato Presidente
             $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizionePresidente",array(
                 "type"=>"clean",
-                "template"=>"<div style='width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; margin-left: 1em'><span style='font-weight: 900'>Presidente:</span><div>#presidente#</div></div>",
-                "data"=>array("presidente"=>$curCoalizione->GetProp('nome_candidato'))
+                "template"=>"<div style='width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; margin-left: 1em'><span style='font-weight: 900'>Presidente:</span><div>#presidente#</div><div style='width: 90px'>#cv#</div><div style='width: 90px'>#cg#</div></div>",
+                "data"=>$coalizione_ops
             )));
+
             $layout_dettaglio_coalizione->AddRow($coalizione_content_box);
             //-------------------------------------------------------
 
@@ -9539,7 +10536,7 @@ Class AA_SierModule extends AA_GenericModule
             //Casellario giudiziale
             if($curCandidato->GetProp('cg') !="")
             {
-                if(strpos($curCandidato->GetProp('cv'),"http") === false) $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cg').'"},"'.$this->id.'")';
+                if(strpos($curCandidato->GetProp('cg'),"http") === false) $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curCandidato->GetProp('cg').'"},"'.$this->id.'")';
                 else $view='window.open("'.$curCandidato->GetProp('cg').'")';
                 $data[$index]['cg']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Consulta il casellario' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
                 if($canModify)
@@ -9712,6 +10709,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data e ora di aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"dati_generali","header"=>array("<div style='text-align: center'>Dati Generali</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"comunicazioni","header"=>array("<div style='text-align: center'>comunicazioni</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"completamento_a","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
             array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
@@ -9727,8 +10725,10 @@ Class AA_SierModule extends AA_GenericModule
 
         $data=array();
         $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
-
+        $giornate=$object->GetGiornate();
         $comuni=$object->GetComuni(null,$params);
+        $now=date("Y-m-d");
+        $giornateKeys=array_keys($giornate);
         foreach($comuni as $curComune)
         {
             $data[]=$curComune->GetProps();
@@ -9743,6 +10743,61 @@ Class AA_SierModule extends AA_GenericModule
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneDatiGeneraliViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['dati_generali']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati generali e del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
             $data[$index]['dati_generali'].="</div>";
+            //------------------------------
+
+            //--------- Comunicazioni ---------
+            $class="AA_DataTable_Ops_Button";
+            $icon="mdi mdi-eye";
+            $text="Vedi e gestisci i dati sulle comunicazioni";
+            $color="green";
+            $analisi=array(false,"Le comunicazioni sono regolari",false);
+            if($curComune->GetProp("comunicazioni") == "")
+            {
+                $class="AA_DataTable_Ops_Button";
+                $icon="mdi mdi-upload";
+                $text="Gestisci i dati sulle comunicazioni";
+                if($giornateKeys[0] > $now)
+                {
+                    $analisi=array(false,"Le comunicazioni sono regolari",false);
+                    $color="green";
+                }
+                else
+                {
+                    $analisi=array(true,"Comunicazioni non presenti",true);
+                    $color="red";
+                }
+            }
+            else
+            {
+                $comunicazioni=$curComune->GetComunicazioni(true);
+                foreach($giornateKeys as $curGiornata)
+                {
+                    if($curGiornata==$now)
+                    {
+                        if($comunicazioni[$now]['inizio']==0)
+                        {
+                            $color="red";
+                            $analisi=array(true,"Mancano alcune comunicazioni.",true);
+                        }
+                    }
+
+                    if($curGiornata < $now)
+                    {
+                        if($comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
+                        {
+                            //AA_Log::Log(__METHOD__." - comunicazioni: ".print_r($comunicazioni,true),100);
+                            $color="red";
+                            $analisi=array(true,"Mancano alcune comunicazioni.",true);
+                        }
+                    }
+                }
+            }
+            $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_COMUNICAZIONI_COMUNALE."_".static::AA_UI_LAYOUT_COMUNICAZIONI_COMUNALE;
+            $view_analisi_comunicazioni='let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($analisi[1]).'"));AA_MainApp.ui.modalBox(note,"Analisi comunicazioni")';
+            $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneComunicazioniViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            if($analisi[0]==false) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
+            else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
+            $data[$index]['comunicazioni'].="</div>";
             //------------------------------
 
             //--------- Affluenza ---------
@@ -10416,6 +11471,47 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_OC_DatiGeneraliModifyDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task modifica comunicazioni operatore comunale 
+    public function Task_GetSierOCModifyComunicazioniDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierOCModifyComunicazioniDlg($object,$comune),true);
         return true;
     }
 
@@ -11172,7 +12268,101 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
-    
+    //Task elimina cg candidato Presidente
+    public function Task_GetSierTrashPresidenteCGDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Coalizione non valida.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierTrashPresidenteCGDlg($object,$coalizione)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task elimina cv candidato Presidente
+    public function Task_GetSierTrashPresidenteCVDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Coalizione non valida.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierTrashPresidenteCVDlg($object,$coalizione)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
 
     //Task elimina cg candidato
     public function Task_GetSierTrashCandidatoCVDlg($task)
@@ -11222,7 +12412,7 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
-    //Task elimina cg candidato
+    //Task elimina candidato
     public function Task_GetSierTrashCandidatoDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -11270,7 +12460,7 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
-    //Task modifica cg candidato
+    //Task modifica cv candidato
     public function Task_GetSierModifyCandidatoCVDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -11302,6 +12492,102 @@ Class AA_SierModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
             $sTaskLog.= $this->Template_GetSierModifyCandidatoCVDlg($object,$candidato)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task modifica cv candidato
+    public function Task_GetSierModifyPresidenteCVDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Coalizione non valido.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierModifyPresidenteCVDlg($object,$coalizione)->toBase64();
+            $sTaskLog.="</content>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task modifica cg candidato Presidente
+    public function Task_GetSierModifyPresidenteCGDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
+        if(!($coalizione instanceof AA_SierCoalizioni))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Coalizione non valida.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetSierModifyPresidenteCGDlg($object,$coalizione)->toBase64();
             $sTaskLog.="</content>";
             $task->SetLog($sTaskLog);
         
@@ -11527,6 +12813,33 @@ Class AA_SierModule extends AA_GenericModule
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierComuneDatiGeneraliViewDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task comunicazioni Comune
+    public function Task_GetSierComuneComunicazioniViewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneComunicazioniViewDlg($object,$comune),true);
         return true;
     }
 
@@ -13749,6 +15062,78 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiornamento comunicazioni operatore Comunale
+    public function Task_Update_OC_ComuneComunicazioni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Modifica comunicazioni non abilitata.",false);
+            return false;
+        }       
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+
+        $giornate=$object->GetGiornate();
+        $comunicazioni=array();
+        foreach($giornate as $giornata=>$curValues)
+        {
+            $comunicazioni[$giornata]=array();
+            if(isset($_REQUEST[$giornata."_inizio"]) && $_REQUEST[$giornata."_inizio"]>0) $comunicazioni[$giornata]["inizio"]=1;
+            else $comunicazioni[$giornata]["inizio"]=0;
+
+            if(isset($_REQUEST[$giornata."_fine"]) && $_REQUEST[$giornata."_fine"]>0) $comunicazioni[$giornata]["fine"]=1;
+            else $comunicazioni[$giornata]["fine"]=0;
+        }
+
+        $comune->SetComunicazioni($comunicazioni);
+
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento comunicazioni - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento delle comunicazioni.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        //$task->SetStatusAction("refreshCurSection");
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
     //Task aggiornamento risultati coalizioni (OC)
     public function Task_Update_OC_ComuneRisultatiCoalizioni($task)
     {
@@ -14096,6 +15481,54 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica dati comunicazioni
+    public function Task_UpdateSierComuneComunicazioni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        $giornate=$object->GetGiornate();
+        $comunicazioni=array();
+        foreach($giornate as $giornata=>$curValues)
+        {
+            $comunicazioni[$giornata]=array();
+            if(isset($_REQUEST[$giornata."_inizio"]) && $_REQUEST[$giornata."_inizio"]>0) $comunicazioni[$giornata]["inizio"]=1;
+            else $comunicazioni[$giornata]["inizio"]=0;
+
+            if(isset($_REQUEST[$giornata."_fine"]) && $_REQUEST[$giornata."_fine"]>0) $comunicazioni[$giornata]["fine"]=1;
+            else $comunicazioni[$giornata]["fine"]=0;
+        }
+
+        $comune->SetComunicazioni($comunicazioni);
+
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica dati comunicazioni"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Comunicazioni aggiornate con successo.",false);
+
+        return true;
+    }
 
     //Task modifica Coalizione
     public function Task_GetSierModifyCoalizioneDlg($task)
@@ -15034,6 +16467,68 @@ Class AA_SierModule extends AA_GenericModule
         {
             //to do view only
             $wnd = new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+
+            return $wnd;
+        }
+    }
+
+    //Template dlg modify user
+    public function Template_GetSierComuneComunicazioniViewDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneComunicazioniViewDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
+
+        $giornate=$object->GetGiornate();
+        $comunicazioni=$comune->GetComunicazioni(true);
+        $form_data=array();
+        $sections=array();
+        $inizio=false;
+        foreach($giornate as $giornata=>$curValues)
+        {
+            $label_inizio="Apertura operazioni uffici elettorali di sezione";
+            if(sizeof($sections)==0) $label_inizio="Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale";
+            $form_data[$giornata."_inizio"]=0;
+            if(isset($comunicazioni[$giornata]['inizio']) && $comunicazioni[$giornata]['inizio']>0) $form_data[$giornata."_inizio"]=1;
+            $form_data[$giornata."_fine"]=0;
+            if(isset($comunicazioni[$giornata]['fine']) && $comunicazioni[$giornata]['fine']>0) $form_data[$giornata."_fine"]=1;
+
+            $section=new AA_FieldSet($id."_Section_".$giornata,"Comunicazioni per la giornata del ".$giornata);
+            $section->AddCheckBoxField($giornata."_inizio", $label_inizio);
+            $section->AddCheckBoxField($giornata."_fine", "Chiusura operazioni uffici elettorali di sezione");
+            $sections[]=$section;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+    
+            $wnd=new AA_GenericFormDlg($id, "Comunicazioni operazioni uffici elettorali", $this->id,$form_data,$form_data);
+            
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(600);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(800);
+            $wnd->SetHeight(600);
+            
+            foreach($sections as $curSection)
+            {
+                $wnd->AddGenericObject($curSection);
+            }
+            
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            $wnd->enableRefreshOnSuccessfulSave();
+            $wnd->SetSaveTask("UpdateSierComuneComunicazioni");
+            
+            return $wnd;    
+        }
+        else
+        {
+            //to do view only
+            $wnd = new AA_GenericWindowTemplate($id, "Comunicazioni uffici elettorali", $this->id);
 
             return $wnd;
         }
@@ -16431,6 +17926,75 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
+    //Template dlg modifycomunicazioni comune
+    public function Template_GetSierOCModifyComunicazioniDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierOCModifyComunicazioniDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
+
+        $giornate=$object->GetGiornate();
+        $comunicazioni=$comune->GetComunicazioni(true);
+        $form_data=array();
+        $sections=array();
+        $inizio=false;
+        foreach($giornate as $giornata=>$curValues)
+        {
+            $label_inizio="Apertura operazioni uffici elettorali di sezione";
+            if(sizeof($sections)==0) $label_inizio="Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale";
+            $form_data[$giornata."_inizio"]=0;
+            if(isset($comunicazioni[$giornata]['inizio']) && $comunicazioni[$giornata]['inizio']>0) $form_data[$giornata."_inizio"]=1;
+            $form_data[$giornata."_fine"]=0;
+            if(isset($comunicazioni[$giornata]['fine']) && $comunicazioni[$giornata]['fine']>0) $form_data[$giornata."_fine"]=1;
+
+            $section=new AA_FieldSet($id."_Section_".$giornata,"Comunicazioni per la giornata del ".$giornata);
+            $section->AddCheckBoxField($giornata."_inizio", $label_inizio);
+            $section->AddCheckBoxField($giornata."_fine", "Chiusura operazioni uffici elettorali di sezione");
+            $sections[]=$section;
+        }
+
+        if(($object->GetAbilitazioni() & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)>0)
+        {
+            $risultati=$comune->GetRisultati(true);
+            foreach($risultati as $key=>$val)
+            {
+                if(isset($form_data[$key])) $form_data[$key]=$val;
+            }
+
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+
+            $wnd=new AA_GenericFormDlg($id, "Comunicazioni operazioni uffici elettorali", $this->id,$form_data,$form_data);
+            
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(600);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(800);
+            $wnd->SetHeight(600);
+            
+            foreach($sections as $curSection)
+            {
+                $wnd->AddGenericObject($curSection);
+            }
+            
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            $wnd->enableRefreshOnSuccessfulSave();
+            $wnd->SetSaveTask("Update_OC_ComuneComunicazioni");
+            
+            return $wnd;        
+        }
+        else
+        {
+            //to do view only
+            $wnd = new AA_GenericWindowTemplate($id,"Comunicazioni operazioni uffici elettorali", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"La modifica delle comunicazioni è disabilitata")));
+
+            return $wnd;
+        }
+    }
+
     //Template dlg modify risultati generali comune
     public function Template_GetSierOCModifyRisultatiCoalizioniDlg($object=null,$comune=null)
     {
@@ -16949,6 +18513,18 @@ Class AA_SierModule extends AA_GenericModule
         $layout->addCol($campo);
         #--------------------------------------
         
+        //Abilitazione modifica comunicazioni
+        $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        $campo=new AA_JSON_Template_Template($id."_Comunicazioni",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Comunicazioni:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $layout->addCol($campo);
+        #--------------------------------------
+
         //Abilitazione caricamento affluenza
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
         if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
@@ -16995,7 +18571,7 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         #----------------------------------------
-        $layout->addCol($campo);
+        //$layout->addCol($campo);
 
         //Abilitazione esportazione risultati
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
