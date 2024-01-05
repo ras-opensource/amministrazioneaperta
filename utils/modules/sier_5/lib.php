@@ -1580,6 +1580,30 @@ Class AA_Sier extends AA_Object_V2
         return $result;
     }
 
+    public function GetOCEmailCSV()
+    {
+        if(!$this->bValid) return array();
+
+        $comuni=$this->GetComuni();
+
+        $csv="circoscrizione;comune;nome;cognome;email;ruolo";
+        $emails=array();
+        foreach($comuni as $idComune=>$curComune)
+        {
+            $operatori=$curComune->GetOperatori(true);
+            foreach($operatori as $cf=>$curOperatore)
+            {
+                //if(!isset($emails[$curOperatore['email']]))
+                {
+                    $csv.="\n".$curComune->GetProp('circoscrizione').";".$curComune->GetProp("denominazione").";".$curOperatore['nome'].";".$curOperatore['cognome'].";".$curOperatore['email'].";".$curOperatore['ruolo'];
+                    $emails[$curOperatore['email']]=1;
+                }
+            }
+        }
+
+        return $csv;
+    }
+
     //Restituisce i candidati
     public function GetCandidati($coalizione=null,$lista=null,$circoscrizione=0)
     {
@@ -3674,6 +3698,7 @@ Class AA_SierModule extends AA_GenericModule
             //control pannel
             $taskManager->RegisterTask("GetSierControlPannelDlg");
             $taskManager->RegisterTask("UpdateSierControlPannel");
+            $taskManager->RegisterTask("GetSierOCEmailsCSV");
 
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
@@ -10461,7 +10486,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_Coalizioni_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Coalizioni e lista</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_Coalizioni_Title",array("view"=>"label","label"=>"<span style='color:#003380'></span>", "align"=>"center")));
         
         $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
             "view"=>"tabbar",
@@ -13010,6 +13035,39 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetLog($sTaskLog);
         
             return true;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task aggiungi allegato
+    public function Task_GetSierOCEmailsCSV($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            header('Content-Type: text/csv');
+            die($object->GetOCEmailCSV());
         }
         else
         {
