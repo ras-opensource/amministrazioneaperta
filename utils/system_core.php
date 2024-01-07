@@ -891,6 +891,7 @@ class AA_User
     const AA_USER_STATUS_ENABLED=1;
 
     //built in groups ids
+    const AA_USER_GROUP_GUESTS=0;
     const AA_USER_GROUP_SUPERUSER=1;
     const AA_USER_GROUP_ADMINS=2;
     const AA_USER_GROUP_OPERATORS=3;
@@ -984,7 +985,8 @@ class AA_User
     //ruolo
     public function GetRuolo($bNumeric=false)
     {
-        $ruolo=static::AA_USER_GROUP_USERS;
+
+        $ruolo=static::AA_USER_GROUP_GUESTS;
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
             if($this->nLivello==0) $ruolo=static::AA_USER_GROUP_ADMINS;
@@ -1001,7 +1003,8 @@ class AA_User
 
         $ruoli=static::GetDefaultGroups();
 
-        return $ruoli[$ruolo];
+        if($ruolo > 0) return $ruoli[$ruolo];
+        else return "Ospite";
     }
     public function GetRole($bNumeric=false)
     {
@@ -6791,7 +6794,7 @@ class AA_Object_V2
 
         //aggiunge i join
         if (isset($params['join']) && is_array($params['join'])) {
-            foreach ($params['join'] as $curJoin) {
+            foreach ((array)$params['join'] as $curJoin) {
                 $join .= " " . $curJoin . " ";
             }
         }
@@ -6799,7 +6802,7 @@ class AA_Object_V2
 
         //aggiunge i where
         if (isset($params['where']) && is_array($params['where'])) {
-            foreach ($params['where'] as $curParam) {
+            foreach ((array)$params['where'] as $curParam) {
                 if ($where == "") $where = " WHERE " . $curParam;
                 $where .= "  " . $curParam;
             }
@@ -6808,7 +6811,7 @@ class AA_Object_V2
 
         //aggiunge i having
         if (isset($params['having']) && is_array($params['having'])) {
-            foreach ($params['having'] as $curParam) {
+            foreach ((array)$params['having'] as $curParam) {
                 if ($having == "") $having = " HAVING " . $curParam;
                 else $having .= " AND " . $curParam;
             }
@@ -6817,7 +6820,7 @@ class AA_Object_V2
 
         //aggiunge i group
         if (isset($params['group']) && is_array($params['group'])) {
-            foreach ($params['group'] as $curParam) {
+            foreach ((array)$params['group'] as $curParam) {
                 if ($group == "") $group = " GROUP BY " . $curParam;
                 else $group .= ", " . $curParam;
             }
@@ -6826,7 +6829,7 @@ class AA_Object_V2
 
         //aggiunge gli order
         if (isset($params['order']) && is_array($params['order'])) {
-            foreach ($params['order'] as $curParam) {
+            foreach ((array)$params['order'] as $curParam) {
                 if ($order == "") $order = " ORDER BY " . $curParam;
                 else $order .= ", " . $curParam;
             }
