@@ -123,7 +123,7 @@ class AA_Storage
                     return new AA_StorageFile();
                 }
 
-                $query="INSERT INTO ".static::AA_DBTABLE_STORAGE." SET name='".$name."', mime='".$type."', aggiornamento='".date("Y-m-d")."', fileHash='".$hash."', size='".filesize($NewFilePath)."', referencesCount = 1, filePath='".$dir.DIRECTORY_SEPARATOR.$hash."', public='".addslashes($bPublic)."'";
+                $query="INSERT INTO ".static::AA_DBTABLE_STORAGE." SET name='".addslashes($name)."', mime='".$type."', aggiornamento='".date("Y-m-d")."', fileHash='".$hash."', size='".filesize($NewFilePath)."', referencesCount = 1, filePath='".$dir.DIRECTORY_SEPARATOR.$hash."', public='".addslashes($bPublic)."'";
                 if(!$db->Query($query))
                 {
                     if(!unlink($NewFilePath))
@@ -283,7 +283,7 @@ class AA_Storage
                     return new AA_StorageFile();
                 }
 
-                $query="INSERT INTO ".static::AA_DBTABLE_STORAGE." SET name='".$file['name']."', mime='".$file['type']."', aggiornamento='".date("Y-m-d")."', fileHash='".$hash."', size='".filesize($NewFilePath)."', referencesCount = 1, filePath='".$dir.DIRECTORY_SEPARATOR.$hash."', public='".addslashes($bPublic)."'";
+                $query="INSERT INTO ".static::AA_DBTABLE_STORAGE." SET name='".addslashes($file['name'])."', mime='".$file['type']."', aggiornamento='".date("Y-m-d")."', fileHash='".$hash."', size='".filesize($NewFilePath)."', referencesCount = 1, filePath='".$dir.DIRECTORY_SEPARATOR.$hash."', public='".addslashes($bPublic)."'";
                 if(!$db->Query($query))
                 {
                     if(!unlink($NewFilePath))
