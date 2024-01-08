@@ -17073,6 +17073,9 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['id']=$object->GetId();
             $form_data['id_sier']=$object->GetId();
             $form_data['id_comune']=$comune->GetProp('id');
+            $form_data['ore_12']=0;
+            $form_data['ore_19']=0;
+            $form_data['ore_22']=0;
 
             $wnd=new AA_GenericFormDlg($id, "Nuovo dato affluenza", $this->id,$form_data,$form_data);
             
