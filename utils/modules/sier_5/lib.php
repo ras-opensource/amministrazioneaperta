@@ -18329,7 +18329,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(450);
-        $wnd->SetHeight(650);
+        $wnd->SetHeight(750);
         
         //Sezioni scrutinate
         $wnd->AddTextField("sezioni_scrutinate","Sezioni scrutinate",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di sezioni scrutinate."));
