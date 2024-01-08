@@ -680,6 +680,7 @@ Class AA_Sier extends AA_Object_V2
             $result[2]=true;
         }
 
+        //-------------- Analisi voti di lista -----------------
         $liste=$this->GetListe();
         $voti_lista=0;
         foreach($liste as $idLista=>$curLista)
@@ -691,6 +692,13 @@ Class AA_Sier extends AA_Object_V2
                     $voti_lista+=intVal($risultati['voti_lista'][$idLista]);
                 }
             } 
+        }
+
+        if($voti_lista != ($voti_validi-$risultati['voti_contestati_na_liste']) && $voti_lista > 0 && $voti_validi > 0)
+        {
+            $result[0]=true;
+            $result[1][]="La somma dei voti di lista (".$voti_lista.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']).")";
+            $result[2]=true;
         }
 
         if($voti_lista == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']) > 0)
@@ -705,7 +713,9 @@ Class AA_Sier extends AA_Object_V2
             $result[1][]="La somma dei voti di Lista (".$voti_lista.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']).")";
             $result[2]=true;
         }
+        //-------------------------------------------------------
 
+        //-------------- Analisi voti candidato ----------------
         $candidati=$this->GetCandidati(null,null,$circoscrizione);
         $voti_candidato=0;
         foreach($candidati as $idCandidato=>$curCandidato)
@@ -725,6 +735,7 @@ Class AA_Sier extends AA_Object_V2
             $result[1][]="Il numero totale di preferenze (".$voti_candidato.") è superiore al doppio dei voti validi (".($voti_validi*2).")";
             $result[2]=true;
         }
+        //---------------------------------------------------------
         
         return $result;
     }
@@ -18314,6 +18325,7 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['voti_contestati_na_pre']=0;
         $form_data['voti_contestati_na_liste']=0;
         $form_data['schede_voti_nulli']=0;
+        $form_data['schede_solo_presidente']=0;
 
         $risultati=$comune->GetRisultati(true);
         foreach($risultati as $key=>$val)
@@ -18329,7 +18341,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(450);
-        $wnd->SetHeight(750);
+        $wnd->SetHeight(800);
         
         //Sezioni scrutinate
         $wnd->AddTextField("sezioni_scrutinate","Sezioni scrutinate",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di sezioni scrutinate."));
