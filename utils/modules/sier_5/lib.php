@@ -541,6 +541,13 @@ Class AA_SierComune
         $this->aProps['comunicazioni']="";
         $this->aProps['lastupdate']="";
         $this->aProps['feed_risultati']="";
+        $this->aProps['sezioni_ordinarie']=0;
+        $this->aProps['sezioni_ospedaliere']=0;
+        $this->aProps['luoghi_cura_sub100']=0;
+        $this->aProps['luoghi_cura_over100']=0;
+        $this->aProps['elettori_esteri_f']=0;
+        $this->aProps['luoghi_detenzione']=0;
+        $this->aProps['elettori_esteri_m']=0;
 
         if(is_array($params)) $this->Parse($params);
     }
@@ -2576,6 +2583,14 @@ Class AA_Sier extends AA_Object_V2
         $query.=", risultati='".addslashes($newComune->GetProp('risultati'))."'";
         $query.=", comunicazioni='".addslashes($newComune->GetProp('comunicazioni'))."'";
         $query.=", operatori='".addslashes($newComune->GetProp('operatori'))."'";
+        $query.=", sezioni_ordinarie='".addslashes($newComune->GetProp('sezioni_ordinarie'))."'";
+        $query.=", sezioni_ospedaliere='".addslashes($newComune->GetProp('sezioni_ospedaliere'))."'";
+        $query.=", luoghi_cura_sub100='".addslashes($newComune->GetProp('luoghi_cura_sub100'))."'";
+        $query.=", luoghi_cura_over100='".addslashes($newComune->GetProp('luoghi_cura_over100'))."'";
+        $query.=", luoghi_detenzione='".addslashes($newComune->GetProp('luoghi_detenzione'))."'";
+        $query.=", elettori_esteri_m='".addslashes($newComune->GetProp('elettori_esteri_m'))."'";
+        $query.=", elettori_esteri_f='".addslashes($newComune->GetProp('elettori_esteri_f'))."'";
+
         $query.=", lastupdate='".date("Y-m-d H:i:s")."'";
         $query.=" WHERE id='".$newComune->GetProp('id')."' LIMIT 1";
         
@@ -4104,6 +4119,9 @@ Class AA_SierModule extends AA_GenericModule
             {
                 $taskManager->RegisterTask("GetSierOCModifyDatiGeneraliDlg");
                 $taskManager->RegisterTask("Update_OC_ComuneDatiGenerali");
+                $taskManager->RegisterTask("GetSierOCModifyCorpoElettoraleDlg");
+                $taskManager->RegisterTask("Update_OC_ComuneCorpoElettorale");
+                
                 $taskManager->RegisterTask("GetSierOCModifyComunicazioniDlg");
                 $taskManager->RegisterTask("Update_OC_ComuneComunicazioni");
                 $taskManager->RegisterTask("GetSierOCAffluenzaAddNewDlg");
@@ -9329,6 +9347,7 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
         
+        
         //prima riga
         $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddCol($anno_rif);
@@ -9789,27 +9808,86 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Note e contatti:","value"=>$value)
         ));
 
-        //sezioni
+        //sezioni totali
         $value = $comune->GetProp("sezioni");
         $sezioni=new AA_JSON_Template_Template($id."_Sezioni",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Sezioni:","value"=>$value)
+            "data"=>array("title"=>"Sezioni totali:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //sezioni ordinarie
+        $value = $comune->GetProp("sezioni_ordinarie");
+        $sezioni_ordinarie=new AA_JSON_Template_Template($id."_SezioniOrdinarie",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Sezioni ordinarie:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //sezioni ospedaliere
+        $value = $comune->GetProp("sezioni_ospedaliere");
+        $sezioni_ospedaliere=new AA_JSON_Template_Template($id."_SezioniOspedaliere",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Sezioni ospedaliere:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
 
         //elettori maschi
         $value = $comune->GetProp("elettori_m");
         $elettori_m=new AA_JSON_Template_Template($id."_Elettori_m",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Elettori maschi:","value"=>$value)
+            "data"=>array("title"=>"Elettori maschi:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        
+        //elettori maschi esteri
+        $value = $comune->GetProp("elettori_esteri_m");
+        $elettori_esteri_m=new AA_JSON_Template_Template($id."_Elettori_esteri_m",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Elettori esteri maschi:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
         //elettori femmine
         $value = $comune->GetProp("elettori_f");
         $elettori_f=new AA_JSON_Template_Template($id."_Elettori_f",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Elettori femmine:","value"=>$value)
+            "data"=>array("title"=>"Elettrici femmine:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //elettori femmine estere
+        $value = $comune->GetProp("elettori_esteri_f");
+        $elettori_esteri_f=new AA_JSON_Template_Template($id."_Elettori_esteri_f",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Elettrici estere femmine:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //luoghi di cura sub 100
+        $value = $comune->GetProp("luoghi_cura_sub100");
+        $luoghi_cura_sub100=new AA_JSON_Template_Template($id."_Luoghi_cura_sub100",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Luoghi di cura con meno di 100 posti letto:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //luoghi di cura over 100
+        $value = $comune->GetProp("luoghi_cura_over100");
+        $luoghi_cura_over100=new AA_JSON_Template_Template($id."_Luoghi_cura_over100",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Luoghi di cura con più di 100 posti letto:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         
+        //luoghi detenzione
+        $value = $comune->GetProp("luoghi_detenzione");
+        $luoghi_detenzione=new AA_JSON_Template_Template($id."_Luoghi_detenzione",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Luoghi di detenzione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
         $rows_fixed_height=60;
         
         //prima riga
@@ -9836,7 +9914,7 @@ Class AA_SierModule extends AA_GenericModule
         //Pulsante di modifica
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
         {            
-            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Generale_btn",array(
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_CorpoElettorale_btn",array(
                "view"=>"button",
                 "type"=>"icon",
                 "icon"=>"mdi mdi-pencil",
@@ -9844,8 +9922,8 @@ Class AA_SierModule extends AA_GenericModule
                 "css"=>"webix_primary",
                 "align"=>"right",
                 "width"=>120,
-                "tooltip"=>"Modifica dati generali e corpo elettorale",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyDatiGeneraliDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                "tooltip"=>"Corpo elettorale",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyCorpoElettoraleDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
             ));
             $toolbar->AddElement($modify_btn);
         }
@@ -9855,12 +9933,31 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $layout->AddRow($toolbar);
+
+        $layout_corpo=new AA_JSON_Template_Layout($id."_CorpoBox",array("type"=>"clean"));
         //corpo elettorale
-        $riga=new AA_JSON_Template_Layout($id."_QuadRow",array("type"=>"clean"));
-        $riga->AddCol($sezioni);
-        $riga->AddCol($elettori_m);
-        $riga->AddCol($elettori_f);
-        $layout->AddRow($riga);
+        $riga=new AA_JSON_Template_Layout($id."_QuadRow",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
+        $riga->AddRow($sezioni);
+        $riga->AddRow($sezioni_ordinarie);
+        $riga->AddRow($sezioni_ospedaliere);
+        $layout_corpo->AddCol($riga);
+        
+        $riga=new AA_JSON_Template_Layout($id."_5Row",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
+        $riga->AddRow($elettori_m);
+        $riga->AddRow($elettori_esteri_m);
+        $riga->AddRow($elettori_f);
+        $riga->AddRow($elettori_esteri_f);
+        $layout_corpo->AddCol($riga);
+
+        $riga=new AA_JSON_Template_Layout($id."_6Row",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
+        $riga->AddRow($luoghi_cura_sub100);
+        $riga->AddRow($luoghi_cura_over100);
+        $riga->AddRow($luoghi_detenzione);
+        $layout_corpo->AddCol($riga);
+        
+        $layout->addRow($layout_corpo);
+        
+        //$layout->AddRow(new AA_JSON_Template_Generic());
 
         return $layout;
     }
@@ -10417,7 +10514,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"lista","header"=>array("<div style='text-align: center'>Lista</div>",array("content"=>"selectFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"coalizione","header"=>array("<div style='text-align: center'>Coalizione</div>",array("content"=>"selectFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"voti","header"=>array("<div style='text-align: center'>Voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"center"),"sort"=>"text")
+            array("id"=>"voti","header"=>array("<div style='text-align: center'>Voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"int")
         );
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
@@ -12149,6 +12246,47 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica dati generali operatore comunale 
+    public function Task_GetSierOCModifyCorpoElettoraleDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_OC_CorpoElettoraleModifyDlg($object,$comune),true);
+        return true;
+    }
+
     //Task modifica comunicazioni operatore comunale 
     public function Task_GetSierOCModifyComunicazioniDlg($task)
     {
@@ -12229,9 +12367,6 @@ Class AA_SierModule extends AA_GenericModule
         $comune->SetProp("pec",$_REQUEST['pec']);
         $comune->SetProp("contatti",$_REQUEST['contatti']);
         $comune->SetProp("indirizzo",$_REQUEST['indirizzo']);
-        if(isset($_REQUEST['sezioni']) && $_REQUEST['sezioni']>0) $comune->SetProp("sezioni",intVal($_REQUEST['sezioni']));
-        if(isset($_REQUEST['elettori_m']) && $_REQUEST['elettori_m']>0) $comune->SetProp("elettori_m",intVal($_REQUEST['elettori_m']));
-        if(isset($_REQUEST['elettori_f']) && $_REQUEST['elettori_f']>0) $comune->SetProp("elettori_f",intVal($_REQUEST['elettori_f']));
 
         if(!$object->UpdateComune($comune,$this->oUser," - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
         {
@@ -12242,6 +12377,86 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Dati generali e corpo elettorale aggiornati con successo.",false);
+        return true;
+    }
+
+    //Task login operatore comunale 
+    public function Task_Update_OC_ComuneCorpoElettorale($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        if($_REQUEST['sezioni']!=$_REQUEST['sezioni_ordinarie']+$_REQUEST['sezioni_ospedaliere'])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Le sezioni totali devono corrispondere alla somma delle sezioni ospedaliere più quelle ordinarie",false);
+            return false;
+        }
+
+        if($_REQUEST['elettori_m']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Gli elettori maschi non possono essere assenti.",false);
+            return false;
+        }
+
+        if($_REQUEST['elettori_f']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Le elettrici femmine non possono essere assenti.",false);
+            return false;
+        }
+
+        if(isset($_REQUEST['sezioni']) && $_REQUEST['sezioni']>0) $comune->SetProp("sezioni",$_REQUEST['sezioni']);
+        if(isset($_REQUEST['sezioni_ordinarie']) && $_REQUEST['sezioni_ordinarie']>0) $comune->SetProp("sezioni_ordinarie",$_REQUEST['sezioni_ordinarie']);
+        if(isset($_REQUEST['sezioni_ospedaliere']) && $_REQUEST['sezioni_ospedaliere']>=0) $comune->SetProp("sezioni_ospedaliere",$_REQUEST['sezioni_ospedaliere']);
+        if(isset($_REQUEST['elettori_m']) && $_REQUEST['elettori_m']>0) $comune->SetProp("elettori_m",$_REQUEST['elettori_m']);
+        if(isset($_REQUEST['elettori_f']) && $_REQUEST['elettori_f']>0) $comune->SetProp("elettori_f",$_REQUEST['elettori_f']);
+        if(isset($_REQUEST['elettori_esteri_m']) && $_REQUEST['elettori_esteri_m']>=0) $comune->SetProp("elettori_esteri_m",$_REQUEST['elettori_esteri_m']);
+        if(isset($_REQUEST['elettori_esteri_f']) && $_REQUEST['elettori_esteri_f']>=0) $comune->SetProp("elettori_esteri_f",$_REQUEST['elettori_esteri_f']);
+        if(isset($_REQUEST['luoghi_detenzione']) && $_REQUEST['luoghi_detenzione']>=0) $comune->SetProp("luoghi_detenzione",$_REQUEST['luoghi_detenzione']);
+        if(isset($_REQUEST['luoghi_cura_sub100']) && $_REQUEST['luoghi_cura_sub100']>=0) $comune->SetProp("luoghi_cura_sub100",$_REQUEST['luoghi_cura_sub100']);
+        if(isset($_REQUEST['luoghi_cura_over100']) && $_REQUEST['luoghi_cura_over100']>=0) $comune->SetProp("luoghi_cura_over100",$_REQUEST['luoghi_cura_over100']);
+
+        if(!$object->UpdateComune($comune,$this->oUser," - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
         return true;
     }
 
@@ -16213,9 +16428,6 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['pec']) && $_REQUEST['pec'] !="") $comune->SetProp("pec",$_REQUEST['pec']);
         if(isset($_REQUEST['indirizzo']) && $_REQUEST['indirizzo'] !="") $comune->SetProp("indirizzo",$_REQUEST['indirizzo']);
         if(isset($_REQUEST['contatti']) && $_REQUEST['contatti'] !="") $comune->SetProp("contatti",$_REQUEST['contatti']);
-        if(isset($_REQUEST['sezioni']) && $_REQUEST['sezioni'] > 0) $comune->SetProp("sezioni",$_REQUEST['sezioni']);
-        if(isset($_REQUEST['elettori_m']) && $_REQUEST['elettori_m'] > 0) $comune->SetProp("elettori_m",$_REQUEST['elettori_m']);
-        if(isset($_REQUEST['elettori_f']) && $_REQUEST['elettori_f'] > 0) $comune->SetProp("elettori_f",$_REQUEST['elettori_f']);
 
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica dati generali"))
         {
@@ -16226,6 +16438,73 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Dati generali aggiornati con successo.",false);
+
+        return true;
+    }
+
+    //Task modifica dati generali Comune
+    public function Task_UpdateSierComuneCorpoElettorale($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if($_REQUEST['sezioni']!=$_REQUEST['sezioni_ordinarie']+$_REQUEST['sezioni_ospedaliere'])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Le sezioni totali devono corrispondere alla somma delle sezioni ospedaliere più quelle ordinarie",false);
+            return false;
+        }
+
+        if($_REQUEST['elettori_m']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Gli elettori maschi non possono essere assenti.",false);
+            return false;
+        }
+
+        if($_REQUEST['elettori_f']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Le elettrici femmine non possono essere assenti.",false);
+            return false;
+        }
+
+        if(isset($_REQUEST['sezioni']) && $_REQUEST['sezioni']>0) $comune->SetProp("sezioni",$_REQUEST['sezioni']);
+        if(isset($_REQUEST['sezioni_ordinarie']) && $_REQUEST['sezioni_ordinarie']>0) $comune->SetProp("sezioni_ordinarie",$_REQUEST['sezioni_ordinarie']);
+        if(isset($_REQUEST['sezioni_ospedaliere']) && $_REQUEST['sezioni_ospedaliere']>=0) $comune->SetProp("sezioni_ospedaliere",$_REQUEST['sezioni_ospedaliere']);
+        if(isset($_REQUEST['elettori_m']) && $_REQUEST['elettori_m']>0) $comune->SetProp("elettori_m",$_REQUEST['elettori_m']);
+        if(isset($_REQUEST['elettori_f']) && $_REQUEST['elettori_f']>0) $comune->SetProp("elettori_f",$_REQUEST['elettori_f']);
+        if(isset($_REQUEST['elettori_esteri_m']) && $_REQUEST['elettori_esteri_m']>=0) $comune->SetProp("elettori_esteri_m",$_REQUEST['elettori_esteri_m']);
+        if(isset($_REQUEST['elettori_esteri_f']) && $_REQUEST['elettori_esteri_f']>=0) $comune->SetProp("elettori_esteri_f",$_REQUEST['elettori_esteri_f']);
+        if(isset($_REQUEST['luoghi_detenzione']) && $_REQUEST['luoghi_detenzione']>=0) $comune->SetProp("luoghi_detenzione",$_REQUEST['luoghi_detenzione']);
+        if(isset($_REQUEST['luoghi_cura_sub100']) && $_REQUEST['luoghi_cura_sub100']>=0) $comune->SetProp("luoghi_cura_sub100",$_REQUEST['luoghi_cura_sub100']);
+        if(isset($_REQUEST['luoghi_cura_over100']) && $_REQUEST['luoghi_cura_over100']>=0) $comune->SetProp("luoghi_cura_over100",$_REQUEST['luoghi_cura_over100']);
+
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica corpo elettorale"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
 
         return true;
     }
@@ -17549,9 +17828,6 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['pec']=$comune->GetProp('pec');
             $form_data['contatti']=$comune->GetProp('contatti');
             $form_data['indirizzo']=$comune->GetProp('indirizzo');
-            $form_data['sezioni']=$comune->GetProp('sezioni');
-            $form_data['elettori_m']=$comune->GetProp('elettori_m');
-            $form_data['elettori_f']=$comune->GetProp('elettori_f');
 
             $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
             
@@ -17574,21 +17850,82 @@ Class AA_SierModule extends AA_GenericModule
                 //contatti
                 $wnd->AddTextareaField("contatti","Note e contatti",array("gravity"=>1, "bottomLabel"=>"*Eventuali informazioni di recapito utili."));
             }
-
-            //Dati corpo elettorale
-            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
-            {
-                $height+=300;
-                $section=new AA_FieldSet($id."_Section_DatiCorpoElettorale","Corpo elettorale");
-                $section->AddTextField("sezioni", "Sezioni", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di sezioni"));
-                $section->AddTextField("elettori_m", "Maschi", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero elettori."),false);
-                $section->AddTextField("elettori_f", "Femmine", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero elettrici."),false);
-                $wnd->AddGenericObject($section);
-            }
                     
             $wnd->EnableCloseWndOnSuccessfulSave();
             $wnd->enableRefreshOnSuccessfulSave();
             $wnd->SetSaveTask("Update_OC_ComuneDatiGenerali");
+            $wnd->SetHeight($height);
+
+            return $wnd;    
+        }
+        else
+        {
+            //to do view only
+            $wnd = new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+
+            return $wnd;
+        }
+    }
+
+    //Template dlg modify user
+    public function Template_OC_CorpoElettoraleModifyDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliModifyDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+            $form_data['sezioni']=$comune->GetProp('sezioni');
+            $form_data['sezioni_ospedaliere']=$comune->GetProp('sezioni_ospedaliere');
+            $form_data['sezioni_ordinarie']=$comune->GetProp('sezioni_ordinarie');
+            $form_data['luoghi_cura_sub100']=$comune->GetProp('luoghi_cura_sub100');
+            $form_data['luoghi_cura_over100']=$comune->GetProp('luoghi_cura_over100');
+            $form_data['luoghi_detenzione']=$comune->GetProp('luoghi_detenzione');
+            $form_data['elettori_m']=$comune->GetProp('elettori_m');
+            $form_data['elettori_f']=$comune->GetProp('elettori_f');
+            $form_data['elettori_esteri_m']=$comune->GetProp('elettori_esteri_m');
+            $form_data['elettori_esteri_f']=$comune->GetProp('elettori_esteri_f');
+
+            $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
+            
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(200);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(920);
+            $height=0;
+
+            //Dati corpo elettorale
+            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
+            {
+                $height+=580;
+                $section=new AA_FieldSet($id."_Section_DatiSezione","Sezioni e corpo elettorale");
+                $section->AddTextField("sezioni", "1 - Sezioni totali", array("required"=>true,"bottomPadding"=>42,"validateFunction"=>"IsInteger","bottomLabel"=>"*1+2"));
+                $section->AddTextField("sezioni_ordinarie", "2 - di cui ordinarie", array("required"=>true,"bottomPadding"=>42,"validateFunction"=>"IsInteger"),false);
+                $section->AddTextField("sezioni_ospedaliere", "3 - di cui ospedaliere", array("required"=>true,"bottomPadding"=>42,"validateFunction"=>"IsInteger"),false);
+                $section->AddTextField("elettori_m", "Elettori maschi", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettori maschi."));
+                $section->AddTextField("elettori_esteri_m", "di cui esteri", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettori esteri maschi."),false);
+                $section->AddTextField("elettori_f", "Elettrici femmine", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettrici."));
+                $section->AddTextField("elettori_esteri_f", "di cui estere", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettrici estere."),false);
+                $wnd->AddGenericObject($section);
+
+                $section=new AA_FieldSet($id."_Section_DatiSezione","Luoghi di cura");
+                $section->AddTextField("luoghi_cura_sub100", "con meno di 100 posti letto", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger"));
+                $section->AddTextField("luoghi_cura_over100", "con più di 100 posti letto", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger"),false);
+
+                $wnd->AddGenericObject($section);
+
+                $wnd->AddTextField("luoghi_detenzione", "Luoghi di detenzione", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di luoghi di detenzione."));
+                $wnd->AddSpacer(false);
+            }
+                    
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            $wnd->enableRefreshOnSuccessfulSave();
+            $wnd->SetSaveTask("Update_OC_ComuneCorpoElettorale");
             $wnd->SetHeight($height);
 
             return $wnd;    
