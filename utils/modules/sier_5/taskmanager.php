@@ -5,18 +5,19 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 include_once("lib.php");
 
 session_start();
 
-//Utente non identificato o sessioen scaduta
 $user=AA_User::GetCurrentUser();
+
 if($user->IsGuest())
 {
   die("<status id='status'>-2</status><error id='error'>Credenziali non impostate o sessione scaduta.</error>");
-  exit;
+  exit;  
 }
+
+//Utente non identificato o sessioen scaduta
 
 //Task non impostato
 if($_REQUEST['task'] == "")

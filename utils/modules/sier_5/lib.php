@@ -9808,83 +9808,113 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Note e contatti:","value"=>$value)
         ));
 
+        $template="<div style='display: flex;justify-content: flex-start;width: 100%; padding:1em;'><div style='font-weight:700;width: 500px'>#title#</div><div style='text-align:right; width: 90px'>#value#</div></div>";
+        $template_tot="<div style='display: flex;justify-content: flex-start;width: 100%; padding:1em;'><div style='font-weight:900;width: 500px;text-align: right'>#title#</div><div style='text-align:right; width: 90px'>#value#</div></div>";
         //sezioni totali
         $value = $comune->GetProp("sezioni");
         $sezioni=new AA_JSON_Template_Template($id."_Sezioni",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Sezioni totali:","value"=>$value),
+            "template"=>$template_tot,
+            "data"=>array("title"=>"Totale sezioni:","value"=>$value),
+            "height"=>48,
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
         //sezioni ordinarie
         $value = $comune->GetProp("sezioni_ordinarie");
         $sezioni_ordinarie=new AA_JSON_Template_Template($id."_SezioniOrdinarie",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "template"=>$template,
             "data"=>array("title"=>"Sezioni ordinarie:","value"=>$value),
+            "height"=>48,
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
         //sezioni ospedaliere
         $value = $comune->GetProp("sezioni_ospedaliere");
         $sezioni_ospedaliere=new AA_JSON_Template_Template($id."_SezioniOspedaliere",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "template"=>$template,
             "data"=>array("title"=>"Sezioni ospedaliere:","value"=>$value),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+            "height"=>48,
+            "css"=>array("border-bottom"=>"2px solid #dadee0 !important")
         ));
 
         //elettori maschi
         $value = $comune->GetProp("elettori_m");
         $elettori_m=new AA_JSON_Template_Template($id."_Elettori_m",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Elettori maschi:","value"=>$value),
+            "template"=>$template,
+            "data"=>array("title"=>"Elettori maschi <i>(compresi i residenti all'estero)</i>:","value"=>$value),
+            "height"=>48,
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         
         //elettori maschi esteri
         $value = $comune->GetProp("elettori_esteri_m");
         $elettori_esteri_m=new AA_JSON_Template_Template($id."_Elettori_esteri_m",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Elettori esteri maschi:","value"=>$value),
+            "template"=>$template,
+            "data"=>array("title"=>"Elettori maschi residenti all'estero:","value"=>$value),
+            "height"=>48,
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
         //elettori femmine
         $value = $comune->GetProp("elettori_f");
         $elettori_f=new AA_JSON_Template_Template($id."_Elettori_f",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Elettrici femmine:","value"=>$value),
+            "template"=>$template,
+            "data"=>array("title"=>"Elettrici femmine <i>(comprese le residenti all'estero)</i>:","value"=>$value),
+            "height"=>48,
+            "css"=>array("border-bottom"=>"2px solid #dadee0 !important")
+        ));
+
+        //totale elettori esteri
+        $value = $comune->GetProp("elettori_esteri_f")+$comune->GetProp("elettori_esteri_m");
+        $elettori_esteri_tot=new AA_JSON_Template_Template($id."_Elettori_esteri_tot",array(
+            "template"=>$template_tot,
+            "data"=>array("title"=>"Totale elettori residenti all'estero:","value"=>$value),
+            "height"=>48,
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        
+        //totale elettori
+        $value = $comune->GetProp("elettori_f")+$comune->GetProp("elettori_m");
+        $elettori_tot=new AA_JSON_Template_Template($id."_Elettori_tot",array(
+            "template"=>$template_tot,
+            "data"=>array("title"=>"Totale elettori:","value"=>$value),
+            "height"=>48,
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
         //elettori femmine estere
         $value = $comune->GetProp("elettori_esteri_f");
         $elettori_esteri_f=new AA_JSON_Template_Template($id."_Elettori_esteri_f",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Elettrici estere femmine:","value"=>$value),
-            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+            "template"=>$template,
+            "data"=>array("title"=>"Elettrici femmine residenti all'estero:","value"=>$value),
+            "height"=>48,
+            "css"=>array("border-bottom"=>"2px solid #dadee0 !important")
         ));
 
         //luoghi di cura sub 100
         $value = $comune->GetProp("luoghi_cura_sub100");
         $luoghi_cura_sub100=new AA_JSON_Template_Template($id."_Luoghi_cura_sub100",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "template"=>$template,
             "data"=>array("title"=>"Luoghi di cura con meno di 100 posti letto:","value"=>$value),
+            "height"=>48,
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
         //luoghi di cura over 100
         $value = $comune->GetProp("luoghi_cura_over100");
         $luoghi_cura_over100=new AA_JSON_Template_Template($id."_Luoghi_cura_over100",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "template"=>$template,
             "data"=>array("title"=>"Luoghi di cura con più di 100 posti letto:","value"=>$value),
+            "height"=>48,
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         
         //luoghi detenzione
         $value = $comune->GetProp("luoghi_detenzione");
         $luoghi_detenzione=new AA_JSON_Template_Template($id."_Luoghi_detenzione",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "template"=>$template,
             "data"=>array("title"=>"Luoghi di detenzione:","value"=>$value),
+            "height"=>48,
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
@@ -9909,7 +9939,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
-        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Corpo elettorale</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Sezioni e corpo elettorale</span>", "align"=>"center")));
         
         //Pulsante di modifica
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
@@ -9937,27 +9967,29 @@ Class AA_SierModule extends AA_GenericModule
         $layout_corpo=new AA_JSON_Template_Layout($id."_CorpoBox",array("type"=>"clean"));
         //corpo elettorale
         $riga=new AA_JSON_Template_Layout($id."_QuadRow",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
-        $riga->AddRow($sezioni);
         $riga->AddRow($sezioni_ordinarie);
         $riga->AddRow($sezioni_ospedaliere);
-        $layout_corpo->AddCol($riga);
-        
-        $riga=new AA_JSON_Template_Layout($id."_5Row",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
-        $riga->AddRow($elettori_m);
-        $riga->AddRow($elettori_esteri_m);
-        $riga->AddRow($elettori_f);
-        $riga->AddRow($elettori_esteri_f);
-        $layout_corpo->AddCol($riga);
+        $riga->AddRow($sezioni);
+        //$layout_corpo->AddCol($riga);
 
-        $riga=new AA_JSON_Template_Layout($id."_6Row",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
+        //$riga=new AA_JSON_Template_Layout($id."_6Row",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
         $riga->AddRow($luoghi_cura_sub100);
         $riga->AddRow($luoghi_cura_over100);
         $riga->AddRow($luoghi_detenzione);
         $layout_corpo->AddCol($riga);
+
+        $riga=new AA_JSON_Template_Layout($id."_5Row",array("type"=>"clean"));
+        $riga->AddRow($elettori_m);
+        $riga->AddRow($elettori_f);
+        $riga->AddRow($elettori_tot);
+        $riga->AddRow($elettori_esteri_m);
+        $riga->AddRow($elettori_esteri_f);
+        $riga->AddRow($elettori_esteri_tot);
+        $layout_corpo->AddCol($riga);
         
         $layout->addRow($layout_corpo);
         
-        //$layout->AddRow(new AA_JSON_Template_Generic());
+        $layout->AddRow(new AA_JSON_Template_Generic());
 
         return $layout;
     }
@@ -17893,25 +17925,29 @@ Class AA_SierModule extends AA_GenericModule
             $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
             
             $wnd->SetLabelAlign("right");
-            $wnd->SetLabelWidth(200);
+            $wnd->SetLabelWidth(280);
             $wnd->EnableValidation();
             
-            $wnd->SetWidth(920);
+            $wnd->SetWidth(1024);
             $height=0;
 
             //Dati corpo elettorale
             if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
             {
-                $height+=580;
-                $section=new AA_FieldSet($id."_Section_DatiSezione","Sezioni e corpo elettorale");
-                $section->AddTextField("sezioni", "1 - Sezioni totali", array("required"=>true,"bottomPadding"=>42,"validateFunction"=>"IsInteger","bottomLabel"=>"*1+2"));
-                $section->AddTextField("sezioni_ordinarie", "2 - di cui ordinarie", array("required"=>true,"bottomPadding"=>42,"validateFunction"=>"IsInteger"),false);
-                $section->AddTextField("sezioni_ospedaliere", "3 - di cui ospedaliere", array("required"=>true,"bottomPadding"=>42,"validateFunction"=>"IsInteger"),false);
-                $section->AddTextField("elettori_m", "Elettori maschi", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettori maschi."));
-                $section->AddTextField("elettori_esteri_m", "di cui esteri", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettori esteri maschi."),false);
-                $section->AddTextField("elettori_f", "Elettrici femmine", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettrici."));
-                $section->AddTextField("elettori_esteri_f", "di cui estere", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettrici estere."),false);
+                $height+=640;
+                $section=new AA_FieldSet($id."_Section_DatiSezione","Sezioni elettorali","",2);
+                $section->AddTextField("sezioni_ordinarie", "Sezioni ordinarie", array("required"=>true,"labelWidth"=>150,"bottomPadding"=>32,"bottomLabel"=>"*Escluse le ospedaliere","validateFunction"=>"IsInteger"));
+                $section->AddTextField("sezioni_ospedaliere", "Sezioni ospedaliere", array("required"=>true,"labelWidth"=>150,"bottomPadding"=>32,"validateFunction"=>"IsInteger"));
+                $section->AddTextField("sezioni", "Sezioni totali", array("required"=>true,"labelWidth"=>150,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Ordinarie + Ospedaliere"));
+                $section->AddSpacer();
                 $wnd->AddGenericObject($section);
+
+                $section=new AA_FieldSet($id."_Section_DatiElettori","Corpo elettorale","",3);
+                $section->AddTextField("elettori_m", "Elettori maschi", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Totale elettori maschi (compresi i residenti all'estero)."));
+                $section->AddTextField("elettori_esteri_m", "Elettori maschi residenti all'estero", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettori maschi residenti all'estero."));
+                $section->AddTextField("elettori_f", "Elettrici femmine", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Totale elettrici femmine (comprese le residenti all'estero)."));
+                $section->AddTextField("elettori_esteri_f", "Elettrici femmine residenti all'estero", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettrici residenti all'estero."));
+                $wnd->AddGenericObject($section,false);
 
                 $section=new AA_FieldSet($id."_Section_DatiSezione","Luoghi di cura");
                 $section->AddTextField("luoghi_cura_sub100", "con meno di 100 posti letto", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger"));
