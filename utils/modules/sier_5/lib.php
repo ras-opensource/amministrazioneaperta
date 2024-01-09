@@ -540,8 +540,77 @@ Class AA_SierComune
         $this->aProps['operatori']="";
         $this->aProps['comunicazioni']="";
         $this->aProps['lastupdate']="";
+        $this->aProps['feed_risultati']="";
 
         if(is_array($params)) $this->Parse($params);
+    }
+
+    //restiruisce il feed dei risultati (cached)
+    public function GetFeedRisultati($bAsObject=false)
+    {
+        $feed=json_decode($this->aProps['feed_risultati'],true);
+        if(!$feed || $this->aProps['feed_risultati']=="")
+        {
+            //struttura vuota
+            $feed=array(
+                "denominazione"=>$this->aProps['denominazione'],
+                "circoscrizione"=>$this->aProps['circoscrizione'],
+                "id_circoscrizione"=>intVal($this->aProps['id_circoscrizione']),
+                "sezioni"=>intVal($this->aProps['sezioni']),
+                "elettori_m"=>intVal($this->aProps['elettori_m']),
+                "elettori_f"=>intVal($this->aProps['elettori_f']),
+                "elettori_tot"=>$this->aProps['elettori_m']+$this->aProps['elettori_f'],
+                "affluenza"=>array(),
+                "risultati"=>array(
+                    "sezioni_scrutinate"=>0,
+                    "votanti_m"=>0,
+                    "votanti_f"=>0,
+                    "votanti_tot"=>0,
+                    "votanti_percent"=>0,
+                    "voti_presidente"=>array(
+                        "sezioni_scrutinate"=>0,
+                        "voti_tot"=>0
+                    ),
+                    "voti_lista"=>array(
+                        "sezioni_scrutinate"=>0,
+                        "voti_tot"=>0
+                    ),
+                    "voti_candidato"=>array(
+                        "sezioni_scrutinate"=>0,
+                        "voti_tot"=>0
+                    )
+                ),
+            );
+
+            if($bAsObject) return $feed;
+            else return json_encode($feed);
+        }
+        else
+        {
+            if($bAsObject) return $feed;
+            else return $this->aProps['feed_risultati'];
+        }
+    }
+
+    //Aggiorna il feed dei risultati in base agli ultimi valori
+    public function SetFeedRisultati($feed="")
+    {
+        if(is_array($feed))
+        {
+            if(sizeof($feed)>0)
+            {
+                $feed=json_encode($feed);
+                if($feed===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica del feed dei risultati. ".print_r($feed,true),100);
+                    return false;
+                }    
+            }
+            else $feed="";
+        }
+
+        $this->SetProp("feed_risultati",$feed);
+        return true;
     }
 
     //imposta il valore di una propietà
@@ -610,9 +679,9 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //Verifica se ci sono delle anomalie sui risultati
-    public function AnalizeRisultati($risultati=null,$circoscrizione=0)
+    public function AnalizeRisultati($risultati=null,$circoscrizione=0,$comune=null)
     {
-        $result=array(false,array(),false);
+        $result=array(false,array(),false,array('risultati_voti_presidente_check'=>0,'risultati_voti_lista_check'=>0,'risultati_voti_candidato_check'=>0,'risultati_scrutinio_parziale_check'=>0));
         if(!is_array($risultati))
         {
             $result[0]=true;
@@ -631,6 +700,39 @@ Class AA_Sier extends AA_Object_V2
 
         $votanti=intVal($risultati['votanti_m']+$risultati['votanti_f']);
         $sezioni_scrutinate=intVal($risultati['sezioni_scrutinate']);
+
+        if($comune instanceof AA_SierComune)
+        {
+            if($sezioni_scrutinate > $comune->GetProp("sezioni"))
+            {
+                $result[0]=true;
+                $result[1][]="Le sezioni scrutinate sono maggiori delle sezioni del comune";
+                $result[2]=true;
+            }
+            
+            if($sezioni_scrutinate < $comune->GetProp("sezioni"))
+            {
+                $result[0]=true;
+                $result[1][]="Non sono state scrutinate tutte le sezioni del comune";
+                $result[2]=false;
+                $result[3]['risultati_scrutinio_parziale_check']=1;
+            }
+
+            if($risultati['votanti_m'] > $comune->GetProp('elettori_m'))
+            {
+                $result[0]=true;
+                $result[1][]="I votanti maschi sono maggiori degli elettori maschi.";
+                $result[2]=true;
+            }
+
+            if($risultati['votanti_f'] > $comune->GetProp('elettori_f'))
+            {
+                $result[0]=true;
+                $result[1][]="Le votanti femmine sono maggiori delle elettrici femmine.";
+                $result[2]=true;
+            }
+        }
+
         $voti_non_validi=intVal($risultati['schede_nulle']+$risultati['schede_bianche']+$risultati['schede_voti_nulli']);
 
         if($votanti > 0 && $sezioni_scrutinate==0)
@@ -664,6 +766,7 @@ Class AA_Sier extends AA_Object_V2
             $result[0]=true;
             $result[1][]="Non ci sono voti per i candidati Presidente nonostante siano presenti voti validi (".$voti_validi.")";
             $result[2]=true;
+            $result[3]['risultati_voti_presidente_check']++;
         }
 
         if($voti_presidente != ($voti_validi-$risultati['voti_contestati_na_pre']) && $voti_presidente > 0 && $voti_validi > 0)
@@ -671,6 +774,7 @@ Class AA_Sier extends AA_Object_V2
             $result[0]=true;
             $result[1][]="La somma dei voti per i candidati Presidente (".$voti_presidente.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
             $result[2]=true;
+            $result[3]['risultati_voti_presidente_check']++;
         }
 
         if($voti_presidente > ($voti_validi-$risultati['voti_contestati_na_pre']))
@@ -678,6 +782,7 @@ Class AA_Sier extends AA_Object_V2
             $result[0]=true;
             $result[1][]="La somma dei voti per i candidati Presidente (".$voti_presidente.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
             $result[2]=true;
+            $result[3]['risultati_voti_presidente_check']++;
         }
 
         //-------------- Analisi voti di lista -----------------
@@ -694,24 +799,28 @@ Class AA_Sier extends AA_Object_V2
             } 
         }
 
-        if($voti_lista != ($voti_validi-$risultati['voti_contestati_na_liste']) && $voti_lista > 0 && $voti_validi > 0)
+        if($voti_lista != ($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']) && $voti_lista > 0 && $voti_validi > 0)
         {
             $result[0]=true;
-            $result[1][]="La somma dei voti di lista (".$voti_lista.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']).")";
+            $result[1][]="La somma dei voti di lista (".$voti_lista.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']).")";
+            $result[2]=true;
+            $result[3]['risultati_voti_lista_check']++;
+        }
+
+        if($voti_lista == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']) > 0)
+        {
+            $result[0]=true;
+            $result[1][]="Non ci sono voti per le Liste nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']).")";
+            $result[3]['risultati_voti_lista_check']++;
             $result[2]=true;
         }
 
-        if($voti_lista == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']) > 0)
+        if($voti_lista > ($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']))
         {
             $result[0]=true;
-            $result[1][]="Non ci sono voti per le Liste nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']).")";
-        }
-
-        if($voti_lista > ($voti_validi-$risultati['voti_contestati_na_liste']))
-        {
-            $result[0]=true;
-            $result[1][]="La somma dei voti di Lista (".$voti_lista.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']).")";
+            $result[1][]="La somma dei voti di Lista (".$voti_lista.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']).")";
             $result[2]=true;
+            $result[3]['risultati_voti_lista_check']++;
         }
         //-------------------------------------------------------
 
@@ -734,6 +843,7 @@ Class AA_Sier extends AA_Object_V2
             $result[0]=true;
             $result[1][]="Il numero totale di preferenze (".$voti_candidato.") è superiore al doppio dei voti validi (".($voti_validi*2).")";
             $result[2]=true;
+            $result[3]['risultati_voti_candidato_check']++;
         }
         //---------------------------------------------------------
         
@@ -950,7 +1060,155 @@ Class AA_Sier extends AA_Object_V2
         return $feed;
     }
 
-    //Costruisce il feed dei risultati
+    //costruisce il feed dei risultati sul singolo comune
+    public function BuildComuneRisultatiAffluenzaFeed($comune=null,$risultati=null)
+    {
+        
+    }
+
+    //Aggiorna il feed dei risultati del comune
+    public function UpdateComuneFeedRisultati($id_comune=0,$user=null,$bReset=false,$bInitializeOnly=false)
+    {
+        if(!$this->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - oggetto non valido.",100);
+            return false;
+        }
+
+        if(!($user instanceof AA_User)) $user=AA_User::GetCurrentUser();
+        if(($this->GetUserCaps($user)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può aggiornare l'oggetto.",100);
+            return false;
+        }
+
+        $comune=$this->GetComune($id_comune);
+        if($comune==null)
+        {
+            AA_Log::Log(__METHOD__." - identificativo comune non valido.",100);
+            return false;
+        }
+
+        $feed=$comune->GetFeedRisultati(true);
+        $affluenza=$comune->GetAffluenza(true);
+        $giornate=$this->GetGiornate();
+        $cp=$this->GetControlPannel();
+        $risultati=$comune->GetRisultati(true);
+        $analisi_risultati=$this->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"));
+
+        //---------- aggiorna i dati generali ---------------------------
+        $feed["denominazione"]=$comune->GetProp('denominazione');
+        $feed["circoscrizione"]=$comune->GetProp('circoscrizione');
+        $feed["id_circoscrizione"]=$comune->GetProp('id_circoscrizione');
+        $feed["sezioni"]=$comune->GetProp('sezioni');
+        $feed["elettori_m"]=$comune->GetProp('elettori_m');
+        $feed["elettori_f"]=$comune->GetProp('elettori_f');
+        $feed["elettori_tot"]=$comune->GetProp('elettori_m')+$comune->GetProp('elettori_f');
+        //----------------------------------------------------------------
+
+        //-------------- affluenza ------------------
+        foreach($giornate as $giornata=>$curGiornata)
+        {
+            if($curGiornata['affluenza']==1)
+            {
+                if(!isset($feed['affluenza'][$giornata]) || $bReset)
+                {
+                    $feed['affluenza'][$giornata]=array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
+                } 
+
+                if(isset($affluenza[$giornata]) && !$bInitializeOnly)
+                {
+                    $feed['affluenza'][$giornata]['ore_12']['count']=$affluenza[$giornata]['ore_12'];
+                    $feed['affluenza'][$giornata]['ore_12']['percent']=round($affluenza[$giornata]['ore_12']*100/intVal($feed['elettori_tot']),1);
+                    $feed['affluenza'][$giornata]['ore_19']['count']=$affluenza[$giornata]['ore_19'];
+                    $feed['affluenza'][$giornata]['ore_19']['percent']=round($affluenza[$giornata]['ore_19']*100/intVal($feed['elettori_tot']),1);
+                    $feed['affluenza'][$giornata]['ore_22']['count']=$affluenza[$giornata]['ore_22'];
+                    $feed['affluenza'][$giornata]['ore_22']['percent']=round($affluenza[$giornata]['ore_22']*100/intVal($feed['elettori_tot']),1);
+                }
+            }
+        }
+        //--------------------------------------------
+
+        //-------------------  Aggiornamento risultati  ----------------------------------
+
+        //risultati generali
+        if($bReset || !isset($feed['risultati']))
+        {
+            $feed['risultati']=array(
+                "sezioni_scrutinate"=>0,
+                "votanti_m"=>0,
+                "votanti_f"=>0,
+                "votanti_tot"=>0,
+                "votanti_percent"=>0,
+                "voti_presidente"=>array("sezioni_scrutinate"=>0,"voti_tot"=>0),
+                "voti_lista"=>array("sezioni_scrutinate"=>0,"voti_tot"=>0),
+                "voti_candidato"=>array("sezioni_scrutinate"=>0,"voti_tot"=>0),
+            );
+        }
+
+        $update=true;
+        $update_liste=true;
+        $update_candidati=true;
+
+        //Non aggiorna i risultati se non è abilitato l'aggiornamento su scrutinio parziale e non sono state scrutinate tutte le sezioni
+        if($cp['risultati_scrutinio_parziale_check'] == 0 && $analisi_risultati[3]["risultati_scrutinio_parziale_check"]>0 && $analisi_risultati[0]) $update=false;
+
+        //Non aggiorna i risultati se non è abilitato l'aggiornamento su anomalie voti presidente e sono state riscontrate delle anomalie sui voti presidente
+        if($cp['risultati_voti_presidente_check'] == 0 && $analisi_risultati[3]["risultati_voti_presidente_check"]>0 && $analisi_risultati[0]) $update=false;
+
+        //non aggiorna i risultati di lista se non è abilitato l'aggiornamento su anomalie voti di lista e sono state riscontrate delle anomalie sui voti di lista
+        if($cp['risultati_voti_lista_check'] == 0 && $analisi_risultati[3]["risultati_voti_lista_check"]>0 && $analisi_risultati[0]) $update_liste=false;
+
+        //non aggiorna i risultati dei candidati se non è abilitato l'aggiornamento su anomalie voti candidato e sono state riscontrate delle anomalie sui voti candidato
+        if($cp['risultati_voti_candidato_check'] == 0 && $analisi_risultati[3]["risultati_voti_candidato_check"]>0 && $analisi_risultati[0]) $update_candidati=false;
+
+        //------------------
+        $coalizioni=$this->GetCoalizioni();
+        if($bReset)
+        {
+            $feed['risultati']['voti_presidente']=array("sezioni_scrutinate"=>0,"voti_tot"=>0);
+        }
+        
+        //aggiorna i dati generali
+        if($update && !$bInitializeOnly)
+        {
+            $feed['risultati']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
+            $feed['risultati']['votanti_m']=intVal($risultati['votanti_m']);
+            $feed['risultati']['votanti_f']=intVal($risultati['votanti_f']);
+            $feed['risultati']['votanti_tot']=intVal($risultati['votanti_tot']);
+
+            $feed['risultati']['voti_presidente']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
+        }
+        //-------------
+
+        //voti presidente
+        $voti_tot_presidente=0;
+        foreach($coalizioni as $idCoalizione=>$curCoalizione)
+        {
+            if($bReset)            
+            {
+                $feed['risultati']['voti_presidente'][$idCoalizione]=array(
+                    "denominazione"=>$curCoalizione->GetProp("nome_candidato"),
+                    "image"=>$curCoalizione->GetProp("image"),
+                    "voti"=>0,
+                    "voti_percent"=>0
+                );
+            }
+
+            if(!$bInitializeOnly && $update && isset($risultati['voti_presidente'][$idCoalizione]))
+            {
+                $feed['risultati']['voti_presidente'][$idCoalizione]['voti']=intVal($risultati[$idCoalizione]);
+                $voti_tot_presidente+=intVal($risultati[$idCoalizione]);
+            }
+        }
+        //-------------
+
+
+
+        //--------------------------------------------------------------------------------
+    }
+
+    //Costruisce il feed dei risultati globale
     public function BuildRisultatiAffluenzaFeed($params=array())
     {
         if(!$this->bValid) return false;
@@ -3860,6 +4118,8 @@ Class AA_SierModule extends AA_GenericModule
                 $taskManager->RegisterTask("Update_OC_ComuneRisultatiPreferenze");
                 $taskManager->RegisterTask("GetSierOCModifyRisultatiPreferenzeMultiDlg");
                 $taskManager->RegisterTask("Update_OC_ComuneRisultatiPreferenzeMulti");
+                
+                $taskManager->RegisterTask("GetSierAnalisiRisultatiDlg");
             }
 
             //desktop
@@ -6318,7 +6578,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetHeight(280);
       
         $risultati=$comune->GetRisultati(true);
-        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"));
+        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
 
         //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true)." - risultati: ".print_r($risultati,true),100);
 
@@ -9819,11 +10079,32 @@ Class AA_SierModule extends AA_GenericModule
         $layout->AddRow($header);
         //---------------------------------------------------------------------
         $layout->AddRow($multiview);
+
+        if(sizeof($risultati)>0)
+        {
+            $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+            if($analisi[0]==true && $risultati['sezioni_scrutinate'] > 0)
+            {
+                $color="orange";
+                if($analisi[2]==true) $color="red";
+                $onClick="AA_MainApp.utils.callHandler('dlg', {task:'GetSierAnalisiRisultatiDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:'".$id."'},module: '" . $this->id . "'},'".$this->id."')";
+                $warning='<div><span class="mdi mdi-alert" style="color:'.$color.'"></span>&nbsp;<a href="#" onClick="'.$onClick.'">Sono presenti delle criticità, fai click qui per visualizzarle.</span></div>';
+            }
+            else
+            {
+                $warning='<div><span class="mdi mdi-check-circle" style="color:green"></span>&nbsp;<span>Le informazioni sono congruenti.</span></div>';
+            }    
+        }
+        else 
+        {
+            $warning="<div>&nbsp;</div>";
+        }
         
         //--------------------------- Dati generali ----------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiGeneraleBox",array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
@@ -9907,6 +10188,17 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
+        //Voti contenenti voti validi solo per il presidente
+        if(isset($risultati['voti_solo_presidente']))$value=$risultati['voti_solo_presidente'];
+        else $value=0;
+        $voti_solo_presidente=new AA_JSON_Template_Template($id."_VotiSoloPresidente",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Schede valide votate solo per i candidati Presidente:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
         //Schede nulle
         if(isset($risultati['schede_nulle']))$value=$risultati['schede_nulle'];
         else $value=0;
@@ -9944,6 +10236,7 @@ Class AA_SierModule extends AA_GenericModule
         $riga->AddRow($schede_bianche);
         $riga->AddRow($schede_nulle);
         $riga->AddRow($schede_voti_nulli);
+        $riga->AddRow($voti_solo_presidente);
         $riga->AddRow($voti_contestati_pre);
         $riga->AddRow($voti_contestati_liste);
 
@@ -9960,9 +10253,9 @@ Class AA_SierModule extends AA_GenericModule
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiCoalizioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-            $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_WarningCoalizioni",array("view"=>"label","label"=>$warning,"align"=>"center")));
     
-           
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiCoalizioni_btn",array(
                 "view"=>"button",
                  "type"=>"icon",
@@ -10023,7 +10316,8 @@ Class AA_SierModule extends AA_GenericModule
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiListe",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-            $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_WarningListe",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiListe_btn",array(
                 "view"=>"button",
@@ -10098,7 +10392,8 @@ Class AA_SierModule extends AA_GenericModule
         //------------------------------ Risultati preferenze ---------------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiPreferenzeBox",array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiPreferenze",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_WarningRisultati",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {   
@@ -14476,7 +14771,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         //controlli
-        if(!isset($_REQUEST['sezioni_scrutinate']) || $_REQUEST['sezioni_scrutinate']==0 || $_REQUEST['sezioni_scrutinate'] =="")
+        if(!isset($_REQUEST['sezioni_scrutinate']) || $_REQUEST['sezioni_scrutinate']<=0 || $_REQUEST['sezioni_scrutinate'] =="")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Le sezioni scrutinate devono essere un numero maggiore di zero.",false);
@@ -14540,6 +14835,7 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>=0) $risultati['schede_nulle']=$_REQUEST['schede_nulle'];
         if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>=0) $risultati['voti_contestati_na_pre']=$_REQUEST['voti_contestati_na_pre'];
         if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>=0) $risultati['voti_contestati_na_liste']=$_REQUEST['voti_contestati_na_liste'];
+        if(isset($_REQUEST['voti_solo_presidente']) && $_REQUEST['voti_solo_presidente']>=0) $risultati['voti_solo_presidente']=$_REQUEST['voti_solo_presidente'];
         if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>=0) $risultati['schede_voti_nulli']=$_REQUEST['schede_voti_nulli'];
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati generali"))
@@ -14618,10 +14914,10 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        if($voti_totali>($votanti-$voti_non_validi))
+        if($voti_totali!=($votanti-$voti_non_validi))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il totale dei voti coalizione non possono essere maggiori del numero di voti validi (num. votanti - voti non validi).",false);
+            $task->SetError("Il totale dei voti per i candidati Presidente (".$voti_totali.") devono essere uguali al numero numero dei voti validi (".$votanti-$voti_non_validi.").",false);
             return false;
         }
         
@@ -14680,6 +14976,7 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
         if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
+        if(isset($risultati['schede_solo_presidente']) && $risultati['schede_solo_presidente']>0) $voti_non_validi+=$risultati['schede_solo_presidente'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         $liste=$object->GetListe();
@@ -14702,10 +14999,10 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        if($voti_totali>($votanti+$voti_non_validi))
+        if($voti_totali!=($votanti-$voti_non_validi))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il totale dei voti di lista non possono essere maggiori del numero di voti validi (num. votanti - voti non validi).",false);
+            $task->SetError("Il totale dei voti di lista (".$voti_totali.") devono corrispondere al numero di voti validi (".$votanti-$voti_non_validi.").",false);
             return false;
         }
         
@@ -15034,6 +15331,7 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
         if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
+        if(isset($risultati['voti_solo_presidente']) && $risultati['voti_solo_presidente']>0) $voti_non_validi+=$risultati['voti_solo_presidente'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         $liste=$object->GetListe(null,$comune->GetProp("id_circoscrizione"));
@@ -15056,10 +15354,10 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        if($voti_totali>($votanti+$voti_non_validi))
+        if($voti_totali!=($votanti-$voti_non_validi))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il totale dei voti di lista non possono essere maggiori del numero di voti validi (num. votanti - voti non validi).",false);
+            $task->SetError("Il totale dei voti di lista (".$voti_totali.") devono corrispondere al numero di voti validi (".$votanti-$voti_non_validi.").",false);
             return false;
         }
         
@@ -15347,7 +15645,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         //controlli
-        if(!isset($_REQUEST['sezioni_scrutinate']) || $_REQUEST['sezioni_scrutinate']==0 || $_REQUEST['sezioni_scrutinate'] =="")
+        if(!isset($_REQUEST['sezioni_scrutinate']) || $_REQUEST['sezioni_scrutinate']<=0 || $_REQUEST['sezioni_scrutinate'] =="")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Le sezioni scrutinate devono essere un numero maggiore di zero.",false);
@@ -15409,6 +15707,7 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>=0) $risultati['schede_nulle']=intVal($_REQUEST['schede_nulle']);
         if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>=0) $risultati['voti_contestati_na_pre']=intVal($_REQUEST['voti_contestati_na_pre']);
         if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>=0) $risultati['voti_contestati_na_liste']=intVal($_REQUEST['voti_contestati_na_liste']);
+        if(isset($_REQUEST['voti_solo_presidente']) && $_REQUEST['voti_solo_presidente']>=0) $risultati['voti_solo_presidente']=intVal($_REQUEST['voti_solo_presidente']);
         if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>=0) $risultati['schede_voti_nulli']=intVal($_REQUEST['schede_voti_nulli']);
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati generali - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
@@ -15660,10 +15959,10 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        if($voti_totali>($votanti-$voti_non_validi))
+        if($voti_totali!=($votanti-$voti_non_validi))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il totale dei voti candidati Presidente non possono essere maggiori del numero di voti validi (num. votanti - voti non validi).",false);
+            $task->SetError("Il totale dei voti per i candidati Presidente (".$voti_totali.") devono essere uguali al numero numero dei voti validi (".$votanti-$voti_non_validi.").",false);
             return false;
         }
         
@@ -17358,7 +17657,7 @@ Class AA_SierModule extends AA_GenericModule
         //---------------------------------------------------------------------
         $layout->AddRow($multiview);
         
-        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"));
+        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
         if($analisi[0]==true)
         {
             $color="orange";
@@ -17497,10 +17796,22 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
+        //Voti contenenti voti validi solo per il presidente
+        if(isset($risultati['voti_solo_presidente']))$value=$risultati['voti_solo_presidente'];
+        else $value=0;
+        $voti_solo_presidente=new AA_JSON_Template_Template($id."_VotiSoloPresidente",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Schede valide votate solo per i candidati Presidente:","value"=>$value),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+
         //$riga=new AA_JSON_Template_Layout($id."_SecondRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddRow($schede_bianche);
         $riga->AddRow($schede_nulle);
         $riga->AddRow($schede_voti_nulli);
+        $riga->AddRow($voti_solo_presidente);
         $riga->AddRow($voti_contestati_pre);
         $riga->AddRow($voti_contestati_liste);
 
@@ -17834,6 +18145,7 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['schede_nulle']=0;
         $form_data['voti_contestati_na_pre']=0;
         $form_data['voti_contestati_na_liste']=0;
+        $form_data['voti_solo_presidente']=0;
         $form_data['schede_voti_nulli']=0;
 
         $risultati=$comune->GetRisultati(true);
@@ -17845,12 +18157,12 @@ Class AA_SierModule extends AA_GenericModule
         $wnd=new AA_GenericFormDlg($id, "Modifica risultati generali", $this->id,$form_data,$form_data);
             
         $wnd->SetLabelAlign("right");
-        $wnd->SetLabelWidth(230);
+        $wnd->SetLabelWidth(330);
         $wnd->SetBottomPadding(32);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(540);
-        $wnd->SetHeight(750);
+        $wnd->SetWidth(610);
+        $wnd->SetHeight(800);
         
         //Sezioni scrutinate
         $wnd->AddTextField("sezioni_scrutinate","Sezioni scrutinate",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di sezioni scrutinate."));
@@ -17864,7 +18176,10 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddTextField("schede_nulle","Schede nulle",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede nulle."));
         //schede contenenti voti nulli
         $wnd->AddTextField("schede_voti_nulli","Schede escl. con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
-        
+
+        //schede solo presidente
+        $wnd->AddTextField("voti_solo_presidente","Schede votate solo per i candidati Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero schede valide votate solo per i candidati Presidente."));
+
         $section=new AA_FieldSet($id."_Section_RisultatiGenerali","Schede contenenti voti contestati e non assegnati");
         //voti contestati non assegnati pre
         $section->AddTextField("voti_contestati_na_pre","al Presidente",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contenti voti contestati e non assegnati (Presidente)."));
@@ -18254,7 +18569,7 @@ Class AA_SierModule extends AA_GenericModule
                 }    
             }
 
-            $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati liste circoscrizionali", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Modifica voti liste circoscrizionali", $this->id,$form_data,$form_data);
                 
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(300);
@@ -18325,7 +18640,7 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['voti_contestati_na_pre']=0;
         $form_data['voti_contestati_na_liste']=0;
         $form_data['schede_voti_nulli']=0;
-        $form_data['schede_solo_presidente']=0;
+        $form_data['voti_solo_presidente']=0;
 
         $risultati=$comune->GetRisultati(true);
         foreach($risultati as $key=>$val)
@@ -18336,11 +18651,11 @@ Class AA_SierModule extends AA_GenericModule
         $wnd=new AA_GenericFormDlg($id, "Modifica risultati generali", $this->id,$form_data,$form_data);
             
         $wnd->SetLabelAlign("right");
-        $wnd->SetLabelWidth(230);
+        $wnd->SetLabelWidth(330);
         $wnd->SetBottomPadding(32);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(450);
+        $wnd->SetWidth(610);
         $wnd->SetHeight(800);
         
         //Sezioni scrutinate
@@ -18355,6 +18670,9 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddTextField("schede_nulle","Schede nulle",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede nulle."));
 
         $wnd->AddTextField("schede_voti_nulli","Schede escl. con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
+
+        //schede solo presidente
+        $wnd->AddTextField("voti_solo_presidente","Schede votate solo per i candidati Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero schede valide votate solo per i candidati Presidente."));
 
         $section=new AA_FieldSet($id."_Section_RisultatiGenerali","Schede contenenti voti contestati e non assegnati");
         //voti contestati non assegnati pre
@@ -18546,7 +18864,7 @@ Class AA_SierModule extends AA_GenericModule
                 if(isset($form_data["lista_".$key])) $form_data["lista_".$key]=$val;
             }
 
-            $wnd=new AA_GenericFormDlg($id, "Modifica voti candidati liste circoscrizionali", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Modifica voti liste circoscrizionali", $this->id,$form_data,$form_data);
                 
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(190);
