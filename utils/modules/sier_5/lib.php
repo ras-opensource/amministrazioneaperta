@@ -4048,6 +4048,8 @@ Class AA_SierModule extends AA_GenericModule
             //comune
             $taskManager->RegisterTask("GetSierComuneDatiGeneraliViewDlg");
             $taskManager->RegisterTask("UpdateSierComuneDatiGenerali");
+            $taskManager->RegisterTask("GetSierComuneCorpoElettoraleViewDlg");
+            $taskManager->RegisterTask("UpdateSierComuneCorpoElettorale");
 
             $taskManager->RegisterTask("GetSierComuneComunicazioniViewDlg");
             $taskManager->RegisterTask("UpdateSierComuneComunicazioni");
@@ -11506,6 +11508,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data e ora di aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"dati_generali","header"=>array("<div style='text-align: center'>Dati Generali</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            array("id"=>"corpo_elettorale","header"=>array("<div style='text-align: center'>Corpo elett.</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"comunicazioni","header"=>array("<div style='text-align: center'>comunicazioni</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"completamento_a","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
@@ -11538,8 +11541,14 @@ Class AA_SierModule extends AA_GenericModule
 
             //--------- Dati generali ---------
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneDatiGeneraliViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-            $data[$index]['dati_generali']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati generali e del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['dati_generali']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati generali' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
             $data[$index]['dati_generali'].="</div>";
+            //------------------------------
+
+            //--------- Corpo Elettorale ---------
+            $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneCorpoElettoraleViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
+            $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
+            $data[$index]['corpo_elettorale'].="</div>";
             //------------------------------
 
             //--------- Comunicazioni ---------
@@ -13807,6 +13816,34 @@ Class AA_SierModule extends AA_GenericModule
         $task->SetContent($this->Template_GetSierComuneDatiGeneraliViewDlg($object,$comune),true);
         return true;
     }
+
+    //Task corpo elettorale
+    public function Task_GetSierComuneCorpoElettoraleViewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneCorpoElettoraleViewDlg($object,$comune),true);
+        return true;
+    }
+
 
     //Task comunicazioni Comune
     public function Task_GetSierComuneComunicazioniViewDlg($task)
@@ -16488,6 +16525,13 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Permessi insufficienti.",false);
+            return false;
+        }
+
         $comune = $object->GetComune($_REQUEST['id_comune']);
         if(!($comune instanceof AA_SierComune))
         {
@@ -17477,9 +17521,6 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['pec']=$comune->GetProp('pec');
             $form_data['contatti']=$comune->GetProp('contatti');
             $form_data['indirizzo']=$comune->GetProp('indirizzo');
-            $form_data['sezioni']=$comune->GetProp('sezioni');
-            $form_data['elettori_m']=$comune->GetProp('elettori_m');
-            $form_data['elettori_f']=$comune->GetProp('elettori_f');
     
             $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
             
@@ -17488,7 +17529,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->EnableValidation();
             
             $wnd->SetWidth(800);
-            $wnd->SetHeight(600);
+            $wnd->SetHeight(450);
             
             //circoscrizione
             $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
@@ -17508,15 +17549,8 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddTextField("indirizzo","Indirizzo",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Via e numero civico."));
     
             //contatti
-            $wnd->AddTextareaField("contatti","Note e contatti",array("gravity"=>1, "bottomLabel"=>"*Eventuali informazioni di recapito utili."));
+            $wnd->AddTextareaField("contatti","Note e contatti",array("gravity"=>1, "bottomLabel"=>"*Eventuali informazioni di recapito utili (per andare a capo premere ctrl+invio)."));
     
-            //Dati corpo elettorale
-            $section=new AA_FieldSet($id."_Section_DatiCorpoElettorale","Corpo elettorale");
-            $section->AddTextField("sezioni", "Sezioni", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di sezioni"));
-            $section->AddTextField("elettori_m", "Maschi", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero elettori."),false);
-            $section->AddTextField("elettori_f", "Femmine", array("required"=>true,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero elettrici."),false);
-            $wnd->AddGenericObject($section);
-                    
             $wnd->EnableCloseWndOnSuccessfulSave();
             $wnd->enableRefreshOnSuccessfulSave();
             $wnd->SetSaveTask("UpdateSierComuneDatiGenerali");
@@ -17972,6 +18006,73 @@ Class AA_SierModule extends AA_GenericModule
             $wnd = new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
 
             return $wnd;
+        }
+    }
+
+    //Template dlg modify user
+    public function Template_GetSierComuneCorpoElettoraleViewDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneCorpoElettoraleViewDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati corpo elettorale", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati corpo elettorale", $this->id);
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0) $readonly=false;
+        else $readonly=true;
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+            $form_data['sezioni']=$comune->GetProp('sezioni');
+            $form_data['sezioni_ospedaliere']=$comune->GetProp('sezioni_ospedaliere');
+            $form_data['sezioni_ordinarie']=$comune->GetProp('sezioni_ordinarie');
+            $form_data['luoghi_cura_sub100']=$comune->GetProp('luoghi_cura_sub100');
+            $form_data['luoghi_cura_over100']=$comune->GetProp('luoghi_cura_over100');
+            $form_data['luoghi_detenzione']=$comune->GetProp('luoghi_detenzione');
+            $form_data['elettori_m']=$comune->GetProp('elettori_m');
+            $form_data['elettori_f']=$comune->GetProp('elettori_f');
+            $form_data['elettori_esteri_m']=$comune->GetProp('elettori_esteri_m');
+            $form_data['elettori_esteri_f']=$comune->GetProp('elettori_esteri_f');
+
+            $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
+            
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(280);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(1024);
+            $height=0;
+
+            
+            $height+=640;
+            $section=new AA_FieldSet($id."_Section_DatiSezione","Sezioni elettorali","",2);
+            $section->AddTextField("sezioni_ordinarie", "Sezioni ordinarie", array("required"=>true,"readonly"=>$readonly,"labelWidth"=>150,"bottomPadding"=>32,"bottomLabel"=>"*Escluse le ospedaliere","validateFunction"=>"IsInteger"));
+            $section->AddTextField("sezioni_ospedaliere", "Sezioni ospedaliere", array("required"=>true,"readonly"=>$readonly,"labelWidth"=>150,"bottomPadding"=>32,"validateFunction"=>"IsInteger"));
+            $section->AddTextField("sezioni", "Sezioni totali", array("required"=>true,"labelWidth"=>150,"readonly"=>$readonly,"bottomPadding"=>32,"readonly"=>$readonly,"validateFunction"=>"IsInteger","bottomLabel"=>"*Ordinarie + Ospedaliere"));
+            $section->AddSpacer();
+            $wnd->AddGenericObject($section);
+
+            $section=new AA_FieldSet($id."_Section_DatiElettori","Corpo elettorale","",3);
+            $section->AddTextField("elettori_m", "Elettori maschi", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Totale elettori maschi (compresi i residenti all'estero)."));
+            $section->AddTextField("elettori_esteri_m", "Elettori maschi residenti all'estero", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettori maschi residenti all'estero."));
+            $section->AddTextField("elettori_f", "Elettrici femmine", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Totale elettrici femmine (comprese le residenti all'estero)."));
+            $section->AddTextField("elettori_esteri_f", "Elettrici femmine residenti all'estero", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di elettrici residenti all'estero."));
+            $wnd->AddGenericObject($section,false);
+
+            $section=new AA_FieldSet($id."_Section_DatiSezione","Luoghi di cura");
+            $section->AddTextField("luoghi_cura_sub100", "con meno di 100 posti letto", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger"));
+            $section->AddTextField("luoghi_cura_over100", "con più di 100 posti letto", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger"),false);
+
+            $wnd->AddGenericObject($section);
+
+            $wnd->AddTextField("luoghi_detenzione", "Luoghi di detenzione", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger","bottomLabel"=>"*Numero di luoghi di detenzione."));
+            $wnd->AddSpacer(false);
+
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            $wnd->enableRefreshOnSuccessfulSave();
+            $wnd->SetSaveTask("UpdateSierComuneCorpoElettorale");
+            $wnd->SetHeight($height);
+
+            return $wnd;    
         }
     }
 

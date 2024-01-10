@@ -974,6 +974,7 @@ class AA_User
             //if($curFlag=="patrimonio") $result.="<span class='AA_Label AA_Label_LightGreen'>GESPI</span>&nbsp;";
             //if($curFlag=="sier") $result.="<span class='AA_Label AA_Label_LightGreen'>SIER</span>&nbsp;";
             if($curFlag=="processi") $result.="<span class='AA_Label AA_Label_LightGreen'>SIMAP</span>&nbsp;";
+            if($curFlag=="processi_admin") $result.="<span class='AA_Label AA_Label_LightGreen'>SIMAP(adm)</span>&nbsp;";
             if($curFlag=="incarichi") $result.="<span class='AA_Label AA_Label_LightGreen'>Incarichi</span>&nbsp;";
             if($curFlag=="incarichi_titolari") $result.="<span class='AA_Label AA_Label_LightGreen'>Incarichi(adm)</span>&nbsp;";
             if(isset($platformFlags[$curFlag])) $result.="<span class='AA_Label AA_Label_LightGreen'>".$platformFlags[$curFlag]."</span>&nbsp;";
@@ -1287,6 +1288,7 @@ class AA_User
             //Concurrent flag
             if(strpos($user->sFlags,"concurrent")!==false || strpos($user->sLegacyFlags,"concurrent")!==false)
             {
+                //AA_Log::Log(__METHOD__." - accesso concorrente abilitato: ".$row[0]['user'],100);
                 $user->nConcurrent=1;
             }
 
@@ -1692,11 +1694,10 @@ class AA_User
             //AA_Log::Log(get_class()."->UserAuth($sToken) - autenticazione in base al token.");
 
             $token_timeout_m = 30;
-            $query_token = sprintf("SELECT * FROM tokens where (TIMESTAMPDIFF(MINUTE,data_rilascio, NOW()) < '%s' OR remember_me='1') and ip_src = '%s' and token ='%s'", $token_timeout_m, $_SERVER['REMOTE_ADDR'], $sToken);
+            $query_token = sprintf("SELECT * FROM tokens where (TIMESTAMPDIFF(MINUTE,data_rilascio, NOW()) < '%s' OR remember_me='1') and token ='%s' order by data_rilascio DESC LIMIT 1", $token_timeout_m, $sToken);
 
             if ($db->Query($query_token)) {
-                $result = $db->GetResult();
-                $rs = $result->fetch(PDO::FETCH_ASSOC);
+                $rs = $db->GetResultSet();
             } else {
                 AA_Log::Log(__METHOD__ . " - errore nell'accesso al db: " . $db->GetErrorMessage(), 100);
                 return AA_User::Guest();
@@ -1704,10 +1705,11 @@ class AA_User
 
             if ($db->GetAffectedRows() > 0) {
 
-                if (strcmp($rs['token'], $sToken) == 0) {
+                //AA_Log::Log(get_class()."->UserAuth($sToken) - Authenticate token ($sToken) - ".print_r($rs,true), 100);
+                if (strcmp($rs[0]['token'], $sToken) == 0) {
                     //AA_Log::Log(get_class()."->UserAuth($sToken) - Authenticate token ($sToken) - success", 50);
 
-                    $user = AA_User::LoadUser($rs['id_utente']);
+                    $user = AA_User::LoadUser($rs[0]['id_utente']);
                     if ($user->IsDisabled()) {
                         AA_Log::Log(get_class() . "->UserAuth($sToken) - L'utente è disattivato.", 100);
                         return AA_User::Guest();
@@ -1756,7 +1758,7 @@ class AA_User
             }
 
             //Old stuff
-            if (isset($log)) AA_Log::LogAction($rs->Get('id'), 0, "Authenticate token ($sToken) - failed");
+            //if (isset($log)) AA_Log::LogAction(), 0, "Authenticate token ($sToken) - failed");
             //----------
 
             AA_Log::Log(get_class() . "->UserAuth($sToken) - Authenticate token ($sToken) - failed", 100);
@@ -2162,7 +2164,7 @@ class AA_User
 
         if ($this->bIsValid && $this->bCurrentUser) {
             $db = new Database();
-            $query = "DELETE from tokens WHERE id_utente='" . $this->nID . "'";
+            $query = "DELETE from tokens WHERE token='" . $_SESSION['token'] . "' and id_utente='".$this->nID."'";
             $db->Query($query);
 
             $_SESSION['token'] = null;
@@ -2176,7 +2178,7 @@ class AA_User
     //Genera il token di autenticazione
     static private function GenerateToken($id_user, $remember_me=false, $concurrent_access=false)
     {
-        //AA_Log::Log(__METHOD__."($id_user)",100);
+        AA_Log::Log(__METHOD__."(".print_r($id_user,true).",".print_r($remember_me,true).",".print_r($concurrent_access,true).")",100);
 
         $token = hash("sha256", $id_user . date("Y-m-d H:i:s") . uniqid() . $_SERVER['REMOTE_ADDR']);
 
@@ -2184,7 +2186,7 @@ class AA_User
 
         $db = new AA_Database();
 
-        if(!$concurrent_access)
+        if(!$concurrent_access && !$remember_me)
         {
             AA_Log::Log(__METHOD__." - accesso concorrente disattivato, elimino token precedenti.",100);
             $query = "DELETE from tokens where id_utente='" . $id_user . "'";
@@ -2214,7 +2216,7 @@ class AA_User
     //Rinfresca il token di autenticazione
     static private function RefreshToken($token)
     {
-        AA_Log::Log(get_class() . "->RefreshToken($token)");
+        //AA_Log::Log(get_class() . "->RefreshToken($token)");
 
         $db = new AA_Database();
 
@@ -3163,6 +3165,10 @@ class AA_User
                 $flags .= $separatore . "processi";
                 $separatore = "|";
             }
+            if (isset($params['gest_processi_admin']) || (isset($params['legacyFlag_processi_admin']) && $params['legacyFlag_processi_admin']>0)) {
+                $flags .= $separatore . "processi_admin";
+                $separatore = "|";
+            }
             if (isset($params['gest_incarichi_titolari']) || (isset($params['legacyFlag_incarichi_titolari']) && $params['legacyFlag_incarichi_titolari']>0)) {
                 $flags .= $separatore . AA_Const::AA_USER_FLAG_INCARICHI_TITOLARI;
                 $separatore = "|";
@@ -3402,8 +3408,6 @@ class AA_User
        return true;
     }
 
-    
-
     //Aggiorna L'utente (legacy)
     public function LegacyUpdateUser($idUser, $params)
     {
@@ -3514,6 +3518,10 @@ class AA_User
 
             if (isset($params['gest_processi']) || (isset($params['legacyFlag_processi']) && $params['legacyFlag_processi']>0)) {
                 $flags .= $separatore . "processi";
+                $separatore = "|";
+            }
+            if (isset($params['gest_processi_admin']) || (isset($params['legacyFlag_processi_admin']) && $params['legacyFlag_processi_admin']>0)) {
+                $flags .= $separatore . "processi_admin";
                 $separatore = "|";
             }
             if (isset($params['gest_incarichi_titolari']) || (isset($params['legacyFlag_incarichi_titolari']) && $params['legacyFlag_incarichi_titolari']>0)) {
@@ -7337,6 +7345,7 @@ class AA_Platform
             "accessi"=>"RIA",
             "admin_accessi"=>"RIA(adm)",
             "processi"=>"Mappatura processi",
+            "processi_admin"=>"Mappatura processi(adm)",
             "incarichi"=>"Gestione incarichi",
             "incarichi_titolari"=>"Gestione Incarichi(adm)"
         );
