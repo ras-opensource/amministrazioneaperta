@@ -2196,6 +2196,14 @@ class AA_User
             }   
         }
 
+        //cancella i token vecchi
+        $query = "DELETE from tokens where id_utente='" . $id_user . "' and TIMESTAMPDIFF(MINUTE,data_rilascio, NOW()) > '60' and remember_me='0'";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+        }
+        //-----------------------
+
         $query = "INSERT INTO tokens set token='" . $token . "', id_utente='" . $id_user . "',ip_src='" . $_SERVER['REMOTE_ADDR'] . "'";
 
         if($remember_me === true || $remember_me > 0)
