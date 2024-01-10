@@ -2160,7 +2160,7 @@ class AA_User
     //Rimuovi le informazioni di autenticazione
     public function LogOut()
     {
-        AA_Log::Log(get_class() . "->LogOut() - " . $this->sUser . "(" . $this->nID . ")");
+        //AA_Log::Log(get_class() . "->LogOut() - " . $this->sUser . "(" . $this->nID . ")");
 
         if ($this->bIsValid && $this->bCurrentUser) {
             $db = new Database();
@@ -2178,7 +2178,7 @@ class AA_User
     //Genera il token di autenticazione
     static private function GenerateToken($id_user, $remember_me=false, $concurrent_access=false)
     {
-        AA_Log::Log(__METHOD__."(".print_r($id_user,true).",".print_r($remember_me,true).",".print_r($concurrent_access,true).")",100);
+        //AA_Log::Log(__METHOD__."(".print_r($id_user,true).",".print_r($remember_me,true).",".print_r($concurrent_access,true).")",100);
 
         $token = hash("sha256", $id_user . date("Y-m-d H:i:s") . uniqid() . $_SERVER['REMOTE_ADDR']);
 
