@@ -17881,7 +17881,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_DatiGeneraliModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliModifyDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -17895,7 +17895,7 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['contatti']=$comune->GetProp('contatti');
             $form_data['indirizzo']=$comune->GetProp('indirizzo');
 
-            $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Dati generali", $this->id,$form_data,$form_data);
             
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(120);
@@ -17927,7 +17927,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             //to do view only
-            $wnd = new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+            $wnd = new AA_GenericWindowTemplate($id, "Dati generali", $this->id);
 
             return $wnd;
         }
@@ -17937,8 +17937,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_CorpoElettoraleModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliModifyDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -17956,7 +17956,7 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['elettori_esteri_m']=$comune->GetProp('elettori_esteri_m');
             $form_data['elettori_esteri_f']=$comune->GetProp('elettori_esteri_f');
 
-            $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Sezioni e corpo elettorale", $this->id,$form_data,$form_data);
             
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(280);
@@ -18013,8 +18013,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneCorpoElettoraleViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneCorpoElettoraleViewDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati corpo elettorale", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati corpo elettorale", $this->id);
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0) $readonly=false;
         else $readonly=true;
@@ -18033,7 +18033,7 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['elettori_esteri_m']=$comune->GetProp('elettori_esteri_m');
             $form_data['elettori_esteri_f']=$comune->GetProp('elettori_esteri_f');
 
-            $wnd=new AA_GenericFormDlg($id, "Dati generali e corpo elettorale", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Sezioni e corpo elettorale", $this->id,$form_data,$form_data);
             
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(280);
