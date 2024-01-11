@@ -165,6 +165,17 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//Esporta gli operatori comunali
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ExportOperatoriComunali = function() {
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.ExportOperatoriComunali", this, arguments);
+        window.open(<?php echo AA_SierModule::AA_ID_MODULE?>.taskManager+"?task="+arguments[0].task+"&id="+arguments[0].params.id);  
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.AddNewCandidato", msg, this);
+    }
+};
+
 <?php
 //parte operatori comunali
 if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1)
