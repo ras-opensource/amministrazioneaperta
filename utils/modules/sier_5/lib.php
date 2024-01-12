@@ -771,7 +771,7 @@ Class AA_Sier extends AA_Object_V2
         if($voti_presidente == 0 && $voti_validi > 0)
         {
             $result[0]=true;
-            $result[1][]="Non ci sono voti per i candidati Presidente nonostante siano presenti voti validi (".$voti_validi.")";
+            $result[1][]="Non ci sono voti per i candidati Presidente nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
             $result[2]=true;
             $result[3]['risultati_voti_presidente_check']++;
         }
@@ -1328,17 +1328,19 @@ Class AA_Sier extends AA_Object_V2
                 $feed['risultati']['voti_presidente'][$idCoalizione]['percent']=$percent;
 
                 //totale coalizione
-                $feed['risultati']['voti_presidente'][$idCoalizione]['voti_coalizione']=$voti_tot_coalizione[$idCoalizione];
-                $percent=round($voti_tot_coalizione[$idCoalizione]*100/$voti_tot_liste,1);
-                $feed['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione']=$percent;
-                if($max_percent_coalizione == 0 || $feed['risultati']['voti_presidente'][$max_percent_coalizione]['percent_coalizione']<$percent) $max_percent_coalizione=$idCoalizione;
-                $tot_percent_coalizione+=$percent;
+                if($voti_tot_liste>0)
+                {
+                    $feed['risultati']['voti_presidente'][$idCoalizione]['voti_coalizione']=$voti_tot_coalizione[$idCoalizione];
+                    $percent=round($voti_tot_coalizione[$idCoalizione]*100/$voti_tot_liste,1);
+                    $feed['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione']=$percent;
+                    if($max_percent_coalizione == 0 || $feed['risultati']['voti_presidente'][$max_percent_coalizione]['percent_coalizione']<$percent) $max_percent_coalizione=$idCoalizione;
+                    $tot_percent_coalizione+=$percent;    
+                }
             }
 
             if($tot_percent_presidente != 100)
             {
                 $feed['risultati']['voti_presidente'][$max_percent_presidente]['percent']=round($feed['risultati']['voti_presidente'][$max_percent_presidente]['percent']+100-$tot_percent_presidente,1);
-
             }
 
             if($tot_percent_coalizione != 100)
@@ -1354,10 +1356,13 @@ Class AA_Sier extends AA_Object_V2
             $feed['risultati']['voti_lista']['voti_tot']=$voti_tot_liste;
             foreach($liste as $idLista=>$curLista)
             {
-                $percent=round($feed['risultati']['voti_lista'][$idLista]['voti']*100/$voti_tot_liste,1);
-                $tot_percent_lista+=$percent;
-                if($max_percent_lista==0 || $feed['risultati']['voti_lista'][$max_percent_lista]['percent']<$percent) $max_percent_lista=$idLista;
-                $feed['risultati']['voti_lista'][$idLista]['percent']=$percent;
+                if($voti_tot_liste>0)
+                {
+                    $percent=round($feed['risultati']['voti_lista'][$idLista]['voti']*100/$voti_tot_liste,1);
+                    $tot_percent_lista+=$percent;
+                    if($max_percent_lista==0 || $feed['risultati']['voti_lista'][$max_percent_lista]['percent']<$percent) $max_percent_lista=$idLista;
+                    $feed['risultati']['voti_lista'][$idLista]['percent']=$percent;
+                }
             }
 
             if($tot_percent_lista != 100)
@@ -3615,6 +3620,135 @@ Class AA_Sier extends AA_Object_V2
         return true;
     }
 
+    //reimposta le comunicazioni dei comuni
+    public function ResetComunicazioniComuni($circoscrizione=null,$user=null)
+    {
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'elemento.", 100,false,true);
+            return false;
+        }
+
+        $db=new AA_Database();
+        $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET comunicazioni='' WHERE id_sier='".$this->nId_Data."'";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore durante il reset delle comunicazioni - ".$db->GetLastErrorMessage(), 100);
+            return false;
+        }
+
+        if(!$this->Update($user,false,"Reset comunicazioni Comuni"))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    //reimposta i risultati dei comuni
+    public function ResetRisultatiComuni($circoscrizione=null,$user=null)
+    {
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'elemento.", 100,false,true);
+            return false;
+        }
+
+        $db=new AA_Database();
+        $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET risultati='' WHERE id_sier='".$this->nId_Data."'";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore durante il reset dei risultati - ".$db->GetLastErrorMessage(), 100);
+            return false;
+        }
+
+        if(!$this->Update($user,false,"Reset risultati Comuni"))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    //reimposta affluenza dei comuni
+    public function ResetAffluenzaComuni($circoscrizione=null,$user=null)
+    {
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'elemento.", 100,false,true);
+            return false;
+        }
+
+        $db=new AA_Database();
+        $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET affluenza='' WHERE id_sier='".$this->nId_Data."'";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore durante il reset dell'affluenza - ".$db->GetLastErrorMessage(), 100);
+            return false;
+        }
+
+        if(!$this->Update($user,false,"Reset affluenza Comuni"))
+        {
+            return false;
+        }
+        return true;
+    }
+
     //Restituisce gli allegati
     public function GetAllegati($idData=0)
     {
@@ -3997,6 +4131,9 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierControlPannelDlg");
             $taskManager->RegisterTask("UpdateSierControlPannel");
             $taskManager->RegisterTask("GetSierOCEmailsCSV");
+            $taskManager->RegisterTask("ResetComunicazioniComuni");
+            $taskManager->RegisterTask("ResetAffluenzaComuni");
+            $taskManager->RegisterTask("ResetRisultatiComuni");
 
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
@@ -12497,7 +12634,7 @@ Class AA_SierModule extends AA_GenericModule
         $comune->SetProp("contatti",$_REQUEST['contatti']);
         $comune->SetProp("indirizzo",$_REQUEST['indirizzo']);
 
-        if(!$object->UpdateComune($comune,$this->oUser," - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
+        if(!$object->UpdateComune($comune,$this->oUser," - aggiornamento dati generali - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError(AA_Log::$lastErrorLog,false);
@@ -12505,7 +12642,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent("Dati generali e corpo elettorale aggiornati con successo.",false);
+        $task->SetContent("Dati generali aggiornati con successo.",false);
         return true;
     }
 
@@ -12577,7 +12714,7 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['luoghi_cura_sub100']) && $_REQUEST['luoghi_cura_sub100']>=0) $comune->SetProp("luoghi_cura_sub100",$_REQUEST['luoghi_cura_sub100']);
         if(isset($_REQUEST['luoghi_cura_over100']) && $_REQUEST['luoghi_cura_over100']>=0) $comune->SetProp("luoghi_cura_over100",$_REQUEST['luoghi_cura_over100']);
 
-        if(!$object->UpdateComune($comune,$this->oUser," - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
+        if(!$object->UpdateComune($comune,$this->oUser," - modifica corpo elettorale - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError(AA_Log::$lastErrorLog,false);
@@ -16405,7 +16542,7 @@ Class AA_SierModule extends AA_GenericModule
         $risultati['voti_presidente']=$voti_presidente;
 
         $comune->SetRisultati($risultati);
-        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento voti Presidente - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento comunicazioni - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Errore nell'aggiornamento dei voti candidati Presidente.",false);
@@ -16789,6 +16926,108 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Comunicazioni aggiornate con successo.",false);
+
+        return true;
+    }
+
+    //Task modifica dati comunicazioni
+    public function Task_ResetComunicazioniComuni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modifcare l'oggetto.",false);
+            return false;
+        }
+
+        if(!$object->ResetComunicazioniComuni())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Comunicazioni resettate con successo.",false);
+
+        return true;
+    }
+
+    //Task modifica dati affluenza
+    public function Task_ResetAffluenzaComuni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modifcare l'oggetto.",false);
+            return false;
+        }
+
+        if(!$object->ResetAffluenzaComuni())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Affluenza resettata con successo.",false);
+
+        return true;
+    }
+
+    //Task modifica risultati
+    public function Task_ResetRisultatiComuni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modifcare l'oggetto.",false);
+            return false;
+        }
+
+        if(!$object->ResetRisultatiComuni())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Risultati resettati con successo.",false);
 
         return true;
     }
