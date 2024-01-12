@@ -356,6 +356,25 @@ Class AA_SierComune
         }
     }
 
+    public function AddLog($msg="",$user="",$oc="",$date="")
+    {
+        if($date=="") $date=date("Y-m-d H:i:s");
+        if($user=="")
+        {
+            $user=AA_User::GetCurrentUser();
+            $user=$user->GetUsername();
+        }
+
+        $logs=$this->GetLogs(true);
+
+        $uid=uniqid();
+        $logs[$uid]=array("data"=>$date,"user"=>$user,"oc"=>$oc,"msg"=>$msg);
+
+        if(sizeof($logs)>1000) $logs=array_slice($logs, -1000);
+
+        $this->SetLogs($logs);
+    }
+
     public function GetOperatori($bAsObject=false)
     {
         $ret="";
@@ -395,6 +414,27 @@ Class AA_SierComune
 
         return $this->aProps['comunicazioni'];
     }
+
+    public function GetLogs($bAsObject=false)
+    {
+        $ret="";
+        if($bAsObject) $ret=array();
+        if(!isset($this->aProps['logs']) || $this->aProps['logs']=="") return $ret;
+        
+        if($bAsObject)
+        {
+            $ret=json_decode($this->aProps['logs'],true);
+            if($ret) return $ret;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'importazione dei logs del comune: ".$this->aProps['id'],100);
+                return array();
+            }
+        }
+
+        return $this->aProps['logs'];
+    }
+
 
     public function GetAffluenza($bAsObject=false)
     {
@@ -457,6 +497,26 @@ Class AA_SierComune
         }
 
         $this->SetProp("operatori",$operatori);
+        return true;
+    }
+
+    public function SetLogs($var="")
+    {
+        if(is_array($var))
+        {
+            if(sizeof($var)>0)
+            {
+                $var=json_encode($var);
+                if($var===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica dei logs. ".print_r($var,true),100);
+                    return false;
+                }    
+            }
+            else $var="";
+        }
+
+        $this->SetProp("logs",$var);
         return true;
     }
 
@@ -548,6 +608,7 @@ Class AA_SierComune
         $this->aProps['elettori_esteri_f']=0;
         $this->aProps['luoghi_detenzione']=0;
         $this->aProps['elettori_esteri_m']=0;
+        $this->aProps['logs']="";
 
         if(is_array($params)) $this->Parse($params);
     }
@@ -1190,7 +1251,7 @@ Class AA_Sier extends AA_Object_V2
         
         if($bReset)
         {
-            $feed['risultati']['voti_presidente']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0);
+            $feed['risultati']['voti_presidente']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0,"voti_coalizione"=>0,"percent_coalizione"=>0);
         }
 
         foreach($coalizioni as $idCoalizione=>$curCoalizione)
@@ -1312,7 +1373,7 @@ Class AA_Sier extends AA_Object_V2
         //---------------------
 
         //percentuali
-        if($update_presidente)
+        if($update_presidente && !$bInitializeOnly)
         {
             $tot_percent_presidente=0;
             $max_percent_presidente=0;
@@ -1322,10 +1383,13 @@ Class AA_Sier extends AA_Object_V2
 
             foreach($coalizioni as $idCoalizione=>$curCoalizione)
             {
-                $percent=round($feed['risultati']['voti_presidente'][$idCoalizione]['voti']*100/$voti_tot_presidente,1);
-                $tot_percent_presidente+=$percent;
-                if($max_percent_presidente==0 || $feed['risultati']['voti_presidente'][$max_percent_presidente]['percent']<$percent) $max_percent_presidente=$idCoalizione;
-                $feed['risultati']['voti_presidente'][$idCoalizione]['percent']=$percent;
+                if($voti_tot_presidente>0)
+                {
+                    $percent=round($feed['risultati']['voti_presidente'][$idCoalizione]['voti']*100/$voti_tot_presidente,1);
+                    $tot_percent_presidente+=$percent;
+                    if($max_percent_presidente==0 || $feed['risultati']['voti_presidente'][$max_percent_presidente]['percent']<$percent) $max_percent_presidente=$idCoalizione;
+                    $feed['risultati']['voti_presidente'][$idCoalizione]['percent']=$percent;    
+                }
 
                 //totale coalizione
                 if($voti_tot_liste>0)
@@ -1349,7 +1413,7 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
-        if($update_liste)
+        if($update_liste && !$bInitializeOnly)
         {
             $tot_percent_lista=0;
             $max_percent_lista=0;
@@ -1372,7 +1436,7 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
-        if($update_candidati)
+        if($update_candidati && !$bInitializeOnly)
         {
             $tot_percent_candidato=0;
             $max_percent_candidato=0;
@@ -1876,7 +1940,7 @@ Class AA_Sier extends AA_Object_V2
 
     public function GetOCEmailCSV()
     {
-        if(!$this->bValid) return array();
+        if(!$this->bValid) return "circoscrizione;comune;nome;cognome;email;ruolo";
 
         $comuni=$this->GetComuni();
 
@@ -1893,6 +1957,83 @@ Class AA_Sier extends AA_Object_V2
                     $emails[$curOperatore['email']]=1;
                 }
             }
+        }
+
+        return $csv;
+    }
+
+    public function ExportCorpoElettoraleComuniCSV($circoscrizione=null)
+    {
+        if(!$this->bValid) 
+        {
+            return "aggiornamento;circoscrizione;comune;sezioni_ordinarie;sezioni_ospedaliere;sezioni_totali;luoghicura_sub100;luoghicura_over100;luoghidetenzione;elettori_maschi;elettrici_femmine;elettori_totali;elettori_res_estero_maschi;elettrici_res_estero_femmine;elettori_res_estero_tot";
+        }
+        
+        $csv="aggiornamento;circoscrizione;comune;sezioni_ordinarie;sezioni_ospedaliere;sezioni_totali;luoghicura_sub100;luoghicura_over100;luoghidetenzione;elettori_maschi;elettrici_femmine;elettori_totali;elettori_res_estero_maschi;elettrici_res_estero_femmine;elettori_res_estero_tot";
+        $comuni=$this->GetComuni($circoscrizione);
+        $log=$this->GetLog()->GetLog();
+        $msg=array_column($log,"msg");
+
+        //AA_Log::Log(__METHOD__." - messaggi: ".print_r($msg,true),100);
+
+        foreach($comuni as $idComune=>$curComune)
+        {
+            $aggiornamento="non aggiornato";
+            $logComune=$curComune->GetLogs(true);
+            $msgCol=array_column($logComune,"msg");
+            foreach($msgCol as $key=>$curMsg)
+            {
+                if(strpos($curMsg,"corpo elettorale") !==false)
+                {
+                    //AA_Log::Log(__METHOD__." - trovato: ".$curComune->GetProp("denominazione")." - - modifica corpo elettorale - in: ".str_replace("-","",$curMsg),100);
+                    $aggiornamento=$logComune[$key]['data'];
+                }
+            }
+
+            if($aggiornamento=="non aggiornato")
+            {
+                foreach($msg as $key=>$curMsg)
+                {
+                    if(strpos($curMsg,$curComune->GetProp("denominazione"))!==false && strpos($curMsg,"corpo elettorale") !==false)
+                    {
+                        //AA_Log::Log(__METHOD__." - trovato: ".$curComune->GetProp("denominazione")." - - modifica corpo elettorale - in: ".str_replace("-","",$curMsg),100);
+                        $aggiornamento=$log[$key]['data'];
+                    }
+                    else
+                    {
+                        if(strpos($curMsg,$curComune->GetProp("denominazione"))!==false && strpos($curMsg,"Modifica comune") !==false && $aggiornamento == "non aggiornato")
+                        {
+                            $aggiornamento=$log[$key]['data'];
+                        }
+                    }
+                }
+
+                if($aggiornamento == "non aggiornato")
+                {
+                    if($curComune->GetProp("elettori_esteri_m") > 0 || $curComune->GetProp("elettori_esteri_f")>0)
+                    {
+                        $aggiornamento="2024-01-11 00:00:00";
+                    }
+                }
+            }
+
+            //if($aggiornamento=="non aggiornato") AA_Log::Log(__METHOD__." - non trovato: ".$curComune->GetProp("denominazione")." - - modifica corpo elettorale - in: ".$curMsg,100);
+
+            $csv.="\n".$aggiornamento.";";
+            $csv.=$curComune->GetProp("circoscrizione").";";
+            $csv.=$curComune->GetProp("denominazione").";";
+            $csv.=$curComune->GetProp("sezioni_ordinarie").";";
+            $csv.=$curComune->GetProp("sezioni_ospedaliere").";";
+            $csv.=$curComune->GetProp("sezioni").";";
+            $csv.=$curComune->GetProp("luoghi_cura_sub100").";";
+            $csv.=$curComune->GetProp("luoghi_cura_over100").";";
+            $csv.=$curComune->GetProp("luoghi_detenzione").";";
+            $csv.=$curComune->GetProp("elettori_m").";";
+            $csv.=$curComune->GetProp("elettori_f").";";
+            $csv.=(intVal($curComune->GetProp("elettori_m"))+intVal($curComune->GetProp("elettori_f"))).";";
+            $csv.=$curComune->GetProp("elettori_esteri_m").";";
+            $csv.=$curComune->GetProp("elettori_etseri_f").";";
+            $csv.=(intVal($curComune->GetProp("elettori_esteri_m"))+intVal($curComune->GetProp("elettori_esteri_f"))).";";
         }
 
         return $csv;
@@ -2587,6 +2728,17 @@ Class AA_Sier extends AA_Object_V2
             $newComune->SetProp('id_sier',$this->nId_Data_Rev);
         }
 
+        if($AppendLog=="") $AppendLog="Modifica";
+        
+        $oc=AA_SierOperatoreComunale::GetInstance();
+        if($oc->IsValid())
+        {
+            $oc=$oc->GetOperatoreComunaleCf();
+        }
+        else $oc="";
+
+        $newComune->AddLog($AppendLog,$user->GetUsername(),$oc);
+
         $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET id_sier='".$newComune->GetProp('id_sier')."'";
         $query.=", id_circoscrizione='".addslashes($newComune->GetProp('id_circoscrizione'))."'";
         $query.=", denominazione='".addslashes($newComune->GetProp('denominazione'))."'";
@@ -2609,6 +2761,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", elettori_esteri_m='".addslashes($newComune->GetProp('elettori_esteri_m'))."'";
         $query.=", elettori_esteri_f='".addslashes($newComune->GetProp('elettori_esteri_f'))."'";
         $query.=", feed_risultati='".addslashes($newComune->GetProp('feed_risultati'))."'";
+        $query.=", logs='".addslashes($newComune->GetProp('logs'))."'";
 
         $query.=", lastupdate='".date("Y-m-d H:i:s")."'";
         $query.=" WHERE id='".$newComune->GetProp('id')."' LIMIT 1";
@@ -3706,6 +3859,45 @@ Class AA_Sier extends AA_Object_V2
         return true;
     }
 
+    //reimposta i risultati dei comuni
+    public function ResetFeedRisultatiComuni($circoscrizione=null,$user=null)
+    {
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'elemento.", 100,false,true);
+            return false;
+        }
+
+        $comuni=$this->GetComuni($circoscrizione);
+        foreach($comuni as $idComune=>$curComune)
+        {
+            if(!$this->UpdateComuneFeedRisultati($idComune,$user,true,true))
+            {
+                AA_Log::Log(__METHOD__."Errore durante il reset del feed risultati del comune di ".$curComune->GetProp("denominazione"),100);
+            }
+        }
+        return true;
+    }
+
     //reimposta affluenza dei comuni
     public function ResetAffluenzaComuni($circoscrizione=null,$user=null)
     {
@@ -4131,9 +4323,11 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierControlPannelDlg");
             $taskManager->RegisterTask("UpdateSierControlPannel");
             $taskManager->RegisterTask("GetSierOCEmailsCSV");
+            $taskManager->RegisterTask("ExportCorpoElettoraleComuniCSV");
             $taskManager->RegisterTask("ResetComunicazioniComuni");
             $taskManager->RegisterTask("ResetAffluenzaComuni");
             $taskManager->RegisterTask("ResetRisultatiComuni");
+            $taskManager->RegisterTask("ResetFeedRisultatiComuni");
 
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
@@ -4225,6 +4419,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeModifyMultiDlg");
             $taskManager->RegisterTask("UpdateSierComuneRisultatiPreferenzeMulti");
             $taskManager->RegisterTask("GetSierAnalisiRisultatiDlg");
+            $taskManager->RegisterTask("GetSierAnalisiComunicazioniDlg");
 
             //$taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeTrashDlg");
             //$taskManager->RegisterTask("TrashSierComuneRisultatiPreferenze");
@@ -6751,6 +6946,89 @@ Class AA_SierModule extends AA_GenericModule
         $risultati=$comune->GetRisultati(true);
         $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
 
+        //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true)." - risultati: ".print_r($risultati,true),100);
+
+        if($analisi[0]==true)
+        {
+            $content="<div style='display: flex; justify-content: flex-start; align-items: center; padding-right: 1em; width: 90%'><ul>Sono state riscontrate le seguenti criticità:";
+            foreach($analisi[1] as $curError)
+            {
+                $content.="<li style='font-weight:bold; margin-top: 1em;'>".$curError."</li>";
+            }
+            $content.="</ul></div>";
+        }
+        else
+        {
+            $content="<div style='display: flex; justify-content: flex-start; align-items: center; width: 90%'><p>I dati sono coerenti.</p></div>";
+        }
+        
+        $wnd->AddView(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","template"=>$content)));
+
+        return $wnd;
+    }
+
+    //Template dlg modal msg
+    public function Template_GetSierAnalisiComunicazioniDlg($object=null,$comune=null)
+    {
+        $id=$this->id."_GetSierAnalisiComunicazioniDlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Analisi criticità comunicazioni", $this->id);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+      
+        $comunicazioni=$comune->GetComunicazioni(true);
+        $giornate=$object->GetGiornate();
+        $giornateKeys=array_keys($giornate);
+        $now=date("Y-m-d");
+        $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' -45 days'));
+        $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' -15 days'));
+        $analisi=array();
+        
+        //alert comunicazioni corpo elettorale
+        if($now > $_45daysago && (!isset($comunicazioni['corpoelettorale_45']) || $comunicazioni['corpoelettorale_45']==0))
+        {
+            $analisi[0]=true;
+            $analisi[1][]="Manca la comunicazione del corpo elettorale al 45° giorno";
+            $analisi[2]=true;
+        }
+
+        if($now > $_15daysago && (!isset($comunicazioni['corpoelettorale_45']) || $comunicazioni['corpoelettorale_15']==0))
+        {
+            $analisi[0]=true;
+            $analisi[1][]="Manca la comunicazione del corpo elettorale al 15° giorno";
+            $analisi[2]=true;
+        }
+
+        foreach($giornateKeys as $curGiornata)
+        {
+            if($curGiornata==$now)
+            {
+                if(!isset($comunicazioni[$now]) || $comunicazioni[$now]['inizio']==0)
+                {
+                    $analisi[0]=true;
+                    $analisi[1][]="Mancano alcune comunicazioni per la giornata del ".$curGiornata;
+                    $analisi[2]=true;
+                }
+            }
+
+            if($curGiornata < $now)
+            {
+                if(!isset($comunicazioni[$curGiornata]) || $comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
+                {
+                    $analisi[0]=true;
+                    $analisi[1][]="Mancano alcune comunicazioni per la giornata del ".$curGiornata;
+                    $analisi[2]=true;
+                }
+            }
+        }
+
+        if(sizeof($analisi)==0)
+        {
+            $analisi=array(false,array("non sono presenti criticità",false));
+        }
         //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true)." - risultati: ".print_r($risultati,true),100);
 
         if($analisi[0]==true)
@@ -9471,7 +9749,22 @@ Class AA_SierModule extends AA_GenericModule
             "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"ResetRisultatiComuni\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn,false);
-        $wnd->AddGenericObject($section);
+        $section->AddSpacer(false);
+
+        //Reset feed Risultati
+        $btn=new AA_JSON_Template_Generic($id."_ResetFeedRisultatiComuni_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-reload-alert",
+            "label"=>"Feed Risultati",
+            "align"=>"right",
+            "width"=>150,
+            "tooltip"=>"Reimposta il feed dei risultati di tutti i Comuni",
+            "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"ResetFeedRisultatiComuni\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $section->AddGenericObject($btn,false);
+
+        if($this->oUser->IsSuperUser()) $wnd->AddGenericObject($section);
 
         $section=new AA_FieldSet($id."_Section_CP_ResetComuni","Export dati dei Comuni");
         //corpo elettorale
@@ -9483,11 +9776,12 @@ Class AA_SierModule extends AA_GenericModule
             "align"=>"right",
             "width"=>150,
             "tooltip"=>"Esporta i dati del corpo elettorale di tutti i Comuni in formato csv",
-            "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"ExportCorpoElettoraleComuni\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            "click"=>"AA_MainApp.utils.callHandler('ExportCorpoElettoraleCSV', {task:\"ExportCorpoElettoraleComuniCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn);
         $section->AddSpacer(false);
-        //corpo elettorale
+        
+        //operatori
         $btn=new AA_JSON_Template_Generic($id."_ExportOperatoriComuni_btn",array(
             "view"=>"button",
             "type"=>"icon",
@@ -9499,7 +9793,6 @@ Class AA_SierModule extends AA_GenericModule
             "click"=>"AA_MainApp.utils.callHandler('ExportOperatoriComunali', {task:\"GetSierOCEmailsCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn,false);
-        $section->AddSpacer(false);
 
         $wnd->AddGenericObject($section);
 
@@ -11751,9 +12044,11 @@ Class AA_SierModule extends AA_GenericModule
         $data=array();
         $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         $giornate=$object->GetGiornate();
+        $giornateKeys=array_keys($giornate);
         $comuni=$object->GetComuni(null,$params);
         $now=date("Y-m-d");
-        $giornateKeys=array_keys($giornate);
+        $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' -45 days'));
+        $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' -15 days'));
         foreach($comuni as $curComune)
         {
             $data[]=$curComune->GetProps();
@@ -11781,50 +12076,47 @@ Class AA_SierModule extends AA_GenericModule
             $icon="mdi mdi-eye";
             $text="Vedi e gestisci i dati sulle comunicazioni";
             $color="green";
+            $comunicazioni=$curComune->GetComunicazioni(true);
             $analisi=array(false,"Le comunicazioni sono regolari",false);
-            if($curComune->GetProp("comunicazioni") == "")
+           
+            foreach($giornateKeys as $curGiornata)
             {
-                $class="AA_DataTable_Ops_Button";
-                $icon="mdi mdi-upload";
-                $text="Gestisci i dati sulle comunicazioni";
-                if($giornateKeys[0] > $now)
+                if($curGiornata==$now)
                 {
-                    $analisi=array(false,"Le comunicazioni sono regolari",false);
-                    $color="green";
-                }
-                else
-                {
-                    $analisi=array(true,"Comunicazioni non presenti",true);
-                    $color="red";
-                }
-            }
-            else
-            {
-                $comunicazioni=$curComune->GetComunicazioni(true);
-                foreach($giornateKeys as $curGiornata)
-                {
-                    if($curGiornata==$now)
+                    if($comunicazioni[$now]['inizio']==0)
                     {
-                        if($comunicazioni[$now]['inizio']==0)
-                        {
-                            $color="red";
-                            $analisi=array(true,"Mancano alcune comunicazioni.",true);
-                        }
+                        $color="red";
+                        $analisi=array(true,"Mancano alcune comunicazioni.",true);
                     }
+                }
 
-                    if($curGiornata < $now)
+                if($curGiornata < $now)
+                {
+                    if($comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
                     {
-                        if($comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
-                        {
-                            //AA_Log::Log(__METHOD__." - comunicazioni: ".print_r($comunicazioni,true),100);
-                            $color="red";
-                            $analisi=array(true,"Mancano alcune comunicazioni.",true);
-                        }
+                        //AA_Log::Log(__METHOD__." - comunicazioni: ".print_r($comunicazioni,true),100);
+                        $color="red";
+                        $analisi=array(true,"Mancano alcune comunicazioni.",true);
                     }
                 }
             }
+
+            //alert comunicazioni corpo elettorale
+            if($now > $_45daysago && (!isset($comunicazioni['corpoelettorale_45']) || $comunicazioni['corpoelettorale_45']==0))
+            {
+                $color="red";
+                $analisi=array(true,"mancano alcune comunicazioni",true);
+            }
+
+            if($now > $_15daysago && (!isset($comunicazioni['corpoelettorale_15']) || $comunicazioni['corpoelettorale_15']==0))
+            {
+                $color="red";
+                $analisi=array(true,"mancano alcune comunicazioni",true);
+            }
+            //----
+
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_COMUNICAZIONI_COMUNALE."_".static::AA_UI_LAYOUT_COMUNICAZIONI_COMUNALE;
-            $view_analisi_comunicazioni='let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($analisi[1]).'"));AA_MainApp.ui.modalBox(note,"Analisi comunicazioni")';
+            $view_analisi_comunicazioni='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAnalisiComunicazioniDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneComunicazioniViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             if($analisi[0]==false) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
@@ -13867,6 +14159,39 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
+    //Task export csv corpo elettorale allegato
+    public function Task_ExportCorpoElettoraleComuniCSV($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            header('Content-Type: text/csv');
+            die($object->ExportCorpoElettoraleComuniCSV());
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
     //Task aggiungi Lista
     public function Task_GetSierAddNewListaDlg($task)
     {
@@ -14324,6 +14649,33 @@ Class AA_SierModule extends AA_GenericModule
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierAnalisiRisultatiDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task modal msg
+    public function Task_GetSierAnalisiComunicazioniDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierAnalisiComunicazioniDlg($object,$comune),true);
         return true;
     }
 
@@ -15187,6 +15539,13 @@ Class AA_SierModule extends AA_GenericModule
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Errore nell'aggiornamento dell'affluenza.",false);
+            return false;
+        }
+
+        if(!$object->UpdateComuneFeedRisultati($comune->GetProp('id'),$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento del feed dei risultati.",false);
             return false;
         }
 
@@ -16441,6 +16800,12 @@ Class AA_SierModule extends AA_GenericModule
             else $comunicazioni[$giornata]["fine"]=0;
         }
 
+        if(isset($_REQUEST['corpoelettorale_45']) && $_REQUEST['corpoelettorale_45']>0) $comunicazioni['corpoelettorale_45']=1;
+        else $comunicazioni['corpoelettorale_45']=0;
+
+        if(isset($_REQUEST['corpoelettorale_15']) && $_REQUEST['corpoelettorale_15']>0) $comunicazioni['corpoelettorale_15']=1;
+        else $comunicazioni['corpoelettorale_15']=0;
+
         $comune->SetComunicazioni($comunicazioni);
 
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento comunicazioni - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
@@ -16915,6 +17280,12 @@ Class AA_SierModule extends AA_GenericModule
             else $comunicazioni[$giornata]["fine"]=0;
         }
 
+        if(isset($_REQUEST['corpoelettorale_45']) && $_REQUEST['corpoelettorale_45']>0) $comunicazioni['corpoelettorale_45']=1;
+        else $comunicazioni['corpoelettorale_45']=0;
+
+        if(isset($_REQUEST['corpoelettorale_15']) && $_REQUEST['corpoelettorale_15']>0) $comunicazioni['corpoelettorale_15']=1;
+        else $comunicazioni['corpoelettorale_15']=0;
+
         $comune->SetComunicazioni($comunicazioni);
 
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica dati comunicazioni"))
@@ -17028,6 +17399,40 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Risultati resettati con successo.",false);
+
+        return true;
+    }
+
+    //Task reset feed risultati
+    public function Task_ResetFeedRisultatiComuni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modifcare l'oggetto.",false);
+            return false;
+        }
+
+        if(!$object->ResetFeedRisultatiComuni())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Feed risultati resettati con successo.",false);
 
         return true;
     }
@@ -17973,21 +18378,62 @@ Class AA_SierModule extends AA_GenericModule
 
         $giornate=$object->GetGiornate();
         $comunicazioni=$comune->GetComunicazioni(true);
+        $giornate=$object->GetGiornate();
+        $giornateKeys=array_keys($giornate);
+        $now=date("Y-m-d");
+        $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' -45 days'));
+        $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' -15 days'));
+
         $form_data=array();
         $sections=array();
         $inizio=false;
+
+        $admin=false;
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        {
+            $admin=true;
+        }
+
+        //comunicazione aggiornamento corpo elettorale
+        $section_corpo=new AA_FieldSet($id."_Section_Corpoelettorale","Comunicazioni aggiornamento del corpo elettorale");
+        $readonly=true;
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0 || $admin)
+        {
+            $readonly=false;
+        }
+        
+        if(!$readonly && $now >= $_45daysago || $admin) $readonly45=false;
+        else $readonly45=true;
+
+        if(!$readonly && $now >= $_15daysago || $admin) $readonly15=false;
+        else $readonly15=true;
+
+        
+
+        $section_corpo->AddCheckBoxField("corpoelettorale_45", "Avvenuto aggiornamento al 45° giorno",array("readonly"=>$readonly45));
+        $form_data['corpoelettorale_45']=0;
+        if($comunicazioni["corpoelettorale_45"]>0) $form_data['corpoelettorale_45']=1;
+        $section_corpo->AddCheckBoxField("corpoelettorale_15", "Avvenuto aggiornamento al 15° giorno",array("readonly"=>$readonly15));
+        $form_data['corpoelettorale_15']=0;
+        if($comunicazioni["corpoelettorale_15"]>0) $form_data['corpoelettorale_15']=1;
+        $sections[]=$section_corpo;
+
+        //giornate
+        $now=date("Y-m-d");
         foreach($giornate as $giornata=>$curValues)
         {
+            $readonly=true;
+            if($giornata<=$now || $admin) $readonly=false;
             $label_inizio="Apertura operazioni uffici elettorali di sezione";
-            if(sizeof($sections)==0) $label_inizio="Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale";
+            if(sizeof($sections)==1) $label_inizio="Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale";
             $form_data[$giornata."_inizio"]=0;
             if(isset($comunicazioni[$giornata]['inizio']) && $comunicazioni[$giornata]['inizio']>0) $form_data[$giornata."_inizio"]=1;
             $form_data[$giornata."_fine"]=0;
             if(isset($comunicazioni[$giornata]['fine']) && $comunicazioni[$giornata]['fine']>0) $form_data[$giornata."_fine"]=1;
 
             $section=new AA_FieldSet($id."_Section_".$giornata,"Comunicazioni per la giornata del ".$giornata);
-            $section->AddCheckBoxField($giornata."_inizio", $label_inizio);
-            $section->AddCheckBoxField($giornata."_fine", "Chiusura operazioni uffici elettorali di sezione");
+            $section->AddCheckBoxField($giornata."_inizio", $label_inizio,array("readonly"=>$readonly));
+            $section->AddCheckBoxField($giornata."_fine", "Chiusura operazioni uffici elettorali di sezione",array("readonly"=>$readonly));
             $sections[]=$section;
         }
 
@@ -18003,8 +18449,8 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetLabelWidth(600);
             $wnd->EnableValidation();
             
-            $wnd->SetWidth(800);
-            $wnd->SetHeight(600);
+            $wnd->SetWidth(700);
+            $wnd->SetHeight(700);
             
             foreach($sections as $curSection)
             {

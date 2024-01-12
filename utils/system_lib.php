@@ -4188,7 +4188,7 @@ class AA_GenericLogDlg extends AA_GenericWindowTemplate
             "columns" => array(
                 array("id" => "data", "header" => array("Data", array("content" => "textFilter")), "width" => 150, "css" => array("text-align" => "left")),
                 array("id" => "user", "header" => array("<div style='text-align: center'>Utente</div>", array("content" => "selectFilter")), "width" => 120, "css" => array("text-align" => "center")),
-                array("id" => "msg", "header" => array("Operazione", array("content" => "selectFilter")), "fillspace" => true, "css" => array("text-align" => "left"))
+                array("id" => "msg", "header" => array("Operazione", array("content" => "textFilter")), "fillspace" => true, "css" => array("text-align" => "left"))
             ),
             "data" => $logs->GetLog()
         ));

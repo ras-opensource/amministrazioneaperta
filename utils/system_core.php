@@ -5742,10 +5742,10 @@ class AA_Object_V2
         $logs=explode("\n",$this->sLog);
         $logs[]=Date("Y-m-d H:i:s") . "|" . $user->GetUsername() . "|" . $actionType . "|" . $log;
 
-        if(sizeof($logs)>100)
+        if(sizeof($logs)>1000)
         {
             //lascia solo gli ultimi 100 log
-            $logs=array_slice($logs, -500);
+            $logs=array_slice($logs, -1000);
         }
 
         $this->sLog = implode("\n",$logs);
