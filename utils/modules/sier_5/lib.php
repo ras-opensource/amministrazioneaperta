@@ -1388,7 +1388,7 @@ Class AA_Sier extends AA_Object_V2
                     $percent=round($feed['risultati']['voti_presidente'][$idCoalizione]['voti']*100/$voti_tot_presidente,1);
                     $tot_percent_presidente+=$percent;
                     if($max_percent_presidente==0 || $feed['risultati']['voti_presidente'][$max_percent_presidente]['percent']<$percent) $max_percent_presidente=$idCoalizione;
-                    $feed['risultati']['voti_presidente'][$idCoalizione]['percent']=$percent;    
+                    $feed['risultati']['voti_presidente'][$idCoalizione]['percent']=$percent;
                 }
 
                 //totale coalizione
@@ -1398,7 +1398,7 @@ Class AA_Sier extends AA_Object_V2
                     $percent=round($voti_tot_coalizione[$idCoalizione]*100/$voti_tot_liste,1);
                     $feed['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione']=$percent;
                     if($max_percent_coalizione == 0 || $feed['risultati']['voti_presidente'][$max_percent_coalizione]['percent_coalizione']<$percent) $max_percent_coalizione=$idCoalizione;
-                    $tot_percent_coalizione+=$percent;    
+                    $tot_percent_coalizione+=$percent;
                 }
             }
 
