@@ -3600,7 +3600,7 @@ function AA_ShowActionMenu() {
 //Visualizza l'assistente interattivo
 async function AA_StartAMAAI() {
     try {
-        let result = await AA_VerboseTask("AMAAI_Start", AA_MainApp.taskManager);
+        let result = await AA_VerboseTask("AMAAI_Start", AA_MainApp.curModule.taskManager);
 
         console.log("AA_StartAMAAI", result);
 

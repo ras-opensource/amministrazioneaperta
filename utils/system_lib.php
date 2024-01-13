@@ -1344,6 +1344,32 @@ class AA_GenericModule
         return true;
     }
 
+    //Generic AMAAI Dlg
+    public function Task_AMAAI_Start($task)
+    {
+        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+
+        $module = AA_AMAAI::GetInstance();
+
+        $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog .=  $this->Template_GenericAMAAIDlg()->toBase64();
+        $sTaskLog .= "</content>";
+        $task->SetLog($sTaskLog);
+        return true;
+    }
+
+    public function Template_GenericAMAAIDlg()
+    {
+        $module = AA_AMAAI::GetInstance();
+        $template = $module->TemplateLayout();
+        $template->SetWidth(720);
+        $template->SetHeight(580);
+
+        $template->AddView($module->TemplateStart());
+
+        return $template;
+    }
+
     //Restituisce la configurazione sulla sidebar
     public function GetSideBarConfig($format = "raw")
     {
@@ -1436,6 +1462,7 @@ class AA_GenericModule
         $taskManager->RegisterTask("GetObjectContent");
         $taskManager->RegisterTask("GetObjectData");
         $taskManager->RegisterTask("PdfExport");
+        $taskManager->RegisterTask("AMAAI_Start");
 
         if ($bDefaultSections) {
             #Sezioni default
@@ -2733,7 +2760,7 @@ class AA_GenericModule
                 else $objects = $objectClass::Search($params, $this->oUser);
 
                 if ($objects[0] == 0) {
-                    $task->SetError("Non è stata individuata nessa corrispondenza in base ai parametri indicati.");
+                    $task->SetError("Non è stata individuata nessuna corrispondenza in base ai parametri indicati.");
                     $sTaskLog = "<status id='status'>-1</status><error id='error'>Non è stata individuata nessa corrispondenza in base ai parametri indicati.</error>";
                     $task->SetLog($sTaskLog);
                     return false;
