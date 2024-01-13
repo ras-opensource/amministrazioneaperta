@@ -1981,12 +1981,13 @@ Class AA_Sier extends AA_Object_V2
             $aggiornamento="non aggiornato";
             $logComune=$curComune->GetLogs(true);
             $msgCol=array_column($logComune,"msg");
+            $msgIndex=array_keys($logComune);
             foreach($msgCol as $key=>$curMsg)
             {
                 if(strpos($curMsg,"corpo elettorale") !==false)
                 {
-                    //AA_Log::Log(__METHOD__." - trovato: ".$curComune->GetProp("denominazione")." - - modifica corpo elettorale - in: ".str_replace("-","",$curMsg),100);
-                    $aggiornamento=$logComune[$key]['data'];
+                    //AA_Log::Log(__METHOD__." - trovato in: ".$curMsg." - chiave: ".print_r($key,true),100);
+                    $aggiornamento=$logComune[$msgIndex[$key]]['data'];
                 }
             }
 
@@ -2032,7 +2033,7 @@ Class AA_Sier extends AA_Object_V2
             $csv.=$curComune->GetProp("elettori_f").";";
             $csv.=(intVal($curComune->GetProp("elettori_m"))+intVal($curComune->GetProp("elettori_f"))).";";
             $csv.=$curComune->GetProp("elettori_esteri_m").";";
-            $csv.=$curComune->GetProp("elettori_etseri_f").";";
+            $csv.=$curComune->GetProp("elettori_esteri_f").";";
             $csv.=(intVal($curComune->GetProp("elettori_esteri_m"))+intVal($curComune->GetProp("elettori_esteri_f"))).";";
         }
 
@@ -3774,7 +3775,7 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //reimposta le comunicazioni dei comuni
-    public function ResetComunicazioniComuni($circoscrizione=null,$user=null)
+    public function ResetComunicazioniComuni($circoscrizione=null,$user=null,$resetCorpoElettorale=false)
     {
         if(!$this->isValid())
         {
@@ -3802,13 +3803,34 @@ Class AA_Sier extends AA_Object_V2
         }
 
         $db=new AA_Database();
-        $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET comunicazioni='' WHERE id_sier='".$this->nId_Data."'";
-        if(!$db->Query($query))
+        if($resetCorpoElettorale)
         {
-            AA_Log::Log(__METHOD__." - errore durante il reset delle comunicazioni - ".$db->GetLastErrorMessage(), 100);
-            return false;
+            $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET comunicazioni='' WHERE id_sier='".$this->nId_Data."'";
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - errore durante il reset delle comunicazioni - ".$db->GetLastErrorMessage(), 100);
+                return false;
+            }    
         }
+        else
+        {
+            $comuni=$this->GetComuni($circoscrizione);
+            foreach($comuni as $id=>$curComune)
+            {
+                $comunicazioni=$curComune->GetComunicazioni(true);
+                $newComunicazioni=array("corpoelettorale_45"=>0,"corpoelettorale_15"=>0);
+                if(isset($comunicazioni['corpoelettorale_45'])) $newComunicazioni['corpoelettorale_45']=$comunicazioni['corpoelettorale_45'];
+                if(isset($comunicazioni['corpoelettorale_15'])) $newComunicazioni['corpoelettorale_15']=$comunicazioni['corpoelettorale_15'];
 
+                $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET comunicazioni='".addslashes(json_encode($newComunicazioni))."' WHERE id_sier='".$this->nId_Data."' and id='".$id."' LIMIT 1";
+                if(!$db->Query($query))
+                {
+                    AA_Log::Log(__METHOD__." - errore durante il reset delle comunicazioni per il comune: ".$curComune->GetProp("denominazione")." - ".$db->GetLastErrorMessage(), 100);
+                    return false;
+                }    
+            }
+        }
+        
         if(!$this->Update($user,false,"Reset comunicazioni Comuni"))
         {
             return false;
@@ -3887,13 +3909,28 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
+        $db=new AA_Database();
         $comuni=$this->GetComuni($circoscrizione);
         foreach($comuni as $idComune=>$curComune)
         {
-            if(!$this->UpdateComuneFeedRisultati($idComune,$user,true,true))
+            $feedRisultati=$this->UpdateComuneFeedRisultati($idComune,$user,true,true,false);
+            if(!is_array($feedRisultati))
             {
                 AA_Log::Log(__METHOD__."Errore durante il reset del feed risultati del comune di ".$curComune->GetProp("denominazione"),100);
+                return false;
             }
+
+            $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET feed_risultati='".addslashes(json_encode($feedRisultati))."' WHERE id_sier='".$this->nId_Data."' and id='".$idComune."' LIMIT 1";
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - errore durante il reset del feed dei risultati per il comune: ".$curComune->GetProp("denominazione")." - ".$db->GetLastErrorMessage(), 100);
+                return false;
+            }   
+        }
+
+        if(!$this->Update($user,false,"Reset feed risultati Comuni"))
+        {
+            return false;
         }
         return true;
     }
@@ -4324,10 +4361,14 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSierControlPannel");
             $taskManager->RegisterTask("GetSierOCEmailsCSV");
             $taskManager->RegisterTask("ExportCorpoElettoraleComuniCSV");
+            $taskManager->RegisterTask("GetSierConfirmResetComunicazioniComuniDlg");
             $taskManager->RegisterTask("ResetComunicazioniComuni");
             $taskManager->RegisterTask("ResetAffluenzaComuni");
+            $taskManager->RegisterTask("GetSierConfirmResetAffluenzaComuniDlg");
             $taskManager->RegisterTask("ResetRisultatiComuni");
+            $taskManager->RegisterTask("GetSierConfirmResetRisultatiComuniDlg");
             $taskManager->RegisterTask("ResetFeedRisultatiComuni");
+            $taskManager->RegisterTask("GetSierConfirmResetFeedRisultatiComuniDlg");
 
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
@@ -9761,7 +9802,7 @@ Class AA_SierModule extends AA_GenericModule
             "align"=>"right",
             "width"=>150,
             "tooltip"=>"Reimposta i dati delle comunicazioni di tutti i Comuni",
-            "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"ResetComunicazioniComuni\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmResetComunicazioniComuniDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn);
         $section->AddSpacer(false);
@@ -9775,7 +9816,7 @@ Class AA_SierModule extends AA_GenericModule
             "align"=>"right",
             "width"=>150,
             "tooltip"=>"Reimposta i dati dell'affluenza di tutti i Comuni",
-            "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"ResetAffluenzaComuni\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmResetAffluenzaComuniDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn,false);
         $section->AddSpacer(false);
@@ -9789,7 +9830,7 @@ Class AA_SierModule extends AA_GenericModule
             "align"=>"right",
             "width"=>150,
             "tooltip"=>"Reimposta i dati dei risultati di tutti i Comuni",
-            "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"ResetRisultatiComuni\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmResetRisultatiComuniDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn,false);
         $section->AddSpacer(false);
@@ -9803,7 +9844,7 @@ Class AA_SierModule extends AA_GenericModule
             "align"=>"right",
             "width"=>150,
             "tooltip"=>"Reimposta il feed dei risultati di tutti i Comuni",
-            "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"ResetFeedRisultatiComuni\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmResetFeedRisultatiComuniDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn,false);
 
@@ -9846,6 +9887,138 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template confirm reset comunicazioni comuni
+    public function Template_GetSierConfirmResetComunicazioniComuniDlg($object=null)
+    {
+        $id=$this->GetId()."_ConfirmResetComunicazioniComuni_Dlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+        //$form_data['id_comune']=$comune->GetProp("id");
+        
+        $wnd=new AA_GenericFormDlg($id, "Conferma reset comunicazioni Comuni", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(400);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>resetterà tutte le comunicazioni effettuate dai comuni.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("ResetComunicazioniComuni");
+        
+        return $wnd;
+    }
+
+    //Template confirm reset comunicazioni comuni
+    public function Template_GetSierConfirmResetFeedRisultatiComuniDlg($object=null)
+    {
+        $id=$this->GetId()."_ConfirmResetFeedRisultatiComuni_Dlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset feed risultati Comuni", $this->id);
+        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+        //$form_data['id_comune']=$comune->GetProp("id");
+        
+        $wnd=new AA_GenericFormDlg($id, "Conferma reset feed risultati Comuni", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(400);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>resetterà i feed dei risultati di tutti i comuni.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("ResetFeedRisultatiComuni");
+        
+        return $wnd;
+    }
+
+    //Template confirm reset risultati comuni
+    public function Template_GetSierConfirmResetRisultatiComuniDlg($object=null)
+    {
+        $id=$this->GetId()."_ConfirmResetRisultatiComuni_Dlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset dei risultati Comuni", $this->id);
+        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+        //$form_data['id_comune']=$comune->GetProp("id");
+        
+        $wnd=new AA_GenericFormDlg($id, "Conferma reset dei risultati Comuni", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(400);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>resetterà i risultati di tutti i comuni.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("ResetRisultatiComuni");
+        
+        return $wnd;
+    }
+
+    //Template confirm reset risultati comuni
+    public function Template_GetSierConfirmResetAffluenzaComuniDlg($object=null)
+    {
+        $id=$this->GetId()."_ConfirmResetAffluenzaComuni_Dlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset dell'affluenza Comuni", $this->id);
+        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+        //$form_data['id_comune']=$comune->GetProp("id");
+        
+        $wnd=new AA_GenericFormDlg($id, "Conferma reset dell'affluenza Comuni", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(400);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>resetterà l'affluenza di tutti i comuni.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("ResetAffluenzaComuni");
+        
+        return $wnd;
+    }
+
     public function Template_GetSierHelpDlg()
     {
         $id=$this->GetId()."_Help_Dlg";
@@ -9881,6 +10054,8 @@ Class AA_SierModule extends AA_GenericModule
 
         return $wnd;
     }
+
+    
 
     //Template detail (da specializzare)
     public function TemplateSection_Detail($params)
@@ -17437,6 +17612,114 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Comunicazioni resettate con successo.",false);
+
+        return true;
+    }
+
+    //Task modifica dati comunicazioni
+    public function Task_GetSierConfirmResetComunicazioniComuniDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modifcare l'oggetto.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierConfirmResetComunicazioniComuniDlg($object),true);
+
+        return true;
+    }
+
+    //Task modifica dati comunicazioni
+    public function Task_GetSierConfirmResetFeedRisultatiComuniDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierConfirmResetFeedRisultatiComuniDlg($object),true);
+
+        return true;
+    }
+
+    //Task modifica dati comunicazioni
+    public function Task_GetSierConfirmResetRisultatiComuniDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierConfirmResetRisultatiComuniDlg($object),true);
+
+        return true;
+    }
+
+    //Task modifica dati comunicazioni
+    public function Task_GetSierConfirmResetAffluenzaComuniDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierConfirmResetAffluenzaComuniDlg($object),true);
 
         return true;
     }
