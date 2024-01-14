@@ -17998,9 +17998,9 @@ Class AA_SierModule extends AA_GenericModule
             else $comunicazioni[$giornata]["fine"]=0;
         }
 
-        if(isset($_REQUEST['corpoelettorale_45']) && $_REQUEST['corpoelettorale_45']>0) $comunicazioni['corpoelettorale_45']=1;
+        //if(isset($_REQUEST['corpoelettorale_45']) && $_REQUEST['corpoelettorale_45']>0) $comunicazioni['corpoelettorale_45']=1;
 
-        if(isset($_REQUEST['corpoelettorale_15']) && $_REQUEST['corpoelettorale_15']>0) $comunicazioni['corpoelettorale_15']=1;
+        //if(isset($_REQUEST['corpoelettorale_15']) && $_REQUEST['corpoelettorale_15']>0) $comunicazioni['corpoelettorale_15']=1;
         
         $comune->SetComunicazioni($comunicazioni);
 
