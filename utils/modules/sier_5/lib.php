@@ -12816,7 +12816,7 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template filtro di ricerca comuni
-    public function Template_GetSierComuneFilterDlg()
+    public function Template_GetSierComuneFilterDlg($object=null,$params=null)
     {
         $session_params=AA_SessionVar::Get(static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX);
         if($session_params->IsValid())
@@ -12825,14 +12825,15 @@ Class AA_SierModule extends AA_GenericModule
             //AA_Log::Log(__METHOD__." - session var: ".$id." - value: ".print_r($params,true),100);
             foreach($formData as $key=>$curParam)
             {
-                if(isset($_REQUEST[$key])) $formData[$key]=$_REQUEST[$key];
+                $formData[$key]=$curParam;
             }
-            if(isset($_REQUEST['id']) && $_REQUEST['id'] > 0) $formData['id']=$_REQUEST['id'];
+
+            if(isset($params['id']) && $params['id'] > 0) $formData['id']=$params['id'];
         }
         else
         {
             //Valori runtime
-            $formData=array("id"=>$_REQUEST['id'],"scrutinio_parziale"=>$_REQUEST['scrutinio_parziale'],"senza_operatori"=>$_REQUEST['senza_operatori'],"senza_affluenza"=>$_REQUEST['senza_affluenza'],"senza_risultati"=>$_REQUEST['senza_risultati'],"senza_rendiconti"=>$_REQUEST['senza_rendiconti']);
+            $formData=array("id"=>$params['id'],"senza_certificazione_45"=>$params['senza_certificazione_45'],"senza_certificazione_15"=>$params['senza_certificazione_15'],"scrutinio_parziale"=>$params['scrutinio_parziale'],"senza_operatori"=>$params['senza_operatori'],"senza_affluenza"=>$params['senza_affluenza'],"senza_risultati"=>$params['senza_risultati'],"senza_rendiconti"=>$params['senza_rendiconti']);
         }
                 
         //Valori reset
@@ -12850,11 +12851,15 @@ Class AA_SierModule extends AA_GenericModule
         //Senza operatori
         $dlg->AddSwitchBoxField("senza_operatori","Comuni senza operatori",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza operatori."));
 
-        //Senza certificazione al 45°
-        $dlg->AddSwitchBoxField("senza_certificazione_45","Comuni senza corpo elettorale certficato al 45°",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza la certificazione del corpo elettorale al 45° giorno."));
+        $cp=$object->GetControlPannel();
+        if($cp['abilita_cert_corpo_elettorale']>0)
+        {
+            //Senza certificazione al 45°
+            $dlg->AddSwitchBoxField("senza_certificazione_45","Comuni senza corpo elettorale certficato al 45°",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza la certificazione del corpo elettorale al 45° giorno."));
 
-        //Senza certificazione al 15°
-        $dlg->AddSwitchBoxField("senza_certificazione_15","Comuni senza corpo elettorale certificato al 15°",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza la certificazione del corpo elettorale al 15° giorno."));
+            //Senza certificazione al 15°
+            $dlg->AddSwitchBoxField("senza_certificazione_15","Comuni senza corpo elettorale certificato al 15°",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza la certificazione del corpo elettorale al 15° giorno."));
+        }
 
         //Senza affluenza
         $dlg->AddSwitchBoxField("senza_affluenza","Comuni senza affluenza",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza affluenza."));
@@ -18823,8 +18828,19 @@ Class AA_SierModule extends AA_GenericModule
      {
          AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
          
+         $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+         if(!$object->isValid())
+         {
+             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+             $sTaskLog.= "{}";
+             $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+             $task->SetLog($sTaskLog);
+         
+             return false;
+         }
+
          $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-         $task->SetContent($this->Template_GetSierComuneFilterDlg($_REQUEST),true);
+         $task->SetContent($this->Template_GetSierComuneFilterDlg($object,$_REQUEST),true);
          
          return true;
      }
