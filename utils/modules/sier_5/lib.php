@@ -12501,14 +12501,23 @@ Class AA_SierModule extends AA_GenericModule
             $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con rendiconti non caricati</span>&nbsp;";
         }
 
-        if(isset($params['senza_certificazione_45']) && $params['senza_certificazione_45'] > 0)
+        $cp=$object->GetControlPannel();
+        if($cp['abilita_cert_corpo_elettorale']>0)
         {
-            $filter.="<span class='AA_Label AA_Label_LightOrange'>comuni senza certificazione al 45° giorno</span>&nbsp;";
+            if(isset($params['senza_certificazione_45']) && $params['senza_certificazione_45'] > 0)
+            {
+                $filter.="<span class='AA_Label AA_Label_LightOrange'>comuni senza certificazione al 45° giorno</span>&nbsp;";
+            }
+    
+            if(isset($params['senza_certificazione_15']) && $params['senza_certificazione_15'] > 0)
+            {
+                $filter.="<span class='AA_Label AA_Label_LightOrange'>comuni senza certificazione al 15° giorno</span>&nbsp;";
+            }    
         }
-
-        if(isset($params['senza_certificazione_15']) && $params['senza_certificazione_15'] > 0)
+        else
         {
-            $filter.="<span class='AA_Label AA_Label_LightOrange'>comuni senza certificazione al 15° giorno</span>&nbsp;";
+            unset($params['senza_certificazione_45']);
+            unset($params['senza_certificazione_15']);
         }
 
         if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
@@ -12597,7 +12606,6 @@ Class AA_SierModule extends AA_GenericModule
         $now=date("Y-m-d");
         $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' -45 days'));
         $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' -15 days'));
-        $cp=$object->GetControlPannel();
         foreach($comuni as $curComune)
         {
             $data[]=$curComune->GetProps();
