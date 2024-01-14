@@ -6767,16 +6767,21 @@ Class AA_SierModule extends AA_GenericModule
 
         if(isset($_REQUEST['risultati_voti_candidato_check']) && $_REQUEST['risultati_voti_candidato_check'] > 0) $cp['risultati_voti_candidato_check']=1;
         else $cp['risultati_voti_candidato_check']=0;
+        //-------------------------------------------------------
 
+        //certificazione corpo elettorale da parte dei comuni
+        if(isset($_REQUEST['abilita_cert_corpo_elettorale']) && $_REQUEST['abilita_cert_corpo_elettorale'] > 0) $cp['abilita_cert_corpo_elettorale']=1;
+        else $cp['abilita_cert_corpo_elettorale']=0;
+
+        //finestra temporale modifica corpo elettorale da parte dei comuni
         if(isset($_REQUEST['finestra_temporale_cert_corpo_elettorale']) && $_REQUEST['finestra_temporale_cert_corpo_elettorale'] >= 0) $cp['finestra_temporale_cert_corpo_elettorale']=intVal($_REQUEST['finestra_temporale_cert_corpo_elettorale']);
         else $cp['finestra_temporale_cert_corpo_elettorale']=0;
-        //-------------------------------------------------------
 
         $object->SetControlPannel($cp);
         if(!$object->Update($this->oUser,true,"Modifica pannelo di controllo"))
         {        
             $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nella modifica del pannello di controllo. (".AA_Log::$lastErrorLog.")</error>";
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento del pannello di controllo. (".AA_Log::$lastErrorLog.")</error>";
             $task->SetLog($sTaskLog);
 
             return false;       
@@ -9800,6 +9805,9 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['finestra_temporale_cert_corpo_elettorale']=0;
         if(isset($cp['finestra_temporale_cert_corpo_elettorale']) && $cp['finestra_temporale_cert_corpo_elettorale']>0)$form_data['finestra_temporale_cert_corpo_elettorale']=$cp['finestra_temporale_cert_corpo_elettorale'];
 
+        $form_data['abilita_cert_corpo_elettorale']=0;
+        if(isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)$form_data['abilita_cert_corpo_elettorale']=$cp['abilita_cert_corpo_elettorale'];
+
         $wnd=new AA_GenericFormDlg($id, "Pannello di controllo", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
@@ -9901,7 +9909,8 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddGenericObject($section);
 
         $section=new AA_FieldSet($id."_Section_CP_Corpoelettorale","Opzioni corpo elettorale");
-        $section->AddTextField("finestra_temporale_cert_corpo_elettorale","Finestra temporale per la certificazione del corpo elettorale",array("labelWidth"=>400,"bottomLabel"=>"Inserire il numero di giorni per i quali è possible certificare il corpo elettorale (0 = senza limiti temporali).","bottomPadding"=>32));
+        $section->AddSwitchBoxField("abilita_cert_corpo_elettorale","Certificazione del corpo elettorale",array("labelWidth"=>400,"onLabel"=>"abilitata","offLabel"=>"disabilitata","bottomLabel"=>"Abilita/Disabilita la certificazione del corpo elettorale da parte dei comuni.","bottomPadding"=>32));
+        $section->AddTextField("finestra_temporale_cert_corpo_elettorale","Finestra temporale per la modifica del corpo elettorale",array("labelWidth"=>400,"bottomLabel"=>"Inserire il numero di giorni per i quali è possible modificare il corpo elettorale (0 = senza limiti temporali).","bottomPadding"=>32));
         $wnd->AddGenericObject($section);
 
         $wnd->EnableCloseWndOnSuccessfulSave();
@@ -10817,8 +10826,6 @@ Class AA_SierModule extends AA_GenericModule
         $layout->AddRow($riga);
 
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
-        
         //Pulsante di modifica
         $cp=$object->GetControlPannel();
         $comunicazioni=$comune->GetComunicazioni(true);
@@ -10831,6 +10838,10 @@ Class AA_SierModule extends AA_GenericModule
         $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' '.(-15+$cp['finestra_temporale_cert_corpo_elettorale']).' days'));
         $certified="";
 
+        if($cp['abilita_cert_corpo_elettorale']>0) $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>240)));
+        else $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+
+        //finestra temporale di modifica del corpo elettorale
         if($cp['finestra_temporale_cert_corpo_elettorale']>0)
         {
             //verifica la presenza all'interno delle finestre temporali
@@ -10838,24 +10849,27 @@ Class AA_SierModule extends AA_GenericModule
             if($now > $_45daysago && $now > $_15daysago) $temp_modify=false;
         }
 
-        //verifica non sia già stato certificato
-        if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && $now <= $_45daysago)
+        if($cp['abilita_cert_corpo_elettorale']>0)
         {
-            $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
-            $temp_modify=false;
-        }
+            //verifica non sia già stato certificato
+            if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && $now <= $_45daysago)
+            {
+                $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+                $temp_modify=false;
+            }
 
-        if(isset($comunicazioni['corpoelettorale_15']) && $comunicazioni['corpoelettorale_15']>0 && $now <= $_15daysago) 
-        {
-            $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
-            $temp_modify=false;
-        }
+            if(isset($comunicazioni['corpoelettorale_15']) && $comunicazioni['corpoelettorale_15']>0 && $now <= $_15daysago) 
+            {
+                $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+                $temp_modify=false;
+            }
 
-        if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && isset($comunicazioni['corpoelettorale_15']) && $comunicazioni['corpoelettorale_15']>0)
-        {
-            $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
-            $temp_modify=false;
-        } 
+            if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && isset($comunicazioni['corpoelettorale_15']) && $comunicazioni['corpoelettorale_15']>0)
+            {
+                $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+                $temp_modify=false;
+            }
+        }    
 
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_CorpoElettorale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Sezioni e corpo elettorale</span>", "align"=>"center")));
 
@@ -10863,18 +10877,21 @@ Class AA_SierModule extends AA_GenericModule
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0 && $temp_modify)
         {
-            $certify_btn=new AA_JSON_Template_Generic($id."_OC_Certify_CorpoElettorale_btn",array(
-                "view"=>"button",
-                 "type"=>"icon",
-                 "icon"=>"mdi mdi-certificate",
-                 "label"=>"Certifica",
-                 "css"=>"AA_ButtonGreen",
-                 "align"=>"right",
-                 "width"=>120,
-                 "tooltip"=>"Certifica il dato del corpo elettorale",
-                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCConfirmCertCorpoElettoraleDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
-            ));
-            $toolbar->AddElement($certify_btn);
+            if($cp['abilita_cert_corpo_elettorale']>0)
+            {
+                $certify_btn=new AA_JSON_Template_Generic($id."_OC_Certify_CorpoElettorale_btn",array(
+                    "view"=>"button",
+                     "type"=>"icon",
+                     "icon"=>"mdi mdi-certificate",
+                     "label"=>"Certifica",
+                     "css"=>"AA_ButtonGreen",
+                     "align"=>"right",
+                     "width"=>120,
+                     "tooltip"=>"Certifica il dato del corpo elettorale",
+                     "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCConfirmCertCorpoElettoraleDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                ));
+                $toolbar->AddElement($certify_btn);                    
+            }
 
             $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_CorpoElettorale_btn",array(
                "view"=>"button",
@@ -10891,13 +10908,18 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            if($certified!="")
+            if($certified!="" && $cp['abilita_cert_corpo_elettorale']>0)
             {
-                $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$certified,"width"=>120, "align"=>"center")));
+                $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$certified,"width"=>240, "align"=>"center")));
             }
             else 
             {
-                $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+                if($cp['abilita_cert_corpo_elettorale']>0)
+                {
+                    $certified="<span class='AA_Label AA_Label_LightOrange'>Dati non certificati</span>";
+                    $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$certified,"width"=>240, "align"=>"center")));
+                }
+                else $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
             }
         }
 
@@ -12575,6 +12597,7 @@ Class AA_SierModule extends AA_GenericModule
         $now=date("Y-m-d");
         $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' -45 days'));
         $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' -15 days'));
+        $cp=$object->GetControlPannel();
         foreach($comuni as $curComune)
         {
             $data[]=$curComune->GetProps();
@@ -12594,15 +12617,15 @@ Class AA_SierModule extends AA_GenericModule
             //--------- Corpo Elettorale ---------
             $color="green";
             $comunicazioni=$curComune->GetComunicazioni(true);
-            $analisi=array(false,"Il corpo elettorale è certificato",false);
+            $analisi=array(false,"",false);
             //alert comunicazioni corpo elettorale
-            if($now > $_45daysago && (!isset($comunicazioni['corpoelettorale_45']) || $comunicazioni['corpoelettorale_45']==0))
+            if($now > $_45daysago && (!isset($comunicazioni['corpoelettorale_45']) || $comunicazioni['corpoelettorale_45']==0) && $cp['abilita_cert_corpo_elettorale']>0)
             {
                 $color="red";
                 $analisi=array(true,"Il corpo elettorale non è certificato",true);
             }
 
-            if($now > $_15daysago && (!isset($comunicazioni['corpoelettorale_15']) || $comunicazioni['corpoelettorale_15']==0))
+            if($now > $_15daysago && (!isset($comunicazioni['corpoelettorale_15']) || $comunicazioni['corpoelettorale_15']==0) && $cp['abilita_cert_corpo_elettorale']>0)
             {
                 $color="red";
                 $analisi=array(true,"Il corpo elettorale non è certificato",true);
@@ -17917,12 +17940,16 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['luoghi_cura_sub100']) && $_REQUEST['luoghi_cura_sub100']>=0) $comune->SetProp("luoghi_cura_sub100",$_REQUEST['luoghi_cura_sub100']);
         if(isset($_REQUEST['luoghi_cura_over100']) && $_REQUEST['luoghi_cura_over100']>=0) $comune->SetProp("luoghi_cura_over100",$_REQUEST['luoghi_cura_over100']);
 
-        $comunicazioni=$comune->GetComunicazioni(true);
-        if(isset($_REQUEST['corpoelettorale_45']) && $_REQUEST['corpoelettorale_45']>0) $comunicazioni['corpoelettorale_45']=1;
-        else $comunicazioni['corpoelettorale_45']=0;
-        if(isset($_REQUEST['corpoelettorale_15']) && $_REQUEST['corpoelettorale_15']>0) $comunicazioni['corpoelettorale_15']=1;
-        else $comunicazioni['corpoelettorale_15']=0;
-        $comune->SetComunicazioni($comunicazioni);
+        $cp=$object->GetControlPannel();
+        if($cp['abilita_cert_corpo_elettorale']>0)
+        {
+            $comunicazioni=$comune->GetComunicazioni(true);
+            if(isset($_REQUEST['corpoelettorale_45']) && $_REQUEST['corpoelettorale_45']>0) $comunicazioni['corpoelettorale_45']=1;
+            else $comunicazioni['corpoelettorale_45']=0;
+            if(isset($_REQUEST['corpoelettorale_15']) && $_REQUEST['corpoelettorale_15']>0) $comunicazioni['corpoelettorale_15']=1;
+            else $comunicazioni['corpoelettorale_15']=0;
+            $comune->SetComunicazioni($comunicazioni);    
+        }
 
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica corpo elettorale"))
         {
