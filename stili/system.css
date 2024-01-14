@@ -818,6 +818,18 @@ div.AA_Footer_Gradient {
     }
   }
   
+.AA_ButtonGreen .webix_button
+{
+    background: #6cb456 !important;
+    color: #fff !important;
+}
+
+.AA_ButtonGreen .webix_icon_btn
+{
+    background: #6cb456 !important;
+    color: #fff !important;
+}
+
 .blinking {
 
     animation: opacity 2s ease-in-out infinite;

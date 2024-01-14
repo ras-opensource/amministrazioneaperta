@@ -2159,6 +2159,16 @@ Class AA_Sier extends AA_Object_V2
             {
                 $query.=" AND (risultati not like CONCAT('{\"sezioni_scrutinate\":\"',sezioni,'\",%') AND risultati not like '')";
             }
+
+            if(isset($params['senza_certificazione_45']) && $params['senza_certificazione_45']==1)
+            {
+                $query.=" AND comunicazioni not like '%\"corpoelettorale_45\":1%'";
+            }
+
+            if(isset($params['senza_certificazione_15']) && $params['senza_certificazione_15']==1)
+            {
+                $query.=" AND comunicazioni not like '%\"corpoelettorale_15\":1%'";
+            }
         }
 
         $query.=" ORDER by ".static::AA_COMUNI_DB_TABLE.".denominazione";
@@ -4528,6 +4538,10 @@ Class AA_SierModule extends AA_GenericModule
                 $taskManager->RegisterTask("Update_OC_ComuneRisultatiPreferenzeMulti");
                 
                 $taskManager->RegisterTask("GetSierAnalisiRisultatiDlg");
+
+                //conferma corpo elettorale
+                $taskManager->RegisterTask("GetSierOCConfirmCertCorpoElettoraleDlg");
+                $taskManager->RegisterTask("Update_OC_CertificazioneCorpoElettorale");
             }
 
             //desktop
@@ -6753,6 +6767,9 @@ Class AA_SierModule extends AA_GenericModule
 
         if(isset($_REQUEST['risultati_voti_candidato_check']) && $_REQUEST['risultati_voti_candidato_check'] > 0) $cp['risultati_voti_candidato_check']=1;
         else $cp['risultati_voti_candidato_check']=0;
+
+        if(isset($_REQUEST['finestra_temporale_cert_corpo_elettorale']) && $_REQUEST['finestra_temporale_cert_corpo_elettorale'] >= 0) $cp['finestra_temporale_cert_corpo_elettorale']=intVal($_REQUEST['finestra_temporale_cert_corpo_elettorale']);
+        else $cp['finestra_temporale_cert_corpo_elettorale']=0;
         //-------------------------------------------------------
 
         $object->SetControlPannel($cp);
@@ -9780,6 +9797,9 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($cp['risultati_voti_candidato_check']) && $cp['risultati_voti_candidato_check']>0)$form_data['risultati_voti_candidato_check']=$cp['risultati_voti_candidato_check'];
         $section->AddSwitchBoxField("risultati_voti_candidato_check","Risultati con criticità sui voti candidato Consigliere",array("onLabel"=>"includi nel feed","offLabel"=>"escludi dal feed","labelWidth"=>400));
 
+        $form_data['finestra_temporale_cert_corpo_elettorale']=0;
+        if(isset($cp['finestra_temporale_cert_corpo_elettorale']) && $cp['finestra_temporale_cert_corpo_elettorale']>0)$form_data['finestra_temporale_cert_corpo_elettorale']=$cp['finestra_temporale_cert_corpo_elettorale'];
+
         $wnd=new AA_GenericFormDlg($id, "Pannello di controllo", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
@@ -9880,6 +9900,10 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd->AddGenericObject($section);
 
+        $section=new AA_FieldSet($id."_Section_CP_Corpoelettorale","Opzioni corpo elettorale");
+        $section->AddTextField("finestra_temporale_cert_corpo_elettorale","Finestra temporale per la certificazione del corpo elettorale",array("labelWidth"=>400,"bottomLabel"=>"Inserire il numero di giorni per i quali è possible certificare il corpo elettorale (0 = senza limiti temporali).","bottomPadding"=>32));
+        $wnd->AddGenericObject($section);
+
         $wnd->EnableCloseWndOnSuccessfulSave();
         //$wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("UpdateSierControlPannel");
@@ -9904,7 +9928,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetLabelWidth(120);
         
         $wnd->SetWidth(540);
-        $wnd->SetHeight(400);
+        $wnd->SetHeight(480);
         
         $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>resetterà tutte le comunicazioni effettuate dai comuni.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
         $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
@@ -9982,6 +10006,39 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetApplyButtonName("Procedi");
         $wnd->EnableResetButton(false);
         $wnd->SetSaveTask("ResetRisultatiComuni");
+        
+        return $wnd;
+    }
+
+    //Template confirm reset risultati comuni
+    public function Template_OC_ConfirmCertCorpoElettoraleDlg($object=null,$comune=null)
+    {
+        $id=$this->GetId()."_ConfirmCertCorpoElettoraleDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma certificazione del Corpo elettorale", $this->id);
+        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+        $form_data['id_comune']=$comune->GetProp("id");
+        
+        $wnd=new AA_GenericFormDlg($id, "Conferma certificazione del Corpo elettorale", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(400);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>La certificazione del corpo elettorale <b>non permetterà più la modifica del dato fino alla prossima finestra temporale.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("Update_OC_CertificazioneCorpoElettorale");
         
         return $wnd;
     }
@@ -10081,7 +10138,7 @@ Class AA_SierModule extends AA_GenericModule
         $canModify=false;
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $canModify=true;
 
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>32,"type"=>"clean","borderless"=>true));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_ControlPannel",array("height"=>32,"type"=>"clean","borderless"=>true));
         $modify_btn=new AA_JSON_Template_Generic($id."_GeneraleOtions_btn",array(
             "view"=>"button",
              "type"=>"icon",
@@ -10257,7 +10314,8 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>$id."_Comunicazioni_".$operatore->GetOperatoreComunaleComune(),"value"=>"Comunicazioni","icon"=>"mdi mdi-send-check"),
             array("id"=>$id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),"value"=>"Dati affluenza","icon"=>"mdi mdi-vote"),
             array("id"=>$id."_Risultati_".$operatore->GetOperatoreComunaleComune(),"value"=>"Risultati","icon"=>"mdi mdi-stack-overflow"),
-            array("id"=>$id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),"value"=>"Rendicontazione","icon"=>"mdi mdi-cash-sync")
+            array("id"=>$id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),"value"=>"Rendicontazione","icon"=>"mdi mdi-cash-sync"),
+            array("id"=>$id."_Documenti_".$operatore->GetOperatoreComunaleComune(),"value"=>"Documenti","icon"=>"mdi mdi-file-document-multiple")
         );
 
         $multiview = new AA_JSON_Template_Multiview($id . "_Multiview_".$object->GetId(), array(
@@ -10321,7 +10379,7 @@ Class AA_SierModule extends AA_GenericModule
         //-------------------   Scheda generale  ------------------------------
         if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Generale_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_DatiGenerali",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         
         //torna al riepilogo
@@ -10336,7 +10394,7 @@ Class AA_SierModule extends AA_GenericModule
             "click"=>"$$('".$id."_PreviewBox_".$operatore->GetOperatoreComunaleComune()."').show()"
         )));
 
-        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati generali</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_DatiGenerali_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Dati generali</span>", "align"=>"center")));
         
         //Pulsante di modifica
         if($canModify)
@@ -10366,9 +10424,12 @@ Class AA_SierModule extends AA_GenericModule
 
         //-------------------  Comunicazioni  ------------------------------
         $canModify=false;
-        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0) $canModify=true;
+        $giornate=$object->GetGiornate();
+        $giornateKeys=array_keys($giornate);
+        $now=date("Y-m-d");
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0 && $now >= $giornateKeys[0]) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Comunicazioni_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Comunicazioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         
         //torna al riepilogo
@@ -10415,7 +10476,7 @@ Class AA_SierModule extends AA_GenericModule
         $canModify=false;
         if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Affluenza",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         //torna al riepilogo
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Affluenza_Back_".$operatore->GetOperatoreComunaleComune()."_btn",array(
@@ -10460,7 +10521,7 @@ Class AA_SierModule extends AA_GenericModule
         $canModify=false;
         if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Risultati_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Risultati",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //torna al riepilogo
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Risultati_Back_".$operatore->GetOperatoreComunaleComune()."_btn",array(
             "view"=>"button",
@@ -10484,7 +10545,7 @@ Class AA_SierModule extends AA_GenericModule
         $canModify=false;
         if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Rendiconti",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //torna al riepilogo
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Rendiconti_Back".$operatore->GetOperatoreComunaleComune()."_btn",array(
             "view"=>"button",
@@ -10523,6 +10584,50 @@ Class AA_SierModule extends AA_GenericModule
         $layout_generale->addRow(new AA_JSON_Template_Generic());
 
         //to do
+
+        $multiview->addCell($layout_generale);
+        //----------------------------------------------------------------------------
+
+        //--------------------------------   Documenti  -----------------------------
+        $layout_generale=new AA_JSON_Template_Layout($id."_Documenti_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Documenti",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
+        //torna al riepilogo
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_OC_Documenti_Back".$operatore->GetOperatoreComunaleComune()."_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-keyboard-backspace",
+            "label"=>"Riepilogo",
+            "align"=>"left",
+            "width"=>120,
+            "tooltip"=>"Torna al riepilogo",
+            "click"=>"$$('".$id."_PreviewBox_".$operatore->GetOperatoreComunaleComune()."').show()"
+        )));
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Documenti_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Documenti</span>", "align"=>"center")));
+        
+        //Pulsante di modifica
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_Documenti_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica rendicontazioni",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCModifyRendicontiDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+        
+        $layout_generale->addRow($toolbar);
+    
+        $layout_generale->addRow($this->Template_OC_Documenti($id,$object,$comune));
 
         $multiview->addCell($layout_generale);
         //----------------------------------------------------------------------------
@@ -10713,11 +10818,64 @@ Class AA_SierModule extends AA_GenericModule
 
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dedede !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
-        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Generale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Sezioni e corpo elettorale</span>", "align"=>"center")));
         
         //Pulsante di modifica
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
-        {            
+        $cp=$object->GetControlPannel();
+        $comunicazioni=$comune->GetComunicazioni(true);
+        $temp_modify=true;
+        $giornate=$object->GetGiornate();
+        $giornateKeys=array_keys($giornate);
+        $now=date("Y-m-d");
+        $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' '.(-45+$cp['finestra_temporale_cert_corpo_elettorale']).' days'));
+        $_15daysago_pre=date('Y-m-d', strtotime($giornateKeys[0].' '.(-15).' days'));
+        $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' '.(-15+$cp['finestra_temporale_cert_corpo_elettorale']).' days'));
+        $certified="";
+
+        if($cp['finestra_temporale_cert_corpo_elettorale']>0)
+        {
+            //verifica la presenza all'interno delle finestre temporali
+            if($now > $_45daysago && $now < $_15daysago_pre) $temp_modify=false;
+            if($now > $_45daysago && $now > $_15daysago) $temp_modify=false;
+        }
+
+        //verifica non sia già stato certificato
+        if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && $now <= $_45daysago)
+        {
+            $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+            $temp_modify=false;
+        }
+
+        if(isset($comunicazioni['corpoelettorale_15']) && $comunicazioni['corpoelettorale_15']>0 && $now <= $_15daysago) 
+        {
+            $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+            $temp_modify=false;
+        }
+
+        if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && isset($comunicazioni['corpoelettorale_15']) && $comunicazioni['corpoelettorale_15']>0)
+        {
+            $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+            $temp_modify=false;
+        } 
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_CorpoElettorale_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Sezioni e corpo elettorale</span>", "align"=>"center")));
+
+        //AA_Log::Log(__METHOD__." - comunicazioni: ".print_r($comunicazioni,true),100);
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0 && $temp_modify)
+        {
+            $certify_btn=new AA_JSON_Template_Generic($id."_OC_Certify_CorpoElettorale_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-certificate",
+                 "label"=>"Certifica",
+                 "css"=>"AA_ButtonGreen",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Certifica il dato del corpo elettorale",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCConfirmCertCorpoElettoraleDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+            ));
+            $toolbar->AddElement($certify_btn);
+
             $modify_btn=new AA_JSON_Template_Generic($id."_OC_Modify_CorpoElettorale_btn",array(
                "view"=>"button",
                 "type"=>"icon",
@@ -10733,7 +10891,14 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+            if($certified!="")
+            {
+                $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$certified,"width"=>120, "align"=>"center")));
+            }
+            else 
+            {
+                $toolbar->addElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+            }
         }
 
         $layout->AddRow($toolbar);
@@ -10924,7 +11089,104 @@ Class AA_SierModule extends AA_GenericModule
         return $layout;
     }
 
-    //Template OC generale
+    //Template OC documenti
+    public function Template_OC_Documenti($id,$object=null,$comune=null,$modify=false)
+    {
+        $id.=$id."_Documenti_Content";
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $canModify=false;
+
+        #documenti----------------------------------
+        $curId=$id;
+        $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","gravity"=>4));
+        $options_documenti=array();
+
+        if($canModify)
+        {
+            $options_documenti[]=array("id"=>"ordine","header"=>array("<div style='text-align: center'>n.</div>",array("content"=>"textFilter")),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int");
+            $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"destinatariDescr","header"=>array("<div style='text-align: center'>Destinatari</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>120,"css"=>array("text-align"=>"center"));
+        }
+        else
+        {
+            $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"width"=>400, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"destinatariDescr","header"=>array("<div style='text-align: center'>Destinatari</div>",array("content"=>"textFilter")),"width"=>400, "css"=>array("text-align"=>"center"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+
+        $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
+
+        $storage=AA_Storage::GetInstance();
+
+        $documenti_data=array();
+        foreach($object->GetAllegati() as $id_doc=>$curDoc)
+        {
+            if($curDoc->GetUrl() == "")
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
+                $view_icon="mdi-floppy";
+                $tip="Scarica";
+
+                if($storage->IsValid())
+                {
+                    $file=$storage->GetFileByHash($curDoc->GetFileHash());
+                    if($file->IsValid())
+                    {
+                        if(strpos($file->GetmimeType(),"pdf",0) !==false)
+                        {
+                            $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
+                            $view_icon="mdi-eye";
+                            $tip="Consulta";
+                        }
+                    }
+                }
+            }
+            else 
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetUrl().'"},"'.$this->id.'")';
+                $view_icon="mdi-eye";
+                $tip="Naviga (in un'altra finestra)";
+            }
+            
+            
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetSierCopyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+            $docDestinatari=array();
+            foreach($curDoc->GetDestinatariDescr(true) as $curDestinatario)
+            {
+                $docDestinatari[]="<span class='AA_Label AA_Label_LightGreen'>".$curDestinatario."</span>";
+            }
+            $docTipo=array();
+            foreach($curDoc->GetTipoDescr(true) as $curTipo)
+            {
+                $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$curTipo."</span>";
+            }
+            
+            $documenti_data[]=array("id"=>$id_doc,"ordine"=>$curDoc->GetOrdine(),"destinatariDescr"=>implode("&nbsp;",$docDestinatari),"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>implode("&nbsp;",$docTipo),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
+        }
+        $documenti->SetProp("data",$documenti_data);
+        if(sizeof($documenti_data) > 0) 
+        {
+            $layout->AddRow($documenti);
+        }
+        else 
+        {
+            $layout->AddRow(new AA_JSON_Template_Template($id."_OC_Documenti_Void",array("type"=>"clean","template"=>"<div style='display:flex; justify-content:center; align-items:center; width:100%;height:100%'><span>Non sono presenti documenti</span></div>")));
+        }
+        #--------------------------------------
+
+        return $layout;
+    }
+
+    //Template OC risultati
     public function Template_OC_Risultati($id,$object=null,$comune=null,$modify=false)
     {
         $id.=$id."_Risultati_Content";
@@ -12217,6 +12479,16 @@ Class AA_SierModule extends AA_GenericModule
             $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con rendiconti non caricati</span>&nbsp;";
         }
 
+        if(isset($params['senza_certificazione_45']) && $params['senza_certificazione_45'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>comuni senza certificazione al 45° giorno</span>&nbsp;";
+        }
+
+        if(isset($params['senza_certificazione_15']) && $params['senza_certificazione_15'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>comuni senza certificazione al 15° giorno</span>&nbsp;";
+        }
+
         if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
         
         $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
@@ -12548,11 +12820,18 @@ Class AA_SierModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Comune_Filter", "Parametri di filtraggio",$this->GetId(),$formData,$resetData,$applyActions,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX);
         
-        $dlg->SetHeight(480);
-        $dlg->SetLabelWidth(250);
+        $dlg->SetHeight(580);
+        $dlg->SetWidth(980);
+        $dlg->SetLabelWidth(350);
         
         //Senza operatori
-        $dlg->AddSwitchBoxField("senza_operatori","Comuni senza operatori",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza operatori."));
+        $dlg->AddSwitchBoxField("senza_operatori","Comuni senza operatori",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza operatori."));
+
+        //Senza certificazione al 45°
+        $dlg->AddSwitchBoxField("senza_certificazione_45","Comuni senza corpo elettorale certficato al 45°",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza la certificazione del corpo elettorale al 45° giorno."));
+
+        //Senza certificazione al 15°
+        $dlg->AddSwitchBoxField("senza_certificazione_15","Comuni senza corpo elettorale certificato al 15°",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza la certificazione del corpo elettorale al 15° giorno."));
 
         //Senza affluenza
         $dlg->AddSwitchBoxField("senza_affluenza","Comuni senza affluenza",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza affluenza."));
@@ -12561,10 +12840,10 @@ Class AA_SierModule extends AA_GenericModule
         $dlg->AddSwitchBoxField("senza_risultati","Comuni senza risultati",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza risultati."));
 
         //con scrutinio parziale
-        $dlg->AddSwitchBoxField("scrutinio_parziale","Comuni con scrutinio parziale",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni con scrutinio parziale."));
+        $dlg->AddSwitchBoxField("scrutinio_parziale","Comuni con scrutinio parziale",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni con scrutinio parziale."));
         
         //Senza rendiconti
-        $dlg->AddSwitchBoxField("senza_rendiconti","Comuni senza rendiconti",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza rendiconti."));
+        $dlg->AddSwitchBoxField("senza_rendiconti","Comuni senza rendiconti",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza rendiconti."));
 
         //Enable session save
         $dlg->EnableSessionSave();
@@ -13141,6 +13420,47 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierOCModifyComunicazioniDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task conferma certificazione corpo elettorale operatore comunale 
+    public function Task_GetSierOCConfirmCertCorpoElettoraleDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_OC_ConfirmCertCorpoElettoraleDlg($object,$comune),true);
         return true;
     }
 
@@ -17099,6 +17419,92 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiornamento comunicazioni operatore Comunale
+    public function Task_Update_OC_CertificazioneCorpoElettorale($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Modifica comunicazioni non abilitata.",false);
+            return false;
+        }       
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+
+        $giornate=$object->GetGiornate();
+        $giornateKeys=array_keys($giornate);
+        $comunicazioni=$comune->GetComunicazioni(true);
+        $now=date("Y-m-d");
+        $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' '.(-45).' days'));
+        $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' '.(-15).' days'));
+
+        if($now < $_45daysago)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("non è possibile certificare il dato prima delle finestre temporali stabilite.",false);
+            return false;
+        }
+
+        if($now >= $_15daysago)
+        {
+            $comunicazioni['corpoelettorale_45']=1;
+            $comunicazioni['corpoelettorale_15']=1;
+        }
+
+        if($now >= $_45daysago && $now < $_15daysago)
+        {
+            $comunicazioni['corpoelettorale_45']=1;
+            $comunicazioni['corpoelettorale_15']=0;
+        }
+
+        $comune->SetComunicazioni($comunicazioni);
+
+        if(!$object->UpdateComune($comune,$this->oUser,"Certificazione corpo elettorale - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento delle informazioni.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction("refreshCurSection");
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
     //Task aggiornamento risultati coalizioni (OC)
     public function Task_Update_OC_ComuneRisultatiCoalizioni($task)
     {
@@ -17513,7 +17919,9 @@ Class AA_SierModule extends AA_GenericModule
 
         $comunicazioni=$comune->GetComunicazioni(true);
         if(isset($_REQUEST['corpoelettorale_45']) && $_REQUEST['corpoelettorale_45']>0) $comunicazioni['corpoelettorale_45']=1;
+        else $comunicazioni['corpoelettorale_45']=0;
         if(isset($_REQUEST['corpoelettorale_15']) && $_REQUEST['corpoelettorale_15']>0) $comunicazioni['corpoelettorale_15']=1;
+        else $comunicazioni['corpoelettorale_15']=0;
         $comune->SetComunicazioni($comunicazioni);
 
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica corpo elettorale"))
@@ -20426,11 +20834,15 @@ Class AA_SierModule extends AA_GenericModule
 
         $giornate=$object->GetGiornate();
         $comunicazioni=$comune->GetComunicazioni(true);
+        $giornateKeys=array_keys($giornate);
+        $now=date("Y-m-d");
         $form_data=array();
         $sections=array();
         $inizio=false;
         foreach($giornate as $giornata=>$curValues)
         {
+            $readonly=true;
+            if($giornata<=$now) $readonly=false;
             $label_inizio="Apertura operazioni uffici elettorali di sezione";
             if(sizeof($sections)==0) $label_inizio="Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale";
             $form_data[$giornata."_inizio"]=0;
@@ -20439,8 +20851,8 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($comunicazioni[$giornata]['fine']) && $comunicazioni[$giornata]['fine']>0) $form_data[$giornata."_fine"]=1;
 
             $section=new AA_FieldSet($id."_Section_".$giornata,"Comunicazioni per la giornata del ".$giornata);
-            $section->AddCheckBoxField($giornata."_inizio", $label_inizio);
-            $section->AddCheckBoxField($giornata."_fine", "Chiusura operazioni uffici elettorali di sezione");
+            $section->AddCheckBoxField($giornata."_inizio", $label_inizio,array("readonly"=>$readonly));
+            $section->AddCheckBoxField($giornata."_fine", "Chiusura operazioni uffici elettorali di sezione",array("readonly"=>$readonly));
             $sections[]=$section;
         }
 
