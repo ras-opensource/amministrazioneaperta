@@ -1251,7 +1251,7 @@ Class AA_Sier extends AA_Object_V2
         
         if($bReset)
         {
-            $feed['risultati']['voti_presidente']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0,"voti_coalizione"=>0,"percent_coalizione"=>0);
+            $feed['risultati']['voti_presidente']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0);
         }
 
         foreach($coalizioni as $idCoalizione=>$curCoalizione)
@@ -1264,7 +1264,9 @@ Class AA_Sier extends AA_Object_V2
                     "denominazione"=>$curCoalizione->GetProp("nome_candidato"),
                     "image"=>$curImagePath,
                     "voti"=>0,
-                    "percent"=>0
+                    "percent"=>0,
+                    "voti_coalizione"=>0,
+                    "percent_coalizione"=>0
                 );
             }
 
@@ -1300,6 +1302,7 @@ Class AA_Sier extends AA_Object_V2
                 $feed['risultati']['voti_lista'][$idLista]=array(
                     "denominazione"=>$curLista->GetProp("denominazione"),
                     "image"=>$curImagePath,
+                    "id_presidente"=>$curLista->GetProp("id_coalizione"),
                     "voti"=>0,
                     "percent"=>0
                 );
@@ -1402,12 +1405,12 @@ Class AA_Sier extends AA_Object_V2
                 }
             }
 
-            if($tot_percent_presidente != 100)
+            if($tot_percent_presidente != 100 && $max_percent_presidente>0)
             {
                 $feed['risultati']['voti_presidente'][$max_percent_presidente]['percent']=round($feed['risultati']['voti_presidente'][$max_percent_presidente]['percent']+100-$tot_percent_presidente,1);
             }
 
-            if($tot_percent_coalizione != 100)
+            if($tot_percent_coalizione != 100 && $max_percent_coalizione>0)
             {
                 $feed['risultati']['voti_presidente'][$max_percent_coalizione]['percent_coalizione']=round($feed['risultati']['voti_presidente'][$max_percent_coalizione]['percent_coalizione']+100-$tot_percent_coalizione,1);
             }
@@ -1429,7 +1432,7 @@ Class AA_Sier extends AA_Object_V2
                 }
             }
 
-            if($tot_percent_lista != 100)
+            if($tot_percent_lista != 100 && $max_percent_lista>0)
             {
                 $feed['risultati']['voti_lista'][$max_percent_lista]['percent']=round($feed['risultati']['voti_lista'][$max_percent_lista]['percent']+100-$tot_percent_lista,1);
 
@@ -1452,7 +1455,7 @@ Class AA_Sier extends AA_Object_V2
                 }
             }
 
-            if($tot_percent_candidato != 100 && $tot_voti_candidato > 0)
+            if($tot_percent_candidato != 100 && $tot_voti_candidato > 0 && $max_percent_candidato>0)
             {
                 $feed['risultati']['voti_candidato'][$max_percent_candidato]['percent']=round($feed['risultati']['voti_candidato'][$max_percent_candidato]['percent']+100-$tot_percent_candidato,1);
 
@@ -1483,14 +1486,37 @@ Class AA_Sier extends AA_Object_V2
     {
         if(!$this->bValid) return false;
 
-        $feed=array("aggiornamento"=>date("Y-m-d H:i:s"),"comuni"=>array(),"stats"=>array("regionale"=>array("sezioni"=>0,"elettori_f"=>0,"elettori_m"=>0,"elettori_tot"=>0,"affluenza"=>array(),"risultati"=>array("sezioni_scrutinate"=>0,"votanti_m"=>0,"votanti_f"=>0,"votanti_tot"=>0,'voti_presidente'=>array("sezioni_scrutinate"=>0,"voti_tot"=>0),"voti_lista"=>array("sezioni_scrutinate"=>0,"voti_tot"=>0),"voti_candidato"=>array("voti_tot"=>0))),"circoscrizionale"=>array()));
+        $feed=array(
+            "aggiornamento"=>date("Y-m-d H:i:s"),
+            "comuni"=>array(),
+            "stats"=>array(
+                "regionale"=>array(
+                    "sezioni"=>0,
+                    "elettori_f"=>0,
+                    "elettori_m"=>0,
+                    "elettori_tot"=>0,
+                    "affluenza"=>array(),
+                    "risultati"=>array(
+                        "sezioni_scrutinate"=>0,
+                        "votanti_m"=>0,
+                        "votanti_f"=>0,
+                        "votanti_tot"=>0,
+                        'votanti_percent'=>0,
+                        'voti_presidente'=>array(
+                            "sezioni_scrutinate"=>0,
+                            "voti_tot"=>0),
+                        "voti_lista"=>array(
+                            "sezioni_scrutinate"=>0,
+                            "voti_tot"=>0))),
+                "circoscrizionale"=>array()));
 
         $comuni=$this->GetComuni();
         $coalizioni=$this->GetCoalizioni();
         $liste=$this->GetListe();
-        $candidati=$this->GetCandidati();
+        //$candidati=$this->GetCandidati();
         $giornateAffluenza=$this->GetGiornate();
-        $cp=$this->GetControlPannel();
+        //$cp=$this->GetControlPannel();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
 
         $voti_validi_regione=0;
         $voti_validi_circoscrizione=array();
@@ -1499,12 +1525,17 @@ Class AA_Sier extends AA_Object_V2
 
         $platform=AA_Platform::GetInstance();
         $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
-
+        $aggiornamento_generale="";
+        $aggiornamento_presidente="";
+        $aggiornamento_presidente_circoscrizionale=array();
+        $aggiornamento_liste="";
+        $aggiornamento_liste_circoscrizionale=array();
+        $aggiornamento_candidati="";
+        $aggiornamento_candidati_circoscrizionale=array();
         foreach($comuni as $idComune=>$curComune)
         {
             $feedComune=$curComune->GetFeedRisultati(true);
             $feed["comuni"][$idComune]=$feedComune;
-            $affluenza=$curComune->GetAffluenza(true);
 
             //dati generali
             $feed['stats']['regionale']['sezioni']+=$curComune->GetProp('sezioni');
@@ -1512,198 +1543,188 @@ Class AA_Sier extends AA_Object_V2
             $feed['stats']['regionale']['elettori_f']+=$curComune->GetProp('elettori_f');
             $feed['stats']['regionale']['elettori_tot']+=$curComune->GetProp('elettori_f')+$curComune->GetProp('elettori_m');
 
-            if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]=array("denominazione"=>$curComune->GetProp('circoscrizione'),"sezioni"=>0,'elettori_m'=>0,'elettori_f'=>0,'elettori_tot'=>0,"affluenza"=>array(),"risultati"=>array("sezioni_scrutinate"=>0,"votanti_m"=>0,"votanti_f"=>0,"votanti_tot"=>0,"votanti_percent"=>0,"voti_presidente"=>array("sezioni_scrutinate"=>0,"voti_tot"=>0),"voti_lista"=>array("sezioni_scrutinate"=>0,"voti_tot"=>0),"voti_candidato"=>array("voti_tot"=>0)));
-            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['sezioni']+=$curComune->GetProp('sezioni');
-            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_m']+=$curComune->GetProp('elettori_m');
-            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_f']+=$curComune->GetProp('elettori_f');
-            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_tot']+=$curComune->GetProp('elettori_f')+$curComune->GetProp('elettori_m');
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]=array(
+                "denominazione"=>$curComune->GetProp('circoscrizione'),
+                "sezioni"=>0,
+                'elettori_m'=>0,
+                'elettori_f'=>0,
+                'elettori_tot'=>0,
+                "affluenza"=>array(),
+                "risultati"=>array(
+                    "sezioni_scrutinate"=>0,
+                    "votanti_m"=>0,
+                    "votanti_f"=>0,
+                    "votanti_tot"=>0,
+                    "votanti_percent"=>0,
+                    "voti_presidente"=>array(
+                        "sezioni_scrutinate"=>0,
+                        "voti_tot"=>0),
+                    "voti_lista"=>array(
+                        "sezioni_scrutinate"=>0,
+                        "voti_tot"=>0),
+                    "voti_candidato"=>array(
+                        "sezioni_scrutinate"=>0,
+                        "voti_tot"=>0))
+                );
+            
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['sezioni']+=intVal($curComune->GetProp('sezioni'));
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_m']+=intVal($curComune->GetProp('elettori_m'));
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_f']+=intVal($curComune->GetProp('elettori_f'));
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_tot']+=intVal($curComune->GetProp('elettori_f')+$curComune->GetProp('elettori_m'));
 
-            //affluenza
-            foreach($giornateAffluenza as $giornata=>$giornataValues)
+            //------------- Affluenza -----------
+            foreach($feedComune['affluenza'] as $giornata=>$giornataValues)
             {
-                if($giornataValues['affluenza']==1)
+                if(is_array($giornataValues))
                 {
-                    if(!isset($feed['stats']['regionale']['affluenza'][$giornata])) $feed['stats']['regionale']['affluenza'][$giornata]=array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
-                    if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]=array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
-                    if(!isset($feed['comuni'][$idComune]['affluenza'])) $feed['comuni'][$idComune]['affluenza']=array($giornata=>array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0)));
-                    if(sizeof($affluenza)>0)
+                    if(!isset($feed['stats']['regionale']['affluenza'][$giornata])) 
                     {
-                        if(isset($affluenza[$giornata]))
-                        {    
-                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']+=$affluenza[$giornata]['ore_12'];
-                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$affluenza[$giornata]['ore_19'];
-                            $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$affluenza[$giornata]['ore_22'];
-
-                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$affluenza[$giornata]['ore_12'];
-                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$affluenza[$giornata]['ore_19'];
-                            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$affluenza[$giornata]['ore_22'];
-                        }
+                        $feed['stats']['regionale']['affluenza'][$giornata]=array(
+                            "ore_12"=>array("count"=>0,"percent"=>0),
+                            "ore_19"=>array("count"=>0,"percent"=>0),
+                            "ore_22"=>array("count"=>0,"percent"=>0));
                     }
+                               
+                    $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
+                    $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
+                    $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
+    
+                    $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
+                    $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
+                    $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
+                }
+            }
+            //-----------------------------------
+
+            //------------------- Risultati generali -----------------------
+            //regionale
+            if($aggiornamento_generale=="" || $feedComune['risultati']['aggiornamento']>$aggiornamento_generale)
+            {
+                $aggiornamento_generale=$feedComune['risultati']['aggiornamento'];
+                $feed['stats']['regionale']['risultati']['aggiornamento']=$feedComune['risultati']['aggiornamento'];
+            }
+            $feed['stats']['regionale']['risultati']['sezioni_scrutinate'] +=$feedComune['risultati']['sezioni_scrutinate'];
+            $feed['stats']['regionale']['risultati']['votanti_m'] +=$feedComune['risultati']['votanti_m'];
+            $feed['stats']['regionale']['risultati']['votanti_f'] +=$feedComune['risultati']['votanti_f'];
+            $feed['stats']['regionale']['risultati']['votanti_tot'] +=$feedComune['risultati']['votanti_tot'];
+
+            //circoscrizionale
+            if(!isset($aggiornamento_generale_circoscrizionale[$curComune->GetProp('id_circoscrizione')]) || $feedComune['risultati']['aggiornamento']>$aggiornamento_generale_circoscrizionale[$curComune->GetProp('id_circoscrizione')])
+            {
+                $aggiornamento_generale_circoscrizionale[$curComune->GetProp('id_circoscrizione')]=$feedComune['risultati']['aggiornamento'];
+                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['aggiornamento']=$feedComune['risultati']['aggiornamento'];
+            }
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['sezioni_scrutinate'] +=$feedComune['risultati']['sezioni_scrutinate'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_m'] +=$feedComune['risultati']['votanti_m'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_f'] +=$feedComune['risultati']['votanti_f'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_tot'] +=$feedComune['risultati']['votanti_tot'];
+            //----------------------------------------------------------------------
+                
+            //Risultati presidente 
+            $feed['stats']['regionale']['risultati']['voti_presidente']['sezioni_scrutinate']+=$feedComune['risultati']['voti_presidente']['sezioni_scrutinate'];
+            $feed['stats']['regionale']['risultati']['voti_presidente']['voti_tot'] += $feedComune['risultati']['voti_presidente']['voti_tot'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente']['sezioni_scrutinate']+=$feedComune['risultati']['voti_presidente']['sezioni_scrutinate'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente']['voti_tot'] += $feedComune['risultati']['voti_presidente']['voti_tot'];
+            if($aggiornamento_presidente=="" || $feedComune['risultati']['voti_presidente']['aggiornamento']>$aggiornamento_presidente)
+            {
+                $feed['stats']['regionale']['risultati']['voti_presidente']['aggiornamento']=$feedComune['risultati']['voti_presidente']['aggiornamento'];
+                $aggiornamento_presidente=$feedComune['risultati']['voti_presidente']['aggiornamento'];
+            }
+            if(!isset($aggiornamento_presidente_circoscrizionale[$curComune->GetProp('id_circoscrizione')]) || $feedComune['risultati']['voti_presidente']['aggiornamento']>$aggiornamento_presidente_circoscrizionale[$curComune->GetProp('id_circoscrizione')])
+            {
+                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente']['aggiornamento']=$feedComune['risultati']['voti_presidente']['aggiornamento'];
+                $aggiornamento_presidente_circoscrizionale[$curComune->GetProp('id_circoscrizione')]=$feedComune['risultati']['voti_presidente']['aggiornamento'];
+            }
+            foreach($feedComune['risultati']['voti_presidente'] as $key=>$val)
+            {
+                if(is_array($val))
+                {
+                    if(!isset($feed['stats']['regionale']['risultati']['voti_presidente'][$key])) $feed['stats']['regionale']['risultati']['voti_presidente'][$key]=$val;
                     else
                     {
-                        $feed['comuni'][$idComune]['affluenza']=array($giornata=>array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0)));
+                        AA_Log::Log(__METHOD__." - key: ".$key." - val: ".print_r($val,true),100);
+                        $feed['stats']['regionale']['risultati']['voti_presidente'][$key]['voti'] += $val['voti'];
+                        $feed['stats']['regionale']['risultati']['voti_presidente'][$key]['voti_coalizione'] += $val['voti_coalizione'];
                     }
-                }
-            }
 
-            //risultati
-            $risultati=$curComune->GetRisultati(true);
-            
-            //verifica errori bloccanti
-            $analisi_risultati=$this->AnalizeRisultati($risultati,$curComune->GetProp("id_circoscrizione"));
-            $include_on_feed=true;
-
-            if($cp['risultati_scrutinio_parziale_check'] !=1 && intVal($curComune->GetProp("sezioni")) != intVal($risultati['sezioni_scrutinate'])) $include_on_feed=false;
-
-            if($analisi_risultati[0]==true)
-            {
-                if($cp['risultati_voti_presidente_check'] !=1)
-                {
-                    foreach($analisi_risultati[1] as $curError)
+                    if(!isset( $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$key]))  $feed['stats']['regionale']['risultati']['voti_presidente'][$key]=$val;
+                    else
                     {
-                        if(strpos($curError,"Presidente") !==false) $include_on_feed=false;
-                    }
-                }
-
-                if($cp['risultati_voti_lista_check'] !=1)
-                {
-                    foreach($analisi_risultati[1] as $curError)
-                    {
-                        if(strpos($curError,"Liste") !==false) $include_on_feed=false;
-                    }
-                }
-
-                if($cp['risultati_voti_candidato_check'] !=1)
-                {
-                    foreach($analisi_risultati[1] as $curError)
-                    {
-                        if(strpos($curError,"preferenze") !==false) $include_on_feed=false;
+                        $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$key]['voti'] += $val['voti'];
+                        $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$key]['voti_coalizione'] += $val['voti_coalizione'];
                     }
                 }
             }
-            //--------------------------
-            
-            //if(!isset($feed['stats']['regionale']['risultati']['voti_presidente'])) $feed['stats']['regionale']['risultati']['voti_presidente']=array("voti_tot"=>0);
-            //if(!isset($feed['stats']['regionale']['risultati']['voti_lista'])) $feed['stats']['regionale']['risultati']['voti_lista']=array("voti_tot"=>0);
-            //if(!isset($feed['stats']['regionale']['risultati']['voti_candidato'])) $feed['stats']['regionale']['risultati']['voti_candidato']=array("voti_tot"=>0);
-            if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente']=array("voti_tot"=>0,"sezioni_scrutinate"=>0);
-            if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']=array("voti_tot"=>0,"sezioni_scrutinate"=>0);
-            if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato']=array("voti_tot"=>0);
+            //------------------------------------------------
 
-            //risultati generali
-            if(isset($risultati['sezioni_scrutinate']) && $include_on_feed)
+            //risultati liste
+            $feed['stats']['regionale']['risultati']['voti_lista']['sezioni_scrutinate']+=$feedComune['risultati']['voti_lista']['sezioni_scrutinate'];
+            $feed['stats']['regionale']['risultati']['voti_lista']['voti_tot'] += $feedComune['risultati']['voti_lista']['voti_tot'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']['sezioni_scrutinate']+=$feedComune['risultati']['voti_lista']['sezioni_scrutinate'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']['voti_tot'] += $feedComune['risultati']['voti_lista']['voti_tot'];
+            if($aggiornamento_liste=="" || $feedComune['risultati']['voti_lista']['aggiornamento']>$aggiornamento_liste)
             {
-                $feed['stats']['regionale']['risultati']['sezioni_scrutinate'] +=$risultati['sezioni_scrutinate'];
-                $feed['stats']['regionale']['risultati']['votanti_m'] +=$risultati['votanti_m'];
-                $feed['stats']['regionale']['risultati']['votanti_f'] +=$risultati['votanti_f'];
-                $feed['stats']['regionale']['risultati']['votanti_tot'] +=$risultati['votanti_f']+$risultati['votanti_m'];
-                
-                //sardegnaIT
-                $feed['stats']['regionale']['risultati']['voti_presidente']['sezioni_scrutinate']+=$risultati['sezioni_scrutinate'];
-                $feed['stats']['regionale']['risultati']['voti_lista']['sezioni_scrutinate']+=$risultati['sezioni_scrutinate'];
-                //----------
-
-                //$voti_validi_regione+=$risultati['votanti_f']+$risultati['votanti_m']-$risultati['schede_bianche']-$risultati['schede_nulle']-$risultati['voti_contestati_na_pre']-$risultati['schede_voti_nulli'];
-                //$voti_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]+=$risultati['votanti_f']+$risultati['votanti_m']-$risultati['schede_bianche']-$risultati['schede_nulle']-$risultati['voti_contestati_na_pre']-$risultati['schede_voti_nulli'];
-                
-                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['sezioni_scrutinate'] +=$risultati['sezioni_scrutinate'];
-                
-                //sardegnaIT
-                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente']['sezioni_scrutinate'] +=$risultati['sezioni_scrutinate'];
-                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']['sezioni_scrutinate'] +=$risultati['sezioni_scrutinate'];
-                //----------
-
-                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_m'] +=$risultati['votanti_m'];
-                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_f'] +=$risultati['votanti_f'];
-                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['votanti_tot'] +=$risultati['votanti_f']+$risultati['votanti_m'];
+                $feed['stats']['regionale']['risultati']['voti_lista']['aggiornamento']=$feedComune['risultati']['voti_lista']['aggiornamento'];
+                $aggiornamento_liste=$feedComune['risultati']['voti_lista']['aggiornamento'];
             }
-
-            //coalizioni
-            foreach($coalizioni as $idCoalizione=>$curCoalizione)
+            if(!isset($aggiornamento_liste_circoscrizionale[$curComune->GetProp('id_circoscrizione')]) || $feedComune['risultati']['voti_lista']['aggiornamento']>$aggiornamento_liste_circoscrizionale[$curComune->GetProp('id_circoscrizione')])
             {
-                $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-                if($curCoalizione->GetProp('image') != "")
-                {
-                    $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
-                }
-                if(!isset($feed['stats']['regionale']['risultati']['voti_presidente'][$idCoalizione])) $feed['stats']['regionale']['risultati']['voti_presidente'][$idCoalizione]=array("denominazione"=>$curCoalizione->GetProp('nome_candidato'),"voti"=>0,"image"=>$curImagePath);
-                if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$idCoalizione])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$idCoalizione]=array("denominazione"=>$curCoalizione->GetProp('nome_candidato'),"voti"=>0,"image"=>$curImagePath);
-                
-                if(isset($risultati['voti_presidente'][$idCoalizione]) && $include_on_feed)
-                {
-                    $feed['stats']['regionale']['risultati']['voti_presidente'][$idCoalizione]['voti']+=$risultati['voti_presidente'][$idCoalizione];
-                    //stats
-                    $voti_validi_regione+=$risultati['voti_presidente'][$idCoalizione];
-                    if(!isset($voti_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")])) $voti_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]=0;
-                    $voti_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]+=$risultati['voti_presidente'][$idCoalizione];
-                    //---------
-
-                    $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$idCoalizione]['voti']+=$risultati['voti_presidente'][$idCoalizione];                    
-                }
+                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']['aggiornamento']=$feedComune['risultati']['voti_lista']['aggiornamento'];
+                $aggiornamento_liste_circoscrizionale[$curComune->GetProp('id_circoscrizione')]=$feedComune['risultati']['voti_lista']['aggiornamento'];
             }
-
-            //liste
-            foreach($liste as $idLista=>$curLista)
+            foreach($feedComune['risultati']['voti_lista'] as $key=>$val)
             {
-                $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-                if($curLista->GetProp('image') != "")
+                if(is_array($val))
                 {
-                    $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
-                }
-                $coalizione=$coalizioni[$curLista->GetProp("id_coalizione")];
-                if(!isset($feed['stats']['regionale']['risultati']['voti_lista'][$idLista])) $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"id_presidente"=>$curLista->GetProp('id_coalizione'),"presidente"=>$coalizione->GetProp("nome_candidato"),"voti"=>0,"image"=>$curImagePath);
-                if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$idLista])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp('denominazione'),"id_presidente"=>$curLista->GetProp('id_coalizione'),"presidente"=>$coalizione->GetProp("nome_candidato"),"voti"=>0,"image"=>$curImagePath);
-                
-                if(isset($risultati['voti_lista'][$idLista]) && $include_on_feed)
-                {
-
-                    $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['voti']+=$risultati['voti_lista'][$idLista];
-                    $feed['stats']['regionale']['risultati']['voti_lista']['voti_tot']+=$risultati['voti_lista'][$idLista];
-                    $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$idLista]['voti']+=$risultati['voti_lista'][$idLista];
-
-                    //stats 
-                    $voti_liste_validi_regione+=$risultati['voti_lista'][$idLista];
-                    if(!isset($voti_liste_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")])) $voti_liste_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]=0;
-                    $voti_liste_validi_circoscrizione[$curComune->GetProp("id_circoscrizione")]+=$risultati['voti_lista'][$idLista];
-                    //--------- 
-                }
-            }
-
-            //preferenze
-            foreach($candidati as $idCandidato=>$curCandidato)
-            {                
-                if(isset($risultati['voti_candidato'][$idCandidato]) && $risultati['voti_candidato'][$idCandidato]['voti'] > 0 && $include_on_feed)
-                {
-                    $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-                    $lista=$liste[$curCandidato->GetProp('id_lista')];
-                    $coalizione=$coalizioni[$risultati['voti_candidato'][$idCandidato]['id_coalizione']];
-
-                    if($lista->GetProp('image') != "")
+                    if(!isset( $feed['stats']['regionale']['risultati']['voti_lista'][$key]))  $feed['stats']['regionale']['risultati']['voti_lista'][$key]=$val;
+                    else
                     {
-                        $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$lista->GetProp('image');
+                        $feed['stats']['regionale']['risultati']['voti_lista'][$key]['voti'] += $val['voti'];
                     }
 
+                    if(!isset( $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$key]))  $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$key]=$val;
+                    else
+                    {
+                        $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista'][$key]['voti'] += $val['voti'];
+                    }
+                }
+            }
+            //------------------------------------------------------------
+
+            //risultati candidato
+            $feed['stats']['regionale']['risultati']['voti_candidato']['sezioni_scrutinate']+=$feedComune['risultati']['voti_candidato']['sezioni_scrutinate'];
+            $feed['stats']['regionale']['risultati']['voti_candidato']['voti_tot'] += $feedComune['risultati']['voti_candidato']['voti_tot'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato']['sezioni_scrutinate']+=$feedComune['risultati']['voti_candidato']['sezioni_scrutinate'];
+            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato']['voti_tot'] += $feedComune['risultati']['voti_candidato']['voti_tot'];
+            if($aggiornamento_candidati=="" || $feedComune['risultati']['voti_candidato']['aggiornamento']>$aggiornamento_candidati)
+            {
+                $feed['stats']['regionale']['risultati']['voti_candidato']['aggiornamento']=$feedComune['risultati']['voti_candidato']['aggiornamento'];
+                $aggiornamento_candidati=$feedComune['risultati']['voti_candidato']['aggiornamento'];
+            }
+            if(!isset($aggiornamento_candidati_circoscrizionale[$curComune->GetProp('id_circoscrizione')]) || $feedComune['risultati']['voti_candidato']['aggiornamento']>$aggiornamento_candidati_circoscrizionale[$curComune->GetProp('id_circoscrizione')])
+            {
+                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato']['aggiornamento']=$feedComune['risultati']['voti_candidato']['aggiornamento'];
+                $aggiornamento_candidato_circoscrizionale[$curComune->GetProp('id_circoscrizione')]=$feedComune['risultati']['voti_candidato']['aggiornamento'];
+            }
+            foreach($feedComune['risultati']['voti_candidato'] as $key=>$val)
+            {
+                if(is_array($val))
+                {
                     /*
-                    if(!isset($feed['stats']['regionale']['risultati']['voti_candidato'][$idCandidato]))
+                    if(!isset( $feed['stats']['regionale']['risultati']['voti_candidato'][$key]))  $feed['stats']['regionale']['risultati']['voti_candidato'][$key]=$val;
+                    else
                     {
-                        $feed['stats']['regionale']['risultati']['voti_candidato'][$idCandidato]=array("denominazione"=>$curCandidato->GetProp('cognome')." ".$curCandidato->GetProp('nome'),"id_lista"=>$risultati['voti_candidato'][$idCandidato]['id_lista'],"lista"=>$risultati['voti_candidato'][$idCandidato]['lista'],"id_presidente"=>$risultati['voti_candidato'][$idCandidato]['id_coalizione'],"presidente"=>$coalizione->GetProp("nome_candidato"),"image"=>$curImagePath,"voti"=>$risultati['voti_candidato'][$idCandidato]['voti']);
-                        
-                    }
-                    else $feed['stats']['regionale']['risultati']['voti_candidato'][$idCandidato]['voti'] += $risultati['voti_candidato'][$idCandidato]['voti'];
-                    */
+                        $feed['stats']['regionale']['risultati']['voti_lista'][$key]['voti'] += $val['voti'];
+                    }*/
 
-                    if(!isset($feed['stats']['circoscrizionale'][$curCandidato->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$idCandidato]))
+                    if(!isset( $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]))  $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]=$val;
+                    else
                     {
-                        $feed['stats']['circoscrizionale'][$curCandidato->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$idCandidato]=array("denominazione"=>$curCandidato->GetProp('cognome')." ".$curCandidato->GetProp('nome'),"id_lista"=>$risultati['voti_candidato'][$idCandidato]['id_lista'],"lista"=>$risultati['voti_candidato'][$idCandidato]['lista'],"id_presidente"=>$risultati['voti_candidato'][$idCandidato]['id_coalizione'],"presidente"=>$coalizione->GetProp("nome_candidato"),"image"=>$curImagePath,"voti"=>$risultati['voti_candidato'][$idCandidato]['voti']);
+                        $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]['voti'] += $val['voti'];
                     }
-                    else $feed['stats']['circoscrizionale'][$curCandidato->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$idCandidato]['voti']+=$risultati['voti_candidato'][$idCandidato]['voti'];
-
-                    //$feed['stats']['regionale']['risultati']['voti_candidato']['voti_tot']+=$risultati['voti_candidato'][$idCandidato]['voti'];
-                    $feed['stats']['circoscrizionale'][$curCandidato->GetProp('id_circoscrizione')]['risultati']['voti_candidato']['voti_tot']+=$risultati['voti_candidato'][$idCandidato]['voti'];
-                    //$feed['regionale']['stats']['risultati']['voti_lista'][$idLista]['voti']+=$risultati['voti_lista'][$idLista];
-                    //$feed['circoscrizionale']['stats'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']['voti']+=$risultati['voti_lista'][$idLista];
                 }
             }
+            //------------------------------------------------------------
         }
 
         //AA_Log::Log(__METHOD__." - voti validi regione: ".$voti_validi_regione,100);
@@ -1711,6 +1732,8 @@ Class AA_Sier extends AA_Object_V2
         //calcolo percentuali
         $max_percent_coalizioni=0;
         $total_percent_coalizioni=0;
+        $max_percent_presidente=0;
+        $total_percent_presidente=0;
 
         //percentuale votanti regione
         $feed['stats']['regionale']['risultati']['votanti_percent']=round($feed['stats']['regionale']['risultati']['votanti_tot']*100/$feed['stats']['regionale']['elettori_tot'],1);
@@ -1718,41 +1741,64 @@ Class AA_Sier extends AA_Object_V2
         //percentuale affluenza
         foreach($giornateAffluenza as $giornata=>$giornataValues)
         {
-            if($giornataValues['affluenza']==1)
+            if(isset($feed['stats']['regionale']['affluenza'][$giornata]))
             {
                 $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
                 $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
                 $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
             }
-        }
-
-        $feed['stats']['regionale']['risultati']['voti_presidente']['voti_tot']=$voti_validi_regione;
-        $feed['stats']['regionale']['risultati']['voti_lista']['voti_tot']=$voti_liste_validi_regione;
-
-        foreach($coalizioni as $idPresidente=>$curPresidente)
-        {
-            if($voti_validi_regione > 0)
+            else
             {
-                $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent']=round($feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['voti']*100/(intVal($voti_validi_regione)),1);
-                $total_percent_coalizioni+=$feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent'];
-                if($max_percent_coalizioni==0 || $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent']>$feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']) $max_percent_coalizioni=$idPresidente;
+                AA_Log::Log(__METHOD__." - giornata non trovata: ".$giornata,100);
             }
         }
 
-        if($total_percent_coalizioni < 100 && $total_percent_coalizioni > 99.8 && $max_percent_coalizioni > 0)
+        foreach($coalizioni as $idPresidente=>$curPresidente)
+        {
+            if($feed['stats']['regionale']['risultati']['voti_presidente']['voti_tot'] > 0)
+            {
+                $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent']=round($feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['voti']*100/(intVal($feed['stats']['regionale']['risultati']['voti_presidente']['voti_tot'])),1);
+                $total_percent_presidente+=$feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent'];
+                if($max_percent_presidente==0 || $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent']>$feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_presidente]['percent']) $max_percent_presidente=$idPresidente;
+
+                //percent coalizione
+                if($feed['stats']['regionale']['risultati']['voti_lista']['voti_tot']>0)
+                {
+                    $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']=round($feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['voti_coalizione']*100/(intVal($feed['stats']['regionale']['risultati']['voti_lista']['voti_tot'])),1);
+                    $total_percent_coalizioni+=$feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione'];
+                    if($max_percent_coalizioni==0 || $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']>$feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_presidente]['percent_coalizione']) $max_percent_coalizioni=$idPresidente;       
+                }
+                else
+                {
+                    $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']=0;
+                }
+            }
+            else
+            {
+                $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent']=0;
+                $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']=0;
+            }
+        }
+
+        if($total_percent_presidente !=100 && $max_percent_presidente > 0 && $feed['stats']['regionale']['risultati']['voti_presidente']['voti_tot']>0)
         {
             $feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']+=round(100-$total_percent_coalizioni,1);
         }
 
+        if($total_percent_coalizioni !=100 && $max_percent_coalizioni > 0 && $feed['stats']['regionale']['risultati']['voti_lista']['voti_tot']>0)
+        {
+            $feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_coalizioni]['percent_coalizione']+=round(100-$total_percent_coalizioni,1);
+        }
+
         foreach($liste as $idLista=>$curLista)
         {
-            if($voti_liste_validi_regione > 0) 
+            if($feed['stats']['regionale']['risultati']['voti_lista']['voti_tot'] > 0) 
             {
-                $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($voti_liste_validi_regione)),1);
+                $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['voti']*100/(intVal( $feed['stats']['regionale']['risultati']['voti_lista']['voti_tot'])),1);
             }
         }
 
-        foreach(AA_Sier_Const::GetCircoscrizioni() as $idCircoscrizione=>$curCircoscrizione)
+        foreach($circoscrizioni as $idCircoscrizione=>$curCircoscrizione)
         {
             //AA_Log::Log(__METHOD__." - circoscrizione: ".print_r($curCircoscrizione,true),100);
             $max_percent_coalizioni=0;
@@ -1781,9 +1827,9 @@ Class AA_Sier extends AA_Object_V2
                 $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['votanti_percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['votanti_tot']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
 
                 //AA_Log::Log(__METHOD__." - voti: ".print_r($voti,true),100);
-                if($voti_validi_circoscrizione[$idCircoscrizione] > 0) 
+                if($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente']['voti_tot'] > 0) 
                 {
-                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']=round($voti*100/(intVal($voti_validi_circoscrizione[$idCircoscrizione])),1);
+                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']=round($voti*100/(intVal($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente']['voti_tot'])),1);
                     $total_percent_coalizioni+=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent'];
                     if($max_percent_coalizioni==0 || $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']>$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']) $max_percent_coalizioni=$idPresidente;
                 }
@@ -1800,9 +1846,9 @@ Class AA_Sier extends AA_Object_V2
 
             foreach($liste as $idLista=>$curLista)
             {
-                if($voti_liste_validi_circoscrizione[$idCircoscrizione] > 0) 
+                if($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista']['voti_tot'] > 0)
                 {
-                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($voti_liste_validi_circoscrizione[$idCircoscrizione])),1);
+                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista']['voti_tot'])),1);
                 }
                 else
                 {
@@ -3945,6 +3991,60 @@ Class AA_Sier extends AA_Object_V2
         return true;
     }
 
+    //aggiorna i feed risultati dei comuni
+    public function UpdateFeedRisultatiComuni($circoscrizione=null,$user=null)
+    {
+        if(!$this->isValid())
+        {
+                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
+                return false;            
+        }
+        
+        //Verifica utente
+        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return false;
+            }
+        }
+
+        //Verifica Flags
+        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'elemento.", 100,false,true);
+            return false;
+        }
+
+        $db=new AA_Database();
+        $comuni=$this->GetComuni($circoscrizione);
+        foreach($comuni as $idComune=>$curComune)
+        {
+            $feedRisultati=$this->UpdateComuneFeedRisultati($idComune,$user,false,false,false);
+            if(!is_array($feedRisultati))
+            {
+                AA_Log::Log(__METHOD__."Errore durante l'aggiornamento del feed risultati del comune di ".$curComune->GetProp("denominazione"),100);
+                return false;
+            }
+
+            $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET feed_risultati='".addslashes(json_encode($feedRisultati))."' WHERE id_sier='".$this->nId_Data."' and id='".$idComune."' LIMIT 1";
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - errore durante l'aggiornamento del feed dei risultati per il comune: ".$curComune->GetProp("denominazione")." - ".$db->GetLastErrorMessage(), 100);
+                return false;
+            }   
+        }
+
+        if(!$this->Update($user,false,"Aggiornamento feed risultati Comuni"))
+        {
+            return false;
+        }
+        return true;
+    }
+
     //reimposta affluenza dei comuni
     public function ResetAffluenzaComuni($circoscrizione=null,$user=null)
     {
@@ -4379,6 +4479,8 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierConfirmResetRisultatiComuniDlg");
             $taskManager->RegisterTask("ResetFeedRisultatiComuni");
             $taskManager->RegisterTask("GetSierConfirmResetFeedRisultatiComuniDlg");
+            $taskManager->RegisterTask("GetSierConfirmUpdateFeedRisultatiComuniDlg");
+            $taskManager->RegisterTask("UpdateFeedRisultatiComuni");
 
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
@@ -6744,7 +6846,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC) && !$this->oUser->IsSuperUser())
         {
             $sTaskLog="<status id='status'>0</status><content id='content'>";
             $sTaskLog.= "operazioni concluse.";
@@ -9830,7 +9932,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetWidth(800);
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
-            $wnd->SetHeight(720);
+            $wnd->SetHeight(820);
             $wnd->AddGenericObject($section);
 
             //Reset dati comuni
@@ -9887,6 +9989,38 @@ Class AA_SierModule extends AA_GenericModule
                 "width"=>150,
                 "tooltip"=>"Reimposta il feed dei risultati di tutti i Comuni",
                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmResetFeedRisultatiComuniDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+            $section->AddGenericObject($btn,false);
+
+            if($this->oUser->IsSuperUser()) $wnd->AddGenericObject($section);
+
+            //Aggiorna feed comuni
+            $section=new AA_FieldSet($id."_Section_CP_UpdateFeed","Aggiornamento feed");
+            
+            //Update feed Risultati
+            $btn=new AA_JSON_Template_Generic($id."_UpdateFeedRisultatiComuni_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-reload-alert",
+                "label"=>"Risultati Comuni",
+                "align"=>"right",
+                "width"=>150,
+                "tooltip"=>"Aggiorna il feed dei risultati di tutti i Comuni",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmUpdateFeedRisultatiComuniDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+            $section->AddGenericObject($btn);
+            $section->AddSpacer(false);
+
+            //Update feed Risultati generali
+            $btn=new AA_JSON_Template_Generic($id."_UpdateFeedRisultatiGenerali_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-reload-alert",
+                "label"=>"Risultati",
+                "align"=>"right",
+                "width"=>150,
+                "tooltip"=>"Aggiorna il feed dei risultati generale per il sito istituzionale",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmUpdateFeedRisultatiGeneraliDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
             ));
             $section->AddGenericObject($btn,false);
 
@@ -10008,18 +10142,51 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
+        //Template confirm reset risultati comuni
+        public function Template_GetSierConfirmResetRisultatiComuniDlg($object=null)
+        {
+            $id=$this->GetId()."_ConfirmResetRisultatiComuni_Dlg";
+            if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset risultati Comuni", $this->id);
+            //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+    
+            $form_data=array();
+            $form_data['id']=$object->GetID();
+            //$form_data['id_comune']=$comune->GetProp("id");
+            
+            $wnd=new AA_GenericFormDlg($id, "Conferma reset risultati Comuni", $this->id,$form_data,$form_data);
+            
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(120);
+            
+            $wnd->SetWidth(540);
+            $wnd->SetHeight(400);
+            
+            $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>resetterà i risultati di tutti i comuni.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+            $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+    
+            $wnd->AddGenericObject($layout);
+    
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            $wnd->enableRefreshOnSuccessfulSave();
+            $wnd->SetApplyButtonName("Procedi");
+            $wnd->EnableResetButton(false);
+            $wnd->SetSaveTask("ResetRisultatiComuni");
+            
+            return $wnd;
+        }
+
     //Template confirm reset risultati comuni
-    public function Template_GetSierConfirmResetRisultatiComuniDlg($object=null)
+    public function Template_GetSierConfirmUpdateFeedRisultatiComuniDlg($object=null)
     {
-        $id=$this->GetId()."_ConfirmResetRisultatiComuni_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset dei risultati Comuni", $this->id);
+        $id=$this->GetId()."_ConfirmUpdateFeedRisultatiComuni_Dlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma aggiornamento del feed risultati dei Comuni", $this->id);
         //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
         //$form_data['id_comune']=$comune->GetProp("id");
         
-        $wnd=new AA_GenericFormDlg($id, "Conferma reset dei risultati Comuni", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Conferma aggiornamento del feed risultati dei Comuni", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
@@ -10027,7 +10194,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetWidth(540);
         $wnd->SetHeight(400);
         
-        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>resetterà i risultati di tutti i comuni.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>aggiornerà il feed risultati di tutti i comuni.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
         $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
 
         $wnd->AddGenericObject($layout);
@@ -10036,7 +10203,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetApplyButtonName("Procedi");
         $wnd->EnableResetButton(false);
-        $wnd->SetSaveTask("ResetRisultatiComuni");
+        $wnd->SetSaveTask("UpdateFeedRisultatiComuni");
         
         return $wnd;
     }
@@ -12542,13 +12709,13 @@ Class AA_SierModule extends AA_GenericModule
             $comunicazioni=$curComune->GetComunicazioni(true);
             $analisi=array(false,"",false);
             //alert comunicazioni corpo elettorale
-            if($now > $_45daysago && (!isset($comunicazioni['corpoelettorale_45']) || $comunicazioni['corpoelettorale_45']==0) && $cp['abilita_cert_corpo_elettorale']>0)
+            if($now > $_45daysago && (!isset($comunicazioni['corpoelettorale_45']) || $comunicazioni['corpoelettorale_45']==0) && isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)
             {
                 $color="red";
                 $analisi=array(true,"Il corpo elettorale non è certificato",true);
             }
 
-            if($now > $_15daysago && (!isset($comunicazioni['corpoelettorale_15']) || $comunicazioni['corpoelettorale_15']==0) && $cp['abilita_cert_corpo_elettorale']>0)
+            if($now > $_15daysago && (!isset($comunicazioni['corpoelettorale_15']) || $comunicazioni['corpoelettorale_15']==0) && isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)
             {
                 $color="red";
                 $analisi=array(true,"Il corpo elettorale non è certificato",true);
@@ -18017,6 +18184,33 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Task modifica dati comunicazioni
+    public function Task_GetSierConfirmUpdateFeedRisultatiComuniDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierConfirmUpdateFeedRisultatiComuniDlg($object),true);
+
+        return true;
+    }
+
+    //Task modifica dati comunicazioni
     public function Task_GetSierConfirmResetRisultatiComuniDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -18134,6 +18328,40 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Risultati resettati con successo.",false);
+
+        return true;
+    }
+
+    //Task modifica risultati
+    public function Task_UpdateFeedRisultatiComuni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modifcare l'oggetto.",false);
+            return false;
+        }
+
+        if(!$object->UpdateFeedRisultatiComuni())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Feed risultati aggiornati con successo.",false);
 
         return true;
     }
