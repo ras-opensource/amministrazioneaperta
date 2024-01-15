@@ -365,14 +365,12 @@ Class AA_SierComune
             $user=$user->GetUsername();
         }
 
-        $logs=$this->GetLogs(true);
+        if(!is_array($this->aProps['logs'])) $this->aProps['logs']=array();
 
         $uid=uniqid();
-        $logs[$uid]=array("data"=>$date,"user"=>$user,"oc"=>$oc,"msg"=>$msg);
+        $this->aProps['logs'][$uid]=array("data"=>$date,"user"=>$user,"oc"=>$oc,"msg"=>$msg);
 
-        if(sizeof($logs)>1000) $logs=array_slice($logs, -1000);
-
-        $this->SetLogs($logs);
+        if(sizeof($this->aProps['logs'])>1000) $this->aProps['logs']=array_slice($this->aProps['logs'], -1000);
     }
 
     public function GetOperatori($bAsObject=false)
@@ -415,26 +413,39 @@ Class AA_SierComune
         return $this->aProps['comunicazioni'];
     }
 
-    public function GetLogs($bAsObject=false)
+    public function GetSavedLogs($bAsObject=false)
     {
+        if($this->aProps['id']>0)
+        {
+            $db= new AA_Database();
+            $query="SELECT logs FROM ".AA_Sier::AA_COMUNI_DB_TABLE." WHERE id='".$this->aProps['id']."' LIMIT 1";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - ".$db->GetLastErrorMessage(),100);
+            }
+
+            $rs=$db->GetResultSet();
+            if($rs[0]['logs'] !="") $logs = json_decode($rs[0]['logs'],true);
+            else $logs=null;
+        }
+
         $ret="";
         if($bAsObject) $ret=array();
-        if(!isset($this->aProps['logs']) || $this->aProps['logs']=="") return $ret;
+        if(!$logs) return $ret;
         
         if($bAsObject)
         {
-            $ret=json_decode($this->aProps['logs'],true);
-            if($ret) return $ret;
-            else
-            {
-                AA_Log::Log(__METHOD__." - Errore nell'importazione dei logs del comune: ".$this->aProps['id'],100);
-                return array();
-            }
+            return $logs;
         }
 
-        return $this->aProps['logs'];
+        return $rs[0]['logs'];
     }
 
+    public function GetLogs($bAsObject=false)
+    {
+        return array_merge($this->GetSavedLogs(true),$this->aProps['logs']);
+    }
 
     public function GetAffluenza($bAsObject=false)
     {
@@ -460,24 +471,42 @@ Class AA_SierComune
 
     public function GetRisultati($bAsObject=false)
     {
+        if($this->aProps['risultati'] != "")
+        {
+            if($bAsObject) 
+            {
+                $feed = json_encode($this->aProps['risultati'],true);
+                if(!$feed) return array();
+                else return $feed;
+            }
+            else return $this->aProps['risultati'];
+        } 
+
+        if($this->aProps['id']>0)
+        {
+            $db= new AA_Database();
+            $query="SELECT risultati FROM ".AA_Sier::AA_COMUNI_DB_TABLE." WHERE id='".$this->aProps['id']."' LIMIT 1";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - ".$db->GetLastErrorMessage(),100);
+            }
+
+            $rs=$db->GetResultSet();
+            if($rs[0]['risultati'] !="") $feed = json_decode($rs[0]['risultati'],true);
+            else $feed=null;
+        }
+
         $ret="";
         if($bAsObject) $ret=array();
-        if(!isset($this->aProps['risultati']) || $this->aProps['risultati']=="") return $ret;
+        if(!$feed) return $ret;
         
         if($bAsObject)
         {
-            $ret=json_decode($this->aProps['risultati'],true);
-            //AA_Log::Log(__METHOD__." - affluenza: ".print_r($ret,true),100);
-
-            if($ret) return $ret;
-            else
-            {
-                AA_Log::Log(__METHOD__." - Errore nell'importazione dei risultati del comune: ".$this->aProps['id'],100);
-                return array();
-            }
+            return $feed;
         }
 
-        return $this->aProps['rsultati'];
+        return $rs[0]['risultati'];
     }
 
     public function SetOperatori($operatori="")
@@ -497,26 +526,6 @@ Class AA_SierComune
         }
 
         $this->SetProp("operatori",$operatori);
-        return true;
-    }
-
-    public function SetLogs($var="")
-    {
-        if(is_array($var))
-        {
-            if(sizeof($var)>0)
-            {
-                $var=json_encode($var);
-                if($var===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica dei logs. ".print_r($var,true),100);
-                    return false;
-                }    
-            }
-            else $var="";
-        }
-
-        $this->SetProp("logs",$var);
         return true;
     }
 
@@ -580,6 +589,27 @@ Class AA_SierComune
         return true;
     }
 
+    public function SetFeedRisultati($val="")
+    {
+        if(is_array($val))
+        {
+            if(sizeof($val)>0)
+            {
+                $risultati=json_encode($val);
+                if($risultati===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica del feed risultati. ".print_r($risultati,true),100);
+                    return false;
+                }    
+            }
+            else $risultati="";
+        }
+
+        $this->SetProp("feed_risultati",$risultati);
+        return true;
+    }
+
+
     public function __construct($params=null)
     {
         //Definisce le proprietà dell'oggetto e i valori di default
@@ -608,7 +638,7 @@ Class AA_SierComune
         $this->aProps['elettori_esteri_f']=0;
         $this->aProps['luoghi_detenzione']=0;
         $this->aProps['elettori_esteri_m']=0;
-        $this->aProps['logs']="";
+        $this->aProps['logs']=array();
 
         if(is_array($params)) $this->Parse($params);
     }
@@ -616,8 +646,64 @@ Class AA_SierComune
     //restiruisce il feed dei risultati (cached)
     public function GetFeedRisultati($bAsObject=false)
     {
-        $feed=json_decode($this->aProps['feed_risultati'],true);
-        if(!$feed || $this->aProps['feed_risultati']=="")
+        if($this->aProps['feed_risultati'] != "")
+        {
+            if($bAsObject) 
+            {
+                $feed = json_encode($this->aProps['feed_risultati'],true);
+                if(!$feed)
+                {
+                    return array(
+                        "denominazione"=>$this->aProps['denominazione'],
+                        "circoscrizione"=>$this->aProps['circoscrizione'],
+                        "id_circoscrizione"=>intVal($this->aProps['id_circoscrizione']),
+                        "sezioni"=>intVal($this->aProps['sezioni']),
+                        "elettori_m"=>intVal($this->aProps['elettori_m']),
+                        "elettori_f"=>intVal($this->aProps['elettori_f']),
+                        "elettori_tot"=>$this->aProps['elettori_m']+$this->aProps['elettori_f'],
+                        "affluenza"=>array(),
+                        "risultati"=>array(
+                            "sezioni_scrutinate"=>0,
+                            "votanti_m"=>0,
+                            "votanti_f"=>0,
+                            "votanti_tot"=>0,
+                            "votanti_percent"=>0,
+                            "voti_presidente"=>array(
+                                "sezioni_scrutinate"=>0,
+                                "voti_tot"=>0
+                            ),
+                            "voti_lista"=>array(
+                                "sezioni_scrutinate"=>0,
+                                "voti_tot"=>0
+                            ),
+                            "voti_candidato"=>array(
+                                "sezioni_scrutinate"=>0,
+                                "voti_tot"=>0
+                            )
+                        ),
+                    );
+                } 
+                else return $feed;
+            }
+            else return $this->aProps['feed_risultati'];
+        }
+
+        if($this->aProps['id']>0)
+        {
+            $db= new AA_Database();
+            $query="SELECT feed_risultati FROM ".AA_Sier::AA_COMUNI_DB_TABLE." WHERE id='".$this->aProps['id']."' LIMIT 1";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - ".$db->GetLastErrorMessage(),100);
+            }
+
+            $rs=$db->GetResultSet();
+            if($rs[0]['feed_risultati'] !="") $feed = json_decode($rs[0]['feed_risultati'],true);
+            else $feed=null;
+        }
+
+        if(!$feed)
         {
             //struttura vuota
             $feed=array(
@@ -656,29 +742,8 @@ Class AA_SierComune
         else
         {
             if($bAsObject) return $feed;
-            else return $this->aProps['feed_risultati'];
+            else return $rs[0]['feed_risultati'];
         }
-    }
-
-    //Aggiorna il feed dei risultati in base agli ultimi valori
-    public function SetFeedRisultati($feed="")
-    {
-        if(is_array($feed))
-        {
-            if(sizeof($feed)>0)
-            {
-                $feed=json_encode($feed);
-                if($feed===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica del feed dei risultati. ".print_r($feed,true),100);
-                    return false;
-                }    
-            }
-            else $feed="";
-        }
-
-        $this->SetProp("feed_risultati",$feed);
-        return true;
     }
 
     //imposta il valore di una propietà
@@ -1152,6 +1217,8 @@ Class AA_Sier extends AA_Object_V2
         }
 
         $feed=$comune->GetFeedRisultati(true);
+        //AA_Log::Log(__METHOD__." - feed_risultati: ".print_r($feed,true),100);
+
         $affluenza=$comune->GetAffluenza(true);
         $giornate=$this->GetGiornate();
         $cp=$this->GetControlPannel();
@@ -1468,7 +1535,7 @@ Class AA_Sier extends AA_Object_V2
         if($bUpdateComune)
         {
             //aggiorna il comune
-            $comune->SetFeedRisultati($feed);
+            $comune->SetProp("feed_risultati",json_encode($feed));
             if(!$this->UpdateComune($comune,$user,"Aggiornamento feed risultati"))
             {
                 AA_Log::Log(__METHOD__." - Errore nell'aggiornamento del feed risultati del comune: ".$comune->GeTProp("denominazione"),100);
@@ -2177,7 +2244,29 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid) return array();
 
         $db=new AA_Database();
-        $query="SELECT ".static::AA_COMUNI_DB_TABLE.".* from ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT ".static::AA_COMUNI_DB_TABLE.".id";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".id_sier";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".denominazione";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".indirizzo";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".contatti";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".affluenza";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".operatori";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".sezioni";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_m";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_f";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".id_circoscrizione";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".pec";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".lastupdate";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".comunicazioni";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".sezioni_ordinarie";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".sezioni_ospedaliere";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".luoghi_cura_over100";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".luoghi_cura_sub100";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".luoghi_detenzione";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_esteri_m";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_esteri_f";
+
+        $query.=" FROM ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if(is_array($params))
         {
@@ -2246,7 +2335,28 @@ Class AA_Sier extends AA_Object_V2
         if(!$this->bValid || (($id<=0 || $id=="") && $cf_oc=="")) return null;
 
         $db=new AA_Database();
-        $query="SELECT ".static::AA_COMUNI_DB_TABLE.".* from ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
+        $query="SELECT ".static::AA_COMUNI_DB_TABLE.".id";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".id_sier";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".denominazione";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".indirizzo";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".contatti";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".affluenza";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".operatori";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".sezioni";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_m";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_f";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".id_circoscrizione";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".pec";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".lastupdate";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".comunicazioni";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".sezioni_ordinarie";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".sezioni_ospedaliere";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".luoghi_cura_over100";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".luoghi_cura_sub100";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".luoghi_detenzione";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_esteri_m";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_esteri_f";
+        $query.=" FROM ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($id > 0)
         {
@@ -2807,7 +2917,9 @@ Class AA_Sier extends AA_Object_V2
         $query.=", elettori_m='".addslashes($newComune->GetProp('elettori_m'))."'";
         $query.=", elettori_f='".addslashes($newComune->GetProp('elettori_f'))."'";
         $query.=", affluenza='".addslashes($newComune->GetProp('affluenza'))."'";
-        $query.=", risultati='".addslashes($newComune->GetProp('risultati'))."'";
+        
+        $risultati=$newComune->GetProp("risultati");
+        if($risultati != "") $query.=", risultati='".addslashes($newComune->GetProp('risultati'))."'";
         $query.=", comunicazioni='".addslashes($newComune->GetProp('comunicazioni'))."'";
         $query.=", operatori='".addslashes($newComune->GetProp('operatori'))."'";
         $query.=", sezioni_ordinarie='".addslashes($newComune->GetProp('sezioni_ordinarie'))."'";
@@ -2817,8 +2929,11 @@ Class AA_Sier extends AA_Object_V2
         $query.=", luoghi_detenzione='".addslashes($newComune->GetProp('luoghi_detenzione'))."'";
         $query.=", elettori_esteri_m='".addslashes($newComune->GetProp('elettori_esteri_m'))."'";
         $query.=", elettori_esteri_f='".addslashes($newComune->GetProp('elettori_esteri_f'))."'";
-        $query.=", feed_risultati='".addslashes($newComune->GetProp('feed_risultati'))."'";
-        $query.=", logs='".addslashes($newComune->GetProp('logs'))."'";
+        
+        $feed_risultati=$newComune->GetProp('feed_risultati');
+        if($feed_risultati!="") $query.=", feed_risultati='".addslashes($feed_risultati)."'";
+        
+        $query.=", logs='".json_encode($newComune->GetLogs(true))."'";
 
         $query.=", lastupdate='".date("Y-m-d H:i:s")."'";
         $query.=" WHERE id='".$newComune->GetProp('id')."' LIMIT 1";
@@ -12690,13 +12805,13 @@ Class AA_SierModule extends AA_GenericModule
         $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' -15 days'));
         foreach($comuni as $curComune)
         {
-            $data[]=$curComune->GetProps();
+            $data[]=array("id"=>$curComune->GetProp("id"),"denominazione"=>$curComune->GetProp("denominazione"),"circoscrizione"=>$curComune->GetProp("circoscrizione"),"lastupdate"=>$curComune->GetProp("lastupdate"));
             $index=sizeof($data)-1;
 
             //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
 
             //Circoscrizione
-            $data[$index]['circoscrizione_desc']=$circoscrizioni[$curComune->GetProp("id_circoscrizione")];
+            //$data[$index]['circoscrizione_desc']=$circoscrizioni[$curComune->GetProp("id_circoscrizione")];
 
             //--------- Dati generali ---------
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneDatiGeneraliViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
@@ -12797,8 +12912,9 @@ Class AA_SierModule extends AA_GenericModule
             $icon="mdi mdi-eye";
             $text="Vedi e gestisci i risultati delle consultazioni";
             $color="green";
-            
-            if($curComune->GetProp("risultati") == "") 
+
+            $risultati=$curComune->GetRisultati(true);
+            if(sizeof($risultati)==0)
             {
                 $class="AA_DataTable_Ops_Button";
                 $icon="mdi mdi-upload";
@@ -12808,7 +12924,6 @@ Class AA_SierModule extends AA_GenericModule
             }
             else
             {
-                $risultati=$curComune->GetRisultati(true);
                 if(isset($risultati['sezioni_scrutinate']) && $risultati['sezioni_scrutinate'] > 0 && intVal($curComune->GetProp('sezioni'))>0)
                 {
                     $completamento=round($risultati['sezioni_scrutinate']*100/intVal($curComune->GetProp('sezioni')));
