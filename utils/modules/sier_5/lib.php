@@ -1229,11 +1229,11 @@ Class AA_Sier extends AA_Object_V2
         //---------- aggiorna i dati generali ---------------------------
         $feed["denominazione"]=$comune->GetProp('denominazione');
         $feed["circoscrizione"]=$comune->GetProp('circoscrizione');
-        $feed["id_circoscrizione"]=$comune->GetProp('id_circoscrizione');
-        $feed["sezioni"]=$comune->GetProp('sezioni');
-        $feed["elettori_m"]=$comune->GetProp('elettori_m');
-        $feed["elettori_f"]=$comune->GetProp('elettori_f');
-        $feed["elettori_tot"]=$comune->GetProp('elettori_m')+$comune->GetProp('elettori_f');
+        $feed["id_circoscrizione"]=intVal($comune->GetProp('id_circoscrizione'));
+        $feed["sezioni"]=intVal($comune->GetProp('sezioni'));
+        $feed["elettori_m"]=intVal($comune->GetProp('elettori_m'));
+        $feed["elettori_f"]=intVal($comune->GetProp('elettori_f'));
+        $feed["elettori_tot"]=intVal($comune->GetProp('elettori_m')+$comune->GetProp('elettori_f'));
         //----------------------------------------------------------------
 
         //-------------- affluenza ------------------
@@ -1249,11 +1249,11 @@ Class AA_Sier extends AA_Object_V2
 
                 if(isset($affluenza[$giornata]) && !$bInitializeOnly)
                 {
-                    $feed['affluenza'][$giornata]['ore_12']['count']=$affluenza[$giornata]['ore_12'];
+                    $feed['affluenza'][$giornata]['ore_12']['count']=intVal($affluenza[$giornata]['ore_12']);
                     $feed['affluenza'][$giornata]['ore_12']['percent']=round($affluenza[$giornata]['ore_12']*100/intVal($feed['elettori_tot']),1);
-                    $feed['affluenza'][$giornata]['ore_19']['count']=$affluenza[$giornata]['ore_19'];
+                    $feed['affluenza'][$giornata]['ore_19']['count']=intVal($affluenza[$giornata]['ore_19']);
                     $feed['affluenza'][$giornata]['ore_19']['percent']=round($affluenza[$giornata]['ore_19']*100/intVal($feed['elettori_tot']),1);
-                    $feed['affluenza'][$giornata]['ore_22']['count']=$affluenza[$giornata]['ore_22'];
+                    $feed['affluenza'][$giornata]['ore_22']['count']=intVal($affluenza[$giornata]['ore_22']);
                     $feed['affluenza'][$giornata]['ore_22']['percent']=round($affluenza[$giornata]['ore_22']*100/intVal($feed['elettori_tot']),1);
                 }
             }
@@ -1369,7 +1369,7 @@ Class AA_Sier extends AA_Object_V2
                 $feed['risultati']['voti_lista'][$idLista]=array(
                     "denominazione"=>$curLista->GetProp("denominazione"),
                     "image"=>$curImagePath,
-                    "id_presidente"=>$curLista->GetProp("id_coalizione"),
+                    "id_presidente"=>intVal($curLista->GetProp("id_coalizione")),
                     "voti"=>0,
                     "percent"=>0
                 );
@@ -1377,10 +1377,11 @@ Class AA_Sier extends AA_Object_V2
 
             if($update_liste && !$bInitializeOnly && isset($risultati['voti_lista'][$idLista]))
             {
+
                 $feed['risultati']['voti_lista'][$idLista]['voti']=intVal($risultati['voti_lista'][$idLista]);
                 $voti_tot_liste+=intVal($risultati['voti_lista'][$idLista]);
                 if(isset($voti_tot_coalizione[$curLista->GetProp('id_coalizione')])) $voti_tot_coalizione[$curLista->GetProp('id_coalizione')]+=intVal($risultati['voti_lista'][$idLista]);
-                else $voti_tot_coalizione[$curLista->GetProp('id_coalizione')]+=intVal($risultati['voti_lista'][$idLista]);
+                else $voti_tot_coalizione[$curLista->GetProp('id_coalizione')]+=intVal($risultati['voti_lista'][$idLista]);    
             }
         }
         
@@ -1395,39 +1396,38 @@ Class AA_Sier extends AA_Object_V2
         //voti candidato
         $tot_voti_candidato=0;
         $candidati=$this->GetCandidati(null,null,$comune->GetProp("id_circoscrizione"));
-        if($bReset)
+        if($bReset || !isset( $feed['risultati']['voti_candidato']))
         {
             $feed['risultati']['voti_candidato']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0);
         }
 
         foreach($candidati as $idCandidato=>$curCandidato)
         {
-            if($bReset)
+            if($bReset || !isset($feed['risultati']['voti_candidato'][$idCandidato]))
             {
                 $lista=$liste[$curCandidato->GetProp('id_lista')];
                 $coalizione=$coalizioni[$curCandidato->GetProp("id_coalizione")];
+                $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
                 if($lista->GetProp('image') != "")
                 {
                     $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$lista->GetProp('image');
                 }
-                $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-                if($curCandidato->GetProp("image") !="") $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');   
                 $feed['risultati']['voti_candidato'][$idCandidato]=array(
                     "nome"=>$curCandidato->GetProp("nome"),
                     "cognome"=>$curCandidato->GetProp("cognome"),
-                    "id_lista"=>$curCandidato->GetProp("id_lista"),
+                    "id_lista"=>intVal($curCandidato->GetProp("id_lista")),
                     "lista"=>$curCandidato->GetProp("lista"),
                     "image"=>$curImagePath,
-                    "id_presidente"=>$curLista->GetProp("id_coalizione"),
+                    "id_presidente"=>intVal($curLista->GetProp("id_coalizione")),
                     "presidente"=>$coalizione->GetProp("nome_candidato"),
-                    "id_circoscrizione"=>$curCandidato->GetProp("id_circoscrizione"),
+                    "id_circoscrizione"=>intVal($curCandidato->GetProp("id_circoscrizione")),
                     "circoscrizione"=>$curCandidato->GetProp("circoscrizione"),
                     "voti"=>0,
                     "percent"=>0
                 );
             }
 
-            if($update_candidati && !$bInitializeOnly)
+            if($update_candidati && !$bInitializeOnly && isset($risultati['voti_candidato'][$idCandidato]))
             {
                 $feed['risultati']['voti_candidato'][$idCandidato]['voti']=intVal($risultati['voti_candidato'][$idCandidato]);
                 $tot_voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]);
@@ -1574,6 +1574,9 @@ Class AA_Sier extends AA_Object_V2
                             "voti_tot"=>0),
                         "voti_lista"=>array(
                             "sezioni_scrutinate"=>0,
+                            "voti_tot"=>0),
+                        "voti_candidato"=>array(
+                            "sezioni_scrutinate"=>0,
                             "voti_tot"=>0))),
                 "circoscrizionale"=>array()));
 
@@ -1585,13 +1588,6 @@ Class AA_Sier extends AA_Object_V2
         //$cp=$this->GetControlPannel();
         $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
 
-        $voti_validi_regione=0;
-        $voti_validi_circoscrizione=array();
-        $voti_liste_validi_regione=0;
-        $voti_liste_validi_circoscrizione=array();
-
-        $platform=AA_Platform::GetInstance();
-        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
         $aggiornamento_generale="";
         $aggiornamento_presidente="";
         $aggiornamento_presidente_circoscrizionale=array();
@@ -1610,7 +1606,7 @@ Class AA_Sier extends AA_Object_V2
             $feed['stats']['regionale']['elettori_f']+=$curComune->GetProp('elettori_f');
             $feed['stats']['regionale']['elettori_tot']+=$curComune->GetProp('elettori_f')+$curComune->GetProp('elettori_m');
 
-            $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]=array(
+            if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]=array(
                 "denominazione"=>$curComune->GetProp('circoscrizione'),
                 "sezioni"=>0,
                 'elettori_m'=>0,
@@ -1656,6 +1652,14 @@ Class AA_Sier extends AA_Object_V2
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
     
+                    if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]))
+                    {
+                        $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]=array(
+                            "ore_12"=>array("count"=>0,"percent"=>0),
+                            "ore_19"=>array("count"=>0,"percent"=>0),
+                            "ore_22"=>array("count"=>0,"percent"=>0));
+                    }
+
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
@@ -1709,12 +1713,12 @@ Class AA_Sier extends AA_Object_V2
                     if(!isset($feed['stats']['regionale']['risultati']['voti_presidente'][$key])) $feed['stats']['regionale']['risultati']['voti_presidente'][$key]=$val;
                     else
                     {
-                        AA_Log::Log(__METHOD__." - key: ".$key." - val: ".print_r($val,true),100);
+                        //AA_Log::Log(__METHOD__." - key: ".$key." - val: ".print_r($val,true),100);
                         $feed['stats']['regionale']['risultati']['voti_presidente'][$key]['voti'] += $val['voti'];
                         $feed['stats']['regionale']['risultati']['voti_presidente'][$key]['voti_coalizione'] += $val['voti_coalizione'];
                     }
 
-                    if(!isset( $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$key]))  $feed['stats']['regionale']['risultati']['voti_presidente'][$key]=$val;
+                    if(!isset( $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$key]))  $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$key]=$val;
                     else
                     {
                         $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente'][$key]['voti'] += $val['voti'];
@@ -1784,7 +1788,11 @@ Class AA_Sier extends AA_Object_V2
                         $feed['stats']['regionale']['risultati']['voti_lista'][$key]['voti'] += $val['voti'];
                     }*/
 
-                    if(!isset( $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]))  $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]=$val;
+                    if(!isset( $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]))  
+                    {
+                        if(isset($val['percent'])) unset($val['percent']);
+                        $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]=$val;
+                    }
                     else
                     {
                         $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]['voti'] += $val['voti'];
@@ -1870,11 +1878,13 @@ Class AA_Sier extends AA_Object_V2
             //AA_Log::Log(__METHOD__." - circoscrizione: ".print_r($curCircoscrizione,true),100);
             $max_percent_coalizioni=0;
             $total_percent_coalizioni=0;
+            $max_percent_presidente=0;
+            $total_percent_presidente=0;
 
             //percentuale affluenza
             foreach($giornateAffluenza as $giornata=>$giornataValues)
             {
-                if($giornataValues['affluenza']==1)
+                if(isset($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]))
                 {
                     //percentuale affluenza
                     $feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_12']['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_12']['count']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
@@ -1883,22 +1893,28 @@ Class AA_Sier extends AA_Object_V2
                 }
             }
 
-            $voti=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente']['voti_tot']=$voti_validi_circoscrizione[$idCircoscrizione];
-            $voti=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista']['voti_tot']=$voti_liste_validi_circoscrizione[$idCircoscrizione];
-
             foreach($coalizioni as $idPresidente=>$curPresidente)
             {
                 $voti=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['voti'];
+                $voti_coalizione=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['voti_coalizione'];
 
                 //percentuale votanti circoscrizione
                 $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['votanti_percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['votanti_tot']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
 
                 //AA_Log::Log(__METHOD__." - voti: ".print_r($voti,true),100);
+                if($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista']['voti_tot']>0)
+                {
+                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']=round($voti_coalizione*100/(intVal($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista']['voti_tot'])),1);
+                    $total_percent_coalizioni+=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent_coalizione'];
+                    if($max_percent_coalizioni==0 || $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']>$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent_coalizione']) $max_percent_coalizioni=$idPresidente;
+                }
+                else $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']=0;
+
                 if($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente']['voti_tot'] > 0) 
                 {
                     $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']=round($voti*100/(intVal($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente']['voti_tot'])),1);
-                    $total_percent_coalizioni+=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent'];
-                    if($max_percent_coalizioni==0 || $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']>$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']) $max_percent_coalizioni=$idPresidente;
+                    $total_percent_presidente+=$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent'];
+                    if($max_percent_presidente==0 || $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idPresidente]['percent']>$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_presidente]['percent_coalizione']) $max_percent_presidente=$idPresidente;    
                 }
                 else
                 {
@@ -1906,9 +1922,14 @@ Class AA_Sier extends AA_Object_V2
                 }
             }
 
-            if($total_percent_coalizioni < 100 && $total_percent_coalizioni > 99.8 && $max_percent_coalizioni > 0)
+            if($total_percent_coalizioni != 100 && $max_percent_coalizioni > 0)
             {
-                $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']+=round(100-$total_percent_coalizioni,1);
+                $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent_coalizione']+=round(100-$total_percent_coalizioni,1);
+            }
+
+            if($total_percent_presidente != 100 && $max_percent_presidente > 0)
+            {
+                $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_presidente]['percent']+=round(100-$total_percent_presidente,1);
             }
 
             foreach($liste as $idLista=>$curLista)
@@ -1923,6 +1944,12 @@ Class AA_Sier extends AA_Object_V2
                 }
             }
         }
+
+        //aggiornamento
+        $feed['aggiornamento']=$aggiornamento_generale;
+        if($aggiornamento_presidente > $feed['aggiornamento']) $feed['aggiornamento']=$aggiornamento_presidente;
+        if($aggiornamento_liste> $feed['aggiornamento']) $feed['aggiornamento']=$aggiornamento_liste;
+        if($aggiornamento_candidati > $feed['aggiornamento']) $feed['aggiornamento']=$aggiornamento_candidati;
 
         return $feed;
     }
