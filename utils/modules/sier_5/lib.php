@@ -10854,19 +10854,25 @@ Class AA_SierModule extends AA_GenericModule
             //verifica non sia già stato certificato
             if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && $now <= $_45daysago)
             {
-                $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+                $certified="<span class='AA_Label AA_Label_LightGreen mdi mdi-certificate'>&nbsp;Dati certificati</span>";
+                $temp_modify=false;
+            }
+
+            if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && $now > $_45daysago && $now < $_15daysago_pre)
+            {
+                $certified="<span class='AA_Label AA_Label_LightGreen mdi mdi-certificate' style='font-size:larger'>&nbsp;Dati certificati</span>";
                 $temp_modify=false;
             }
 
             if(isset($comunicazioni['corpoelettorale_15']) && $comunicazioni['corpoelettorale_15']>0 && $now <= $_15daysago) 
             {
-                $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+                $certified="<span class='AA_Label AA_Label_LightGreen mdi mdi-certificate'>&nbsp;Dati certificati</span>";
                 $temp_modify=false;
             }
 
             if(isset($comunicazioni['corpoelettorale_45']) && $comunicazioni['corpoelettorale_45']>0 && isset($comunicazioni['corpoelettorale_15']) && $comunicazioni['corpoelettorale_15']>0)
             {
-                $certified="<span class='AA_Label AA_Label_LightGreen'>Dati certificati</span>";
+                $certified="<span class='AA_Label AA_Label_LightGreen mdi mdi-certificate'>&nbsp;Dati certificati</span>";
                 $temp_modify=false;
             }
         }    
