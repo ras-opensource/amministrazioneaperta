@@ -95,4 +95,3 @@ function SendMail($Tolist,$CClist,$subject,$body,$allegati=array(), $priority=nu
     
     return false;
 }
-?>
