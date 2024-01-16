@@ -4825,10 +4825,10 @@ Class AA_SierModule extends AA_GenericModule
             $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
                 array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
                 //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CRUSCOTTO_TAB, "value"=>"Cruscotto","tooltip"=>"Cruscotto di gestione","template"=>"TemplateSierDettaglio_Cruscotto_Tab"),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab","preview_template"=>"TemplateSierDettaglio_Preview_Coalizioni_Tab"),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab","preview_template"=>"TemplateSierDettaglio_Preview_Candidati_Tab"),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab","preview_template"=>"TemplateSierDettaglio_Preview_Comuni_Tab"),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab","preview_template"=>"TemplateSierDettaglio_Preview_Allegati_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab","enable_preview"=>true),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab","enable_preview"=>true),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab","enable_preview"=>true),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","enable_preview"=>true),
             ));
         }
         else
@@ -12181,38 +12181,6 @@ Class AA_SierModule extends AA_GenericModule
         #--------------------------------------
         
         return $layout;
-    }
-
-    //Template section detail, tab generale
-    public function TemplateSierDettaglio_Preview_Allegati_Tab($object=null)
-    {
-        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX;
-
-        return new AA_JSON_Template_Template($id,array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"));
-    }
-
-    //Template section detail preview tab comuni
-    public function TemplateSierDettaglio_Preview_Comuni_Tab($object=null)
-    {
-        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX;
-
-        return new AA_JSON_Template_Template($id,array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"));
-    }
-
-    //Template section detail preview tab candidati
-    public function TemplateSierDettaglio_Preview_Candidati_Tab($object=null)
-    {
-        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX;
-
-        return new AA_JSON_Template_Template($id,array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"));
-    }
-
-    //Template section detail preview tab coalizioni
-    public function TemplateSierDettaglio_Preview_Coalizioni_Tab($object=null)
-    {
-        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX;
-
-        return new AA_JSON_Template_Template($id,array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"));
     }
 
     //Template dettaglio riepilogo nomine

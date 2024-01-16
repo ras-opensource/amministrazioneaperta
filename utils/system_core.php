@@ -1691,7 +1691,7 @@ class AA_User
         }
 
         if ($sToken != null) {
-            //AA_Log::Log(get_class()."->UserAuth($sToken) - autenticazione in base al token.");
+            //AA_Log::Log(__METHOD__." - autenticazione in base al token.");
 
             $token_timeout_m = 30;
             $query_token = sprintf("SELECT * FROM tokens where (TIMESTAMPDIFF(MINUTE,data_rilascio, NOW()) < '%s' OR remember_me='1') and token ='%s' order by data_rilascio DESC LIMIT 1", $token_timeout_m, $sToken);
@@ -1703,15 +1703,14 @@ class AA_User
                 return AA_User::Guest();
             }
 
-            if ($db->GetAffectedRows() > 0) {
-
-                //AA_Log::Log(get_class()."->UserAuth($sToken) - Authenticate token ($sToken) - ".print_r($rs,true), 100);
+            if ($db->GetAffectedRows() > 0) 
+            {
                 if (strcmp($rs[0]['token'], $sToken) == 0) {
-                    //AA_Log::Log(get_class()."->UserAuth($sToken) - Authenticate token ($sToken) - success", 50);
+                    //AA_Log::Log(__METHOD__." - Authenticate token ($sToken) - success", 50);
 
                     $user = AA_User::LoadUser($rs[0]['id_utente']);
                     if ($user->IsDisabled()) {
-                        AA_Log::Log(get_class() . "->UserAuth($sToken) - L'utente è disattivato.", 100);
+                        AA_Log::Log(__METHOD__." - L'utente è disattivato.", 100);
                         return AA_User::Guest();
                     }
 
@@ -1869,7 +1868,7 @@ class AA_User
         }
 
         if ($sToken != null) {
-            //AA_Log::Log(get_class()."->UserAuth($sToken) - autenticazione in base al token.");
+            //AA_Log::Log(__METHOD__." - autenticazione in base al token.");
 
             $token_timeout_m = 30;
             $query_token = sprintf("SELECT * FROM tokens where (TIMESTAMPDIFF(MINUTE,data_rilascio, NOW()) < '%s' OR remember_me='1') and ip_src = '%s' and token ='%s'", $token_timeout_m, $_SERVER['REMOTE_ADDR'], $sToken);
@@ -1885,7 +1884,7 @@ class AA_User
             if ($db->GetAffectedRows() > 0) {
 
                 if (strcmp($rs['token'], $sToken) == 0) {
-                    //AA_Log::Log(get_class()."->UserAuth($sToken) - Authenticate token ($sToken) - success", 50);
+                    //AA_Log::Log(__METHOD__." - Authenticate token ($sToken) - success", 50);
 
                     $user = AA_User::LoadUser($rs['id_utente']);
                     if ($user->IsDisabled()) {

@@ -3729,18 +3729,33 @@ class AA_GenericModule
             "css" => "AA_Detail_Content"
         ));
 
-        foreach ($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] as $curTab) {
-            if(isset($curTab['preview_template']))
+        $bDefaultChangeEventAdded=false;
+        foreach ($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] as $curTab) 
+        {
+            if(isset($curTab['enable_preview']))
             {
-                $bDefaultChangeEventAdded=false;
-                if (method_exists($this, $curTab['preview_template']) && $curTab['preview_template'] != "" && is_string($curTab['preview_template'])) {
-                    $multiview->addCell($this->{$curTab['preview_template']}($object));
-                    if(!$bDefaultChangeEventAdded)
+                if(isset($curTab['preview_template']))
+                {
+                    
+                    if (method_exists($this, $curTab['preview_template']) && $curTab['preview_template'] != "" && is_string($curTab['preview_template'])) 
                     {
-                        $multiview->AddEventHandler("onViewChange","onDetailViewChange",null,$this->GetId());
-                        $bDefaultChangeEventAdded=true;
-                    }
-                }   
+                        $multiview->addCell($this->{$curTab['preview_template']}($object));
+                    } 
+                    else
+                    {
+                        $multiview->addCell(new AA_JSON_Template_Template($curTab['id'],array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));    
+                    }  
+                }
+                else
+                {
+                    $multiview->addCell(new AA_JSON_Template_Template($curTab['id'],array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));
+                }
+                
+                if(!$bDefaultChangeEventAdded)
+                {
+                    $multiview->AddEventHandler("onViewChange","onDetailViewChange",null,$this->GetId());
+                    $bDefaultChangeEventAdded=true;
+                }
             }
             else
             {
