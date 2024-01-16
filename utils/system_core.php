@@ -1518,7 +1518,7 @@ class AA_User
             if (filter_var($sUserName, FILTER_VALIDATE_EMAIL)) 
             {
                 //Login tramite email
-                AA_Log::Log(__METHOD__." - autenticazione in base alla mail.");
+                //AA_Log::Log(__METHOD__." - autenticazione in base alla mail.");
                 $query_utenti = "SELECT ".static::AA_DB_TABLE.".* FROM ".static::AA_DB_TABLE." WHERE ".static::AA_DB_TABLE.".email = '".addslashes(trim($sUserName))."' AND status>=0";
 
                 if($db->Query($query_utenti))

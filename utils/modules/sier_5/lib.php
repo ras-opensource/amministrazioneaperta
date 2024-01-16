@@ -854,14 +854,45 @@ Class AA_Sier extends AA_Object_V2
         return parent::DeleteData($idData,$user);
     }
 
+    //Analizza i risultati di tutti i comuni
+    public function UpdateAnalisiRisultati($comune=null,$circoscrizione=null)
+    {
+        if($comune==null)
+        {
+            $comuni=$this->GetComuni($circoscrizione);
+        }
+        else $comuni=array($comune);
+
+        $db=new AA_Database();
+        foreach($comuni as $curComune)
+        {
+            $analisi=$this->AnalizeRisultati(null,$curComune->GetProp("id_circoscrizione"),$curComune);
+            $query="UPDATE ".static::AA_COMUNI_DB_TABLE." SET analisi_risultati='".addslashes(json_encode($analisi))."' WHERE id='".$curComune->GetProp("id")."' AND id_sier='".$this->nId_Data."' LIMIT 1";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log(__METHOD__." - ".$db->GetLastErrorMessage(),100);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     //Verifica se ci sono delle anomalie sui risultati
     public function AnalizeRisultati($risultati=null,$circoscrizione=0,$comune=null)
     {
         $result=array(false,array(),false,array('risultati_voti_presidente_check'=>0,'risultati_voti_lista_check'=>0,'risultati_voti_candidato_check'=>0,'risultati_scrutinio_parziale_check'=>0));
+        if($risultati==null && $comune instanceof AA_SierComune)
+        {
+            $risultati=$comune->GetRisultati(true);
+            //AA_Log::Log(__METHOD__." - risultati: ".print_r($risultati,true),100);
+        }
+
         if(!is_array($risultati))
         {
             $result[0]=true;
-            $result[1][]='Risultati non presenti.';
+            $result[1][0]='Risultati non presenti!.';
             $result[2]=true;
             return $result;
         }
@@ -869,7 +900,7 @@ Class AA_Sier extends AA_Object_V2
         if(sizeof($risultati)==0)
         {
             $result[0]=true;
-            $result[1][]='Risultati non presenti.';
+            $result[1][0]='Risultati non presenti.';
             $result[2]=true;
             return $result;
         }
@@ -1426,7 +1457,7 @@ Class AA_Sier extends AA_Object_V2
                 $feed['risultati']['voti_lista'][$idLista]['voti']=intVal($risultati['voti_lista'][$idLista]);
                 $voti_tot_liste+=intVal($risultati['voti_lista'][$idLista]);
                 if(isset($voti_tot_coalizione[$curLista->GetProp('id_coalizione')])) $voti_tot_coalizione[$curLista->GetProp('id_coalizione')]+=intVal($risultati['voti_lista'][$idLista]);
-                else $voti_tot_coalizione[$curLista->GetProp('id_coalizione')]+=intVal($risultati['voti_lista'][$idLista]);    
+                else $voti_tot_coalizione[$curLista->GetProp('id_coalizione')]=intVal($risultati['voti_lista'][$idLista]);    
             }
         }
         
@@ -4371,16 +4402,21 @@ Class AA_SierOperatoreComunale
             return false;
         }
 
+        $operatore=null;
         $operatori=$comune->GetOperatori(true);
-        $operatore=$operatori[strtolower($cf)];
+        if(isset($operatori[trim(strtolower($cf))]))
+        {
+            $operatore=$operatori[trim(strtolower($cf))];
+        }
+        if($operatore==null && isset($operatori[trim(strtoupper($cf))]))
+        {
+            $operatore=$operatori[trim(strtoupper($cf))];
+        }
+
         if(!is_array($operatore))
         {
-            $operatore=$operatori[strtoupper($cf)];
-            if(!is_array($operatore))
-            {
-                AA_Log::Log(__METHOD__." - Operatore non valido.",100);
-                return false;
-            }
+            AA_Log::Log(__METHOD__." - CF Operatore non valido o non autorizzato.",100);
+            return false;
         }
 
         $this->nOperatoreComunaleComune=$comune->GetProp("id");
@@ -4673,7 +4709,8 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierConfirmResetFeedRisultatiComuniDlg");
             $taskManager->RegisterTask("GetSierConfirmUpdateFeedRisultatiComuniDlg");
             $taskManager->RegisterTask("UpdateFeedRisultatiComuni");
-
+            $taskManager->RegisterTask("UpdateAnalisiRisultatiComuni");
+            
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
             $taskManager->RegisterTask("AddNewSierAllegato");
@@ -4788,10 +4825,10 @@ Class AA_SierModule extends AA_GenericModule
             $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
                 array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
                 //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CRUSCOTTO_TAB, "value"=>"Cruscotto","tooltip"=>"Cruscotto di gestione","template"=>"TemplateSierDettaglio_Cruscotto_Tab"),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab"),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab"),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab"),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab","preview_template"=>"TemplateSierDettaglio_Preview_Coalizioni_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab","preview_template"=>"TemplateSierDettaglio_Preview_Candidati_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab","preview_template"=>"TemplateSierDettaglio_Preview_Comuni_Tab"),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab","preview_template"=>"TemplateSierDettaglio_Preview_Allegati_Tab"),
             ));
         }
         else
@@ -10187,14 +10224,14 @@ Class AA_SierModule extends AA_GenericModule
             if($this->oUser->IsSuperUser()) $wnd->AddGenericObject($section);
 
             //Aggiorna feed comuni
-            $section=new AA_FieldSet($id."_Section_CP_UpdateFeed","Aggiornamento feed");
+            $section=new AA_FieldSet($id."_Section_CP_UpdateFeed","Aggiornamento dati Comuni e feed");
             
             //Update feed Risultati
             $btn=new AA_JSON_Template_Generic($id."_UpdateFeedRisultatiComuni_btn",array(
                 "view"=>"button",
                 "type"=>"icon",
                 "icon"=>"mdi mdi-reload-alert",
-                "label"=>"Risultati Comuni",
+                "label"=>"Feed Risultati",
                 "align"=>"right",
                 "width"=>150,
                 "tooltip"=>"Aggiorna il feed dei risultati di tutti i Comuni",
@@ -10203,15 +10240,29 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddGenericObject($btn);
             $section->AddSpacer(false);
 
+            //Update analisi Risultati
+            $btn=new AA_JSON_Template_Generic($id."_UpdateAnalisiRisultatiComuni_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-reload-alert",
+                "label"=>"Analisi risultati",
+                "align"=>"right",
+                "width"=>150,
+                "tooltip"=>"Aggiorna l'analisi dei risultati di tutti i Comuni",
+                "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"UpdateAnalisiRisultatiComuni\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+            $section->AddGenericObject($btn,false);
+            $section->AddSpacer(false);
+
             //Update feed Risultati generali
             $btn=new AA_JSON_Template_Generic($id."_UpdateFeedRisultatiGenerali_btn",array(
                 "view"=>"button",
                 "type"=>"icon",
                 "icon"=>"mdi mdi-reload-alert",
-                "label"=>"Risultati",
+                "label"=>"Feed pubblico",
                 "align"=>"right",
                 "width"=>150,
-                "tooltip"=>"Aggiorna il feed dei risultati generale per il sito istituzionale",
+                "tooltip"=>"Aggiorna il feed pubblico dei risultati",
                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmUpdateFeedRisultatiGeneraliDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
             ));
             $section->AddGenericObject($btn,false);
@@ -10512,6 +10563,8 @@ Class AA_SierModule extends AA_GenericModule
         //$params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"));
         if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $params['readonly']=true;
         
+        $params['MultiviewEventHandlers']=array("onViewChange"=>array("handler"=>"onDetailViewChange"));
+
         $detail = $this->TemplateGenericSection_Detail($params);
 
         return $detail;
@@ -10734,7 +10787,7 @@ Class AA_SierModule extends AA_GenericModule
             //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
             $name="<span style='font-weight:900;'>".implode("</span><span>",explode("-",$curMod['value']))."</span>";
             $onclick="AA_MainApp.utils.callHandler('OC_SectionBoxClick','".$curMod['id']."','".$this->GetId()."')";
-            $moduli_data=array("id"=>$curModId,"name"=>$name,'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon'],"onclick"=>$onclick);
+            $moduli_data=array("id"=>$curModId,"name"=>$name,"icon"=>$curMod['icon'],"onclick"=>$onclick);
             $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data))));
         }
         $preview_layout=new AA_JSON_Template_Layout($id."_PreviewBox_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean","minHeight"=>300));
@@ -12130,6 +12183,38 @@ Class AA_SierModule extends AA_GenericModule
         return $layout;
     }
 
+    //Template section detail, tab generale
+    public function TemplateSierDettaglio_Preview_Allegati_Tab($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX;
+
+        return new AA_JSON_Template_Template($id,array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"));
+    }
+
+    //Template section detail preview tab comuni
+    public function TemplateSierDettaglio_Preview_Comuni_Tab($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX;
+
+        return new AA_JSON_Template_Template($id,array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"));
+    }
+
+    //Template section detail preview tab candidati
+    public function TemplateSierDettaglio_Preview_Candidati_Tab($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX;
+
+        return new AA_JSON_Template_Template($id,array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"));
+    }
+
+    //Template section detail preview tab coalizioni
+    public function TemplateSierDettaglio_Preview_Coalizioni_Tab($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX;
+
+        return new AA_JSON_Template_Template($id,array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"));
+    }
+
     //Template dettaglio riepilogo nomine
     public function TemplateDettaglio_Coalizioni_Riepilogo_Tab($object=null,$id="",$riepilogo_data=array())
     {
@@ -12438,7 +12523,7 @@ Class AA_SierModule extends AA_GenericModule
                 if($canModify)
                 {
                     $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyPresidenteCGDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
-                    $coalizione_ops['cg'].="<div class='AA_DataTable_Ops' style='justify-content: space-between'><span style='font-weight: 700'>cg:</span> <a class='AA_DataTable_Ops_Button' title='Carica il casellario' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
+                    $coalizione_ops['cg']="<div class='AA_DataTable_Ops' style='justify-content: space-between'><span style='font-weight: 700'>cg:</span> <a class='AA_DataTable_Ops_Button' title='Carica il casellario' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
             }
 
@@ -12776,7 +12861,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $cp=$object->GetControlPannel();
-        if($cp['abilita_cert_corpo_elettorale']>0)
+        if(isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)
         {
             if(isset($params['senza_certificazione_45']) && $params['senza_certificazione_45'] > 0)
             {
@@ -13000,6 +13085,7 @@ Class AA_SierModule extends AA_GenericModule
             $analisi=$curComune->GetAnalisiRisultati(true);
             if(sizeof($analisi)==0)
             {
+                AA_Log::Log(__METHOD__." - analisi vuota",100);
                 $risultati=$curComune->GetRisultati(true);
                 if(sizeof($risultati)==0)
                 {
@@ -13007,12 +13093,11 @@ Class AA_SierModule extends AA_GenericModule
                     $icon="mdi mdi-upload";
                     $text="Gestisci i risultati delle consultazioni";
                     $completamento=0;
-                    $analisi=array(true,array("Risultati non presenti"),false);
+                    $analisi=array(true,array("Risultati non presenti."),false);
                 }
                 else
                 {
                     $analisi=$object->AnalizeRisultati($risultati,$curComune->GetProp("id_circoscrizione"));
-                    //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true),100);
                 }
             }
             
@@ -13028,6 +13113,12 @@ Class AA_SierModule extends AA_GenericModule
             else
             {
                 $completamento=0;
+                
+                if(strpos($analisi[1][0],"Risultati non presenti" === false))
+                {
+                    $completamento=100;
+                }
+
                 if(isset($analisi[3]['risultati_scrutinio_parziale_check']) && $analisi[3]['risultati_scrutinio_parziale_check']>0)
                 {
                     $completamento=round($analisi[3]['risultati_scrutinio_parziale_check']*100/intVal($curComune->GetProp('sezioni')));
@@ -18643,6 +18734,40 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task reset feed risultati
+    public function Task_UpdateAnalisiRisultatiComuni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modifcare l'oggetto.",false);
+            return false;
+        }
+
+        if(!$object->UpdateAnalisiRisultati())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Analisi risultati aggiornate con successo.",false);
+
+        return true;
+    }
+
     //Task modifica Coalizione
     public function Task_GetSierModifyCoalizioneDlg($task)
     {
@@ -21728,6 +21853,36 @@ Class AA_SierModule extends AA_GenericModule
             //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
 
             $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "content" => $this->TemplateSierDettaglio_Comuni_Tab()->toArray());
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent(json_encode($content),true);
+            return true;
+        }
+
+        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX)
+        {
+            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
+            $object=new AA_Sier($_REQUEST['id']);
+            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "content" => $this->TemplateSierDettaglio_Allegati_Tab($object)->toArray());
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent(json_encode($content),true);
+            return true;
+        }
+
+        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX)
+        {
+            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
+            $object=new AA_Sier($_REQUEST['id']);
+            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "content" => $this->TemplateSierDettaglio_Candidati_Tab($object)->toArray());
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent(json_encode($content),true);
+            return true;
+        }
+
+        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX)
+        {
+            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
+            $object=new AA_Sier($_REQUEST['id']);
+            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "content" => $this->TemplateSierDettaglio_Coalizioni_Tab($object)->toArray());
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
             $task->SetContent(json_encode($content),true);
             return true;

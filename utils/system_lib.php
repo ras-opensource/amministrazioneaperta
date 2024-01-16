@@ -3730,8 +3730,26 @@ class AA_GenericModule
         ));
 
         foreach ($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] as $curTab) {
-            if (method_exists($this, $curTab['template']) && $curTab['template'] != "" && is_string($curTab['template'])) {
-                $multiview->addCell($this->{$curTab['template']}($object));
+            if(isset($curTab['preview_template']))
+            {
+                $bDefaultChangeEventAdded=false;
+                if (method_exists($this, $curTab['preview_template']) && $curTab['preview_template'] != "" && is_string($curTab['preview_template'])) {
+                    $multiview->addCell($this->{$curTab['preview_template']}($object));
+                    if(!$bDefaultChangeEventAdded)
+                    {
+                        $multiview->AddEventHandler("onViewChange","onDetailViewChange",null,$this->GetId());
+                        $bDefaultChangeEventAdded=true;
+                    }
+                }   
+            }
+            else
+            {
+                if(isset($curTab['template']))
+                {
+                    if (method_exists($this, $curTab['template']) && $curTab['template'] != "" && is_string($curTab['template'])) {
+                        $multiview->addCell($this->{$curTab['template']}($object));
+                    }    
+                }    
             }
         }
         $content->AddRow($multiview);
