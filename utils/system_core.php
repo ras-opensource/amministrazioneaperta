@@ -1068,7 +1068,7 @@ class AA_User
 
     public function __construct()
     {
-        AA_Log::Log(get_class() . "__construct()");
+        //AA_Log::Log(get_class() . "__construct()");
 
         $this->oStruct = new AA_Struct();
     }
