@@ -469,6 +469,28 @@ Class AA_SierComune
         return $this->aProps['affluenza'];
     }
 
+    public function GetAnalisiRisultati($bAsObject=false)
+    {
+        $ret="";
+        if($bAsObject) $ret=array();
+        if(!isset($this->aProps['analisi_risultati']) || $this->aProps['analisi_risultati']=="") return $ret;
+        
+        if($bAsObject)
+        {
+            $ret=json_decode($this->aProps['analisi_risultati'],true);
+            //AA_Log::Log(__METHOD__." - affluenza: ".print_r($ret,true),100);
+
+            if($ret) return $ret;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'importazione dell'analisi dei risultati del comune: ".$this->aProps['id'],100);
+                return array();
+            }
+        }
+
+        return $this->aProps['analisi_risultati'];
+    }
+
     public function GetRisultati($bAsObject=false)
     {
         if($this->aProps['risultati'] != "")
@@ -569,6 +591,26 @@ Class AA_SierComune
         return true;
     }
 
+    public function SetAnalisiRisultati($val="")
+    {
+        if(is_array($val))
+        {
+            if(sizeof($val)>0)
+            {
+                $affluenza=json_encode($val);
+                if($affluenza===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($affluenza,true),100);
+                    return false;
+                }    
+            }
+            else $affluenza="";
+        }
+
+        $this->SetProp("analisi_risultati",$affluenza);
+        return true;
+    }
+
     public function SetRisultati($val="")
     {
         if(is_array($val))
@@ -626,6 +668,7 @@ Class AA_SierComune
         $this->aProps['elettori_f']=0;
         $this->aProps['affluenza']="";
         $this->aProps['risultati']="";
+        $this->aProps['analisi_risultati']="";
         $this->aProps['rendiconti']="";
         $this->aProps['operatori']="";
         $this->aProps['comunicazioni']="";
@@ -818,7 +861,7 @@ Class AA_Sier extends AA_Object_V2
         if(!is_array($risultati))
         {
             $result[0]=true;
-            $result[1][]='Risultati non presenti (1)';
+            $result[1][]='Risultati non presenti.';
             $result[2]=true;
             return $result;
         }
@@ -826,7 +869,7 @@ Class AA_Sier extends AA_Object_V2
         if(sizeof($risultati)==0)
         {
             $result[0]=true;
-            $result[1][]='Risultati non presenti (2)';
+            $result[1][]='Risultati non presenti.';
             $result[2]=true;
             return $result;
         }
@@ -848,7 +891,7 @@ Class AA_Sier extends AA_Object_V2
                 $result[0]=true;
                 $result[1][]="Non sono state scrutinate tutte le sezioni del comune";
                 $result[2]=false;
-                $result[3]['risultati_scrutinio_parziale_check']=1;
+                $result[3]['risultati_scrutinio_parziale_check']=$sezioni_scrutinate;
             }
 
             if($risultati['votanti_m'] > $comune->GetProp('elettori_m'))
@@ -932,7 +975,9 @@ Class AA_Sier extends AA_Object_V2
             } 
         }
 
-        if($voti_lista != ($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']) && $voti_lista > 0 && $voti_validi > 0)
+        $voti_solo_presidente=0;
+        if(isset($risultati['voti_solo_presidente'])) $voti_solo_presidente=$risultati['voti_solo_presidente'];
+        if($voti_lista != ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente) && $voti_lista > 0 && $voti_validi > 0)
         {
             $result[0]=true;
             $result[1][]="La somma dei voti di lista (".$voti_lista.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']).")";
@@ -940,18 +985,18 @@ Class AA_Sier extends AA_Object_V2
             $result[3]['risultati_voti_lista_check']++;
         }
 
-        if($voti_lista == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']) > 0)
+        if($voti_lista == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente) > 0)
         {
             $result[0]=true;
-            $result[1][]="Non ci sono voti per le Liste nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']).")";
+            $result[1][]="Non ci sono voti per le Liste nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente).")";
             $result[3]['risultati_voti_lista_check']++;
             $result[2]=true;
         }
 
-        if($voti_lista > ($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']))
+        if($voti_lista > ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente))
         {
             $result[0]=true;
-            $result[1][]="La somma dei voti di Lista (".$voti_lista.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']).")";
+            $result[1][]="La somma dei voti di Lista (".$voti_lista.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente).")";
             $result[2]=true;
             $result[3]['risultati_voti_lista_check']++;
         }
@@ -2292,7 +2337,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=",".static::AA_COMUNI_DB_TABLE.".luoghi_detenzione";
         $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_esteri_m";
         $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_esteri_f";
-
+        $query.=",".static::AA_COMUNI_DB_TABLE.".analisi_risultati";
         $query.=" FROM ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if(is_array($params))
@@ -2383,6 +2428,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=",".static::AA_COMUNI_DB_TABLE.".luoghi_detenzione";
         $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_esteri_m";
         $query.=",".static::AA_COMUNI_DB_TABLE.".elettori_esteri_f";
+        $query.=",".static::AA_COMUNI_DB_TABLE.".analisi_risultati";
         $query.=" FROM ".static::AA_COMUNI_DB_TABLE." WHERE ".static::AA_COMUNI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
         if($id > 0)
@@ -2947,6 +2993,10 @@ Class AA_Sier extends AA_Object_V2
         
         $risultati=$newComune->GetProp("risultati");
         if($risultati != "") $query.=", risultati='".addslashes($newComune->GetProp('risultati'))."'";
+
+        $analisi_risultati=$newComune->GetProp("analisi_risultati");
+        if($analisi_risultati != "") $query.=", analisi_risultati='".addslashes($analisi_risultati)."'";
+
         $query.=", comunicazioni='".addslashes($newComune->GetProp('comunicazioni'))."'";
         $query.=", operatori='".addslashes($newComune->GetProp('operatori'))."'";
         $query.=", sezioni_ordinarie='".addslashes($newComune->GetProp('sezioni_ordinarie'))."'";
@@ -12849,25 +12899,32 @@ Class AA_SierModule extends AA_GenericModule
             //--------- Corpo Elettorale ---------
             $color="green";
             $comunicazioni=$curComune->GetComunicazioni(true);
-            $analisi=array(false,"",false);
+            $analisi=array(false,array(),false);
             //alert comunicazioni corpo elettorale
             if($now > $_45daysago && (!isset($comunicazioni['corpoelettorale_45']) || $comunicazioni['corpoelettorale_45']==0) && isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)
             {
                 $color="red";
-                $analisi=array(true,"Il corpo elettorale non è certificato",true);
+                $analisi[0]=true;
+                $analisi[1][]="Manca la certificazione al 45° giorno";
+                $analisi[2]=true;
             }
 
             if($now > $_15daysago && (!isset($comunicazioni['corpoelettorale_15']) || $comunicazioni['corpoelettorale_15']==0) && isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)
             {
                 $color="red";
-                $analisi=array(true,"Il corpo elettorale non è certificato",true);
+                $analisi[0]=true;
+                $analisi[1][]="Manca la certificazione al 15° giorno";
+                $analisi[2]=true;
             }
             //----
             $class="AA_DataTable_Ops_Button";
             $view_analisi_corpo='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAnalisiCorpoElettoraleDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneCorpoElettoraleViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             if($analisi[0]==false) $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
-            else $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a><a class='".$class."' title='Visualizza le criticità riscontrate sul corpo elettorale' onClick='".$view_analisi_corpo."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
+            else 
+            {
+                $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a><a class='".$class."' title='Visualizza le criticità riscontrate sul corpo elettorale' onClick='".$view_analisi_corpo."'><span class='mdi mdi-alert' style='color:".$color."'></span><sup style='font-size: 70%'>".(sizeof($analisi)-1)."</sup></a>";
+            }
             $data[$index]['corpo_elettorale'].="</div>";
             //------------------------------
 
@@ -12940,40 +12997,52 @@ Class AA_SierModule extends AA_GenericModule
             $text="Vedi e gestisci i risultati delle consultazioni";
             $color="green";
 
-            $risultati=$curComune->GetRisultati(true);
-            if(sizeof($risultati)==0)
+            $analisi=$curComune->GetAnalisiRisultati(true);
+            if(sizeof($analisi)==0)
             {
-                $class="AA_DataTable_Ops_Button";
-                $icon="mdi mdi-upload";
-                $text="Gestisci i risultati delle consultazioni";
-                $completamento=0;
-                $analisi=array(true,"Risultati non presenti",false);
-            }
-            else
-            {
-                if(isset($risultati['sezioni_scrutinate']) && $risultati['sezioni_scrutinate'] > 0 && intVal($curComune->GetProp('sezioni'))>0)
+                $risultati=$curComune->GetRisultati(true);
+                if(sizeof($risultati)==0)
                 {
-                    $completamento=round($risultati['sezioni_scrutinate']*100/intVal($curComune->GetProp('sezioni')));
+                    $class="AA_DataTable_Ops_Button";
+                    $icon="mdi mdi-upload";
+                    $text="Gestisci i risultati delle consultazioni";
+                    $completamento=0;
+                    $analisi=array(true,array("Risultati non presenti"),false);
                 }
                 else
                 {
-                    $completamento=0;
-                }
-
-                $analisi=$object->AnalizeRisultati($risultati,$curComune->GetProp("id_circoscrizione"));
-                //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true),100);
-                if($analisi[0] == true)
-                {
-                    $color="orange";
-                    if($analisi[2] == true) $color="red";
+                    $analisi=$object->AnalizeRisultati($risultati,$curComune->GetProp("id_circoscrizione"));
+                    //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true),100);
                 }
             }
+            
+            if($analisi[0] == true)
+            {
+                $color="orange";
+                if($analisi[2] == true) $color="red";
+            }
+
+            //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true),100);
+            $completamento=0;
+            if($analisi[0] == false) $completamento=100;
+            else
+            {
+                $completamento=0;
+                if(isset($analisi[3]['risultati_scrutinio_parziale_check']) && $analisi[3]['risultati_scrutinio_parziale_check']>0)
+                {
+                    $completamento=round($analisi[3]['risultati_scrutinio_parziale_check']*100/intVal($curComune->GetProp('sezioni')));
+                }
+            }
+
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_RISULTATI_COMUNALI."_".static::AA_UI_LAYOUT_RISULTATI_COMUNALI;
             $view_analisi_risultati='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAnalisiRisultatiDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $data[$index]['completamento']=$completamento;
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRisultatiViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             if($analisi[0]==false) $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a></div>";
-            else $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza i risultati delle analisi dei risultati' onClick='".$view_analisi_risultati."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a></div>";
+            else 
+            {
+                $data[$index]['risultati']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza i risultati delle analisi dei risultati' onClick='".$view_analisi_risultati."'><span class='mdi mdi-alert' style='color:".$color."'></span><sup style='font-size: 70%'>".sizeof($analisi[1])."</sup></a></div>";
+            }
             //if($canModify)
             //{
             //    $view_analisi_risultati='AA_MainApp.utils.callHandler("dlg", {task:"GetSierRisultatiModifyDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
@@ -16561,6 +16630,9 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['voti_solo_presidente']) && $_REQUEST['voti_solo_presidente']>=0) $risultati['voti_solo_presidente']=$_REQUEST['voti_solo_presidente'];
         if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>=0) $risultati['schede_voti_nulli']=$_REQUEST['schede_voti_nulli'];
         
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
+
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati generali"))
         {
@@ -16654,6 +16726,10 @@ Class AA_SierModule extends AA_GenericModule
         
         $risultati['voti_presidente']=$voti_presidente;
 
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        
+        $comune->SetAnalisiRisultati($analisi_risultati);
+
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti presidente"))
         {
@@ -16714,7 +16790,7 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
         if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
-        if(isset($risultati['schede_solo_presidente']) && $risultati['schede_solo_presidente']>0) $voti_non_validi+=$risultati['schede_solo_presidente'];
+        if(isset($risultati['voti_solo_presidente']) && $risultati['voti_solo_presidente']>0) $voti_non_validi+=$risultati['voti_solo_presidente'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         $liste=$object->GetListe();
@@ -16745,6 +16821,9 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         $risultati['voti_lista']=$voti_liste;
+
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
 
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti lista"))
@@ -16859,6 +16938,9 @@ Class AA_SierModule extends AA_GenericModule
 
         $risultati['voti_candidato']=$voti_candidato;
 
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
+
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti candidato."))
         {
@@ -16959,6 +17041,9 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $risultati['voti_candidato']=$voti_candidato;
+
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
 
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti candidato."))
@@ -17122,6 +17207,9 @@ Class AA_SierModule extends AA_GenericModule
         
         $risultati['voti_lista']=$voti_liste;
 
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
+
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti lista - operatore: ".$operatore->GetOperatoreComunaleCf()))
         {
@@ -17247,6 +17335,9 @@ Class AA_SierModule extends AA_GenericModule
 
         $risultati['voti_candidato']=$voti_candidato;
 
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
+
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti preferenze - operatore: ".$operatore->GetOperatoreComunaleCf()))
         {
@@ -17360,6 +17451,9 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $risultati['voti_candidato']=$voti_candidato;
+
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
 
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti preferenze multi - operatore: ".$operatore->GetOperatoreComunaleCf()))
@@ -17489,6 +17583,10 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>=0) $risultati['voti_contestati_na_liste']=intVal($_REQUEST['voti_contestati_na_liste']);
         if(isset($_REQUEST['voti_solo_presidente']) && $_REQUEST['voti_solo_presidente']>=0) $risultati['voti_solo_presidente']=intVal($_REQUEST['voti_solo_presidente']);
         if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>=0) $risultati['schede_voti_nulli']=intVal($_REQUEST['schede_voti_nulli']);
+      
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
+
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati generali - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
         {
@@ -17832,6 +17930,9 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         $risultati['voti_presidente']=$voti_presidente;
+
+        $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        $comune->SetAnalisiRisultati($analisi_risultati);
 
         $comune->SetRisultati($risultati);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento comunicazioni - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
@@ -20581,69 +20682,69 @@ Class AA_SierModule extends AA_GenericModule
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
-        $form_data['id']=$object->GetId();
-        $form_data['id_sier']=$object->GetId();
-        $form_data['id_comune']=$comune->GetProp('id');
-        $form_data['sezioni_scrutinate']=0;
-        $form_data['votanti_m']=0;
-        $form_data['votanti_f']=0;
-        $form_data['schede_bianche']=0;
-        $form_data['schede_nulle']=0;
-        $form_data['voti_contestati_na_pre']=0;
-        $form_data['voti_contestati_na_liste']=0;
-        $form_data['voti_solo_presidente']=0;
-        $form_data['schede_voti_nulli']=0;
+            $form_data['id']=$object->GetId();
+            $form_data['id_sier']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp('id');
+            $form_data['sezioni_scrutinate']=0;
+            $form_data['votanti_m']=0;
+            $form_data['votanti_f']=0;
+            $form_data['schede_bianche']=0;
+            $form_data['schede_nulle']=0;
+            $form_data['voti_contestati_na_pre']=0;
+            $form_data['voti_contestati_na_liste']=0;
+            $form_data['voti_solo_presidente']=0;
+            $form_data['schede_voti_nulli']=0;
 
-        $risultati=$comune->GetRisultati(true);
-        foreach($risultati as $key=>$val)
-        {
-            if(isset($form_data[$key])) $form_data[$key]=$val;
-        }
+            $risultati=$comune->GetRisultati(true);
+            foreach($risultati as $key=>$val)
+            {
+                if(isset($form_data[$key])) $form_data[$key]=$val;
+            }
 
-        $wnd=new AA_GenericFormDlg($id, "Modifica risultati generali", $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Modifica risultati generali comune di ".$comune->GetProp("denominazione"), $this->id,$form_data,$form_data);
+                
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(330);
+            $wnd->SetBottomPadding(32);
+            $wnd->EnableValidation();
             
-        $wnd->SetLabelAlign("right");
-        $wnd->SetLabelWidth(330);
-        $wnd->SetBottomPadding(32);
-        $wnd->EnableValidation();
-        
-        $wnd->SetWidth(610);
-        $wnd->SetHeight(800);
-        
-        //Sezioni scrutinate
-        $wnd->AddTextField("sezioni_scrutinate","Sezioni scrutinate",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di sezioni scrutinate."));
-        //votanti maschi
-        $wnd->AddTextField("votanti_m","Votanti maschi",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti maschi."));
-        //votanti femminie
-        $wnd->AddTextField("votanti_f","Votanti femmine",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti femmine."));
-        //schede bianche
-        $wnd->AddTextField("schede_bianche","Schede bianche",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede bianche."));
-        //schede nulle
-        $wnd->AddTextField("schede_nulle","Schede nulle",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede nulle."));
-        //schede contenenti voti nulli
-        $wnd->AddTextField("schede_voti_nulli","Schede escl. con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
+            $wnd->SetWidth(610);
+            $wnd->SetHeight(800);
+            
+            //Sezioni scrutinate
+            $wnd->AddTextField("sezioni_scrutinate","Sezioni scrutinate",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di sezioni scrutinate."));
+            //votanti maschi
+            $wnd->AddTextField("votanti_m","Votanti maschi",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti maschi."));
+            //votanti femminie
+            $wnd->AddTextField("votanti_f","Votanti femmine",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti femmine."));
+            //schede bianche
+            $wnd->AddTextField("schede_bianche","Schede bianche",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede bianche."));
+            //schede nulle
+            $wnd->AddTextField("schede_nulle","Schede nulle",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede nulle."));
+            //schede contenenti voti nulli
+            $wnd->AddTextField("schede_voti_nulli","Schede escl. con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
 
-        //schede solo presidente
-        $wnd->AddTextField("voti_solo_presidente","Schede votate solo per i candidati Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero schede valide votate solo per i candidati Presidente."));
+            //schede solo presidente
+            $wnd->AddTextField("voti_solo_presidente","Schede votate solo per i candidati Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero schede valide votate solo per i candidati Presidente."));
 
-        $section=new AA_FieldSet($id."_Section_RisultatiGenerali","Schede contenenti voti contestati e non assegnati");
-        //voti contestati non assegnati pre
-        $section->AddTextField("voti_contestati_na_pre","al Presidente",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contenti voti contestati e non assegnati (Presidente)."));
-        //voti contestati non assegnati liste
-        $section->AddTextField("voti_contestati_na_liste","alle Liste",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contenti voti contestati e non assegnati (Liste)."));
-        $wnd->AddGenericObject($section);
+            $section=new AA_FieldSet($id."_Section_RisultatiGenerali","Schede contenenti voti contestati e non assegnati");
+            //voti contestati non assegnati pre
+            $section->AddTextField("voti_contestati_na_pre","al Presidente",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contenti voti contestati e non assegnati (Presidente)."));
+            //voti contestati non assegnati liste
+            $section->AddTextField("voti_contestati_na_liste","alle Liste",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di schede contenti voti contestati e non assegnati (Liste)."));
+            $wnd->AddGenericObject($section);
 
-        $wnd->EnableCloseWndOnSuccessfulSave();
-        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
-        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
-        $wnd->SetSaveTask("UpdateSierComuneRisultatiGenerali");
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+            if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+            $wnd->SetSaveTask("UpdateSierComuneRisultatiGenerali");
 
-        return $wnd;    
+            return $wnd;    
         }
         else
         {
             //to do view only
-            $wnd = new AA_GenericWindowTemplate($id,"Modifica risultati generali", $this->id);
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica risultati generali comune di ".$comune->GetProp("denominazione"), $this->id);
             $wnd->AddView(new AA_JSON_Template_Template($id."_Fake",array("template"=>"L'utente corrente non può apportare modifiche.")));
 
             return $wnd;

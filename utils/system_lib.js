@@ -114,8 +114,16 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         console.log("doTask - Refresh ui object: "+params.refresh_obj_id);
                         this.refreshUiObject(params.refresh_obj_id, true);
                     }
-                    else this.refreshCurSection();
+                    else
+                    {
+                        if(!AA_MainApp.utils.isDefined(params.refresh_section)) this.refreshCurSection();
+                    }
                 }
+                if(AA_MainApp.utils.isDefined(params.refresh_section))
+                {
+                    this.refreshCurSection();
+                }
+
                 return true;
             } else {
                 console.error(this.name + ".doTask", result.error.value);
@@ -1021,24 +1029,31 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (AA_MainApp.utils.isDefined(params.wnd_id) && $$(params.wnd_id)) $$(params.wnd_id).close();
                         if (AA_MainApp.utils.isDefined(params.refresh)) {
                             if (AA_MainApp.utils.isDefined(params.refresh_obj_id)) this.refreshUiObject(params.refresh_obj_id, true);
-                            else {
+                            else 
+                            {
                                 if (AA_MainApp.utils.isDefined(params.refreshApp)) {
                                     AA_MainApp.ui.MainUI.refresh();
-                                } else this.refreshCurSection();
+                                } 
+                                else
+                                {
+                                    if(!AA_MainApp.utils.isDefined(params.refresh_section)) this.refreshCurSection();
+                                }
+                            }
+                        }
+                        
+                        if(AA_MainApp.utils.isDefined(params.refresh_section)) this.refreshCurSection();
 
-                                //aggiorna l'immagine del profilo
-                                if (AA_MainApp.utils.isDefined(params.refreshUserProfile)) {
-                                    const urlParams = new URLSearchParams(window.location.search);
-                                    var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module") + "&mobile=" + AA_MainApp.device.isMobile + "&viewport_width=" + AA_MainApp.ui.viewport.width + "&viewport_height=" + AA_MainApp.ui.viewport.height);
-                                    if (getAppStatus.status.value == "0") {
-                                        //Aggiorna il nome utente e l'immagine
-                                        var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
-                                        if (user.length > 0) {
-                                            $$("AA_icon_user").define("tooltip", user);
-                                            $$("AA_icon_user").define("data", { "user_image_path": $(getAppStatus.content.value)[0].childNodes[5].nextSibling.data });
-                                            AA_MainApp.ui.user = user;
-                                        }
-                                    }
+                        //aggiorna l'immagine del profilo
+                        if (AA_MainApp.utils.isDefined(params.refreshUserProfile)) {
+                            const urlParams = new URLSearchParams(window.location.search);
+                            var getAppStatus = await AA_VerboseTask("GetAppStatus", AA_MainApp.taskManager, "module=" + urlParams.get("module") + "&mobile=" + AA_MainApp.device.isMobile + "&viewport_width=" + AA_MainApp.ui.viewport.width + "&viewport_height=" + AA_MainApp.ui.viewport.height);
+                            if (getAppStatus.status.value == "0") {
+                                //Aggiorna il nome utente e l'immagine
+                                var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
+                                if (user.length > 0) {
+                                    $$("AA_icon_user").define("tooltip", user);
+                                    $$("AA_icon_user").define("data", { "user_image_path": $(getAppStatus.content.value)[0].childNodes[5].nextSibling.data });
+                                    AA_MainApp.ui.user = user;
                                 }
                             }
                         }
