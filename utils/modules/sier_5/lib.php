@@ -892,8 +892,9 @@ Class AA_Sier extends AA_Object_V2
         if(!is_array($risultati))
         {
             $result[0]=true;
-            $result[1][0]='Risultati non presenti!.';
+            $result[1][0]='Risultati non presenti.';
             $result[2]=true;
+            $result[3]=array('risultati_voti_presidente_check'=>1,'risultati_voti_lista_check'=>1,'risultati_voti_candidato_check'=>1,'risultati_scrutinio_parziale_check'=>1);
             return $result;
         }
         
@@ -902,6 +903,7 @@ Class AA_Sier extends AA_Object_V2
             $result[0]=true;
             $result[1][0]='Risultati non presenti.';
             $result[2]=true;
+            $result[3]=array('risultati_voti_presidente_check'=>1,'risultati_voti_lista_check'=>1,'risultati_voti_candidato_check'=>1,'risultati_scrutinio_parziale_check'=>1);
             return $result;
         }
 
@@ -1045,6 +1047,7 @@ Class AA_Sier extends AA_Object_V2
         {
             $result[0]=true;
             $result[1][]="Non ci sono preferenze nonostante siano presenti voti validi (".$voti_validi.")";
+            $result[3]['risultati_voti_candidato_check']++;
         }
 
         if($voti_candidato > ($voti_validi*2))
@@ -1299,7 +1302,11 @@ Class AA_Sier extends AA_Object_V2
         $giornate=$this->GetGiornate();
         $cp=$this->GetControlPannel();
         $risultati=$comune->GetRisultati(true);
-        $analisi_risultati=$this->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"));
+        $analisi_risultati=$comune->GetAnalisiRisultati(true);
+        if(sizeof($analisi_risultati)==0)
+        {
+            $analisi_risultati=$this->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+        } 
         $now=date("Y-m-d H:i:s");
 
         //---------- aggiorna i dati generali ---------------------------
@@ -1312,7 +1319,7 @@ Class AA_Sier extends AA_Object_V2
         $feed["elettori_tot"]=intVal($comune->GetProp('elettori_m')+$comune->GetProp('elettori_f'));
         //----------------------------------------------------------------
 
-        //-------------- affluenza ------------------
+        //-------------- affluenza --------------------
         $feed['affluenza']=array("aggiornamento"=>$now);
         foreach($giornate as $giornata=>$curGiornata)
         {
@@ -1378,10 +1385,10 @@ Class AA_Sier extends AA_Object_V2
         if($update && $update_presidente && $update_liste && $update_candidati && !$bInitializeOnly)
         {
             $feed['risultati']['aggiornamento']=$now;
-            $feed['risultati']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
-            $feed['risultati']['votanti_m']=intVal($risultati['votanti_m']);
-            $feed['risultati']['votanti_f']=intVal($risultati['votanti_f']);
-            $feed['risultati']['votanti_tot']=intVal($risultati['votanti_f'])+intVal($risultati['votanti_m']);
+            if($risultati['sezioni_scrutinate']) $feed['risultati']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
+            if($risultati['votanti_m']) $feed['risultati']['votanti_m']=intVal($risultati['votanti_m']);
+            if($risultati['votanti_f']) $feed['risultati']['votanti_f']=intVal($risultati['votanti_f']);
+            $feed['risultati']['votanti_tot']=intVal($feed['risultati']['votanti_f'])+intVal($feed['risultati']['votanti_f']);
             $feed['risultati']['votanti_percent']=round($feed['risultati']['votanti_tot']*100/(intVal($comune->GetProp("elettori_m")+$comune->GetProp("elettori_f"))),1);
         }
         //------------------------
@@ -1394,7 +1401,7 @@ Class AA_Sier extends AA_Object_V2
         
         if($bReset)
         {
-            $feed['risultati']['voti_presidente']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0);
+            $feed['risultati']['voti_presidente']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0,"consolidato"=>1);
         }
 
         foreach($coalizioni as $idCoalizione=>$curCoalizione)
@@ -1426,6 +1433,7 @@ Class AA_Sier extends AA_Object_V2
             $feed['risultati']['voti_presidente']['aggiornamento']=$now;
             $feed['risultati']['voti_presidente']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
             $feed['risultati']['voti_presidente']['voti_tot']=$voti_tot_presidente;
+            if($analisi_risultati[3]['risultati_voti_presidente_check']>0) $feed['risultati']['voti_presidente']['consolidato'] = 0;
         }
         //-------------------------------
 
@@ -1433,7 +1441,7 @@ Class AA_Sier extends AA_Object_V2
         $liste=$this->GetListe();
         if($bReset)
         {
-            $feed['risultati']['voti_lista']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0);            
+            $feed['risultati']['voti_lista']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0,"consolidato"=>1);            
         }
 
         foreach($liste as $idLista=>$curLista)
@@ -1466,6 +1474,7 @@ Class AA_Sier extends AA_Object_V2
             $feed['risultati']['voti_lista']['aggiornamento']=$now;
             $feed['risultati']['voti_lista']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
             $feed['risultati']['voti_lista']['voti_tot']=$voti_tot_liste;
+            if($analisi_risultati[3]['risultati_voti_lista_check']>0) $feed['risultati']['voti_lista']['consolidato'] = 0;
         }
         //-------------------
 
@@ -1474,7 +1483,7 @@ Class AA_Sier extends AA_Object_V2
         $candidati=$this->GetCandidati(null,null,$comune->GetProp("id_circoscrizione"));
         if($bReset || !isset( $feed['risultati']['voti_candidato']))
         {
-            $feed['risultati']['voti_candidato']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0);
+            $feed['risultati']['voti_candidato']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0,"consolidato"=>1);
         }
 
         foreach($candidati as $idCandidato=>$curCandidato)
@@ -1515,6 +1524,7 @@ Class AA_Sier extends AA_Object_V2
             $feed['risultati']['voti_candidato']['aggiornamento']=$now;
             $feed['risultati']['voti_candidato']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
             $feed['risultati']['voti_candidato']['voti_tot']=$tot_voti_candidato;
+            if($analisi_risultati[3]['risultati_voti_candidato_check']>0) $feed['risultati']['voti_candidato']['consolidato'] = 0;
         }
         //---------------------
 
@@ -1647,13 +1657,16 @@ Class AA_Sier extends AA_Object_V2
                         'votanti_percent'=>0,
                         'voti_presidente'=>array(
                             "sezioni_scrutinate"=>0,
-                            "voti_tot"=>0),
+                            "voti_tot"=>0,
+                            "consolidato"=>1),
                         "voti_lista"=>array(
                             "sezioni_scrutinate"=>0,
-                            "voti_tot"=>0),
+                            "voti_tot"=>0,
+                            "consolidato"=>1),
                         "voti_candidato"=>array(
                             "sezioni_scrutinate"=>0,
-                            "voti_tot"=>0))),
+                            "voti_tot"=>0,
+                            "consolidato"=>1))),
                 "circoscrizionale"=>array()));
 
         $comuni=$this->GetComuni();
@@ -1697,13 +1710,16 @@ Class AA_Sier extends AA_Object_V2
                     "votanti_percent"=>0,
                     "voti_presidente"=>array(
                         "sezioni_scrutinate"=>0,
-                        "voti_tot"=>0),
+                        "voti_tot"=>0,
+                        "consolidato"=>1),
                     "voti_lista"=>array(
                         "sezioni_scrutinate"=>0,
-                        "voti_tot"=>0),
+                        "voti_tot"=>0,
+                        "consolidato"=>1),
                     "voti_candidato"=>array(
                         "sezioni_scrutinate"=>0,
-                        "voti_tot"=>0))
+                        "voti_tot"=>0,
+                        "consolidato"=>1))
                 );
             
             $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['sezioni']+=intVal($curComune->GetProp('sezioni'));
@@ -1782,6 +1798,11 @@ Class AA_Sier extends AA_Object_V2
                 $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente']['aggiornamento']=$feedComune['risultati']['voti_presidente']['aggiornamento'];
                 $aggiornamento_presidente_circoscrizionale[$curComune->GetProp('id_circoscrizione')]=$feedComune['risultati']['voti_presidente']['aggiornamento'];
             }
+            if(!isset($feedComune['risultati']['voti_presidente']['consolidato']) || $feedComune['risultati']['voti_presidente']['consolidato']==0)
+            {
+                $feed['stats']['regionale']['risultati']['voti_presidente']['consolidato']=0;
+                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_presidente']['consolidato']=0;
+            }
             foreach($feedComune['risultati']['voti_presidente'] as $key=>$val)
             {
                 if(is_array($val))
@@ -1819,6 +1840,11 @@ Class AA_Sier extends AA_Object_V2
                 $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']['aggiornamento']=$feedComune['risultati']['voti_lista']['aggiornamento'];
                 $aggiornamento_liste_circoscrizionale[$curComune->GetProp('id_circoscrizione')]=$feedComune['risultati']['voti_lista']['aggiornamento'];
             }
+            if(!isset($feedComune['risultati']['voti_lista']['consolidato']) || $feedComune['risultati']['voti_lista']['consolidato']==0)
+            {
+                $feed['stats']['regionale']['risultati']['voti_presidente']['consolidato']=0;
+                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_lista']['consolidato']=0;
+            }
             foreach($feedComune['risultati']['voti_lista'] as $key=>$val)
             {
                 if(is_array($val))
@@ -1852,6 +1878,11 @@ Class AA_Sier extends AA_Object_V2
             {
                 $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato']['aggiornamento']=$feedComune['risultati']['voti_candidato']['aggiornamento'];
                 $aggiornamento_candidato_circoscrizionale[$curComune->GetProp('id_circoscrizione')]=$feedComune['risultati']['voti_candidato']['aggiornamento'];
+            }
+            if(!isset($feedComune['risultati']['voti_candidato']['consolidato']) || $feedComune['risultati']['voti_candidato']['consolidato']==0)
+            {
+                $feed['stats']['regionale']['risultati']['voti_candidato']['consolidato']=0;
+                $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato']['consolidato']=0;
             }
             foreach($feedComune['risultati']['voti_candidato'] as $key=>$val)
             {
@@ -2406,6 +2437,11 @@ Class AA_Sier extends AA_Object_V2
             if(isset($params['senza_certificazione_15']) && $params['senza_certificazione_15']==1)
             {
                 $query.=" AND comunicazioni not like '%\"corpoelettorale_15\":1%'";
+            }
+
+            if(isset($params['con_criticita']) && $params['con_criticita']==1)
+            {
+                $query.=" AND analisi_risultati not like '[false,%'";
             }
         }
 
@@ -12828,6 +12864,11 @@ Class AA_SierModule extends AA_GenericModule
             $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con rendiconti non caricati</span>&nbsp;";
         }
 
+        if(isset($params['con_criticita']) && $params['con_criticita'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con criticità</span>&nbsp;";
+        }
+
         $cp=$object->GetControlPannel();
         if(isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)
         {
@@ -13232,6 +13273,9 @@ Class AA_SierModule extends AA_GenericModule
         
         //Senza rendiconti
         $dlg->AddSwitchBoxField("senza_rendiconti","Comuni senza rendiconti",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza rendiconti."));
+
+        //comuni con criticità
+        $dlg->AddSwitchBoxField("con_criticita","Comuni con criticità",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni con criticità."));
 
         //Enable session save
         $dlg->EnableSessionSave();
