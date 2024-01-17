@@ -201,7 +201,7 @@ if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1)
 }
 else
 {
-    AA_Log::Log(__METHOD__." - variabile di sessione non impostata",100);
+    //AA_Log::Log(__METHOD__." - variabile di sessione non impostata",100);
 }
 ?>
 

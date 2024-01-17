@@ -2996,6 +2996,43 @@ class AA_GenericModule
             }
         }
 
+        //templates sezione dettaglio
+        if($params['section']==static::AA_ID_SECTION_DETAIL)
+        {
+            if(is_array($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]))
+            {
+                foreach($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] as $key=>$val)
+                {
+                    if($params['object']==$val['id'] && method_exists($this, $val['template']))
+                    {
+                        //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
+                        $object=null;
+                        if(isset($params['id']) && AA_Platform::IsRegistered($this->GetId(),$this->oUser))
+                        {
+                            $platform=AA_Platform::GetInstance();
+                            $module=$platform->GetModule($this->GetId());
+                            if(class_exists($module['class']))
+                            {
+                                $object=new $module['class']($params['id']);
+                            }
+                            else
+                            {
+                                AA_Log::Log(__METHOD__." - classe non trovata: ".$module['class'],100);
+                            }
+                        }
+                        
+                        if($object !=null)
+                        {
+                            $content = array("id" =>$val['id'], "content" => $this->{$val['template']}($object)->toArray());
+                            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+                            $task->SetContent(json_encode($content),true);
+                            return true;    
+                        }
+                    }
+                }    
+            }
+        }
+
         switch ($params[$param]) {
             case "Bozze":
             case static::AA_UI_PREFIX . "_" . static::AA_UI_BOZZE_BOX:
@@ -3750,7 +3787,7 @@ class AA_GenericModule
                 {
                     $multiview->addCell(new AA_JSON_Template_Template($curTab['id'],array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));
                 }
-                
+
                 if(!$bDefaultChangeEventAdded)
                 {
                     $multiview->AddEventHandler("onViewChange","onDetailViewChange",null,$this->GetId());

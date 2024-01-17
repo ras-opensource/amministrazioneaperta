@@ -4828,7 +4828,7 @@ Class AA_SierModule extends AA_GenericModule
                 array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateSierDettaglio_Coalizioni_Tab","enable_preview"=>true),
                 array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateSierDettaglio_Candidati_Tab","enable_preview"=>true),
                 array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateSierDettaglio_Comuni_Tab","enable_preview"=>true),
-                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","enable_preview"=>true),
+                array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateSierDettaglio_Allegati_Tab","enable_preview"=>true),
             ));
         }
         else
@@ -21815,47 +21815,7 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetContent(json_encode($content),true);
             return true;
         }
-
-        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX)
-        {
-            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
-
-            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "content" => $this->TemplateSierDettaglio_Comuni_Tab()->toArray());
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent(json_encode($content),true);
-            return true;
-        }
-
-        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX)
-        {
-            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
-            $object=new AA_Sier($_REQUEST['id']);
-            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "content" => $this->TemplateSierDettaglio_Allegati_Tab($object)->toArray());
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent(json_encode($content),true);
-            return true;
-        }
-
-        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX)
-        {
-            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
-            $object=new AA_Sier($_REQUEST['id']);
-            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "content" => $this->TemplateSierDettaglio_Candidati_Tab($object)->toArray());
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent(json_encode($content),true);
-            return true;
-        }
-
-        if($_REQUEST['object']==static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX)
-        {
-            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
-            $object=new AA_Sier($_REQUEST['id']);
-            $content = array("id" =>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "content" => $this->TemplateSierDettaglio_Coalizioni_Tab($object)->toArray());
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent(json_encode($content),true);
-            return true;
-        }
-
+        
         return $this->Task_GetGenericObjectContent($task, $_REQUEST);
     }
 
