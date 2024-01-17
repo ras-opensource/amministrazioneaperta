@@ -1624,7 +1624,7 @@ Class AA_Sier extends AA_Object_V2
             $comune->SetProp("feed_risultati",json_encode($feed));
             if(!$this->UpdateComune($comune,$user,"Aggiornamento feed risultati"))
             {
-                AA_Log::Log(__METHOD__." - Errore nell'aggiornamento del feed risultati del comune: ".$comune->GeTProp("denominazione"),100);
+                AA_Log::Log(__METHOD__." - Errore nell'aggiornamento del feed risultati del comune: ".$comune->GetProp("denominazione"),100);
                 return false;
             }
 
@@ -7379,7 +7379,7 @@ Class AA_SierModule extends AA_GenericModule
         
         $form_data=array();
         
-        $wnd=new AA_GenericWindowTemplate($id, "Analisi criticità risultati", $this->id);
+        $wnd=new AA_GenericWindowTemplate($id, "Analisi criticità risultati comune di ".$comune->GetProp("denominazione"), $this->id);
         
         $wnd->SetWidth(580);
         $wnd->SetHeight(280);
@@ -7400,7 +7400,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $content="<div style='display: flex; justify-content: flex-start; align-items: center; width: 90%'><p>I dati sono coerenti.</p></div>";
+            $content="<div style='display: flex; justify-content: center; align-items: center; width: 100%;height: 100%'><p>I dati sono coerenti.</p></div>";
         }
         
         $wnd->AddView(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","template"=>$content)));
@@ -13017,7 +13017,7 @@ Class AA_SierModule extends AA_GenericModule
             if($analisi[0]==false) $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
             else 
             {
-                $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a><a class='".$class."' title='Visualizza le criticità riscontrate sul corpo elettorale' onClick='".$view_analisi_corpo."'><span class='mdi mdi-alert' style='color:".$color."'></span><sup style='font-size: 70%'>".(sizeof($analisi)-1)."</sup></a>";
+                $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a><a class='".$class."' title='Visualizza le criticità riscontrate sul corpo elettorale' onClick='".$view_analisi_corpo."'><span class='mdi mdi-alert' style='color:".$color."'></span><sup style='font-size: 70%'>".(sizeof($analisi[1])-1)."</sup></a>";
             }
             $data[$index]['corpo_elettorale'].="</div>";
             //------------------------------
