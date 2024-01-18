@@ -3088,7 +3088,7 @@ Class AA_Sier extends AA_Object_V2
         
         if(!$db->Query($query))
         {
-            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
+            AA_Log::Log(__METHOD__." - Errore nella query - ".$db->GetLastErrorMessage(), 100);
             return false;            
         }
         
@@ -13017,7 +13017,7 @@ Class AA_SierModule extends AA_GenericModule
             if($analisi[0]==false) $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a>";
             else 
             {
-                $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a><a class='".$class."' title='Visualizza le criticità riscontrate sul corpo elettorale' onClick='".$view_analisi_corpo."'><span class='mdi mdi-alert' style='color:".$color."'></span><sup style='font-size: 70%'>".(sizeof($analisi[1])-1)."</sup></a>";
+                $data[$index]['corpo_elettorale']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='AA_DataTable_Ops_Button' title='Vedi e gestisci i dati del corpo elettorale' onClick='".$view."'><span class='mdi mdi-eye'></span></a><a class='".$class."' title='Visualizza le criticità riscontrate sul corpo elettorale' onClick='".$view_analisi_corpo."'><span class='mdi mdi-alert' style='color:".$color."'></span><sup style='font-size: 70%'>".sizeof($analisi[1])."</sup></a>";
             }
             $data[$index]['corpo_elettorale'].="</div>";
             //------------------------------
