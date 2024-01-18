@@ -1490,6 +1490,7 @@ Class AA_Sier extends AA_Object_V2
         {
             if($bReset || !isset($feed['risultati']['voti_candidato'][$idCandidato]))
             {
+                /*
                 $lista=$liste[$curCandidato->GetProp('id_lista')];
                 $coalizione=$coalizioni[$curCandidato->GetProp("id_coalizione")];
                 $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
@@ -1497,7 +1498,8 @@ Class AA_Sier extends AA_Object_V2
                 {
                     $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$lista->GetProp('image');
                 }
-                $feed['risultati']['voti_candidato'][$idCandidato]=array(
+                
+                /*$feed['risultati']['voti_candidato'][$idCandidato]=array(
                     "nome"=>$curCandidato->GetProp("nome"),
                     "cognome"=>$curCandidato->GetProp("cognome"),
                     "id_lista"=>intVal($curCandidato->GetProp("id_lista")),
@@ -1509,13 +1511,18 @@ Class AA_Sier extends AA_Object_V2
                     "circoscrizione"=>$curCandidato->GetProp("circoscrizione"),
                     "voti"=>0,
                     "percent"=>0
+                );*/
+
+                $feed['risultati']['voti_candidato'][$idCandidato]=array(
+                    "voti"=>0,
+                    "percent"=>0
                 );
             }
 
             if($update_candidati && !$bInitializeOnly && isset($risultati['voti_candidato'][$idCandidato]))
             {
-                $feed['risultati']['voti_candidato'][$idCandidato]['voti']=intVal($risultati['voti_candidato'][$idCandidato]);
-                $tot_voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]);
+                $feed['risultati']['voti_candidato'][$idCandidato]['voti']=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
+                $tot_voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
             }    
         }
         
@@ -1635,7 +1642,7 @@ Class AA_Sier extends AA_Object_V2
     }
 
     //Costruisce il feed dei risultati globale
-    public function BuildRisultatiAffluenzaFeed($params=array())
+    public function BuildRisultatiAffluenzaFeed($params=array(),$mini=false)
     {
         if(!$this->bValid) return false;
 
@@ -1669,10 +1676,19 @@ Class AA_Sier extends AA_Object_V2
                             "consolidato"=>1))),
                 "circoscrizionale"=>array()));
 
+        if($mini)
+        {
+            $feed['candidati']=array();
+        }
+
         $comuni=$this->GetComuni();
         $coalizioni=$this->GetCoalizioni();
         $liste=$this->GetListe();
-        //$candidati=$this->GetCandidati();
+        $platform=AA_Platform::GetInstance();
+        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
+
+        $candidati=$this->GetCandidati();
+
         $giornateAffluenza=$this->GetGiornate();
         //$cp=$this->GetControlPannel();
         $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
@@ -1688,6 +1704,57 @@ Class AA_Sier extends AA_Object_V2
         {
             $feedComune=$curComune->GetFeedRisultati(true);
             $feed["comuni"][$idComune]=$feedComune;
+           
+            foreach($feedComune['risultati']['voti_candidato'] as $id=>$val)
+            {
+                if(is_array($val) && isset($candidati[$id]))
+                {
+                    if($mini)
+                    {
+                        if(!isset($feed['candidati'][$id]))
+                        {
+                            $candidato=$candidati[$id];
+                            $lista=$liste[$candidato->GetProp('id_lista')];
+                            $coalizione=$coalizioni[$candidato->GetProp("id_coalizione")];
+                            $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+                            if($lista->GetProp('image') != "")
+                            {
+                                $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$lista->GetProp('image');
+                            }
+                            $feed['candidati'][$id]=array();
+                            $feed['candidati'][$id]['nome']=$candidato->GetProp("nome");
+                            $feed['candidati'][$id]['cognome']=$candidato->GetProp("cognome");
+                            $feed['candidati'][$id]['id_lista']=$candidato->GetProp("id_lista");
+                            $feed['candidati'][$id]['lista']=$candidato->GetProp("lista");
+                            $feed['candidati'][$id]['image']=$curImagePath;
+                            $feed['candidati'][$id]['id_presidente']=$lista->GetProp("id_coalizione");
+                            $feed['candidati'][$id]['presidente']=$coalizione->GetProp("nome_candidato");
+                            $feed['candidati'][$id]['id_circoscrizione']=$candidato->GetProp("id_circoscrizione");
+                            $feed['candidati'][$id]['circoscrizione']=$candidato->GetProp("circoscrizione");
+                        }    
+                    }
+                    else
+                    {
+                        $candidato=$candidati[$id];
+                        $lista=$liste[$candidato->GetProp('id_lista')];
+                        $coalizione=$coalizioni[$candidato->GetProp("id_coalizione")];
+                        $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+                        if($lista->GetProp('image') != "")
+                        {
+                            $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$lista->GetProp('image');
+                        }
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['nome']=$candidato->GetProp("nome");
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['cognome']=$candidato->GetProp("cognome");
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['id_lista']=$candidato->GetProp("id_lista");
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['lista']=$candidato->GetProp("lista");
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['image']=$curImagePath;
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['id_presidente']=$lista->GetProp("id_coalizione");
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['presidente']=$coalizione->GetProp("nome_candidato");
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['id_circoscrizione']=$candidato->GetProp("id_circoscrizione");
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['circoscrizione']=$candidato->GetProp("circoscrizione");
+                    }
+                }
+            }
 
             //dati generali
             $feed['stats']['regionale']['sezioni']+=$curComune->GetProp('sezioni');
@@ -1888,13 +1955,27 @@ Class AA_Sier extends AA_Object_V2
             {
                 if(is_array($val))
                 {
-                    /*
-                    if(!isset( $feed['stats']['regionale']['risultati']['voti_candidato'][$key]))  $feed['stats']['regionale']['risultati']['voti_candidato'][$key]=$val;
-                    else
+                    if(!$mini && isset($candidati[$key]))
                     {
-                        $feed['stats']['regionale']['risultati']['voti_lista'][$key]['voti'] += $val['voti'];
-                    }*/
-
+                        $candidato=$candidati[$key];
+                        $lista=$liste[$candidato->GetProp('id_lista')];
+                        $coalizione=$coalizioni[$candidato->GetProp("id_coalizione")];
+                        $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+                        if($lista->GetProp('image') != "")
+                        {
+                            $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$lista->GetProp('image');
+                        }
+                        $val['nome']=$candidato->GetProp("nome");
+                        $val['cognome']=$candidato->GetProp("cognome");
+                        $val['id_lista']=$candidato->GetProp("id_lista");
+                        $val['lista']=$candidato->GetProp("lista");
+                        $val['image']=$curImagePath;
+                        $val['id_presidente']=$lista->GetProp("id_coalizione");
+                        $val['presidente']=$coalizione->GetProp("nome_candidato");
+                        $val['id_circoscrizione']=$candidato->GetProp("id_circoscrizione");
+                        $val['circoscrizione']=$candidato->GetProp("circoscrizione");
+                    }
+                
                     if(!isset( $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['risultati']['voti_candidato'][$key]))  
                     {
                         if(isset($val['percent'])) unset($val['percent']);
@@ -17029,12 +17110,13 @@ Class AA_SierModule extends AA_GenericModule
             
             if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>=0)
             {
-                $candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
+                //$candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
+                $candidato=array();
     
                 if(is_array($candidato))
                 {
                     $candidato['voti']=intVal($_REQUEST['voti']);
-                    $voti_candidato[$candidato['id']]=$candidato;
+                    $voti_candidato[$_REQUEST['id_candidato']]=$candidato;
                 }
             }
         }
@@ -17129,7 +17211,8 @@ Class AA_SierModule extends AA_GenericModule
         {
             if(isset($_REQUEST['candidato_'.$idCandidato]))
             {
-                $dati_candidato=$curCandidato->GetProps();
+                //$dati_candidato=$curCandidato->GetProps();
+                $dati_candidato=array();
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
                 $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
@@ -17426,12 +17509,13 @@ Class AA_SierModule extends AA_GenericModule
             
             if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>0)
             {
-                $candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
+                //$candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
+                $candidato=array();
     
                 if(is_array($candidato))
                 {
                     $candidato['voti']=intVal($_REQUEST['voti']);
-                    $voti_candidato[$candidato['id']]=$candidato;
+                    $voti_candidato[$_REQUEST['id_candidato']]=$candidato;
                 }
             }
         }
@@ -17539,7 +17623,8 @@ Class AA_SierModule extends AA_GenericModule
         {
             if(isset($_REQUEST['candidato_'.$idCandidato]))
             {
-                $dati_candidato=$curCandidato->GetProps();
+                //$dati_candidato=$curCandidato->GetProps();
+                $dati_candidato=array();
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
                 $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
