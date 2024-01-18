@@ -2978,13 +2978,13 @@ class AA_GenericModule
         $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
 
         //Verifica se il contenuto richiesto è una sezione
-        foreach($this->GetSections() as $curSection)
+        foreach($this->sections as $idSection=>$curSection)
         {
-            if($params[$param] == $curSection->GetViewId())
+            if($idSection==$params[$param] || $idSection==$params['section'])
             {
-                if(is_string($this->aSectionItemTemplates[$curSection->GetId()]) && method_exists($this,$this->aSectionItemTemplates[$curSection->GetId()]))
+                if(is_string($this->aSectionItemTemplates[$idSection]) && method_exists($this,$this->aSectionItemTemplates[$idSection]))
                 {
-                    $content = array("id" => $curSection->GetViewId(), "content" => $this->{$this->aSectionItemTemplates[$curSection->GetId()]}($params)->toArray());
+                    $content = array("id" => $curSection->GetViewId(), "content" => $this->{$this->aSectionItemTemplates[$idSection]}($params)->toArray());
                      
                     //Codifica il contenuto in base64
                      $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
@@ -2993,42 +2993,38 @@ class AA_GenericModule
                      //AA_Log::Log(__METHOD__." - tasklog: ".$sTaskLog,100);
                      return true;
                 }
-            }
-        }
 
-        //templates sezione dettaglio
-        if($params['section']==static::AA_ID_SECTION_DETAIL)
-        {
-            if(is_array($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL]))
-            {
-                foreach($this->aSectionItemTemplates[static::AA_ID_SECTION_DETAIL] as $key=>$val)
+                if(is_array($this->aSectionItemTemplates[$idSection]))
                 {
-                    if($params['object']==$val['id'] && method_exists($this, $val['template']))
+                    foreach($this->aSectionItemTemplates[$idSection] as $key=>$val)
                     {
-                        //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
-                        $object=null;
-                        if(isset($params['id']) && AA_Platform::IsRegistered($this->GetId(),$this->oUser))
+                        if($params['object']==$val['id'] && method_exists($this, $val['template']))
                         {
-                            $platform=AA_Platform::GetInstance();
-                            $module=$platform->GetModule($this->GetId());
-                            if(class_exists($module['class']))
+                            //AA_Log::Log(__METHOD__." - object id: ".$_REQUEST['object'],100);
+                            $object=null;
+                            if(isset($params['id']) && AA_Platform::IsRegistered($this->GetId(),$this->oUser))
                             {
-                                $object=new $module['class']($params['id']);
+                                $platform=AA_Platform::GetInstance();
+                                $module=$platform->GetModule($this->GetId());
+                                if(class_exists($module['class']))
+                                {
+                                    $object=new $module['class']($params['id']);
+                                }
+                                else
+                                {
+                                    AA_Log::Log(__METHOD__." - classe non trovata: ".$module['class'],100);
+                                }
                             }
-                            else
+                            
+                            if($object !=null)
                             {
-                                AA_Log::Log(__METHOD__." - classe non trovata: ".$module['class'],100);
+                                $content = array("id" =>$val['id'], "content" => $this->{$val['template']}($object)->toArray());
+                                $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+                                $task->SetContent(json_encode($content),true);
+                                return true;    
                             }
                         }
-                        
-                        if($object !=null)
-                        {
-                            $content = array("id" =>$val['id'], "content" => $this->{$val['template']}($object)->toArray());
-                            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-                            $task->SetContent(json_encode($content),true);
-                            return true;    
-                        }
-                    }
+                    }    
                 }    
             }
         }
@@ -3791,6 +3787,325 @@ class AA_GenericModule
                 if(!$bDefaultChangeEventAdded)
                 {
                     $multiview->AddEventHandler("onViewChange","onDetailViewChange",null,$this->GetId());
+                    $bDefaultChangeEventAdded=true;
+                }
+            }
+            else
+            {
+                if(isset($curTab['template']))
+                {
+                    if (method_exists($this, $curTab['template']) && $curTab['template'] != "" && is_string($curTab['template'])) {
+                        $multiview->addCell($this->{$curTab['template']}($object));
+                    }    
+                }    
+            }
+        }
+        $content->AddRow($multiview);
+
+        return $content;
+    }
+
+    //Template Generic Tabbed Section
+    public function TemplateGenericTabbedSection($id_section="",$object=null,$params=null)
+    {
+        $section=null;
+        if(isset($this->sections[$id_section]))
+        {
+            $section=$this->sections[$id_section];
+            $id=$section->GetViewId();
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - sezione non trovata: ".$id_section,100);
+            return new AA_JSON_Template_Template("GenericVoidTemplate_".uniqid(),array("type"=>"clean","template"=>"<div style='display:flex; justify-content: center;align-items: center;width:100%;height:100%'>&nbsp;</div>"));
+        }
+
+        if($object==null && is_array($params) && isset($params['id']))
+        {
+            $objectClass = static::AA_MODULE_OBJECTS_CLASS;
+            if (class_exists($objectClass)) {
+                $object = new $objectClass($params['id'], $this->oUser);
+            }
+        }
+
+        $id_org=uniqid();
+        $details="";
+        if(isset($params['details'])) $details=$params['details'];
+
+        $status="";
+        if(isset($params['status'])) $details=$params['status'];
+
+        if($object != null && $object instanceof AA_Object_V2)
+        {
+            $id_org = $object->GetID();
+
+            if(!isset($params['status']))
+            {
+                #Stato
+                if ($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) $status = "bozza";
+                if ($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status = "pubblicata";
+                if ($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status .= " revisionata";
+                if ($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status .= " cestinata";
+                $status = "<span class='AA_Label AA_Label_LightBlue' title='Stato oggetto'>" . $status . "</span>";
+            }
+
+            if(!isset($params['details']))
+            {
+                #Dettagli
+                if ($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") {
+                    //Aggiornamento
+                    $details = "<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;" . $object->GetAggiornamento() . "</span>&nbsp;";
+
+                    //utente
+                    $lastLog = $object->GetLog()->GetLastLog();
+                    //AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
+                    $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: " . $object->GetId() . "}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
+                    $details .= "</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;" . $object->GetId() . "</span>";
+                } else {
+                    if ($object->GetAggiornamento() != "") $details = "<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;" . $object->GetAggiornamento() . "</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;" . $object->GetId() . "</span>";
+                }
+
+                $perms = $object->GetUserCaps($this->oUser);
+                if($params['readonly']) $perms=AA_Const::AA_PERMS_READ;
+
+                if (($perms & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'oggetto\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
+            }
+        }
+
+        $header = new AA_JSON_Template_Layout($id . "Header" . "_$id_org", array("type" => "clean", "height" => 38, "css" => "AA_SectionContentHeader"));
+
+        $layout_tab=new AA_JSON_Template_Layout($id . "Layout_TabBar" . "_$id_org",array("type"=>"clean","minWidth"=>500));
+        
+        $gravity_tabbar=sizeof($this->aSectionItemTemplates[$id_section]);
+
+        $layout_tab->addCol(new AA_JSON_Template_Generic($id . "TabBar" . "_$id_org", array(
+            "view" => "tabbar",
+            "gravity"=>$gravity_tabbar,
+            "borderless" => true,
+            "value" => $this->aSectionItemTemplates[$id_section][0]['id'],
+            "css" => "AA_Header_TabBar",
+            "multiview" => true,
+            "view_id" => $id . "Multiview" . "_$id_org",
+            "options" => $this->aSectionItemTemplates[$id_section]
+        )));
+
+        $layout_tab->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer","gravity"=>2/$gravity_tabbar)));
+        $header->addCol($layout_tab);
+
+        $header->addCol(new AA_JSON_Template_Generic($id . "Detail" . "_$id_org", array(
+            "view" => "template",
+            "borderless" => true,
+            "css" => "AA_SectionContentHeader",
+            "minWidth" => 500,
+            "template" => "<div style='display: flex; width:100%; height: 100%; justify-content: center; align-items: center;'>#status#<span>&nbsp;&nbsp;</span><span>#detail#</span></div>",
+            "data" => array("detail" => $details, "status" => $status)
+        )));
+
+        $layout_toolbar=new AA_JSON_Template_Layout($id . "Layout_ToolBar" . "_$id_org",array("type"=>"clean","minWidth"=>500));
+
+        $toolbar = new AA_JSON_Template_Toolbar($id . "_Toolbar" . "_$id_org", array(
+            "type" => "clean",
+            "css" => array("background" => "#ebf0fa", "border-color" => "transparent")
+        ));
+
+        if($object != null && $object instanceof AA_Object_V2 && isset($params['common_ctrls']))
+        {
+            $show_action_menu=false;
+            if(isset($params['common_ctrls']['publish']))
+            {
+                //Inserisce il pulsante di pubblicazione
+                if (($perms & AA_Const::AA_PERMS_PUBLISH) > 0 && ($object->GetStatus() & AA_Const::AA_STATUS_BOZZA) > 0 && ($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) == 0) {
+                    $menu_data[] = array(
+                        "id" => $this->id . "_Publish" . "_$id_org",
+                        "value" => "Pubblica",
+                        "tooltip" => "Pubblica l'elemento",
+                        "icon" => "mdi mdi-certificate",
+                        "module_id" => $this->id,
+                        "handler" => "sectionActionMenu.publish",
+                        "handler_params" => array("task" => static::AA_UI_TASK_PUBLISH_DLG, "object_id" => $object->GetID())
+                    );
+                    $show_action_menu=true;
+                }
+            }
+
+            if(isset($params['common_ctrls']['reassign']))
+            {
+                //Inserisce il pulsante di riassegnazione ripristino
+                if (($perms & AA_Const::AA_PERMS_WRITE) > 0 && ($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) == 0)
+                {
+                    //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
+                    //$menu_spacer=true;
+                    $menu_data[] = array(
+                        "id" => $this->id . "_Reassign" . "_$id_org",
+                        "value" => "Riassegna",
+                        "tooltip" => "Riassegna l'elemento",
+                        "icon" => "mdi mdi-share-all",
+                        "module_id" => $this->id,
+                        "handler" => "sectionActionMenu.reassign",
+                        "handler_params" => array("task" => static::AA_UI_TASK_REASSIGN_DLG, "object_id" => $object->GetID())
+                    );
+                    $show_action_menu=true;
+                }
+            }
+
+            if(isset($params['common_ctrls']['resume']) && ($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) > 0)
+            {
+                $menu_data[] = array(
+                    "id" => $id . "_Resume" . "_$id_org",
+                    "value" => "Ripristina",
+                    "tooltip" => "Ripristina gli elementi selezionati (tutta la lista se non ci sono elementi selezionati)",
+                    "icon" => "mdi mdi-recycle",
+                    "module_id" => $this->id,
+                    "handler" => "sectionActionMenu.resume",
+                    "handler_params" => array("task" => static::AA_UI_TASK_RESUME_DLG, "object_id" => $object->GetID())
+                );
+                $show_action_menu=true;
+            }
+
+            //Inserisce le voci di esportazione
+            //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
+            //$menu_spacer=true;
+            if(isset($params['common_ctrls']['save_as_pdf']))
+            {
+                $menu_data[] = array(
+                    "id" => $id . "_SaveAsPdf" . "_$id_org",
+                    "value" => "Esporta in pdf",
+                    "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file pdf",
+                    "icon" => "mdi mdi-file-pdf",
+                    "module_id" => $this->id,
+                    "handler" => "sectionActionMenu.saveAsPdf",
+                    "handler_params" => array("task" => static::AA_UI_TASK_SAVEASPDF_DLG, "object_id" => $object->GetID())
+                );
+                $show_action_menu=true;
+            }
+
+            if(isset($params['common_ctrls']['save_as_csv']))
+            {
+                $menu_data[] = array(
+                    "id" => $id . "_SaveAsCsv" . "_$id_org",
+                    "value" => "Esporta in csv",
+                    "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file csv",
+                    "icon" => "mdi mdi-file-table",
+                    "module_id" => $this->id,
+                    "handler" => "sectionActionMenu.saveAsCsv",
+                    "handler_params" => array("task" => static::AA_UI_TASK_SAVEASCSV_DLG, "object_id" => $object->GetID())
+                );
+                $show_action_menu=true;
+            }
+            #-------------------------------------
+
+            //Inserisce la voce di eliminazione
+            if (isset($params['common_ctrls']['trash']) && ($perms & AA_Const::AA_PERMS_DELETE) > 0) 
+            {
+                if (($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) == 0) {
+                    //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
+                    //$menu_spacer=true;
+
+                    $menu_data[] = array(
+                        "id" => $id . "_Trash" . "_$id_org",
+                        "value" => "Cestina",
+                        "css" => "AA_Menu_Red",
+                        "tooltip" => "Cestina l'elemento",
+                        "icon" => "mdi mdi-trash-can",
+                        "module_id" => $this->id,
+                        "handler" => "sectionActionMenu.trash",
+                        "handler_params" => array("task" => static::AA_UI_TASK_TRASH_DLG, "object_id" => $object->GetID())
+                    );
+                } else {
+
+                    $menu_data[] = array(
+                        "id" => $id . "_Delete" . "_$id_org",
+                        "value" => "Elimina",
+                        "css" => "AA_Menu_Red",
+                        "tooltip" => "Elimina definitivamente l'elemento",
+                        "icon" => "mdi mdi-trash-can",
+                        "module_id" => $this->id,
+                        "handler" => "sectionActionMenu.delete",
+                        "handler_params" => array("task" => static::AA_UI_TASK_DELETE_DLG, "object_id" => $object->GetID())
+                    );
+                }
+                $show_action_menu=true;
+            }
+
+            if($show_action_menu)
+            {
+                //Azioni
+                $scriptAzioni = "try{"
+                    . "let azioni_btn=$$('" . $id . "_Azioni_btn_$id_org');"
+                    . "if(azioni_btn){"
+                    . "let azioni_menu=webix.ui(azioni_btn.config.menu_data);"
+                    . "if(azioni_menu){"
+                    . "azioni_menu.setContext(azioni_btn);"
+                    . "azioni_menu.show(azioni_btn.\$view);"
+                    . "}"
+                    . "}"
+                    . "}catch(msg){console.error('" . $id . "_Azioni_btn_$id_org',this,msg);AA_MainApp.ui.alert(msg);}";
+                $azioni_btn = new AA_JSON_Template_Generic($id . "_Azioni_btn" . "_$id_org", array(
+                    "view" => "button",
+                    "type" => "icon",
+                    "icon" => "mdi mdi-dots-vertical",
+                    "label" => "Azioni",
+                    "align" => "right",
+                    "autowidth" => true,
+                    "menu_data" => new AA_JSON_Template_Generic($id . "_ActionMenu" . "_$id_org", array("view" => "contextmenu", "data" => $menu_data, "module_id" => $this->GetId(), "on" => array("onItemClick" => "AA_MainApp.utils.getEventHandler('onDetailMenuItemClick','" . $this->GetId() . "')"))),
+                    "tooltip" => "Visualizza le azioni disponibili",
+                    "click" => $scriptAzioni
+                ));
+
+                $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+                $toolbar->addElement($azioni_btn);
+                $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 15)));
+            }
+        }
+
+        $layout_toolbar->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+        $layout_toolbar->addCol($toolbar);
+
+        $header->addCol($layout_toolbar);
+
+        //Content box
+        $content = new AA_JSON_Template_Layout(
+            $id,
+            array(
+                "type" => "clean",
+                "name" => $object->GetName(),
+                "filtered" => true
+            )
+        );
+        $content->AddRow($header);
+
+        $multiview = new AA_JSON_Template_Multiview($id . "Multiview" . "_$id_org", array(
+            "type" => "clean",
+            "css" => "AA_Detail_Content"
+        ));
+
+        $bDefaultChangeEventAdded=false;
+        $ChangeViewHandler="onGenericSectionViewChange";
+        if(isset($params['change_view_handler'])) $ChangeViewHandler=$params['change_view_handler'];
+        foreach ($this->aSectionItemTemplates[$id_section] as $curTab) 
+        {
+            if(isset($curTab['enable_preview']))
+            {
+                if(isset($curTab['preview_template']))
+                {
+                    
+                    if (method_exists($this, $curTab['preview_template']) && $curTab['preview_template'] != "" && is_string($curTab['preview_template'])) 
+                    {
+                        $multiview->addCell($this->{$curTab['preview_template']}($object));
+                    } 
+                    else
+                    {
+                        $multiview->addCell(new AA_JSON_Template_Template($curTab['id'],array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));    
+                    }  
+                }
+                else
+                {
+                    $multiview->addCell(new AA_JSON_Template_Template($curTab['id'],array("filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));
+                }
+
+                if(!$bDefaultChangeEventAdded)
+                {
+                    $multiview->AddEventHandler("onViewChange",$ChangeViewHandler,null,$this->GetId());
                     $bDefaultChangeEventAdded=true;
                 }
             }

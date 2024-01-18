@@ -1053,6 +1053,50 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         }
     };
 
+    //evento di cambio pagina sul sezione con multiview
+    this.eventHandlers['defaultHandlers'].onGenericSectionViewChange = async function() 
+    {
+        try 
+        {
+            //console.log("eventHandlers.defaultHandlers.onDetailViewChange", this, arguments);
+            //let oldView=arguments[0];
+            let newView=arguments[1];
+            if($$(newView))
+            {
+                let config=$$(newView).config;
+                if(!config.preview)
+                {
+                    //console.log("eventHandlers.defaultHandlers.onDetailViewChange - la view non è un preview.");
+                    return;
+                }
+                else
+                {
+                    console.log("eventHandlers.defaultHandlers.onGenericSectionViewChange - la view è un preview, carico i dati effettivi.");
+                }
+
+                //Imposta il filtro per l'oggetto
+                if(AA_MainApp.utils.isDefined(AA_MainApp.curModule.curSection))
+                {
+                    let runtimeDetailData=AA_MainApp.curModule.getRuntimeValue(AA_MainApp.curModule.curSection.view_id,"filter_data");
+
+                    AA_MainApp.curModule.setRuntimeValue(newView, "filter_data", runtimeDetailData);
+    
+                    //imposta l'attributo filtered per passare i dati alla funzione di recupero
+                    $$(newView).define("filtered", true);    
+                }
+
+                $$(newView).disable();
+
+                //$view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});';
+                await AA_MainApp.curModule.refreshUiObject(newView,true,true);
+            }
+            return true;
+        } catch (msg) {
+            console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onGenericSectionViewChange", msg);
+            return false;
+        }
+    };
+
     //DefaultFormSaveHandler
     this.eventHandlers['defaultHandlers'].saveData = async function(params) {
         try {
