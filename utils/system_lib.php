@@ -3085,12 +3085,13 @@ class AA_GenericModule
                 //Codifica il contenuto in base64
                 $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
                 $task->SetLog($sTaskLog);
-                
+
                 return true;
             }
         }
 
-        switch ($params[$param]) {
+        switch ($params[$param]) 
+        {
             case "Bozze":
             case static::AA_UI_PREFIX . "_" . static::AA_UI_BOZZE_BOX:
                 $template = $this->TemplateSection_Bozze($params);
