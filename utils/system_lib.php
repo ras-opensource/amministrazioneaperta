@@ -1237,6 +1237,40 @@ class AA_GenericModule
         else return new AA_GenericModuleSection();
     }
 
+    //templates degli oggetti
+    protected $aObjectTemplates=array();
+    public function AddObjectTemplate($idObject="",$template="")
+    {
+        if($idObject!="")
+        {
+            if(method_exists($this,$template))
+            {
+                $this->aObjectTemplates[$idObject]=$template;
+                return true;
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - Template non trovato (".$template.") per l'oggetto: ".$idObject,100);
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - id oggetto non valido ".$idObject,100);
+        }
+        
+        return false;
+    }
+    public function DelObjectTemplate($idObject="")
+    {
+        if($idObject !="" && isset($this->aObjectTemplates[$idObject])) unset($this->aObjectTemplates[$idObject]);
+    }
+    public function GetObjectTemplate($idObject="")
+    {
+        if($idObject !="" && isset($this->aObjectTemplates[$idObject])) return $this->aObjectTemplates[$idObject];
+
+        return "";
+    }
+
     //Restituisce le sezioni del modulo
     public function GetSections($format = "raw")
     {
@@ -3038,6 +3072,21 @@ class AA_GenericModule
                         }
                     }    
                 }    
+            }
+        }
+
+        //object templates
+        foreach($this->aObjectTemplates as $idObject=>$curTemplate)
+        {
+            if($params['object']==$idObject && is_string($curTemplate))
+            {
+                $content = array("id" => $idObject, "content" => $this->{$curTemplate}($params)->toArray());
+                    
+                //Codifica il contenuto in base64
+                $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
+                $task->SetLog($sTaskLog);
+                
+                return true;
             }
         }
 
