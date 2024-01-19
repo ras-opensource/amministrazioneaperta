@@ -3070,15 +3070,15 @@ class AA_GenericModule
                                 return true;    
                             }
                         }
-                    }    
-                }    
+                    }
+                }
             }
         }
 
         //object templates
         foreach($this->aObjectTemplates as $idObject=>$curTemplate)
         {
-            if($params['object']==$idObject && is_string($curTemplate))
+            if($params['object']==$idObject && is_string($curTemplate) && method_exists($this,$curTemplate))
             {
                 $content = array("id" => $idObject, "content" => $this->{$curTemplate}($params)->toArray());
                     
