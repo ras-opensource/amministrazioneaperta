@@ -2982,6 +2982,18 @@ class AA_GenericModule
         {
             if($idSection==$params[$param] || $idSection==$params['section'])
             {
+                if($curSection->GetTemplate() != "" && method_exists($this,$curSection->GetTemplate()))
+                {
+                    $content = array("id" => $curSection->GetViewId(), "content" => $this->{$curSection->GetTemplate()}($params)->toArray());
+                     
+                    //Codifica il contenuto in base64
+                     $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
+                     $task->SetLog($sTaskLog);
+
+                     //AA_Log::Log(__METHOD__." - tasklog: ".$sTaskLog,100);
+                     return true;
+                }
+
                 if(is_string($this->aSectionItemTemplates[$idSection]) && method_exists($this,$this->aSectionItemTemplates[$idSection]))
                 {
                     $content = array("id" => $curSection->GetViewId(), "content" => $this->{$this->aSectionItemTemplates[$idSection]}($params)->toArray());
@@ -3072,7 +3084,7 @@ class AA_GenericModule
     //Task section layout (da specializzare)
     public function Task_GetSectionContent($task)
     {
-        //verifica se è presente un template per la sezione impostata
+        /*//verifica se è presente un template per la sezione impostata
         if($_REQUEST['section'] !="" && isset($this->aSectionItemTemplates[$_REQUEST['section']]))
         {
             $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
@@ -3088,7 +3100,7 @@ class AA_GenericModule
                     return true;
                 }
             }
-        }
+        }*/
 
         return $this->Task_GetGenericObjectContent($task, $_REQUEST, "section");
     }
@@ -4295,6 +4307,16 @@ class AA_GenericModuleSection
         $this->detail = $bVal;
     }
 
+    protected $template = "";
+    public function SetTemplate($val="")
+    {
+        $this->template=$val;
+    }
+    public function GetTemplate()
+    {
+        return $this->template;
+    }
+
     protected $navbar_template = "{}";
     public function SetNavbarTemplate($template = "{}")
     {
@@ -4338,7 +4360,7 @@ class AA_GenericModuleSection
         return base64_encode($this->toString());
     }
 
-    public function __construct($id = "AA_GENERIC_MODULE_SECTION", $name = "section name", $navbar = false, $view_id = "AA_Section_Content_Box", $module_id = "AA_GENERIC_MODULE", $default = false, $refresh_view = true, $detail = false, $valid = false, $icon="")
+    public function __construct($id = "AA_GENERIC_MODULE_SECTION", $name = "section name", $navbar = false, $view_id = "AA_Section_Content_Box", $module_id = "AA_GENERIC_MODULE", $default = false, $refresh_view = true, $detail = false, $valid = false, $icon="",$template="")
     {
         $this->name = $name;
         $this->id = $id;
@@ -4350,6 +4372,7 @@ class AA_GenericModuleSection
         $this->refresh_view = $refresh_view;
         $this->detail = $detail;
         $this->icon = $icon;
+        $this->template=$template;
     }
 }
 #----------------------------------------------
