@@ -1024,7 +1024,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 if(!config.preview)
                 {
                     //console.log("eventHandlers.defaultHandlers.onDetailViewChange - la view non è un preview.");
-                    return;
+                    if(!config.refreshOnView) return;
                 }
                 else
                 {
@@ -1067,7 +1067,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 if(!config.preview)
                 {
                     //console.log("eventHandlers.defaultHandlers.onDetailViewChange - la view non è un preview.");
-                    return;
+                    if(!config.refreshOnView) return;
                 }
                 else
                 {

@@ -917,7 +917,7 @@ class AA_GenericWindowTemplate
     }
 
     private $title = "finestra di dialogo";
-    public function __construct($id = "", $title = "", $module = "")
+    public function __construct($id = "", $title = "", $module = "",$bodyProps=null)
     {
         if ($id != "") $this->id = $id;
         if ($title != "") $this->title = $title;
@@ -928,7 +928,10 @@ class AA_GenericWindowTemplate
 
         $script = 'try{if($$(\'' . $this->id . '_Wnd\').config.fullscreen){webix.fullscreen.exit();$$(\'' . $this->id . '_btn_resize\').define({icon:"mdi mdi-fullscreen", tooltip:"Mostra la finestra a schermo intero"});$$(\'' . $this->id . '_btn_resize\').refresh();}else{webix.fullscreen.set($$(\'' . $this->id . '_Wnd\'));$$(\'' . $this->id . '_btn_resize\').define({icon:"mdi mdi-fullscreen-exit", tooltip:"Torna alla visualizzazione normale"});$$(\'' . $this->id . '_btn_resize\').refresh();}}catch(msg){console.error(msg);}';
 
-        $this->body = new AA_JSON_Template_Layout($this->id . "_Content_Box", array("type" => "clean"));
+        if(!is_array($bodyProps)) $bodyProps=array("type" => "clean");
+        if(!isset($bodyProps['type']))$bodyProps['type']="clean";
+        
+        $this->body = new AA_JSON_Template_Layout($this->id . "_Content_Box", $bodyProps);
         $this->head = new AA_JSON_Template_Generic($this->id . "_head", array("css" => "AA_Wnd_header_box", "view" => "toolbar", "height" => "38", "elements" => array(
             array("id" => $this->id . "_Title", "css" => "AA_Wnd_title", "template" => $this->title),
             array("id" => $this->id . "_btn_resize", "view" => "icon", "icon" => "mdi mdi-fullscreen", "css" => "AA_Wnd_btn_fullscreen", "width" => 24, "height" => 24, "tooltip" => "Mostra la finestra a schermo intero", "click" => $script),

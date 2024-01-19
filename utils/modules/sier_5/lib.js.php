@@ -187,6 +187,58 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//----------------------------------------------  Funzioni di reportistica  ----------------------------------------------
+var timeoutRisultati=null;
+//Inizializza l'app dei risultati
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].StartRisultatiApp = async function() {
+    try 
+    {
+        //build UI if not present
+        if(!$$("<?php echo AA_SierModule::AA_ID_APP?>"))
+        {
+            let result = await AA_VerboseTask("GetSierWebApp", <?php echo AA_SierModule::AA_ID_MODULE?>.taskManager);
+            if (result.status.value == 0) 
+            {
+                //---------  Show App  --------------
+                let wnd = webix.ui(result.content.value);
+                wnd.show();
+                //-----------------------------------
+
+                //-------- refresh data  -----------
+                let url=arguments[0]['url'];
+                <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData(url);
+                if(timeoutRisultati)
+                {
+                    clearTimeout(timeoutRisultati);
+                }
+                timeoutRisultati=setTimeout(<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData,10000,url);
+                //-----------------------------------
+            }
+            else
+            {
+                console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.StartRisultatiApp",result.error.value);
+            }
+        }
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.StartRisultatiApp", msg);
+    }
+};
+
+//Rinfresca i dati sui risultati
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData = async function(feed_url) {
+    try 
+    {
+        webix.ajax().get(feed_url).then(function(data)
+        {
+            let risultati=data.json();
+            console.log("eventHandlers.defaultHandlers.RefreshRisultatiData", risultati);
+        });
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.RefreshRisultatiData", msg);
+    }
+};
+
+//------------------------------------------------------------------------------------------------------------------------
 <?php
 //parte operatori comunali
 if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1)

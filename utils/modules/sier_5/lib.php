@@ -4736,6 +4736,10 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_LAYOUT_COMUNICAZIONI_COMUNALE="ComunicazioniComunaleLayout";
     const AA_UI_TASK_ADDNEWMULTI_DLG="GetSierComuneAddNewMultiDlg";
 
+    //report
+    const AA_UI_WND_REPORT_RISULTATI="ReportRisultatiWnd";
+    const AA_UI_LAYOUT_REPORT_RISULTATI="ReportRisultatiLayout";
+
     //Section id
     const AA_ID_SECTION_OC_LOGIN="OperatoriComunaliLogin";
     const AA_ID_SECTION_OC_DESKTOP= "OperatoriComunaliDesktop";
@@ -4745,10 +4749,14 @@ Class AA_SierModule extends AA_GenericModule
     const AA_UI_DETAIL_LISTE_BOX = "Liste_Box";
     const AA_UI_DETAIL_CANDIDATI_BOX = "Candidati_Box";
     const AA_UI_DETAIL_COMUNI_BOX = "Comuni_Box";
+    const AA_UI_DETAIL_REPORT_BOX = "Report_Box";
     const AA_UI_DETAIL_CRUSCOTTO_BOX = "Cruscotto_Box";
     const AA_UI_DETAIL_ALLEGATI_BOX = "Allegati_Box";
     const AA_UI_SECTION_OC_LOGIN = "OperatoriComunaliLoginBox";
     const AA_UI_SECTION_OC_DESKTOP= "OperatoriComunaliDesktopBox";
+
+    //Risultati App id
+    const AA_ID_APP= "SierWebApp";
 
     protected $bOperatoreComunaleInterface=false;
     public function IsOperatoreComunaleUIEnabled()
@@ -4938,6 +4946,9 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierFeedCandidati");
             $taskManager->RegisterTask("GetSierListaCandidati");
 
+            //sier web app
+            $taskManager->RegisterTask("GetSierWebApp");
+            
             //template dettaglio
             $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
                 array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"),
@@ -7235,8 +7246,12 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['finestra_temporale_cert_corpo_elettorale']) && $_REQUEST['finestra_temporale_cert_corpo_elettorale'] >= 0) $cp['finestra_temporale_cert_corpo_elettorale']=intVal($_REQUEST['finestra_temporale_cert_corpo_elettorale']);
         else $cp['finestra_temporale_cert_corpo_elettorale']=0;
 
+        //url feed pubblico risultati
+        if(isset($_REQUEST['url_feed_risultati']) && $_REQUEST['url_feed_risultati'] > 0) $cp['url_feed_risultati']=$_REQUEST['url_feed_risultati'];
+        else $cp['url_feed_risultati']="";
+
         $object->SetControlPannel($cp);
-        if(!$object->Update($this->oUser,true,"Modifica pannelo di controllo"))
+        if(!$object->Update($this->oUser,true,"Modifica pannello di controllo"))
         {        
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento del pannello di controllo. (".AA_Log::$lastErrorLog.")</error>";
@@ -10266,7 +10281,11 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($cp['finestra_temporale_cert_corpo_elettorale']) && $cp['finestra_temporale_cert_corpo_elettorale']>0)$form_data['finestra_temporale_cert_corpo_elettorale']=$cp['finestra_temporale_cert_corpo_elettorale'];
     
             $form_data['abilita_cert_corpo_elettorale']=0;
-            if(isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)$form_data['abilita_cert_corpo_elettorale']=$cp['abilita_cert_corpo_elettorale'];    
+            if(isset($cp['abilita_cert_corpo_elettorale']) && $cp['abilita_cert_corpo_elettorale']>0)$form_data['abilita_cert_corpo_elettorale']=$cp['abilita_cert_corpo_elettorale'];
+
+            $form_data['url_feed_risultati']="";
+            if(isset($cp['url_feed_risultati']) && $cp['url_feed_risultati']>0)$form_data['url_feed_risultati']=$cp['url_feed_risultati'];    
+            $section->AddTextField("url_feed_risultati","Url pubblico feed risultati",array("labelWidth"=>190));
         }
       
         $wnd=new AA_GenericFormDlg($id, "Pannello di controllo", $this->id,$form_data,$form_data);
@@ -10700,7 +10719,21 @@ Class AA_SierModule extends AA_GenericModule
 
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
+            $cp=$object->GetControlPannel();
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_ControlPannel",array("height"=>32,"type"=>"clean","borderless"=>true));
+            $modify_btn=new AA_JSON_Template_Generic($id."_ShowReports_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-account-search",
+                 "label"=>"Reports",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Consulta la reportistica sui risultati delle consultazioni",
+                 "click"=>"AA_MainApp.utils.callHandler('StartRisultatiApp', {url:\"".addslashes($cp['url_feed_risultati'])."\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+            $toolbar->AddElement(new AA_JSON_Template_Generic());
+            $toolbar->AddElement($modify_btn);  
+
             $modify_btn=new AA_JSON_Template_Generic($id."_GeneraleOtions_btn",array(
                 "view"=>"button",
                  "type"=>"icon",
@@ -10711,7 +10744,7 @@ Class AA_SierModule extends AA_GenericModule
                  "tooltip"=>"Pannello di controllo",
                  "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierControlPannelDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
             ));
-            $toolbar->AddElement(new AA_JSON_Template_Generic());
+            
             $toolbar->AddElement($modify_btn);    
         }
         else $toolbar=null;
@@ -13648,6 +13681,17 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         return $this->Task_GenericAddNew($task,$_REQUEST);
+    }
+
+    //Task Aggiungi provvedimenti
+    public function Task_GetSierWebApp($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierReportViewDlg(),true);
+        
+        return true;
     }
 
     //Task aggiunta organismo
@@ -21699,6 +21743,64 @@ Class AA_SierModule extends AA_GenericModule
         $layout=$this->Template_GetSierComuneRisultatiViewLayout($object,$comune,$id);
         $wnd->AddView($layout);
         return $wnd;
+    }
+
+    //Template dlg report
+    public function Template_GetSierReportViewDlg($object=null,$circoscrizione=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_REPORT_RISULTATI;
+        $wnd = new AA_GenericWindowTemplate($id, "Report risultati", $this->id,array("css"=>array("background-color"=>"#f4f5f9")));
+        $wnd->SetWidth(380);
+
+        //dettaglio visualizzazione
+        $form=new AA_JSON_Template_Form($id."_Form",array(
+                "elementsConfig"=>array("labelWidth"=>180, "labelAlign"=>"left", "labelPosition"=>"top","bottomPadding"=>15),
+                "padding"=>15,
+                "css"=>array("background-color"=>"transparent !important")
+            ));
+        $form_layout=new AA_JSON_Template_Layout($id."_FormContentBox",array("type"=>"space","css"=>array("border-radius"=>"15px")));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("type"=>"clean","borderless"=>true));
+        
+        //scrolltext
+        $toolbar->addElement(new AA_JSON_Template_Generic($id."_DetailLevelTitle",array("view"=>"label","autowidth"=>true,"label"=>"<div class='scrollTextFromLeft'>Dettaglio per tutta la Regione Sardegna</div>")));
+        $toolbar->addElement(new AA_JSON_Template_Generic(""));
+        $toolbar->addElement(new AA_JSON_Template_Generic($this->id . "_Detail_btn", array(
+            "view" => "button",
+            "type" => "icon",
+            "icon" => "mdi mdi-text-box-search",
+            "label" => "",
+            "width"=>38,
+            "tooltip" => "Cambia il livello di dettaglio dei risultati"
+        )));
+        //$form_layout->AddRow($toolbar);
+        //---------------
+
+        //search input
+        $form_layout->AddRow(new AA_JSON_Template_Search($id."_FilterParams",array("label"=>"Livello di dettaglio","value"=>"tutta la Regione Sardegna", "tooltip"=>"Inserisci o seleziona il comune o la circoscrizione di cui vuoi visualizzare il dettaglio.","clear"=>true,"bottomLabel"=>"Inserisci le iniziali del comune o della circoscrizione.")));
+        $form->AddRow($form_layout);
+        //---------------
+
+        $wnd->AddView($form);
+        //-------------------------
+
+        $layout=$this->Template_GetSierReportViewLayout($object,$circoscrizione,$comune,$id);
+        $wnd->AddView($layout);
+        return $wnd;
+    }
+
+    //layout dlg report
+    public function Template_GetSierReportViewLayout($object=null,$circoscrizione=null,$comune=null,$id="")
+    {
+        $id.="_".static::AA_UI_LAYOUT_REPORT_RISULTATI;
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $multiview = new AA_JSON_Template_Multiview($id . "Multiview", array("type" =>"clean"));
+        
+        $multiview->addCell(new AA_JSON_Template_Generic());
+
+        $layout->AddRow($multiview);
+        return $layout;
     }
  
     //Template dlg affluenza user
