@@ -573,6 +573,11 @@ div.AA_Footer_Gradient {
     background: #dadee0 !important;
 }
 
+.AA_DataTable_Row_AlternateColor {
+    background-color: #f0f0f0 !important;
+}
+
+
 .AA_DataTable_Ops {
     display: flex;
     justify-content: space-between;
@@ -874,6 +879,38 @@ div.AA_Footer_Gradient {
       -moz-transform: translateX(100%);
       -webkit-transform: translateX(100%);
       transform: translateX(100%);
+    }
+    to {
+      -moz-transform: translateX(-100%);
+      -webkit-transform: translateX(-100%);
+      transform: translateX(-100%);
+    }
+}
+
+.scrollTextFromLeftMobile {
+    /* animation properties */
+    -moz-animation: ScrollFromLeftAnimationMobile 15s linear infinite;
+    -webkit-animation: ScrollFromLeftAnimationMobile 15s linear infinite;
+    animation: ScrollFromLeftAnimationMobile 15s linear infinite;
+  }
+  
+  /* for Firefox */
+  @-moz-keyframes ScrollFromLeftAnimationMobile {
+    from { -moz-transform: translateX(100vw); }
+    to { -moz-transform: translateX(-100%); }
+  }
+  
+  /* for Chrome */
+  @-webkit-keyframes ScrollFromLeftAnimationMobile {
+    from { -webkit-transform: translateX(100vw); }
+    to { -webkit-transform: translateX(-100%); }
+  }
+  
+  @keyframes ScrollFromLeftAnimationMobile {
+    from {
+      -moz-transform: translateX(100vw);
+      -webkit-transform: translateX(100vw);
+      transform: translateX(vw);
     }
     to {
       -moz-transform: translateX(-100%);

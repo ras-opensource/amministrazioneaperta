@@ -21749,40 +21749,19 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierReportViewDlg($object=null,$circoscrizione=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_REPORT_RISULTATI;
-        $wnd = new AA_GenericWindowTemplate($id, "Report risultati", $this->id,array("css"=>array("background-color"=>"#f4f5f9")));
+        $wnd = new AA_GenericWindowTemplate($id, "Report affluenza e risultati", $this->id,array("css"=>array("background-color"=>"#f4f5f9")));
         $wnd->SetWidth(380);
 
-        //dettaglio visualizzazione
-        $form=new AA_JSON_Template_Form($id."_Form",array(
-                "elementsConfig"=>array("labelWidth"=>180, "labelAlign"=>"left", "labelPosition"=>"top","bottomPadding"=>15),
-                "padding"=>15,
-                "css"=>array("background-color"=>"transparent !important")
-            ));
-        $form_layout=new AA_JSON_Template_Layout($id."_FormContentBox",array("type"=>"space","css"=>array("border-radius"=>"15px")));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("type"=>"clean","borderless"=>true));
-        
-        //scrolltext
-        $toolbar->addElement(new AA_JSON_Template_Generic($id."_DetailLevelTitle",array("view"=>"label","autowidth"=>true,"label"=>"<div class='scrollTextFromLeft'>Dettaglio per tutta la Regione Sardegna</div>")));
-        $toolbar->addElement(new AA_JSON_Template_Generic(""));
-        $toolbar->addElement(new AA_JSON_Template_Generic($this->id . "_Detail_btn", array(
-            "view" => "button",
-            "type" => "icon",
-            "icon" => "mdi mdi-text-box-search",
-            "label" => "",
-            "width"=>38,
-            "tooltip" => "Cambia il livello di dettaglio dei risultati"
-        )));
-        //$form_layout->AddRow($toolbar);
-        //---------------
-
-        //search input
-        $form_layout->AddRow(new AA_JSON_Template_Search($id."_FilterParams",array("label"=>"Livello di dettaglio","value"=>"tutta la Regione Sardegna", "tooltip"=>"Inserisci o seleziona il comune o la circoscrizione di cui vuoi visualizzare il dettaglio.","clear"=>true,"bottomLabel"=>"Inserisci le iniziali del comune o della circoscrizione.")));
-        $form->AddRow($form_layout);
-        //---------------
-
-        $wnd->AddView($form);
-        //-------------------------
-
+        $layout_tab=new AA_JSON_Template_Generic($id . "TabBar", array(
+            "view" => "tabbar",
+            "borderless" => true,
+            "value" => $id . "_".static::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox",
+            "css" => "AA_Header_TabBar",
+            "multiview" => true,
+            "view_id" => $id . "_".static::AA_UI_LAYOUT_REPORT_RISULTATI."_Multiview",
+            "options" => array(array("id"=>$id . "_".static::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox","value"=>"Affluenza"),array("value"=>"Risultati","id"=>$id . "_".static::AA_UI_LAYOUT_REPORT_RISULTATI."_PresidentiBox"))
+        ));
+        $wnd->AddView($layout_tab);
         $layout=$this->Template_GetSierReportViewLayout($object,$circoscrizione,$comune,$id);
         $wnd->AddView($layout);
         return $wnd;
@@ -21793,11 +21772,53 @@ Class AA_SierModule extends AA_GenericModule
     {
         $id.="_".static::AA_UI_LAYOUT_REPORT_RISULTATI;
 
-        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","filtered"=>true,"filter_id"=>$id));
         
         $multiview = new AA_JSON_Template_Multiview($id . "Multiview", array("type" =>"clean"));
+        $multiview->AddEventHandler("onViewChange","SierWebAppRefreshUi",null,$this->GetId());
+
+        //Aggiornamento
+        //$multiview->addCell(new AA_JSON_Template_Template($id."_AggiornamentoBox",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"preview"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));
         
-        $multiview->addCell(new AA_JSON_Template_Generic());
+        //--------  Affluenza  ----------
+        $layout_affluenza=new AA_JSON_Template_Layout($id."_AffluenzaBox",array("type"=>"clean"));
+        $template_content="<div id='".$id."_AffluenzaContent'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
+        $template_content.="</div>";
+        $template_footer="<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>";
+
+        $layout_affluenza->AddRow(new AA_JSON_Template_Template($id."_Affluenza",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>$template_content)));
+        $layout_affluenza->AddRow(new AA_JSON_Template_Template($id."_Affluenza_Footer",array("height"=>24,"css"=>array("background-color"=>"#3186ac","color"=>"#fff","text-transform"=>"uppercase"),"filtered"=>true,"template"=>$template_footer,"data"=>array("footer"=>"&nbsp;"))));
+        $multiview->addCell($layout_affluenza);
+        //-------------------------------
+
+        //Risultati presidenti
+        $layout_presidenti=new AA_JSON_Template_Layout($id."_PresidentiBox",array("type"=>"clean"));
+        //dettaglio visualizzazione
+        $form=new AA_JSON_Template_Form($id."_Form",array(
+            "elementsConfig"=>array("labelWidth"=>180, "labelAlign"=>"left", "labelPosition"=>"top","bottomPadding"=>15),
+            "padding"=>15,
+            "css"=>array("background-color"=>"transparent !important")
+        ));
+        $form_layout=new AA_JSON_Template_Layout($id."_FormContentBox",array("type"=>"space", "css"=>array("border-radius"=>"15px")));
+        $form_layout->AddRow(new AA_JSON_Template_Search($id."_PresidentiFilterParams",array("label"=>"Livello di dettaglio","value"=>"tutta la Regione Sardegna", "tooltip"=>"Inserisci o seleziona il comune o la circoscrizione di cui vuoi visualizzare il dettaglio.","clear"=>true,"bottomLabel"=>"Inserisci le iniziali del comune o della circoscrizione.")));
+        $form->AddRow($form_layout);
+        $layout_presidenti->AddRow($form);
+        $template_content="<div id='".$id."_PresidentiContent'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
+        $template_content.="</div>";
+        $template_footer="<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>";
+
+        $layout_presidenti->AddRow(new AA_JSON_Template_Template($id."_Presidenti",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>$template_content)));
+        $layout_presidenti->AddRow(new AA_JSON_Template_Template($id."_Presidenti_Footer",array("height"=>24,"css"=>array("background-color"=>"#3186ac","color"=>"#fff","text-transform"=>"uppercase"),"filtered"=>true,"template"=>$template_footer,"data"=>array("footer"=>"&nbsp;"))));
+
+        $multiview->addCell($layout_presidenti);
+        //---------------
+
+
+        //Risultati Coalizione presidente
+        $multiview->addCell(new AA_JSON_Template_Template($id."_CoalizioneBox",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));
+
+        //Risultati preferenze candidati di lista
+        $multiview->addCell(new AA_JSON_Template_Template($id."_CandidatiBox",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));
 
         $layout->AddRow($multiview);
         return $layout;
