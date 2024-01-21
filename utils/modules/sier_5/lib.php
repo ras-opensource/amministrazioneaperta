@@ -1807,14 +1807,19 @@ Class AA_Sier extends AA_Object_V2
                     if(!isset($feed['stats']['regionale']['affluenza'][$giornata])) 
                     {
                         $aggiornamento=$now;
-                        if($aggiornamento>$giornata)$aggiornamento=$giornata." 07:00:00";
+                        if($aggiornamento>$giornata) $aggiornamento=$giornata." 07:00:00";
                         $feed['stats']['regionale']['affluenza'][$giornata]=array(
                             "aggiornamento"=>$aggiornamento,
                             "ore_12"=>array("count"=>0,"percent"=>0),
                             "ore_19"=>array("count"=>0,"percent"=>0),
                             "ore_22"=>array("count"=>0,"percent"=>0));
                     }
-                    if(isset($feedComune['affluenza'][$giornata]['aggiornamento'])) $feed['stats']['regionale']['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
+
+                    if(isset($feedComune['affluenza'][$giornata]['aggiornamento']) && ($aggiornamento_generale=="" || $feedComune['affluenza'][$giornata]['aggiornamento']>$aggiornamento_generale))
+                    {
+                        $aggiornamento_generale=$feedComune['affluenza'][$giornata]['aggiornamento'];
+                        $feed['stats']['regionale']['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
+                    }
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
@@ -1830,7 +1835,11 @@ Class AA_Sier extends AA_Object_V2
                             "ore_22"=>array("count"=>0,"percent"=>0));
                     }
 
-                    if(isset($feedComune['affluenza'][$giornata]['aggiornamento'])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
+                    if(isset($feedComune['affluenza'][$giornata]['aggiornamento']) && (!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']) || $feedComune['affluenza'][$giornata]['aggiornamento']>$feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']))
+                    {
+                        $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
+                    }
+
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
@@ -16508,10 +16517,6 @@ Class AA_SierModule extends AA_GenericModule
     
         header('Content-Type: application/json');
         die(json_encode($object->BuildRisultatiAffluenzaFeed()));
-
-        //$task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        //$task->SetContent($this->Template_GetSierComuneOperatoriViewDlg($object,$comune),false);
-        return true;
     }
 
     //Task feed candidati
@@ -16530,10 +16535,6 @@ Class AA_SierModule extends AA_GenericModule
     
         header('Content-Type: application/json');
         die(json_encode($object->BuildCandidatiFeed()));
-
-        //$task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        //$task->SetContent($this->Template_GetSierComuneOperatoriViewDlg($object,$comune),false);
-        return true;
     }
 
     //Task risultati Comune view
