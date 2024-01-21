@@ -190,13 +190,15 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
 //----------------------------------------------  Funzioni di reportistica  ----------------------------------------------
 var AA_SierWebAppParams={
     affluenza:{
-        livello_dettaglio:0,
-        livello_dettaglio_label:"Tutta la Regione Sardegna",
-        data: null,
-        view_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox"?>",
-        container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaContent"?>",
-        realtime_container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaRealtimeContent"?>",
-        footer_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_Affluenza_Footer"?>"
+        regionale:
+        {
+            data: null,
+            view_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox"?>",
+            container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaContent"?>",
+            realtime_container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaRealtimeContent"?>",
+            footer_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_Affluenza_Footer"?>",
+            aggiornamento:null
+        }
     },
     risultati:{
         livello_dettaglio:0,
@@ -227,17 +229,22 @@ var AA_SierWebAppParams={
                 let wnd = webix.ui(result.content.value);
                 wnd.show();
 
-                <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppRefreshUi(AA_SierWebAppParams.sezione_corrente,AA_SierWebAppParams.sezione_corrente);
+                //inizializzazione
+                AA_SierWebAppParams.data=null;
+                AA_SierWebAppParams.sezione_corrente="<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox"?>";
+                AA_SierWebAppParams.affluenza.regionale.data=null;
+                AA_SierWebAppParams.affluenza.regionale.aggiornamento=null;
+                <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppRefreshUi(null,AA_SierWebAppParams.sezione_corrente);
                 //----------------------------------
 
                 //-------- refresh data  -----------
                 let url=arguments[0]['url'];
-                <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData(url);
+                <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData(url,true);
                 if(AA_SierWebAppParams.timeoutRisultati)
                 {
                     clearTimeout(AA_SierWebAppParams.timeoutRisultati);
                 }
-                AA_SierWebAppParams.timeoutRisultati=setTimeout(<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData,10000,url);
+                AA_SierWebAppParams.timeoutRisultati=setTimeout(<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData,10000,url,true);
                 //-----------------------------------
             }
             else
@@ -270,26 +277,41 @@ var AA_SierWebAppParams={
             });
         }
 
-        //---------------------------- Affluenza -----------------------------------
-        if(arguments[1]==AA_SierWebAppParams.affluenza.view_id)
-        {    
-            //Rimuove la view precedente
-            if($$(AA_SierWebAppParams.affluenza.realtime_container_id))
+        //---------------------------- Affluenza regione-----------------------------------
+        if(arguments[1]==AA_SierWebAppParams.affluenza.regionale.view_id)
+        {
+            <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppUpdateAffluenzaData();
+        
+            if(AA_SierWebAppParams.affluenza.regionale.aggiornamento)
             {
-                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - rimuovo il box affluenza: "+AA_SierWebAppParams.affluenza.realtime_container_id);
-                $$(AA_SierWebAppParams.affluenza.realtime_container_id).destructor();
+                date=new Date(AA_SierWebAppParams.affluenza.regionale.aggiornamento);
+                aggiornamento=date.toLocaleDateString('it-IT',{
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
 
-                if($$(AA_SierWebAppParams.affluenza.footer_id))
+            //Rimuove la view precedente
+            if($$(AA_SierWebAppParams.affluenza.regionale.realtime_container_id))
+            {
+                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - rimuovo il box affluenza: "+AA_SierWebAppParams.affluenza.regionale.realtime_container_id);
+                $$(AA_SierWebAppParams.affluenza.regionale.realtime_container_id).destructor();
+
+                if($$(AA_SierWebAppParams.affluenza.regionale.footer_id))
                 {
-                    $$(AA_SierWebAppParams.affluenza.footer_id).parse({"footer":"&nbsp;"});
+                    $$(AA_SierWebAppParams.affluenza.regionale.footer_id).parse({"footer":"&nbsp;"});
                 }
             }
 
-            if(AA_SierWebAppParams.affluenza.data==null)
+            if(AA_SierWebAppParams.affluenza.regionale.data==null)
             {
                 let preview_template={
-                    id: AA_SierWebAppParams.affluenza.realtime_container_id,
-                    container: AA_SierWebAppParams.affluenza.container_id,
+                    id: AA_SierWebAppParams.affluenza.regionale.realtime_container_id,
+                    container: AA_SierWebAppParams.affluenza.regionale.container_id,
                     view:"template",
                     borderless: true,
                     css:{"background-color":"#f4f5f9"},
@@ -301,68 +323,78 @@ var AA_SierWebAppParams={
                 return;
             }
 
-            console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - Aggiorno il box affluenza: "+AA_SierWebAppParams.affluenza.view_id);
+            console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - Aggiorno il box affluenza: "+AA_SierWebAppParams.affluenza.regionale.view_id);
 
             //Aggiorna l'affluenza
             let affluenza_cols=[
-                {id:"denominazione",header:["<div style='text-align: center'>Circoscrizione</div>"],"fillspace":true, "sort":"text","css":{"text-align":"center"}},
+                {id:"denominazione",header:["<div style='text-align: left'>Circoscrizione</div>"],"fillspace":true, "sort":"text","css":{"text-align":"left"}},
                 {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "sort":"text","css":{"text-align":"right"}},
-                {id:"percent",header:["<div style='text-align: right'>%</div>"],"width":60, "sort":"text","css":{"text-align":"right"}}
+                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"text","css":{"text-align":"right"}}
             ];
-
-            if(AA_SierWebAppParams.affluenza.livello_dettaglio != 0)
-            {
-                affluenza_cols=[
-                    {id:"denominazione",header:["<div style='text-align: center'>Comune</div>"],"fillspace":true, "sort":"text","css":{"text-align":"center"}},
-                    {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "sort":"text","css":{"text-align":"right"}},
-                    {id:"percent",header:["<div style='text-align: right'>%</div>"],"width":60, "sort":"text","css":{"text-align":"right"}}
-                ];
-            }
             //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - affluenza_cols",affluenza_cols);
     
-            if($$(AA_SierWebAppParams.affluenza.container_id))
+            if($$(AA_SierWebAppParams.affluenza.regionale.container_id))
             {
-                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - implemento il box affluenza: "+AA_SierWebAppParams.affluenza.realtime_container_id);
+                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - implemento il box affluenza: "+AA_SierWebAppParams.affluenza.regionale.realtime_container_id);
                 let votanti_tot=0;
                 let elettori_tot=0;
-                for(let affluenza_data of AA_SierWebAppParams.affluenza.data)
+                for(let affluenza_data of AA_SierWebAppParams.affluenza.regionale.data)
                 {
                     votanti_tot+=affluenza_data.count;
                     elettori_tot+=affluenza_data.elettori;
                 }
                 let votanti_percent=0;
-                if(elettori_tot>0) votanti_percent=new Intl.NumberFormat('it-IT', { maximumSignificantDigits: 1 }).format(Number(votanti_tot/elettori_tot).toFixed(1));
-                if(votanti_percent==0 && votanti_tot>0) votanti_percent='&lt;1';
+                if(elettori_tot>0) votanti_percent=new Intl.NumberFormat('it-IT').format(Number(votanti_tot/elettori_tot).toFixed(1));
+                if(votanti_percent==0 && votanti_tot>0) votanti_percent='&lt;0,1';
+                elettori_tot=new Intl.NumberFormat('it-IT').format(Number(elettori_tot));
+                votanti_tot=new Intl.NumberFormat('it-IT').format(Number(votanti_tot));
                 let affluenza_box={
-                    id: AA_SierWebAppParams.affluenza.realtime_container_id,
+                    id: AA_SierWebAppParams.affluenza.regionale.realtime_container_id,
                     view: "layout",
                     css:{"background-color":"#f4f5f9"},
-                    container: AA_SierWebAppParams.affluenza.container_id,
+                    container: AA_SierWebAppParams.affluenza.regionale.container_id,
                     type:"clean",
                     rows:
                     [
+                        {height: 10},
                         {
                             view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between;font-weight: 700;height:100%'><span style='font-size: 18px; color: #0c467f'>VOTANTI</span><span>#votanti#</span><span style='font-size: 28px; color: #0c467f'>#percent#%</span></div>",
-                            data:{votanti : votanti_tot,percent: votanti_percent},
-                            height: 60,
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='font-size:larger; font-weight:bold; border-bottom:1px solid #b6bcbf;width:70%;text-align: center'>Regione Sardegna</div><div style='display:flex;align-items:center; justify-content:space-between;height:100px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:33%; color: #0c467f; border-right: 1px solid #dadee0'><span>ELETTORI</span><hr style='width:96%;color: #eef9ff'><span>#elettori#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:33%; color: #0c467f'><span>VOTANTI</span><hr style='width:100%; color: #eef9ff'><span>#votanti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:33%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
+                            data:{votanti : votanti_tot,percent: votanti_percent,elettori:elettori_tot},
+                            height: 140,
                             css: {"border-radius": "15px","border-width":"1px 1px 1px !important"}
                         },
                         {height: 10},
                         {
-                            view:"datatable",
-                            scrollX:false,
-                            select:false,
-                            autoheight: true,
-                            css:"AA_Header_DataTable",
-                            scheme:{$change:function(item)
+                            type:"space",
+                            css:{"border-radius":"15px","background-color":"#fff"},
+                            rows:
+                            [
                                 {
-                                    if (item.number%2) item.$css = "AA_DataTable_Row_AlternateColor";
+                                    template:"<div style='font-weight:bold; border-bottom:1px solid #b6bcbf;width:100%;text-align: center'>Dettaglio per circoscrizione</div>",
+                                    autoheight: true,
+                                    borderless: true,
+                                },
+                                {
+                                    view:"datatable",
+                                    scrollX:false,
+                                    select:false,
+                                    autoheight: true,
+                                    css:"AA_Header_DataTable",
+                                    scheme:{$change:function(item)
+                                        {
+                                            if (item.number%2) item.$css = "AA_DataTable_Row_AlternateColor";
+                                        }
+                                    },
+                                    columns:affluenza_cols,
+                                    data: AA_SierWebAppParams.affluenza.regionale.data
+                                },
+                                {
+                                    template:"<div style='font-size:smaller; width:100%;text-align: left'><i>*I valori percentuale sono riferiti agli elettori totali della circoscrizione.</i></div>",
+                                    autoheight: true,
+                                    borderless: true,
                                 }
-                            },
-                            hover: "AA_DataTable_Row_Hover",
-                            columns:affluenza_cols,
-                            data: AA_SierWebAppParams.affluenza.data
+                            ]
                         },
                         {}
                     ]
@@ -371,18 +403,18 @@ var AA_SierWebAppParams={
                 let affluenza_ui=webix.ui(affluenza_box);
                 if(affluenza_ui) 
                 {
-                    console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - visualizzo il box affluenza: "+AA_SierWebAppParams.affluenza.container_id);
+                    console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - visualizzo il box affluenza: "+AA_SierWebAppParams.affluenza.regionale.container_id);
                     affluenza_ui.show();
                 }
 
-                if($$(AA_SierWebAppParams.affluenza.footer_id))
+                if($$(AA_SierWebAppParams.affluenza.regionale.footer_id))
                 {
-                    $$(AA_SierWebAppParams.affluenza.footer_id).parse({"footer":"Dati aggiornati al "+aggiornamento});
+                    $$(AA_SierWebAppParams.affluenza.regionale.footer_id).parse({"footer":"Dati aggiornati al "+aggiornamento});
                 }
             }
             else
             {
-                console.errore("eventHandlers.defaultHandlers.SierWebAppRefreshUi - Errore nell'aggiornamento del box affluenza.");
+                console.error("eventHandlers.defaultHandlers.SierWebAppRefreshUi - Errore nell'aggiornamento del box affluenza.");
             }
         }
         //-------------------------------------------------------------------------------
@@ -392,8 +424,62 @@ var AA_SierWebAppParams={
     }
 }
 
+//Aggiorna i dati dell'affluenza
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppUpdateAffluenzaData = async function() {
+    try 
+    {
+        let affluenza_data=[];
+        AA_SierWebAppParams.affluenza.regionale.data=null;
+        AA_SierWebAppParams.affluenza.regionale.aggiornamento=null;
+     
+        let risultati=AA_SierWebAppParams.data;
+        if(!risultati) return;
+        
+        //--------------------- Affluenza Regione-----------------------------
+        console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - Aggiorno i dati del dettaglio Regione");
+        if(risultati.stats.circoscrizionale)
+        {
+            //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData",risultati.stats.circoscrizionale);
+            let num=1;
+            for(let idCircoscrizione in risultati.stats.circoscrizionale)
+            {
+                //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - circoscrizione",idCircoscrizione);
+                let count=0;
+                let percent=0;
+                for(let giornata in risultati.stats.circoscrizionale[idCircoscrizione].affluenza)
+                {
+                    if(AA_SierWebAppParams.affluenza.aggiornamento==null || risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].aggiornamento > AA_SierWebAppParams.affluenza.aggiornamento) AA_SierWebAppParams.affluenza.aggiornamento=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].aggiornamento;
+                    if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count > 0)  
+                    {
+                        count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count;
+                        percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.percent;
+                    }
+                    if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.count > 0)  
+                    {
+                        count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.count;
+                        percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.percent;
+                    }
+                    if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.count > 0)  
+                    {
+                        count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.count;
+                        percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.percent;
+                    }                            
+                }
+                affluenza_data.push({"number":num,"id":idCircoscrizione,"denominazione":risultati.stats.circoscrizionale[idCircoscrizione].denominazione,"count":count,"percent":percent,
+                    "elettori":risultati.stats.circoscrizionale[idCircoscrizione].elettori_tot,
+                });
+                num++;
+            }
+            AA_SierWebAppParams.affluenza.regionale.data=affluenza_data;
+        }
+        //-------------------------------------------------------------------
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.StartRisultatiApp", msg);
+    }
+};
+
 //Rinfresca i dati sui risultati
-<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData = async function(feed_url) {
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData = async function(feed_url,updateView=true) {
     try 
     {
         console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - recupero il feed",feed_url);
@@ -415,57 +501,19 @@ var AA_SierWebAppParams={
             //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - livelli_dettaglio",AA_SierWebAppParams.livelli_dettaglio_data);
             //--------------------------------------------------------------
 
-            let affluenza_data=[];
-            if(AA_SierWebAppParams.affluenza.livello_dettaglio == 0)
-            {
-                console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - Aggiorno i dati del dettaglio Regione");
-                if(risultati.stats.circoscrizionale)
-                {
-                    //--------------------- Affluenza -----------------------------
-                    console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - Aggiorno i dati dell'affluenza");
-                    //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData",risultati.stats.circoscrizionale);
-                    let num=1;
-                    for(let idCircoscrizione in risultati.stats.circoscrizionale)
-                    {
-                        //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - circoscrizione",idCircoscrizione);
-                        let count=0;
-                        let percent=0;
-                        for(let giornata in risultati.stats.circoscrizionale[idCircoscrizione].affluenza)
-                        {
-                            if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count > 0)  
-                            {
-                                count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count;
-                                percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.percent;
-                            }
-                            if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.count > 0)  
-                            {
-                                count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.count;
-                                percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.percent;
-                            }
-                            if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.count > 0)  
-                            {
-                                count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.count;
-                                percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.percent;
-                            }
-                        }
-                        affluenza_data.push({"number":num,"id":idCircoscrizione,"denominazione":risultati.stats.circoscrizionale[idCircoscrizione].denominazione,"count":count,"percent":percent,
-                            "elettori":risultati.stats.circoscrizionale[idCircoscrizione].elettori_tot,
-                        });
-                        num++;
-                    }
-                    AA_SierWebAppParams.affluenza.data=affluenza_data;
-                    //-------------------------------------------------------------------
-                }
-            }
-            //--------------------
+            //Aggiorna i dati dell'affluenza
+            <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppUpdateAffluenzaData();
 
             //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData", risultati);
             
-            //Rinfresca la visualizzazione della sezione corrente
-            if($$(AA_SierWebAppParams.sezione_corrente) && !$$(AA_SierWebAppParams.sezione_corrente).isVisible()) $$(AA_SierWebAppParams.sezione_corrente).show();
-            else
+            if(updateView)
             {
-                <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppRefreshUi(AA_SierWebAppParams.sezione_corrente,AA_SierWebAppParams.sezione_corrente);
+                //Rinfresca la visualizzazione della sezione corrente
+                if($$(AA_SierWebAppParams.sezione_corrente) && !$$(AA_SierWebAppParams.sezione_corrente).isVisible()) $$(AA_SierWebAppParams.sezione_corrente).show();
+                else
+                {
+                    <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppRefreshUi(AA_SierWebAppParams.sezione_corrente,AA_SierWebAppParams.sezione_corrente);
+                }
             }
         });
     } catch (msg) {

@@ -1320,18 +1320,22 @@ Class AA_Sier extends AA_Object_V2
         //----------------------------------------------------------------
 
         //-------------- affluenza --------------------
-        $feed['affluenza']=array("aggiornamento"=>$now);
+        $feed['affluenza']=array("aggiornamento"=>"");
         foreach($giornate as $giornata=>$curGiornata)
         {
             if($curGiornata['affluenza']==1)
             {
                 if(!isset($feed['affluenza'][$giornata]) || $bReset)
                 {
-                    $feed['affluenza'][$giornata]=array("ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
+                    $aggiornamento=$now;
+                    if($giornata<$now)$aggiornamento=$giornata." 07:00:00";
+                    $feed['affluenza'][$giornata]=array("aggiornamento"=>$aggiornamento,"ore_12"=>array("count"=>0,"percent"=>0),"ore_19"=>array("count"=>0,"percent"=>0),"ore_22"=>array("count"=>0,"percent"=>0));
                 } 
 
                 if(isset($affluenza[$giornata]) && !$bInitializeOnly)
                 {
+                    if($affluenza[$giornata]['aggiornamento']>$feed['affluenza']['aggiornamento'])$feed['affluenza']['aggiornamento']=$affluenza[$giornata]['aggiornamento'];
+                    $feed['affluenza'][$giornata]['aggiornamento']=$affluenza[$giornata]['aggiornamento'];
                     $feed['affluenza'][$giornata]['ore_12']['count']=intVal($affluenza[$giornata]['ore_12']);
                     $feed['affluenza'][$giornata]['ore_12']['percent']=round($affluenza[$giornata]['ore_12']*100/intVal($feed['elettori_tot']),1);
                     $feed['affluenza'][$giornata]['ore_19']['count']=intVal($affluenza[$giornata]['ore_19']);
@@ -1700,6 +1704,7 @@ Class AA_Sier extends AA_Object_V2
         $aggiornamento_liste_circoscrizionale=array();
         $aggiornamento_candidati="";
         $aggiornamento_candidati_circoscrizionale=array();
+        $now=date("Y-m-d H:i:s");
         foreach($comuni as $idComune=>$curComune)
         {
             $feedComune=$curComune->GetFeedRisultati(true);
@@ -1801,24 +1806,31 @@ Class AA_Sier extends AA_Object_V2
                 {
                     if(!isset($feed['stats']['regionale']['affluenza'][$giornata])) 
                     {
+                        $aggiornamento=$now;
+                        if($aggiornamento>$giornata)$aggiornamento=$giornata." 07:00:00";
                         $feed['stats']['regionale']['affluenza'][$giornata]=array(
+                            "aggiornamento"=>$aggiornamento,
                             "ore_12"=>array("count"=>0,"percent"=>0),
                             "ore_19"=>array("count"=>0,"percent"=>0),
                             "ore_22"=>array("count"=>0,"percent"=>0));
                     }
-                               
+                    if(isset($feedComune['affluenza'][$giornata]['aggiornamento'])) $feed['stats']['regionale']['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
     
                     if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]))
                     {
+                        $aggiornamento=$now;
+                        if($aggiornamento>$giornata) $aggiornamento=$giornata." 07:00:00";
                         $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]=array(
+                            "aggiornamento"=>$aggiornamento,
                             "ore_12"=>array("count"=>0,"percent"=>0),
                             "ore_19"=>array("count"=>0,"percent"=>0),
                             "ore_22"=>array("count"=>0,"percent"=>0));
                     }
 
+                    if(isset($feedComune['affluenza'][$giornata]['aggiornamento'])) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
@@ -3632,7 +3644,7 @@ Class AA_Sier extends AA_Object_V2
         {
             if(is_array($curComune))
             {
-                if($this->AddNewComune(new AA_SierComune($curComune,$user))===false)
+                if($this->AddNewComune(new AA_SierComune($curComune))===false)
                 {
                     $result[1]+=1;
                 }
@@ -4584,8 +4596,6 @@ Class AA_SierOperatoreComunale
             AA_Log::Log(__METHOD__." - cf: ".$cf." - auth token: ".$token,100);
             return true;
         }
-
-        return false;
     }
     public function VerifyLogin($token="")
     {
@@ -16685,7 +16695,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
-        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>intVal(strtolower(trim($_REQUEST['ore_12']))),"ore_19"=>intVal(strtolower(trim($_REQUEST['ore_19']))),"ore_22"=>intVal(strtolower(trim($_REQUEST['ore_22']))));
+        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>intVal(strtolower(trim($_REQUEST['ore_12']))),"ore_19"=>intVal(strtolower(trim($_REQUEST['ore_19']))),"ore_22"=>intVal(strtolower(trim($_REQUEST['ore_22']))));
         $comune->SetAffluenza($affluenza);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento affluenza per la giornata: ".$_REQUEST['giornata']))
         {
@@ -17913,7 +17923,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
-        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>strtolower(trim($_REQUEST['ore_12'])),"ore_19"=>strtolower(trim($_REQUEST['ore_19'])),"ore_22"=>strtolower(trim($_REQUEST['ore_22'])));
+        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>strtolower(trim($_REQUEST['ore_12'])),"ore_19"=>strtolower(trim($_REQUEST['ore_19'])),"ore_22"=>strtolower(trim($_REQUEST['ore_22'])));
         $comune->SetAffluenza($affluenza);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento affluenza per la giornata: ".$_REQUEST['giornata']." - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
         {
@@ -22084,7 +22094,6 @@ Class AA_SierModule extends AA_GenericModule
                 break;
             default:
                 return parent::Task_GetActionMenu($task);
-                break;
         }
 
         if ($content != "") $sTaskLog .= $content->toBase64();
