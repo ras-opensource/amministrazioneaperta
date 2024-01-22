@@ -1334,7 +1334,7 @@ Class AA_Sier extends AA_Object_V2
 
                 if(isset($affluenza[$giornata]) && !$bInitializeOnly)
                 {
-                    $feed['affluenza'][$giornata]['aggiornamento']=$affluenza[$giornata]['aggiornamento'];
+                    if(isset($affluenza[$giornata]['aggiornamento'])) $feed['affluenza'][$giornata]['aggiornamento']=$affluenza[$giornata]['aggiornamento'];
                     $feed['affluenza'][$giornata]['ore_12']['count']=intVal($affluenza[$giornata]['ore_12']);
                     $feed['affluenza'][$giornata]['ore_12']['percent']=round($affluenza[$giornata]['ore_12']*100/intVal($feed['elettori_tot']),1);
                     $feed['affluenza'][$giornata]['ore_19']['count']=intVal($affluenza[$giornata]['ore_19']);
