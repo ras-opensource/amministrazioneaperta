@@ -244,6 +244,8 @@ var AA_SierWebAppParams={
                 AA_SierWebAppParams.sezione_corrente="<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox"?>";
                 AA_SierWebAppParams.affluenza.regionale.data=null;
                 AA_SierWebAppParams.affluenza.regionale.aggiornamento=null;
+                AA_SierWebAppParams.affluenza.circoscrizionale.data=null;
+                AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento=null;
                 <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppRefreshUi(null,AA_SierWebAppParams.sezione_corrente);
                 //----------------------------------
 
@@ -254,7 +256,7 @@ var AA_SierWebAppParams={
                 {
                     clearTimeout(AA_SierWebAppParams.timeoutRisultati);
                 }
-                AA_SierWebAppParams.timeoutRisultati=setTimeout(<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData,10000,url,true);
+                AA_SierWebAppParams.timeoutRisultati=setTimeout(<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshRisultatiData,600000,url,true);
                 //-----------------------------------
             }
             else
@@ -429,6 +431,158 @@ var AA_SierWebAppParams={
         }
         //-------------------------------------------------------------------------------
 
+        //---------------------------- Affluenza circoscrizionale-----------------------------------
+        if(arguments[1]==AA_SierWebAppParams.affluenza.circoscrizionale.view_id)
+        {
+            <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppUpdateAffluenzaData();
+            if(AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento)
+            {
+                date=new Date(AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento);
+                aggiornamento=date.toLocaleDateString('it-IT',{
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            //Rimuove la view precedente
+            if($$(AA_SierWebAppParams.affluenza.circoscrizionale.realtime_container_id))
+            {
+                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - rimuovo il box affluenza: "+AA_SierWebAppParams.affluenza.circoscrizionale.realtime_container_id);
+                $$(AA_SierWebAppParams.affluenza.circoscrizionale.realtime_container_id).destructor();
+
+                if($$(AA_SierWebAppParams.affluenza.circoscrizionale.footer_id))
+                {
+                    $$(AA_SierWebAppParams.affluenza.circoscrizionale.footer_id).parse({"footer":"&nbsp;"});
+                }
+            }
+
+            if(AA_SierWebAppParams.affluenza.circoscrizionale.data==null)
+            {
+                let preview_template={
+                    id: AA_SierWebAppParams.affluenza.circoscrizionale.realtime_container_id,
+                    container: AA_SierWebAppParams.circoscrizionale.regionale.container_id,
+                    view:"template",
+                    borderless: true,
+                    css:{"background-color":"#f4f5f9"},
+                    template: "<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"
+                };
+
+                webix.ui(preview_template).show();
+                
+                return;
+            }
+
+            console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - Aggiorno il box affluenza: "+AA_SierWebAppParams.affluenza.circoscrizionale.view_id);
+
+            //Aggiorna l'affluenza
+            let affluenza_cols=[
+                {id:"denominazione",header:["<div style='text-align: left'>Comune</div>"],"fillspace":true, "sort":"text","css":{"text-align":"left"}},
+                {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "sort":"text","css":{"text-align":"right"}},
+                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"text","css":{"text-align":"right"}}
+            ];
+            //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - affluenza_cols",affluenza_cols);
+    
+            if($$(AA_SierWebAppParams.affluenza.circoscrizionale.container_id))
+            {
+                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - implemento il box affluenza: "+AA_SierWebAppParams.affluenza.circoscrizionale.realtime_container_id);
+                let votanti_tot=0;
+                let elettori_tot=0;
+                for(let affluenza_data of AA_SierWebAppParams.affluenza.circoscrizionale.data)
+                {
+                    votanti_tot+=affluenza_data.count;
+                }
+                elettori_tot=AA_SierWebAppParams.data.stats.circoscrizionale[AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione].elettori_tot;
+                let votanti_percent=0;
+                if(elettori_tot>0) votanti_percent=new Intl.NumberFormat('it-IT').format(Number(votanti_tot/elettori_tot).toFixed(1));
+                if(votanti_percent==0 && votanti_tot>0) votanti_percent='&lt;0,1';
+                elettori_tot=new Intl.NumberFormat('it-IT').format(Number(elettori_tot));
+                votanti_tot=new Intl.NumberFormat('it-IT').format(Number(votanti_tot));
+                let affluenza_box={
+                    id: AA_SierWebAppParams.affluenza.circoscrizionale.realtime_container_id,
+                    view: "layout",
+                    css:{"background-color":"#f4f5f9"},
+                    container: AA_SierWebAppParams.affluenza.circoscrizionale.container_id,
+                    type:"clean",
+                    rows:
+                    [
+                        {height: 10},
+                        {
+                            view:"template",
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='border-bottom:1px solid #b6bcbf;width:70%;text-align: center'><span style='font-size:larger; font-weight:bold;'>"+AA_SierWebAppParams.data.stats.circoscrizionale[AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione].denominazione+"</span><br><span style='font-size: smaller'>circoscrizione</span></div><div style='display:flex;align-items:center; justify-content:space-between;height:100px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:33%; color: #0c467f; border-right: 1px solid #dadee0'><span>ELETTORI</span><hr style='width:96%;color: #eef9ff'><span>#elettori#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:33%; color: #0c467f'><span>VOTANTI</span><hr style='width:100%; color: #eef9ff'><span>#votanti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:33%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
+                            data:{votanti : votanti_tot,percent: votanti_percent,elettori:elettori_tot},
+                            height: 140,
+                            css: {"border-radius": "15px","border-width":"1px 1px 1px !important"}
+                        },
+                        {height: 10},
+                        {
+                            type:"space",
+                            css:{"border-radius":"15px","background-color":"#fff"},
+                            rows:
+                            [
+                                {
+                                    template:"<div style='font-weight:bold; border-bottom:1px solid #b6bcbf;width:100%;text-align: center'>Dettaglio per comune</div>",
+                                    autoheight: true,
+                                    borderless: true,
+                                },
+                                {
+                                    view:"datatable",
+                                    scrollX:false,
+                                    select:false,
+                                    css:"AA_Header_DataTable",
+                                    height: 300,
+                                    scheme:{$change:function(item)
+                                        {
+                                            if (item.number%2) item.$css = "AA_DataTable_Row_AlternateColor";
+                                        }
+                                    },
+                                    columns:affluenza_cols,
+                                    data: AA_SierWebAppParams.affluenza.circoscrizionale.data
+                                },
+                                {
+                                    template:"<div style='font-size:smaller; width:100%;text-align: left'><i>*I valori percentuale sono riferiti agli elettori totali del comune.</i></div>",
+                                    autoheight: true,
+                                    borderless: true,
+                                }
+                            ]
+                        },
+                        {},
+                        {
+                            view:"button",
+                            type:"icon",
+                            align: "center",
+                            icon: "mdi mdi-keyboard-backspace",
+                            label: "Indietro",
+                            tooltip: "Torna alla pagina principale dei dati sull'affluenza",
+                            click: "AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione=0;$$(AA_SierWebAppParams.affluenza.regionale.view_id).show()"
+                        },
+                        {}
+                    ]
+                };
+                
+                let affluenza_ui=webix.ui(affluenza_box);
+                if(affluenza_ui) 
+                {
+                    console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - visualizzo il box affluenza: "+AA_SierWebAppParams.affluenza.circoscrizionale.view_id);
+                    affluenza_ui.show();
+                }
+
+                if($$(AA_SierWebAppParams.affluenza.circoscrizionale.footer_id))
+                {
+                    $$(AA_SierWebAppParams.affluenza.circoscrizionale.footer_id).parse({"footer":"Dati aggiornati al "+aggiornamento});
+                }
+                //------------------------------------------------------------------------------------------------------------------------
+            }
+            else
+            {
+                console.error("eventHandlers.defaultHandlers.SierWebAppRefreshUi - Errore nell'aggiornamento del box affluenza.");
+            }
+        }
+        //------------------------------------------------------------------------------------------
+
     }catch (msg) {
         console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.SierWebAppRefreshUi", msg);
     }
@@ -446,19 +600,19 @@ var AA_SierWebAppParams={
         if(!risultati) return;
         
         //--------------------- Affluenza Regione-----------------------------
-        console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - Aggiorno i dati del dettaglio Regione");
+        console.log("eventHandlers.defaultHandlers.SierWebAppUpdateAffluenzaData - Aggiorno i dati  affluenza Regione");
         if(risultati.stats.circoscrizionale)
         {
-            //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData",risultati.stats.circoscrizionale);
+            //console.log("eventHandlers.defaultHandlers.SierWebAppUpdateAffluenzaData",risultati.stats.circoscrizionale);
             let num=1;
             for(let idCircoscrizione in risultati.stats.circoscrizionale)
             {
-                //console.log("eventHandlers.defaultHandlers.RefreshRisultatiData - circoscrizione",idCircoscrizione);
+                //console.log("eventHandlers.defaultHandlers.SierWebAppUpdateAffluenzaData - circoscrizione",idCircoscrizione);
                 let count=0;
                 let percent=0;
                 for(let giornata in risultati.stats.circoscrizionale[idCircoscrizione].affluenza)
                 {
-                    if(AA_SierWebAppParams.affluenza.aggiornamento==null || risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].aggiornamento > AA_SierWebAppParams.affluenza.aggiornamento) AA_SierWebAppParams.affluenza.aggiornamento=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].aggiornamento;
+                    if(AA_SierWebAppParams.affluenza.regionale.aggiornamento==null || risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].aggiornamento > AA_SierWebAppParams.affluenza.regionale.aggiornamento) AA_SierWebAppParams.affluenza.regionale.aggiornamento=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].aggiornamento;
                     if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count > 0)  
                     {
                         count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count;
@@ -475,12 +629,54 @@ var AA_SierWebAppParams={
                         percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.percent;
                     }                            
                 }
-                affluenza_data.push({"number":num,"id":idCircoscrizione,"denominazione":risultati.stats.circoscrizionale[idCircoscrizione].denominazione,"count":count,"percent":percent,
+                let script="AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione="+idCircoscrizione+";$$(AA_SierWebAppParams.affluenza.circoscrizionale.view_id).show();";
+                affluenza_data.push({"number":num,"id":idCircoscrizione,"denominazione":"<a href='#' onClick='"+script+"'>"+risultati.stats.circoscrizionale[idCircoscrizione].denominazione+"</a>","count":count,"percent":percent,
                     "elettori":risultati.stats.circoscrizionale[idCircoscrizione].elettori_tot,
                 });
                 num++;
             }
             AA_SierWebAppParams.affluenza.regionale.data=affluenza_data;
+        }
+
+        //circoscrizionale
+        AA_SierWebAppParams.affluenza.circoscrizionale.data=null;
+        AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento=null;
+        if(AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione > 0 && risultati.comuni)
+        {
+            console.log("eventHandlers.defaultHandlers.SierWebAppUpdateAffluenzaData - Aggiorno i dati circoscrizione di "+risultati.stats.circoscrizionale[AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione].denominazione);
+            AA_SierWebAppParams.affluenza.circoscrizionale.data=[];
+            let num=1;
+            for(let comune in risultati.comuni)
+            {
+                if(risultati.comuni[comune].id_circoscrizione == AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione)
+                {
+                    let count=0;
+                    let percent=0;
+                    for(let giornata in risultati.comuni[comune].affluenza)
+                    {
+                        if(AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento==null || risultati.comuni[comune].affluenza[giornata].aggiornamento > AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento) AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento=risultati.comuni[comune].affluenza[giornata].aggiornamento;
+                        if(risultati.comuni[comune].affluenza[giornata].ore_12.count > 0)  
+                        {
+                            count=risultati.comuni[comune].affluenza[giornata].ore_12.count;
+                            percent=risultati.comuni[comune].affluenza[giornata].ore_12.percent;
+                        }
+                        if(risultati.comuni[comune].affluenza[giornata].ore_19.count > 0)  
+                        {
+                            count=risultati.comuni[comune].affluenza[giornata].ore_19.count;
+                            percent=risultati.comuni[comune].affluenza[giornata].ore_19.percent;
+                        }
+                        if(risultati.comuni[comune].affluenza[giornata].ore_22.count > 0)  
+                        {
+                            count=risultati.comuni[comune].affluenza[giornata].ore_22.count;
+                            percent=risultati.comuni[comune].affluenza[giornata].ore_22.percent;
+                        }
+                    }
+
+                    AA_SierWebAppParams.affluenza.circoscrizionale.data.push({number:num, id:comune,"denominazione":risultati.comuni[comune].denominazione,"count":count,"percent":percent});
+                    num++;
+                }
+            }
+            //console.log("eventHandlers.defaultHandlers.SierWebAppUpdateAffluenzaData - dati circoscrizione di "+risultati.stats.circoscrizionale[AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione], AA_SierWebAppParams.affluenza.circoscrizionale.data);
         }
         //-------------------------------------------------------------------
     } catch (msg) {
