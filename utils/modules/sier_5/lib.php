@@ -2310,6 +2310,33 @@ Class AA_Sier extends AA_Object_V2
         return $csv;
     }
 
+    public function GetCSVImportMap()
+    {
+        if(!$this->bValid) return array();
+
+        $feed=array("voti_presidente"=>array(),"voti_lista"=>array(),"voti_candidato"=>array());
+        $coalizioni=$this->GetCoalizioni();
+        foreach($coalizioni as $idCoalizione=>$curCoalizione)
+        {
+            $feed['voti_presidente'][$idCoalizione]=array("nome_coalizione"=>$curCoalizione->GetProp("denominazione"),"presidente"=>$curCoalizione->GetProp("nome_candidato"));
+        }
+
+        $liste=$this->GetListe();
+        foreach($liste as $idLista=>$curLista)
+        {
+            $feed['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp("denominazione"),"id_presidente"=>$curLista->GetProp("id_coalizione"));
+        }
+
+        
+        $candidati=$this->GetCandidati();
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            $feed['voti_candidato'][$idCandidato]=array("nome"=>$curCandidato->GetProp("nome"),"cognome"=>$curCandidato->GetProp("cognome"),"id_lista"=>$curCandidato->GetProp("id_lista"),"circoscrizione"=>$curCandidato->Getprop("circoscrizione"));
+        }
+
+        return $feed;
+    }
+
     public function ExportCorpoElettoraleComuniCSV($circoscrizione=null)
     {
         if(!$this->bValid) 
@@ -15269,7 +15296,7 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
-    //Task aggiungi allegato
+    //Task email export
     public function Task_GetSierOCEmailsCSV($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -21799,6 +21826,16 @@ Class AA_SierModule extends AA_GenericModule
         $layout_affluenza->AddRow(new AA_JSON_Template_Template($id."_Affluenza",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>$template_content)));
         $layout_affluenza->AddRow(new AA_JSON_Template_Template($id."_Affluenza_Footer",array("height"=>24,"css"=>array("background-color"=>"#3186ac","color"=>"#fff","text-transform"=>"uppercase"),"filtered"=>true,"template"=>$template_footer,"data"=>array("footer"=>"&nbsp;"))));
         $multiview->addCell($layout_affluenza);
+
+        $layout_affluenza=new AA_JSON_Template_Layout($id."_AffluenzaCircoscrizionaleBox",array("type"=>"clean"));
+        $template_content="<div id='".$id."_AffluenzaCircoscrizionaleContent'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
+        $template_content.="</div>";
+        $template_footer="<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>";
+
+        $layout_affluenza->AddRow(new AA_JSON_Template_Template($id."_AffluenzaCircoscrizionale",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>$template_content)));
+        $layout_affluenza->AddRow(new AA_JSON_Template_Template($id."_AffluenzaCircoscrizionale_Footer",array("height"=>24,"css"=>array("background-color"=>"#3186ac","color"=>"#fff","text-transform"=>"uppercase"),"filtered"=>true,"template"=>$template_footer,"data"=>array("footer"=>"&nbsp;"))));
+        $multiview->addCell($layout_affluenza);
+
         //-------------------------------
 
         //Risultati presidenti
