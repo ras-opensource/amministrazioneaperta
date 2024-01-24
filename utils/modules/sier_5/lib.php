@@ -1426,6 +1426,7 @@ Class AA_Sier extends AA_Object_V2
                 if($curCoalizione->GetProp("image") !="") $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');    
                 $feed['risultati']['voti_presidente'][$idCoalizione]=array(
                     "denominazione"=>$curCoalizione->GetProp("nome_candidato"),
+                    "denominazione_coalizione"=>$curCoalizione->GetProp("denominazione"),
                     "image"=>$curImagePath,
                     "voti"=>0,
                     "percent"=>0,
@@ -1744,6 +1745,7 @@ Class AA_Sier extends AA_Object_V2
                             $feed['candidati'][$id]['image']=$curImagePath;
                             $feed['candidati'][$id]['id_presidente']=$lista->GetProp("id_coalizione");
                             $feed['candidati'][$id]['presidente']=$coalizione->GetProp("nome_candidato");
+                            $feed['candidati'][$id]['denominazione_coalizione']=$coalizione->GetProp("denominazione");
                             $feed['candidati'][$id]['id_circoscrizione']=$candidato->GetProp("id_circoscrizione");
                             $feed['candidati'][$id]['circoscrizione']=$candidato->GetProp("circoscrizione");
                         }    
@@ -1765,6 +1767,7 @@ Class AA_Sier extends AA_Object_V2
                         $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['image']=$curImagePath;
                         $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['id_presidente']=$lista->GetProp("id_coalizione");
                         $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['presidente']=$coalizione->GetProp("nome_candidato");
+                        $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['denominazione_coalizione']=$coalizione->GetProp("denominazione");
                         $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['id_circoscrizione']=$candidato->GetProp("id_circoscrizione");
                         $feed["comuni"][$idComune]['risultati']['voti_candidato'][$id]['circoscrizione']=$candidato->GetProp("circoscrizione");
                     }
