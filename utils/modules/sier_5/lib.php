@@ -21860,13 +21860,32 @@ Class AA_SierModule extends AA_GenericModule
         $multiview->addCell($layout_presidenti);
         //---------------
 
+        //Risultati liste
+        $layout_liste=new AA_JSON_Template_Layout($id."_ListeBox",array("type"=>"clean"));
+        
+        $template_content="<div id='".$id."_ListeContent'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
+        $template_content.="</div>";
+        $template_footer="<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>";
 
-        //Risultati Coalizione presidente
-        $multiview->addCell(new AA_JSON_Template_Template($id."_CoalizioneBox",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));
+        $layout_liste->AddRow(new AA_JSON_Template_Template($id."_Liste",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>$template_content)));
+        $layout_liste->AddRow(new AA_JSON_Template_Template($id."_Liste_Footer",array("height"=>24,"css"=>array("background-color"=>"#3186ac","color"=>"#fff","text-transform"=>"uppercase"),"filtered"=>true,"template"=>$template_footer,"data"=>array("footer"=>"&nbsp;"))));
 
-        //Risultati preferenze candidati di lista
-        $multiview->addCell(new AA_JSON_Template_Template($id."_CandidatiBox",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>"<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>")));
+        $multiview->addCell($layout_liste);
+        //---------------
 
+        //Risultaticandidati
+        $layout_liste=new AA_JSON_Template_Layout($id."_CandidatiBox",array("type"=>"clean"));
+
+        $template_content="<div id='".$id."_CandidatiContent'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
+        $template_content.="</div>";
+        $template_footer="<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>";
+
+        $layout_liste->AddRow(new AA_JSON_Template_Template($id."_Candidati",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>$template_content)));
+        $layout_liste->AddRow(new AA_JSON_Template_Template($id."_Candidati_Footer",array("height"=>24,"css"=>array("background-color"=>"#3186ac","color"=>"#fff","text-transform"=>"uppercase"),"filtered"=>true,"template"=>$template_footer,"data"=>array("footer"=>"&nbsp;"))));
+
+        $multiview->addCell($layout_liste);
+        //---------------
+        
         $layout->AddRow($multiview);
         return $layout;
     }
