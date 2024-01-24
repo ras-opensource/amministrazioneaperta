@@ -13,6 +13,7 @@
   border: 0px;
   padding: 2px;
   padding-bottom: 0px;
+  cursor: default;
 }
 
 .AA_SierWebAppHeader_TabBar .webix_item_tab {

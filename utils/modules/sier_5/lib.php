@@ -1040,20 +1040,31 @@ Class AA_Sier extends AA_Object_V2
         $voti_candidato=0;
         foreach($candidati as $idCandidato=>$curCandidato)
         {
-            if(isset($risultati['voti_candidato'][$idCandidato])) $voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
+            if(isset($risultati['voti_candidato'][$idCandidato])) 
+            {
+                $voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
+                
+                if($risultati['voti_candidato'][$idCandidato] > $risultati['voti_lista'][$curCandidato->GetProp('id_lista')]['voti'])
+                {
+                    $result[0]=true;
+                    $result[1][]="I voti (".$risultati['voti_candidato'][$idCandidato]['voti'].") del candidato ".$curCandidato->GetProp('nome')." ".$curCandidato->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$curCandidato->GetProp('id_lista')]['voti']).") della lista (".$curCandidato->GetProp('lista').") di appartenenza.";
+                    $result[3]['risultati_voti_candidato_check']++;
+                }
+            }
+
         }
 
-        if($voti_candidato == 0 && $voti_validi > 0)
+        if($voti_candidato == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente) > 0)
         {
             $result[0]=true;
-            $result[1][]="Non ci sono preferenze nonostante siano presenti voti validi (".$voti_validi.")";
+            $result[1][]="Non ci sono preferenze per i candidati nonostante siano presenti voti validi (".$voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente.")";
             $result[3]['risultati_voti_candidato_check']++;
         }
 
-        if($voti_candidato > ($voti_validi*2))
+        if($voti_candidato > ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente)*2)
         {
             $result[0]=true;
-            $result[1][]="Il numero totale di preferenze (".$voti_candidato.") è superiore al doppio dei voti validi (".($voti_validi*2).")";
+            $result[1][]="Il numero totale di preferenze (".$voti_candidato.") è superiore al doppio dei voti validi (".(($voti_validi-($risultati['voti_contestati_na_liste']-$voti_solo_presidente))*2).")";
             $result[2]=true;
             $result[3]['risultati_voti_candidato_check']++;
         }
@@ -17149,7 +17160,8 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
+        //if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
+        if(isset($risultati['voti_solo_presidente']) && $risultati['voti_solo_presidente']>0) $voti_non_validi+=$risultati['voti_solo_presidente'];
         if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
@@ -17173,6 +17185,14 @@ Class AA_SierModule extends AA_GenericModule
 
         $candidato=null;
         $tot_voti_candidati=0;
+        
+        if($_REQUEST['voti'] > $risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]['voti'])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("I voti (".$_REQUEST['voti'].") del candidato ".$candidati[$_REQUEST['id_candidato']]->GetProp('nome')." ".$candidati[$_REQUEST['id_candidato']]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]['voti']).") della lista (".$candidati[$_REQUEST['id_candidato']]->GetProp('lista').") di appartenenza.",false);
+            return false;
+        }
+
         foreach($voti_candidato as $idCandidato=>$curCandidato)
         {
             if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
@@ -17266,8 +17286,9 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
-        if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
+        //if(isset($risultati['voti_contestati_na_pre']) && $risultati['voti_contestati_na_pre']>0) $voti_non_validi+=$risultati['voti_contestati_na_pre'];
         if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
+        if(isset($risultati['voti_solo_presidente']) && $risultati['voti_solo_presidente']>0) $voti_non_validi+=$risultati['voti_solo_presidente'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
 
         if($votanti==0)
@@ -17297,6 +17318,13 @@ Class AA_SierModule extends AA_GenericModule
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
                 $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
+
+                if(intVal($_REQUEST['candidato_'.$idCandidato]) > $risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]['voti'])
+                {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("I voti (".$_REQUEST['candidato_'.$idCandidato].") del candidato ".$candidati[$idCandidato]->GetProp('nome')." ".$candidati[$idCandidato]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]['voti']).") della lista (".$candidati[$idCandidato]->GetProp('lista').") di appartenenza.",false);
+                    return false;
+                }
             }
         }
 
@@ -17551,6 +17579,8 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
+        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
+        if(isset($risultati['voti_solo_presidente']) && $risultati['voti_solo_presidente']>0) $voti_non_validi+=$risultati['voti_solo_presidente'];
 
         if($votanti==0)
         {
@@ -17572,6 +17602,14 @@ Class AA_SierModule extends AA_GenericModule
 
         $candidato=null;
         $tot_voti_candidati=0;
+        
+        if($_REQUEST['voti'] > $risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]['voti'])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("I voti (".$_REQUEST['voti'].") del candidato ".$candidati[$_REQUEST['id_candidato']]->GetProp('nome')." ".$candidati[$_REQUEST['id_candidato']]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]['voti']).") della lista (".$candidati[$_REQUEST['id_candidato']]->GetProp('lista').") di appartenenza.",false);
+            return false;
+        }
+
         foreach($voti_candidato as $idCandidato=>$curCandidato)
         {
             if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
@@ -17680,6 +17718,8 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($risultati['schede_bianche']) && $risultati['schede_bianche']>0) $voti_non_validi+=$risultati['schede_bianche'];
         if(isset($risultati['schede_nulle']) && $risultati['schede_nulle']>0) $voti_non_validi+=$risultati['schede_nulle'];
         if(isset($risultati['schede_voti_nulli']) && $risultati['schede_voti_nulli']>0) $voti_non_validi+=$risultati['schede_voti_nulli'];
+        if(isset($risultati['voti_contestati_na_liste']) && $risultati['voti_contestati_na_liste']>0) $voti_non_validi+=$risultati['voti_contestati_na_liste'];
+        if(isset($risultati['voti_solo_presidente']) && $risultati['voti_solo_presidente']>0) $voti_non_validi+=$risultati['voti_solo_presidente'];
 
         if($votanti==0)
         {
@@ -17709,6 +17749,13 @@ Class AA_SierModule extends AA_GenericModule
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
                 $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
+
+                if(intVal($_REQUEST['candidato_'.$idCandidato]) > $risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]['voti'])
+                {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("I voti (".$_REQUEST['candidato_'.$idCandidato].") del candidato ".$candidati[$idCandidato]->GetProp('nome')." ".$candidati[$idCandidato]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]['voti']).") della lista (".$candidati[$idCandidato]->GetProp('lista').") di appartenenza.",false);
+                    return false;
+                }
             }
         }
 

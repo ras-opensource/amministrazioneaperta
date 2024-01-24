@@ -805,9 +805,9 @@ class AA_Group
                 else $query.=", system=0";
             }
 
-            if(isset($newGroupData['id_parent']))
+            if(isset($groupData['id_parent']))
             {
-                if($newGroupData['id_parent'] > 0) $query.=", id_parent='".addslashes($newGroupData['id_parent'])."'";
+                if($groupData['id_parent'] > 0) $query.=", id_parent='".addslashes($groupData['id_parent'])."'";
                 else $query.=", id_parent='0'";
             }
         }

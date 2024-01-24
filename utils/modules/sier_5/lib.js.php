@@ -128,34 +128,40 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
         let params=arguments[0].params[1];
         let table=$$(params.table_id);    
         //console.log("eventHandlers.defaultHandlers.AddNewCandidato",task,params);
-        if(table && task && params)
+        if(task && params)
         {
             params.task=task;
             let circoscrizione_val="";
             let lista_val="";
             
-            let circoscrizione=table.getFilter("circoscrizione_desc");
-            if(circoscrizione)
+            if(table)
             {
-                circoscrizione_val=circoscrizione.value;
+                let circoscrizione=table.getFilter("circoscrizione_desc");
+                if(circoscrizione)
+                {
+                    circoscrizione_val=circoscrizione.value;
+                }
+                else
+                {
+                    console.log("eventHandlers.defaultHandlers.AddNewCandidato - circoscrizione non valida.",circoscrizione);
+                }
+
+                let lista=table.getFilter("lista");
+                if(lista) 
+                {
+                    lista_val=lista.value;
+                }
+                else
+                {
+                    console.log("eventHandlers.defaultHandlers.AddNewCandidato - lista non valida.",lista);
+                }
+                
+                params.params=[{circoscrizione_desc:circoscrizione_val},{lista_desc:lista_val},id_object];
             }
             else
             {
-                console.log("eventHandlers.defaultHandlers.AddNewCandidato - circoscrizione non valida.",circoscrizione);
+                params.params=[id_object];
             }
-
-            let lista=table.getFilter("lista");
-            if(lista) 
-            {
-                lista_val=lista.value;
-            }
-            else
-            {
-                console.log("eventHandlers.defaultHandlers.AddNewCandidato - lista non valida.",lista);
-            }
-            
-            params.params=[{circoscrizione_desc:circoscrizione_val},{lista_desc:lista_val},id_object];
-
             //console.log("eventHandlers.defaultHandlers.AddNewCandidato",params);
 
             AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_SierModule::AA_ID_MODULE?>');
@@ -393,7 +399,7 @@ var AA_SierWebAppParams={
                         {height: 10},
                         {
                             view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='font-size:larger; font-weight:bold; border-bottom:1px solid #b6bcbf;width:70%;text-align: center'>Regione Sardegna</div><div style='display:flex;align-items:center; justify-content:space-between;height:100px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:33%; color: #0c467f; border-right: 1px solid #dadee0'><span>ELETTORI</span><hr style='width:96%;color: #eef9ff'><span>#elettori#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:33%; color: #0c467f'><span>VOTANTI</span><hr style='width:100%; color: #eef9ff'><span>#votanti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:33%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='font-size:larger; font-weight:bold; border-bottom:1px solid #b6bcbf;width:70%;text-align: center; color: #0c467f;'>Regione Sardegna</div><div style='display:flex;align-items:center; justify-content:space-between;height:100px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:33%; color: #0c467f; border-right: 1px solid #dadee0'><span>ELETTORI</span><hr style='width:96%;color: #eef9ff'><span>#elettori#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:33%; color: #0c467f'><span>VOTANTI</span><hr style='width:100%; color: #eef9ff'><span>#votanti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:33%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
                             data:{votanti : votanti_tot,percent: votanti_percent,elettori:elettori_tot},
                             height: 140,
                             css: {"border-radius": "15px","border-width":"1px 1px 1px !important"}
@@ -534,7 +540,7 @@ var AA_SierWebAppParams={
                         {height: 10},
                         {
                             view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='border-bottom:1px solid #b6bcbf;width:70%;text-align: center'><span style='font-size:larger; font-weight:bold;'>"+AA_SierWebAppParams.data.stats.circoscrizionale[AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione].denominazione+"</span><br><span style='font-size: smaller'>circoscrizione</span></div><div style='display:flex;align-items:center; justify-content:space-between;height:100px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:33%; color: #0c467f; border-right: 1px solid #dadee0'><span>ELETTORI</span><hr style='width:96%;color: #eef9ff'><span>#elettori#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:33%; color: #0c467f'><span>VOTANTI</span><hr style='width:100%; color: #eef9ff'><span>#votanti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:33%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center; border-bottom:1px solid #b6bcbf;width:100%;'><a href='#' onClick='AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione=0;$$(AA_SierWebAppParams.affluenza.regionale.view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center'><span style='font-size:larger; font-weight:bold; color: #0c467f;'>"+AA_SierWebAppParams.data.stats.circoscrizionale[AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione].denominazione+"</span><br><span style='font-size: smaller'>circoscrizione</span></div><div>&nbsp;</div></div><div style='display:flex;align-items:center; justify-content:space-between;height:100px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:33%; color: #0c467f; border-right: 1px solid #dadee0'><span>ELETTORI</span><hr style='width:96%;color: #eef9ff'><span>#elettori#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:33%; color: #0c467f'><span>VOTANTI</span><hr style='width:100%; color: #eef9ff'><span>#votanti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:33%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
                             data:{votanti : votanti_tot,percent: votanti_percent,elettori:elettori_tot},
                             height: 140,
                             css: {"border-radius": "15px","border-width":"1px 1px 1px !important"}
@@ -570,16 +576,6 @@ var AA_SierWebAppParams={
                                     borderless: true,
                                 }
                             ]
-                        },
-                        {},
-                        {
-                            view:"button",
-                            type:"icon",
-                            align: "center",
-                            icon: "mdi mdi-keyboard-backspace",
-                            label: "Indietro",
-                            tooltip: "Torna alla pagina principale dei dati sull'affluenza",
-                            click: "AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione=0;$$(AA_SierWebAppParams.affluenza.regionale.view_id).show()"
                         },
                         {}
                     ]
@@ -656,6 +652,7 @@ var AA_SierWebAppParams={
                 console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - implemento il box risultati: "+AA_SierWebAppParams.risultati.realtime_container_id);
                 let sezioni_percent=0;
                 if(AA_SierWebAppParams.risultati.sezioni) sezioni_percent=new Intl.NumberFormat('it-IT').format(Number(AA_SierWebAppParams.risultati.sezioni_scrutinate*100/AA_SierWebAppParams.risultati.sezioni).toFixed(1));                
+                let cursor="zoom-in";
                 let risultati_box={
                     id: AA_SierWebAppParams.risultati.realtime_container_id,
                     view: "layout",
@@ -699,13 +696,14 @@ var AA_SierWebAppParams={
                                             xCount:1,
                                             select:false,
                                             borderless:true,
-                                            css:{"background":"transparent"},
+                                            css:{"background":"transparent","cursor":"default"},
+                                            on:{"onItemClick":function(){AA_SierWebAppParams.risultati.liste.id_coalizione=arguments[0];$$(AA_SierWebAppParams.risultati.liste.view_id).show()}},
                                             type: {
                                                 height: 50,
                                                 width:"auto",
                                                 css:"AA_SierWebAppDataviewItem"
                                             },
-                                            template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:35px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width: 57%;text-align:left;font-weight: 500;color: #0c467f;'>&nbsp;#presidente#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>",
+                                            template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:35px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width: 57%;text-align:left;font-weight: 500;color: #0c467f;'>&nbsp;#presidente#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>",
                                             data: AA_SierWebAppParams.risultati.data
                                         },
                                         {
@@ -715,13 +713,14 @@ var AA_SierWebAppParams={
                                             xCount:1,
                                             select:false,
                                             borderless:true,
-                                            css:{"background":"transparent"},
+                                            css:{"background":"transparent","cursor":"default"},
+                                            on:{"onItemClick":function(){AA_SierWebAppParams.risultati.liste.id_coalizione=arguments[0];$$(AA_SierWebAppParams.risultati.liste.view_id).show()}},
                                             type: {
                                                 height: 50,
                                                 width:"auto",
                                                 css:"AA_SierWebAppDataviewItem"
                                             },
-                                            template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:35px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width:57%; text-align:left;font-weight: 500;color: #0c467f;'>&nbsp;#presidente#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti_coalizione#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent_coalizione#%&nbsp;</div></div></div>",
+                                            template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:35px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width:57%; text-align:left;font-weight: 500;color: #0c467f;'>&nbsp;#presidente#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti_coalizione#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent_coalizione#%&nbsp;</div></div></div>",
                                             data: AA_SierWebAppParams.risultati.data                                    
                                         }
                                     ]
@@ -748,11 +747,171 @@ var AA_SierWebAppParams={
         //------------------------------------------------------------------------------------------------
 
         //---------------------------------------- Risultati Liste (coalizione) ----------------------------------
-        
+        if(arguments[1]==AA_SierWebAppParams.risultati.liste.view_id)
+        {
+            <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppUpdateRisultatiData();
+            if(AA_SierWebAppParams.risultati.liste.aggiornamento)
+            {
+                date=new Date(AA_SierWebAppParams.risultati.liste.aggiornamento);
+                aggiornamento=date.toLocaleDateString('it-IT',{
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            //Rimuove la view precedente
+            if($$(AA_SierWebAppParams.risultati.liste.realtime_container_id))
+            {
+                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - rimuovo il box risultati: "+AA_SierWebAppParams.risultati.liste.realtime_container_id);
+                $$(AA_SierWebAppParams.risultati.liste.realtime_container_id).destructor();
+
+                if($$(AA_SierWebAppParams.risultati.liste.footer_id))
+                {
+                    $$(AA_SierWebAppParams.risultati.liste.footer_id).parse({"footer":"&nbsp;"});
+                }
+            }
+
+            if(AA_SierWebAppParams.risultati.liste.data==null)
+            {
+                let preview_template={
+                    id: AA_SierWebAppParams.risultati.liste.realtime_container_id,
+                    container: AA_SierWebAppParams.risultati.liste.container_id,
+                    view:"template",
+                    borderless: true,
+                    css:{"background-color":"#f4f5f9"},
+                    template: "<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"
+                };
+
+                webix.ui(preview_template).show();
+                
+                return;
+            }
+
+            console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - Aggiorno il box risultati: "+AA_SierWebAppParams.risultati.liste.container_id);
+            if($$(AA_SierWebAppParams.risultati.liste.container_id))
+            {
+                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - implemento il box risultati: "+AA_SierWebAppParams.risultati.liste.realtime_container_id);
+                let risultati=AA_SierWebAppParams.data;
+                let dettaglio=risultati.stats.regionale.risultati;
+                if(AA_SierWebAppParams.risultati.id_circoscrizione>0 ) dettaglio=risultati.stats.circoscrizionale[AA_SierWebAppParams.risultati.id_circoscrizione].risultati;
+                if(AA_SierWebAppParams.risultati.id_comune>0 ) dettaglio=risultati.comuni[AA_SierWebAppParams.risultati.id_comune].risultati;
+                let voti_percent=0;
+                if(dettaglio.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].percent_coalizione > 0) voti_percent=new Intl.NumberFormat('it-IT').format(Number(dettaglio.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].percent_coalizione).toFixed(1));                
+                let cursor="zoom-in";
+                if(AA_SierWebAppParams.risultati.id_circoscrizione == 0)
+                {
+                    cursor="default";
+                }
+                let risultati_box={
+                    id: AA_SierWebAppParams.risultati.liste.realtime_container_id,
+                    view: "layout",
+                    css:{"background-color":"#f4f5f9"},
+                    container: AA_SierWebAppParams.risultati.liste.container_id,
+                    type:"clean",
+                    rows:
+                    [
+                        {
+                            view:"template",
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center; border-bottom:1px solid #b6bcbf;width:100%'><a href='#' onClick='AA_SierWebAppParams.risultati.liste.id_coalizione=0;$$(AA_SierWebAppParams.risultati.view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span style='font-size:larger; font-weight:bold; color: #0c467f;'>"+dettaglio.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].denominazione+"</span><br><span style='font-size: smaller'>dettaglio coalizione</span></div><span>&nbsp;</span></div><div style='display:flex;align-items:center; justify-content:space-between;height:60px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:25%; color: #0c467f;'><span>VOTI</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:49%; color: #0c467f'><span>#voti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:25%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
+                            data:{voti : dettaglio.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].voti_coalizione,percent: voti_percent},
+                            height: 100,
+                            css: {"border-radius": "15px","border-width":"1px 1px 1px !important"}
+                        },
+                        {height: 10},
+                        {
+                            view:"layout",
+                            type:"clean",
+                            css:{"border-radius":"15px","background-color":"#f4f5f9"},
+                            borderless:true,
+                            rows:
+                            [
+                                {
+                                    view:"dataview",
+                                    scrollX:false,
+                                    xCount:1,
+                                    select:false,
+                                    borderless:true,
+                                    css:{"background":"transparent","cursor": "default"},
+                                    type: {
+                                        height: 50,
+                                        width:"auto",
+                                        css:"AA_SierWebAppDataviewItem"
+                                    },
+                                    template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:35px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width: 57%;text-align:left;font-weight: 500;color: #0c467f;'>&nbsp;#denominazione#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>",
+                                    data: AA_SierWebAppParams.risultati.liste.data
+                                }
+                            ]
+                        },
+                        {height:10}
+                    ]
+                };
+
+                
+                
+                let risultati_ui=webix.ui(risultati_box);
+                if(risultati_box) 
+                {
+                    console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - visualizzo il box risultati: "+AA_SierWebAppParams.risultati.liste.view_id);
+                    risultati_ui.show();
+                }
+
+                if($$(AA_SierWebAppParams.risultati.liste.footer_id))
+                {
+                    $$(AA_SierWebAppParams.risultati.liste.footer_id).parse({"footer":"Dati aggiornati al "+aggiornamento});
+                }
+            }
+        }
         //------------------------------------------------------------------------------------------------
 
         //---------------------------------------- Risultati Candidati lista ----------------------------------
-        
+        if(arguments[1]==AA_SierWebAppParams.risultati.candidati.view_id)
+        {
+            <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppUpdateRisultatiData();
+            if(AA_SierWebAppParams.risultati.candidati.aggiornamento)
+            {
+                date=new Date(AA_SierWebAppParams.risultati.candidati.aggiornamento);
+                aggiornamento=date.toLocaleDateString('it-IT',{
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            //Rimuove la view precedente
+            if($$(AA_SierWebAppParams.risultati.candidati.realtime_container_id))
+            {
+                console.log("eventHandlers.defaultHandlers.SierWebAppRefreshUi - rimuovo il box risultati: "+AA_SierWebAppParams.risultati.candidati.realtime_container_id);
+                $$(AA_SierWebAppParams.risultati.candidati.realtime_container_id).destructor();
+
+                if($$(AA_SierWebAppParams.risultati.candidati.footer_id))
+                {
+                    $$(AA_SierWebAppParams.risultati.candidati.footer_id).parse({"footer":"&nbsp;"});
+                }
+            }
+
+            if(AA_SierWebAppParams.risultati.candidati.data==null)
+            {
+                let preview_template={
+                    id: AA_SierWebAppParams.risultati.candidati.realtime_container_id,
+                    container: AA_SierWebAppParams.risultati.candidati.container_id,
+                    view:"template",
+                    borderless: true,
+                    css:{"background-color":"#f4f5f9"},
+                    template: "<div style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; font-size: larger; font-weight: 600; color: rgb(0, 102, 153);' class='blinking'>Caricamento in corso...</div>"
+                };
+
+                webix.ui(preview_template).show();
+                
+                return;
+            }
+        }
         //------------------------------------------------------------------------------------------------
     }catch (msg) {
         console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.SierWebAppRefreshUi", msg);
@@ -906,7 +1065,7 @@ var AA_SierWebAppParams={
             }
         }
     
-        console.log("eventHandlers.defaultHandlers.SierWebAppUpdateRisultatiData - AA_SierWebAppParams.risultati.data",AA_SierWebAppParams.risultati.data);
+        //console.log("eventHandlers.defaultHandlers.SierWebAppUpdateRisultatiData - AA_SierWebAppParams.risultati.data",AA_SierWebAppParams.risultati.data);
         //-------------------------------------------------------------------
 
         //--------------------- Risultati Liste -----------------------------
@@ -924,11 +1083,11 @@ var AA_SierWebAppParams={
             {
                 if(typeof dettaglio.voti_lista[idLista] === 'object' && dettaglio.voti_lista[idLista].id_presidente==AA_SierWebAppParams.risultati.liste.id_coalizione)
                 {
-                    AA_SierWebAppParams.risultati.liste.data.push({id:idLista,"denominazione":dettaglio.voti_lista[idLista].denominazione,"presidente":risultati.stats.regionale.risultati.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].denominazione,denominazione_coalizione:"Coalizione "+risultati.stats.regionale.risultati.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].denominazione,"voti":dettaglio.voti_lista[idLista].voti,"percent":dettaglio.voti_lista[idLista].percent,"image":dettaglio.voti_lista[idLista].image});
+                    AA_SierWebAppParams.risultati.liste.data.push({id:idLista,"denominazione":dettaglio.voti_lista[idLista].denominazione,"presidente":risultati.stats.regionale.risultati.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].denominazione,denominazione_coalizione:"Coalizione "+risultati.stats.regionale.risultati.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].denominazione,"voti":fmtNumber.format(Number(dettaglio.voti_lista[idLista].voti)),"percent":fmtNumber.format(Number(dettaglio.voti_lista[idLista].percent)),"image":"https://amministrazioneaperta.regione.sardegna.it"+dettaglio.voti_lista[idLista].image});
                 }
             }
         
-            console.log("eventHandlers.defaultHandlers.SierWebAppUpdateRisultatiData - AA_SierWebAppParams.risultati.lista.data",AA_SierWebAppParams.risultati.lista.data);
+            //console.log("eventHandlers.defaultHandlers.SierWebAppUpdateRisultatiData - AA_SierWebAppParams.risultati.liste.data",AA_SierWebAppParams.risultati.liste.data);
         }
         //-------------------------------------------------------------------
 
@@ -947,7 +1106,7 @@ var AA_SierWebAppParams={
             {
                 if(typeof dettaglio.voti_candidato[idCandidato] === 'object' && risultati.candidati[idCandidato].id_lista==AA_SierWebAppParams.risultati.candidati.id_lista)
                 {
-                    AA_SierWebAppParams.risultati.candidati.data.push({id:idCandidato,"denominazione":risultati.candidati[idCandidato].nome+" "+risultati.candidati[idCandidato].cognome,"presidente":risultati.candidati[idCandidato].presidente,lista:risultati.candidati[idCandidato].lista,"voti":dettaglio.voti_candidato[idCandidato].voti,"percent":dettaglio.voti_candidato[idCandidato].percent,"image":risultati.candidati[idCandidato].image});
+                    AA_SierWebAppParams.risultati.candidati.data.push({id:idCandidato,"denominazione":risultati.candidati[idCandidato].nome+" "+risultati.candidati[idCandidato].cognome,"presidente":risultati.candidati[idCandidato].presidente,lista:risultati.candidati[idCandidato].lista,"voti":dettaglio.voti_candidato[idCandidato].voti,"percent":dettaglio.voti_candidato[idCandidato].percent,"image":"https://amministrazioneaperta.regione.sardegna.it"+risultati.candidati[idCandidato].image});
                 }
             }
         
