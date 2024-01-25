@@ -2554,7 +2554,7 @@ var AA_MainApp = {
                             console.log("AA_MainApp.ui.sidemenu.refresh - sidebar.ItemSelected: "+AA_MainApp.ui.sidebar.itemSelected);
                             sidemenu.select(AA_MainApp.ui.sidebar.itemSelected);
                         } else {
-                            if(AA_MainApp.ui.sidebar.sType=="section")
+                            if(AA_MainApp.ui.sidemenu.sType=="section")
                             {
                                 for (i = 0; i < sidemenucontent.content.value.length; i++) {
                                     if (sidemenucontent.content.value[i].section == AA_MainApp.curModule.curSection.id) {
