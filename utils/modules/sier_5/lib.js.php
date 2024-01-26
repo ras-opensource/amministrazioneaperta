@@ -962,32 +962,43 @@ var AA_SierWebAppParams={
                     [
                         {
                             view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center; border-bottom:1px solid #b6bcbf;width:100%'><a href='#' onClick='AA_SierWebAppParams.risultati.candidati.id_lista=0;$$(AA_SierWebAppParams.risultati.liste.view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span style='font-size:larger; font-weight:bold; color: #0c467f;'>"+dettaglio.voti_lista[AA_SierWebAppParams.risultati.candidati.id_lista].denominazione+"</span><br><span style='font-size: smaller'>dettaglio voti candidato</span></div><span>&nbsp;</span></div><div style='display:flex;align-items:center; justify-content:space-between;height:60px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:25%; color: #0c467f;'><span>VOTI</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:49%; color: #0c467f'><span>#voti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:25%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
-                            data:{voti : dettaglio.voti_lista[AA_SierWebAppParams.risultati.candidati.id_lista].voti,percent: voti_percent},
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%'><a href='#' onClick='AA_SierWebAppParams.risultati.candidati.id_lista=0;$$(AA_SierWebAppParams.risultati.liste.view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>Livello di dettaglio:</span><br><span style='font-weight:bold; color: #0c467f;'>"+AA_SierWebAppParams.risultati.livello_dettaglio_label+"</span></div><span>&nbsp;</span></div></div></div>",
+                            css:{"background-color":"#ebedf0","border-radius": "15px","border-width":"1px 1px 1px !important"},
+                            height: 42,
+                        },
+                        {height:10},
+                        {
+                            view:"template",
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: center; align-items:center;width:100%'><div style='width:60px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:50%; overflow:hidden'><img src='#image#' style='width:40px'></img></div><div style='text-align:center;'><span style='font-size:larger; font-weight:bold; color: #0c467f;'>"+dettaglio.voti_lista[AA_SierWebAppParams.risultati.candidati.id_lista].denominazione+"</span></div><div style='width:45px;display:flex;align-items:center;justify-content:center'>&nbsp;</div></div><div style='display:flex;align-items:center; justify-content:space-between;height:40px; width:100%;border-bottom: 1px solid #dadee0;border-top:1px solid #b6bcbf;background-color:#fbfbfa'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:40%; color: #0c467f;'><span>&nbsp;VOTI di LISTA</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:38%; color: #0c467f'><span>#voti_lista#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:25%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent_lista#%</span></div></div></div>",
+                            data:{voti_lista : fmtNumber.format(Number(dettaglio.voti_lista[AA_SierWebAppParams.risultati.candidati.id_lista].voti)), percent_lista: voti_percent,image:"https://amministrazioneaperta.regione.sardegna.it"+dettaglio.voti_lista[AA_SierWebAppParams.risultati.candidati.id_lista].image},
                             height: 100,
                             css: {"border-radius": "15px","border-width":"1px 1px 1px !important"}
                         },
                         {height: 10},
                         {
                             view:"layout",
-                            type:"clean",
-                            css:{"border-radius":"15px","background-color":"#f4f5f9"},
-                            borderless:true,
+                            type:"space",
+                            css:{"border-radius":"15px","background-color":"#ebedf0","border":"1px solid #dee1e4 !important"},
                             rows:
                             [
+                                {
+                                    view:"label",
+                                    label:"<span style='border-bottom: 1px solid #c8cccf'>Dettaglio voti candidati consigliere</span>",
+                                    align:"center"
+                                },
                                 {
                                     view:"dataview",
                                     scrollX:false,
                                     xCount:1,
                                     select:false,
                                     borderless:true,
-                                    css:{"background":"transparent","cursor": "default"},
+                                    css:{"background-color":"#ebedf0","cursor": "default"},
                                     type: {
                                         height: 50,
                                         width:"auto",
-                                        css:"AA_SierWebAppDataviewItem"
+                                        css:"AA_SierWebAppCandidatiDataviewItem"
                                     },
-                                    template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:40px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width: 57%;text-align:left;font-weight: 500;color: #0c467f;#font_size#'>#denominazione#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>",
+                                    template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:10px'>&nbsp;</div><div style='width: 60%;text-align:left;font-weight: 500;color: #0c467f;#font_size#'>#denominazione#</div><div style='width:35%;text-align:right;font-weight: 500'>#voti#</div><div style='width:10px'>&nbsp;</div></div></div>",
                                     data: AA_SierWebAppParams.risultati.candidati.data
                                 }
                             ]
