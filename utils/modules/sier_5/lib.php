@@ -1044,10 +1044,10 @@ Class AA_Sier extends AA_Object_V2
             {
                 $voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
                 
-                if($risultati['voti_candidato'][$idCandidato] > $risultati['voti_lista'][$curCandidato->GetProp('id_lista')]['voti'])
+                if($risultati['voti_candidato'][$idCandidato]['voti'] > $risultati['voti_lista'][$curCandidato->GetProp('id_lista')])
                 {
                     $result[0]=true;
-                    $result[1][]="I voti (".$risultati['voti_candidato'][$idCandidato]['voti'].") del candidato ".$curCandidato->GetProp('nome')." ".$curCandidato->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$curCandidato->GetProp('id_lista')]['voti']).") della lista (".$curCandidato->GetProp('lista').") di appartenenza.";
+                    $result[1][]="I voti (".$risultati['voti_candidato'][$idCandidato]['voti'].") del candidato ".$curCandidato->GetProp('nome')." ".$curCandidato->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$curCandidato->GetProp('id_lista')]).") della lista (".$curCandidato->GetProp('lista').") di appartenenza.";
                     $result[3]['risultati_voti_candidato_check']++;
                 }
             }
@@ -12796,7 +12796,7 @@ Class AA_SierModule extends AA_GenericModule
                     "tabbar"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_TabBar_".$object->GetId(),
                     "type"=>array(
                         "type"=>"tiles",
-                        "height"=>80,
+                        "height"=>120,
                         "width"=>"auto",
                         "css"=>"AA_DataView_Nomine_item",
                     ),
@@ -12869,7 +12869,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"ordine","header"=>array("<div style='text-align: center'>n.</div>",array("content"=>"selectFilter")),"width"=>50, "sort"=>"int","css"=>array("text-align"=>"center")),
             array("id"=>"cognome","header"=>array("<div style='text-align: center'>Cognome</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"left")),
             array("id"=>"nome","header"=>array("<div style='text-align: center'>Nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"cf","header"=>array("<div style='text-align: center'>CF</div>",array("content"=>"textFilter")),"width"=>180, "css"=>array("text-align"=>"center"),"sort"=>"text"),
             array("id"=>"cv","header"=>array("<div style='text-align: center'>Curriculum</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"cg","header"=>array("<div style='text-align: center'>Casellario</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
             array("id"=>"circoscrizione_desc","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"width"=>180, "css"=>array("text-align"=>"center"),"sort"=>"text"),
@@ -17189,17 +17189,26 @@ Class AA_SierModule extends AA_GenericModule
         $candidato=null;
         $tot_voti_candidati=0;
         
-        if($_REQUEST['voti'] > $risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]['voti'])
+        if($_REQUEST['voti'] > $risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')])
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("I voti (".$_REQUEST['voti'].") del candidato ".$candidati[$_REQUEST['id_candidato']]->GetProp('nome')." ".$candidati[$_REQUEST['id_candidato']]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]['voti']).") della lista (".$candidati[$_REQUEST['id_candidato']]->GetProp('lista').") di appartenenza.",false);
+            $task->SetError("I voti (".$_REQUEST['voti'].") del candidato ".$candidati[$_REQUEST['id_candidato']]->GetProp('nome')." ".$candidati[$_REQUEST['id_candidato']]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]).") della lista (".$candidati[$_REQUEST['id_candidato']]->GetProp('lista').") di appartenenza.",false);
             return false;
         }
 
+        $id_lista=0;
         foreach($voti_candidato as $idCandidato=>$curCandidato)
         {
             if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
             else $tot_voti_candidati+=intVal($_REQUEST['voti']);
+            if($id_lista==0) $id_lista=$curCandidato->GetProp("id_lista");
+        }
+
+        if($id_lista > 0 && $tot_voti_candidati > (2*$risultati['voti_lista'][$id_lista]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il totale dei voti ai candidati (".$tot_voti_candidati.") sono superiori al doppio dei voti (".intVal($risultati['voti_lista'][$id_lista]).") della lista di appartenenza.",false);
+            return false;
         }
 
         if($tot_voti_candidati > 2*($votanti -$voti_non_validi))
@@ -17312,6 +17321,7 @@ Class AA_SierModule extends AA_GenericModule
         $voti_candidato=$risultati['voti_candidato'];
         if(!is_array($voti_candidato)) $voti_candidato=array();
         $tot_voti_candidato=0;
+        $id_lista=0;
         foreach($candidati as $idCandidato=>$curCandidato)
         {
             if(isset($_REQUEST['candidato_'.$idCandidato]))
@@ -17321,14 +17331,21 @@ Class AA_SierModule extends AA_GenericModule
                 $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
                 $voti_candidato[$idCandidato]=$dati_candidato;
                 $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
-
-                if(intVal($_REQUEST['candidato_'.$idCandidato]) > $risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]['voti'])
+                if($id_lista==0) $id_lista=$curCandidato->GetProp('id_lista');
+                if(intVal($_REQUEST['candidato_'.$idCandidato]) > $risultati['voti_lista'][$curCandidato->GetProp('id_lista')])
                 {
                     $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                    $task->SetError("I voti (".$_REQUEST['candidato_'.$idCandidato].") del candidato ".$candidati[$idCandidato]->GetProp('nome')." ".$candidati[$idCandidato]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]['voti']).") della lista (".$candidati[$idCandidato]->GetProp('lista').") di appartenenza.",false);
+                    $task->SetError("I voti (".$_REQUEST['candidato_'.$idCandidato].") del candidato ".$candidati[$idCandidato]->GetProp('nome')." ".$candidati[$idCandidato]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]).") della lista (".$candidati[$idCandidato]->GetProp('lista').") di appartenenza.",false);
                     return false;
                 }
             }
+        }
+
+        if($id_lista > 0 && $tot_voti_candidato > (2*$risultati['voti_lista'][$id_lista]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il totale dei voti ai candidati (".$tot_voti_candidato.") sono superiori al doppio dei voti (".intVal($risultati['voti_lista'][$id_lista]).") della lista di appartenenza.",false);
+            return false;
         }
 
         if($tot_voti_candidato > 2*($votanti -$voti_non_validi))
@@ -17606,17 +17623,26 @@ Class AA_SierModule extends AA_GenericModule
         $candidato=null;
         $tot_voti_candidati=0;
         
-        if($_REQUEST['voti'] > $risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]['voti'])
+        if($_REQUEST['voti'] > $risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')])
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("I voti (".$_REQUEST['voti'].") del candidato ".$candidati[$_REQUEST['id_candidato']]->GetProp('nome')." ".$candidati[$_REQUEST['id_candidato']]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]['voti']).") della lista (".$candidati[$_REQUEST['id_candidato']]->GetProp('lista').") di appartenenza.",false);
+            $task->SetError("I voti (".$_REQUEST['voti'].") del candidato ".$candidati[$_REQUEST['id_candidato']]->GetProp('nome')." ".$candidati[$_REQUEST['id_candidato']]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')]).") della lista (".$candidati[$_REQUEST['id_candidato']]->GetProp('lista').") di appartenenza.",false);
             return false;
         }
 
+        $id_lista=0;
         foreach($voti_candidato as $idCandidato=>$curCandidato)
         {
             if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
             else $tot_voti_candidati+=intVal($_REQUEST['voti']);
+            if($id_lista==0) $id_lista=$curCandidato->GetProp("id_lista");
+        }
+
+        if($id_lista > 0 && $tot_voti_candidati > (2*$risultati['voti_lista'][$id_lista]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il totale dei voti ai candidati (".$tot_voti_candidati.") sono superiori al doppio dei voti (".intVal($risultati['voti_lista'][$id_lista]).") della lista di appartenenza.",false);
+            return false;
         }
 
         if($tot_voti_candidati > 2*($votanti -$voti_non_validi))
@@ -17743,6 +17769,7 @@ Class AA_SierModule extends AA_GenericModule
         if(!is_array($voti_candidato)) $voti_candidato=array();
 
         $tot_voti_candidato=0;
+        $id_lista=0;
         foreach($candidati as $idCandidato=>$curCandidato)
         {
             if(isset($_REQUEST['candidato_'.$idCandidato]))
@@ -17753,13 +17780,21 @@ Class AA_SierModule extends AA_GenericModule
                 $voti_candidato[$idCandidato]=$dati_candidato;
                 $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
 
-                if(intVal($_REQUEST['candidato_'.$idCandidato]) > $risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]['voti'])
+                if(intVal($_REQUEST['candidato_'.$idCandidato]) > $risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')])
                 {
                     $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                    $task->SetError("I voti (".$_REQUEST['candidato_'.$idCandidato].") del candidato ".$candidati[$idCandidato]->GetProp('nome')." ".$candidati[$idCandidato]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]['voti']).") della lista (".$candidati[$idCandidato]->GetProp('lista').") di appartenenza.",false);
+                    $task->SetError("I voti (".$_REQUEST['candidato_'.$idCandidato].") del candidato ".$candidati[$idCandidato]->GetProp('nome')." ".$candidati[$idCandidato]->GetProp('cognome')." sono superiori ai voti (".intVal($risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')]).") della lista (".$candidati[$idCandidato]->GetProp('lista').") di appartenenza.",false);
                     return false;
                 }
+                if($id_lista==0) $id_lista=$curCandidato->GetProp("id_lista");
             }
+        }
+
+        if($id_lista > 0 && $tot_voti_candidato > (2*$risultati['voti_lista'][$id_lista]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il totale dei voti ai candidati (".$tot_voti_candidato.") sono superiori al doppio dei voti (".intVal($risultati['voti_lista'][$id_lista]).") della lista di appartenenza.",false);
+            return false;
         }
 
         if($tot_voti_candidato > 2*($votanti -$voti_non_validi))

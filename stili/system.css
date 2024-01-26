@@ -855,6 +855,26 @@ div.AA_Footer_Gradient {
   }
 }
 
+.LightBlinking {
+
+    animation: opacity_50 2s ease-in-out infinite;
+    opacity: 1;
+}
+
+@keyframes opacity_50 {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
 .scrollTextFromLeft {
     /* animation properties */
     -moz-animation: ScrollFromLeftAnimation 15s linear infinite;
