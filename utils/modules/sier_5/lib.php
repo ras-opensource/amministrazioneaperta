@@ -21934,7 +21934,7 @@ Class AA_SierModule extends AA_GenericModule
         $form_layout=new AA_JSON_Template_Layout($id."_FormContentBox",array("type"=>"space", "css"=>array("border-radius"=>"15px")));
         $form_layout->AddRow(new AA_JSON_Template_Search($id."_PresidentiFilterParams",array("label"=>"Livello di dettaglio","value"=>"tutta la Regione Sardegna", "tooltip"=>"Inserisci o seleziona il comune o la circoscrizione di cui vuoi visualizzare il dettaglio.","clear"=>true,"bottomLabel"=>"Inserisci le iniziali del comune o della circoscrizione.")));
         $form->AddRow($form_layout);
-        $layout_presidenti->AddRow($form);
+        //$layout_presidenti->AddRow($form);
         $template_content="<div id='".$id."_PresidentiContent'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
         $template_content.="</div>";
         $template_footer="<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>";
@@ -21970,7 +21970,17 @@ Class AA_SierModule extends AA_GenericModule
 
         $multiview->addCell($layout_liste);
         //---------------
-        
+
+         //Tree view select
+         $layout_liste=new AA_JSON_Template_Layout($id."_DettaglioTreeBox",array("type"=>"clean"));
+
+         $template_content="<div id='AA_SierWebAppSideMenuBox'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
+         $template_content.="</div>";
+ 
+         $layout_liste->AddRow(new AA_JSON_Template_Template($id."_DettaglioTreeBoxContent",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>$template_content)));
+         $multiview->addCell($layout_liste);
+         //---------------
+         
         $layout->AddRow($multiview);
         return $layout;
     }
