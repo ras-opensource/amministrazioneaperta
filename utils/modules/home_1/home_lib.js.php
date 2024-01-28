@@ -5,6 +5,7 @@
  * and open the template in the editor.
  */
 include_once("home_lib.php");
+header('Content-Type: text/javascript');
 ?>
 
 //Modulo HOME

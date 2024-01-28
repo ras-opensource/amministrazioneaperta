@@ -6,6 +6,7 @@
  */
 session_start();
 include_once("lib.php");
+header('Content-Type: text/javascript');
 ?>
 //modulo
 var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_SierModule::AA_ID_MODULE?>", "SIER");
@@ -194,70 +195,75 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
 };
 
 //----------------------------------------------  Funzioni di reportistica  ----------------------------------------------
-var AA_SierWebAppParams={
-    affluenza:{
+function AA_SierWebAppGenericParams()
+{
+    this.ui_prefix="<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI?>";
+    this.affluenza=
+    {
         regionale:
         {
             data: null,
-            view_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox"?>",
-            container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaContent"?>",
-            realtime_container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaRealtimeContent"?>",
-            footer_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_Affluenza_Footer"?>",
+            view_id: this.ui_prefix+"_AffluenzaBox",
+            container_id:this.ui_prefix+"_AffluenzaContent",
+            realtime_container_id: this.ui_prefix+"_AffluenzaRealtimeContent",
+            footer_id:this.ui_prefix+"_Affluenza_Footer",
             aggiornamento:null
         },
         circoscrizionale:
         {
             circoscrizione:0,
             data: null,
-            view_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaCircoscrizionaleBox"?>",
-            container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaCircoscrizionaleContent"?>",
-            realtime_container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaCircoscrizionaleRealtimeContent"?>",
-            footer_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaCircoscrizionale_Footer"?>",
+            view_id:this.ui_prefix+"_AffluenzaCircoscrizionaleBox",
+            container_id:this.ui_prefix+"_AffluenzaCircoscrizionaleContent",
+            realtime_container_id:this.ui_prefix+"_AffluenzaCircoscrizionaleRealtimeContent",
+            footer_id:this.ui_prefix+"_AffluenzaCircoscrizionale_Footer",
             aggiornamento:null
         }
-    },
-    risultati:{
+    };
+    this.risultati=
+    {
         aggiornamento: null,
         id_circoscrizione:0,
         id_comune:0,
         livello_dettaglio_label:"tutta la Regione Sardegna",
         data:null,
-        view_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_PresidentiBox"?>",
-        container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_PresidentiContent"?>",
-        realtime_container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_PresidentiRealtimeContent"?>",
-        footer_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_Presidenti_Footer"?>",
+        view_id:this.ui_prefix+"_PresidentiBox",
+        container_id:this.ui_prefix+"_PresidentiContent",
+        realtime_container_id:this.ui_prefix+"_PresidentiRealtimeContent",
+        footer_id:this.ui_prefix+"_Presidenti_Footer",
         liste:
         {
             aggiornamento: null,
             id_coalizione:0,
             data: null,
-            view_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_ListeBox"?>",
-            container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_ListeContent"?>",
-            realtime_container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_ListeRealtimeContent"?>",
-            footer_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_Liste_Footer"?>",
+            view_id:this.ui_prefix+"_ListeBox",
+            container_id:this.ui_prefix+"_ListeContent",
+            realtime_container_id:this.ui_prefix+"_ListeRealtimeContent",
+            footer_id:this.ui_prefix+"_Liste_Footer",
         },
         candidati:
         {
             aggiornamento: null,
             id_lista:0,
             data: null,
-            view_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_CandidatiBox"?>",
-            container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_CandidatiContent"?>",
-            realtime_container_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_CandidatiRealtimeContent"?>",
-            footer_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_Candidati_Footer"?>"
+            view_id:this.ui_prefix+"_CandidatiBox",
+            container_id:this.ui_prefix+"_CandidatiContent",
+            realtime_container_id:this.ui_prefix+"_CandidatiRealtimeContent",
+            footer_id:this.ui_prefix+"_Candidati_Footer"
         }
-    },
-    mainUi_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI?>",
-    autoUpdateTime: 300000,
-    ui_prefix:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI?>",
-    sezione_corrente:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox"?>",
-    timeoutRisultati:null,
-    livello_dettaglio_data_tree: [{ id: "1", value: "tutta la Regione Sardegna (1)", "open":true, comune:0, circoscrizione:0, data:[]}],
-    livello_dettaglio_view_id: "<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_DettaglioTreeBox"?>",
-    livello_dettaglio_prev_view_id: null,
-    embedded: true,
-    data:null
+    };
+    this.mainUi_id=this.ui_prefix;
+    this.autoUpdateTime = 300000;
+    this.sezione_corrente = this.ui_prefix+"_AffluenzaBox";
+    this.timeoutRisultati = null;
+    this.livello_dettaglio_data_tree = [{ id: "1", value: "tutta la Regione Sardegna (1)", "open":true, comune:0, circoscrizione:0, data:[]}];
+    this.livello_dettaglio_view_id = this.ui_prefix+"_DettaglioTreeBox";
+    this.livello_dettaglio_prev_view_id= null;
+    this.embedded= true;
+    this.data=null;
 }
+
+var AA_SierWebAppParams = new AA_SierWebAppGenericParams();
 
 //Embedded refresh app gui
 <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SierWebAppRefreshUi = function() {
@@ -279,6 +285,7 @@ var AA_SierWebAppParams={
         console.error("<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].StartRisultatiApp", msg);
     }
 };
+//---------------------------------------------------------------------------------------------------------------------------
 
 <?php
 //parte operatori comunali

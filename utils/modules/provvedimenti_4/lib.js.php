@@ -5,6 +5,7 @@
  * and open the template in the editor.
  */
 include_once("lib.php");
+header('Content-Type: text/javascript');
 ?>
 //modulo
 var <?php echo AA_ProvvedimentiModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_ProvvedimentiModule::AA_ID_MODULE?>", "PROVVEDIMENTI");

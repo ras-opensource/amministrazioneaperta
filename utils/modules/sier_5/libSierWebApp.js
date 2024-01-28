@@ -1,71 +1,73 @@
-let AA_SierWebApp=
+function AA_GenericSierWebApp()
 {
-    refreshMainUi:
-        async function()
-        {
-            if(AA_SierWebAppParams.embedded==true) 
-            {
-                //console.log("AA_SierWebApp.refreshMainUi",AA_SierWebAppParams.taskManager);
-                let result = await AA_VerboseTask("GetSierWebApp", AA_SierWebAppParams.taskManager);
-                if (result.status.value == 0) 
-                {
-                    //---------  Show App  --------------
-                    let wnd = webix.ui(result.content.value);
-                    wnd.show();
-
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        }
-};
-
-//Inizializza l'app dei risultati
-AA_SierWebApp.StartApp = async function() {
-    try 
+    this.refreshMainUi= async function()
     {
-        //console.log("AA_SierWebApp.StartApp",arguments);
-        //build UI if not present
-        if(!$$(AA_SierWebAppParams.mainUi_id))
+        if(AA_SierWebAppParams.embedded==true) 
         {
-            let result = await this.refreshMainUi();
-            if (result) 
+            //console.log("AA_SierWebApp.refreshMainUi",AA_SierWebAppParams.taskManager);
+            let result = await AA_VerboseTask("GetSierWebApp", AA_SierWebAppParams.taskManager);
+            if (result.status.value == 0) 
             {
-                //inizializzazione
-                AA_SierWebAppParams.data=null;
-                AA_SierWebAppParams.sezione_corrente=AA_SierWebAppParams.affluenza.regionale.view_id;
-                AA_SierWebAppParams.affluenza.regionale.data=null;
-                AA_SierWebAppParams.affluenza.regionale.aggiornamento=null;
-                AA_SierWebAppParams.affluenza.circoscrizionale.data=null;
-                AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento=null;
-                AA_SierWebAppParams.risultati.id_comune=0;
-                AA_SierWebAppParams.risultati.id_circoscrizione=0;
-                AA_SierWebAppParams.risultati.livello_dettaglio_label="tutta la Regione Sardegna";
-                AA_SierWebAppParams.risultati.data=null;
-                AA_SierWebAppParams.risultati.liste.id_coalizione=0;
-                AA_SierWebAppParams.risultati.liste.data=null;
-                AA_SierWebAppParams.risultati.candidati.id_lista=0;
-                AA_SierWebAppParams.risultati.candidati.data=null;
-                AA_SierWebApp.RefreshUi(null,AA_SierWebAppParams.sezione_corrente);
-                //----------------------------------
+                //---------  Show App  --------------
+                let wnd = webix.ui(result.content.value);
+                wnd.show();
 
-                //-------- refresh data  -----------
-                let url=arguments[0]['url'];
-                AA_SierWebApp.RefreshRisultatiData(url,true,true);
-                //-----------------------------------
+                return true;
             }
             else
             {
-                console.error("AA_SierWebApp.StartRisultatiApp",result.error.value);
+                return false;
             }
         }
-    } catch (msg) {
-        console.error("AA_SierWebApp.StartRisultatiApp", msg);
-    }
+    };
+
+    //Inizializza l'app dei risultati
+    this.StartApp = async function() 
+    {
+        try 
+        {
+            //console.log("AA_SierWebApp.StartApp",arguments);
+            //build UI if not present
+            if(!$$(AA_SierWebAppParams.mainUi_id))
+            {
+                let result = await this.refreshMainUi();
+                if (result) 
+                {
+                    //inizializzazione
+                    AA_SierWebAppParams.data=null;
+                    AA_SierWebAppParams.sezione_corrente=AA_SierWebAppParams.affluenza.regionale.view_id;
+                    AA_SierWebAppParams.affluenza.regionale.data=null;
+                    AA_SierWebAppParams.affluenza.regionale.aggiornamento=null;
+                    AA_SierWebAppParams.affluenza.circoscrizionale.data=null;
+                    AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento=null;
+                    AA_SierWebAppParams.risultati.id_comune=0;
+                    AA_SierWebAppParams.risultati.id_circoscrizione=0;
+                    AA_SierWebAppParams.risultati.livello_dettaglio_label="tutta la Regione Sardegna";
+                    AA_SierWebAppParams.risultati.data=null;
+                    AA_SierWebAppParams.risultati.liste.id_coalizione=0;
+                    AA_SierWebAppParams.risultati.liste.data=null;
+                    AA_SierWebAppParams.risultati.candidati.id_lista=0;
+                    AA_SierWebAppParams.risultati.candidati.data=null;
+                    AA_SierWebApp.RefreshUi(null,AA_SierWebAppParams.sezione_corrente);
+                    //----------------------------------
+
+                    //-------- refresh data  -----------
+                    let url=arguments[0]['url'];
+                    AA_SierWebApp.RefreshRisultatiData(url,true,true);
+                    //-----------------------------------
+                }
+                else
+                {
+                    console.error("AA_SierWebApp.StartRisultatiApp",result.error.value);
+                }
+            }
+        } catch (msg) {
+            console.error("AA_SierWebApp.StartRisultatiApp", msg);
+        }
+    };
 };
+
+var AA_SierWebApp = new AA_GenericSierWebApp();
 
 //Rinfresca l'interfaccia web app
 AA_SierWebApp.RefreshUi = async function() {
