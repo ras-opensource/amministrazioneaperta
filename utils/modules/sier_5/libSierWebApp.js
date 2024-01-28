@@ -31,11 +31,11 @@ function AA_GenericSierWebApp()
             this.ui.setup();
 
             //pull to refresh
-            if (AA_SierWebAppParams.enablePullToRefresh != "") {
-                console.log("AA_DefaultSystemInitialization - abilito il pull to refresh sull'elemento: ");
+            if (AA_SierWebAppParams.enablePullToRefresh) {
+                console.log("AA_DefaultSystemInitialization - abilito il pull to refresh sull'elemento: "+AA_SierWebAppParams.ui_prefix+"_HeaderPull");
                 const ptr = PullToRefresh.init({
                     mainElement: 'body',
-                    triggerElement: AA_SierWebAppParams.ui_prefix+"_Header",
+                    triggerElement: "#"+AA_SierWebAppParams.ui_prefix+"_HeaderPull",
                     instructionsReleaseToRefresh: "Rilascia per aggiornare...",
                     instructionsPullToRefresh: "Trascina per aggiornare...",
                     instructionsRefreshing: "Aggiornamento...",
@@ -116,6 +116,8 @@ function AA_GenericSierWebApp()
             //Imposta la posìzione dei messaggi
             webix.message.position = "bottom";
 
+            //<div style='font-weight:700;font-size:larger;text-align:center'><span style='color:#fff'>A</span>mministrazione <span style='color:#fff'>A</span>perta</div>
+            //<div style='font-weight:600;font-size:smaller;font-variant:default; text-align:center'>Regione Autonoma della Sardegna</div>
             app_box = 
             {
                 id: AA_SierWebAppParams.ui_prefix,
@@ -127,7 +129,7 @@ function AA_GenericSierWebApp()
                         view:"template",
                         type:"clean",
                         borderless:true,
-                        template:"<div style='width:100%;height:100%;display:flex;justify-content:space-between;align-items:center;background-color:#17324d'><div style='height:100%; width:60px; display:flex; align-items:center;justify-content:center'><img src='immagini/gonfalone_bianco.png' height='70%'/></div><div style='height:100%; display:flex; align_items:center; justify-content:space-evenly;flex-direction:column; color:rgb(215, 238, 255);font-variant: small-caps;'><div style='font-weight:700;font-size:larger;text-align:center'><span style='color:#fff'>A</span>mministrazione <span style='color:#fff'>A</span>perta</div><div style='text-align:center'><span style='color:#fff; '>Elezioni Regionali 2019</span></div></div><div style='width:60px'>&nbsp;</div></div>",
+                        template:"<div id='"+AA_SierWebAppParams.ui_prefix+"_HeaderPull' style='width:100%;height:100%;display:flex;justify-content:space-between;align-items:center;background-color:#17324d'><div style='height:100%; width:60px; display:flex; align-items:center;justify-content:center'><img src='immagini/gonfalone_bianco.png' title='Regione Autonoma della Sardegna' alt='Regione Autonoma della Sardegna' height='50%'/></div><div style='height:100%; display:flex; align_items:center; justify-content:space-evenly;flex-direction:column; color:rgb(215, 238, 255);font-weight: 700; font-size:larger'><div style='text-align:center'><span style='color:#fff; '>ELEZIONI REGIONALI</span><br><span style='font-size:larger'><i>2019</i></span></div></div><div style='height:100%; width:60px; display:flex; align-items:center;justify-content:center'><img src='immagini/aa_logo.png' height='50%' title='Amministrazione Aperta' alt='Amministrazione Aperta'/></div></div>",
                         height: 60
                     },
                     {
@@ -139,8 +141,8 @@ function AA_GenericSierWebApp()
                         view_id:AA_SierWebAppParams.ui_prefix+"_Multiview",
                         options:
                         [
-                            {id:AA_SierWebAppParams.affluenza.regionale.view_id,value:"Affluenza"},
-                            {id:AA_SierWebAppParams.risultati.view_id,value:"Risultati"}
+                            {id:AA_SierWebAppParams.affluenza.regionale.view_id,value:"Affluenza", css:"AA_SierWebAppTab"},
+                            {id:AA_SierWebAppParams.risultati.view_id,value:"Risultati", css:"AA_SierWebAppTab"}
                         ]
                     },
                     {
@@ -372,7 +374,7 @@ AA_SierWebApp.RefreshUi = async function() {
                     {
                         id:"AA_SierWebAppSideMenuBoxContentLabel",
                         view:"template",
-                        template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%'><a href='#' onClick='$$(AA_SierWebAppParams.livello_dettaglio_prev_view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>livello di dettaglio attuale:</span><br><span style='font-weight:bold; color: #0c467f;'>#livello_dettaglio_label#</span></div><span>&nbsp;</span></div></div></div>",
+                        template: "<div style='display:flex;align-items:center; justify-content:center; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%;height:100%'><a href='#' onClick='$$(AA_SierWebAppParams.livello_dettaglio_prev_view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>livello di dettaglio attuale:</span><br><span style='font-weight:bold; color: #0c467f;'>#livello_dettaglio_label#</span></div><span>&nbsp;</span></div></div></div>",
                         css:{"background-color":"#ebedf0","border-radius": "15px"},
                         data:{livello_dettaglio_label:AA_SierWebAppParams.risultati.livello_dettaglio_label},
                         height: 42,
@@ -549,7 +551,7 @@ AA_SierWebApp.RefreshUi = async function() {
             let affluenza_cols=[
                 {id:"denominazione",header:["<div style='text-align: left'>Circoscrizione</div>"],"fillspace":true, "sort":"text","css":{"text-align":"left"}},
                 {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "css":{"text-align":"right"}},
-                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"int","css":{"text-align":"right","font-weight":"700"}}
+                {id:"percent",header:["<div style='text-align: right'>%</div>"],"width":60, "sort":"int","css":{"text-align":"right","font-weight":"700"}}
             ];
             //console.log("AA_SierWebApp.RefreshRisultatiData - affluenza_cols",affluenza_cols);
     
@@ -579,7 +581,7 @@ AA_SierWebApp.RefreshUi = async function() {
                         {height: 10},
                         {
                             view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='font-size:larger; font-weight:bold; border-bottom:1px solid #b6bcbf;width:70%;text-align: center; color: #0c467f;'>Regione Sardegna</div><div style='display:flex;align-items:center; justify-content:space-between;height:100px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:33%; color: #0c467f; border-right: 1px solid #dadee0'><span>ELETTORI</span><hr style='width:96%;color: #eef9ff'><span>#elettori#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:33%; color: #0c467f'><span>VOTANTI</span><hr style='width:100%; color: #eef9ff'><span>#votanti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:33%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='font-size:larger; font-weight:bold; border-bottom:1px solid #b6bcbf;width:70%;text-align: center; color: #0c467f;height:22px;padding-top:8px'>Regione Sardegna</div><div style='display:flex;align-items:center; justify-content:space-between;height:100px; width:100%'><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; font-weight: 600; width:33%; color: #0c467f; border-right: 1px solid #dadee0'><span>ELETTORI</span><hr style='width:96%;color: #eef9ff'><span>#elettori#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center;font-weight: 600; width:33%; color: #0c467f'><span>VOTANTI</span><hr style='width:100%; color: #eef9ff'><span>#votanti#</span></div><div style='display:flex; flex-direction:column;justify-content:center;align-items:center; width:33%; font-weight:700; font-size: 24px; color: #0c467f'><span>#percent#%</span></div></div></div>",
                             data:{votanti : votanti_tot,percent: votanti_percent,elettori:elettori_tot},
                             height: 140,
                             css: {"border-radius": "15px","border-width":"1px 1px 1px !important"}
@@ -591,7 +593,7 @@ AA_SierWebApp.RefreshUi = async function() {
                             rows:
                             [
                                 {
-                                    template:"<div style='font-weight:bold; border-bottom:1px solid #b6bcbf;width:100%;text-align: center'>Dettaglio per circoscrizione</div>",
+                                    template:"<div style='font-weight:bold; width:100%;text-align: center'>Dettaglio per circoscrizione</div>",
                                     autoheight: true,
                                     borderless: true,
                                 },
@@ -610,7 +612,7 @@ AA_SierWebApp.RefreshUi = async function() {
                                     data: AA_SierWebAppParams.affluenza.regionale.data
                                 },
                                 {
-                                    template:"<div style='font-size:smaller; width:100%;text-align: left'><i>*I valori percentuale sono riferiti agli elettori totali della circoscrizione.</i></div>",
+                                    template:"<div style='font-size:smaller; width:100%;text-align: left'><i>Fai click sulla circoscrizione per visualizzare il dettaglio al livello comunale.</i></div>",
                                     autoheight: true,
                                     borderless: true,
                                 }
@@ -690,7 +692,7 @@ AA_SierWebApp.RefreshUi = async function() {
             let affluenza_cols=[
                 {id:"denominazione",header:["<div style='text-align: left'>Comune</div>"],"fillspace":true, "sort":"text","css":{"text-align":"left"}},
                 {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "css":{"text-align":"right"}},
-                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"int","css":{"text-align":"right"}}
+                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"int","css":{"text-align":"right","font-weight":"700"}}
             ];
             //console.log("AA_SierWebApp.RefreshRisultatiData - affluenza_cols",affluenza_cols);
     
@@ -843,7 +845,7 @@ AA_SierWebApp.RefreshUi = async function() {
                     [
                         {
                             view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%'><span>&nbsp;</span><div style='text-align:center;'><span>Livello di dettaglio:</span><br><a href='#' onclick='AA_SierWebAppParams.livello_dettaglio_prev_view_id=AA_SierWebAppParams.risultati.view_id;$$(AA_SierWebAppParams.livello_dettaglio_view_id).show();' title='Fai click per cambiare il livello di dettaglio' style='text-decoration: none'><span style='font-weight:bold; color: #0c467f;'>"+AA_SierWebAppParams.risultati.livello_dettaglio_label+"</span></a></div>&nbsp;</div></div></div>",
+                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: center; align-items:center;width:100%;height:100%'><span>&nbsp;</span><div style='text-align:center;'><span>Livello di dettaglio:</span><br><a href='#' onclick='AA_SierWebAppParams.livello_dettaglio_prev_view_id=AA_SierWebAppParams.risultati.view_id;$$(AA_SierWebAppParams.livello_dettaglio_view_id).show();' title='Fai click per cambiare il livello di dettaglio' style='text-decoration: none'><span style='font-weight:bold; color: #0c467f;'>"+AA_SierWebAppParams.risultati.livello_dettaglio_label+"</span></a></div>&nbsp;</div></div></div>",
                             css:{"background-color":"#ebedf0","border-radius": "15px","border-width":"1px 1px 1px !important"},
                             height: 42,
                         },
@@ -868,7 +870,7 @@ AA_SierWebApp.RefreshUi = async function() {
                                     css:"AA_SierWebAppHeader_TabBar",
                                     borderless: true,
                                     multiview:true,
-                                    options:[{value:"Voti presidente",id:"voti_presidente"},{value:"Voti coalizione",id:"voti_coalizione"}]
+                                    options:[{value:"Voti presidente",id:"voti_presidente",css:"AA_SierWebAppTab"},{value:"Voti coalizione",id:"voti_coalizione",css:"AA_SierWebAppTab"}]
                                 },
                                 {
                                     view: "multiview",
@@ -1017,7 +1019,7 @@ AA_SierWebApp.RefreshUi = async function() {
                     [
                         {
                             view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%'><a href='#' onClick='AA_SierWebAppParams.risultati.liste.id_coalizione=0;$$(AA_SierWebAppParams.risultati.view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>Livello di dettaglio:</span><br><a href='#' onclick='AA_SierWebAppParams.livello_dettaglio_prev_view_id=AA_SierWebAppParams.risultati.liste.view_id;$$(AA_SierWebAppParams.livello_dettaglio_view_id).show();' title='Fai click per cambiare il livello di dettaglio' style='text-decoration: none'><span style='font-weight:bold; color: #0c467f;'>"+AA_SierWebAppParams.risultati.livello_dettaglio_label+"</span></a></div><div style='display:flex;justify-content:center;align-items:center'><span class='mdi mdi-home' style='font-size:larger;cursor:pointer;color: #0c467f;' onClick='$$(AA_SierWebAppParams.risultati.view_id).show()'></span></div></div></div>",
+                            template: "<div style='display:flex;align-items:center; justify-content:center; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%;height:100%;'><a href='#' onClick='AA_SierWebAppParams.risultati.liste.id_coalizione=0;$$(AA_SierWebAppParams.risultati.view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>Livello di dettaglio:</span><br><a href='#' onclick='AA_SierWebAppParams.livello_dettaglio_prev_view_id=AA_SierWebAppParams.risultati.liste.view_id;$$(AA_SierWebAppParams.livello_dettaglio_view_id).show();' title='Fai click per cambiare il livello di dettaglio' style='text-decoration: none'><span style='font-weight:bold; color: #0c467f;'>"+AA_SierWebAppParams.risultati.livello_dettaglio_label+"</span></a></div><div style='display:flex;justify-content:center;align-items:center'><span class='mdi mdi-home' style='font-size:larger;cursor:pointer;color: #0c467f;' onClick='$$(AA_SierWebAppParams.risultati.view_id).show()'></span></div></div></div>",
                             css:{"background-color":"#ebedf0","border-radius": "15px","border-width":"1px 1px 1px !important"},
                             height: 42,
                         },
@@ -1156,7 +1158,7 @@ AA_SierWebApp.RefreshUi = async function() {
                     [
                         {
                             view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%'><a href='#' onClick='AA_SierWebAppParams.risultati.candidati.id_lista=0;$$(AA_SierWebAppParams.risultati.liste.view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>Livello di dettaglio:</span><br><a href='#' onclick='AA_SierWebAppParams.livello_dettaglio_prev_view_id=AA_SierWebAppParams.risultati.candidati.view_id;$$(AA_SierWebAppParams.livello_dettaglio_view_id).show();' title='Fai click per cambiare il livello di dettaglio' style='text-decoration: none'><span style='font-weight:bold; color: #0c467f;'>"+AA_SierWebAppParams.risultati.livello_dettaglio_label+"</span></a></div><div style='display:flex;justify-content:center;align-items:center'><span class='mdi mdi-home' style='font-size:larger;cursor:pointer;color: #0c467f;' onClick='$$(AA_SierWebAppParams.risultati.view_id).show()'></span></div></div></div>",
+                            template: "<div style='display:flex;align-items:center; justify-content:center; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%;height:100%'><a href='#' onClick='AA_SierWebAppParams.risultati.candidati.id_lista=0;$$(AA_SierWebAppParams.risultati.liste.view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>Livello di dettaglio:</span><br><a href='#' onclick='AA_SierWebAppParams.livello_dettaglio_prev_view_id=AA_SierWebAppParams.risultati.candidati.view_id;$$(AA_SierWebAppParams.livello_dettaglio_view_id).show();' title='Fai click per cambiare il livello di dettaglio' style='text-decoration: none'><span style='font-weight:bold; color: #0c467f;'>"+AA_SierWebAppParams.risultati.livello_dettaglio_label+"</span></a></div><div style='display:flex;justify-content:center;align-items:center'><span class='mdi mdi-home' style='font-size:larger;cursor:pointer;color: #0c467f;' onClick='$$(AA_SierWebAppParams.risultati.view_id).show()'></span></div></div></div>",
                             css:{"background-color":"#ebedf0","border-radius": "15px","border-width":"1px 1px 1px !important"},
                             height: 42,
                         },
@@ -1268,7 +1270,7 @@ AA_SierWebApp.UpdateAffluenzaData = async function() {
                     }                            
                 }
                 let script="AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione="+idCircoscrizione+";$$(AA_SierWebAppParams.affluenza.circoscrizionale.view_id).show();";
-                affluenza_data.push({"number":num,"id":idCircoscrizione,"denominazione":"<a href='#' onClick='"+script+"'>"+risultati.stats.circoscrizionale[idCircoscrizione].denominazione+"</a>","count":count,"percent":percent,
+                affluenza_data.push({"number":num,"id":idCircoscrizione,"denominazione":"<a href='#' style='text-decoration: none; color: #0c467f' onClick='"+script+"'>"+risultati.stats.circoscrizionale[idCircoscrizione].denominazione+"</a>","count":count,"percent":percent,
                     "elettori":risultati.stats.circoscrizionale[idCircoscrizione].elettori_tot,
                     "count_plain":count_plain
                 });
