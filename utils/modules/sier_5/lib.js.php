@@ -247,10 +247,11 @@ var AA_SierWebAppParams={
             footer_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_Candidati_Footer"?>"
         }
     },
+    mainUi_id:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI?>",
+    autoUpdateTime: 300000,
     ui_prefix:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI?>",
     sezione_corrente:"<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_AffluenzaBox"?>",
     timeoutRisultati:null,
-    livello_dettaglio_data:null,
     livello_dettaglio_data_tree: [{ id: "1", value: "tutta la Regione Sardegna (1)", "open":true, comune:0, circoscrizione:0, data:[]}],
     livello_dettaglio_view_id: "<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI."_DettaglioTreeBox"?>",
     livello_dettaglio_prev_view_id: null,

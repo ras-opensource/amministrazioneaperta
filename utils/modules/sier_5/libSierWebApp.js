@@ -29,7 +29,7 @@ AA_SierWebApp.StartApp = async function() {
     {
         //console.log("AA_SierWebApp.StartApp",arguments);
         //build UI if not present
-        if(!$$("AA_SierWebAppGui"))
+        if(!$$(AA_SierWebAppParams.mainUi_id))
         {
             let result = await this.refreshMainUi();
             if (result) 
@@ -43,6 +43,7 @@ AA_SierWebApp.StartApp = async function() {
                 AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento=null;
                 AA_SierWebAppParams.risultati.id_comune=0;
                 AA_SierWebAppParams.risultati.id_circoscrizione=0;
+                AA_SierWebAppParams.risultati.livello_dettaglio_label="tutta la Regione Sardegna";
                 AA_SierWebAppParams.risultati.data=null;
                 AA_SierWebAppParams.risultati.liste.id_coalizione=0;
                 AA_SierWebAppParams.risultati.liste.data=null;
@@ -53,12 +54,7 @@ AA_SierWebApp.StartApp = async function() {
 
                 //-------- refresh data  -----------
                 let url=arguments[0]['url'];
-                AA_SierWebApp.RefreshRisultatiData(url,true);
-                if(AA_SierWebAppParams.timeoutRisultati)
-                {
-                    clearTimeout(AA_SierWebAppParams.timeoutRisultati);
-                }
-                AA_SierWebAppParams.timeoutRisultati=setTimeout(AA_SierWebApp.RefreshRisultatiData,60000,url,true);
+                AA_SierWebApp.RefreshRisultatiData(url,true,true);
                 //-----------------------------------
             }
             else
@@ -93,168 +89,146 @@ AA_SierWebApp.RefreshUi = async function() {
         //-------------------------------- Sidemenu ----------------------------------------
         if(arguments[1]==AA_SierWebAppParams.livello_dettaglio_view_id)
         {
-            if(!$$("AA_SierWebAppSideMenuBoxContent"))
+            if($$("AA_SierWebAppSideMenuBoxContent"))
             {
-                //console.log("AA_SierWebApp.RefreshUi - costruisco il tree view del livello di dettaglio",AA_SierWebAppParams.livello_dettaglio_data_tree);
-                let SierWebAppSideMenu=
-                {
-                    id: "AA_SierWebAppSideMenuBoxContent",
-                    container: "AA_SierWebAppSideMenuBox",
-                    view: "layout",
-                    type: "space",
-                    css: {"border-radius": "15px","border-width":"1px 1px 1px !important"},
-                    rows:
-                    [
+                $$("AA_SierWebAppSideMenuBoxContent").destructor();
+            }
+           
+            console.log("AA_SierWebApp.RefreshUi - costruisco il tree view del livello di dettaglio");
+            let SierWebAppSideMenu=
+            {
+                id: "AA_SierWebAppSideMenuBoxContent",
+                container: "AA_SierWebAppSideMenuBox",
+                view: "layout",
+                type: "space",
+                css: {"border-radius": "15px","border-width":"1px 1px 1px !important"},
+                rows:
+                [
+                    {
+                        id:"AA_SierWebAppSideMenuBoxContentLabel",
+                        view:"template",
+                        template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%'><a href='#' onClick='$$(AA_SierWebAppParams.livello_dettaglio_prev_view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>livello di dettaglio attuale:</span><br><span style='font-weight:bold; color: #0c467f;'>#livello_dettaglio_label#</span></div><span>&nbsp;</span></div></div></div>",
+                        css:{"background-color":"#ebedf0","border-radius": "15px"},
+                        data:{livello_dettaglio_label:AA_SierWebAppParams.risultati.livello_dettaglio_label},
+                        height: 42,
+                        borderless:true,
+                    },
+                    {
+                        view:"template",
+                        borderless: true,
+                        template:"<div style='font-size: smaller'>Selezione una voce dalla lista per cambiare il livello di dettaglio.</div>",
+                        autoheight:true,
+                        css:{"background-color":"transparent"}
+                    },
+                    {
+                        id:"AA_SierWebAppDettaglioFilterSearch",
+                        view: "search",
+                        value: "",
+                        label:"",
+                        clear: true,
+                        on:
                         {
-                            id:"AA_SierWebAppSideMenuBoxContentLabel",
-                            view:"template",
-                            template: "<div style='display:flex;align-items:center; justify-content:space-between; height:100%; width:100%; flex-direction: column;'><div style='display:flex; justify-content: space-between; align-items:center;width:100%'><a href='#' onClick='$$(AA_SierWebAppParams.livello_dettaglio_prev_view_id).show();' style='font-weight: 700;font-size: larger;color: #0c467f;' title='Indietro'><span class='mdi mdi-keyboard-backspace'></span></a><div style='text-align:center;'><span>livello di dettaglio attuale:</span><br><span style='font-weight:bold; color: #0c467f;'>#livello_dettaglio_label#</span></div><span>&nbsp;</span></div></div></div>",
-                            css:{"background-color":"#ebedf0","border-radius": "15px"},
-                            data:{livello_dettaglio_label:AA_SierWebAppParams.risultati.livello_dettaglio_label},
-                            height: 42,
-                            borderless:true,
-                        },
-                        {
-                            view:"template",
-                            borderless: true,
-                            template:"<div style='font-size: smaller'>Selezione una voce dalla lista per cambiare il livello di dettaglio.</div>",
-                            autoheight:true,
-                            css:{"background-color":"transparent"}
-                        },
-                        {
-                            id:"AA_SierWebAppDettaglioFilterSearch",
-                            view: "search",
-                            value: "",
-                            label:"",
-                            clear: true,
-                            on:
-                            {
-                                "onTimedKeyPress":
-                                function() 
-                                { 
-                                    //console.log("AA_SierWebApp.RefreshUi - click");
-                                    if ($$('AA_SierWebAppSideMenuTree')) 
+                            "onTimedKeyPress":
+                            function() 
+                            { 
+                                //console.log("AA_SierWebApp.RefreshUi - click");
+                                if ($$('AA_SierWebAppSideMenuTree')) 
+                                {
+                                    $$('AA_SierWebAppSideMenuTree').filter(function(obj) 
                                     {
-                                        $$('AA_SierWebAppSideMenuTree').filter(function(obj) 
+                                        if($$('AA_SierWebAppDettaglioFilterSearch') && obj.value !="") 
                                         {
-                                            if($$('AA_SierWebAppDettaglioFilterSearch') && obj.value !="") 
-                                            {
-                                                return obj.value.toLowerCase().indexOf($$('AA_SierWebAppDettaglioFilterSearch').getValue().toLowerCase()) !== -1; 
-                                            }
-                                            else return true;
-                                        });
-                                    }
-                                },
-                                "onChange":
-                                function() 
-                                { 
-                                    //console.log("AA_SierWebApp.RefreshUi - click");
-                                    if ($$('AA_SierWebAppSideMenuTree')) 
-                                    {
-                                        $$('AA_SierWebAppSideMenuTree').filter(function(obj) 
-                                        {
-                                            if($$('AA_SierWebAppDettaglioFilterSearch') && obj.value !="") 
-                                            {
-                                                return obj.value.toLowerCase().indexOf($$('AA_SierWebAppDettaglioFilterSearch').getValue().toLowerCase()) !== -1; 
-                                            }
-                                            else return true;
-                                        });
-                                    }
+                                            return obj.value.toLowerCase().indexOf($$('AA_SierWebAppDettaglioFilterSearch').getValue().toLowerCase()) !== -1; 
+                                        }
+                                        else return true;
+                                    });
                                 }
-                            }
-                        },
-                        {
-                            view: "tree",
-                            id: "AA_SierWebAppSideMenuTree",
-                            borderless: false,
-                            scroll: true,
-                            "template" : "{common.icon()}&nbsp;{common.folder()}&nbsp;<span style='cursor:pointer;'>#value#</span>",
-                            data: JSON.parse(JSON.stringify(AA_SierWebAppParams.livello_dettaglio_data_tree)),
-                            select: true,
-                            type: {
-                                height: 40
                             },
-                            on: {
-                                onAfterSelect: async function(id) {
-                                    try {
-                                        let sidemenu = $$("AA_SierWebAppSideMenuTree");
-
-                                        item = sidemenu.getItem(id);
-                                        if(!item)
+                            "onChange":
+                            function() 
+                            { 
+                                //console.log("AA_SierWebApp.RefreshUi - click");
+                                if ($$('AA_SierWebAppSideMenuTree')) 
+                                {
+                                    $$('AA_SierWebAppSideMenuTree').filter(function(obj) 
+                                    {
+                                        if($$('AA_SierWebAppDettaglioFilterSearch') && obj.value !="") 
                                         {
-                                            console.log("AA_SierWebAppSideMenuTree - item non valido.");
-                                            return false;
+                                            return obj.value.toLowerCase().indexOf($$('AA_SierWebAppDettaglioFilterSearch').getValue().toLowerCase()) !== -1; 
                                         }
-                                        //console.log("AA_MainApp.sidebar.onAfterSelect("+id+")",item);
-                                        
-                                        AA_SierWebAppParams.risultati.id_circoscrizione=0;
-                                        AA_SierWebAppParams.risultati.id_comune=0;
-                                        AA_SierWebAppParams.risultati.livello_dettaglio_label=item.value;
-                        
-                                        if(Number(item.circoscrizione) > 0) 
-                                        {
-                                            //console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - imposto la circoscrizione: "+item.value);
-                                            AA_SierWebAppParams.risultati.id_circoscrizione=Number(item.circoscrizione);
-                                            AA_SierWebAppParams.risultati.id_comune=0;
-                                        }
-
-                                        if(Number(item.comune) > 0) 
-                                        {
-                                            //console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - imposto il comune: "+item.value);
-                                            AA_SierWebAppParams.risultati.id_comune=Number(item.comune);
-                                        }
-
-                                        if(AA_SierWebAppParams.livello_dettaglio_prev_view_id == AA_SierWebAppParams.risultati.candidati.view_id && AA_SierWebAppParams.risultati.id_comune==0)
-                                        {
-                                            AA_SierWebAppParams.livello_dettaglio_prev_view_id=AA_SierWebAppParams.risultati.liste.view_id;
-                                        }
-
-                                        if(AA_SierWebAppParams.livello_dettaglio_prev_view_id && $$(AA_SierWebAppParams.livello_dettaglio_prev_view_id))
-                                        {
-                                            console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - visualizzo la view precedente "+AA_SierWebAppParams.livello_dettaglio_prev_view_id);
-                                            $$(AA_SierWebAppParams.livello_dettaglio_prev_view_id).show();
-                                            AA_SierWebAppParams.livello_dettaglio_prev_view_id=null;
-                                        }
-
-                                        return true;
-                                    } catch (msg) {
-                                        //console.error("AA_MainApp.ui.sidemenu.onAfterSelect(" + id + ")");
-                                        AA_MainApp.ui.alert(msg);
-                                        return Promise.reject(msg);
-                                    }
+                                        else return true;
+                                    });
                                 }
                             }
                         }
-                    ]
-                }
-
-                //console.log("AA_SierWebApp.RefreshUi - visualizzo il tree view",AA_SierWebAppParams.livello_dettaglio_data_tree);
-                webix.ui(SierWebAppSideMenu).show();
-            }
-            else
-            {
-                //console.log("AA_SierWebApp.RefreshUi - aggiorno il contenuto del tree view",AA_SierWebAppParams.livello_dettaglio_data_tree);
-                if($$("AA_SierWebAppSideMenuBoxContentLabel"))
-                {
-                    $$("AA_SierWebAppSideMenuBoxContentLabel").parse({"livello_dettaglio_label":AA_SierWebAppParams.risultati.livello_dettaglio_label});
-                    $$("AA_SierWebAppSideMenuBoxContentLabel").refresh();
-                }
-                if($$("AA_SierWebAppDettaglioFilterSearch"))
-                {
-                    $$("AA_SierWebAppDettaglioFilterSearch").setValue("");
-                }
-                if($$("AA_SierWebAppSideMenuTree"))
-                {
-                    $$('AA_SierWebAppSideMenuTree').filter();
-                    let selectedItem=$$("AA_SierWebAppSideMenuTree").getSelectedItem();
-                    $$("AA_SierWebAppSideMenuTree").define("data",AA_SierWebAppParams.livello_dettaglio_data_tree);
-                    $$("AA_SierWebAppSideMenuTree").refresh();
-                    if(selectedItem)
+                    },
                     {
-                        $$("AA_SierWebAppSideMenuTree").showItem(selectedItem.id);
+                        view: "tree",
+                        id: "AA_SierWebAppSideMenuTree",
+                        borderless: false,
+                        scroll: true,
+                        "template" : "{common.icon()}&nbsp;{common.folder()}&nbsp;<span style='cursor:pointer;'>#value#</span>",
+                        data: JSON.parse(JSON.stringify(AA_SierWebAppParams.livello_dettaglio_data_tree)),
+                        select: true,
+                        type: {
+                            height: 40
+                        },
+                        on: {
+                            onAfterSelect: async function(id) {
+                                try {
+                                    let sidemenu = $$("AA_SierWebAppSideMenuTree");
+
+                                    item = sidemenu.getItem(id);
+                                    if(!item)
+                                    {
+                                        console.log("AA_SierWebAppSideMenuTree - item non valido.");
+                                        return false;
+                                    }
+                                    //console.log("AA_MainApp.sidebar.onAfterSelect("+id+")",item);
+                                    
+                                    AA_SierWebAppParams.risultati.id_circoscrizione=0;
+                                    AA_SierWebAppParams.risultati.id_comune=0;
+                                    AA_SierWebAppParams.risultati.livello_dettaglio_label=item.value;
+                    
+                                    if(Number(item.circoscrizione) > 0) 
+                                    {
+                                        //console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - imposto la circoscrizione: "+item.value);
+                                        AA_SierWebAppParams.risultati.id_circoscrizione=Number(item.circoscrizione);
+                                        AA_SierWebAppParams.risultati.id_comune=0;
+                                    }
+
+                                    if(Number(item.comune) > 0) 
+                                    {
+                                        //console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - imposto il comune: "+item.value);
+                                        AA_SierWebAppParams.risultati.id_comune=Number(item.comune);
+                                    }
+
+                                    if(AA_SierWebAppParams.livello_dettaglio_prev_view_id == AA_SierWebAppParams.risultati.candidati.view_id && AA_SierWebAppParams.risultati.id_comune==0)
+                                    {
+                                        AA_SierWebAppParams.livello_dettaglio_prev_view_id=AA_SierWebAppParams.risultati.liste.view_id;
+                                    }
+
+                                    if(AA_SierWebAppParams.livello_dettaglio_prev_view_id && $$(AA_SierWebAppParams.livello_dettaglio_prev_view_id))
+                                    {
+                                        console.log("AA_MainApp.sidebar.onAfterSelect("+id+") - visualizzo la view precedente "+AA_SierWebAppParams.livello_dettaglio_prev_view_id);
+                                        $$(AA_SierWebAppParams.livello_dettaglio_prev_view_id).show();
+                                        AA_SierWebAppParams.livello_dettaglio_prev_view_id=null;
+                                    }
+
+                                    return true;
+                                } catch (msg) {
+                                    //console.error("AA_MainApp.ui.sidemenu.onAfterSelect(" + id + ")");
+                                    AA_MainApp.ui.alert(msg);
+                                    return Promise.reject(msg);
+                                }
+                            }
+                        }
                     }
-                }
+                ]
             }
+
+            //console.log("AA_SierWebApp.RefreshUi - visualizzo il tree view",AA_SierWebAppParams.livello_dettaglio_data_tree);
+            webix.ui(SierWebAppSideMenu).show();            
         }
         //----------------------------------------------------------------------------------
 
@@ -309,8 +283,8 @@ AA_SierWebApp.RefreshUi = async function() {
             //Aggiorna l'affluenza
             let affluenza_cols=[
                 {id:"denominazione",header:["<div style='text-align: left'>Circoscrizione</div>"],"fillspace":true, "sort":"text","css":{"text-align":"left"}},
-                {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "sort":"text","css":{"text-align":"right"}},
-                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"text","css":{"text-align":"right"}}
+                {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "css":{"text-align":"right"}},
+                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"int","css":{"text-align":"right","font-weight":"700"}}
             ];
             //console.log("AA_SierWebApp.RefreshRisultatiData - affluenza_cols",affluenza_cols);
     
@@ -321,7 +295,7 @@ AA_SierWebApp.RefreshUi = async function() {
                 let elettori_tot=0;
                 for(let affluenza_data of AA_SierWebAppParams.affluenza.regionale.data)
                 {
-                    votanti_tot+=affluenza_data.count;
+                    votanti_tot+=affluenza_data.count_plain;
                     elettori_tot+=affluenza_data.elettori;
                 }
                 let votanti_percent=0;
@@ -450,8 +424,8 @@ AA_SierWebApp.RefreshUi = async function() {
             //Aggiorna l'affluenza
             let affluenza_cols=[
                 {id:"denominazione",header:["<div style='text-align: left'>Comune</div>"],"fillspace":true, "sort":"text","css":{"text-align":"left"}},
-                {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "sort":"text","css":{"text-align":"right"}},
-                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"text","css":{"text-align":"right"}}
+                {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "css":{"text-align":"right"}},
+                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"int","css":{"text-align":"right"}}
             ];
             //console.log("AA_SierWebApp.RefreshRisultatiData - affluenza_cols",affluenza_cols);
     
@@ -462,7 +436,7 @@ AA_SierWebApp.RefreshUi = async function() {
                 let elettori_tot=0;
                 for(let affluenza_data of AA_SierWebAppParams.affluenza.circoscrizionale.data)
                 {
-                    votanti_tot+=affluenza_data.count;
+                    votanti_tot+=affluenza_data.count_plain;
                 }
                 elettori_tot=AA_SierWebAppParams.data.stats.circoscrizionale[AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione].elettori_tot;
                 let votanti_percent=0;
@@ -991,6 +965,8 @@ AA_SierWebApp.UpdateAffluenzaData = async function() {
      
         let risultati=AA_SierWebAppParams.data;
         if(!risultati) return;
+
+        fmtNumber= new Intl.NumberFormat('it-IT');
         
         //--------------------- Affluenza Regione-----------------------------
         console.log("AA_SierWebApp.UpdateAffluenzaData - Aggiorno i dati  affluenza Regione");
@@ -1003,28 +979,33 @@ AA_SierWebApp.UpdateAffluenzaData = async function() {
                 //console.log("AA_SierWebApp.UpdateAffluenzaData - circoscrizione",idCircoscrizione);
                 let count=0;
                 let percent=0;
+                let count_plain=0;
                 for(let giornata in risultati.stats.circoscrizionale[idCircoscrizione].affluenza)
                 {
                     if(AA_SierWebAppParams.affluenza.regionale.aggiornamento==null || risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].aggiornamento > AA_SierWebAppParams.affluenza.regionale.aggiornamento) AA_SierWebAppParams.affluenza.regionale.aggiornamento=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].aggiornamento;
                     if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count > 0)  
                     {
-                        count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count;
-                        percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.percent;
+                        count_plain=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.count;
+                        count=fmtNumber.format(Number(count_plain));
+                        percent=fmtNumber.format(Number(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_12.percent));
                     }
                     if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.count > 0)  
                     {
-                        count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.count;
-                        percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.percent;
+                        count_plain=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.count;
+                        count=fmtNumber.format(Number(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.count));
+                        percent=fmtNumber.format(Number(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_19.percent));
                     }
                     if(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.count > 0)  
                     {
-                        count=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.count;
-                        percent=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.percent;
+                        count_plain=risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.count;
+                        count=fmtNumber.format(Number(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.count));
+                        percent=fmtNumber.format(Number(risultati.stats.circoscrizionale[idCircoscrizione].affluenza[giornata].ore_22.percent));
                     }                            
                 }
                 let script="AA_SierWebAppParams.affluenza.circoscrizionale.id_circoscrizione="+idCircoscrizione+";$$(AA_SierWebAppParams.affluenza.circoscrizionale.view_id).show();";
                 affluenza_data.push({"number":num,"id":idCircoscrizione,"denominazione":"<a href='#' onClick='"+script+"'>"+risultati.stats.circoscrizionale[idCircoscrizione].denominazione+"</a>","count":count,"percent":percent,
                     "elettori":risultati.stats.circoscrizionale[idCircoscrizione].elettori_tot,
+                    "count_plain":count_plain
                 });
                 num++;
             }
@@ -1045,27 +1026,31 @@ AA_SierWebApp.UpdateAffluenzaData = async function() {
                 {
                     let count=0;
                     let percent=0;
+                    let count_plain=0;
                     for(let giornata in risultati.comuni[comune].affluenza)
                     {
                         if(AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento==null || risultati.comuni[comune].affluenza[giornata].aggiornamento > AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento) AA_SierWebAppParams.affluenza.circoscrizionale.aggiornamento=risultati.comuni[comune].affluenza[giornata].aggiornamento;
                         if(risultati.comuni[comune].affluenza[giornata].ore_12.count > 0)  
                         {
-                            count=risultati.comuni[comune].affluenza[giornata].ore_12.count;
-                            percent=risultati.comuni[comune].affluenza[giornata].ore_12.percent;
+                            count_plain=risultati.comuni[comune].affluenza[giornata].ore_12.count;
+                            count=fmtNumber.format(Number(risultati.comuni[comune].affluenza[giornata].ore_12.count));
+                            percent=fmtNumber.format(Number(risultati.comuni[comune].affluenza[giornata].ore_12.percent));
                         }
                         if(risultati.comuni[comune].affluenza[giornata].ore_19.count > 0)  
                         {
-                            count=risultati.comuni[comune].affluenza[giornata].ore_19.count;
-                            percent=risultati.comuni[comune].affluenza[giornata].ore_19.percent;
+                            count_plain=risultati.comuni[comune].affluenza[giornata].ore_19.count;
+                            count=fmtNumber.format(Number(risultati.comuni[comune].affluenza[giornata].ore_19.count));
+                            percent=fmtNumber.format(Number(risultati.comuni[comune].affluenza[giornata].ore_19.percent));
                         }
                         if(risultati.comuni[comune].affluenza[giornata].ore_22.count > 0)  
                         {
-                            count=risultati.comuni[comune].affluenza[giornata].ore_22.count;
-                            percent=risultati.comuni[comune].affluenza[giornata].ore_22.percent;
+                            count_plain=risultati.comuni[comune].affluenza[giornata].ore_22.count;
+                            count=fmtNumber.format(Number(risultati.comuni[comune].affluenza[giornata].ore_22.count));
+                            percent=fmtNumber.format(Number(risultati.comuni[comune].affluenza[giornata].ore_22.percent));
                         }
                     }
 
-                    AA_SierWebAppParams.affluenza.circoscrizionale.data.push({number:num, id:comune,"denominazione":risultati.comuni[comune].denominazione,"count":count,"percent":percent});
+                    AA_SierWebAppParams.affluenza.circoscrizionale.data.push({number:num, id:comune,"denominazione":risultati.comuni[comune].denominazione,"count":count,"percent":percent,"count_plain":count_plain});
                     num++;
                 }
             }
@@ -1198,7 +1183,7 @@ AA_SierWebApp.UpdateRisultatiData = async function() {
 };
 
 //Rinfresca i dati sui risultati
-AA_SierWebApp.RefreshRisultatiData = async function(feed_url,updateView=true) {
+AA_SierWebApp.RefreshRisultatiData = async function(feed_url,updateView=true,autoUpdate=true) {
     try 
     {
         console.log("AA_SierWebApp.RefreshRisultatiData - recupero il feed",feed_url);
@@ -1246,8 +1231,18 @@ AA_SierWebApp.RefreshRisultatiData = async function(feed_url,updateView=true) {
             }
             else
             {
-                console.error("AA_SierWebApp.RefreshRisultatiData - Cassau",arguments);
+                console.error("AA_SierWebApp.RefreshRisultatiData",arguments);
             }
+
+            if($$(AA_SierWebAppParams.mainUi_id) && autoUpdate && AA_SierWebAppParams.autoUpdateTime >= 60000)
+            {
+                console.log("AA_SierWebApp.RefreshRisultatiData - imposto l'aggiornamento automatico tra "+String(Number(AA_SierWebAppParams.autoUpdateTime)/60000)+" min");
+                if(AA_SierWebAppParams.timeoutRisultati)
+                {
+                    clearTimeout(AA_SierWebAppParams.timeoutRisultati);
+                }
+                AA_SierWebAppParams.timeoutRisultati=setTimeout(AA_SierWebApp.RefreshRisultatiData,AA_SierWebAppParams.autoUpdateTime,feed_url,true);
+            } 
         });
     } catch (msg) {
         console.error("AA_SierWebApp.RefreshRisultatiData", msg);
