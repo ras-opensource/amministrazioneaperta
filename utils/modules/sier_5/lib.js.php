@@ -198,6 +198,10 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
 function AA_SierWebAppGenericParams()
 {
     this.ui_prefix="<?php echo AA_SierModule::AA_UI_PREFIX."_".AA_SierModule::AA_UI_WND_REPORT_RISULTATI."_".AA_SierModule::AA_UI_LAYOUT_REPORT_RISULTATI?>";
+    this.data_url="";
+    this.web_url="";
+    this.privacy_policy_url="";
+    this.enablePullToRefresh=false;
     this.affluenza=
     {
         regionale:
@@ -280,6 +284,8 @@ var AA_SierWebAppParams = new AA_SierWebAppGenericParams();
 <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].StartRisultatiApp = function() {
     try 
     {
+        AA_SierWebAppParams.data_url=arguments[0]['url'];
+        AA_SierWebAppParams.taskManager=<?php echo AA_SierModule::AA_ID_MODULE?>.taskManager;
         return AA_SierWebApp.StartApp(arguments[0]);
     } catch (msg) {
         console.error("<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].StartRisultatiApp", msg);

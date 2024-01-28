@@ -19,6 +19,36 @@ function AA_GenericSierWebApp()
                 return false;
             }
         }
+        else
+        {
+            AA_SierWebApp.ui.overlay.show();
+
+            if (typeof cookieconsent === 'object') {
+                console.log("AA_DefaultSystemInitialization - abilito la gestione dei cookie.");
+                cookieconsent.run({ "notice_banner_type": "interstitial", "consent_type": "express", "palette": "light", "language": "it", "page_load_consent_levels": ["strictly-necessary"], "notice_banner_reject_button_hide": false, "preferences_center_close_button_hide": false, "page_refresh_confirmation_buttons": false, "website_name": AA_SierWebAppParams.web_url, "website_privacy_policy_url": AA_SierWebAppParams.privacy_policy_url });
+            }
+
+            this.ui.setup();
+
+            //pull to refresh
+            if (AA_SierWebAppParams.enablePullToRefresh != "") {
+                console.log("AA_DefaultSystemInitialization - abilito il pull to refresh sull'elemento: ");
+                const ptr = PullToRefresh.init({
+                    mainElement: 'body',
+                    triggerElement: AA_SierWebAppParams.ui_prefix+"_Header",
+                    instructionsReleaseToRefresh: "Rilascia per aggiornare...",
+                    instructionsPullToRefresh: "Trascina per aggiornare...",
+                    instructionsRefreshing: "Aggiornamento...",
+                    onRefresh() {
+                        window.location.reload();
+                    }
+                });
+            }
+
+            AA_SierWebApp.ui.overlay.hide();
+
+            return true;
+        }
     };
 
     //Inizializza l'app dei risultati
@@ -52,8 +82,7 @@ function AA_GenericSierWebApp()
                     //----------------------------------
 
                     //-------- refresh data  -----------
-                    let url=arguments[0]['url'];
-                    AA_SierWebApp.RefreshRisultatiData(url,true,true);
+                    AA_SierWebApp.RefreshRisultatiData(AA_SierWebAppParams.data_url,true,true);
                     //-----------------------------------
                 }
                 else
@@ -65,6 +94,240 @@ function AA_GenericSierWebApp()
             console.error("AA_SierWebApp.StartRisultatiApp", msg);
         }
     };
+
+    this.ui=
+    {
+        setup: function()
+        {
+            console.log("AA_SierWebApp::ui::setup()");
+        
+            if (webix.CustomScroll && !webix.env.touch) webix.CustomScroll.init();
+        
+            //Verifica se si sta visualizzando da un cellulare
+            /*if (webix.env.mobile) {
+                //Cambia il tema css
+                if ($("#webix_style")) {
+                    let old_style = $("#webix_style").attr("href");
+                    let new_style = old_style.replace("webix.min.css", "skins/mini.min.css");
+                    $("#webix_style").attr("href", new_style);
+                }
+            }*/
+
+            //Imposta la posìzione dei messaggi
+            webix.message.position = "bottom";
+
+            app_box = 
+            {
+                id: AA_SierWebAppParams.ui_prefix,
+                type:"clean",
+                rows:
+                [
+                    {
+                        id: AA_SierWebAppParams.ui_prefix+"_Header",
+                        view:"template",
+                        type:"clean",
+                        borderless:true,
+                        template:"<div style='width:100%;height:100%;display:flex;justify-content:space-between;align-items:center;background-color:#17324d'><div style='height:100%; width:60px; display:flex; align-items:center;justify-content:center'><img src='immagini/gonfalone_bianco.png' height='70%'/></div><div style='height:100%; display:flex; align_items:center; justify-content:space-evenly;flex-direction:column; color:rgb(215, 238, 255);font-variant: small-caps;'><div style='font-weight:700;font-size:larger;text-align:center'><span style='color:#fff'>A</span>mministrazione <span style='color:#fff'>A</span>perta</div><div style='text-align:center'><span style='color:#fff; '>Elezioni Regionali 2019</span></div></div><div style='width:60px'>&nbsp;</div></div>",
+                        height: 60
+                    },
+                    {
+                        view:"tabbar",
+                        borderless:true,
+                        value:AA_SierWebAppParams.affluenza.regionale.view_id,
+                        css: "AA_Header_TabBar",
+                        multiview:true,
+                        view_id:AA_SierWebAppParams.ui_prefix+"_Multiview",
+                        options:
+                        [
+                            {id:AA_SierWebAppParams.affluenza.regionale.view_id,value:"Affluenza"},
+                            {id:AA_SierWebAppParams.risultati.view_id,value:"Risultati"}
+                        ]
+                    },
+                    {
+                        id: AA_SierWebAppParams.ui_prefix+"_Multiview",
+                        view:"multiview",
+                        type: "clean",
+                        on:
+                        {
+                            "onViewChange":AA_SierWebApp.RefreshUi
+                        },
+                        cells:
+                        [
+                            {
+                                id:AA_SierWebAppParams.affluenza.regionale.view_id,
+                                type:"clean",
+                                rows:
+                                [
+                                    {
+                                        id:AA_SierWebAppParams.ui_prefix+"_Affluenza",
+                                        template:"<div id='"+AA_SierWebAppParams.affluenza.regionale.container_id+"'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'></div>",
+                                        css:{"background-color":"#f4f5f9"}
+                                    },
+                                    {
+                                        id:AA_SierWebAppParams.affluenza.regionale.footer_id,
+                                        template:"<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>",
+                                        height:24,
+                                        css:{"background-color":"#08324f","color":"#fff","text-tramsform":"uppercase"},
+                                        data:{"footer":"&nbsp;"}
+                                    },
+                                ]
+                            },
+                            {
+                                id:AA_SierWebAppParams.affluenza.circoscrizionale.view_id,
+                                type:"clean",
+                                rows:
+                                [
+                                    {
+                                        id:AA_SierWebAppParams.ui_prefix+"_AffluenzaCircoscrizionale",
+                                        template:"<div id='"+AA_SierWebAppParams.affluenza.circoscrizionale.container_id+"'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'></div>",
+                                        css:{"background-color":"#f4f5f9"}
+                                    },
+                                    {
+                                        id:AA_SierWebAppParams.affluenza.circoscrizionale.footer_id,
+                                        template:"<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>",
+                                        height:24,
+                                        css:{"background-color":"#08324f","color":"#fff","text-tramsform":"uppercase"},
+                                        data:{"footer":"&nbsp;"}
+                                    },
+                                ]
+                            },
+                            {
+                                id:AA_SierWebAppParams.risultati.view_id,
+                                type:"clean",
+                                rows:
+                                [
+                                    {
+                                        id:AA_SierWebAppParams.ui_prefix+"_Presidenti",
+                                        template:"<div id='"+AA_SierWebAppParams.risultati.container_id+"'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'></div>",
+                                        css:{"background-color":"#f4f5f9"}
+                                    },
+                                    {
+                                        id:AA_SierWebAppParams.risultati.footer_id,
+                                        template:"<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>",
+                                        height:24,
+                                        css:{"background-color":"#08324f","color":"#fff","text-tramsform":"uppercase"},
+                                        data:{"footer":"&nbsp;"}
+                                    },
+                                ]
+                            },
+                            {
+                                id:AA_SierWebAppParams.risultati.liste.view_id,
+                                type:"clean",
+                                rows:
+                                [
+                                    {
+                                        id:AA_SierWebAppParams.ui_prefix+"_Liste",
+                                        template:"<div id='"+AA_SierWebAppParams.risultati.liste.container_id+"'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'></div>",
+                                        css:{"background-color":"#f4f5f9"}
+                                    },
+                                    {
+                                        id:AA_SierWebAppParams.risultati.liste.footer_id,
+                                        template:"<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>",
+                                        height:24,
+                                        css:{"background-color":"#08324f","color":"#fff","text-tramsform":"uppercase"},
+                                        data:{"footer":"&nbsp;"}
+                                    },
+                                ]
+                            },
+                            {
+                                id:AA_SierWebAppParams.risultati.candidati.view_id,
+                                type:"clean",
+                                rows:
+                                [
+                                    {
+                                        id:AA_SierWebAppParams.ui_prefix+"_Candidati",
+                                        template:"<div id='"+AA_SierWebAppParams.risultati.candidati.container_id+"'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'></div>",
+                                        css:{"background-color":"#f4f5f9"}
+                                    },
+                                    {
+                                        id:AA_SierWebAppParams.risultati.candidati.footer_id,
+                                        template:"<div style='display: flex; justify-content: center; align-items: center; width: min-content; height: 100%; overflow: visible; white-space:nowrap;' class='scrollTextFromLeft'><span>#footer#</span></div>",
+                                        height:24,
+                                        css:{"background-color":"#08324f","color":"#fff","text-tramsform":"uppercase"},
+                                        data:{"footer":"&nbsp;"}
+                                    },
+                                ]
+                            },
+                            {
+                                id:AA_SierWebAppParams.livello_dettaglio_view_id,
+                                type:"clean",
+                                rows:
+                                [
+                                    {
+                                        id:AA_SierWebAppParams.ui_prefix+"__DettaglioTreeBoxContent",
+                                        template:"<div id='AA_SierWebAppSideMenuBox'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>",
+                                        css:{"background-color":"#f4f5f9"}
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+
+            webix.ui(app_box);
+        },
+        overlay: 
+        {
+            isVisible: function() {
+                try {
+                    let overlay = document.getElementById("AA_MainOverlay");
+                    if (overlay) {
+                        if (overlay.style.display == "block") {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                } catch (msg) {
+                    console.error(msg);
+                    return false;
+                }
+            },
+            show: function() {
+                try {
+                    let overlay = document.getElementById("AA_MainOverlay");
+                    if (overlay) {
+                        if (overlay.style.display == "none") {
+                            console.log("AA_MainApp.ui.overlay.show - mostro l'overlay");
+                            overlay.classList.remove('AA_MainOverlayFadeOff');
+                            overlay.classList.add('AA_MainOverlayFadeIn');
+                            overlay.style.display = "block";
+                        }
+                    }
+                } catch (msg) {
+                    console.error("AA_SierWebApp.ui.overlay.show", msg);
+                }
+            },
+            hide: function(delay = 1000) {
+                try {
+                    let overlay = document.getElementById("AA_MainOverlay");
+                    //console.log("AA_MainApp.ui.overlay.hide", overlay);
+                    if (overlay) {
+                        if (overlay.style.display == "flex") {
+                            console.log("AA_SierWebApp.ui.overlay.hide");
+
+                            if (delay > 0) {
+                                setTimeout(function() {
+                                    overlay.classList.remove('AA_MainOverlayFadeIn');
+                                    overlay.classList.add('AA_MainOverlayFadeOff');
+                                }, delay)
+                            } else {
+                                overlay.classList.remove('AA_MainOverlayFadeIn');
+                                overlay.classList.add('AA_MainOverlayFadeOff');
+                            }
+
+                            setTimeout(function() {
+                                overlay.style.display = "none";
+                            }, 2100 + delay);
+                        }
+                    }
+                } catch (msg) {
+                    console.error("AA_SierWebApp.ui.overlay.hide", msg);
+                }
+            }
+        }
+    }
 };
 
 var AA_SierWebApp = new AA_GenericSierWebApp();
