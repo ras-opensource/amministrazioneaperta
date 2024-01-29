@@ -835,6 +835,7 @@ AA_SierWebApp.RefreshUi = async function() {
                 let sezioni_percent=0;
                 if(AA_SierWebAppParams.risultati.sezioni) sezioni_percent=new Intl.NumberFormat('it-IT').format(Number(AA_SierWebAppParams.risultati.sezioni_scrutinate*100/AA_SierWebAppParams.risultati.sezioni).toFixed(1));                
                 let cursor="zoom-in";
+                let risultati_item_template="<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:40px;min-width:40px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width:100%;text-align:left;font-weight: 500;color: #0c467f;'>#presidente#</div><div style='width:60px;min-width:60px;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;min-width:60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>";
                 let risultati_box={
                     id: AA_SierWebAppParams.risultati.realtime_container_id,
                     view: "layout",
@@ -892,7 +893,7 @@ AA_SierWebApp.RefreshUi = async function() {
                                                 width:"auto",
                                                 css:"AA_SierWebAppDataviewItem"
                                             },
-                                            template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:35px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width: 55%;text-align:left;font-weight: 500;color: #0c467f;'>&nbsp;#presidente#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>",
+                                            template:risultati_item_template,
                                             data: AA_SierWebAppParams.risultati.data
                                         },
                                         {
@@ -909,7 +910,7 @@ AA_SierWebApp.RefreshUi = async function() {
                                                 width:"auto",
                                                 css:"AA_SierWebAppDataviewItem"
                                             },
-                                            template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:35px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width:55%; text-align:left;font-weight: 500;color: #0c467f;'>&nbsp;#presidente#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>",
+                                            template:risultati_item_template,
                                             data: AA_SierWebAppParams.risultati.data_coalizioni                                    
                                         }
                                     ]
@@ -1008,6 +1009,7 @@ AA_SierWebApp.RefreshUi = async function() {
                 {
                     cursor="default";
                 }
+                let risultati_item_template="<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:40px;min-width: 40px; display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width:100%;#font_size#;text-align:left;font-weight: 500;color: #0c467f;'>#denominazione#</div><div style='width:60px;min-width:60px;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;min-width:60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>";
                 let onItemClick=function(){if(AA_SierWebAppParams.risultati.id_circoscrizione == 0) {webix.message(bottomText); return;}; AA_SierWebAppParams.risultati.candidati.id_lista=arguments[0];$$(AA_SierWebAppParams.risultati.candidati.view_id).show()};
                 let risultati_box={
                     id: AA_SierWebAppParams.risultati.liste.realtime_container_id,
@@ -1053,7 +1055,7 @@ AA_SierWebApp.RefreshUi = async function() {
                                         width:"auto",
                                         css:"AA_SierWebAppDataviewItem"
                                     },
-                                    template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:40px;display:flex;align-items:center;justify-content:center'><img src='#image#' style='border-radius:50%; width:30px'></img></div><div style='width: 55%;text-align:left;font-weight: 500;color: #0c467f;#font_size#'>#denominazione#</div><div style='width:15%;text-align:right;font-size: smaller'>#voti#</div><div style='width: 60px;text-align:right;font-size:larger;font-weight:bold;color: #0c467f;'>#percent#%&nbsp;</div></div></div>",
+                                    template:risultati_item_template,
                                     data: AA_SierWebAppParams.risultati.liste.data
                                 }
                             ]
@@ -1148,6 +1150,7 @@ AA_SierWebApp.RefreshUi = async function() {
                 let voti_percent=0;
                 if(dettaglio.voti_lista[AA_SierWebAppParams.risultati.candidati.id_lista].percent > 0) voti_percent=new Intl.NumberFormat('it-IT').format(Number(dettaglio.voti_lista[AA_SierWebAppParams.risultati.candidati.id_lista].percent).toFixed(1));
                 let cursor="default";
+                let risultati_item_template="<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:10px'>&nbsp;</div><div style='flex-grow:1; text-align:left;font-weight: 500;color: #0c467f;#font_size#'>#denominazione#</div><div style='width:70px;text-align:right;font-weight: 500'>#voti#</div><div style='width:10px'>&nbsp;</div></div></div>";
                 let risultati_box={
                     id: AA_SierWebAppParams.risultati.candidati.realtime_container_id,
                     view: "layout",
@@ -1194,7 +1197,7 @@ AA_SierWebApp.RefreshUi = async function() {
                                         width:"auto",
                                         css:"AA_SierWebAppCandidatiDataviewItem"
                                     },
-                                    template:"<div style='display: flex;justify-content: center; align-items: center; width: 100%; height:100%;cursor:"+cursor+"'><div style='display: flex; justify-content: space-between; align-items: center; width: 100%; height:96%; border: 1px solid #5ccce7;background: #fff; border-radius: 10px'><div style='width:10px'>&nbsp;</div><div style='width: 60%;text-align:left;font-weight: 500;color: #0c467f;#font_size#'>#denominazione#</div><div style='width:35%;text-align:right;font-weight: 500'>#voti#</div><div style='width:10px'>&nbsp;</div></div></div>",
+                                    template:risultati_item_template,
                                     data: AA_SierWebAppParams.risultati.candidati.data
                                 }
                             ]

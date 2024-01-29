@@ -16663,12 +16663,19 @@ Class AA_SierModule extends AA_GenericModule
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
 
-        $affluenza[$_REQUEST['giornata']]=array("ore_12"=>intVal(strtolower(trim($_REQUEST['ore_12']))),"ore_19"=>intVal(strtolower(trim($_REQUEST['ore_19']))),"ore_22"=>intVal(strtolower(trim($_REQUEST['ore_22']))));
+        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>intVal(strtolower(trim($_REQUEST['ore_12']))),"ore_19"=>intVal(strtolower(trim($_REQUEST['ore_19']))),"ore_22"=>intVal(strtolower(trim($_REQUEST['ore_22']))));
         $comune->SetAffluenza($affluenza);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiunta affluenza per la giornata: ".$_REQUEST['giornata']))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Errore nell'aggiornamento dell'affluenza.",false);
+            return false;
+        }
+
+        if(!$object->UpdateComuneFeedRisultati($comune->GetProp('id'),$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento del feed dei risultati.",false);
             return false;
         }
 
