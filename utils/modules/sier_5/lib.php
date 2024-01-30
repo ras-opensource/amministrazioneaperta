@@ -1038,12 +1038,15 @@ Class AA_Sier extends AA_Object_V2
         //-------------- Analisi voti candidato ----------------
         $candidati=$this->GetCandidati(null,null,$circoscrizione);
         $voti_candidato=0;
+        $voti_candidato_lista=array();
         foreach($candidati as $idCandidato=>$curCandidato)
         {
             if(isset($risultati['voti_candidato'][$idCandidato])) 
             {
                 $voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
-                
+                if(!isset($voti_candidato_lista[$curCandidato->GetProp('id_lista')])) $voti_candidato_lista[$curCandidato->GetProp('id_lista')]=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
+                else $voti_candidato_lista[$curCandidato->GetProp('id_lista')]+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
+
                 if($risultati['voti_candidato'][$idCandidato]['voti'] > $risultati['voti_lista'][$curCandidato->GetProp('id_lista')])
                 {
                     $result[0]=true;
@@ -1051,7 +1054,16 @@ Class AA_Sier extends AA_Object_V2
                     $result[3]['risultati_voti_candidato_check']++;
                 }
             }
+        }
 
+        foreach($voti_candidato_lista as $idLista=>$tot_voti_candidati_lista)
+        {
+            if($tot_voti_candidati_lista > 2*$risultati['voti_lista'][$idLista])
+            {
+                $result[0]=true;
+                $result[1][]="Il totale dei voti (".$tot_voti_candidati_lista.") dei candidati della lista ".$liste[$idLista]->GetProp('denominazione')." sono superiori al doppio dei voti (".intVal(2*$risultati['voti_lista'][$idLista]).") della lista di appartenenza.";
+                $result[3]['risultati_voti_candidato_check']++;
+            }
         }
 
         if($voti_candidato == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente) > 0)
@@ -4956,6 +4968,10 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierComuneAddNewMultiPreviewDlg");
             $taskManager->RegisterTask("SierComuneAddNewMulti");
             $taskManager->RegisterTask("GetSierComuneAddNewMultiResultDlg");
+            $taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeCsvImportDlg");
+            $taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeCsvImportCalc");
+            $taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg");
+            $taskManager->RegisterTask("SierComuneRisultatiPreferenzeCsvImport");
 
             //elezioni
             $taskManager->RegisterTask("GetSierModifyDlg");
@@ -5157,6 +5173,13 @@ Class AA_SierModule extends AA_GenericModule
                 //conferma corpo elettorale
                 $taskManager->RegisterTask("GetSierOCConfirmCertCorpoElettoraleDlg");
                 $taskManager->RegisterTask("Update_OC_CertificazioneCorpoElettorale");
+
+                //importazione csv
+                $taskManager->RegisterTask("GetSierOCRisultatiPreferenzeCsvImportDlg");
+                $taskManager->RegisterTask("GetSierOCRisultatiPreferenzeCsvImportCalc");
+                $taskManager->RegisterTask("GetSierOCRisultatiPreferenzeCsvImportPreviewDlg");
+                $taskManager->RegisterTask("Update_OC_RisultatiPreferenzeCsvImport");
+                
             }
 
             //desktop
@@ -5250,7 +5273,7 @@ Class AA_SierModule extends AA_GenericModule
         return $data;
      }
 
-    //Template dlg addnew patrimonio
+    //Template dlg addnew comune da csv
     public function Template_GetSierComuneAddNewMultiDlg($object=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneAddNewMultiDlg";
@@ -5290,6 +5313,238 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd->SetSaveTask("GetSierComuneAddNewMultiPreviewCalc");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        
+        return $wnd;
+    }
+
+    //Template dlg import da csv risultati candidati
+    public function Template_GetSierComuneRisultatiPreferenzeCsvImportDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiPreferenzeCsvImportDlg";
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
+
+        $form_data=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp("id"),"csv_reset"=>1,"refresh_obj_id"=>$_REQUEST['refresh_obj_id'],"refresh"=>$_REQUEST['refresh']);
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(680);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+
+        $descr="<ul>Il file csv deve avere le seguenti caratteristiche:";
+        $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8;</li>";
+        $descr.="<li>usare il carattere \",\" (virgola) come separatore dei campi;</li>";
+        $descr.="<li>la prima riga deve contenere i nomi dei campi: id_candidato,voti</li>";
+        $descr.="<li>i voti devono essere formattati come un numero intero senza indicatore delle migliaia (es. 1500)</li>";
+        $descr.="<li>per ottenere il file di mappatura tra gli identificativi e i candidati scrivere a: amministrazioneaperta@regione.sardegna.it</li>";
+        $descr.="</ul>";
+        $descr.="<hr/>";
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di caricare i risultati dei voti ai candidati consiglieri tramite importazione da file csv.".$descr."<div style='width:100%;text-align:center'><span class='blinking' style='color: red'>!ATTENZIONE<span></div><b>L'importazione può andare a buon fine esclusivamente se non sono presenti anomalie sui risultati relativi ai voti presidente e voti di lista.</b></div>")));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
+
+        //options
+        $section=new AA_FieldSet($id."_CSV_Import_Options","Opzioni di importazione");
+        $section->AddCheckBoxField("csv_reset","Reimposta a 0 (zero) il numero dei voti dei candidati non presenti sul file csv",array("labelWidth"=>550,"bottomPadding"=>10));
+        $section->AddCheckBoxField("csv_incrementale","Considera il numero dei voti incrementale rispetto a quanto già presente",array("labelWidth"=>550,"bottomPadding"=>10));
+        $wnd->AddGenericObject($section);
+        
+        //csv
+        $wnd->AddFileUploadField("SierComunePreferenzeCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 5Mb).","accept"=>"application/csv"));
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        $wnd->enableRefreshOnSuccessfulSave(false);
+
+        $wnd->SetApplyButtonName("Procedi");
+
+        $wnd->SetSaveTask("GetSierComuneRisultatiPreferenzeCsvImportCalc");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        
+        return $wnd;
+    }
+
+    //Template dlg import da csv risultati candidati
+    public function Template_GetSierOCRisultatiPreferenzeCsvImportDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierOCRisultatiPreferenzeCsvImportDlg";
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
+
+        $form_data=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp("id"),"csv_reset"=>1,"refresh_obj_id"=>$_REQUEST['refresh_obj_id'],"refresh"=>$_REQUEST['refresh']);
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV dei voti candidati Consiglio regionale", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(680);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+
+        $descr="<ul>Il file csv deve avere le seguenti caratteristiche:";
+        $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8;</li>";
+        $descr.="<li>usare il carattere \",\" (virgola) come separatore dei campi;</li>";
+        $descr.="<li>la prima riga deve contenere i nomi dei campi: id_candidato,voti</li>";
+        $descr.="<li>i voti devono essere formattati come un numero intero senza indicatore delle migliaia (es. 1500)</li>";
+        $descr.="<li>per ottenere il file di mappatura tra gli identificativi e i candidati scrivere a: amministrazioneaperta@regione.sardegna.it</li>";
+        $descr.="</ul>";
+        $descr.="<hr/>";
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di caricare i risultati dei voti ai candidati consiglieri tramite importazione da file csv.".$descr."<div style='width:100%;text-align:center'><span class='blinking' style='color: red'>!ATTENZIONE<span></div><b>L'importazione può andare a buon fine esclusivamente se non sono presenti anomalie sui risultati relativi ai voti presidente e voti di lista.</b></div>")));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
+
+        //options
+        $section=new AA_FieldSet($id."_CSV_Import_Options","Opzioni di importazione");
+        $section->AddCheckBoxField("csv_reset","Reimposta a 0 (zero) il numero dei voti dei candidati non presenti sul file csv",array("labelWidth"=>550,"bottomPadding"=>10));
+        $section->AddCheckBoxField("csv_incrementale","Considera il numero dei voti incrementale rispetto a quanto già presente",array("labelWidth"=>550,"bottomPadding"=>10));
+        $wnd->AddGenericObject($section);
+        
+        //csv
+        $wnd->AddFileUploadField("SierComunePreferenzeCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 5Mb).","accept"=>"application/csv"));
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        $wnd->enableRefreshOnSuccessfulSave(false);
+
+        $wnd->SetApplyButtonName("Procedi");
+
+        $wnd->SetSaveTask("GetSierOCRisultatiPreferenzeCsvImportCalc");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        
+        return $wnd;
+    }
+
+    //Template dlg import preferenze csv
+    public function Template_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg";
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_sierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
+
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        //$wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(540);
+        //$wnd->SetBottomPadding(36);
+        //$wnd->EnableValidation();
+        //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
+        $columns=array(
+            array("id"=>"candidato","header"=>array("<div style='text-align: left'>Candidato</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"voti","header"=>array("<div style='text-align: right'>voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"int")
+        );
+
+        $data=AA_SessionVar::Get("SierComuneRisultatiPreferenzeCSV_ParsedData")->GetValue();
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array(array("candidato"=>"pinco","voti"=>0));
+        }
+
+        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
+
+        $desc="<p>Sono stati riconosciuti <b>".sizeof((array)$data)." Candidati</b></p>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+
+        $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
+            "type"=>"clean",
+            "view"=>"scrollview",
+            "scroll"=>"x"
+        ));
+        $table=new AA_JSON_Template_Generic($id."_CsvImportPreviewTable", array(
+            "view"=>"datatable",
+            "css"=>"AA_Header_DataTable",
+            "hover"=>"AA_DataTable_Row_Hover",
+            "columns"=>$columns,
+            "data"=>array_values($data)
+        ));
+        $scrollview->addRowToBody($table);
+
+        $wnd->AddGenericObject($scrollview);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        //$wnd->enableRefreshOnSuccessfulSave();
+
+        $wnd->SetApplyButtonName("Importa");
+
+        $wnd->SetSaveTask("SierComuneRisultatiPreferenzeCsvImport");
+        $params=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp('id'));
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        $wnd->SetSaveTaskParams($params);
+        
+        return $wnd;
+    }
+
+    //Template dlg import preferenze csv
+    public function Template_GetSierOCRisultatiPreferenzeCsvImportPreviewDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg";
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_sierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
+
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        //$wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(540);
+        //$wnd->SetBottomPadding(36);
+        //$wnd->EnableValidation();
+        //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
+        $columns=array(
+            array("id"=>"candidato","header"=>array("<div style='text-align: left'>Candidato</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"voti","header"=>array("<div style='text-align: right'>voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"int")
+        );
+
+        $data=AA_SessionVar::Get("SierComuneRisultatiPreferenzeCSV_ParsedData")->GetValue();
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array(array("candidato"=>"pinco","voti"=>0));
+        }
+
+        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
+
+        $desc="<p>Sono stati riconosciuti <b>".sizeof((array)$data)." Candidati</b></p>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+
+        $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
+            "type"=>"clean",
+            "view"=>"scrollview",
+            "scroll"=>"x"
+        ));
+        $table=new AA_JSON_Template_Generic($id."_CsvImportPreviewTable", array(
+            "view"=>"datatable",
+            "css"=>"AA_Header_DataTable",
+            "hover"=>"AA_DataTable_Row_Hover",
+            "columns"=>$columns,
+            "data"=>array_values($data)
+        ));
+        $scrollview->addRowToBody($table);
+
+        $wnd->AddGenericObject($scrollview);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        //$wnd->enableRefreshOnSuccessfulSave();
+
+        $wnd->SetApplyButtonName("Importa");
+
+        $wnd->SetSaveTask("Update_OC_RisultatiPreferenzeCsvImport");
+        $params=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp('id'));
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        //if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        $wnd->SetSaveTaskParams($params);
         
         return $wnd;
     }
@@ -12256,7 +12511,19 @@ Class AA_SierModule extends AA_GenericModule
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {   
-            $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiPreferenze_btn",array(
+            $modify_btn=new AA_JSON_Template_Generic($id."_OCCsvImportRisultatiPreferenze_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-archive-edit",
+                 "label"=>"da CSV",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Importa da csv",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCRisultatiPreferenzeCsvImportDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+            $toolbar->addElement($modify_btn);
+
+            $modify_btn=new AA_JSON_Template_Generic($id."_OCModifyRisultatiPreferenze_btn",array(
                 "view"=>"button",
                  "type"=>"icon",
                  "icon"=>"mdi mdi-pencil",
@@ -13927,6 +14194,558 @@ Class AA_SierModule extends AA_GenericModule
         die(json_encode($result));
     }
 
+    //Task aggiornamento preferenze da csv, passo 2 di 3
+    public function Task_GetSierComuneRisultatiPreferenzeCsvImportCalc($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
+
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);        
+            return false;
+        }
+
+        $comune=$object->GetComune($_REQUEST['id_comune']);
+        if(!$comune instanceof AA_SierComune)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo comune non valido. (".$_REQUEST['id_comune'].")",false);
+            return false;
+        }
+
+        $csvFile=AA_SessionFileUpload::Get("SierComunePreferenzeCSV");
+        if(!$csvFile->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non valido",false);        
+            return false;
+        }
+
+        $csv=$csvFile->GetValue();
+        if(!is_file($csv["tmp_name"]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non valido (1)",false);
+            return false;
+        }
+
+        $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        //Elimina il file temporaneo
+        if(is_file($csv["tmp_name"]))
+        {
+            unlink($csv["tmp_name"]);
+        }
+
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        
+        //Parsing della posizione dei campi
+        //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
+        $fieldPos=array(
+            "id_candidato"=>-1,
+            "voti"=>-1
+        );
+        
+        $recognizedFields=0;
+        foreach(explode(",",$csvRows[0]) as $pos=>$curFieldName)
+        {
+            if($fieldPos[trim(strtolower($curFieldName))] == -1)
+            {
+                $fieldPos[trim(strtolower($curFieldName))] = $pos;
+                $recognizedFields++;
+            }
+        }
+        //----------------------------------------
+
+        if($fieldPos['id_candidato']==-1 || $fieldPos['voti'] ==-1)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono stati trovati tutti i campi relativi a: id_candidato,voti. Verificare che il file csv sia strutturato correttamente e riprovare",false);
+            return false;
+        }
+
+        //parsing dei dati
+        $voti_candidato_csv=array();
+        $curRowNum=0;
+        $candidati=$object->GetCandidati(null,null,$comune->GetProp("id_circoscrizione"));
+        $reset=false;
+        $incrementale=false;
+
+        $risultati=$comune->GetRisultati(true);
+
+        if(isset($_REQUEST['csv_reset']) && $_REQUEST['csv_reset'] > 0) $reset=true;
+        if(isset($_REQUEST['csv_incrementale']) && $_REQUEST['csv_incrementale']>0) $incrementale=true;
+
+        foreach($csvRows as $curCsvRow)
+        {
+            //salta la prima riga
+            if($curRowNum > 0 && $curCsvRow !="")
+            {
+                $csvValues=explode(",",$curCsvRow);
+                if(sizeof($csvValues) >= $recognizedFields && isset($candidati[$csvValues[$fieldPos['id_candidato']]]))
+                {
+                    $voti_candidato_csv[$csvValues[$fieldPos['id_candidato']]]=array("voti"=>trim(intVal($csvValues[$fieldPos['voti']])));
+                }
+            }
+            $curRowNum++;
+        }
+
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            if(isset($voti_candidato_csv[$idCandidato]))
+            {
+                if($incrementale && isset($risultati['voti_candidato']) && isset($risultati['voti_candidato'][$idCandidato]))
+                {
+                    $voti_candidato_csv[$idCandidato]['voti']+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
+                }
+                $voti_candidato_csv[$idCandidato]['candidato']=$curCandidato->GetProp("nome")." ".$curCandidato->GetProp("cognome");
+            }
+            else
+            {
+                if($reset) $voti_candidato_csv[$idCandidato]=array("voti"=>0,"candidato"=>$curCandidato->GetProp("nome")." ".$curCandidato->GetProp("cognome"));
+            }
+        }
+
+        $risultati['voti_candidato']=$voti_candidato_csv;
+
+        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+
+        if($analisi[0] && ($analisi[3]['risultati_voti_presidente_check'] > 0 || $analisi[3]['risultati_voti_lista_check']>0 || $analisi[3]['risultati_voti_candidato_check'] > 0))
+        {
+            $id=$this->id."_GetSierResultCSVAnalisiRisultatiDlg";
+            
+            $wnd=new AA_GenericWindowTemplate($id, "Analisi criticità risultati comune di ".$comune->GetProp("denominazione"), $this->id);
+            
+            $wnd->SetWidth(580);
+            $wnd->SetHeight(280);
+
+            if($analisi[0]==true)
+            {
+                $content="<div style='display: flex; justify-content: flex-start; align-items: center; padding-right: 1em; width: 90%'><ul>Sono state riscontrate le seguenti criticità:";
+                foreach($analisi[1] as $curError)
+                {
+                    $content.="<li style='font-weight:bold; margin-top: 1em;'>".$curError."</li>";
+                }
+                $content.="</ul></div>";
+            }
+            else
+            {
+                $content="<div style='display: flex; justify-content: center; align-items: center; width: 100%;height: 100%'><p>I dati sono coerenti.</p></div>";
+            }
+            
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","template"=>$content)));
+           
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($wnd,true);
+            return false;
+        }
+
+        AA_SessionVar::Set("SierComuneRisultatiPreferenzeCSV_ParsedData",$voti_candidato_csv,false);
+        
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $params=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp('id'));
+        if(isset($_REQUEST['refresh_obj_id'])) $params["refresh_obj_id"]=$_REQUEST['refresh_obj_id'];
+        if(isset($_REQUEST['refresh'])) $params["refresh"]=$_REQUEST['refresh'];
+        $task->SetStatusAction('dlg',array("task"=>"GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg","params"=>$params),true);
+        $task->SetContent("Csv elaborato.",false);
+                
+        return true;
+    }
+
+    //Task aggiornamento preferenze da csv, passo 2 di 3
+    public function Task_GetSierOCRisultatiPreferenzeCsvImportCalc($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $csvFile=AA_SessionFileUpload::Get("SierComunePreferenzeCSV");
+        if(!$csvFile->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non valido",false);        
+            return false;
+        }
+
+        $csv=$csvFile->GetValue();
+        if(!is_file($csv["tmp_name"]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non valido (1)",false);
+            return false;
+        }
+
+        $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        //Elimina il file temporaneo
+        if(is_file($csv["tmp_name"]))
+        {
+            unlink($csv["tmp_name"]);
+        }
+        
+        //Parsing della posizione dei campi
+        $fieldPos=array(
+            "id_candidato"=>-1,
+            "voti"=>-1
+        );
+        
+        $recognizedFields=0;
+        foreach(explode(",",$csvRows[0]) as $pos=>$curFieldName)
+        {
+            if($fieldPos[trim(strtolower($curFieldName))] == -1)
+            {
+                $fieldPos[trim(strtolower($curFieldName))] = $pos;
+                $recognizedFields++;
+            }
+        }
+        //----------------------------------------
+
+        if($fieldPos['id_candidato']==-1 || $fieldPos['voti'] ==-1)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono stati trovati tutti i campi relativi a: id_candidato,voti. Verificare che il file csv sia strutturato correttamente e riprovare",false);
+            return false;
+        }
+
+        //parsing dei dati
+        $voti_candidato_csv=array();
+        $curRowNum=0;
+        $candidati=$object->GetCandidati(null,null,$comune->GetProp("id_circoscrizione"));
+        $reset=false;
+        $incrementale=false;
+
+        $risultati=$comune->GetRisultati(true);
+
+        if(isset($_REQUEST['csv_reset']) && $_REQUEST['csv_reset'] > 0) $reset=true;
+        if(isset($_REQUEST['csv_incrementale']) && $_REQUEST['csv_incrementale']>0) $incrementale=true;
+
+        foreach($csvRows as $curCsvRow)
+        {
+            //salta la prima riga
+            if($curRowNum > 0 && $curCsvRow !="")
+            {
+                $csvValues=explode(",",$curCsvRow);
+                if(sizeof($csvValues) >= $recognizedFields && isset($candidati[$csvValues[$fieldPos['id_candidato']]]))
+                {
+                    $voti_candidato_csv[$csvValues[$fieldPos['id_candidato']]]=array("voti"=>trim(intVal($csvValues[$fieldPos['voti']])));
+                }
+            }
+            $curRowNum++;
+        }
+
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            if(isset($voti_candidato_csv[$idCandidato]))
+            {
+                if($incrementale && isset($risultati['voti_candidato']) && isset($risultati['voti_candidato'][$idCandidato]))
+                {
+                    $voti_candidato_csv[$idCandidato]['voti']+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
+                }
+                $voti_candidato_csv[$idCandidato]['candidato']=$curCandidato->GetProp("nome")." ".$curCandidato->GetProp("cognome");
+            }
+            else
+            {
+                if($reset) $voti_candidato_csv[$idCandidato]=array("voti"=>0,"candidato"=>$curCandidato->GetProp("nome")." ".$curCandidato->GetProp("cognome"));
+            }
+        }
+
+        $risultati['voti_candidato']=$voti_candidato_csv;
+
+        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+
+        if($analisi[0] && ($analisi[3]['risultati_voti_presidente_check'] > 0 || $analisi[3]['risultati_voti_lista_check']>0 || $analisi[3]['risultati_voti_candidato_check'] > 0))
+        {
+            $id=$this->id."_GetSierResultCSVAnalisiRisultatiDlg";
+            
+            $wnd=new AA_GenericWindowTemplate($id, "Analisi criticità risultati comune di ".$comune->GetProp("denominazione"), $this->id);
+            
+            $wnd->SetWidth(580);
+            $wnd->SetHeight(280);
+
+            if($analisi[0]==true)
+            {
+                $content="<div style='display: flex; justify-content: flex-start; align-items: center; padding-right: 1em; width: 90%'><ul>Sono state riscontrate le seguenti criticità:";
+                foreach($analisi[1] as $curError)
+                {
+                    $content.="<li style='font-weight:bold; margin-top: 1em;'>".$curError."</li>";
+                }
+                $content.="</ul></div>";
+            }
+            else
+            {
+                $content="<div style='display: flex; justify-content: center; align-items: center; width: 100%;height: 100%'><p>I dati sono coerenti.</p></div>";
+            }
+            
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","template"=>$content)));
+           
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($wnd,true);
+            return false;
+        }
+
+        AA_SessionVar::Set("SierComuneRisultatiPreferenzeCSV_ParsedData",$voti_candidato_csv,false);
+        
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $params=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp('id'));
+        if(isset($_REQUEST['refresh_obj_id'])) $params["refresh_obj_id"]=$_REQUEST['refresh_obj_id'];
+        if(isset($_REQUEST['refresh'])) $params["refresh"]=$_REQUEST['refresh'];
+        $task->SetStatusAction('dlg',array("task"=>"GetSierOCRisultatiPreferenzeCsvImportPreviewDlg","params"=>$params),true);
+        $task->SetContent("Csv elaborato.",false);
+                
+        return true;
+    }
+
+    //Task aggiornamento preferenze da csv, passo 3 di 3
+    public function Task_SierComuneRisultatiPreferenzeCsvImport($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
+
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);        
+            return false;
+        }
+
+        $comune=$object->GetComune($_REQUEST['id_comune']);
+        if(!$comune instanceof AA_SierComune)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo comune non valido. (".$_REQUEST['id_comune'].")",false);
+            return false;
+        }
+
+        $voti_candidato_csv=AA_SessionVar::Get("SierComuneRisultatiPreferenzeCSV_ParsedData")->GetValue();
+
+        if(!is_array($voti_candidato_csv))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($voti_candidato_csv,TRUE),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("- dati non validi",false);
+            return false;
+        }
+
+        $voti_candidato=array();
+        foreach($voti_candidato_csv as $idCandidato=>$curCandidato)
+        {
+            $voti_candidato[$idCandidato]=array("voti"=>$curCandidato['voti']);
+        }
+
+        $risultati=$comune->GetRisultati(true);
+        $risultati['voti_candidato']=$voti_candidato;
+
+        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+
+        if($analisi[0] && ($analisi[3]['risultati_voti_presidente_check'] > 0 || $analisi[3]['risultati_voti_lista_check']>0 || $analisi[3]['risultati_voti_candidato_check'] > 0))
+        {
+            $id=$this->id."_GetSierResultCSVAnalisiRisultatiDlg";
+            
+            $wnd=new AA_GenericWindowTemplate($id, "Analisi criticità risultati comune di ".$comune->GetProp("denominazione"), $this->id);
+            
+            $wnd->SetWidth(580);
+            $wnd->SetHeight(280);
+
+            if($analisi[0]==true)
+            {
+                $content="<div style='display: flex; justify-content: flex-start; align-items: center; padding-right: 1em; width: 90%'><ul>Sono state riscontrate le seguenti criticità:";
+                foreach($analisi[1] as $curError)
+                {
+                    $content.="<li style='font-weight:bold; margin-top: 1em;'>".$curError."</li>";
+                }
+                $content.="</ul></div>";
+            }
+            else
+            {
+                $content="<div style='display: flex; justify-content: center; align-items: center; width: 100%;height: 100%'><p>I dati sono coerenti.</p></div>";
+            }
+            
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","template"=>$content)));
+           
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($wnd,true);
+            return false;
+        }
+
+        AA_SessionVar::UnsetVar("SierComuneRisultatiPreferenzeCSV_ParsedData");
+        $comune->SetAnalisiRisultati($analisi);
+
+        $comune->SetRisultati($risultati);
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti candidato (da csv)."))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei voti candidato.",false);
+            return false;
+        }
+
+        if(!$object->UpdateComuneFeedRisultati($comune->GetProp('id'),$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento del feed dei risultati.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
+    //Task aggiornamento preferenze da csv, passo 3 di 3
+    public function Task_Update_OC_RisultatiPreferenzeCsvImport($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Modifica risultati non abilitata.",false);
+            return false;
+        }
+
+        $voti_candidato_csv=AA_SessionVar::Get("SierComuneRisultatiPreferenzeCSV_ParsedData")->GetValue();
+
+        if(!is_array($voti_candidato_csv))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($voti_candidato_csv,TRUE),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("- dati non validi",false);
+            return false;
+        }
+
+        $voti_candidato=array();
+        foreach($voti_candidato_csv as $idCandidato=>$curCandidato)
+        {
+            $voti_candidato[$idCandidato]=array("voti"=>$curCandidato['voti']);
+        }
+
+        $risultati=$comune->GetRisultati(true);
+        $risultati['voti_candidato']=$voti_candidato;
+
+        $analisi=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
+
+        if($analisi[0] && ($analisi[3]['risultati_voti_presidente_check'] > 0 || $analisi[3]['risultati_voti_lista_check']>0 || $analisi[3]['risultati_voti_candidato_check'] > 0))
+        {
+            $id=$this->id."_GetSierResultCSVAnalisiRisultatiDlg";
+            
+            $wnd=new AA_GenericWindowTemplate($id, "Analisi criticità risultati comune di ".$comune->GetProp("denominazione"), $this->id);
+            
+            $wnd->SetWidth(580);
+            $wnd->SetHeight(280);
+
+            if($analisi[0]==true)
+            {
+                $content="<div style='display: flex; justify-content: flex-start; align-items: center; padding-right: 1em; width: 90%'><ul>Sono state riscontrate le seguenti criticità:";
+                foreach($analisi[1] as $curError)
+                {
+                    $content.="<li style='font-weight:bold; margin-top: 1em;'>".$curError."</li>";
+                }
+                $content.="</ul></div>";
+            }
+            else
+            {
+                $content="<div style='display: flex; justify-content: center; align-items: center; width: 100%;height: 100%'><p>I dati sono coerenti.</p></div>";
+            }
+            
+            $wnd->AddView(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","template"=>$content)));
+           
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($wnd,true);
+            return false;
+        }
+
+        AA_SessionVar::UnsetVar("SierComuneRisultatiPreferenzeCSV_ParsedData");
+        $comune->SetAnalisiRisultati($analisi);
+
+        $comune->SetRisultati($risultati);
+        if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento risultati voti preferenze (da csv) - operatore: ".$operatore->GetOperatoreComunaleCf()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei voti candidato.",false);
+            return false;
+        }
+
+        if(!$object->UpdateComuneFeedRisultati($comune->GetProp('id'),$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento del feed dei risultati.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
     //Task login operatore comunale 
     public function Task_OCLogin($task)
     {
@@ -16184,6 +17003,114 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica risultati preferenze csv
+    public function Task_GetSierComuneRisultatiPreferenzeCsvImportDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRisultatiPreferenzeCsvImportDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task modifica risultati preferenze preview csv
+    public function Task_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        $data=AA_SessionVar::Get("SierComuneRisultatiPreferenzeCSV_ParsedData")->GetValue();
+
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("- dati csv non validi",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task modifica risultati preferenze preview csv
+    public function Task_GetSierOCRisultatiPreferenzeCsvImportPreviewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $data=AA_SessionVar::Get("SierComuneRisultatiPreferenzeCSV_ParsedData")->GetValue();
+
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("- dati csv non validi",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierOCRisultatiPreferenzeCsvImportPreviewDlg($object,$comune),true);
+        return true;
+    }
+
     //Task modifica risultati preferenze comunale multi
     public function Task_GetSierComuneRisultatiPreferenzeModifyMultiDlg($task)
     {
@@ -16507,6 +17434,54 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierOCModifyRisultatiPreferenzeDlg($object,$comune,$candidato),true);
+        return true;
+    }
+
+    //Task modifica risultati liste (OC)
+    public function Task_GetSierOCRisultatiPreferenzeCsvImportDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        //controlli
+        $risultati=$comune->GetRisultati(true);
+
+        $votanti=0;
+        if(isset($risultati['votanti_m'])) $votanti+=$risultati['votanti_m'];
+        if(isset($risultati['votanti_f'])) $votanti+=$risultati['votanti_f'];
+
+        if($votanti==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono presenti votanti, caricare prima i dati generali.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierOCRisultatiPreferenzeCsvImportDlg($object,$comune),true);
         return true;
     }
 
@@ -17344,7 +18319,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
             else $tot_voti_candidati+=intVal($_REQUEST['voti']);
-            if($id_lista==0) $id_lista=$curCandidato->GetProp("id_lista");
+            if($id_lista==0) $id_lista=$candidati[$idCandidato]->GetProp("id_lista");
         }
 
         if($id_lista > 0 && $tot_voti_candidati > (2*$risultati['voti_lista'][$id_lista]))
@@ -17778,7 +18753,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
             else $tot_voti_candidati+=intVal($_REQUEST['voti']);
-            if($id_lista==0) $id_lista=$curCandidato->GetProp("id_lista");
+            if($id_lista==0) $id_lista=$candidati[$idCandidato]->GetProp("id_lista");
         }
 
         if($id_lista > 0 && $tot_voti_candidati > (2*$risultati['voti_lista'][$id_lista]))
@@ -21124,7 +22099,19 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning_Preferenze",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
-        {   
+        {
+            $modify_btn=new AA_JSON_Template_Generic($id."_CsvImportRisultatiPreferenze_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-archive-edit",
+                 "label"=>"da CSV",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Importa da csv",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRisultatiPreferenzeCsvImportDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+            $toolbar->addElement($modify_btn);
+
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiPreferenze_btn",array(
                 "view"=>"button",
                  "type"=>"icon",
