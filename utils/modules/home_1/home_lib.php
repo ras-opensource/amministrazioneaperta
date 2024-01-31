@@ -810,11 +810,20 @@ Class AA_HomeModule extends AA_GenericModule
     //Template risorse content
     public function TemplateSection_Risorse()
     {
+
         $section_box=new AA_JSON_Template_Layout("AA_Home_Risorse_Box",array("type"=>"space","css"=>"AA_Desktop_Section_Box"));
-        
-        
         $section_box->AddRow(new AA_JSON_Template_Generic("HomeRisorseBoxTitle",array("view"=>"label","align"=>"center","label"=>"<span class='AA_Desktop_Section_Label'>Risorse</span>")));
-        $section_box->AddRow(new AA_JSON_Template_Generic());
+ 
+        if(!$this->oUser->IsSuperUser())
+        {
+            $section_box_content=new AA_JSON_Template_Generic();
+        }
+        else
+        {
+            $section_box_content=new AA_JSON_Template_Template("AA_ServerStatusLink",array("template"=>"<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetServerStatusDlg', taskManager: AA_MainApp.taskManager},'".$this->id."');\">Stato del server</a></div>"));
+        }
+        $section_box->addRow($section_box_content);
+
         return $section_box;
     }
 

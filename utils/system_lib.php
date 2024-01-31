@@ -410,6 +410,12 @@ class AA_SystemTaskManager extends AA_GenericTaskManager
 
         //Aggiorna la password dell'utente corrente
         $this->RegisterTask("UpdateCurrentUserPwd","AA_SystemTask_UpdateCurrentUserPwd");
+
+        //visualizza lo stato del server
+        $this->RegisterTask("GetServerStatus","AA_SystemTask_GetServerStatus");
+
+        //visualizza lo stato del server dlg
+        $this->RegisterTask("GetServerStatusDlg","AA_SystemTask_GetServerStatusDlg");
     }
 }
 
@@ -482,6 +488,24 @@ class AA_SystemTask_GetLogDlg extends AA_GenericTask
     }
 }
 
+//Task per la visualizzazione del log di un oggetto
+class AA_SystemTask_GetServerStatusDlg extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("GetServerStatusDlg", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
+        $wnd = new AA_GenericServerStatusDlg("AA_SystemServerStatusDlg_" . $_REQUEST['id'], "Server status", $this->oUser);
+
+        $this->sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>" . $wnd->toBase64() . "</content><error id='error'></error>";
+        return true;
+    }
+}
 //Task per la gestione del preview pdf
 class AA_SystemTask_GetPdfPreviewDlg extends AA_GenericTask
 {
@@ -633,6 +657,58 @@ class AA_SystemTask_GetAppStatus extends AA_GenericTask
             $this->sTaskLog .= "</content>";
 
             return true;
+        }
+    }
+}
+#--------------------------------------------
+
+//Task che restituisce lo stato corrente della piattaforma (utente loggato e sidebar)
+class AA_SystemTask_GetServerStatus extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("GetServerStatus", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        AA_Log::Log(__METHOD__ . "() - task: " . $this->GetName());
+
+        if($this->oUser->IsSuperUser())
+        {
+            $curlSES=curl_init(); 
+            
+            //aggiorna il feed completo
+            curl_setopt($curlSES,CURLOPT_URL,"http://localhost/server-status");
+            curl_setopt($curlSES,CURLOPT_RETURNTRANSFER,true);
+            curl_setopt($curlSES,CURLOPT_HEADER, false); 
+            $result=curl_exec($curlSES);
+            curl_close($curlSES);
+
+            $info=curl_getinfo($curlSES);
+            //AA_Log::Log(__METHOD__." - info: ".print_r(curl_getinfo($curlSES),true), 100);
+
+            if($info['http_code']!="200")
+            {
+                AA_Log::Log(__METHOD__." - Errore http(".$info['http_code'].") per l'url: http://localhost/server-status", 100);
+                die(json_encode(array("status"=>"<div>&nbsp;</div>")));
+            }
+
+            if($result===false)
+            {
+                AA_Log::Log(__METHOD__." - Errore (".curl_error($curlSES).").", 100);
+                die(json_encode(array("status"=>"<div>&nbsp;</div>")));
+            }
+            else
+            {
+                
+               die(json_encode(array("status"=>"<div>".substr($result,strpos($result,"<body>")+7,-15)."</div>")));
+            }
+        }
+        else
+        {
+           die(json_encode(array("status"=>"<div>&nbsp;</div>")));
         }
     }
 }
@@ -4689,6 +4765,41 @@ class AA_GenericLogDlg extends AA_GenericWindowTemplate
     }
 }
 
+//Template generic  logView dlg
+class AA_GenericServerStatusDlg extends AA_GenericWindowTemplate
+{
+    public function __construct($id = "", $title = "Logs", $user = null)
+    {
+        parent::__construct($id, $title);
+
+        $this->SetWidth("1280");
+        $this->SetHeight("720");
+
+        //Verifica utente
+        if ($user instanceof AA_User) {
+            if (!$user->isCurrentUser() || $user->IsGuest()) {
+                $user = AA_User::GetCurrentUser();
+            }
+        } else $user = AA_User::GetCurrentUser();
+
+        if (!$user->IsSuperUser()) {
+            $this->body->AddRow(new AA_JSON_Template_Template($this->id . "_ServerStatus_Box", array("type" => "clean", "template" => "<div style='text-align: center;'id='pdf_preview_box' style='width: 100%; height: 100%'>Utente non autorizzato.</div>")));
+            return;
+        }
+
+        $section_box=new AA_JSON_Template_Layout("ServerStatus_Box",array("type"=>"space","css"=>"AA_Desktop_Section_Box"));
+        $section_box_content=new AA_JSON_Template_Generic("ServerStatus_Box_content",array("view"=>"scrollview","borderless"=>true));
+        $section_box_content->AddRowToBody(new AA_JSON_Template_Template("AA_ServerStatus_Details",array("template"=>"#status#","autoheight"=>true,"url"=>"utils/system_ops.php?task=GetServerStatus")));
+        $section_box->addRow($section_box_content);
+
+        $this->body->AddRow($section_box);
+    }
+
+    protected function Update()
+    {
+        parent::Update();
+    }
+}
 
 //Template sezione paginata
 class AA_GenericPagedSectionTemplate
