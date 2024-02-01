@@ -745,7 +745,6 @@ Class AA_NewsTags
 //Class generic parsable object
 Class AA_GenericParsableObject
 {
-    static protected $dbDataTable="";
     protected $aProps=array();
     
     //Importa i valori da un array
@@ -785,6 +784,17 @@ Class AA_GenericParsableObject
     public function GetProps()
     {
         return $this->aProps;
+    }
+}
+
+//Class generic parsable object
+Class AA_GenericParsableDbObject extends AA_GenericParsableObject
+{
+    static protected $dbDataTable="";
+
+    public function __construct($params=null)
+    {
+        parent::__construct($params);
     }
 
     public static function Search($params=null)
@@ -883,7 +893,7 @@ Class AA_GenericParsableObject
 
     public static function Load($id=0)
     {
-        if($id<=0) return null;
+        if($id<=0 || static::$dbDataTable=="") return null;
 
         if(static::$dbDataTable == "") return null;
  
@@ -905,12 +915,12 @@ Class AA_GenericParsableObject
     }
 }
 
-Class AA_GenericNews extends AA_GenericParsableObject
+Class AA_GenericNews extends AA_GenericParsableDbObject
 {
     public function __construct($params = null)
     {
         static::$dbDataTable="aa_news";
-
+        
         $this->aProps['timestamp']="";
         $this->aProps['tags']="";
         $this->aProps['oggetto']="";
@@ -922,7 +932,7 @@ Class AA_GenericNews extends AA_GenericParsableObject
     }
 }
 
-Class AA_GenericResources extends AA_GenericParsableObject
+Class AA_GenericResources extends AA_GenericParsableDbObject
 {
     public function __construct($params = null)
     {
