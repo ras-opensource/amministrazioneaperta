@@ -812,6 +812,8 @@ Class AA_HomeModule extends AA_GenericModule
     {
 
         $section_box=new AA_JSON_Template_Layout("AA_Home_Risorse_Box",array("type"=>"space","css"=>"AA_Desktop_Section_Box"));
+        
+        //mdi-server-security
         $section_box->AddRow(new AA_JSON_Template_Generic("HomeRisorseBoxTitle",array("view"=>"label","align"=>"center","label"=>"<span class='AA_Desktop_Section_Label'>Risorse</span>")));
  
         if(!$this->oUser->IsSuperUser())

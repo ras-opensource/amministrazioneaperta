@@ -2000,7 +2000,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 let mod = AA_MainApp.getModule(module);
                 if (mod.isValid()) {
                     return mod.dlg(params);
-                } else return AA_MainApp.setCurrentModule.dlg(params);
+                } else return AA_MainApp.curModule.dlg(params);
             } catch (msg) {
                 console.error(".ui.dlg(" + task + "," + params + "," + module + "," + taskManager + ")", msg);
                 AA_MainApp.ui.alert(msg);
@@ -3502,12 +3502,12 @@ async function AA_Task(task, taskManagerURL = "", params = "", postParams = "", 
             if (Array.isArray(params)) {
                 for (let param of params) {
                     for (var i in param) {
-                        url += '&' + i + '=' + param[i];
+                        url += '&' + i + '=' + encodeURIComponent(param[i]);
                     }
                 }
             } else {
                 for (let i in params) {
-                    url += '&' + i + '=' + params[i];
+                    url += '&' + i + '=' + encodeURIComponent(params[i]);
                 }
             }
         }

@@ -150,14 +150,14 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
                 let lista=table.getFilter("lista");
                 if(lista) 
                 {
-                    lista_val=lista.value;
+                    lista_val=String(lista.value);
                 }
                 else
                 {
                     console.log("eventHandlers.defaultHandlers.AddNewCandidato - lista non valida.",lista);
                 }
                 
-                params.params=[{circoscrizione_desc:circoscrizione_val},{lista_desc:lista_val},id_object];
+                params.params=[{circoscrizione_desc:circoscrizione_val},{lista_desc:String(lista_val)},id_object];
             }
             else
             {

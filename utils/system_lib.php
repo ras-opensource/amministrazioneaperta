@@ -692,13 +692,13 @@ class AA_SystemTask_GetServerStatus extends AA_GenericTask
             if($info['http_code']!="200")
             {
                 AA_Log::Log(__METHOD__." - Errore http(".$info['http_code'].") per l'url: http://localhost/server-status", 100);
-                die(json_encode(array("status"=>"<div>&nbsp;</div>")));
+                die(json_encode(array("status"=>"<div>Statistiche server non presenti.</div>")));
             }
 
             if($result===false)
             {
                 AA_Log::Log(__METHOD__." - Errore (".curl_error($curlSES).").", 100);
-                die(json_encode(array("status"=>"<div>&nbsp;</div>")));
+                die(json_encode(array("status"=>"<div>Statistiche server non presenti.</div>")));
             }
             else
             {
@@ -708,7 +708,281 @@ class AA_SystemTask_GetServerStatus extends AA_GenericTask
         }
         else
         {
-           die(json_encode(array("status"=>"<div>&nbsp;</div>")));
+           die(json_encode(array("status"=>"<div>Statistiche server non presenti.</div>")));
+        }
+    }
+}
+#--------------------------------------------
+
+Class AA_NewsTags
+{
+    private $aTags=array();
+
+    private static $oInstance=null;
+
+    protected static function Initialize()
+    {
+        static::$oInstance=new AA_NewsTags();
+    }
+
+    private function __construct()
+    {
+        $this->aTags[0]="esterna";
+        $this->aTags[1]="interna";
+    }
+
+    public static function GetTags($params=null)
+    {
+        if(!static::$oInstance)
+        {
+            static::Initialize();
+        }
+
+        return static::$oInstance->aTags;
+    }
+}
+
+//Class generic parsable object
+Class AA_GenericParsableObject
+{
+    static protected $dbDataTable="";
+    protected $aProps=array();
+    
+    //Importa i valori da un array
+    protected function Parse($values=null)
+    {
+        if(is_array($values))
+        {
+            foreach($values as $key=>$value)
+            {
+                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
+            }
+        }
+    }
+
+    public function __construct($params=null)
+    {
+        //Definisce le proprietà dell'oggetto e i valori di default
+        $this->aProps['id']=0;
+
+        if(is_array($params)) $this->Parse($params);
+    }
+
+    //imposta il valore di una propietà
+    public function SetProp($prop="",$value="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
+    }
+
+    //restituisce il valore di una propietà
+    public function GetProp($prop="")
+    {
+        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
+        else return "";
+    }
+
+    //restituisce tutte le propietà
+    public function GetProps()
+    {
+        return $this->aProps;
+    }
+
+    public static function Search($params=null)
+    {
+        if(static::$dbDataTable == "") return array();
+ 
+        $db=new AA_Database();
+        $query="SELECT * FROM ".static::$dbDataTable;
+        $where="";
+        $order="";
+        if(isset($params['WHERE']) && is_array($params['WHERE']))
+        {
+            foreach($params['WHERE'] as $key=>$curFilter)
+            {
+                $currentWhere="";
+                if(is_array($curFilter))
+                {
+                    if(isset($curFilter['FIELD']))
+                    {
+                        $currentWhere.=" ".$curFilter['FIELD']." ";
+                        
+                        //operatore
+                        if(isset($curFilter['OPERATOR']))
+                        {
+                            $currentWhere.=" ".$curFilter['OPERATOR']." ";
+                        }
+                        else
+                        {
+                            $currentWhere.=" LIKE ";
+                        }
+
+                        //valore
+                        if(isset($curFilter['VALUE']))
+                        {
+                            $currentWhere.=" ".addslashes($curFilter['VALUE'])." ";
+                        }
+                        else
+                        {
+                            AA_Log::Log(__METHOD__." - Errore parametro di ricerca, manca il campo VALUE - ".print_r($curFilter,true),100);
+                            $currentWhere="";
+                        }
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - Errore parametro di ricerca, manca il campo FIELD - ".print_r($curFilter,true),100);
+                    }
+                }
+
+                if($currentWhere !="")
+                {
+                    if($where=="")
+                    {
+                        $where = " WHERE ".$currentWhere;
+                    }
+                    else
+                    {
+                        if(isset($curFilter['CONCAT_OPERATOR']))
+                        {
+                            $where.=" ".$curFilter['CONCAT_OPERATOR']." ".$currentWhere;
+                        }
+                    }
+                }
+            }
+        }
+
+        //order
+        if(isset($params['ORDER']) && is_array($params['ORDER']))
+        {
+            foreach($params['ORDER'] as $key=>$curOrder)
+            {
+                if($order=="") $order=" ORDER BY ".$curOrder;
+                else $order.=",".$curOrder;
+            }
+        }
+
+        $query.=$where.$order;
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+            return array();
+        }
+
+        if($db->GetAffectedRows() == 0) return array();
+        
+        $rs=$db->GetResultSet();
+        $return=array();
+        $class=__CLASS__;
+
+        foreach($rs as $id=>$row)
+        {
+            $return[$id]=new $class($row);
+        }
+
+        return $return;
+    }
+
+    public static function Load($id=0)
+    {
+        if($id<=0) return null;
+
+        if(static::$dbDataTable == "") return null;
+ 
+        $db=new AA_Database();
+        $query="SELECT * FROM ".static::$dbDataTable." WHERE id = '".addslashes($id)."'";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+            return null;
+        }
+
+        if($db->GetAffectedRows() == 0) return null;
+        
+        $rs=$db->GetResultSet();
+        $class=__CLASS__;
+
+        return new $class($rs[0]);
+    }
+}
+
+Class AA_GenericNews extends AA_GenericParsableObject
+{
+    public function __construct($params = null)
+    {
+        static::$dbDataTable="aa_news";
+
+        $this->aProps['timestamp']="";
+        $this->aProps['tags']="";
+        $this->aProps['oggetto']="";
+        $this->aProps['descrizione']="";
+        $this->aProps['allegati']="";
+        $this->aProps['module']="";
+
+        return parent::__construct($params);
+    }
+}
+
+Class AA_GenericResources extends AA_GenericParsableObject
+{
+    public function __construct($params = null)
+    {
+        static::$dbDataTable="aa_resources";
+
+        $this->aProps['timestamp']="";
+        $this->aProps['module']="";
+        $this->aProps['data']="";
+
+        return parent::__construct($params);
+    }
+}
+
+//Task che restituisce le news
+class AA_SystemTask_GetNews extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("GetNews", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        AA_Log::Log(__METHOD__ . "() - task: " . $this->GetName());
+
+        if($this->oUser->IsSuperUser())
+        {
+            $curlSES=curl_init(); 
+            
+            //aggiorna il feed completo
+            curl_setopt($curlSES,CURLOPT_URL,"http://localhost/server-status");
+            curl_setopt($curlSES,CURLOPT_RETURNTRANSFER,true);
+            curl_setopt($curlSES,CURLOPT_HEADER, false); 
+            $result=curl_exec($curlSES);
+            curl_close($curlSES);
+
+            $info=curl_getinfo($curlSES);
+            //AA_Log::Log(__METHOD__." - info: ".print_r(curl_getinfo($curlSES),true), 100);
+
+            if($info['http_code']!="200")
+            {
+                AA_Log::Log(__METHOD__." - Errore http(".$info['http_code'].") per l'url: http://localhost/server-status", 100);
+                die(json_encode(array("status"=>"<div>Statistiche server non presenti.</div>")));
+            }
+
+            if($result===false)
+            {
+                AA_Log::Log(__METHOD__." - Errore (".curl_error($curlSES).").", 100);
+                die(json_encode(array("status"=>"<div>Statistiche server non presenti.</div>")));
+            }
+            else
+            {
+                
+               die(json_encode(array("status"=>"<div>".substr($result,strpos($result,"<body>")+7,-15)."</div>")));
+            }
+        }
+        else
+        {
+           die(json_encode(array("status"=>"<div>Statistiche server non presenti.</div>")));
         }
     }
 }
