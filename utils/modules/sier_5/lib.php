@@ -1255,7 +1255,11 @@ Class AA_Sier extends AA_Object_V2
             {
                 $curCoalizioneImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
             }
-            $feed['coalizioni'][$idCoalizione]=array("denominazione"=>$curCoalizione->GetProp("denominazione"),"image"=>$curCoalizioneImagePath,"presidente"=>$curCoalizione->GetProp("nome_candidato"),"cv"=>$curCoalizione->GetProp("cv"),"cg"=>$curCoalizione->GetProp("cg"));
+            $curCv="";
+            if($curCoalizione->GetProp('cv')!="") $curCv="/storage.php?object=".$curCoalizione->GetProp('cv');
+            $curCg="";
+            if($curCoalizione->GetProp('cg')!="") $curCg="/storage.php?object=".$curCoalizione->GetProp('cg');
+            $feed['coalizioni'][$idCoalizione]=array("denominazione"=>$curCoalizione->GetProp("denominazione"),"image"=>$curCoalizioneImagePath,"presidente"=>$curCoalizione->GetProp("nome_candidato"),"cv"=>$curCv,"cg"=>$curCg);
         }
 
         foreach($candidati as $idCandidato=>$curCandidato)
