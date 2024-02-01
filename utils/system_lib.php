@@ -807,14 +807,14 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         $order="";
         if(isset($params['WHERE']) && is_array($params['WHERE']))
         {
-            foreach($params['WHERE'] as $key=>$curFilter)
+            foreach($params['WHERE'] as $curFilter)
             {
                 $currentWhere="";
                 if(is_array($curFilter))
                 {
                     if(isset($curFilter['FIELD']))
                     {
-                        $currentWhere.=" ".$curFilter['FIELD']." ";
+                        $currentWhere.=" ".static::$dbDataTable.".".$curFilter['FIELD']." ";
                         
                         //operatore
                         if(isset($curFilter['OPERATOR']))
@@ -829,7 +829,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
                         //valore
                         if(isset($curFilter['VALUE']))
                         {
-                            $currentWhere.=" ".addslashes($curFilter['VALUE'])." ";
+                            $currentWhere.=" ".$curFilter['VALUE']." ";
                         }
                         else
                         {
@@ -855,6 +855,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
                         {
                             $where.=" ".$curFilter['CONCAT_OPERATOR']." ".$currentWhere;
                         }
+                        else $where.=" AND ".$currentWhere;
                     }
                 }
             }
