@@ -21,12 +21,26 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
     try 
     {
         //console.log("eventHandlers.defaultHandlers.ModuleBoxClick", this, arguments);
-        for(let item of AA_MainApp.ui.sidebar.content)
+        if(AA_MainApp.ui.enableSidebar)
         {
-            //console.log("eventHandlers.defaultHandlers.ModuleBoxClick", item);
-            if(item.module==arguments[0])
+            for(let item of AA_MainApp.ui.sidebar.content)
             {
-                AA_MainApp.ui.sidebar.select(item.id);
+                //console.log("eventHandlers.defaultHandlers.ModuleBoxClick", item);
+                if(item.module==arguments[0])
+                {
+                    AA_MainApp.ui.sidebar.select(item.id);
+                }
+            }
+        }
+        if(AA_MainApp.ui.enableSidemenu)
+        {
+            for(let item of AA_MainApp.ui.sidemenu.aMenuData)
+            {
+                //console.log("eventHandlers.defaultHandlers.ModuleBoxClick", item);
+                if(item.module==arguments[0])
+                {
+                    AA_MainApp.ui.sidemenu.selectItem(item.id);
+                }
             }
         }
     } catch (msg) {

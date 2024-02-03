@@ -4057,7 +4057,7 @@ class AA_GenericModule
 
         //Inserisce il pulsante di riassegnazione ripristino
         if (($perms & AA_Const::AA_PERMS_WRITE) > 0) {
-            if (($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) == 0) {
+            if (($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) == 0 && !isset($params['disable_reassign'])) {
                 //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
                 //$menu_spacer=true;
                 $menu_data[] = array(
@@ -4086,24 +4086,30 @@ class AA_GenericModule
         //Inserisce le voci di esportazione
         //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
         //$menu_spacer=true;
-        $menu_data[] = array(
-            "id" => $id . "_SaveAsPdf" . "_$id_org",
-            "value" => "Esporta in pdf",
-            "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file pdf",
-            "icon" => "mdi mdi-file-pdf",
-            "module_id" => $this->id,
-            "handler" => "sectionActionMenu.saveAsPdf",
-            "handler_params" => array("task" => static::AA_UI_TASK_SAVEASPDF_DLG, "object_id" => $object->GetID())
-        );
-        $menu_data[] = array(
-            "id" => $id . "_SaveAsCsv" . "_$id_org",
-            "value" => "Esporta in csv",
-            "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file csv",
-            "icon" => "mdi mdi-file-table",
-            "module_id" => $this->id,
-            "handler" => "sectionActionMenu.saveAsCsv",
-            "handler_params" => array("task" => static::AA_UI_TASK_SAVEASCSV_DLG, "object_id" => $object->GetID())
-        );
+        if(!isset($params['disable_SaveAsPdf']))
+        {
+            $menu_data[] = array(
+                "id" => $id . "_SaveAsPdf" . "_$id_org",
+                "value" => "Esporta in pdf",
+                "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file pdf",
+                "icon" => "mdi mdi-file-pdf",
+                "module_id" => $this->id,
+                "handler" => "sectionActionMenu.saveAsPdf",
+                "handler_params" => array("task" => static::AA_UI_TASK_SAVEASPDF_DLG, "object_id" => $object->GetID())
+            );    
+        }
+        if(!isset($params['disable_SaveAsCsv']))
+        {
+            $menu_data[] = array(
+                "id" => $id . "_SaveAsCsv" . "_$id_org",
+                "value" => "Esporta in csv",
+                "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file csv",
+                "icon" => "mdi mdi-file-table",
+                "module_id" => $this->id,
+                "handler" => "sectionActionMenu.saveAsCsv",
+                "handler_params" => array("task" => static::AA_UI_TASK_SAVEASCSV_DLG, "object_id" => $object->GetID())
+            );
+        }
         #-------------------------------------
 
         //Inserisce la voce di eliminazione
@@ -5998,6 +6004,8 @@ class AA_GenericPagedSectionTemplate
     {
         $this->saveAsCsvEnable = $bVal;
         $this->saveAsPdfEnable = $bVal;
+        $this->saveAsCsvView = $bVal;
+        $this->saveAsPdfView = $bVal;
     }
     public function DisableExportFunctions()
     {
