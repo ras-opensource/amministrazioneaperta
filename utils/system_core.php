@@ -2509,6 +2509,118 @@ class AA_User
         return array();
     }
 
+    //Ricerca utenti (solo utenti di livello "user")
+    static public function SearchUsers($params=array(),$user=null)
+    {
+        if(!($user instanceof AA_User))
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if($user->IsGuest())
+        {
+            AA_Log::Log(__METHOD__." - l'utente corrente non è abilitato alla funzione richiesta.",100);
+            return array();
+        }
+
+        $query="SELECT id from ".static::AA_DB_TABLE." WHERE groups = ".AA_User::AA_USER_GROUP_USERS." AND status=".AA_User::AA_USER_STATUS_ENABLED;
+
+        //username
+        if(isset($params['user']) && $params['user']!="")
+        {
+            $query.=" AND user like '%".addslashes($params['user'])."%'";
+        }
+
+        //email
+        if(isset($params['email']) && $params['email']!="")
+        {
+            $query.=" AND email like '%".addslashes($params['email'])."%'";
+        }
+
+        //flags
+        if(isset($params['flags']) && sizeof($params['flags'])>0)
+        {
+            $query.=" AND (";
+            $curQuery="";
+            foreach($params['flags'] as $curFlag)
+            {
+                if($curQuery=="") $curQuery.=" flags like '".addslashes($curFlag)."' OR flags like '".addslashes($curFlag)."|%' OR flags like '%|".addslashes($curFlag)."' OR flags like '%|".addslashes($curFlag)."|%'";
+                else $curQuery.=" OR flags like '".addslashes($curFlag)."' OR flags like '".addslashes($curFlag)."|%' OR flags like '%|".addslashes($curFlag)."' OR flags like '%|".addslashes($curFlag)."|%'";
+            }
+            $query.=$curQuery.")";
+        }
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            if(!$user->IsSuperUser()) $query.=" AND status >=0 ";
+
+            $struct=$user->GetStruct();
+            if($struct->GetAssessorato(true)>0)
+            {
+                $query.=" AND legacy_data like '%\"id_assessorato\":\"".$struct->GetAssessorato(true)."\"%'";
+            }
+            else
+            {
+                if($params['id_assessorato']>0)
+                {
+                    $query.=" AND legacy_data like '%\"id_assessorato\":\"".$params['id_assessorato']."\"%'";
+                }
+            }
+
+            if($struct->GetDirezione(true)>0)
+            {
+                $query.=" AND legacy_data like '%\"id_direzione\":\"".$struct->GetDirezione(true)."\"%'";
+            }
+            else
+            {
+                if($params['id_direzione']>0)
+                {
+                    $query.=" AND legacy_data like '%\"id_direzione\":\"".$params['id_direzione']."\"%'";
+                }
+            }
+
+            if($struct->GetServizio(true)>0)
+            {
+                $query.=" AND legacy_data like '%\"id_servizio\":\"".$struct->GetServizio(true)."\"%'";
+            }
+            else
+            {
+                if($params['id_servizio']>0)
+                {
+                    $query.=" AND legacy_data like '%\"id_servizio\":\"".$params['id_servizio']."\"%'";
+                }
+            }
+        }
+
+        $db=new AA_Database();
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage(),100);
+            return array();
+        }
+
+        //Limita la ricerca ai primi 500
+        $query.=" LIMIT 500";
+
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
+
+        $rs=$db->GetResultSet();
+        if(sizeof($rs)>0)
+        {
+            $result=array();
+            foreach($rs as $curRow)
+            {
+                $user=AA_User::LoadUser($curRow['id']);
+                if($user->IsValid()) $result[]=$user;
+            }
+
+            return $result;
+        }
+
+        return array();
+    }
+
     //Ricerca utenti
     static public function LegacySearch($params=array(),$user=null,$bOnlyLegacy=true)
     {
@@ -6436,7 +6548,7 @@ class AA_Object_V2
     }
 
     //Funzione di caricamento
-    static public function Load($id = 0, $user = null, $bLoadData = true)
+    static public function Load($id = 0, $user = null, $bLoadData = true, $bCheckPerms=true)
     {
         //Verifica utente
         if ($user instanceof AA_User) {
@@ -6477,23 +6589,6 @@ class AA_Object_V2
             $object->sAggiornamento = $rs[0]['aggiornamento'];
             $object->sName = $rs[0]['nome'];
             $object->sDescr = $rs[0]['descrizione'];
-
-            $perms = $object->GetUserCaps($user);
-            if (($perms & AA_Const::AA_PERMS_READ) == 0) {
-                AA_Log::Log(__METHOD__ . " - Errore: l'utente corrente non ha i permessi per visualizzare l'oggetto.", 100);
-                $object->bValid = false;
-                return $object;
-            }
-
-            if (($perms & AA_Const::AA_PERMS_WRITE) == 0) {
-                //AA_Log::Log(__METHOD__." - readonly: ".$perms." ".print_r($user,true),100);
-                $object->bReadOnly = true;
-            } else {
-                //AA_Log::Log(__METHOD__." - writable: ".print_r($object,true),100);
-                $object->bReadOnly = false;
-                //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
-            }
-
             $object->nId = $rs[0]['id'];
             $object->nId_Data = $rs[0]['id_data'];
             $object->nId_Data_Rev = $rs[0]['id_data_rev'];
@@ -6506,6 +6601,29 @@ class AA_Object_V2
                     AA_Log::Log(__METHOD__ . " - Errore: dati non caricati.", 100);
                     $object->bValid = false;
                 } else $object->bValid = true;
+            }
+
+            if($object->bValid && $bCheckPerms)
+            {
+                $perms = $object->GetUserCaps($user);
+                if (($perms & AA_Const::AA_PERMS_READ) == 0) {
+                    AA_Log::Log(__METHOD__ . " - Errore: l'utente corrente non ha i permessi per visualizzare l'oggetto. ".print_r($object,true), 100);
+                    $object->bValid = false;
+                    $object->nId = 0;
+                    $object->nId_Data = 0;
+                    $object->nId_Data_Rev = 0;
+                    $object->sLog = "";
+                    return $object;
+                }
+    
+                if (($perms & AA_Const::AA_PERMS_WRITE) == 0) {
+                    //AA_Log::Log(__METHOD__." - readonly: ".$perms." ".print_r($user,true),100);
+                    $object->bReadOnly = true;
+                } else {
+                    //AA_Log::Log(__METHOD__." - writable: ".print_r($object,true),100);
+                    $object->bReadOnly = false;
+                    //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
+                }
             }
         } else {
             AA_Log::Log(__METHOD__ . " - Errore: oggetto non trovato ($id)", 100);
@@ -6819,7 +6937,11 @@ class AA_Object_V2
         if (isset($params['where']) && is_array($params['where'])) {
             foreach ((array)$params['where'] as $curParam) {
                 if ($where == "") $where = " WHERE " . $curParam;
-                $where .= "  " . $curParam;
+                else
+                {
+                    if(strpos($curParam," AND ") !==false || strpos($curParam," OR ") !==false) $where .= "  " . $curParam;
+                    else $where .= "  AND " . $curParam;    
+                }
             }
         }
         //-----------------------
