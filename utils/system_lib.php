@@ -1997,7 +1997,12 @@ class AA_GenericModule
             );
 
             if (method_exists($this, $customTemplateDataFunction)) {
-                $templateData[] = $this->$customTemplateDataFunction($result, $object);
+                $result=$this->$customTemplateDataFunction($result, $object);
+                if($result['pretitolo'] !="" && strpos($result['pretitolo'],"span") === false)
+                {
+                    $result['pretitolo']="<span class='AA_Label AA_Label_Blue_Simo'>".$result['pretitolo']."</span>";
+                }
+                $templateData[] = $result;
             } else if (function_exists($customTemplateDataFunction)) {
                 $templateData[] = $customTemplateDataFunction($result, $object);
             } else {
@@ -3855,11 +3860,21 @@ class AA_GenericModule
             );
 
             if (method_exists($this, $customTemplateDataFunction)) {
-                $templateData[] = $this->$customTemplateDataFunction($newData, $object);
+                $result=$this->$customTemplateDataFunction($result, $object);
+                if($result['pretitolo'] !="" && strpos($result['pretitolo'],"span") === false)
+                {
+                    $result['pretitolo']="<span class='AA_Label AA_Label_Blue_Simo'>".$result['pretitolo']."</span>";
+                }
+                $templateData[] = $result;
             } else if (function_exists($customTemplateDataFunction)) {
                 $templateData[] = $customTemplateDataFunction($newData, $object);
             } else {
                 $templateData[] = $newData;
+            }
+
+            if($result['pretitolo'] !="" && strpos($result['pretitolo'],"span") === false)
+            {
+                $result['pretitolo'].="<span class='AA_Label AA_Label_Blue_Simo'>".$result['pretitolo']."</span>";
             }
         }
 
@@ -5246,7 +5261,7 @@ class AA_GenericPagedSectionTemplate
         $this->id = $id;
         $this->content_box = $content_box;
         $this->contentBoxTemplate = "<div class='AA_DataView_ItemContent'>"
-            . "<div><span class='AA_Label AA_Label_Blue_Simo'>#pretitolo#</span></div>"
+            . "<div>#pretitolo#</div>"
             . "<div><span class='AA_DataView_ItemTitle'>#denominazione#</span></div>"
             . "<div>#tags#</div>"
             . "<div><span class='AA_DataView_ItemSubTitle'>#sottotitolo#</span></div>"
