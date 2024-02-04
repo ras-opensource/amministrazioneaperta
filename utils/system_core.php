@@ -1342,6 +1342,7 @@ class AA_User
         "oggetto"=>'Amministrazione Aperta - Reset della password.',
         "incipit"=>"<p>Buongiorno,<br>è stato richiesto il reset della password per l'accesso alla piattaforma applicativa \"Amministrazione Aperta\".<br>url: https://#www#<br>di seguito le credenziali per l'accesso:",
         "bShowStruct"=>true,
+        "sendToUs"=>true,
         "post"=>'<br/>E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.<br>E&apos; anche possibile effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente.<br>Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
         "firma"=>'<div>--
         <div><strong>Amministrazione Aperta</strong></div>
@@ -4322,10 +4323,13 @@ class AA_User
                         return false;
                     }
 
-                    //invio notifica a se stesso
-                    if(!SendMail(array("amministrazioneaperta@regione.sardegna.it"),array(),"Notifica reinvio credenziali utente: ". $user->GetUserName()." - email: ".$user->GetEmail(),"Reinvio credenziali all'utente:<br>login: ".$user->GetUsername()."<br>email: ".$user->GetEmail()."<br>Data: ".date("Y-m-d"),$firma,1))
+                    if(isset(static::$aResetPasswordEmailParams['sendToUs']) && static::$aResetPasswordEmailParams['sendToUs'])
                     {
-                        AA_Log::Log(__METHOD__."- Errore nell'invio notifica", 100);
+                        //invio notifica a se stesso
+                        if(!SendMail(array("amministrazioneaperta@regione.sardegna.it"),array(),"Notifica reinvio credenziali utente: ". $user->GetUserName()." - email: ".$user->GetEmail(),"Reinvio credenziali all'utente:<br>login: ".$user->GetUsername()."<br>email: ".$user->GetEmail()."<br>Data: ".date("Y-m-d"),$firma,1))
+                        {
+                            AA_Log::Log(__METHOD__."- Errore nell'invio notifica", 100);
+                        }
                     }
                 }
                 else
