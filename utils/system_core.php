@@ -6557,24 +6557,18 @@ class AA_Object_V2
             }
         } else $user = AA_User::GetCurrentUser();
 
-        /*
-        if($user->IsGuest())
-        {
-            AA_Log::Log(__METHOD__." - Utente non valido o sessione scaduta.",100);
-            return false;
-        }*/
-
-        $object = new AA_Object_V2(0, $user, false);
-        $object->bValid = false;
-
         $db = new AA_Database();
         $query = "SELECT * from " . AA_Const::AA_DBTABLE_OBJECTS . " WHERE id ='" . addslashes($id) . "' LIMIT 1";
-        if (!$db->Query($query)) {
+        if (!$db->Query($query)) 
+        {
             AA_Log::Log(__METHOD__ . " - Errore: " . $db->GetErrorMessage(), 100);
+            $object = new AA_Object_V2(0, $user, false);
+            $object->bValid = false;
             return $object;
         }
 
-        if ($db->GetAffectedRows() > 0) {
+        if ($db->GetAffectedRows() > 0) 
+        {
             $rs = $db->GetResultSet();
 
             $objectClass = "AA_Object_V2";
@@ -6583,7 +6577,8 @@ class AA_Object_V2
             }
 
             $object = new $objectClass(0, $user);
-            $object->oStruct = AA_Struct::GetStruct($rs[0]['id_assessorato'], $rs[0]['id_direzione'], $rs[0]['id_servizio']);
+            if(AA_Const::AA_ENABLE_LEGACY_DATA) $object->oStruct = AA_Struct::GetStruct($rs[0]['id_assessorato'], $rs[0]['id_direzione'], $rs[0]['id_servizio']);
+            else $object->oStruct = AA_Struct::GetStruct(0,0,0);
             $object->nStatus = $rs[0]['status'];
             $object->sClass = $rs[0]['class'];
             $object->sAggiornamento = $rs[0]['aggiornamento'];
@@ -6625,8 +6620,12 @@ class AA_Object_V2
                     //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
                 }
             }
-        } else {
+        } 
+        else 
+        {
             AA_Log::Log(__METHOD__ . " - Errore: oggetto non trovato ($id)", 100);
+            $object = new AA_Object_V2(0, $user, false);
+            $object->bValid = false;
         }
 
         //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
@@ -6685,7 +6684,7 @@ class AA_Object_V2
     }
 
     //Costruttore standard
-    public function __construct($id = 0, $user = null, $bLoadData = true)
+    public function __construct($id = 0, $user = null, $bLoadData = true, $bCheckPerms=true)
     {
         //Verifica utente
         if ($user instanceof AA_User) {
@@ -6694,13 +6693,59 @@ class AA_Object_V2
             }
         } else $user = AA_User::GetCurrentUser();
 
-        if ($user->IsGuest()) {
-            AA_Log::Log(__METHOD__ . " - Utente non valido o sessione scaduta.", 100);
-            return;
-        }
+        if ($id > 0) 
+        {
+            $db = new AA_Database();
+            $query = "SELECT * from " . AA_Const::AA_DBTABLE_OBJECTS . " WHERE id ='" . addslashes($id) . "' LIMIT 1";
+            if (!$db->Query($query)) 
+            {
+                AA_Log::Log(__METHOD__ . " - Errore: " . $db->GetErrorMessage(), 100);
+                return;
+            }
 
-        if ($id > 0) {
-            $object = static::Load($id, $user, $bLoadData);
+            if ($db->GetAffectedRows() > 0) 
+            {
+                $rs = $db->GetResultSet();
+                $this->nStatus = $rs[0]['status'];
+                if(AA_Const::AA_ENABLE_LEGACY_DATA) $this->oStruct = AA_Struct::GetStruct($rs[0]['id_assessorato'], $rs[0]['id_direzione'], $rs[0]['id_servizio']);
+                else $this->oStruct = AA_Struct::GetStruct(0,0,0);
+                $this->sClass = $rs[0]['class'];
+                $this->sAggiornamento = $rs[0]['aggiornamento'];
+                $this->sName = $rs[0]['nome'];
+                $this->sDescr = $rs[0]['descrizione'];
+                $this->nId = $rs[0]['id'];
+                $this->nId_Data = $rs[0]['id_data'];
+                $this->nId_Data_Rev = $rs[0]['id_data_rev'];
+                $this->sLog = $rs[0]['logs'];
+                $this->bValid = true;
+                
+                if($bLoadData && $this->sDbDataTable != "" ) $this->LoadData($user);
+
+                if($bCheckPerms || $user->IsGuest())
+                {
+                    $perms=$this->GetUserCaps($user);
+                    if(($perms&AA_Const::AA_PERMS_WRITE) == 0) $this->bReadOnly=true;
+                    if(($perms & AA_Const::AA_PERMS_READ) == 0)
+                    {
+                        $this->nStatus = AA_Const::AA_STATUS_NONE;
+                        $this->oStruct = AA_Struct::GetStruct(0,0,0);
+                        $this->sClass = "AA_Object_V2";
+                        $this->sAggiornamento = "";
+                        $this->sName = "";
+                        $this->sDescr = "";
+                        $this->nId = 0;
+                        $this->nId_Data = 0;
+                        $this->nId_Data_Rev = 0;
+                        $this->sLog = "";
+                        $this->aProps=array();
+                        $this->bValid=false;
+                    } 
+                }
+            }
+
+            /*$object = static::Load($id, $user, $bLoadData,false);
+
+            $perms=$this->GetUserCaps($user);
 
             //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
 
@@ -6717,11 +6762,12 @@ class AA_Object_V2
                 $this->sLog = $object->sLog;
                 $this->bValid = true;
                 $this->bReadOnly = $object->bReadOnly;
+                if($bLoadData) $this->aProps=$object->aProps;
 
                 //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true)." - this: ".print_r($this,true),100);
             } else {
                 AA_Log::Log(__METHOD__ . " - Errore oggetto non valido - ".print_r($object,true), 100);
-            }
+            }*/
         } else {
             $this->bValid = true;
         }

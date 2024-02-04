@@ -1159,8 +1159,9 @@ Class AA_Sier extends AA_Object_V2
         $this->EnableRevision(false);
 
         //chiama il costruttore genitore
-        parent::__construct($id,$user,false);
+        parent::__construct($id,$user);
 
+        /*
         //Carica i dati dell'oggetto
         if($this->bValid && $this->nId > 0)
         {
@@ -1172,7 +1173,7 @@ Class AA_Sier extends AA_Object_V2
         else
         {
             $this->bValid=false;
-        }
+        }*/
     }
 
     //Restituisce le coalizioni
