@@ -1145,15 +1145,15 @@ Class AA_Sier extends AA_Object_V2
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
         //Db data binding
-        $this->SetBind("Note","note");
-        $this->SetBind("Flags","flags");
-        $this->SetBind("Anno","anno");
-        $this->SetBind("Giornate","giornate");
-        $this->SetBind("ControlPannel","cp");
+        $this->AddProp("Note","","note");
+        $this->AddProp("Flags",0,"flags");
+        $this->AddProp("Anno","","anno");
+        $this->AddProp("Giornate","","giornate");
+        $this->AddProp("ControlPannel","","cp");
 
         //Valori iniziali
-        $this->SetProp("IdData",0);
-        $this->SetProp("Flags",0);
+        //$this->SetProp("IdData",0);
+        //$this->SetProp("Flags",0);
 
         //disabilita la revisione
         $this->EnableRevision(false);

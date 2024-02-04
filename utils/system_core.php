@@ -6724,7 +6724,7 @@ class AA_Object_V2
                 if($bCheckPerms || $user->IsGuest())
                 {
                     $perms=$this->GetUserCaps($user);
-                    if(($perms&AA_Const::AA_PERMS_WRITE) == 0) $this->bReadOnly=true;
+                    if(($perms&AA_Const::AA_PERMS_WRITE) > 0) $this->bReadOnly=false;
                     if(($perms & AA_Const::AA_PERMS_READ) == 0)
                     {
                         $this->nStatus = AA_Const::AA_STATUS_NONE;
@@ -6789,6 +6789,33 @@ class AA_Object_V2
                 $this->aProps[$prop] = $val;
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    //Aggiunge una proprietà all'oggetto ed eventualmente la associa ad un campo db
+    public function AddProp($prop = "", $initValue="",$dbBind="")
+    {
+        if ($prop != "" && $prop != null) {
+            if (in_array($prop, array_keys($this->aProps))) {
+                if($dbBind=="")
+                {
+                    if(isset($this->aDbBindings[$prop])) unset($this->aDbBindings[$prop]);
+                }
+                else $this->aDbBindings[$prop]=$dbBind;
+                
+            }
+            else
+            {
+                $this->aProps[$prop]=$initValue;
+                if($dbBind != "")
+                {
+                    $this->aDbBindings[$prop]=$dbBind;
+                }
+            }
+
+            return true;
         }
 
         return false;
