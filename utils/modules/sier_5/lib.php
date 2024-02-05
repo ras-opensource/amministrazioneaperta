@@ -5012,6 +5012,8 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateAnalisiRisultatiComuni");
             $taskManager->RegisterTask("GetSierConfirmUpdateFeedRisultatiGeneraliDlg");
             $taskManager->RegisterTask("UpdateFeedRisultatiGenerali");
+            $taskManager->RegisterTask("GetSierConfirmTrashWebAppQRCodeDlg");
+            $taskManager->RegisterTask("DeleteSierWebAppQrCode");
             
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
@@ -7609,6 +7611,7 @@ Class AA_SierModule extends AA_GenericModule
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $uploadedFile=AA_SessionFileUpload::Get("SierWebAppQRCode_file");
         
         if(!$object->isValid())
         {
@@ -7616,6 +7619,17 @@ Class AA_SierModule extends AA_GenericModule
             $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo oggetto non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
             $task->SetLog($sTaskLog);
 
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
             return false;
         }
         
@@ -7625,6 +7639,18 @@ Class AA_SierModule extends AA_GenericModule
             $sTaskLog.= "operazioni concluse.";
             $sTaskLog.="</content>";
             $task->SetLog($sTaskLog);
+
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
         
             return true;
         }
@@ -7635,10 +7661,65 @@ Class AA_SierModule extends AA_GenericModule
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'oggetto: ".$object->GetProp("titolo")."</error>";
             $task->SetLog($sTaskLog);
 
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
             return false;            
         }
         
         $cp=$object->GetControlPannel();
+
+        //qr code web APP
+        if($uploadedFile->isValid())
+        {   
+            $file=$uploadedFile->GetValue();
+            if(file_exists($file['tmp_name']))
+            {
+                $storage=AA_Storage::GetInstance($this->oUser);
+                if($storage->IsValid())
+                {
+                    if($cp['sierwebappqrcode']!="")
+                    {
+                        if(!$storage->DelFile($cp['sierwebappqrcode']))
+                        {
+                            AA_Log::Log(__METHOD__." - ".AA_Log::$lastErrorLog);
+                        }
+                        else
+                        {
+                            $cp['sierwebappqrcode']="";
+                        }
+                    }
+
+                    $storageFile=$storage->AddFileFromUpload($uploadedFile,1);
+                    if(!$storageFile->IsValid())
+                    {
+                        AA_Log::Log(__METHOD__." - ".AA_Log::$lastErrorLog);
+                    }
+                    else $cp['sierwebappqrcode']=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Storage non valido. - ".AA_Log::$lastErrorLog);
+                }
+
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }
+        }  
 
         // --------- Esportazione risultati --------------------
         if(isset($_REQUEST['risultati_scrutinio_parziale_check']) && $_REQUEST['risultati_scrutinio_parziale_check'] > 0) $cp['risultati_scrutinio_parziale_check']=1;
@@ -7675,13 +7756,11 @@ Class AA_SierModule extends AA_GenericModule
 
             return false;       
         }
-        
-        $sTaskLog="<status id='status'>0</status><content id='content'>";
-        $sTaskLog.= "dati aggiornati con successo.";
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
+                
+        $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction("RefreshControlPannel",json_encode(array("id"=>$object->GetId())));
+        $task->SetContent("dati aggiornati con successo.",false);
+
         return true;
     }
 
@@ -10675,7 +10754,7 @@ Class AA_SierModule extends AA_GenericModule
 
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
-            $section=new AA_FieldSet($id."_Section_CP","Opzioni di esportazione dei risultati comunali sul feed pubblico generale");
+            $section=new AA_FieldSet($id."_Section_CP","Opzioni di esportazione dei risultati comunali sul feed pubblico generale","",2);
 
             $form_data['risultati_scrutinio_parziale_check']=0;
             if(isset($cp['risultati_scrutinio_parziale_check']) && $cp['risultati_scrutinio_parziale_check']>0)$form_data['risultati_scrutinio_parziale_check']=$cp['risultati_scrutinio_parziale_check'];
@@ -10713,8 +10792,35 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetWidth(800);
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
-            $wnd->SetHeight(820);
+            $wnd->SetHeight(920);
+            $wnd->SetWidth(1280);
             $wnd->AddGenericObject($section);
+
+            //QR Code Web APP
+            $section=new AA_FieldSet($id."_Section_CP_QRCode","QR Code Web APP","",1);
+            if($cp['sierwebappqrcode']=="")
+            {
+                $section->AddGenericObject(new AA_JSON_Template_Template($id."_WebAppQrCodeImg",array("borderless"=>true,"template"=>"<div style='width:100%;height:100%; display:flex;justify-content:center;align-items:center'>QR Code non impostato.</div>")));
+                $section->AddFileUploadField("SierWebAppQRCode_file","Scegli l'immagine del QR code per l'app", array("bottomLabel"=>"*Caricare solo immagini in formato png o jpg (dimensione max: 1Mb).","accept"=>"image/png"));
+            }
+            else
+            {
+                $btn=new AA_JSON_Template_Generic($id."_DeleteQRCodeImg_btn",array(
+                    "view"=>"button",
+                    "type"=>"icon",
+                    "icon"=>"mdi mdi-trash-can",
+                    "label"=>"Elimina",
+                    "align"=>"right",
+                    "tooltip"=>"Rimuovi il QR code",
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmTrashWebAppQRCodeDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+                ));
+                $section->AddGenericObject(new AA_JSON_Template_Template($id."_WebAppQrCodeImg",array("borderless"=>true,"template"=>"<div style='width:100%;height:100%; display:flex;justify-content:center;align-items:center;flex-direction:column'><div style='text-align:center; width:80%;height:100%;'><img src='".AA_Const::AA_WWW_ROOT."/storage.php?object=".$cp['sierwebappqrcode']."' style='height:100%' /></div></div>")));
+                $section->AddGenericObject($btn);
+                $section->AddFileUploadField("SierWebAppQRCode_file","Cambia l'immagine del QR code per l'app", array("bottomLabel"=>"*Caricare solo immagini in formato png o jpg (dimensione max: 1Mb).","accept"=>"image/png"));
+            }
+
+            $wnd->SetFileUploaderId($id."_Section_CP_QRCode_FileUpload_Field");
+            $wnd->AddGenericObject($section,false);
 
             //Reset dati comuni
             $section=new AA_FieldSet($id."_Section_CP_ResetComuni","Reset dati dei Comuni");
@@ -10999,6 +11105,38 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetApplyButtonName("Procedi");
         $wnd->EnableResetButton(false);
         $wnd->SetSaveTask("ResetRisultatiComuni");
+        
+        return $wnd;
+    }
+
+    public function Template_GetSierConfirmTrashWebAppQRCodeDlg($object=null)
+    {
+        $id=$this->GetId()."_GetSierConfirmTrashWebAppQRCodeDlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione QR code", $this->id);
+        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+        //$form_data['id_comune']=$comune->GetProp("id");
+        
+        $wnd=new AA_GenericFormDlg($id, "Conferma eliminazione QR code", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(400);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>eliminerà il QR code attuale per la SierWebApp.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("DeleteSierWebAppQrCode");
         
         return $wnd;
     }
@@ -17882,6 +18020,61 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Task aggiornamento affluenza
+    public function Task_DeleteSierWebAppQrCode($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+    
+        $cp=$object->GetControlPannel();
+        //Verifica
+        if(!isset($cp['sierwebappqrcode']) || trim($cp['sierwebappqrcode'])=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("QR code non presente",false);
+            return false;
+        }
+
+        $storage=AA_Storage::GetInstance();
+        if($storage->IsValid())
+        {
+            if(!$storage->DelFile($cp['sierwebappqrcode']))
+            {
+                AA_Log::Log(__METHOD__." - ".AA_Log::$lastErrorLog,100);
+            }
+        }
+
+        $cp['sierwebappqrcode']="";
+
+        $object->SetControlPannel($cp);
+        if(!$object->Update($this->oUser,true,"Modifica pannello di controllo - eliminazione qr code"))
+        {        
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento del pannello di controllo. (".AA_Log::$lastErrorLog.")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;       
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction("RefreshControlPannel",json_encode(array("id"=>$object->GetId())));
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
     public function Task_TrashSierComuneAffluenza($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -20014,6 +20207,32 @@ Class AA_SierModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierConfirmResetAffluenzaComuniDlg($object),true);
+
+        return true;
+    }
+
+    public function Task_GetSierConfirmTrashWebAppQRCodeDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierConfirmTrashWebAppQRCodeDlg($object),true);
 
         return true;
     }

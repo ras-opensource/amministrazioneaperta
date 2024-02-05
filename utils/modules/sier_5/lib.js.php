@@ -119,6 +119,24 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//refresh control pannel
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].RefreshControlPannel = function() {
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.OC_RefreshSection", this, arguments);
+        let cp="<?php echo AA_SierModule::AA_ID_MODULE?>_ControlPannel_Dlg_Wnd";
+        //console.log("eventHandlers.defaultHandlers.RefreshControlPannel", cp);
+        if($$(cp))
+        {
+            $$(cp).close();
+        }
+        let params={task:"GetSierControlPannelDlg",params:{id:arguments[0].id}};
+        <?php echo AA_SierModule::AA_ID_MODULE?>.dlg(params);
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.OC_RefreshSection", msg, this);
+    }
+};
+
 //Handler caricamento candidati con suggerimento della lista, della circoscrizione e della coalizione
 <?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].AddNewCandidato = function() {
     try 

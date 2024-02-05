@@ -3860,7 +3860,7 @@ class AA_GenericModule
             );
 
             if (method_exists($this, $customTemplateDataFunction)) {
-                $result=$this->$customTemplateDataFunction($result, $object);
+                $result=$this->$customTemplateDataFunction($newData, $object);
                 if($result['pretitolo'] !="" && strpos($result['pretitolo'],"span") === false)
                 {
                     $result['pretitolo']="<span class='AA_Label AA_Label_Blue_Simo'>".$result['pretitolo']."</span>";
@@ -3870,11 +3870,6 @@ class AA_GenericModule
                 $templateData[] = $customTemplateDataFunction($newData, $object);
             } else {
                 $templateData[] = $newData;
-            }
-
-            if($result['pretitolo'] !="" && strpos($result['pretitolo'],"span") === false)
-            {
-                $result['pretitolo'].="<span class='AA_Label AA_Label_Blue_Simo'>".$result['pretitolo']."</span>";
             }
         }
 
