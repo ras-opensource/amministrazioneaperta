@@ -282,6 +282,7 @@ function AA_SierWebAppGenericParams()
     this.livello_dettaglio_view_id = this.ui_prefix+"_DettaglioTreeBox";
     this.livello_dettaglio_prev_view_id= null;
     this.embedded= true;
+    this.anno_rif=2024;
     this.data=null;
 }
 
