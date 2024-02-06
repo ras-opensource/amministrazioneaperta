@@ -1509,7 +1509,8 @@ AA_SierWebApp.RefreshRisultatiData = async function(feed_url,updateView=true,aut
             {
                 console.error("AA_SierWebApp.RefreshRisultatiData",arguments);
             }
-
+        })
+        .finally(()=>{
             if($$(AA_SierWebAppParams.mainUi_id) && autoUpdate && AA_SierWebAppParams.autoUpdateTime >= 60000)
             {
                 console.log("AA_SierWebApp.RefreshRisultatiData - imposto l'aggiornamento automatico tra "+String(Number(AA_SierWebAppParams.autoUpdateTime)/60000)+" min");
@@ -1518,7 +1519,7 @@ AA_SierWebApp.RefreshRisultatiData = async function(feed_url,updateView=true,aut
                     clearTimeout(AA_SierWebAppParams.timeoutRisultati);
                 }
                 AA_SierWebAppParams.timeoutRisultati=setTimeout(AA_SierWebApp.RefreshRisultatiData,AA_SierWebAppParams.autoUpdateTime,feed_url,true);
-            } 
+            }
         });
     } catch (msg) {
         console.error("AA_SierWebApp.RefreshRisultatiData", msg);
