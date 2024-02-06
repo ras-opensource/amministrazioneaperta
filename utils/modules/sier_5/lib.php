@@ -11548,9 +11548,20 @@ Class AA_SierModule extends AA_GenericModule
         }
         $preview_layout=new AA_JSON_Template_Layout($id."_PreviewBox_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean","minHeight"=>300));
         $preview_header_box=new AA_JSON_Template_Layout($id."_PreviewHeaderBox_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean","minHeight"=>300));
-        $preview_header_box->AddRow(new AA_JSON_Template_Generic());
-        $preview_header_box->AddRow(new AA_JSON_Template_Generic($id."_PreviewHeaderTitle",array("view"=>"label","label"=>"<span style='font-size: 24px; color:#006699'>".$object->GetName()."</span>","align"=>"center")));
-        $preview_header_box->AddRow(new AA_JSON_Template_Template($id."_PreviewHeaderContent",array("template"=>"<div style='display: flex; justify-content:center; align-center: center; width: 100%; height:100%'><p>Ciao <b>".$operatore->GetOperatoreComunaleNome()."</b>, fai click su uno dei box sottostanti per accedere alla relativa sezione.</p></div>")));
+        $preview_header_box_col=new AA_JSON_Template_Layout($id."_PreviewHeaderBox_Col".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean","minHeight"=>300));
+        $preview_header_box_col->AddRow(new AA_JSON_Template_Generic());
+        $preview_header_box_col->AddRow(new AA_JSON_Template_Generic($id."_PreviewHeaderTitle",array("view"=>"label","label"=>"<span style='font-size: 24px; color:#006699'>".$object->GetName()."</span>","align"=>"center")));
+        $preview_header_box_col->AddRow(new AA_JSON_Template_Template($id."_PreviewHeaderContent",array("template"=>"<div style='display: flex; justify-content:center; align-center: center; width: 100%; height:100%'><p>Ciao <b>".$operatore->GetOperatoreComunaleNome()."</b>, fai click su uno dei box sottostanti per accedere alla relativa sezione.</p></div>")));
+        $preview_header_box->AddCol(new AA_JSON_Template_Generic("",array("width"=>300)));
+        $preview_header_box->AddCol($preview_header_box_col);
+        
+        $cp=$object->GetControlPannel();
+        if(isset($cp['sierwebappqrcode']) && $cp['sierwebappqrcode']!="")
+        {
+            $preview_header_box->AddCol(new AA_JSON_Template_Template($id."_WebAppQrCode",array("width"=>300,"height"=>300,"template"=>"<div style='width: 100%;height: 100%; display:flex;justify-content:center;align-items:center;flex-direction:column;'><div style='display:flex;justify-content:center;align-items:center;flex-direction:column;width: 90%;height: 90%; min-height:250px; background-color:#fff;border-radius:15px;border:1px solid #dedede; box-shadow: 5px 5px 10px #000'><img src='".AA_Const::AA_WWW_ROOT."/storage.php?object=".$cp['sierwebappqrcode']."' style='width: 55%' /><div style='display:flex;justify-content:center;align-items:center; font-size:smaller; height:50px;'><div style='text-align:center'>Scarica l'APP per consultare i risultati in tempo reale dal tuo smartphone!</div></div></div></div>")));
+        }
+        else $preview_header_box->AddCol(new AA_JSON_Template_Generic("",array("width"=>300)));
+
         $preview_layout->AddRow($preview_header_box);
         $preview_layout->AddRow($moduli_view);
         $preview_layout->AddRow(new AA_JSON_Template_Generic());
