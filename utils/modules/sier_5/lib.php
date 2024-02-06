@@ -199,6 +199,7 @@ Class AA_SierCoalizioni
         $this->aProps['image']="";
         $this->aProps['cv']="";
         $this->aProps['cg']="";
+        $this->aProps['ordine']=0;
 
         if(is_array($params)) $this->Parse($params);
     }
@@ -1197,6 +1198,8 @@ Class AA_Sier extends AA_Object_V2
                 $query.=" AND denominazione like '%".addslashes(trim($params['denominazione']))."%'";
             }
         }
+
+        $query.=" ORDER by ordine";
 
         if(!$db->Query($query))
         {
@@ -3054,6 +3057,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", denominazione='".addslashes($newCoalizione->GetProp('denominazione'))."'";
         $query.=", nome_candidato='".addslashes($newCoalizione->GetProp('nome_candidato'))."'";
         $query.=", image='".addslashes($newCoalizione->GetProp('image'))."'";
+        $query.=", ordine='".addslashes($newCoalizione->GetProp('ordine'))."'";
         
         $db = new AA_Database();
         
@@ -3126,6 +3130,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", image='".addslashes($newCoalizione->GetProp('image'))."'";
         $query.=", cv='".addslashes($newCoalizione->GetProp('cv'))."'";
         $query.=", cg='".addslashes($newCoalizione->GetProp('cg'))."'";
+        $query.=", ordine='".addslashes($newCoalizione->GetProp('ordine'))."'";
         $query.=" WHERE id='".$newCoalizione->GetProp('id')."' LIMIT 1";
         
         $db = new AA_Database();
@@ -6072,7 +6077,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
-        $form_data=array();
+        $form_data=array("ordine"=>0);
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi Coalizione", $this->id,$form_data,$form_data);
         
@@ -6082,13 +6087,16 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(480);
+        $wnd->SetHeight(540);
 
         //denominazione
         $wnd->AddTextField("denominazione", "Denominazione", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare la denominazione della coalizione.", "placeholder" => "..."));
 
         //nome candidato
         $wnd->AddTextField("nome_candidato", "Presidente", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare il nome e cognome del candidato Presidente.", "placeholder" => "..."));
+
+        //ordine
+        $wnd->AddTextField("ordine", "Ordine", array("required"=>true,"validateFunction"=>"IsPositive","labelWidth"=>150,"bottomLabel" => "*Indicare l'ordine di visualizzazione.", "placeholder" => "..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
@@ -6120,6 +6128,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $form_data['denominazione']=$coalizione->GetProp("denominazione");
             $form_data['nome_candidato']=$coalizione->GetProp("nome_candidato");
+            $form_data['ordine']=$coalizione->GetProp("ordine");
         }
         else
         {
@@ -6134,13 +6143,16 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(640);
-        $wnd->SetHeight(480);
+        $wnd->SetHeight(540);
 
         //denominazione
         $wnd->AddTextField("denominazione", "Denominazione", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare la denominazione della coalizione.", "placeholder" => "..."));
 
         //nome candidato
         $wnd->AddTextField("nome_candidato", "Presidente", array("required"=>true,"labelWidth"=>150,"bottomLabel" => "*Indicare il nome e cognome del candidato Presidente.", "placeholder" => "..."));
+
+        //ordine
+        $wnd->AddTextField("ordine", "Ordine", array("required"=>true,"validateFunction"=>"IsPositive","labelWidth"=>150,"bottomLabel" => "*Indicare l'ordine di visualizzazione.", "placeholder" => "..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
@@ -10539,6 +10551,7 @@ Class AA_SierModule extends AA_GenericModule
             'nome_candidato'=>$_REQUEST['nome_candidato'],
             'cv'=>$coalizione->GetProp("cv"),
             'cg'=>$coalizione->GetProp("cg"),
+            'ordine'=>$_REQUEST['ordine']
         );
 
         $params['image'] = $imageFileHash;
