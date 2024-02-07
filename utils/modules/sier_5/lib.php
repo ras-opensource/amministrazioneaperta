@@ -1451,7 +1451,8 @@ Class AA_Sier extends AA_Object_V2
                     "voti"=>0,
                     "percent"=>0,
                     "voti_coalizione"=>0,
-                    "percent_coalizione"=>0
+                    "percent_coalizione"=>0,
+                    "ordine"=>$curCoalizione->GetProp("ordine")
                 );
             }
 

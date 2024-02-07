@@ -129,7 +129,7 @@ function AA_GenericSierWebApp()
                         view:"template",
                         type:"clean",
                         borderless:true,
-                        template:"<div id='"+AA_SierWebAppParams.ui_prefix+"_HeaderPull' style='width:100%;height:100%;display:flex;justify-content:space-between;align-items:center;background-color:#17324d'><div style='height:100%; width:60px; display:flex; align-items:center;justify-content:center'><img src='immagini/gonfalone_bianco.png' title='Regione Autonoma della Sardegna' alt='Regione Autonoma della Sardegna' height='50%'/></div><div style='height:100%; display:flex; align_items:center; justify-content:space-evenly;flex-direction:column;font-weight: 700; font-size:larger'><div style='text-align:center'><span style='color:#fff; '>ELEZIONI REGIONALI</span><br><span style='font-size:larger;color:#fff'>2019</span></div></div><div style='height:100%; width:60px; display:flex; align-items:center;justify-content:center'><img src='immagini/aa_logo.png' height='50%' title='Amministrazione Aperta' alt='Amministrazione Aperta'/></div></div>",
+                        template:"<div id='"+AA_SierWebAppParams.ui_prefix+"_HeaderPull' style='width:100%;height:100%;display:flex;justify-content:space-between;align-items:center;background-color:#17324d'><div style='height:100%; width:60px; display:flex; align-items:center;justify-content:center'><img src='immagini/gonfalone_bianco.png' title='Regione Autonoma della Sardegna' alt='Regione Autonoma della Sardegna' height='50%'/></div><div style='height:100%; display:flex; align_items:center; justify-content:space-evenly;flex-direction:column;font-weight: 700; font-size:larger'><div style='text-align:center'><span style='color:#fff; '>ELEZIONI REGIONALI</span><br><span style='font-size:larger;color:#fff'>"+AA_SierWebAppParams.anno_rif+"</span></div></div><div style='height:100%; width:60px; display:flex; align-items:center;justify-content:center'><img src='immagini/aa_logo.png' height='50%' title='Amministrazione Aperta' alt='Amministrazione Aperta'/></div></div>",
                         height: 60
                     },
                     {
@@ -1387,14 +1387,14 @@ AA_SierWebApp.UpdateRisultatiData = async function() {
             if(typeof dettaglio[idCoalizione] === 'object')
             {
                 //console.log("AA_SierWebApp.UpdateRisultatiData - coalizione",idCoalizione);
-                AA_SierWebAppParams.risultati.data.push({id:idCoalizione,"presidente":dettaglio[idCoalizione].denominazione,denominazione_coalizione:"Coalizione "+dettaglio[idCoalizione].denominazione,"voti_raw":dettaglio[idCoalizione].voti,"voti":fmtNumber.format(Number(dettaglio[idCoalizione].voti)),"percent":fmtNumber.format(Number(dettaglio[idCoalizione].percent)),"image":"https://amministrazioneaperta.regione.sardegna.it"+dettaglio[idCoalizione].image});
-                AA_SierWebAppParams.risultati.data_coalizioni.push({id:idCoalizione,"presidente":dettaglio[idCoalizione].denominazione,denominazione_coalizione:"Coalizione "+dettaglio[idCoalizione].denominazione,"voti_raw":dettaglio[idCoalizione].voti_coalizione,"percent":fmtNumber.format(Number(dettaglio[idCoalizione].percent_coalizione)),"voti":fmtNumber.format(Number(dettaglio[idCoalizione].voti_coalizione)),"image":"https://amministrazioneaperta.regione.sardegna.it"+dettaglio[idCoalizione].image});
+                AA_SierWebAppParams.risultati.data.push({id:idCoalizione,"presidente":dettaglio[idCoalizione].denominazione,denominazione_coalizione:"Coalizione "+dettaglio[idCoalizione].denominazione,"voti_raw":dettaglio[idCoalizione].voti,"voti":fmtNumber.format(Number(dettaglio[idCoalizione].voti)),"percent":fmtNumber.format(Number(dettaglio[idCoalizione].percent)),"image":"https://amministrazioneaperta.regione.sardegna.it"+dettaglio[idCoalizione].image,"ordine":dettaglio[idCoalizione].ordine});
+                AA_SierWebAppParams.risultati.data_coalizioni.push({id:idCoalizione,"presidente":dettaglio[idCoalizione].denominazione,denominazione_coalizione:"Coalizione "+dettaglio[idCoalizione].denominazione,"voti_raw":dettaglio[idCoalizione].voti_coalizione,"percent":fmtNumber.format(Number(dettaglio[idCoalizione].percent_coalizione)),"voti":fmtNumber.format(Number(dettaglio[idCoalizione].voti_coalizione)),"image":"https://amministrazioneaperta.regione.sardegna.it"+dettaglio[idCoalizione].image,"ordine":dettaglio[idCoalizione].ordine});
             }
         }
     
         //ordina
-        AA_SierWebAppParams.risultati.data.sort(function(a,b){if(Number(a.voti_raw) > Number(b.voti_raw)) return -1;if(Number(a.voti_raw) == Number(b.voti_raw)) return 0; return 1;});
-        AA_SierWebAppParams.risultati.data_coalizioni.sort(function(a,b){if(Number(a.voti_raw) > Number(b.voti_raw)) return -1;if(Number(a.voti_raw) == Number(b.voti_raw)) return 0; return 1;});
+        AA_SierWebAppParams.risultati.data.sort(function(a,b){if(Number(a.voti_raw) > Number(b.voti_raw)) return -1;if(Number(a.voti_raw) == Number(b.voti_raw)){ if(Number(a.ordine) > Number(b.ordine)) return 1; if(Number(a.ordine) < Number(b.ordine)) return -1; return 0;}; return 1;});
+        AA_SierWebAppParams.risultati.data_coalizioni.sort(function(a,b){if(Number(a.voti_raw) > Number(b.voti_raw)) return -1;if(Number(a.voti_raw) == Number(b.voti_raw)){ if(Number(a.ordine) > Number(b.ordine)) return 1; if(Number(a.ordine) < Number(b.ordine)) return -1; return 0;}; return 1;});
         
         //console.log("AA_SierWebApp.UpdateRisultatiData - AA_SierWebAppParams.risultati.data",AA_SierWebAppParams.risultati.data);
         //-------------------------------------------------------------------
@@ -1462,10 +1462,21 @@ AA_SierWebApp.UpdateRisultatiData = async function() {
 AA_SierWebApp.RefreshRisultatiData = async function(feed_url,updateView=true,autoUpdate=true) {
     try 
     {
-        console.log("AA_SierWebApp.RefreshRisultatiData - recupero il feed",feed_url);
-        webix.ajax().get(feed_url).then(function(data)
+        let fetch_url=feed_url;
+        if(!AA_SierWebAppParams.data)
+        {
+            fetch_url=feed_url+"&last=1";
+        }
+
+        console.log("AA_SierWebApp.RefreshRisultatiData - recupero il feed",fetch_url);
+        webix.ajax().get(fetch_url).then(function(data)
         {
             let risultati=data.json();
+            if(risultati.length==0)
+            {
+                console.log("AA_SierWebApp.RefreshRisultatiData - risultati vuoti");
+                return;
+            }
             AA_SierWebAppParams.data=risultati;
 
             console.log("AA_SierWebApp.RefreshRisultatiData - faccio il parsing del feed");
