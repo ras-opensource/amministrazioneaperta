@@ -21916,6 +21916,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             //to do view only
             $wnd = new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+            $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_VoidContent",array("template"=>"<div style='width:100%,height:100%;display:flex;justify-contyent:center;align-items:center'>La modifica del corpo elettorale è disabilitata.</div>")));
 
             return $wnd;
         }
