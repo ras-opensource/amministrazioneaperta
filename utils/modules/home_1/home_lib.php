@@ -186,7 +186,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitato alla gestione utenti.</error>";
             $task->SetLog($sTaskLog);
             return false; 
         }
@@ -227,7 +227,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitato alla gestione utenti.</error>";
             $task->SetLog($sTaskLog);
             return false; 
         }
@@ -272,7 +272,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitato alla gestione utenti.</error>";
             $task->SetLog($sTaskLog);
             return false; 
         }
@@ -326,7 +326,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitato alla gestione utenti.</error>";
             $task->SetLog($sTaskLog);
             return false; 
         }
@@ -369,7 +369,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitao alla gestione utenti.</error>";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non è abilitato alla gestione utenti.</error>";
             $task->SetLog($sTaskLog);
             return false; 
         }

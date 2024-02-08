@@ -8350,8 +8350,8 @@ Class AA_SierModule extends AA_GenericModule
         $params=array(
             "id_circoscrizione"=>$circoscrizione['id'],
             "id_lista"=>$lista->GetProp("id"),
-            "nome"=>$_REQUEST['nome'],
-            "cognome"=>$_REQUEST['cognome'],
+            "nome"=>trim($_REQUEST['nome']),
+            "cognome"=>trim($_REQUEST['cognome']),
             "cf"=>$_REQUEST['cf']
         );
         $candidato=new AA_SierCandidato($params);
@@ -8789,9 +8789,9 @@ Class AA_SierModule extends AA_GenericModule
             "id"=>$candidato->GetProp('id'),
             "id_circoscrizione"=>$_REQUEST['id_circoscrizione'],
             "id_lista"=>$_REQUEST['id_lista'],
-            "nome"=>$_REQUEST['nome'],
-            "cognome"=>$_REQUEST['cognome'],
-            "cf"=>$_REQUEST['cf'],
+            "nome"=>trim($_REQUEST['nome']),
+            "cognome"=>trim($_REQUEST['cognome']),
+            "cf"=>trim($_REQUEST['cf']),
             "cv"=>$candidato->GetProp('cv'),
             "cg"=>$candidato->GetProp('cg'),
             "ordine"=>$ordine
