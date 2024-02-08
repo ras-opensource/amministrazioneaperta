@@ -13910,12 +13910,10 @@ Class AA_SierModule extends AA_GenericModule
                 
                 if(strpos($analisi[1][0],"Risultati non presenti" === false))
                 {
-                    $completamento=100;
-                }
-
-                if(isset($analisi[3]['risultati_scrutinio_parziale_check']) && $analisi[3]['risultati_scrutinio_parziale_check']>0)
-                {
-                    $completamento=round($analisi[3]['risultati_scrutinio_parziale_check']*100/intVal($curComune->GetProp('sezioni')));
+                    if(isset($analisi[3]['risultati_scrutinio_parziale_check']) && $analisi[3]['risultati_scrutinio_parziale_check']>0)
+                    {
+                        $completamento=round($analisi[3]['risultati_scrutinio_parziale_check']*100/intVal($curComune->GetProp('sezioni')));
+                    }
                 }
             }
 
