@@ -4153,31 +4153,36 @@ class AA_GenericModule
             }
         }
 
-        //Azioni
-        $scriptAzioni = "try{"
-            . "let azioni_btn=$$('" . $id . "_Azioni_btn_$id_org');"
-            . "if(azioni_btn){"
-            . "let azioni_menu=webix.ui(azioni_btn.config.menu_data);"
-            . "if(azioni_menu){"
-            . "azioni_menu.setContext(azioni_btn);"
-            . "azioni_menu.show(azioni_btn.\$view);"
-            . "}"
-            . "}"
-            . "}catch(msg){console.error('" . $id . "_Azioni_btn_$id_org',this,msg);AA_MainApp.ui.alert(msg);}";
-        $azioni_btn = new AA_JSON_Template_Generic($id . "_Azioni_btn" . "_$id_org", array(
-            "view" => "button",
-            "type" => "icon",
-            "icon" => "mdi mdi-dots-vertical",
-            "label" => "Azioni",
-            "align" => "right",
-            "autowidth" => true,
-            "menu_data" => new AA_JSON_Template_Generic($id . "_ActionMenu" . "_$id_org", array("view" => "contextmenu", "data" => $menu_data, "module_id" => $this->GetId(), "on" => array("onItemClick" => "AA_MainApp.utils.getEventHandler('onDetailMenuItemClick','" . $this->GetId() . "')"))),
-            "tooltip" => "Visualizza le azioni disponibili",
-            "click" => $scriptAzioni
-        ));
+        if(!isset($params['disable_MenuAzioni']))
+        {
+            //Azioni
+            $scriptAzioni = "try{"
+                . "let azioni_btn=$$('" . $id . "_Azioni_btn_$id_org');"
+                . "if(azioni_btn){"
+                . "let azioni_menu=webix.ui(azioni_btn.config.menu_data);"
+                . "if(azioni_menu){"
+                . "azioni_menu.setContext(azioni_btn);"
+                . "azioni_menu.show(azioni_btn.\$view);"
+                . "}"
+                . "}"
+                . "}catch(msg){console.error('" . $id . "_Azioni_btn_$id_org',this,msg);AA_MainApp.ui.alert(msg);}";
+            $azioni_btn = new AA_JSON_Template_Generic($id . "_Azioni_btn" . "_$id_org", array(
+                "view" => "button",
+                "type" => "icon",
+                "icon" => "mdi mdi-dots-vertical",
+                "label" => "Azioni",
+                "align" => "right",
+                "autowidth" => true,
+                "menu_data" => new AA_JSON_Template_Generic($id . "_ActionMenu" . "_$id_org", array("view" => "contextmenu", "data" => $menu_data, "module_id" => $this->GetId(), "on" => array("onItemClick" => "AA_MainApp.utils.getEventHandler('onDetailMenuItemClick','" . $this->GetId() . "')"))),
+                "tooltip" => "Visualizza le azioni disponibili",
+                "click" => $scriptAzioni
+            ));
 
-        $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
-        $toolbar->addElement($azioni_btn);
+            $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+            $toolbar->addElement($azioni_btn);
+        }
+        else $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer")));
+
         $toolbar->addElement(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 15)));
 
         $layout_toolbar->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer")));

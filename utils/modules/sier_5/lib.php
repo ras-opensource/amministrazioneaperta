@@ -14,6 +14,8 @@ Class AA_Sier_Const extends AA_Const
     const AA_USER_FLAG_SIER="sier";
     const AA_USER_FLAG_SIER_OC="sier_oc";
 
+    const AA_USER_FLAG_SIER_PREF="sier_pref";
+
     //percorso file
     const AA_SIER_ALLEGATI_PATH="/sier/allegati";
     const AA_SIER_IMMAGINI_PUBLIC_PATH="/img";
@@ -5240,6 +5242,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $content=$this->TemplateGenericSection_Pubblicate($params,$bCanModify);
+        $content->EnableExportFunctions(false);
         return $content->toObject();
     }
 
@@ -11302,6 +11305,10 @@ Class AA_SierModule extends AA_GenericModule
         
         $params['MultiviewEventHandlers']=array("onViewChange"=>array("handler"=>"onDetailViewChange"));
 
+        $params['disable_SaveAsPdf']=true;
+        $params['disable_SaveAsCsv']=true;
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $params['disable_MenuAzioni']=true;
+        
         $detail = $this->TemplateGenericSection_Detail($params);
 
         return $detail;
@@ -11318,7 +11325,7 @@ Class AA_SierModule extends AA_GenericModule
         $canModify=false;
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $canModify=true;
 
-        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC)|| $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
         {
             $cp=$object->GetControlPannel();
             $url=$cp['url_feed_risultati'];
@@ -11341,18 +11348,20 @@ Class AA_SierModule extends AA_GenericModule
             $toolbar->AddElement(new AA_JSON_Template_Generic());
             $toolbar->AddElement($modify_btn);  
 
-            $modify_btn=new AA_JSON_Template_Generic($id."_GeneraleOtions_btn",array(
-                "view"=>"button",
-                 "type"=>"icon",
-                 "icon"=>"mdi mdi-tools",
-                 "label"=>"Strumenti",
-                 "align"=>"right",
-                 "width"=>120,
-                 "tooltip"=>"Pannello di controllo",
-                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierControlPannelDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
-            ));
-            
-            $toolbar->AddElement($modify_btn);    
+            if($canModify)
+            {
+                $modify_btn=new AA_JSON_Template_Generic($id."_GeneraleOtions_btn",array(
+                    "view"=>"button",
+                     "type"=>"icon",
+                     "icon"=>"mdi mdi-tools",
+                     "label"=>"Strumenti",
+                     "align"=>"right",
+                     "width"=>120,
+                     "tooltip"=>"Pannello di controllo",
+                     "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierControlPannelDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+                ));
+                $toolbar->AddElement($modify_btn);
+            }
         }
         else $toolbar=null;
         
@@ -13250,6 +13259,7 @@ Class AA_SierModule extends AA_GenericModule
                     $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyPresidenteCVDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
                     $coalizione_ops['cv']="<div class='AA_DataTable_Ops' style='justify-content: space-between'><span style='font-weight: 700'>cv:</span><a class='AA_DataTable_Ops_Button' title='Carica il curriculum' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
+                else $coalizione_ops['cv']="&nbsp;";
             }
 
             //Casellario giudiziale
@@ -13273,6 +13283,7 @@ Class AA_SierModule extends AA_GenericModule
                     $add='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyPresidenteCGDlg", params: [{id: "'.$object->GetId().'"},{id_coalizione:"'.$curCoalizione->GetProp("id").'"}]},"'.$this->id.'")';
                     $coalizione_ops['cg']="<div class='AA_DataTable_Ops' style='justify-content: space-between'><span style='font-weight: 700'>cg:</span> <a class='AA_DataTable_Ops_Button' title='Carica il casellario' onClick='".$add."'><span class='mdi mdi-file-upload'></span></a></div>";
                 }
+                else $coalizione_ops['cg']="&nbsp;";
             }
 
             $coalizione_content_box->AddCol(new AA_JSON_Template_Template($id_detail_coalizione."_CoalizioneImage",array(
@@ -13636,6 +13647,19 @@ Class AA_SierModule extends AA_GenericModule
         
         $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
         
+        //Exporta corpo elettorale
+        $btn=new AA_JSON_Template_Generic($id."_ExportCorpoElettoraleComuni_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Esporta corpo elettorale",
+            "align"=>"right",
+            "width"=>240,
+            "tooltip"=>"Esporta i dati del corpo elettorale di tutti i Comuni in formato csv",
+            "click"=>"AA_MainApp.utils.callHandler('ExportCorpoElettoraleCSV', {task:\"ExportCorpoElettoraleComuniCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $toolbar->AddElement($btn);
+
         //filtro
         $modify_btn=new AA_JSON_Template_Generic($id."_FilterComuni_btn",array(
             "view"=>"button",
@@ -13690,24 +13714,36 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         $layout->addRow($toolbar);        
-        $columns=array(
-            array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Comune</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
-            array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data e ora di aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"dati_generali","header"=>array("<div style='text-align: center'>Dati Generali</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"corpo_elettorale","header"=>array("<div style='text-align: center'>Corpo elett.</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"comunicazioni","header"=>array("<div style='text-align: center'>comunicazioni</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"completamento_a","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
-            array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
-            array("id"=>"rendiconti","header"=>array("<div style='text-align: center'>Rendiconti</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-            array("id"=>"operatori","header"=>array("<div style='text-align: center'>Operatori</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
-        );
-
         if($canModify)
         {
+            $columns=array(
+                array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Comune</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
+                array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
+                array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data e ora di aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
+                array("id"=>"dati_generali","header"=>array("<div style='text-align: center'>Dati Generali</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"corpo_elettorale","header"=>array("<div style='text-align: center'>Corpo elett.</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"comunicazioni","header"=>array("<div style='text-align: center'>comunicazioni</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"completamento_a","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
+                array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
+                array("id"=>"rendiconti","header"=>array("<div style='text-align: center'>Rendiconti</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"operatori","header"=>array("<div style='text-align: center'>Operatori</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+            );
             $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
+        }
+        else
+        {
+            $columns=array(
+                array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Comune</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
+                array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
+                array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data e ora di aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
+                array("id"=>"corpo_elettorale","header"=>array("<div style='text-align: center'>Corpo elett.</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"completamento_a","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
+                array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"completamento","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
+            );
         }
 
         $data=array();
@@ -13810,8 +13846,13 @@ Class AA_SierModule extends AA_GenericModule
             if($curComune->GetProp("affluenza") == "") 
             {
                 $class="AA_DataTable_Ops_Button";
-                $icon="mdi mdi-upload";
-                $text="Gestisci i dati sull&apos;affluenza alle urne";
+                $icon="mdi mdi-eye";
+                $text="Visualizza i dati sull&apos;affluenza alle urne";
+                if($canModify) 
+                {
+                    $icon="mdi mdi-upload";
+                    $text="Gestione i dati sull&apos;affluenza alle urne";
+                }
                 $completamento_a=0;
             }
             else
@@ -16483,7 +16524,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
         {
             header('Content-Type: text/csv');
             die($object->ExportCorpoElettoraleComuniCSV());
@@ -22045,9 +22086,8 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
         {
-            
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiGenerali_btn",array(
                 "view"=>"button",
                 "type"=>"icon",
@@ -22197,7 +22237,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiCoalizioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning_Coalizioni",array("view"=>"label","label"=>$warning,"align"=>"center")));
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
         {  
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiCoalizioni_btn",array(
                 "view"=>"button",
@@ -22265,7 +22305,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning_Liste",array("view"=>"label","label"=>$warning,"align"=>"center")));
         
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
         {
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiListe_btn",array(
                 "view"=>"button",
@@ -22347,7 +22387,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning_Preferenze",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
         {
             $modify_btn=new AA_JSON_Template_Generic($id."_CsvImportRisultatiPreferenze_btn",array(
                 "view"=>"button",
@@ -22389,7 +22429,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"voti","header"=>array("<div style='text-align: center'>Voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"center"),"sort"=>"int")
         );
 
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
         {
             $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
         }
@@ -22407,7 +22447,7 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($risultati['voti_candidato'][$curCandidato->GetProp('id')])) $data[$index]['voti']=$risultati['voti_candidato'][$curCandidato->GetProp('id')]['voti'];
             //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
 
-            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+            if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
             {
                 //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$comune->GetProp('id').'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneRisultatiPreferenzeModifyDlg", postParams: {id: "'.$object->GetId().'",id_comune:"'.$comune->GetProp('id').'",id_candidato:"'.$curCandidato->GetProp("id").'",refresh: 1,refresh_obj_id:"'.$id.'"},module: "' . $this->id . '"},"'.$this->id.'")';
@@ -23439,7 +23479,7 @@ Class AA_SierModule extends AA_GenericModule
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Gestione affluenza", $this->id);
 
 
-        $wnd = new AA_GenericWindowTemplate($id, "Gestione affluenza comune di ".$comune->GetProp("denominazione"), $this->id);
+        $wnd = new AA_GenericWindowTemplate($id, "Affluenza alle urne - comune di ".$comune->GetProp("denominazione"), $this->id);
 
         $layout=$this->Template_GetSierComuneAffluenzaViewLayout($object,$comune,$id);
         $wnd->AddView($layout);
@@ -23472,18 +23512,21 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
 
         //nuovo
-        $modify_btn=new AA_JSON_Template_Generic($id."_AddNewAffluenza_btn",array(
-            "view"=>"button",
-             "type"=>"icon",
-             "icon"=>"mdi mdi-account-plus",
-             "label"=>"Aggiungi",
-             "css"=>"webix_primary",
-             "align"=>"right",
-             "width"=>120,
-             "tooltip"=>"Aggiungi nuovo dato sull'affluenza",
-             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneAffluenzaAddNewDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
-        ));
-        $toolbar->AddElement($modify_btn);
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $modify_btn=new AA_JSON_Template_Generic($id."_AddNewAffluenza_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-account-plus",
+                 "label"=>"Aggiungi",
+                 "css"=>"webix_primary",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Aggiungi nuovo dato sull'affluenza",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneAffluenzaAddNewDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);    
+        }
         
         $layout->addRow($toolbar);
 
