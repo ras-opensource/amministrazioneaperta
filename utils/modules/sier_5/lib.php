@@ -8352,7 +8352,7 @@ Class AA_SierModule extends AA_GenericModule
             "id_lista"=>$lista->GetProp("id"),
             "nome"=>trim($_REQUEST['nome']),
             "cognome"=>trim($_REQUEST['cognome']),
-            "cf"=>$_REQUEST['cf']
+            "cf"=>trim($_REQUEST['cf'])
         );
         $candidato=new AA_SierCandidato($params);
         

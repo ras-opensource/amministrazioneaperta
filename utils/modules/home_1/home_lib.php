@@ -461,9 +461,9 @@ Class AA_HomeModule extends AA_GenericModule
         $params['id']=$_REQUEST['id'];
         if(isset($_REQUEST['user']) && $_REQUEST['user'] !="") $params['user']=$_REQUEST['user'];
         if(isset($_REQUEST['email']) && $_REQUEST['email'] !="") $params['email']=$_REQUEST['email'];
-        $params['phone']=$_REQUEST['phone'];
-        $params['nome']=$_REQUEST['nome'];
-        $params['cognome']=$_REQUEST['cognome'];
+        $params['phone']=trim($_REQUEST['phone']);
+        $params['nome']=trim($_REQUEST['nome']);
+        $params['cognome']=trim($_REQUEST['cognome']);
         
         //ruolo
         if(isset($_REQUEST['ruolo']) && $_REQUEST['ruolo']>0) $params['ruolo']=$_REQUEST['ruolo'];

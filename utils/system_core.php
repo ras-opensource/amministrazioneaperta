@@ -3498,10 +3498,10 @@ class AA_User
         }
 
         $info=json_encode(array(
-            "nome"=>addslashes(trim($params['nome'])),
-            "cognome"=>addslashes(trim($params['cognome'])),
-            "phone"=>addslashes(trim($params['phone'])),
-            "image"=>addslashes(trim($params['image']))
+            "nome"=>trim($params['nome']),
+            "cognome"=>trim($params['cognome']),
+            "phone"=>trim($params['phone']),
+            "image"=>trim($params['image'])
         ));
 
         $sql="UPDATE ".static::AA_DB_TABLE." SET ";
