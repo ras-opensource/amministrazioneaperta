@@ -11413,7 +11413,7 @@ Class AA_SierModule extends AA_GenericModule
         $detail = $this->TemplateGenericSection_Detail($params);
 
         return $detail;
-    }   
+    }
     
     //Template section detail, tab generale
     public function TemplateSierDettaglio_Generale_Tab($object=null)
