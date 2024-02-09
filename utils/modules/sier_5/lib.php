@@ -184,10 +184,21 @@ Class AA_SierCoalizioni
             }
         }
     }
-
     public function GetListe()
     {
         return $this->aProps['liste'];
+    }
+
+    public function toArray($full=false)
+    {
+        if(!$full)
+        {
+            return $this->aProps;
+        }
+        else
+        {
+            return $this->aProps;
+        }
     }
 
     public function __construct($params=null)
@@ -240,6 +251,18 @@ Class AA_SierLista
             {
                 if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
             }
+        }
+    }
+
+    public function toArray($full=false)
+    {
+        if(!$full)
+        {
+            return $this->aProps;
+        }
+        else
+        {
+            return $this->aProps;
         }
     }
 
@@ -302,6 +325,17 @@ Class AA_SierCandidato
         }
     }
 
+    public function toArray($full=false)
+    {
+        if(!$full)
+        {
+            return $this->aProps;
+        }
+        else
+        {
+            return $this->aProps;
+        }
+    }
     public function __construct($params=null)
     {
         //Definisce le proprietà dell'oggetto e i valori di default
@@ -359,6 +393,21 @@ Class AA_SierComune
         }
     }
 
+    public function toArray($full=false)
+    {
+        if(!$full)
+        {
+            return $this->aProps;
+        }
+        else
+        {
+            if($this->aProps['risultati']=="") $this->aProps['risultati'] = $this->GetRisultati();
+            if($this->aProps['feed_risultati']=="") $this->aProps['feed_risultati'] = $this->GetFeedRisultati();
+            $this->aProps['logs']=$this->GetLogs();
+
+            return $this->aProps;
+        }
+    }
     public function AddLog($msg="",$user="",$oc="",$date="")
     {
         if($date=="") $date=date("Y-m-d H:i:s");
@@ -447,7 +496,8 @@ Class AA_SierComune
 
     public function GetLogs($bAsObject=false)
     {
-        return array_merge($this->GetSavedLogs(true),$this->aProps['logs']);
+        if($bAsObject) return array_merge($this->GetSavedLogs(true),$this->aProps['logs']);
+        else return json_encode(array_merge($this->GetSavedLogs(true),$this->aProps['logs']));
     }
 
     public function GetAffluenza($bAsObject=false)
@@ -855,6 +905,40 @@ Class AA_Sier extends AA_Object_V2
         }
 
         return parent::DeleteData($idData,$user);
+    }
+
+    public function serialize()
+    {
+        $result=get_object_vars($this);
+        $comuni=$this->GetComuni();
+        $coalizioni=$this->GetCoalizioni();
+        $liste=$this->GetListe();
+        $candidati=$this->GetCandidati();
+        $result['comuni']=array();
+        foreach($comuni as $idComune=>$curComune)
+        {
+            $result['comuni'][$idComune]=$curComune->toArray(true);
+        }
+
+        $result['coalizioni']=array();
+        foreach($coalizioni as $idCoalizione=>$curCoalizione)
+        {
+            $result['coalizioni'][$idCoalizione]=$curCoalizione->toArray(true);
+        }
+        
+        $result['liste']=array();
+        foreach($liste as $idlista=>$curlista)
+        {
+            $result['liste'][$idlista]=$curlista->toArray(true);
+        }
+
+        $result['candidati']=array();
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            $result['candidati'][$idCandidato]=$curCandidato->toArray(true);
+        }
+
+        return json_encode($result);
     }
 
     //Analizza i risultati di tutti i comuni
@@ -5038,6 +5122,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateFeedRisultatiGenerali");
             $taskManager->RegisterTask("GetSierConfirmTrashWebAppQRCodeDlg");
             $taskManager->RegisterTask("DeleteSierWebAppQrCode");
+            $taskManager->RegisterTask("GetSierSerialize");
             
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
@@ -11336,7 +11421,7 @@ Class AA_SierModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX;
 
         if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
-        
+
         $rows_fixed_height=50;
         $canModify=false;
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $canModify=true;
@@ -17874,6 +17959,22 @@ Class AA_SierModule extends AA_GenericModule
         $task->SetContent($this->Template_GetSierComuneOperatoriViewDlg($object,$comune),true);
         return true;
     }
+    public function Task_GetSierSerialize($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        header('Content-Type: application/json');
+        die($object->serialize());
+    }
 
     //Task feed risultati
     public function Task_GetSierFeedRisultatiAffluenza($task)
@@ -24046,6 +24147,10 @@ Class AA_SierAllegati
         return implode(",",$result);
     }
 
+    public function toArray($full=false)
+    {
+       get_object_vars($this);
+    }
     protected $estremi="";
     public function GetEstremi()
     {

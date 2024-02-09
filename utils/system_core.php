@@ -5767,6 +5767,12 @@ class AA_Object_V2
         return true;
     }
 
+    //restituisce una rappresentazione testula dell'oggetto
+    public function serialize()
+    {
+        return json_encode(get_object_vars($this));
+    }
+    
     //Abilita o disabilita le revisioni
     public function EnableRevision($var = true)
     {
