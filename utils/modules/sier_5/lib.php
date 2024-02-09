@@ -2347,9 +2347,25 @@ Class AA_Sier extends AA_Object_V2
         return $csv;
     }
 
-    public function GetCSVImportMap()
+    public function GetCSVImportMap($toCsv=false)
     {
-        if(!$this->bValid) return array();
+        if(!$this->bValid) 
+        {
+            if(!$toCsv) return array();
+            else return "id_candidato,nome,cognome,id_lista,circoscrizione";
+        }
+
+        if($toCsv)
+        {
+            $feed="id_candidato,nome,cognome,id_lista,circoscrizione";
+            $candidati=$this->GetCandidati();
+            foreach($candidati as $idCandidato=>$curCandidato)
+            {
+                $feed.="\n".$curCandidato->GetProp("id").",".$curCandidato->GetProp("nome").",".$curCandidato->GetProp("cognome").",".$curCandidato->GetProp("id_lista").",".$curCandidato->Getprop("circoscrizione");
+            }   
+            
+            return $feed;
+        }
 
         $feed=array("voti_presidente"=>array(),"voti_lista"=>array(),"voti_candidato"=>array());
         $coalizioni=$this->GetCoalizioni();
