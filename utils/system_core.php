@@ -7235,7 +7235,7 @@ class AA_SessionFileUpload
         }
 
         if (is_file($value['tmp_name'])) {
-            $dir = DIRECTORY_SEPARATOR . "tmp" . DIRECTORY_SEPARATOR . "session_files";
+            $dir = sys_get_temp_dir(). DIRECTORY_SEPARATOR . "session_files";
             if (!is_dir($dir)) {
                 mkdir($dir);
             }
