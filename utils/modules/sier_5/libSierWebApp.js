@@ -566,7 +566,7 @@ AA_SierWebApp.RefreshUi = async function() {
                     elettori_tot+=affluenza_data.elettori;
                 }
                 let votanti_percent=0;
-                if(elettori_tot>0) votanti_percent=new Intl.NumberFormat('it-IT').format(Number(votanti_tot/elettori_tot).toFixed(1));
+                if(elettori_tot>0) votanti_percent=new Intl.NumberFormat('it-IT').format(Number(votanti_tot*100/elettori_tot).toFixed(1));
                 if(votanti_percent==0 && votanti_tot>0) votanti_percent='&lt;0,1';
                 elettori_tot=new Intl.NumberFormat('it-IT').format(Number(elettori_tot));
                 votanti_tot=new Intl.NumberFormat('it-IT').format(Number(votanti_tot));

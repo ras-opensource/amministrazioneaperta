@@ -1550,7 +1550,7 @@ Class AA_Sier extends AA_Object_V2
             }
         }
         
-        if($update_presidente)
+        if($update && $update_presidente && $update_liste && $update_candidati)
         {
             $feed['risultati']['voti_presidente']['aggiornamento']=$now;
             $feed['risultati']['voti_presidente']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
@@ -1581,7 +1581,7 @@ Class AA_Sier extends AA_Object_V2
                 );
             }
 
-            if($update_liste && !$bInitializeOnly && isset($risultati['voti_lista'][$idLista]))
+            if($update && $update_presidente && $update_liste && $update_candidati && !$bInitializeOnly && isset($risultati['voti_lista'][$idLista]))
             {
 
                 $feed['risultati']['voti_lista'][$idLista]['voti']=intVal($risultati['voti_lista'][$idLista]);
@@ -1591,7 +1591,7 @@ Class AA_Sier extends AA_Object_V2
             }
         }
         
-        if($update_liste)
+        if($update && $update_presidente && $update_liste && $update_candidati)
         {
             $feed['risultati']['voti_lista']['aggiornamento']=$now;
             $feed['risultati']['voti_lista']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
@@ -1641,14 +1641,14 @@ Class AA_Sier extends AA_Object_V2
                 );
             }
 
-            if($update_candidati && !$bInitializeOnly && isset($risultati['voti_candidato'][$idCandidato]))
+            if($update && $update_presidente && $update_liste && $update_candidati && !$bInitializeOnly && isset($risultati['voti_candidato'][$idCandidato]))
             {
                 $feed['risultati']['voti_candidato'][$idCandidato]['voti']=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
                 $tot_voti_candidato+=intVal($risultati['voti_candidato'][$idCandidato]['voti']);
             }    
         }
         
-        if($update_candidati)
+        if($update && $update_presidente && $update_liste && $update_candidati)
         {
             $feed['risultati']['voti_candidato']['aggiornamento']=$now;
             $feed['risultati']['voti_candidato']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
@@ -1658,7 +1658,7 @@ Class AA_Sier extends AA_Object_V2
         //---------------------
 
         //percentuali
-        if($update_presidente && !$bInitializeOnly)
+        if($update && $update_presidente && $update_liste && $update_candidati && !$bInitializeOnly)
         {
             $tot_percent_presidente=0;
             $max_percent_presidente=0;
@@ -1698,7 +1698,7 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
-        if($update_liste && !$bInitializeOnly)
+        if($update && $update_presidente && $update_liste && $update_candidati && !$bInitializeOnly)
         {
             $tot_percent_lista=0;
             $max_percent_lista=0;
@@ -1721,7 +1721,7 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
-        if($update_candidati && !$bInitializeOnly)
+        if($update && $update_presidente && $update_liste && $update_candidati && !$bInitializeOnly)
         {
             $tot_percent_candidato=0;
             $max_percent_candidato=0;
@@ -1920,6 +1920,7 @@ Class AA_Sier extends AA_Object_V2
             $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['elettori_tot']+=intVal($curComune->GetProp('elettori_f')+$curComune->GetProp('elettori_m'));
 
             //------------- Affluenza -----------
+            $defaultValue=0;
             foreach($feedComune['affluenza'] as $giornata=>$giornataValues)
             {
                 if(is_array($giornataValues))
@@ -1930,9 +1931,9 @@ Class AA_Sier extends AA_Object_V2
                         if($aggiornamento>$giornata) $aggiornamento=$giornata." 07:00:00";
                         $feed['stats']['regionale']['affluenza'][$giornata]=array(
                             "aggiornamento"=>$aggiornamento,
-                            "ore_12"=>array("count"=>0,"percent"=>0),
-                            "ore_19"=>array("count"=>0,"percent"=>0),
-                            "ore_22"=>array("count"=>0,"percent"=>0));
+                            "ore_12"=>array("count"=>$defaultValue,"percent"=>0),
+                            "ore_19"=>array("count"=>$defaultValue,"percent"=>0),
+                            "ore_22"=>array("count"=>$defaultValue,"percent"=>0));
                     }
 
                     if(isset($feedComune['affluenza'][$giornata]['aggiornamento']) && ($aggiornamento_generale=="" || $feedComune['affluenza'][$giornata]['aggiornamento']>$aggiornamento_generale))
@@ -1950,9 +1951,9 @@ Class AA_Sier extends AA_Object_V2
                         if($aggiornamento>$giornata) $aggiornamento=$giornata." 07:00:00";
                         $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]=array(
                             "aggiornamento"=>$aggiornamento,
-                            "ore_12"=>array("count"=>0,"percent"=>0),
-                            "ore_19"=>array("count"=>0,"percent"=>0),
-                            "ore_22"=>array("count"=>0,"percent"=>0));
+                            "ore_12"=>array("count"=>$defaultValue,"percent"=>0),
+                            "ore_19"=>array("count"=>$defaultValue,"percent"=>0),
+                            "ore_22"=>array("count"=>$defaultValue,"percent"=>0));
                     }
 
                     if(isset($feedComune['affluenza'][$giornata]['aggiornamento']) && (!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']) || $feedComune['affluenza'][$giornata]['aggiornamento']>$feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']))
@@ -2147,9 +2148,9 @@ Class AA_Sier extends AA_Object_V2
         {
             if(isset($feed['stats']['regionale']['affluenza'][$giornata]))
             {
-                $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
-                $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
-                $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
+                if($feed['stats']['regionale']['affluenza'][$giornata]['ore_12']>0) $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
+                if($feed['stats']['regionale']['affluenza'][$giornata]['ore_19']>0)$feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
+                if($feed['stats']['regionale']['affluenza'][$giornata]['ore_22']>0)$feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['percent']=round($feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']*100/$feed['stats']['regionale']['elettori_tot'],1);
             }
             else
             {
@@ -2216,9 +2217,9 @@ Class AA_Sier extends AA_Object_V2
                 if(isset($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]))
                 {
                     //percentuale affluenza
-                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_12']['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_12']['count']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
-                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_19']['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_19']['count']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
-                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_22']['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_22']['count']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
+                    if($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_12']['count']>0) $feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_12']['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_12']['count']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
+                    if($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_19']['count']>0) $feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_19']['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_19']['count']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
+                    if($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_22']['count']>0) $feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_22']['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['affluenza'][$giornata]['ore_22']['count']*100/$feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],1);
                 }
             }
 
@@ -2451,7 +2452,7 @@ Class AA_Sier extends AA_Object_V2
             return $feed;
         }
 
-        $feed=array("voti_presidente"=>array(),"voti_lista"=>array(),"voti_candidato"=>array());
+        $feed=array("voti_presidente"=>array(),"voti_lista"=>array(),"voti_candidato"=>array(),'circoscrizioni'=>array(),"comuni"=>array());
         $coalizioni=$this->GetCoalizioni();
         foreach($coalizioni as $idCoalizione=>$curCoalizione)
         {
@@ -2469,6 +2470,18 @@ Class AA_Sier extends AA_Object_V2
         foreach($candidati as $idCandidato=>$curCandidato)
         {
             $feed['voti_candidato'][$idCandidato]=array("nome"=>$curCandidato->GetProp("nome"),"cognome"=>$curCandidato->GetProp("cognome"),"id_lista"=>$curCandidato->GetProp("id_lista"),"circoscrizione"=>$curCandidato->Getprop("circoscrizione"));
+        }
+
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        foreach($circoscrizioni as $idCircoscrizione=>$curCircoscrizione)
+        {
+            $feed['circoscrizioni'][$idCircoscrizione]=array("denominazione"=>$curCircoscrizione);
+        }
+
+        $comuni=$this->GetComuni();
+        foreach($comuni as $idComune=>$curComune)
+        {
+            $feed['comuni'][$idComune]=array("denominazione"=>$curComune->GetProp("denominazione"),"id_circoscrizione"=>$curComune->GetProp('id_circoscrizione'),"circoscrizione"=>$curComune->GetProp("circoscrizione"));
         }
 
         return $feed;
@@ -18684,7 +18697,6 @@ Class AA_SierModule extends AA_GenericModule
         if(!is_array($voti_candidato)) $voti_candidato=array();
 
         $candidato=null;
-        $tot_voti_candidati=0;
         
         if($_REQUEST['voti'] > $risultati['voti_lista'][$candidati[$_REQUEST['id_candidato']]->GetProp('id_lista')])
         {
@@ -18693,12 +18705,15 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $id_lista=0;
+        $updateCandidato=$candidati[$_REQUEST['id_candidato']];
+        $id_lista=$updateCandidato->GetProp("id_lista");
+        $tot_voti_candidati=intVal($_REQUEST['voti']);
         foreach($voti_candidato as $idCandidato=>$curCandidato)
         {
-            if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
-            else $tot_voti_candidati+=intVal($_REQUEST['voti']);
-            if($id_lista==0) $id_lista=$candidati[$idCandidato]->GetProp("id_lista");
+            if($candidati[$idCandidato]->GetProp("id_lista")==$id_lista)
+            {
+                if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
+            }
         }
 
         if($id_lista > 0 && $tot_voti_candidati > (2*$risultati['voti_lista'][$id_lista]))
@@ -19127,12 +19142,15 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $id_lista=0;
+        $updateCandidato=$candidati[$_REQUEST['id_candidato']];
+        $id_lista=$updateCandidato->GetProp("id_lista");
+        $tot_voti_candidati=intVal($_REQUEST['voti']);
         foreach($voti_candidato as $idCandidato=>$curCandidato)
         {
-            if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
-            else $tot_voti_candidati+=intVal($_REQUEST['voti']);
-            if($id_lista==0) $id_lista=$candidati[$idCandidato]->GetProp("id_lista");
+            if($candidati[$idCandidato]->GetProp("id_lista")==$id_lista)
+            {
+                if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
+            }
         }
 
         if($id_lista > 0 && $tot_voti_candidati > (2*$risultati['voti_lista'][$id_lista]))
