@@ -11095,9 +11095,42 @@ Class AA_SierModule extends AA_GenericModule
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $section=new AA_FieldSet($id."_Section_CP_Corpoelettorale","Opzioni corpo elettorale");
-            $section->AddSwitchBoxField("abilita_cert_corpo_elettorale","Certificazione del corpo elettorale",array("labelWidth"=>400,"onLabel"=>"abilitata","offLabel"=>"disabilitata","bottomLabel"=>"Abilita/Disabilita la certificazione del corpo elettorale da parte dei comuni.","bottomPadding"=>32));
-            $section->AddTextField("finestra_temporale_cert_corpo_elettorale","Finestra temporale per la modifica del corpo elettorale",array("labelWidth"=>400,"bottomLabel"=>"Inserire il numero di giorni per i quali è possible modificare il corpo elettorale (0 = senza limiti temporali).","bottomPadding"=>32));
+            $section->AddSwitchBoxField("abilita_cert_corpo_elettorale","Certificazione del corpo elettorale",array("labelWidth"=>380,"onLabel"=>"abilitata","offLabel"=>"disabilitata","bottomLabel"=>"Abilita/Disabilita la certificazione del corpo elettorale da parte dei comuni.","bottomPadding"=>32));
+            $section->AddTextField("finestra_temporale_cert_corpo_elettorale","Finestra temporale per la modifica del corpo elettorale",array("labelWidth"=>380,"bottomLabel"=>"Inserire il numero di giorni per i quali è possible modificare il corpo elettorale (0 = senza limiti temporali).","bottomPadding"=>32));
             $wnd->AddGenericObject($section);
+
+            $section=new AA_FieldSet($id."_Section_CP_StatusUpdateFeed","Stato aggiornamento automatico feed pubblici");
+            $update_time_mini="n.d.";
+            $update_time="n.d.";
+            if(is_file("/var/log/sier_autoupdate_mini.log")) 
+            {
+                $update_log=json_decode(file_get_contents("/var/log/sier_autoupdate_mini.log"),true);
+                if(is_array($update_log))
+                {
+                    if($update_log['status']==1) $update_time_mini=$update_log['time'];
+                    else $update_time_mini="aggiornamento manuale";
+                } 
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - file log non trovato.",100);
+            }
+            if(is_file("/var/log/sier_autoupdate.log")) 
+            {
+                $update_log=json_decode(file_get_contents("/var/log/sier_autoupdate.log"),true);
+                if(is_array($update_log))
+                {
+                    if($update_log['status']==1) $update_time=$update_log['time'];
+                    else $update_time="aggiornamento manuale";
+                } 
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - file log non trovato.",100);
+            }
+            $section->AddGenericObject(new AA_JSON_Template_Template($id."_LastUpdateFeedPubblic",array("borderless"=>true,"template"=>"<div style='display: flex; justify-content: space-evenly; align-items: center'><div style='width: 80%'><b>Data e ora ultimo aggiornamento (mini)</b>:</div><div style='text-align: right'>#update_time#</div></div>","data"=>array("update_time"=>$update_time_mini))));
+            $section->AddGenericObject(new AA_JSON_Template_Template($id."_LastUpdateFeedPubblic",array("borderless"=>true,"template"=>"<div style='display: flex; justify-content: space-evenly; align-items: center'><div style='width: 80%'><b>Data e ora ultimo aggiornamento (completo)</b>:</div><div style='text-align: right'>#update_time#</div></div>","data"=>array("update_time"=>$update_time))));
+            $wnd->AddGenericObject($section,false);
         }
 
         $wnd->EnableCloseWndOnSuccessfulSave();
