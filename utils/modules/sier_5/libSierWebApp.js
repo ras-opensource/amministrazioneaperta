@@ -1416,6 +1416,7 @@ AA_SierWebApp.UpdateRisultatiData = async function() {
                 {
                     let font_size="font-size: normal";
                     if(String(dettaglio.voti_lista[idLista].denominazione).length > 24) font_size="font-size:smaller";
+                    if(String(dettaglio.voti_lista[idLista].denominazione).length > 48) font_size="font-size: 10px";
                     AA_SierWebAppParams.risultati.liste.data.push({id:idLista,"font_size":font_size,"denominazione":dettaglio.voti_lista[idLista].denominazione,"presidente":risultati.stats.regionale.risultati.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].denominazione,denominazione_coalizione:"Coalizione "+risultati.stats.regionale.risultati.voti_presidente[AA_SierWebAppParams.risultati.liste.id_coalizione].denominazione,"voti_raw":dettaglio.voti_lista[idLista].voti,"voti":fmtNumber.format(Number(dettaglio.voti_lista[idLista].voti)),"percent":fmtNumber.format(Number(dettaglio.voti_lista[idLista].percent)),"image":"https://amministrazioneaperta.regione.sardegna.it"+dettaglio.voti_lista[idLista].image});
                 }
             }

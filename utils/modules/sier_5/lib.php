@@ -2465,7 +2465,6 @@ Class AA_Sier extends AA_Object_V2
             $feed['voti_lista'][$idLista]=array("denominazione"=>$curLista->GetProp("denominazione"),"id_presidente"=>$curLista->GetProp("id_coalizione"));
         }
 
-        
         $candidati=$this->GetCandidati();
         foreach($candidati as $idCandidato=>$curCandidato)
         {
