@@ -11095,8 +11095,8 @@ Class AA_SierModule extends AA_GenericModule
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $section=new AA_FieldSet($id."_Section_CP_Corpoelettorale","Opzioni corpo elettorale");
-            $section->AddSwitchBoxField("abilita_cert_corpo_elettorale","Certificazione del corpo elettorale",array("labelWidth"=>380,"onLabel"=>"abilitata","offLabel"=>"disabilitata","bottomLabel"=>"Abilita/Disabilita la certificazione del corpo elettorale da parte dei comuni.","bottomPadding"=>32));
-            $section->AddTextField("finestra_temporale_cert_corpo_elettorale","Finestra temporale per la modifica del corpo elettorale",array("labelWidth"=>380,"bottomLabel"=>"Inserire il numero di giorni per i quali è possible modificare il corpo elettorale (0 = senza limiti temporali).","bottomPadding"=>32));
+            $section->AddSwitchBoxField("abilita_cert_corpo_elettorale","Certificazione del corpo elettorale",array("labelWidth"=>360,"onLabel"=>"abilitata","offLabel"=>"disabilitata","bottomLabel"=>"Abilita/Disabilita la certificazione del corpo elettorale da parte dei comuni.","bottomPadding"=>32));
+            $section->AddTextField("finestra_temporale_cert_corpo_elettorale","Finestra temporale per la modifica del corpo elettorale",array("labelWidth"=>360,"bottomLabel"=>"Inserire il numero di giorni per i quali è possible modificare il corpo elettorale (0 = senza limiti temporali).","bottomPadding"=>42));
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet($id."_Section_CP_StatusUpdateFeed","Stato aggiornamento automatico feed pubblici");
