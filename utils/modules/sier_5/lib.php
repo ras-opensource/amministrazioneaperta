@@ -11129,7 +11129,7 @@ Class AA_SierModule extends AA_GenericModule
                 AA_Log::Log(__METHOD__." - file log non trovato.",100);
             }
             $section->AddGenericObject(new AA_JSON_Template_Template($id."_LastUpdateFeedPubblic",array("borderless"=>true,"template"=>"<div style='display: flex; justify-content: space-evenly; align-items: center'><div style='width: 80%'><b>Data e ora ultimo aggiornamento (mini)</b>:</div><div style='text-align: right'>#update_time#</div></div>","data"=>array("update_time"=>$update_time_mini))));
-            $section->AddGenericObject(new AA_JSON_Template_Template($id."_LastUpdateFeedPubblic",array("borderless"=>true,"template"=>"<div style='display: flex; justify-content: space-evenly; align-items: center'><div style='width: 80%'><b>Data e ora ultimo aggiornamento (completo)</b>:</div><div style='text-align: right'>#update_time#</div></div>","data"=>array("update_time"=>$update_time))));
+            $section->AddGenericObject(new AA_JSON_Template_Template($id."_LastUpdateFeedPubblic",array("borderless"=>true,"template"=>"<div style='display: flex; justify-content: space-evenly; align-items: center'><div style='width: 80%'><b>Data e ora ultimo aggiornamento (esteso)</b>:</div><div style='text-align: right'>#update_time#</div></div>","data"=>array("update_time"=>$update_time))));
             $wnd->AddGenericObject($section,false);
         }
 
