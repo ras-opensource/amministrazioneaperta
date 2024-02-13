@@ -4615,65 +4615,30 @@ Class AA_Sier extends AA_Object_V2
         if(isset($cp['url_feed_risultati']) && $cp['url_feed_risultati']!="")
         {
             $url=parse_url($cp['url_feed_risultati']);
-            
-            //step1
-            $curlSES=curl_init(); 
-            
-            //aggiorna il feed completo
-            curl_setopt($curlSES,CURLOPT_URL,"http://localhost".$url['path']."?update=1");
-            curl_setopt($curlSES,CURLOPT_RETURNTRANSFER,true);
-            curl_setopt($curlSES,CURLOPT_HEADER, false); 
-            $result=curl_exec($curlSES);
-            curl_close($curlSES);
-
-            $info=curl_getinfo($curlSES);
-            //AA_Log::Log(__METHOD__." - info: ".print_r(curl_getinfo($curlSES),true), 100);
-
-            if($info['http_code']!="200")
+            if(is_dir(AA_Const::AA_APP_FILESYSTEM_FOLDER.$url['path']) && is_writable(AA_Const::AA_APP_FILESYSTEM_FOLDER.$url['path']))
             {
-                AA_Log::Log(__METHOD__." - Errore http(".$info['http_code'].") per l'url: http://localhost".$url['path']."?update=1", 100);
+                //AA_Log::Log(__METHOD__." - Salvo feed in: ".AA_Const::AA_APP_FILESYSTEM_FOLDER.$url['path'].'/feed_mini.json',100);
+
+                //feed mini
+                $feed=json_encode($this->BuildRisultatiAffluenzaFeed(null,true));
+                if(file_put_contents(AA_Const::AA_APP_FILESYSTEM_FOLDER.$url['path'].'feed_mini.json',$feed) === false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nel salvataggio del file: ".AA_Const::AA_APP_FILESYSTEM_FOLDER.$url['path'].'feed_mini.json',100);
+                    return false;
+                }
+                
+                $feed=json_encode($this->BuildRisultatiAffluenzaFeed(null));
+                if(file_put_contents(AA_Const::AA_APP_FILESYSTEM_FOLDER.$url['path'].'feed.json',$feed) === false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nel salvataggio del file: ".AA_Const::AA_APP_FILESYSTEM_FOLDER.$url['path'].'feed.json',100);
+                    return false;
+                }
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - Directory non esistente o in sola lettura: ".AA_Const::AA_APP_FILESYSTEM_FOLDER.$url['path'],100);
                 return false;
             }
-
-            if($result===false)
-            {
-                AA_Log::Log(__METHOD__." - Errore (".curl_error($curlSES).") nell'aggiornamento del feed generale dei risultati.", 100);
-                return false;
-            }
-
-            $result=json_decode($result,true);
-            //AA_Log::Log(__METHOD__." - Aggiornamento del feed generale dei risultati - ".print_r($result,true), 100);
-            if($result['status']==-1)
-            {
-                AA_Log::Log(__METHOD__." - Errore (".$result['msg'].") nell'aggiornamento del feed generale dei risultati.", 100);
-                return false;
-            }
-
-            curl_setopt($curlSES,CURLOPT_URL,"http://localhost".$url['path']."?update=1&mini=1");
-            $result=curl_exec($curlSES);
-            curl_close($curlSES);
-            $info=curl_getinfo($curlSES);
-
-            if($info['http_code']!="200")
-            {
-                AA_Log::Log(__METHOD__." - Errore http(".$info['http_code'].") per l'url: http://localhost".$url['path']."?update=1&mini=1", 100);
-                return false;
-            }
-            
-            if($result===false)
-            {
-                AA_Log::Log(__METHOD__." - Errore (".curl_error($curlSES).") nell'aggiornamento del feed(mini) generale dei risultati.", 100);
-                return false;
-            }
-            $result=json_decode($result,true);
-
-            //AA_Log::Log(__METHOD__." - Aggiornamento del feed(mini) generale dei risultati - ".print_r($result,true), 100);
-            if($result['status']==-1)
-            {
-                AA_Log::Log(__METHOD__." - Errore (".$result['msg'].") nell'aggiornamento del feed(mini) generale dei risultati.", 100);
-                return false;
-            }
-
             return true;
         }
     }
