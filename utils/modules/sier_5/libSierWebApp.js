@@ -549,9 +549,9 @@ AA_SierWebApp.RefreshUi = async function() {
 
             //Aggiorna l'affluenza
             let affluenza_cols=[
-                {id:"denominazione",header:["<div style='text-align: left'>Circoscrizione</div>"],"fillspace":true, "sort":"text","css":{"text-align":"left"}},
+                {id:"denominazione",header:["<div style='text-align: left'>Circoscrizione</div>"],"fillspace":true, "css":{"text-align":"left"}},
                 {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "css":{"text-align":"right"}},
-                {id:"percent",header:["<div style='text-align: right'>%</div>"],"width":60, "sort":"int","css":{"text-align":"right","font-weight":"700"}}
+                {id:"percent",header:["<div style='text-align: right'>%</div>"],"width":60, "css":{"text-align":"right","font-weight":"700"}}
             ];
             //console.log("AA_SierWebApp.RefreshRisultatiData - affluenza_cols",affluenza_cols);
     
@@ -692,7 +692,7 @@ AA_SierWebApp.RefreshUi = async function() {
             let affluenza_cols=[
                 {id:"denominazione",header:["<div style='text-align: left'>Comune</div>"],"fillspace":true, "sort":"text","css":{"text-align":"left"}},
                 {id:"count",header:["<div style='text-align: right'>votanti</div>"],"width":90, "css":{"text-align":"right"}},
-                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "sort":"int","css":{"text-align":"right","font-weight":"700"}}
+                {id:"percent",header:["<div style='text-align: right'>%<sup>*</sup></div>"],"width":60, "css":{"text-align":"right","font-weight":"700"}}
             ];
             //console.log("AA_SierWebApp.RefreshRisultatiData - affluenza_cols",affluenza_cols);
     
