@@ -2355,7 +2355,7 @@ Class AA_Sier extends AA_Object_V2
             return array();
         }
 
-        //AA_Log::Log(__METHOD__." - query: ".$query,100);
+        AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=array();
         if($db->GetAffectedRows()>0)
@@ -12750,18 +12750,22 @@ Class AA_SierModule extends AA_GenericModule
             $liste_data=array();
             foreach($liste as $idLista=>$curLista)
             {
-                if($curLista->GetProp('image') != "")
+                $candidati=$object->GetCandidati(null,$curLista,$comune->GetProp('id_circoscrizione'));
+                if(sizeof($candidati)>0)
                 {
-                    $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
+                    if($curLista->GetProp('image') != "")
+                    {
+                        $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
+                    }
+                    else
+                    {
+                        $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+                    }
+    
+                    $value=0;
+                    if(isset($risultati['voti_lista']) && isset($risultati['voti_lista'][$idLista]) && $risultati['voti_lista'][$idLista]>0) $value=intVal($risultati['voti_lista'][$idLista]);
+                    $liste_data[]=array("id"=>$idLista,"title"=>$curLista->GetProp("denominazione"),"value"=>$value,"image"=>$curImagePath);
                 }
-                else
-                {
-                    $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-                }
-
-                $value=0;
-                if(isset($risultati['voti_lista']) && isset($risultati['voti_lista'][$idLista]) && $risultati['voti_lista'][$idLista]>0) $value=intVal($risultati['voti_lista'][$idLista]);
-                $liste_data[]=array("id"=>$idLista,"title"=>$curLista->GetProp("denominazione"),"value"=>$value,"image"=>$curImagePath);
             }
             
             //AA_Log::Log(__METHOD__." - liste: ".print_r($liste_data,true),100);
@@ -22471,18 +22475,22 @@ Class AA_SierModule extends AA_GenericModule
             $liste_data=array();
             foreach($liste as $idLista=>$curLista)
             {
-                if($curLista->GetProp('image') != "")
+                $candidati=$object->GetCandidati(null,$curLista,$comune->GetProp('id_circoscrizione'));
+                if(sizeof($candidati)>0)
                 {
-                    $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
+                    if($curLista->GetProp('image') != "")
+                    {
+                        $curImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curLista->GetProp('image');
+                    }
+                    else
+                    {
+                        $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
+                    }
+    
+                    $value=0;
+                    if(isset($risultati['voti_lista']) && isset($risultati['voti_lista'][$idLista]) && $risultati['voti_lista'][$idLista]>0) $value=intVal($risultati['voti_lista'][$idLista]);
+                    $liste_data[]=array("id"=>$idLista,"title"=>$curLista->GetProp("denominazione"),"value"=>$value,"image"=>$curImagePath);
                 }
-                else
-                {
-                    $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
-                }
-
-                $value=0;
-                if(isset($risultati['voti_lista']) && isset($risultati['voti_lista'][$idLista]) && $risultati['voti_lista'][$idLista]>0) $value=intVal($risultati['voti_lista'][$idLista]);
-                $liste_data[]=array("id"=>$idLista,"title"=>$curLista->GetProp("denominazione"),"value"=>$value,"image"=>$curImagePath);
             }
             
             //AA_Log::Log(__METHOD__." - liste: ".print_r($liste_data,true),100);
@@ -23101,6 +23109,7 @@ Class AA_SierModule extends AA_GenericModule
             return $wnd;
         }
 
+        $listeToAdd=array();
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
             $form_data['id']=$object->GetId();
@@ -23109,7 +23118,12 @@ Class AA_SierModule extends AA_GenericModule
             
             foreach($liste as $idLista=>$curLista)
             {
-                $form_data["lista_".$idLista]=0;
+                $candidati=$object->GetCandidati(null,$curLista,$comune->GetProp("id_circoscrizione"));
+                if(sizeof($candidati)>0) 
+                {
+                    $form_data["lista_".$idLista]=0;
+                    $listeToAdd[$idLista]=$curLista;
+                }
             }
 
             $risultati=$comune->GetRisultati(true);
@@ -23134,7 +23148,7 @@ Class AA_SierModule extends AA_GenericModule
             $numforRow=3;
             $curNumRow=0;
             $curCol=0;
-            foreach($liste as $idLista=>$curLista)
+            foreach($listeToAdd as $idLista=>$curLista)
             {
                 //liste
                 if($curNumRow%$numforRow) 
@@ -23405,13 +23419,19 @@ Class AA_SierModule extends AA_GenericModule
 
         if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
         {
+            $listeToAdd=array();
             $form_data['id']=$object->GetId();
             $form_data['id_sier']=$object->GetId();
             $form_data['id_comune']=$comune->GetProp('id');
         
             foreach($liste as $idLista=>$curLista)
             {
-                $form_data["lista_".$idLista]=0;
+                $candidati=$object->GetCandidati(null,$curLista,$comune->GetProp("id_circoscrizione"));
+                if(sizeof($candidati)>0) 
+                {
+                    $form_data["lista_".$idLista]=0;
+                    $listeToAdd[$idLista]=$curLista;
+                }
             }
 
             $risultati=$comune->GetRisultati(true);
@@ -23433,7 +23453,7 @@ Class AA_SierModule extends AA_GenericModule
             $numforRow=3;
             $curNumRow=0;
             $curCol=0;
-            foreach($liste as $idLista=>$curLista)
+            foreach($listeToAdd as $idLista=>$curLista)
             {
                 //liste
                 if($curNumRow%$numforRow) 
