@@ -21926,7 +21926,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template dlg modify user
     public function Template_OC_DatiGeneraliModifyDlg($object=null,$comune=null)
     {
-        $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliModifyDlg";
+        $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliModifyDlg".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
 
@@ -22832,7 +22832,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template dlg modify risultati preferenze comune
     public function Template_GetSierComuneRisultatiPreferenzeModifyDlg($object=null,$comune=null,$candidato=null)
     {
-        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg";
+        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         if(!($candidato instanceof AA_SierCandidato)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
@@ -22888,7 +22888,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template dlg modify risultati preferenze comune multi
     public function Template_GetSierComuneRisultatiPreferenzeModifyMultiDlg($object=null,$comune=null,$lista=null)
     {
-        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg";
+        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         if(!($lista instanceof AA_SierLista)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
@@ -22966,7 +22966,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template dlg modify risultati preferenze comune
     public function Template_GetSierOCModifyRisultatiPreferenzeDlg($object=null,$comune=null,$candidato=null)
     {
-        $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiCoalizioniDlg";
+        $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiCoalizioniDlg".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         if(!($candidato instanceof AA_SierCandidato)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
@@ -23019,7 +23019,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template dlg modify risultati preferenze comune
     public function Template_GetSierOCModifyRisultatiPreferenzeMultiDlg($object=null,$comune=null,$lista=null)
     {
-        $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiCoalizioniDlg";
+        $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiCoalizioniDlg".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         if(!($lista instanceof AA_SierLista)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
@@ -23096,7 +23096,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template dlg modify risultati coalizioni comune
     public function Template_GetSierComuneRisultatiListeModifyDlg($object=null,$comune=null)
     {
-        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiListeModifyDlg";
+        $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiListeModifyDlg".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti voti Liste circoscrizionali", $this->id);
         $liste=$object->GetListe(null,$comune->GetProp('id_circoscrizione'));
