@@ -1508,7 +1508,7 @@ Class AA_Sier extends AA_Object_V2
             if($risultati['sezioni_scrutinate']) $feed['risultati']['sezioni_scrutinate']=intVal($risultati['sezioni_scrutinate']);
             if($risultati['votanti_m']) $feed['risultati']['votanti_m']=intVal($risultati['votanti_m']);
             if($risultati['votanti_f']) $feed['risultati']['votanti_f']=intVal($risultati['votanti_f']);
-            $feed['risultati']['votanti_tot']=intVal($feed['risultati']['votanti_f'])+intVal($feed['risultati']['votanti_f']);
+            $feed['risultati']['votanti_tot']=intVal($feed['risultati']['votanti_m'])+intVal($feed['risultati']['votanti_f']);
             $feed['risultati']['votanti_percent']=round($feed['risultati']['votanti_tot']*100/(intVal($comune->GetProp("elettori_m")+$comune->GetProp("elettori_f"))),1);
         }
         //------------------------
@@ -1542,7 +1542,7 @@ Class AA_Sier extends AA_Object_V2
                 );
             }
 
-            if(!$bInitializeOnly && $update_presidente && isset($risultati['voti_presidente'][$idCoalizione]))
+            if(!$bInitializeOnly && $update && $update_presidente && $update_liste && $update_candidati && isset($risultati['voti_presidente'][$idCoalizione]))
             {
                 $feed['risultati']['voti_presidente']['aggiornamento']=date("Y-m-d H:i:s");
                 $feed['risultati']['voti_presidente'][$idCoalizione]['voti']=intVal($risultati['voti_presidente'][$idCoalizione]);
@@ -19171,7 +19171,7 @@ Class AA_SierModule extends AA_GenericModule
         foreach($candidati as $idCandidato=>$curCandidato)
         {
             
-            if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>0)
+            if(isset($candidati[$_REQUEST['id_candidato']]) && $_REQUEST['voti']>=0)
             {
                 //$candidato=$candidati[$_REQUEST['id_candidato']]->GetProps();
                 $candidato=array();
