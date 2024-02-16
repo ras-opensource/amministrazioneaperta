@@ -31,7 +31,7 @@ if(!$file->IsPublic())
 header("Cache-control: private");
 header("Content-type: ".$file->GetMimeType());
 header("Content-Length: ".$file->GetFileSize());
-if(isset($_REQUEST['filename'])) header('Content-Disposition: attachment; filename="'.$file->GetName().'"');
+if(isset($_REQUEST['filename']) || isset($_REQUEST['attachment'])) header('Content-Disposition: attachment; filename="'.$file->GetName().'"');
 $fd = fopen ($file->GetFilePath(), "rb");
 echo fread ($fd, filesize ($file->GetFilePath()));
 fclose ($fd);
