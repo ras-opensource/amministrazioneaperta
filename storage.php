@@ -31,7 +31,7 @@ if(!$file->IsPublic())
 header("Cache-control: private");
 header("Content-type: ".$file->GetMimeType());
 header("Content-Length: ".$file->GetFileSize());
-//header('Content-Disposition: attachment; filename="'.$this->tipo."_".$this->id.'.pdf"');
+if(isset($_REQUEST['filename'])) header('Content-Disposition: attachment; filename="'.$file->GetName().'"');
 $fd = fopen ($file->GetFilePath(), "rb");
 echo fread ($fd, filesize ($file->GetFilePath()));
 fclose ($fd);

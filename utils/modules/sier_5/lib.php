@@ -1346,9 +1346,9 @@ Class AA_Sier extends AA_Object_V2
                 $curCoalizioneImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
             }
             $curCv="";
-            if($curCoalizione->GetProp('cv')!="") $curCv="/storage.php?object=".$curCoalizione->GetProp('cv');
+            if($curCoalizione->GetProp('cv')!="") $curCv="/storage.php?object=".$curCoalizione->GetProp('cv')."&filename=1";
             $curCg="";
-            if($curCoalizione->GetProp('cg')!="") $curCg="/storage.php?object=".$curCoalizione->GetProp('cg');
+            if($curCoalizione->GetProp('cg')!="") $curCg="/storage.php?object=".$curCoalizione->GetProp('cg')."&filename=1";
             $feed['coalizioni'][$idCoalizione]=array("denominazione"=>$curCoalizione->GetProp("denominazione"),"image"=>$curCoalizioneImagePath,"presidente"=>$curCoalizione->GetProp("nome_candidato"),"cv"=>$curCv,"cg"=>$curCg);
         }
 
@@ -1367,9 +1367,9 @@ Class AA_Sier extends AA_Object_V2
                 $curCoalizioneImagePath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCoalizione->GetProp('image');
             }
             
-            if($curCandidato->GetProp("cv")!="") $cvPath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCandidato->GetProp("cv");
+            if($curCandidato->GetProp("cv")!="") $cvPath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCandidato->GetProp("cv")."&filename=1";
             else $cvPath="";
-            if($curCandidato->GetProp("cg")!="") $cgPath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCandidato->GetProp("cg");
+            if($curCandidato->GetProp("cg")!="") $cgPath=AA_Const::AA_WWW_ROOT."/storage.php?object=".$curCandidato->GetProp("cg")."&filename=1";
             else $cgPath="";
             
             $feed['candidati'][$idCandidato]=array("nome"=>$curCandidato->GetProp("nome"),
