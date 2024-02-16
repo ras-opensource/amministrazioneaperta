@@ -1060,7 +1060,7 @@ Class AA_Sier extends AA_Object_V2
         if($voti_presidente == 0 && $voti_validi > 0)
         {
             $result[0]=true;
-            $result[1][]="Non ci sono voti per i candidati Presidente nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
+            $result[1][]="Non ci sono <b>voti per i candidati Presidente</b> nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
             $result[2]=true;
             $result[3]['risultati_voti_presidente_check']++;
         }
@@ -1068,7 +1068,7 @@ Class AA_Sier extends AA_Object_V2
         if($voti_presidente != ($voti_validi-$risultati['voti_contestati_na_pre']) && $voti_presidente > 0 && $voti_validi > 0)
         {
             $result[0]=true;
-            $result[1][]="La somma dei voti per i candidati Presidente (".$voti_presidente.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
+            $result[1][]="La somma dei <b>voti per i candidati Presidente</b> (".$voti_presidente.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
             $result[2]=true;
             $result[3]['risultati_voti_presidente_check']++;
         }
@@ -1076,7 +1076,7 @@ Class AA_Sier extends AA_Object_V2
         if($voti_presidente > ($voti_validi-$risultati['voti_contestati_na_pre']))
         {
             $result[0]=true;
-            $result[1][]="La somma dei voti per i candidati Presidente (".$voti_presidente.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
+            $result[1][]="La somma dei <b>voti per i candidati Presidente</b> (".$voti_presidente.") è maggiore del numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_pre']).")";
             $result[2]=true;
             $result[3]['risultati_voti_presidente_check']++;
         }
@@ -1100,7 +1100,7 @@ Class AA_Sier extends AA_Object_V2
         if($voti_lista != ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente) && $voti_lista > 0 && $voti_validi > 0)
         {
             $result[0]=true;
-            $result[1][]="La somma dei voti di lista (".$voti_lista.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']).")";
+            $result[1][]="La somma dei <b>voti di lista</b> (".$voti_lista.") non corrisponde al numero dei voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$risultati['voti_solo_presidente']).")";
             $result[2]=true;
             $result[3]['risultati_voti_lista_check']++;
         }
@@ -1108,7 +1108,7 @@ Class AA_Sier extends AA_Object_V2
         if($voti_lista == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente) > 0)
         {
             $result[0]=true;
-            $result[1][]="Non ci sono voti per le Liste nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente).")";
+            $result[1][]="Non ci sono <b>voti per le Liste</b> nonostante siano presenti voti validi (".($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente).")";
             $result[3]['risultati_voti_lista_check']++;
             $result[2]=true;
         }
@@ -1156,14 +1156,14 @@ Class AA_Sier extends AA_Object_V2
         if($voti_candidato == 0 && ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente) > 0)
         {
             $result[0]=true;
-            $result[1][]="Non ci sono preferenze per i candidati nonostante siano presenti voti validi (".$voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente.")";
+            $result[1][]="Non ci sono voti per i <b>candidati al Consiglio Regionale</b> nonostante siano presenti voti validi (".$voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente.")";
             $result[3]['risultati_voti_candidato_check']++;
         }
 
         if($voti_candidato > ($voti_validi-$risultati['voti_contestati_na_liste']-$voti_solo_presidente)*2)
         {
             $result[0]=true;
-            $result[1][]="Il numero totale di preferenze (".$voti_candidato.") è superiore al doppio dei voti validi (".(($voti_validi-($risultati['voti_contestati_na_liste']-$voti_solo_presidente))*2).")";
+            $result[1][]="Il numero totale di voti (".$voti_candidato.") per i <b>candidati al Consiglio Regionale</b> è superiore al doppio dei voti validi (".(($voti_validi-($risultati['voti_contestati_na_liste']-$voti_solo_presidente))*2).")";
             $result[2]=true;
             $result[3]['risultati_voti_candidato_check']++;
         }
