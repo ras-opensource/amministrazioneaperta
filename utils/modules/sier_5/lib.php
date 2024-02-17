@@ -18366,7 +18366,20 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("Le sezioni scrutinate non possono superare il numero di sezioni del comune.",false);
             return false;
         }
-        
+        if(!isset($_REQUEST['votanti_m']) || !isset($_REQUEST['votanti_f']) || !isset($_REQUEST['votanti_tot']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre specificare il numero di votantio maschi, femmine e il totale.",false);
+            return false;
+        }
+
+        if(intVal($_REQUEST['votanti_m'])+intVal($_REQUEST['votanti_f']) != intVal($_REQUEST['votanti_tot']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("La somma dei votanti maschi e femmine non corrisponde al totale votanti indicato.",false);
+            return false;
+        }
+
         $elettori=intVal($comune->GetProp('elettori_m'))+intVal($comune->GetProp('elettori_f'));
 
         $votanti=0;
@@ -18379,6 +18392,8 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("I votanti non possono superare il numero di elettori.",false);
             return false;
         }
+
+        if(!isset($_REQUEST['votanti_m']) || !isset($_REQUEST['votanti_f']) || !isset($_REQUEST['votanti_tot']))
 
         if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>$comune->GetProp('elettori_m'))
         {
@@ -19400,6 +19415,20 @@ Class AA_SierModule extends AA_GenericModule
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Le sezioni scrutinate non possono superare il numero di sezioni del comune.",false);
+            return false;
+        }
+        
+        if(!isset($_REQUEST['votanti_m']) || !isset($_REQUEST['votanti_f']) || !isset($_REQUEST['votanti_tot']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre specificare il numero di votanti maschi, femmine e il totale.",false);
+            return false;
+        }
+
+        if(intVal($_REQUEST['votanti_m'])+intVal($_REQUEST['votanti_f']) != intVal($_REQUEST['votanti_tot']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("La somma dei votantio maschi e femmine non corrisponde al totale votanti indicato.",false);
             return false;
         }
         
@@ -22713,6 +22742,7 @@ Class AA_SierModule extends AA_GenericModule
             {
                 if(isset($form_data[$key])) $form_data[$key]=$val;
             }
+            $form_data['votanti_tot']= $form_data['votanti_f']+ $form_data['votanti_m'];
 
             $wnd=new AA_GenericFormDlg($id, "Modifica risultati generali comune di ".$comune->GetProp("denominazione"), $this->id,$form_data,$form_data);
                 
@@ -22721,15 +22751,19 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetBottomPadding(32);
             $wnd->EnableValidation();
             
-            $wnd->SetWidth(610);
+            $wnd->SetWidth(720);
             $wnd->SetHeight(800);
             
             //Sezioni scrutinate
             $wnd->AddTextField("sezioni_scrutinate","Sezioni scrutinate",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di sezioni scrutinate."));
+            $section=new AA_FieldSet($id."_Section_RisultatiGeneraliVotanti","Dati sui votanti");
             //votanti maschi
-            $wnd->AddTextField("votanti_m","Votanti maschi",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti maschi."));
+            $section->AddTextField("votanti_m","Maschi",array("required"=>true,"gravity"=>1,"labelWidth"=>100, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti maschi."));
             //votanti femminie
-            $wnd->AddTextField("votanti_f","Votanti femmine",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti femmine."));
+            $section->AddTextField("votanti_f","Femmine",array("required"=>true,"gravity"=>1, "labelWidth"=>100,"validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti femmine."),false);
+            
+            $section->AddTextField("votanti_tot","Totale",array("required"=>true,"gravity"=>1, "labelWidth"=>100,"validateFunction"=>"IsPositive","bottomLabel"=>"*maschi + femmine."),false);
+            $wnd->AddGenericObject($section);
             //schede bianche
             $wnd->AddTextField("schede_bianche","Schede bianche",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede bianche."));
             //schede nulle
@@ -23201,6 +23235,7 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['sezioni_scrutinate']=0;
         $form_data['votanti_m']=0;
         $form_data['votanti_f']=0;
+        $form_data['votanti_tot']=0;
         $form_data['schede_bianche']=0;
         $form_data['schede_nulle']=0;
         $form_data['voti_contestati_na_pre']=0;
@@ -23213,6 +23248,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             if(isset($form_data[$key])) $form_data[$key]=$val;
         }
+        $form_data['votanti_tot']=$form_data['votanti_m']+$form_data['votanti_f'];
 
         $wnd=new AA_GenericFormDlg($id, "Modifica risultati generali", $this->id,$form_data,$form_data);
             
@@ -23221,15 +23257,21 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetBottomPadding(32);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(610);
+        $wnd->SetWidth(720);
         $wnd->SetHeight(800);
         
         //Sezioni scrutinate
         $wnd->AddTextField("sezioni_scrutinate","Sezioni scrutinate",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero di sezioni scrutinate."));
+        
+        $section=new AA_FieldSet($id."_Section_RisultatiGeneraliVotanti","Dati sui votanti");
         //votanti maschi
-        $wnd->AddTextField("votanti_m","Votanti maschi",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti maschi."));
+        $section->AddTextField("votanti_m","Maschi",array("required"=>true,"gravity"=>1,"labelWidth"=>100, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti maschi."));
         //votanti femminie
-        $wnd->AddTextField("votanti_f","Votanti femmine",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti femmine."));
+        $section->AddTextField("votanti_f","Femmine",array("required"=>true,"gravity"=>1, "labelWidth"=>100,"validateFunction"=>"IsPositive","bottomLabel"=>"*numero dei votanti femmine."),false);
+        
+        $section->AddTextField("votanti_tot","Totale",array("required"=>true,"gravity"=>1, "labelWidth"=>100,"validateFunction"=>"IsPositive","bottomLabel"=>"*maschi + femmine."),false);
+        $wnd->AddGenericObject($section);
+
         //schede bianche
         $wnd->AddTextField("schede_bianche","Schede bianche",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede bianche."));
         //schede nulle
