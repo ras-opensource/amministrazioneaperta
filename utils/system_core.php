@@ -4220,11 +4220,11 @@ class AA_User
                     } 
                     else 
                     {
-                        if(static::$aResetPasswordEmailParams['bShowStruct']) $credenziali .= '<br>struttura: ' . $struttura;
-                        else $credenziali .= '<br>';
+                        if(static::$aResetPasswordEmailParams['bShowStruct']) $credenziali .= '<p>struttura: ' . $struttura;
+                        else $credenziali .= '<p>';
                         $credenziali .= '
                         nome utente: <b>' . $user->GetUserName() . '</b>
-                        password: <b>' . $newPwd . '</b>';
+                        password: <b>' . $newPwd . '</b></p>';
                     }
                 }
             }
@@ -4232,8 +4232,11 @@ class AA_User
             if ($credenziali != "") {
                 $oggetto = static::$aResetPasswordEmailParams['oggetto'];
 
-                $corpo = static::$aResetPasswordEmailParams['incipit'].$credenziali.static::$aResetPasswordEmailParams['post'];
-                $firma = static::$aResetPasswordEmailParams['firma'];
+                //$corpo = static::$aResetPasswordEmailParams['incipit'].$credenziali.static::$aResetPasswordEmailParams['post'];
+                //$firma = static::$aResetPasswordEmailParams['firma'];
+
+                $corpo = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,static::$aResetPasswordEmailParams['incipit']).$credenziali.static::$aResetPasswordEmailParams['post'];
+                $firma = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,static::$aResetPasswordEmailParams['firma']);
 
                 if ($bSendEmail) 
                 {
