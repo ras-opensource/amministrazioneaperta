@@ -1560,7 +1560,7 @@ Class AA_Sier extends AA_Object_V2
         //-------------------------------
 
         //voti_lista
-        $liste=$this->GetListe();
+        $liste=$this->GetListe(null,$comune->GetProp('id_circoscrizione'));
         if($bReset)
         {
             $feed['risultati']['voti_lista']=array("aggiornamento"=>$now,"sezioni_scrutinate"=>0,"voti_tot"=>0,"consolidato"=>1);            
@@ -1803,7 +1803,7 @@ Class AA_Sier extends AA_Object_V2
             $feed['candidati']=array();
         }
 
-        $comuni=$this->GetComuni();
+        $comuni=$this->GetComuni(null,array("orderByCircoscrizione"=>true));
         $coalizioni=$this->GetCoalizioni();
         $liste=$this->GetListe();
         $platform=AA_Platform::GetInstance();
@@ -2722,7 +2722,8 @@ Class AA_Sier extends AA_Object_V2
             }
         }
 
-        $query.=" ORDER by ".static::AA_COMUNI_DB_TABLE.".denominazione";
+        if(isset($params['orderByCircoscrizione'])) $query.=" ORDER by id_circoscrizione, ".static::AA_COMUNI_DB_TABLE.".denominazione";
+        else $query.=" ORDER by ".static::AA_COMUNI_DB_TABLE.".denominazione";
 
         if(!$db->Query($query))
         {
