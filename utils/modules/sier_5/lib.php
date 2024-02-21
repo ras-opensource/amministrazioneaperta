@@ -1823,6 +1823,9 @@ Class AA_Sier extends AA_Object_V2
         $aggiornamento_candidati="";
         $aggiornamento_candidati_circoscrizionale=array();
         $now=date("Y-m-d H:i:s");
+        
+        //AA_Log::Log(__METHOD__." - now: ".$now,100);
+
         foreach($comuni as $idComune=>$curComune)
         {
             $feedComune=$curComune->GetFeedRisultati(true);
@@ -1953,12 +1956,15 @@ Class AA_Sier extends AA_Object_V2
                             "aggiornamento"=>$aggiornamento,
                             "ore_12"=>array("count"=>$defaultValue,"percent"=>0),
                             "ore_19"=>array("count"=>$defaultValue,"percent"=>0),
-                            "ore_22"=>array("count"=>$defaultValue,"percent"=>0));
+                            "ore_22"=>array("count"=>$defaultValue,"percent"=>0)
+                        );
+                        //AA_Log::Log(__METHOD__." - aggiornamento iniziale: ".$aggiornamento. " - $now",100);
                     }
 
                     if(isset($feedComune['affluenza'][$giornata]['aggiornamento']) && (!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']) || $feedComune['affluenza'][$giornata]['aggiornamento']>$feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']))
                     {
                         $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
+                        //AA_Log::Log(__METHOD__." - aggiornamento: ".$feedComune['affluenza'][$giornata]['aggiornamento'],100);
                     }
 
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
@@ -2154,7 +2160,7 @@ Class AA_Sier extends AA_Object_V2
             }
             else
             {
-                AA_Log::Log(__METHOD__." - giornata non trovata: ".$giornata,100);
+                //AA_Log::Log(__METHOD__." - giornata non trovata: ".$giornata,100);
             }
         }
 
