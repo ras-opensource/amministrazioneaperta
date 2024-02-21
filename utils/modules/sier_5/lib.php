@@ -2167,6 +2167,7 @@ Class AA_Sier extends AA_Object_V2
                 //AA_Log::Log(__METHOD__." - giornata non trovata: ".$giornata,100);
             }
         }
+        //--------------------------------
 
         foreach($coalizioni as $idPresidente=>$curPresidente)
         {
@@ -2181,7 +2182,7 @@ Class AA_Sier extends AA_Object_V2
                 {
                     $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']=round($feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['voti_coalizione']*100/(intVal($feed['stats']['regionale']['risultati']['voti_lista']['voti_tot'])),1);
                     $total_percent_coalizioni+=$feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione'];
-                    if($max_percent_coalizioni==0 || $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']>$feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_presidente]['percent_coalizione']) $max_percent_coalizioni=$idPresidente;       
+                    if($max_percent_coalizioni==0 || $feed['stats']['regionale']['risultati']['voti_presidente'][$idPresidente]['percent_coalizione']>$feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_coalizioni]['percent_coalizione']) $max_percent_coalizioni=$idPresidente;       
                 }
                 else
                 {
@@ -2197,7 +2198,8 @@ Class AA_Sier extends AA_Object_V2
 
         if($total_percent_presidente !=100 && $max_percent_presidente > 0 && $feed['stats']['regionale']['risultati']['voti_presidente']['voti_tot']>0)
         {
-            $feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_coalizioni]['percent']+=round(100-$total_percent_coalizioni,1);
+            $feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_presidente]['percent']+=round(100-$total_percent_presidente,1);
+            //AA_Log::Log(__METHOD__." - quadro la percentuale - scarto: ".(100-$total_percent_presidente),100);
         }
 
         if($total_percent_coalizioni !=100 && $max_percent_coalizioni > 0 && $feed['stats']['regionale']['risultati']['voti_lista']['voti_tot']>0)
@@ -2280,12 +2282,12 @@ Class AA_Sier extends AA_Object_V2
                 }
             }
 
-            if($total_percent_coalizioni != 100 && $max_percent_coalizioni > 0)
+            if($total_percent_coalizioni != 100 && $max_percent_coalizioni > 0 && $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['sezioni_scrutinate'] > 0)
             {
                 $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_coalizioni]['percent_coalizione']+=round(100-$total_percent_coalizioni,1);
             }
 
-            if($total_percent_presidente != 100 && $max_percent_presidente > 0)
+            if($total_percent_presidente != 100 && $max_percent_presidente > 0 && $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['sezioni_scrutinate'] > 0)
             {
                 $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_presidente]['percent']+=round(100-$total_percent_presidente,1);
             }
@@ -5566,63 +5568,80 @@ Class AA_SierModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg";
         if(!($object instanceof AA_Sier) || !($comune instanceof AA_sierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
 
-        $form_data=array();
-        
-        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
-        
-        //$wnd->SetLabelAlign("right");
-        //$wnd->SetLabelWidth(120);
-        
-        $wnd->SetWidth(720);
-        $wnd->SetHeight(540);
-        //$wnd->SetBottomPadding(36);
-        //$wnd->EnableValidation();
-        //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
-        $columns=array(
-            array("id"=>"candidato","header"=>array("<div style='text-align: left'>Candidato</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"voti","header"=>array("<div style='text-align: right'>voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"int")
-        );
-
         $data=AA_SessionVar::Get("SierComuneRisultatiPreferenzeCSV_ParsedData")->GetValue();
         if(!is_array($data))
         {
             AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
             $data=array(array("candidato"=>"pinco","voti"=>0));
         }
-
-        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
-
-        $desc="<p>Sono stati riconosciuti <b>".sizeof((array)$data)." Candidati</b></p>";
-        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
-
-        $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
-            "type"=>"clean",
-            "view"=>"scrollview",
-            "scroll"=>"x"
-        ));
-        $table=new AA_JSON_Template_Generic($id."_CsvImportPreviewTable", array(
-            "view"=>"datatable",
-            "css"=>"AA_Header_DataTable",
-            "hover"=>"AA_DataTable_Row_Hover",
-            "columns"=>$columns,
-            "data"=>array_values($data)
-        ));
-        $scrollview->addRowToBody($table);
-
-        $wnd->AddGenericObject($scrollview);
-
-        $wnd->EnableCloseWndOnSuccessfulSave();
-
-        //$wnd->enableRefreshOnSuccessfulSave();
-
-        $wnd->SetApplyButtonName("Importa");
-
-        $wnd->SetSaveTask("SierComuneRisultatiPreferenzeCsvImport");
-        $params=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp('id'));
-        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
-        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
-        $wnd->SetSaveTaskParams($params);
         
+        $tot_voti=0;
+        foreach($data as $curCandidato)
+        {
+            $tot_voti+=intVal($curCandidato['voti']);
+        }
+
+        if(sizeof($data)>0)
+        {
+            $form_data=array();
+            
+            $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
+            
+            //$wnd->SetLabelAlign("right");
+            //$wnd->SetLabelWidth(120);
+            
+            $wnd->SetWidth(720);
+            $wnd->SetHeight(540);
+            //$wnd->SetBottomPadding(36);
+            //$wnd->EnableValidation();
+            //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
+            $columns=array(
+                array("id"=>"candidato","header"=>array("<div style='text-align: left'>Candidato</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+                array("id"=>"voti","header"=>array("<div style='text-align: right'>voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"int")
+            );
+
+            $desc="<p>Sono stati riconosciuti <b>".sizeof((array)$data)." Candidati</b>, per un totale di #tot_voti# voti.</p>";
+            $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true,"data"=>array("tot_voti"=>$tot_voti))));
+    
+            $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
+                "type"=>"clean",
+                "view"=>"scrollview",
+                "scroll"=>"x"
+            ));
+            $table=new AA_JSON_Template_Generic($id."_CsvImportPreviewTable", array(
+                "view"=>"datatable",
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>array_values($data)
+            ));
+            $scrollview->addRowToBody($table);
+    
+            $wnd->AddGenericObject($scrollview);
+    
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            
+            $wnd->SetApplyButtonName("Importa");
+
+            $wnd->SetSaveTask("SierComuneRisultatiPreferenzeCsvImport");
+            $params=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp('id'));
+            if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+            if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+            $wnd->SetSaveTaskParams($params);
+        }
+        else
+        {
+            $wnd=new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
+            
+            $wnd->SetWidth(480);
+            $wnd->SetHeight(340);
+
+            $desc="<div style='display:flex; width: 100%; height: 100%; justify-content: center; align-items: center'>Non sono stati trovati dati importare.</div>";
+            $wnd->AddView(new AA_JSON_Template_Generic("",array()));
+            $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true,"data"=>array("tot_voti"=>$tot_voti))));
+            $wnd->AddView(new AA_JSON_Template_Generic("",array()));
+        }
+
         return $wnd;
     }
 
