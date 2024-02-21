@@ -1700,24 +1700,28 @@ Class AA_Sier extends AA_Object_V2
 
         if($update && $update_presidente && $update_liste && $update_candidati && !$bInitializeOnly)
         {
-            $tot_percent_lista=0;
-            $max_percent_lista=0;
+            $tot_voti_lista_percent=array();
+            $tot_voti_lista_percent_max=array();
             $feed['risultati']['voti_lista']['voti_tot']=$voti_tot_liste;
             foreach($liste as $idLista=>$curLista)
             {
                 if($voti_tot_liste>0)
                 {
                     $percent=round($feed['risultati']['voti_lista'][$idLista]['voti']*100/$voti_tot_liste,1);
-                    $tot_percent_lista+=$percent;
-                    if($max_percent_lista==0 || $feed['risultati']['voti_lista'][$max_percent_lista]['percent']<$percent) $max_percent_lista=$idLista;
+                    $idCoalizione=$curLista->GetProp('id_coalizione');
+                    $tot_voti_lista_percent[$idCoalizione]+= $percent;
+                    if($tot_voti_lista_percent_max[$idCoalizione]==0 ||  $feed['risultati']['voti_lista'][$idLista]['percent']> $feed['risultati']['voti_lista'][$tot_voti_lista_percent_max[$idCoalizione]]['percent']) $tot_voti_lista_percent_max[$idCoalizione]=$idLista;
                     $feed['risultati']['voti_lista'][$idLista]['percent']=$percent;
                 }
             }
 
-            if($tot_percent_lista != 100 && $max_percent_lista>0)
+            //correzione errori arrotondamento percentuale
+            foreach($tot_voti_lista_percent as $idCoalizione=>$percent)
             {
-                $feed['risultati']['voti_lista'][$max_percent_lista]['percent']=round($feed['risultati']['voti_lista'][$max_percent_lista]['percent']+100-$tot_percent_lista,1);
-
+                if($percent != $feed['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione'] && $percent > 0 && $tot_voti_lista_percent_max[$idCoalizione] > 0)
+                {
+                    $feed['risultati']['voti_lista'][$tot_voti_lista_percent_max[$idCoalizione]]['percent']+=round($feed['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione']-$percent,1);
+                }
             }
         }
 
@@ -2201,14 +2205,32 @@ Class AA_Sier extends AA_Object_V2
             $feed['stats']['regionale']['risultati']['voti_presidente'][$max_percent_coalizioni]['percent_coalizione']+=round(100-$total_percent_coalizioni,1);
         }
 
+        $tot_voti_lista_percent=array();
+        $tot_voti_lista_percent_max=array();
         foreach($liste as $idLista=>$curLista)
         {
-            if($feed['stats']['regionale']['risultati']['voti_lista']['voti_tot'] > 0) 
+            if($feed['stats']['regionale']['risultati']['voti_lista']['voti_tot'] > 0)
             {
                 $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['voti']*100/(intVal( $feed['stats']['regionale']['risultati']['voti_lista']['voti_tot'])),1);
+                
+                //calcolo percentuale coalizione
+                $idCoalizione=$liste[$idLista]->GetProp('id_coalizione');
+                $tot_voti_lista_percent[$idCoalizione]+= $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['percent'];
+                if($tot_voti_lista_percent_max[$idCoalizione]==0 || $feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['percent']>$feed['stats']['regionale']['risultati']['voti_lista'][$tot_voti_lista_percent_max[$idCoalizione]]['percent']) $tot_voti_lista_percent_max[$idCoalizione]=$idLista;
             }
         }
 
+        //correzione errori arrotondamento percentuale
+        foreach($tot_voti_lista_percent as $idCoalizione=>$percent)
+        {
+            if($percent != $feed['stats']['regionale']['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione'] && $percent > 0 && $tot_voti_lista_percent_max[$idCoalizione] > 0)
+            {
+                $feed['stats']['regionale']['risultati']['voti_lista'][$tot_voti_lista_percent_max[$idCoalizione]]['percent']+=round($feed['stats']['regionale']['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione']-$percent,1);
+            }
+        }
+
+        $tot_voti_lista_percent=array();
+        $tot_voti_lista_percent_max=array();
         foreach($circoscrizioni as $idCircoscrizione=>$curCircoscrizione)
         {
             //AA_Log::Log(__METHOD__." - circoscrizione: ".print_r($curCircoscrizione,true),100);
@@ -2268,15 +2290,35 @@ Class AA_Sier extends AA_Object_V2
                 $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$max_percent_presidente]['percent']+=round(100-$total_percent_presidente,1);
             }
 
+            $tot_voti_lista_percent[$idCircoscrizione]=array();
+            $tot_voti_lista_percent_max[$idCircoscrizione]=array();
             foreach($liste as $idLista=>$curLista)
             {
                 if($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista']['voti_tot'] > 0)
                 {
                     $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['voti']*100/(intVal($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista']['voti_tot'])),1);
+                    //calcolo percentuale coalizione
+                    $idCoalizione=$curLista->GetProp('id_coalizione');
+                    if(!isset($tot_voti_lista_percent[$idCircoscrizione][$idCoalizione])) $tot_voti_lista_percent[$idCircoscrizione][$idCoalizione]=0;
+                    if(!isset($tot_voti_lista_percent_max[$idCircoscrizione][$idCoalizione])) $tot_voti_lista_percent_max[$idCircoscrizione][$idCoalizione]=0;
+                    $tot_voti_lista_percent[$idCircoscrizione][$idCoalizione]+= $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent'];
+                    if($tot_voti_lista_percent_max[$idCircoscrizione][$idCoalizione]==0 || $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']>$feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$tot_voti_lista_percent_max[$idCircoscrizione][$idCoalizione]]['percent']) $tot_voti_lista_percent_max[$idCircoscrizione][$idCoalizione]=$idLista;
                 }
                 else
                 {
                     $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$idLista]['percent']=0;
+                }
+            }
+        }
+
+        //correzione errori arrotondamento percentuale circoscrizioni
+        foreach($circoscrizioni as $idCircoscrizione=>$curCircoscrizione)
+        {
+            foreach($tot_voti_lista_percent[$idCircoscrizione] as $idCoalizione=>$percent)
+            {
+                if($percent != $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione'] && $percent > 0 && $tot_voti_lista_percent_max[$idCircoscrizione][$idCoalizione] > 0)
+                {
+                    $feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_lista'][$tot_voti_lista_percent_max[$idCircoscrizione][$idCoalizione]]['percent']+=round($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['voti_presidente'][$idCoalizione]['percent_coalizione']-$percent,1);
                 }
             }
         }
