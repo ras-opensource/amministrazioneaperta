@@ -212,6 +212,17 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//Esporta i candidati
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ExportCandidatiCSV = function() {
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.ExportCandidatiCSV", this, arguments);
+        window.open(<?php echo AA_SierModule::AA_ID_MODULE?>.taskManager+"?task="+arguments[0].task+"&id="+arguments[0].params.id);  
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.ExportCandidatiCSV", msg, this);
+    }
+};
+
 //----------------------------------------------  Funzioni di reportistica  ----------------------------------------------
 function AA_SierWebAppGenericParams()
 {

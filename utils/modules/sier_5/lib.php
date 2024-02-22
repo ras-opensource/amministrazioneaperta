@@ -2620,6 +2620,31 @@ Class AA_Sier extends AA_Object_V2
         return $csv;
     }
 
+    public function ExportCandidatiCSV($circoscrizione=null)
+    {
+        if(!$this->bValid) 
+        {
+            return "nome,cognome,circoscrizione,lista,coalizione";
+        }
+        
+        $csv="nome,cognome,circoscrizione,lista,coalizione";
+
+        $candidati=$this->GetCandidati(null,$circoscrizione);
+
+        //AA_Log::Log(__METHOD__." - messaggi: ".print_r($msg,true),100);
+
+        foreach($candidati as $idCandidato=>$curCandidato)
+        {
+            $csv.="\n".$curCandidato->GetProp("nome").",";
+            $csv.=$curCandidato->GetProp("cognome").",";
+            $csv.=$curCandidato->GetProp("circoscrizione").",";
+            $csv.=$curCandidato->GetProp("lista").",";
+            $csv.=$curCandidato->GetProp("coalizione");
+        }
+
+        return $csv;
+    }
+
     //Restituisce i candidati
     public function GetCandidati($coalizione=null,$lista=null,$circoscrizione=0)
     {
@@ -5218,6 +5243,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("DeleteSierCandidatoCV");
             $taskManager->RegisterTask("GetSierTrashCandidatoDlg");
             $taskManager->RegisterTask("DeleteSierCandidato");
+            $taskManager->RegisterTask("ExportCandidatiCSV");
 
             //comune
             $taskManager->RegisterTask("GetSierComuneDatiGeneraliViewDlg");
@@ -13618,6 +13644,20 @@ Class AA_SierModule extends AA_GenericModule
         //Pulsante di modifica
         $canModify=false;
         if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        
+        //Exporta candidati
+        $btn=new AA_JSON_Template_Generic($id."_ExportCandidati_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Esporta",
+            "align"=>"right",
+            "width"=>120,
+            "tooltip"=>"Esporta la lista dei candidati in formato csv",
+            "click"=>"AA_MainApp.utils.callHandler('ExportCandidatiCSV', {task:\"ExportCandidatiCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $toolbar->AddElement($btn);
+
         if($canModify)
         {            
             $modify_btn=new AA_JSON_Template_Generic($id."_AddNewCandidato_btn",array(
@@ -16715,6 +16755,39 @@ Class AA_SierModule extends AA_GenericModule
         {
             header('Content-Type: text/csv');
             die($object->ExportCorpoElettoraleComuniCSV());
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task export csv corpo elettorale allegato
+    public function Task_ExportCandidatiCSV($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
+        {
+            header('Content-Type: text/csv');
+            die($object->ExportCandidatiCSV());
         }
         else
         {
