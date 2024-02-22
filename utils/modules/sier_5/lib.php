@@ -2396,8 +2396,14 @@ Class AA_Sier extends AA_Object_V2
             $query.=" AND ".static::AA_COALIZIONI_DB_TABLE.".id='".addslashes($coalizione->GetProp('id'))."'";
         }
 
-        if($orderedForCircoscrizione==0) $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".denominazione ";
-        else $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".ordine_".$orderedForCircoscrizione.",".static::AA_LISTE_DB_TABLE.".denominazione";
+        if($orderedForCircoscrizione==0)
+        {
+            $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".denominazione ";
+        } 
+        else 
+        {
+            $query.=" ORDER BY ".static::AA_LISTE_DB_TABLE.".ordine_".$orderedForCircoscrizione.",".static::AA_LISTE_DB_TABLE.".denominazione";
+        }
 
         if(!$db->Query($query))
         {
