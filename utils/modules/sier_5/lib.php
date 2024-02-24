@@ -1028,7 +1028,7 @@ Class AA_Sier extends AA_Object_V2
                         $analisi[1][]="Manca la chiusura dei seggi per la giornata del ".$curGiornata;
                         $analisi[2]=true;
                     }
-                }  
+                }
             }
 
             if($curGiornata < $now)
@@ -1036,8 +1036,8 @@ Class AA_Sier extends AA_Object_V2
                 if(!isset($comunicazioni[$curGiornata]) || $comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
                 {
                     $analisi[0]=true;
-                    if($comunicazioni[$curGiornata]['inizio']==0) $analisi[1][]="Manca la comunicazione dell'apertura dei seggi per la giornata del ".$curGiornata;
-                    if($comunicazioni[$curGiornata]['fine']==0) $analisi[1][]="Manca la comunicazione della chiusura dei seggi per la giornata del ".$curGiornata;
+                    if(!isset($comunicazioni[$curGiornata]['inizio']) || $comunicazioni[$curGiornata]['inizio']==0) $analisi[1][]="Manca la comunicazione dell'apertura dei seggi per la giornata del ".$curGiornata;
+                    if(!isset($comunicazioni[$curGiornata]['fine']) || $comunicazioni[$curGiornata]['fine']==0) $analisi[1][]="Manca la comunicazione della chiusura dei seggi per la giornata del ".$curGiornata;
                     $analisi[2]=true;
                 }
             }
