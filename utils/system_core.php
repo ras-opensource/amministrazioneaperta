@@ -2280,21 +2280,21 @@ class AA_User
     {
         //AA_Log::Log(get_class()."->HasFlag($flag)");
 
-        if ($flag == "") return false;
+        if($flag == "") return false;
 
         if(array_search("1",$this->GetGroups()) !==false || $this->nID==1) return true;
 
         $flags = explode("|", $this->sFlags);
-        if (in_array($flag, $flags)) 
+        if (in_array($flag, $flags,true) != false)
         {
-            //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
+            //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag - flags:".print_r($flags,true),100);
             return true;
         }
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
             $legacy_flags=explode("|", $this->sLegacyFlags);
-            if (in_array($flag, $legacy_flags)) {
+            if (in_array($flag, $legacy_flags,true) != false) {
                 //AA_Log::Log(get_class()."->HasFlag($flag) - l'utente: ".$this->sUser."(".$this->nID.") ha il flag",100,FALSE,TRUE);
                 return true;
             }

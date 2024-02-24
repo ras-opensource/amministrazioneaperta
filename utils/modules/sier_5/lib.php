@@ -997,19 +997,38 @@ Class AA_Sier extends AA_Object_V2
         {
             if($curGiornata==$now)
             {
-                if(!isset($comunicazioni[$now]) || $comunicazioni[$now]['inizio']==0)
+                if(!isset($comunicazioni[$now]))
                 {
-                    $analisi[0]=true;
-                    $analisi[1][]="Manca l'apertura dei seggi per la giornata del ".$curGiornata;
-                    $analisi[2]=true;
-                }
+                    if( $curGiornata." ".$giornate[$curGiornata]['orario_apertura'] < $ora)
+                    {
+                        $analisi[0]=true;
+                        $analisi[1][]="Manca l'apertura dei seggi per la giornata del ".$curGiornata;
+                        $analisi[2]=true;
+                    }
 
-                if($comunicazioni[$now]['fine']==0 && $curGiornata." 19:00" < $ora)
-                {
-                    $analisi[0]=true;
-                    $analisi[1][]="Manca la chiusura dei seggi per la giornata del ".$curGiornata;
-                    $analisi[2]=true;
+                    if( $curGiornata." ".$giornate[$curGiornata]['orario_chiusura'] < $ora)
+                    {
+                        $analisi[0]=true;
+                        $analisi[1][]="Manca la chiusura dei seggi per la giornata del ".$curGiornata;
+                        $analisi[2]=true;
+                    }
                 }
+                else
+                {
+                    if($comunicazioni[$now]['inizio']==0 && $curGiornata." ".$giornate[$curGiornata]['orario_apertura'] < $ora)
+                    {
+                        $analisi[0]=true;
+                        $analisi[1][]="Manca l'apertura dei seggi per la giornata del ".$curGiornata;
+                        $analisi[2]=true;
+                    }
+    
+                    if($comunicazioni[$now]['fine']==0 && $curGiornata." ".$giornate[$curGiornata]['orario_chiusura'] < $ora)
+                    {
+                        $analisi[0]=true;
+                        $analisi[1][]="Manca la chiusura dei seggi per la giornata del ".$curGiornata;
+                        $analisi[2]=true;
+                    }
+                }  
             }
 
             if($curGiornata < $now)
@@ -6125,6 +6144,8 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['giornata']=date("Y-m-d");
         $form_data['affluenza']=0;
         $form_data['risultati']=0;
+        $form_data['orario_apertura']="7:00";
+        $form_data['orario_chiusura']="22:00";
 
         $wnd=new AA_GenericFormDlg($id, "Aggiungi giornata", $this->id,$form_data,$form_data);
         
@@ -6134,10 +6155,13 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(480);
-        $wnd->SetHeight(350);
+        $wnd->SetHeight(550);
 
         //data
         $wnd->AddDateField("giornata", "Data", array("required"=>true,"bottomLabel" => "*Selezionare una data dal calendario","width"=>350,"labelWidth"=>180));
+        $wnd->AddTextField("orario_apertura","Orario apertura",array("required"=>true,"bottomLabel" => "*Orario di apertura dei seggi","width"=>350,"labelWidth"=>180));
+        $wnd->AddTextField("orario_chiusura","Orario chiusura",array("required"=>true,"bottomLabel" => "*Orario di chiusura dei seggi","width"=>350,"labelWidth"=>180));
+
         $wnd->AddGenericObject(new AA_JSON_Template_Generic(),false);
 
         //Abilita/disabilita il caricamento dell'affluenza
@@ -6169,6 +6193,8 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['giornata']=$data;
             $form_data['affluenza']=$giornate[$data]['affluenza'];
             $form_data['risultati']=$giornate[$data]['risultati'];
+            $form_data['orario_apertura']=$giornate[$data]['orario_apertura'];
+            $form_data['orario_chiusura']=$giornate[$data]['orario_chiusura'];
             $form_data['old_giornata']=$data;
         }
         else
@@ -6176,6 +6202,8 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['giornata']=date("Y-m-d");
             $form_data['affluenza']=0;
             $form_data['risultati']=0;
+            $form_data['orario_apertura']="7:00";
+            $form_data['orario_chiusura']="22:00";
         }
 
         $wnd=new AA_GenericFormDlg($id, "Modifica giornata", $this->id,$form_data,$form_data);
@@ -6186,10 +6214,12 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(480);
-        $wnd->SetHeight(350);
+        $wnd->SetHeight(550);
 
         //data
         $wnd->AddDateField("giornata", "Data", array("required"=>true,"bottomLabel" => "*Selezionare una data dal calendario","width"=>350,"labelWidth"=>180));
+        $wnd->AddTextField("orario_apertura","Orario apertura",array("required"=>true,"bottomLabel" => "*Orario di apertura dei seggi","width"=>350,"labelWidth"=>180));
+        $wnd->AddTextField("orario_chiusura","Orario chiusura",array("required"=>true,"bottomLabel" => "*Orario di chiusura dei seggi","width"=>350,"labelWidth"=>180));
         $wnd->AddGenericObject(new AA_JSON_Template_Generic(),false);
 
         //Abilita/disabilita il caricamento dell'affluenza
@@ -7775,7 +7805,13 @@ Class AA_SierModule extends AA_GenericModule
         $risultati=0;
         if($_REQUEST['risultati'] > 0) $risultati=1;
 
-        $giornate[$giornata]=array("affluenza"=>$affluenza,"risultati"=>$risultati);
+        if(!isset($_REQUEST['orario_apertura']) || $_REQUEST['orario_apertura'] == "") $apertura="7:00";
+        else $apertura=trim($_REQUEST['orario_apertura']);
+
+        if(!isset($_REQUEST['orario_chiusura']) || $_REQUEST['orario_chiusura'] == "") $chiusura="22:00";
+        else $chiusura=trim($_REQUEST['orario_chiusura']);
+
+        $giornate[$giornata]=array("affluenza"=>$affluenza,"risultati"=>$risultati,"orario_apertura"=>$apertura,"orario_chiusura"=>$chiusura);
         $object->SetProp("Giornate",json_encode($giornate));
         if(!$object->Update($this->oUser,true,"Aggiunta giornata - ".$_REQUEST['giornata']))
         {        
@@ -7843,7 +7879,13 @@ Class AA_SierModule extends AA_GenericModule
         $risultati=0;
         if($_REQUEST['risultati'] > 0) $risultati=1;
 
-        $giornate[$giornata]=array("affluenza"=>$affluenza,"risultati"=>$risultati);
+        if(!isset($_REQUEST['orario_apertura']) || $_REQUEST['orario_apertura'] == "") $apertura="7:00";
+        else $apertura=trim($_REQUEST['orario_apertura']);
+
+        if(!isset($_REQUEST['orario_chiusura']) || $_REQUEST['orario_chiusura'] == "") $chiusura="22:00";
+        else $chiusura=trim($_REQUEST['orario_chiusura']);
+
+        $giornate[$giornata]=array("affluenza"=>$affluenza,"risultati"=>$risultati,"orario_apertura"=>$apertura,"orario_chiusura"=>$chiusura);
         ksort($giornate);
 
         $object->SetProp("Giornate",json_encode($giornate));
@@ -14071,12 +14113,12 @@ Class AA_SierModule extends AA_GenericModule
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneComunicazioniViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             if($analisi[0]==false) 
             {
-                if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF && !$this->oUser->IsSuperUser())) $data[$index]['comunicazioni']=$data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><span style='color:green' class='mdi mdi-checkbox-marked-circle'></span>";
+                if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']=$data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><span style='color:green' class='mdi mdi-checkbox-marked-circle'></span>";
                 else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             }
             else 
             {
-                if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF && !$this->oUser->IsSuperUser())) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
+                if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
                 else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
             }
             $data[$index]['comunicazioni'].="</div>";
@@ -21697,6 +21739,8 @@ Class AA_SierModule extends AA_GenericModule
         if($canModify)
         {
             $options_giornate[]=array("id"=>"data", "header"=>"Data", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_giornate[]=array("id"=>"orario_apertura", "header"=>"Apertura", "width"=>90,"css"=>array("text-align"=>"center"));
+            $options_giornate[]=array("id"=>"orario_chiusura", "header"=>"Chiusura", "width"=>90,"css"=>array("text-align"=>"center"));
             $options_giornate[]=array("id"=>"affluenza", "header"=>"Affluenza", "width"=>90,"css"=>array("text-align"=>"center"));
             $options_giornate[]=array("id"=>"risultati", "header"=>"Risultati", "width"=>90,"css"=>array("text-align"=>"center"));
             $options_giornate[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
@@ -21704,6 +21748,8 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $options_giornate[]=array("id"=>"data", "header"=>"Data", "fillspace"=>true,"css"=>array("text-align"=>"left"));
+            $options_giornate[]=array("id"=>"orario_apertura", "header"=>"Apertura", "width"=>90,"css"=>array("text-align"=>"center"));
+            $options_giornate[]=array("id"=>"orario_chiusura", "header"=>"Chiusura", "width"=>90,"css"=>array("text-align"=>"center"));
             $options_giornate[]=array("id"=>"affluenza", "header"=>"Affluenza", "width"=>90,"css"=>array("text-align"=>"center"));
             $options_giornate[]=array("id"=>"risultati", "header"=>"Risultati", "width"=>90,"css"=>array("text-align"=>"center"));
         }
@@ -21721,7 +21767,7 @@ Class AA_SierModule extends AA_GenericModule
             if($curFlags['affluenza']==1) $affluenza="Si";
             $risultati="No";
             if($curFlags['risultati']==1) $risultati="Si";
-            $giornate_data[]=array("data"=>$id_giornata,"affluenza"=>$affluenza,"risultati"=>$risultati,"ops"=>$ops);
+            $giornate_data[]=array("data"=>$id_giornata,"affluenza"=>$affluenza,"risultati"=>$risultati,"orario_apertura"=>$curFlags['orario_apertura'],"orario_chiusura"=>$curFlags['orario_chiusura'],"ops"=>$ops);
         }
         $lista->SetProp("data",$giornate_data);
         if(sizeof($giornate_data) > 0) $giornate->AddRow($lista);
