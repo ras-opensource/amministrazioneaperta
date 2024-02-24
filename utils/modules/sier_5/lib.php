@@ -8209,6 +8209,7 @@ Class AA_SierModule extends AA_GenericModule
         $giornate=$object->GetGiornate();
         $giornateKeys=array_keys($giornate);
         $now=date("Y-m-d");
+        $ora=date("Y-m-d H:i");
 
         foreach($giornateKeys as $curGiornata)
         {
@@ -8217,7 +8218,14 @@ Class AA_SierModule extends AA_GenericModule
                 if(!isset($comunicazioni[$now]) || $comunicazioni[$now]['inizio']==0)
                 {
                     $analisi[0]=true;
-                    $analisi[1][]="Mancano alcune comunicazioni per la giornata del ".$curGiornata;
+                    $analisi[1][]="Manca l'apertura dei seggi per la giornata del ".$curGiornata;
+                    $analisi[2]=true;
+                }
+
+                if($comunicazioni[$now]['fine']==0 && $curGiornata." 19:00" < $ora)
+                {
+                    $analisi[0]=true;
+                    $analisi[1][]="Manca la chiusura dei seggi per la giornata del ".$curGiornata;
                     $analisi[2]=true;
                 }
             }
@@ -8227,7 +8235,8 @@ Class AA_SierModule extends AA_GenericModule
                 if(!isset($comunicazioni[$curGiornata]) || $comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
                 {
                     $analisi[0]=true;
-                    $analisi[1][]="Mancano alcune comunicazioni per la giornata del ".$curGiornata;
+                    if($comunicazioni[$curGiornata]['inizio']==0) $analisi[1][]="Manca la comunicazione dell'apertura dei seggi per la giornata del ".$curGiornata;
+                    if($comunicazioni[$curGiornata]['fine']==0) $analisi[1][]="Manca la comunicazione della chiusura dei seggi per la giornata del ".$curGiornata;
                     $analisi[2]=true;
                 }
             }
@@ -13968,6 +13977,7 @@ Class AA_SierModule extends AA_GenericModule
                 array("id"=>"circoscrizione","header"=>array("<div style='text-align: center'>Circoscrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
                 array("id"=>"lastupdate","header"=>array("<div style='text-align: center'>Data e ora di aggiornamento</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
                 array("id"=>"corpo_elettorale","header"=>array("<div style='text-align: center'>Corpo elett.</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                array("id"=>"comunicazioni","header"=>array("<div style='text-align: center'>comunicazioni</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
                 array("id"=>"affluenza","header"=>array("<div style='text-align: center'>Affluenza</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
                 array("id"=>"completamento_a","header"=>array("<div style='text-align: center'>%</div>"),"width"=>60, "css"=>array("text-align"=>"center"),"sort"=>"int"),
                 array("id"=>"risultati","header"=>array("<div style='text-align: center'>Risultati</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
@@ -13981,6 +13991,7 @@ Class AA_SierModule extends AA_GenericModule
         $giornateKeys=array_keys($giornate);
         $comuni=$object->GetComuni(null,$params);
         $now=date("Y-m-d");
+        $ora=date("Y-m-d H:i");
         $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' -45 days'));
         $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' -15 days'));
         foreach($comuni as $curComune)
@@ -14036,8 +14047,8 @@ Class AA_SierModule extends AA_GenericModule
             $icon="mdi mdi-eye";
             $text="Vedi e gestisci i dati sulle comunicazioni";
             $color="green";
-            $analisi=array(false,"Le comunicazioni sono regolari",false);
-           
+            $analisi=array(false,array(),false);
+
             foreach($giornateKeys as $curGiornata)
             {
                 if($curGiornata==$now)
@@ -14045,7 +14056,16 @@ Class AA_SierModule extends AA_GenericModule
                     if(!isset($comunicazioni[$now]) || $comunicazioni[$now]['inizio']==0)
                     {
                         $color="red";
-                        $analisi=array(true,"Mancano alcune comunicazioni.",true);
+                        $analisi[0]=true;
+                        $analisi[1][]="Mancano le comunicazioni di apertura per la giornata ".$curGiornata;
+                        $analisi[2]=true;
+                    }
+                    if($comunicazioni[$now]['fine']==0 && $curGiornata." 19:00" < $ora)
+                    {
+                        $color="red";
+                        $analisi[0]=true;
+                        $analisi[1][]="Mancano le comunicazioni di chiusura per la giornata ".$curGiornata;
+                        $analisi[2]=true;
                     }
                 }
 
@@ -14055,7 +14075,10 @@ Class AA_SierModule extends AA_GenericModule
                     {
                         //AA_Log::Log(__METHOD__." - comunicazioni: ".print_r($comunicazioni,true),100);
                         $color="red";
-                        $analisi=array(true,"Mancano alcune comunicazioni.",true);
+                        $analisi[0]=true;
+                        if($comunicazioni[$curGiornata]['inizio']==0) $analisi[1][]="Manca la comunicazione dell'apertura dei seggi per la giornata del ".$curGiornata;
+                        if($comunicazioni[$curGiornata]['fine']==0) $analisi[1][]="Manca la comunicazione della chiusura dei seggi per la giornata del ".$curGiornata;
+                        $analisi[2]=true;
                     }
                 }
             }
@@ -14063,8 +14086,16 @@ Class AA_SierModule extends AA_GenericModule
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_COMUNICAZIONI_COMUNALE."_".static::AA_UI_LAYOUT_COMUNICAZIONI_COMUNALE;
             $view_analisi_comunicazioni='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAnalisiComunicazioniDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneComunicazioniViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
-            if($analisi[0]==false) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
-            else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
+            if($analisi[0]==false) 
+            {
+                if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF && !$this->oUser->IsSuperUser())) $data[$index]['comunicazioni']=$data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><span style='color:green' class='mdi mdi-checkbox-marked-circle'></span>";
+                else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
+            }
+            else 
+            {
+                if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF && !$this->oUser->IsSuperUser())) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
+                else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
+            }
             $data[$index]['comunicazioni'].="</div>";
             //------------------------------
 
@@ -20360,6 +20391,12 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
+        if(!$this->oUser->IsSuperUser() && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent(" ",false);
+        }
+
         $giornate=$object->GetGiornate();
         $comunicazioni=$comune->GetComunicazioni(true);
         foreach($giornate as $giornata=>$curValues)
@@ -21802,6 +21839,8 @@ Class AA_SierModule extends AA_GenericModule
         {
             $readonly=true;
             if($giornata<=$now || $admin) $readonly=false;
+            if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF) && !$admin) $readonly=true;
+
             $label_inizio="Apertura operazioni uffici elettorali di sezione";
             if(sizeof($sections)==0) $label_inizio="Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale";
             $form_data[$giornata."_inizio"]=0;
@@ -21837,6 +21876,7 @@ Class AA_SierModule extends AA_GenericModule
             
             $wnd->EnableCloseWndOnSuccessfulSave();
             $wnd->enableRefreshOnSuccessfulSave();
+            if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF) && !$admin) $wnd->SetApplyButtonName("Chiudi");
             $wnd->SetSaveTask("UpdateSierComuneComunicazioni");
             
             return $wnd;    
