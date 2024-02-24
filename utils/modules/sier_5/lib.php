@@ -966,6 +966,72 @@ Class AA_Sier extends AA_Object_V2
         return true;
     }
 
+    public function AnalizeComunicazioni($comunicazioni=null,$comune=null)
+    {
+        $analisi=array(false,array(),false);
+        if(!$this->IsValid())
+        {
+            $analisi[0]=true;
+            $analisi[1][]="Oggetto non valido.";
+            $analisi[2]=true;
+
+            return $analisi;
+        }
+
+        if(!($comune instanceof AA_SierComune) && !is_array($comunicazioni))
+        {
+            $analisi[0]=true;
+            $analisi[1][]="Comune e comunicazioni non validi.";
+            $analisi[2]=true;
+
+            return $analisi;
+        }
+
+        if(!is_array($comunicazioni)) $comunicazioni=$comune->GetComunicazioni(true);
+        $giornate=$this->GetGiornate();
+        $giornateKeys=array_keys($giornate);
+        $now=date("Y-m-d");
+        $ora=date("Y-m-d H:i");
+
+        foreach($giornateKeys as $curGiornata)
+        {
+            if($curGiornata==$now)
+            {
+                if(!isset($comunicazioni[$now]) || $comunicazioni[$now]['inizio']==0)
+                {
+                    $analisi[0]=true;
+                    $analisi[1][]="Manca l'apertura dei seggi per la giornata del ".$curGiornata;
+                    $analisi[2]=true;
+                }
+
+                if($comunicazioni[$now]['fine']==0 && $curGiornata." 19:00" < $ora)
+                {
+                    $analisi[0]=true;
+                    $analisi[1][]="Manca la chiusura dei seggi per la giornata del ".$curGiornata;
+                    $analisi[2]=true;
+                }
+            }
+
+            if($curGiornata < $now)
+            {
+                if(!isset($comunicazioni[$curGiornata]) || $comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
+                {
+                    $analisi[0]=true;
+                    if($comunicazioni[$curGiornata]['inizio']==0) $analisi[1][]="Manca la comunicazione dell'apertura dei seggi per la giornata del ".$curGiornata;
+                    if($comunicazioni[$curGiornata]['fine']==0) $analisi[1][]="Manca la comunicazione della chiusura dei seggi per la giornata del ".$curGiornata;
+                    $analisi[2]=true;
+                }
+            }
+        }
+
+        if(sizeof($analisi[1])==0)
+        {
+            $analisi[1][]="Non ci sono criticita'";
+        }
+
+        return $analisi;
+    }
+
     //Verifica se ci sono delle anomalie sui risultati
     public function AnalizeRisultati($risultati=null,$circoscrizione=0,$comune=null)
     {
@@ -8206,48 +8272,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetHeight(280);
       
         $comunicazioni=$comune->GetComunicazioni(true);
-        $giornate=$object->GetGiornate();
-        $giornateKeys=array_keys($giornate);
-        $now=date("Y-m-d");
-        $ora=date("Y-m-d H:i");
-
-        foreach($giornateKeys as $curGiornata)
-        {
-            if($curGiornata==$now)
-            {
-                if(!isset($comunicazioni[$now]) || $comunicazioni[$now]['inizio']==0)
-                {
-                    $analisi[0]=true;
-                    $analisi[1][]="Manca l'apertura dei seggi per la giornata del ".$curGiornata;
-                    $analisi[2]=true;
-                }
-
-                if($comunicazioni[$now]['fine']==0 && $curGiornata." 19:00" < $ora)
-                {
-                    $analisi[0]=true;
-                    $analisi[1][]="Manca la chiusura dei seggi per la giornata del ".$curGiornata;
-                    $analisi[2]=true;
-                }
-            }
-
-            if($curGiornata < $now)
-            {
-                if(!isset($comunicazioni[$curGiornata]) || $comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
-                {
-                    $analisi[0]=true;
-                    if($comunicazioni[$curGiornata]['inizio']==0) $analisi[1][]="Manca la comunicazione dell'apertura dei seggi per la giornata del ".$curGiornata;
-                    if($comunicazioni[$curGiornata]['fine']==0) $analisi[1][]="Manca la comunicazione della chiusura dei seggi per la giornata del ".$curGiornata;
-                    $analisi[2]=true;
-                }
-            }
-        }
-
-        if(sizeof($analisi)==0)
-        {
-            $analisi=array(false,array("non sono presenti criticità",false));
-        }
-        //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true)." - risultati: ".print_r($risultati,true),100);
-
+        $analisi=$object->AnalizeComunicazioni($comunicazioni);
         if($analisi[0]==true)
         {
             $content="<div style='display: flex; justify-content: flex-start; align-items: center; padding-right: 1em; width: 90%'><ul>Sono state riscontrate le seguenti criticità:";
@@ -13986,23 +14011,16 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $data=array();
-        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         $giornate=$object->GetGiornate();
         $giornateKeys=array_keys($giornate);
         $comuni=$object->GetComuni(null,$params);
         $now=date("Y-m-d");
-        $ora=date("Y-m-d H:i");
         $_45daysago=date('Y-m-d', strtotime($giornateKeys[0].' -45 days'));
         $_15daysago=date('Y-m-d', strtotime($giornateKeys[0].' -15 days'));
         foreach($comuni as $curComune)
         {
             $data[]=array("id"=>$curComune->GetProp("id"),"denominazione"=>$curComune->GetProp("denominazione"),"circoscrizione"=>$curComune->GetProp("circoscrizione"),"lastupdate"=>$curComune->GetProp("lastupdate"));
             $index=sizeof($data)-1;
-
-            //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
-
-            //Circoscrizione
-            //$data[$index]['circoscrizione_desc']=$circoscrizioni[$curComune->GetProp("id_circoscrizione")];
 
             //--------- Dati generali ---------
             $view='AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneDatiGeneraliViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
@@ -14046,43 +14064,8 @@ Class AA_SierModule extends AA_GenericModule
             $class="AA_DataTable_Ops_Button";
             $icon="mdi mdi-eye";
             $text="Vedi e gestisci i dati sulle comunicazioni";
-            $color="green";
-            $analisi=array(false,array(),false);
-
-            foreach($giornateKeys as $curGiornata)
-            {
-                if($curGiornata==$now)
-                {
-                    if(!isset($comunicazioni[$now]) || $comunicazioni[$now]['inizio']==0)
-                    {
-                        $color="red";
-                        $analisi[0]=true;
-                        $analisi[1][]="Mancano le comunicazioni di apertura per la giornata ".$curGiornata;
-                        $analisi[2]=true;
-                    }
-                    if($comunicazioni[$now]['fine']==0 && $curGiornata." 19:00" < $ora)
-                    {
-                        $color="red";
-                        $analisi[0]=true;
-                        $analisi[1][]="Mancano le comunicazioni di chiusura per la giornata ".$curGiornata;
-                        $analisi[2]=true;
-                    }
-                }
-
-                if($curGiornata < $now)
-                {
-                    if(!isset($comunicazioni[$curGiornata]) || $comunicazioni[$curGiornata]['inizio']==0 || $comunicazioni[$curGiornata]['fine']==0)
-                    {
-                        //AA_Log::Log(__METHOD__." - comunicazioni: ".print_r($comunicazioni,true),100);
-                        $color="red";
-                        $analisi[0]=true;
-                        if($comunicazioni[$curGiornata]['inizio']==0) $analisi[1][]="Manca la comunicazione dell'apertura dei seggi per la giornata del ".$curGiornata;
-                        if($comunicazioni[$curGiornata]['fine']==0) $analisi[1][]="Manca la comunicazione della chiusura dei seggi per la giornata del ".$curGiornata;
-                        $analisi[2]=true;
-                    }
-                }
-            }
-
+            $color="red";
+            $analisi=$object->AnalizeComunicazioni($comunicazioni);
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_COMUNICAZIONI_COMUNALE."_".static::AA_UI_LAYOUT_COMUNICAZIONI_COMUNALE;
             $view_analisi_comunicazioni='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAnalisiComunicazioniDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneComunicazioniViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
