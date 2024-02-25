@@ -1915,7 +1915,7 @@ Class AA_Sier extends AA_Object_V2
         $aggiornamento_candidati_circoscrizionale=array();
         $now=date("Y-m-d H:i:s");
         $ora=intVal(date("H"));
-        $day=date("Y-m-d");
+        $today=date("Y-m-d");
 
         //AA_Log::Log(__METHOD__." - now: ".$now,100);
 
@@ -2039,13 +2039,13 @@ Class AA_Sier extends AA_Object_V2
                         $feed['stats']['regionale']['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
                     }
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
-                    if($ora >= 19 || $giornata < $day)
+                    if($ora >= 19 || $giornata < $today)
                     {
                         if($giornataValues['ore_19']['count']>0) $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
                         else $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_12']['count'];
                     }
                     
-                    if($ora >= 22 || $giornata < $day)
+                    if($ora >= 22 || $giornata < $today)
                     {
                         if($giornataValues['ore_22']['count']>0) $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
                         else  
@@ -2075,13 +2075,13 @@ Class AA_Sier extends AA_Object_V2
                     }
 
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
-                    if($ora >= 19 || $giornata < $day)
+                    if($ora >= 19 || $giornata < $today)
                     {
                         if($giornataValues['ore_19']['count']>0) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
                         else $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_12']['count'];
                     }
 
-                    if($ora >= 22 || $giornata < $day)
+                    if($ora >= 22 || $giornata < $today)
                     {
                         if($giornataValues['ore_22']['count']>0) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
                         else 
