@@ -999,8 +999,10 @@ Class AA_Sier extends AA_Object_V2
             {
                 if(!isset($comunicazioni[$now]))
                 {
+                    //AA_Log::Log(__METHOD__." - ora inizio:".$curGiornata." ".$giornate[$curGiornata]['orario_apertura']." - ora: ".$ora,100);
                     if( $curGiornata." ".$giornate[$curGiornata]['orario_apertura'] < $ora)
                     {
+                        AA_Log::Log(__METHOD__." - l'ora di inizio e dopo. ".$curGiornata,100);
                         $analisi[0]=true;
                         $analisi[1][]="Manca l'apertura dei seggi per la giornata del ".$curGiornata;
                         $analisi[2]=true;
@@ -1912,7 +1914,9 @@ Class AA_Sier extends AA_Object_V2
         $aggiornamento_candidati="";
         $aggiornamento_candidati_circoscrizionale=array();
         $now=date("Y-m-d H:i:s");
-        
+        $ora=intVal(date("H"));
+        $day=date("Y-m-d");
+
         //AA_Log::Log(__METHOD__." - now: ".$now,100);
 
         foreach($comuni as $idComune=>$curComune)
@@ -2013,6 +2017,7 @@ Class AA_Sier extends AA_Object_V2
 
             //------------- Affluenza -----------
             $defaultValue=0;
+            
             foreach($feedComune['affluenza'] as $giornata=>$giornataValues)
             {
                 if(is_array($giornataValues))
@@ -2034,9 +2039,22 @@ Class AA_Sier extends AA_Object_V2
                         $feed['stats']['regionale']['affluenza'][$giornata]['aggiornamento']=$feedComune['affluenza'][$giornata]['aggiornamento'];
                     }
                     $feed['stats']['regionale']['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
-                    $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
-                    $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
-    
+                    if($ora >= 19 || $giornata < $day)
+                    {
+                        if($giornataValues['ore_19']['count']>0) $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
+                        else $feed['stats']['regionale']['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_12']['count'];
+                    }
+                    
+                    if($ora >= 22 || $giornata < $day)
+                    {
+                        if($giornataValues['ore_22']['count']>0) $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
+                        else  
+                        {
+                            if($giornataValues['ore_19']['count']>0) $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_19']['count'];
+                            else $feed['stats']['regionale']['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_12']['count'];
+                        }
+                    }
+
                     if(!isset($feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]))
                     {
                         $aggiornamento=$now;
@@ -2057,8 +2075,21 @@ Class AA_Sier extends AA_Object_V2
                     }
 
                     $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_12']['count']+=$giornataValues['ore_12']['count'];
-                    $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
-                    $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
+                    if($ora >= 19 || $giornata < $day)
+                    {
+                        if($giornataValues['ore_19']['count']>0) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_19']['count'];
+                        else $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_19']['count']+=$giornataValues['ore_12']['count'];
+                    }
+
+                    if($ora >= 22 || $giornata < $day)
+                    {
+                        if($giornataValues['ore_22']['count']>0) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_22']['count'];
+                        else 
+                        {
+                            if($giornataValues['ore_19']['count']>0) $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_19']['count'];
+                            else $feed['stats']['circoscrizionale'][$curComune->GetProp('id_circoscrizione')]['affluenza'][$giornata]['ore_22']['count']+=$giornataValues['ore_12']['count'];
+                        }
+                    }
                 }
             }
             //-----------------------------------
@@ -12773,7 +12804,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Schede valide votate solo per i candidati Presidente:","value"=>$value),
+            "data"=>array("title"=>"Schede valide solo per i candidati Presidente:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
@@ -14108,6 +14139,7 @@ Class AA_SierModule extends AA_GenericModule
             $text="Vedi e gestisci i dati sulle comunicazioni";
             $color="red";
             $analisi=$object->AnalizeComunicazioni($comunicazioni);
+            //AA_Log::Log(__METHOD__." - analisi Comunicazioni: ".print_r($analisi,true),100);
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_COMUNICAZIONI_COMUNALE."_".static::AA_UI_LAYOUT_COMUNICAZIONI_COMUNALE;
             $view_analisi_comunicazioni='AA_MainApp.utils.callHandler("dlg", {task:"GetSierAnalisiComunicazioniDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneComunicazioniViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
@@ -14786,7 +14818,7 @@ Class AA_SierModule extends AA_GenericModule
                 $csvValues=explode(",",$curCsvRow);
                 if(sizeof($csvValues) >= $recognizedFields && isset($candidati[$csvValues[$fieldPos['id_candidato']]]))
                 {
-                    $voti_candidato_csv[$csvValues[$fieldPos['id_candidato']]]=array("voti"=>trim(intVal($csvValues[$fieldPos['voti']])));
+                    $voti_candidato_csv[$csvValues[$fieldPos['id_candidato']]]=array("voti"=>intVal(str_replace(".","",$csvValues[$fieldPos['voti']])));
                 }
             }
             $curRowNum++;
@@ -18315,7 +18347,7 @@ Class AA_SierModule extends AA_GenericModule
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
 
-        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>intVal(strtolower(trim($_REQUEST['ore_12']))),"ore_19"=>intVal(strtolower(trim($_REQUEST['ore_19']))),"ore_22"=>intVal(strtolower(trim($_REQUEST['ore_22']))));
+        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>intVal(strtolower(trim(str_replace(".","",$_REQUEST['ore_12'])))),"ore_19"=>intVal(strtolower(trim(str_replace(".","",$_REQUEST['ore_19'])))),"ore_22"=>intVal(strtolower(trim(str_replace(".","",$_REQUEST['ore_22'])))));
         $comune->SetAffluenza($affluenza);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiunta affluenza per la giornata: ".$_REQUEST['giornata']))
         {
@@ -18395,7 +18427,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
-        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>intVal(strtolower(trim($_REQUEST['ore_12']))),"ore_19"=>intVal(strtolower(trim($_REQUEST['ore_19']))),"ore_22"=>intVal(strtolower(trim($_REQUEST['ore_22']))));
+        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>intVal(strtolower(trim(str_replace(".","",$_REQUEST['ore_12'])))),"ore_19"=>intVal(strtolower(trim(str_replace(".","",$_REQUEST['ore_19'])))),"ore_22"=>intVal(strtolower(trim(str_replace(".","",$_REQUEST['ore_22'])))));
         $comune->SetAffluenza($affluenza);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento affluenza per la giornata: ".$_REQUEST['giornata']))
         {
@@ -19239,8 +19271,8 @@ Class AA_SierModule extends AA_GenericModule
             $voti_liste[$idLista]=0;
             if(isset($_REQUEST["lista_".$idLista]) && $_REQUEST["lista_".$idLista]>0)
             {
-                $voti_liste[$idLista]=$_REQUEST["lista_".$idLista];
-                $voti_totali+=$_REQUEST["lista_".$idLista];
+                $voti_liste[$idLista]=intVal(str_replace(".","",$_REQUEST["lista_".$idLista]));
+                $voti_totali+=intVal(str_replace(".","",$_REQUEST["lista_".$idLista]));
             }
         }
 
@@ -19368,7 +19400,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             if($candidati[$idCandidato]->GetProp("id_lista")==$id_lista)
             {
-                if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal($curCandidato['voti']);
+                if($idCandidato != $_REQUEST['id_candidato']) $tot_voti_candidati+=intVal(str_replace(".","",$curCandidato['voti']));
             }
         }
 
@@ -19396,7 +19428,7 @@ Class AA_SierModule extends AA_GenericModule
     
                 if(is_array($candidato))
                 {
-                    $candidato['voti']=intVal($_REQUEST['voti']);
+                    $candidato['voti']=intVal(str_replace(".","",$_REQUEST['voti']));
                     $voti_candidato[$_REQUEST['id_candidato']]=$candidato;
                 }
             }
@@ -19510,9 +19542,9 @@ Class AA_SierModule extends AA_GenericModule
             {
                 //$dati_candidato=$curCandidato->GetProps();
                 $dati_candidato=array();
-                $dati_candidato['voti']=intVal($_REQUEST['candidato_'.$idCandidato]);
+                $dati_candidato['voti']=intVal(str_replace(".","",$_REQUEST['candidato_'.$idCandidato]));
                 $voti_candidato[$idCandidato]=$dati_candidato;
-                $tot_voti_candidato+=intVal($_REQUEST['candidato_'.$idCandidato]);
+                $tot_voti_candidato+=intVal(str_replace(".","",$_REQUEST['candidato_'.$idCandidato]));
 
                 if(intVal($_REQUEST['candidato_'.$idCandidato]) > $risultati['voti_lista'][$candidati[$idCandidato]->GetProp('id_lista')])
                 {
@@ -19638,8 +19670,8 @@ Class AA_SierModule extends AA_GenericModule
         $elettori=intVal($comune->GetProp('elettori_m'))+intVal($comune->GetProp('elettori_f'));
 
         $votanti=0;
-        if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>0) $votanti+=$_REQUEST['votanti_m'];        
-        if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>0) $votanti+=$_REQUEST['votanti_f'];
+        if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>0) $votanti+=intVal(str_replace(".","",$_REQUEST['votanti_m']));        
+        if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>0) $votanti+=intVal(str_replace(".","",$_REQUEST['votanti_f']));
         
         if($votanti>$elettori)
         {
@@ -19677,8 +19709,8 @@ Class AA_SierModule extends AA_GenericModule
         $risultati=$comune->GetRisultati(true);
         if(!is_array($risultati)) $risultati=array();
         if(isset($_REQUEST['sezioni_scrutinate']) && $_REQUEST['sezioni_scrutinate']>=0) $risultati['sezioni_scrutinate']=intVal($_REQUEST['sezioni_scrutinate']);
-        if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>=0) $risultati['votanti_m']=intVal($_REQUEST['votanti_m']);
-        if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>=0) $risultati['votanti_f']=intVal($_REQUEST['votanti_f']);
+        if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>=0) $risultati['votanti_m']=intVal(str_replace(".","",$_REQUEST['votanti_m']));
+        if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>=0) $risultati['votanti_f']=intVal(str_replace(".","",$_REQUEST['votanti_f']));
         if(isset($_REQUEST['schede_bianche']) && $_REQUEST['schede_bianche']>=0) $risultati['schede_bianche']=intVal($_REQUEST['schede_bianche']);
         if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>=0) $risultati['schede_nulle']=intVal($_REQUEST['schede_nulle']);
         if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>=0) $risultati['voti_contestati_na_pre']=intVal($_REQUEST['voti_contestati_na_pre']);
@@ -19783,7 +19815,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
-        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>strtolower(trim($_REQUEST['ore_12'])),"ore_19"=>strtolower(trim($_REQUEST['ore_19'])),"ore_22"=>strtolower(trim($_REQUEST['ore_22'])));
+        $affluenza[$_REQUEST['giornata']]=array("aggiornamento"=>date("Y-m-d H:i:s"),"ore_12"=>strtolower(trim(str_replace(".","",$_REQUEST['ore_12']))),"ore_19"=>strtolower(trim(str_replace(".","",$_REQUEST['ore_19']))),"ore_22"=>strtolower(trim(str_replace(".","",$_REQUEST['ore_22']))));
         $comune->SetAffluenza($affluenza);
         if(!$object->UpdateComune($comune,$this->oUser,"Aggiornamento affluenza per la giornata: ".$_REQUEST['giornata']." - operatore comunale: ".$operatore->GetOperatoreComunaleCf()))
         {
@@ -20026,8 +20058,8 @@ Class AA_SierModule extends AA_GenericModule
             $voti_presidente[$idCoalizione]=0;
             if(isset($_REQUEST[$idCoalizione]) && $_REQUEST[$idCoalizione]>0)
             {
-                $voti_presidente[$idCoalizione]=intVal($_REQUEST[$idCoalizione]);
-                $voti_totali+=$_REQUEST[$idCoalizione];
+                $voti_presidente[$idCoalizione]=intVal(str_replace(".","",$_REQUEST[$idCoalizione]));
+                $voti_totali+=intVal(str_replace(".","",$_REQUEST[$idCoalizione]));
             }
         }
 
@@ -22592,7 +22624,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Schede valide votate solo per i candidati Presidente:","value"=>$value),
+            "data"=>array("title"=>"Schede valide solo per i candidati Presidente:","value"=>$value),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
 
@@ -22988,7 +23020,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddTextField("schede_voti_nulli","Schede escl. con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
 
             //schede solo presidente
-            $wnd->AddTextField("voti_solo_presidente","Schede votate solo per i candidati Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero schede valide votate solo per i candidati Presidente."));
+            $wnd->AddTextField("voti_solo_presidente","Schede valide solo per i candidati Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero schede valide solo per i candidati Presidente."));
 
             $section=new AA_FieldSet($id."_Section_RisultatiGenerali","Schede contenenti voti contestati e non assegnati");
             //voti contestati non assegnati pre
@@ -23496,7 +23528,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddTextField("schede_voti_nulli","Schede escl. con voti nulli",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero delle schede contenenti esclusivamente voti nulli."));
 
         //schede solo presidente
-        $wnd->AddTextField("voti_solo_presidente","Schede votate solo per i candidati Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero schede valide votate solo per i candidati Presidente."));
+        $wnd->AddTextField("voti_solo_presidente","Schede valide solo per i candidati Presidente ",array("required"=>true,"gravity"=>1, "validateFunction"=>"IsPositive","bottomLabel"=>"*numero schede valide solo per i candidati Presidente."));
 
         $section=new AA_FieldSet($id."_Section_RisultatiGenerali","Schede contenenti voti contestati e non assegnati");
         //voti contestati non assegnati pre
