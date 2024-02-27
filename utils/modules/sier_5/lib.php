@@ -2903,6 +2903,11 @@ Class AA_Sier extends AA_Object_V2
                 $query.=" AND (risultati not like CONCAT('{\"sezioni_scrutinate\":\"',sezioni,'\",%') AND risultati not like '')";
             }
 
+            if(isset($params['senza_voti_lista']) && $params['senza_voti_lista']==1)
+            {
+                $query.=" AND (risultati not like '%\"voti_lista\":%' AND risultati not like '')";
+            }
+
             if(isset($params['senza_certificazione_45']) && $params['senza_certificazione_45']==1)
             {
                 $query.=" AND comunicazioni not like '%\"corpoelettorale_45\":1%'";
@@ -2927,6 +2932,8 @@ Class AA_Sier extends AA_Object_V2
             AA_Log::Log(__METHOD__." - Errore query: ".$query,100);
             return array();
         }
+
+        AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=array();
         if($db->GetAffectedRows()>0)
@@ -13945,6 +13952,11 @@ Class AA_SierModule extends AA_GenericModule
             $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con risultati non caricati</span>&nbsp;";
         }
 
+        if(isset($params['senza_voti_lista']) && $params['senza_voti_lista'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni senza voti di lista</span>&nbsp;";
+        }
+
         if(isset($params['scrutinio_parziale']) && $params['scrutinio_parziale'] > 0)
         {
             $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con scrutinio parziale</span>&nbsp;";
@@ -14220,17 +14232,27 @@ Class AA_SierModule extends AA_GenericModule
 
             //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true),100);
             $completamento=0;
-            if($analisi[0] == false) $completamento=100;
-            else
+            if($analisi[3]['risultati_scrutinio_parziale_check'] == 0 && strpos($analisi[1][0],"Risultati non presenti") !== false) 
             {
-                $completamento=0;
-                
-                if(strpos($analisi[1][0],"Risultati non presenti" === false))
+                $completamento=100;
+            }
+            else
+            {   
+                if(strpos($analisi[1][0],"Risultati non presenti") === false)
                 {
-                    if(isset($analisi[3]['risultati_scrutinio_parziale_check']) && $analisi[3]['risultati_scrutinio_parziale_check']>0)
+                    //AA_Log::Log(__METHOD__." - ".print_r($analisi,true),100);
+                    if($analisi[3]['risultati_scrutinio_parziale_check']>0)
                     {
                         $completamento=round($analisi[3]['risultati_scrutinio_parziale_check']*100/intVal($curComune->GetProp('sezioni')));
                     }
+                    else
+                    {
+                        $completamento=100;
+                    }
+                }
+                else
+                {
+                    $completamento=0;
                 }
             }
 
@@ -14345,7 +14367,7 @@ Class AA_SierModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Comune_Filter", "Parametri di filtraggio",$this->GetId(),$formData,$resetData,$applyActions,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX);
         
-        $dlg->SetHeight(580);
+        $dlg->SetHeight(640);
         $dlg->SetWidth(980);
         $dlg->SetLabelWidth(350);
         
@@ -14367,6 +14389,9 @@ Class AA_SierModule extends AA_GenericModule
 
         //Senza risultati
         $dlg->AddSwitchBoxField("senza_risultati","Comuni senza risultati",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza risultati."));
+
+        //Senza voti di lista
+        $dlg->AddSwitchBoxField("senza_voti_lista","Comuni senza voti di lista",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilta per mostrare ESCLUSIVAMENTE i comuni senza risultati."));
 
         //con scrutinio parziale
         $dlg->AddSwitchBoxField("scrutinio_parziale","Comuni con scrutinio parziale",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni con scrutinio parziale."));
@@ -22524,8 +22549,13 @@ Class AA_SierModule extends AA_GenericModule
         $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:1%;'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px; text-align: right;padding-right: 50px'>#value#</div></div>";
         
         //Sezioni scrutinate
-        if(isset($risultati['sezioni_scrutinate']))$value=$risultati['sezioni_scrutinate'];
+        if(isset($risultati['sezioni_scrutinate']))
+        {
+            $value=$risultati['sezioni_scrutinate'];
+        }
         else $value=0;
+
+        $value.=" di ".$comune->GetProp("sezioni");
         $sezioni=new AA_JSON_Template_Template($id."_SezioniScrutinate",array(
             "template"=>$template,
             "gravity"=>1,
