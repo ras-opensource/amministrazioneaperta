@@ -2933,7 +2933,7 @@ Class AA_Sier extends AA_Object_V2
             return array();
         }
 
-        AA_Log::Log(__METHOD__." - query: ".$query,100);
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         $result=array();
         if($db->GetAffectedRows()>0)
@@ -5400,6 +5400,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierAnalisiComunicazioniDlg");
             $taskManager->RegisterTask("GetSierAnalisiCorpoElettoraleDlg");
             $taskManager->RegisterTask("GetSierComuneLogsDlg");
+            $taskManager->RegisterTask("FixComuneLogs");
             
             //$taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeTrashDlg");
             //$taskManager->RegisterTask("TrashSierComuneRisultatiPreferenze");
@@ -14352,7 +14353,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetHeight("576");
 
         $logs = $comune->GetLogs(true);
-        AA_Log::Log(__METHOD__." - logs: ".print_r($logs,true),100);
+        //AA_Log::Log(__METHOD__." - logs: ".print_r($logs,true),100);
         $table = new AA_JSON_Template_Generic($id . "_Table", array(
             "view" => "datatable",
             "scrollX" => false,
@@ -18644,6 +18645,70 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Task aggiornamento risultati generali
+    public function Task_FixComuneLogs($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può modificare l'oggetto: ".$object,false);
+            return false;
+        }
+
+        $comuni=$object->GetComuni();
+        $ids=array();
+        $db=new AA_Database();
+        foreach($comuni as $idComune=>$curComune)
+        {
+            //if($curComune->GetProp('denominazione') == 'CAGLIARI')
+            {
+                $logs=$curComune->GetLogs(true);
+                foreach($logs as $idLog=>$curLog)
+                {
+                    if($curLog['data'] > "2024-02-26 09:00")
+                    {
+                        //AA_Log::Log(__METHOD__." - log: ".print_r($curLog,true),100);
+                        if(strpos($curLog['msg'],"Aggiornamento comunicazioni") !== false)
+                        {
+                            //AA_Log::Log(__METHOD__." - correggo il log del: ".$curLog['data'],100);
+                            $ids[]=$idLog;
+                        }
+                    }
+                }
+    
+                array_pop($ids);
+    
+                if(sizeof($ids) > 0)
+                {
+                    AA_Log::Log(__METHOD__." - Correggo il log del comune di ".$curComune->GetProp("denominazione"),100);
+                    foreach($ids as $idLog)
+                    {
+                        $logs[$idLog]['msg']=str_replace("comunicazioni",'voti Presidente',$logs[$idLog]['msg']);
+                    }
+    
+                    if(!$db->Query("UPDATE ".AA_Sier::AA_COMUNI_DB_TABLE." set logs='".addslashes(json_encode($logs))."' WHERE id='".$curComune->GetProp('id')."' LIMIT 1"))
+                    {
+                        AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage(),100);
+                    }
+                }
+            }
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        return true;
+    }
+
     public function Task_UpdateSierComuneRisultatiGenerali($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -18686,10 +18751,11 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("Le sezioni scrutinate non possono superare il numero di sezioni del comune.",false);
             return false;
         }
+        
         if(!isset($_REQUEST['votanti_m']) || !isset($_REQUEST['votanti_f']) || !isset($_REQUEST['votanti_tot']))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Occorre specificare il numero di votantio maschi, femmine e il totale.",false);
+            $task->SetError("Occorre specificare il numero di votanti maschi, femmine e il totale.",false);
             return false;
         }
 
@@ -18699,12 +18765,12 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("La somma dei votanti maschi e femmine non corrisponde al totale votanti indicato.",false);
             return false;
         }
-
+        
         $elettori=intVal($comune->GetProp('elettori_m'))+intVal($comune->GetProp('elettori_f'));
 
         $votanti=0;
-        if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>0) $votanti+=$_REQUEST['votanti_m'];        
-        if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>0) $votanti+=$_REQUEST['votanti_f'];
+        if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>0) $votanti+=intVal(str_replace(".","",$_REQUEST['votanti_m']));        
+        if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>0) $votanti+=intVal(str_replace(".","",$_REQUEST['votanti_f']));
         
         if($votanti>$elettori)
         {
@@ -18712,8 +18778,6 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("I votanti non possono superare il numero di elettori.",false);
             return false;
         }
-
-        if(!isset($_REQUEST['votanti_m']) || !isset($_REQUEST['votanti_f']) || !isset($_REQUEST['votanti_tot']))
 
         if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>$comune->GetProp('elettori_m'))
         {
@@ -18732,29 +18796,27 @@ Class AA_SierModule extends AA_GenericModule
         $voti_non_validi=0;
         if(isset($_REQUEST['schede_bianche']) && $_REQUEST['schede_bianche']>0) $voti_non_validi+=$_REQUEST['schede_bianche'];
         if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>0) $voti_non_validi+=$_REQUEST['schede_nulle'];
-        if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>0) $voti_non_validi+=$_REQUEST['voti_contestati_na_pre'];
-        if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>0) $voti_non_validi+=$_REQUEST['voti_contestati_na_liste'];
         if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>0) $voti_non_validi+=$_REQUEST['schede_voti_nulli'];
     
         if($voti_non_validi>$votanti)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il numero di voti NON validi (schede bianche+schede nulle+schede contestate+voti nulli) non può superare il numero dei votanti.",false);
+            $task->SetError("Il numero di voti non validi (schede bianche+schede nulle+schede contestate+voti nulli) non può superare il numero dei votanti.",false);
             return false;
         }
 
         $risultati=$comune->GetRisultati(true);
         if(!is_array($risultati)) $risultati=array();
-        if(isset($_REQUEST['sezioni_scrutinate']) && $_REQUEST['sezioni_scrutinate']>=0) $risultati['sezioni_scrutinate']=$_REQUEST['sezioni_scrutinate'];
-        if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>=0) $risultati['votanti_m']=$_REQUEST['votanti_m'];
-        if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>=0) $risultati['votanti_f']=$_REQUEST['votanti_f'];
-        if(isset($_REQUEST['schede_bianche']) && $_REQUEST['schede_bianche']>=0) $risultati['schede_bianche']=$_REQUEST['schede_bianche'];
-        if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>=0) $risultati['schede_nulle']=$_REQUEST['schede_nulle'];
-        if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>=0) $risultati['voti_contestati_na_pre']=$_REQUEST['voti_contestati_na_pre'];
-        if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>=0) $risultati['voti_contestati_na_liste']=$_REQUEST['voti_contestati_na_liste'];
-        if(isset($_REQUEST['voti_solo_presidente']) && $_REQUEST['voti_solo_presidente']>=0) $risultati['voti_solo_presidente']=$_REQUEST['voti_solo_presidente'];
-        if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>=0) $risultati['schede_voti_nulli']=$_REQUEST['schede_voti_nulli'];
-        
+        if(isset($_REQUEST['sezioni_scrutinate']) && $_REQUEST['sezioni_scrutinate']>=0) $risultati['sezioni_scrutinate']=intVal($_REQUEST['sezioni_scrutinate']);
+        if(isset($_REQUEST['votanti_m']) && $_REQUEST['votanti_m']>=0) $risultati['votanti_m']=intVal(str_replace(".","",$_REQUEST['votanti_m']));
+        if(isset($_REQUEST['votanti_f']) && $_REQUEST['votanti_f']>=0) $risultati['votanti_f']=intVal(str_replace(".","",$_REQUEST['votanti_f']));
+        if(isset($_REQUEST['schede_bianche']) && $_REQUEST['schede_bianche']>=0) $risultati['schede_bianche']=intVal($_REQUEST['schede_bianche']);
+        if(isset($_REQUEST['schede_nulle']) && $_REQUEST['schede_nulle']>=0) $risultati['schede_nulle']=intVal($_REQUEST['schede_nulle']);
+        if(isset($_REQUEST['voti_contestati_na_pre']) && $_REQUEST['voti_contestati_na_pre']>=0) $risultati['voti_contestati_na_pre']=intVal($_REQUEST['voti_contestati_na_pre']);
+        if(isset($_REQUEST['voti_contestati_na_liste']) && $_REQUEST['voti_contestati_na_liste']>=0) $risultati['voti_contestati_na_liste']=intVal($_REQUEST['voti_contestati_na_liste']);
+        if(isset($_REQUEST['voti_solo_presidente']) && $_REQUEST['voti_solo_presidente']>=0) $risultati['voti_solo_presidente']=intVal($_REQUEST['voti_solo_presidente']);
+        if(isset($_REQUEST['schede_voti_nulli']) && $_REQUEST['schede_voti_nulli']>=0) $risultati['schede_voti_nulli']=intVal($_REQUEST['schede_voti_nulli']);
+      
         $analisi_risultati=$object->AnalizeRisultati($risultati,$comune->GetProp("id_circoscrizione"),$comune);
         $comune->SetAnalisiRisultati($analisi_risultati);
 
