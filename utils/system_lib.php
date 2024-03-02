@@ -4272,6 +4272,19 @@ class AA_GenericModule
             }
         }
 
+        if(!is_array($this->aSectionItemTemplates[$id_section]))
+        {
+            if(method_exists($this,$this->aSectionItemTemplates[$id_section]))
+            {
+                return $this->{(string)$this->aSectionItemTemplates[$id_section]}($object);
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - templates di sezione non impostati come array, utilizzare la funzione SetSectionItemTemplates passando un array di array come secondo parametro. ".print_r($this->aSectionItemTemplates[$id_section],true),100);
+                return new AA_JSON_Template_Template($id,array("type"=>"clean","template"=>"<div style='display:flex; justify-content: center;align-items: center;width:100%;height:100%'>".__METHOD__." - templates di sezione non impostati come array, utilizzare la funzione SetSectionItemTemplates passando un array di array come secondo parametro. </div>"));
+            }
+        }
+
         $id_org=uniqid();
         $details="";
         if(isset($params['details'])) $details=$params['details'];
