@@ -4518,7 +4518,7 @@ class AA_GenericModule
         );
         $content->AddRow($header);
 
-        $multiview = new AA_JSON_Template_Multiview($id . "Multiview" . "_$id_org", array(
+        $multiview = new AA_JSON_Template_Multiview($id . "_Multiview" . "_$id_org", array(
             "type" => "clean",
             "css" => "AA_Detail_Content"
         ));
