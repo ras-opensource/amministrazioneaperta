@@ -1702,7 +1702,7 @@ class AA_GenericModule
         if (!is_array($this->aSectionItemTemplates)) {
             $this->aSectionItemTemplates = array();
         }
-        $this->aSectionItemTemplates[$section] = $template;        
+        $this->aSectionItemTemplates[$section] = $template;
     }
     public function GetSectionItemTemplate($section = "")
     {
