@@ -229,11 +229,18 @@ class AA_GenericModuleTask extends AA_GenericTask
     public function SetContent($val="", $json=false, $encode=true)
     {
         $content=$val;
-        
-        if($encode) $content=base64_encode($content);
+        if($json)
+        {
+            if($val instanceof AA_JSON_Template_Generic) $content=$val->__toString();
+            $this->sContentType="json";
+        }
 
-        if($json) $this->sContentType="json";
-        if($encode) $this->sContentEncode="base64";
+        if($encode) 
+        {
+            $content=base64_encode($content);
+            $this->sContentEncode="base64";
+        }
+
         $this->sContent=$content;
     }
 
