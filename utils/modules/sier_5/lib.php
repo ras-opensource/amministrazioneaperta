@@ -23245,14 +23245,17 @@ Class AA_SierModule extends AA_GenericModule
             "view" => "tabbar",
             "gravity"=>$gravity_tabbar,
             "borderless" => true,
-            "value" => $id."_RendicontiPersonaleBox",
+            "value" => $id."_RendicontiRiepilogoBox",
             "css" => "AA_Header_TabBar",
             "multiview" => true,
             "view_id" => $id . "_Multiview_".$object->GetId(),
             "options" => array(
-                array("id"=>$id."_RendicontiPersonaleBox","value"=>"Spese per il personale dipendente e per i seggi"),
-                array("id"=>$id."_RendicontiPersonaleDetBox","value"=>"Spese per il personale a tempo determinato"),
-                array("id"=>$id."_RendicontiServiziBox","value"=>"Spese per beni e servizi"),
+                array("id"=>$id."_RendicontiRiepilogoBox","value"=>"Riepilogo"),
+                array("id"=>$id."_RendicontiSeggiBox","value"=>"Componenti seggi"),
+                array("id"=>$id."_RendicontiPersonaleBox","value"=>"<span style='font-size:smaller'>Personale a tempo indeterminato</span>"),
+                array("id"=>$id."_RendicontiPersonaleDetBox","value"=>"<span style='font-size:smaller'>Personale a tempo determinato</span>"),
+                array("id"=>$id."_RendicontiBuoniBox","value"=>"Buoni pasto"),
+                array("id"=>$id."_RendicontiServiziBox","value"=>"Beni e servizi"),
             )
         )));
         $header->AddCol($layout_tab);
@@ -23280,32 +23283,221 @@ Class AA_SierModule extends AA_GenericModule
         {
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         }*/
-        $layout->AddRow($toolbar);
+        //$layout->AddRow($toolbar);
         $layout->AddRow($header);
         //---------------------------------------------------------------------
         $layout->AddRow($multiview);
         
-        /*
-        if($analisi[0]==true)
+        //------------------------------ riepilogo -------------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiRiepilogoBox",array("type"=>"clean"));
+        $box=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>180)));
+        $title="Prospetto riassuntivo generale";
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>$title,"align"=>"center")));
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
         {
-            $color="orange";
-            if($analisi[2]==true) $color="red";
-            $onClick="AA_MainApp.utils.callHandler('dlg', {task:'GetSierAnalisiRisultatiDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:'".$id."'},module: '" . $this->id . "'},'".$this->id."')";
-            $warning='<div><span class="mdi mdi-alert" style="color:'.$color.'"></span>&nbsp;<a href="#" onClick="'.$onClick.'">Sono presenti delle criticità, fai click qui per visualizzarle.</span></div>';
+            $modify_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-cog",
+                "label"=>"Genera report",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>180,
+                "tooltip"=>"Genera il report in formato pdf con i dati inseriti fino a questo momento",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiSpesePersonaleCompetenzeTempoDetAddnewDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
         }
         else
         {
-            $warning='<div><span class="mdi mdi-check-circle" style="color:green"></span>&nbsp;<span>Le informazioni sono congruenti.</span></div>';
-        }*/
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+        $box->AddRow($toolbar);
 
-        //--------------------------- Spese Personale ----------------------------
-        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiPersonaleBox",array("type"=>"clean"));
-        $first_row=new AA_JSON_Template_Layout($id."_Personale_FirstRow",array("type"=>"clean"));
+        //content
+        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><div style='width:70%;text-align:center'>Spese presentate a rimborso</div><div style='width:30%; text-align:center'>Importo totale</div></div>"));
+        $box->AddRow($header);
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:100%;height:100%;'><div style='font-weight:700;width:70%; min-width:70%; padding-left:20px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 20px'>#value#</div></div>";
+        //competenze seggi
+        $value=0;
+        if(isset($rendiconti['seggi']['competenze']['importo']))
+        {
+            $value+=$rendiconti['seggi']['competenze']['importo'];
+        }
+        if(isset($rendiconti['seggi']['missioni']['importo']))
+        {
+            $value+=$rendiconti['seggi']['missioni']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Competenze spettanti ai componenti dei seggi (comprensiva di missioni):","value"=>$value,"value_align"=>"right"),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['comune']['straordinario']['importo']))
+        {
+            $value+=$rendiconti['comune']['straordinario']['importo'];
+        }
+        if(isset($rendiconti['comune']['missioni']['importo']))
+        {
+            $value+=$rendiconti['seggi']['missioni']['importo'];
+        }
+        if(isset($rendiconti['comune']['oneri']['importo']))
+        {
+            $value+=$rendiconti['comune']['oneri']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Retribuzione per lavoro straordinario dei dipendenti comunali (comprensiva di oneri e missioni):","value"=>$value,"value_align"=>"right"),
+            "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['personale']['tempo_determinato']['importo']))
+        {
+            $value+=$rendiconti['personale']['tempo_determinato']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Assunzione di personale a tempo determinato:","value"=>$value,"value_align"=>"right"),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['buoni']['importo']))
+        {
+            $value+=$rendiconti['buoni']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Buoni pasto dei dipendenti addetti al servizio elettorale:","value"=>$value,"value_align"=>"right"),
+            "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['servizi']['software']['importo']))
+        {
+            $value+=$rendiconti['servizi']['software']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Stampati o software sostitutivi non forniti direttamente dalla Regione o dallo Stato:","value"=>$value,"value_align"=>"right"),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['servizi']['allestimento']['importo']))
+        {
+            $value+=$rendiconti['servizi']['allestimento']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Trasporto del materiale elettorale e degli arredi dei seggi - Allestimento dei seggi:","value"=>$value,"value_align"=>"right"),
+            "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['servizi']['materiale']['importo']))
+        {
+            $value+=$rendiconti['servizi']['materiale']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Acquisto di materiale di consumo per l’allestimento dei seggi:","value"=>$value,"value_align"=>"right"),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['servizi']['propaganda']['importo']))
+        {
+            $value+=$rendiconti['servizi']['propaganda']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Spese per la propaganda elettorale:","value"=>$value,"value_align"=>"right"),
+            "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['servizi']['collegamenti']['importo']))
+        {
+            $value+=$rendiconti['servizi']['collegamenti']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Collegamenti telefonici straordinari ai fini della raccolta dei dati elettorali:","value"=>$value,"value_align"=>"right"),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['servizi']['altro']['importo']))
+        {
+            $value+=$rendiconti['servizi']['altro']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"Altre spese indispensabili per gli adempimenti elettorali:","value"=>$value,"value_align"=>"right"),
+            "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $value=0;
+        if(isset($rendiconti['servizi']['altro']['importo']))
+        {
+            $value+=$rendiconti['servizi']['altro']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger'>TOTALE:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".$value."</span>","value_align"=>"right"),
+            "css"=>array("border-top"=>"2px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $box->AddRow(new AA_JSON_Template_Generic());
+        $generaleLayout->AddRow($box);
+        $multiview->AddCell($generaleLayout);
+        //------------------------------------------------------------------------
+
+        //-------------------------------- Competenze seggio -----------------------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiSeggiBox",array("type"=>"clean"));
+        $first_row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $generaleLayout->addRow($first_row);
-        $second_row=new AA_JSON_Template_Layout($id."_Personale_SecondRow",array("type"=>"clean"));
-        $generaleLayout->addRow($second_row);
-        
-        //---------------- Competenze seggio ----------------
         $box=new AA_JSON_Template_Layout($id."_Personale_CompetenzeSeggio_Box",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Personale_CompetenzeSeggio_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -23334,8 +23526,8 @@ Class AA_SierModule extends AA_GenericModule
         }
         $box->AddRow($toolbar);
 
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px; text-align: right;padding-right: 50px'>#value#</div></div>";
-        
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px; min-width:280px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 50px'>#value#</div></div>";
+        $template_short="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px; min-width:200px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 10px'>#value#</div></div>";
         //competenze seggi
         $value.="n.d.";
         if(isset($rendiconti['seggi']['competenze']['estremi_liquidazione']))
@@ -23346,10 +23538,10 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi provvedimento di liquidazione:","value"=>$value),
+            "data"=>array("title"=>"Estremi provvedimento di liquidazione:","value"=>$value,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
-        $header=new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><span>Missioni</span></div>"));
+        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><span>Missioni</span></div>"));
         //$row->addCol($val);
         $box->addRow($val);
         $value="n.d.";
@@ -23361,7 +23553,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi mandato di pagamento:","value"=>$value),
+            "data"=>array("title"=>"Estremi mandato di pagamento:","value"=>$value,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         //$row->addCol($val);
@@ -23377,8 +23569,8 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>2,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>$value),
-            "css"=>array("border-right"=>"1px solid #dadee0")
+            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"value_align"=>"left"),
+            "css"=>array("background-color"=>"","border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
         $box->addRow($row);
@@ -23392,7 +23584,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi provvedimento di liquidazione:","value"=>$value),
+            "data"=>array("title"=>"Estremi provvedimento di liquidazione:","value"=>$value,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         //$row->addCol($val);
@@ -23406,11 +23598,24 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi mandato di pagamento:","value"=>$value),
+            "data"=>array("title"=>"Estremi mandato di pagamento:","value"=>$value,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $box->addRow($val);
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="n.d.";
+        if(isset($rendiconti['seggi']['missioni']['componenti']))
+        {
+            $value=$rendiconti['seggi']['missioni']['componenti'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Componenti con missioni:","value"=>$value,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0")
+        ));
+        $row->AddCol($val);
         $value="n.d.";
         if(isset($rendiconti['seggi']['missioni']['km']))
         {
@@ -23420,10 +23625,13 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Km percorsi:","value"=>$value),
+            "data"=>array("title"=>"Km percorsi:","value"=>$value,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
+        $box->AddRow($row);
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $row->AddCol(new AA_JSON_Template_Generic());
         $value="n.d.";
         if(isset($rendiconti['seggi']['missioni']['importo']))
         {
@@ -23433,15 +23641,21 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>2,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>$value),
+            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
         $box->AddRow($row);
-        
         $first_row->AddCol($box);
-        //---------------------------------------------------
-
+        $multiview->AddCell($generaleLayout);
+        //------------------------------------------------------------------------------------------------
+      
+        //--------------------------- Spese Personale ----------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiPersonaleBox",array("type"=>"clean"));
+        $first_row=new AA_JSON_Template_Layout($id."_Personale_FirstRow",array("type"=>"clean"));
+        $generaleLayout->addRow($first_row);
+        //$second_row=new AA_JSON_Template_Layout($id."_Personale_SecondRow",array("type"=>"clean"));
+        //$generaleLayout->addRow($second_row);
         //---------------- Competenze comune ----------------
         $box=new AA_JSON_Template_Layout($id."_Personale_CompetenzeComune_Box",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Personale_CompetenzeComune_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
@@ -23475,7 +23689,6 @@ Class AA_SierModule extends AA_GenericModule
         $box->AddRow($header);
 
         //content
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left: #padding#px'><div style='font-weight:700;width: 350px;'>#title#</div><div style='width: 150px; text-align: right;padding-right: 50px'>#value#</div></div>";
         $value="n.d.";
         if(isset($rendiconti['comune']['straordinario']['estremi_autorizzazione']))
         {
@@ -23485,7 +23698,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>60,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi provvedimenti di autorizzazione:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Estremi provvedimenti di autorizzazione:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
@@ -23499,7 +23712,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>40,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi provvedimenti di autorizzazione:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Estremi provvedimenti di autorizzazione:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
@@ -23513,21 +23726,21 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>60,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi provvedimenti di liquidazione:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Estremi provvedimenti di liquidazione:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $row->AddCol($val);
         $value="n.d.";
-        if(isset($rendiconti['comune']['straordinario']['missioni_estremi_liquidazione']))
+        if(isset($rendiconti['comune']['missioni']['estremi_liquidazione']))
         {
-            $value=$rendiconti['comune']['straordinario']['missioni_estremi_liquidazione'];
+            $value=$rendiconti['comune']['missioni']['estremi_liquidazione'];
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>40,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi provvedimenti di liquidazione:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Estremi provvedimenti di liquidazione:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -23541,78 +23754,78 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>60,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi mandati di pagamento:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Estremi mandati di pagamento:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $row->AddCol($val);
 
         $value="n.d.";
-        if(isset($rendiconti['comune']['straordinario']['missioni_km']))
+        if(isset($rendiconti['comune']['missioni']['km']))
         {
-            $value=$rendiconti['comune']['straordinario']['missioni_km'];
+            $value=$rendiconti['comune']['missioni']['km'];
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>40,
             "type"=>"clean",
-            "data"=>array("title"=>"Km percorsi:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Km percorsi:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
         $box->addRow($row);
         $value="n.d.";
-        if(isset($rendiconti['comune']['straordinario']['estremi_oneri_pagamento']))
+        if(isset($rendiconti['comune']['oneri']['estremi_pagamento']))
         {
-            $value=$rendiconti['comune']['straordinario']['estremi_estremi_pagamento'];
+            $value=$rendiconti['comune']['oneri']['estremi_pagamento'];
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>60,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi mandati di pagamento oneri:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Estremi mandati di pagamento oneri:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $row->AddCol($val);
         $value="n.d.";
-        if(isset($rendiconti['comune']['straordinario']['missioni_dipendenti']))
+        if(isset($rendiconti['comune']['missioni']['dipendenti']))
         {
-            $value=$rendiconti['comune']['straordinario']['missioni_dipendenti'];
+            $value=$rendiconti['comune']['missioni']['dipendenti'];
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>40,
             "type"=>"clean",
-            "data"=>array("title"=>"Dipendenti che hanno effettuato missioni:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Dipendenti che hanno effettuato missioni:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
         $box->addRow($row);
         $value="n.d.";
-        if(isset($rendiconti['comune']['straordinario']['oneri']))
+        if(isset($rendiconti['comune']['oneri']['dettaglio']))
         {
-            $value=$rendiconti['comune']['straordinario']['oneri'];
+            $value=$rendiconti['comune']['oneri']['dettaglio'];
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>60,
             "type"=>"clean",
-            "data"=>array("title"=>"Dettaglio oneri:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Dettaglio oneri:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $row->AddCol($val);
         $value="n.d.";
-        if(isset($rendiconti['comune']['straordinario']['missioni_importo']))
+        if(isset($rendiconti['comune']['missioni']['importo']))
         {
-            $value=$rendiconti['comune']['straordinario']['missioni_importo'];
+            $value=$rendiconti['comune']['missioni']['importo'];
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>40,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -23624,10 +23837,10 @@ Class AA_SierModule extends AA_GenericModule
             $value=$rendiconti['comune']['straordinario']['periodo_autorizzato'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
+            "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Periodo autorizzato (dal-al):","value"=>$value,"padding"=>5)
+            "data"=>array("title"=>"Periodo autorizzato (dal-al):","value"=>$value,"padding"=>5,"value_align"=>"left")
         ));
         $row->AddCol($val);
         $value="n.d.";
@@ -23636,10 +23849,10 @@ Class AA_SierModule extends AA_GenericModule
             $value=$rendiconti['comune']['straordinario']['periodo_effettivo'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
+            "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Periodo effettivo (dal-al):","value"=>$value,"padding"=>0),
+            "data"=>array("title"=>"Periodo effettivo (dal-al):","value"=>$value,"padding"=>0,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -23652,10 +23865,10 @@ Class AA_SierModule extends AA_GenericModule
             $value=$rendiconti['comune']['straordinario']['dipendenti_max'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
+            "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Dipendenti autorizzati:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Dipendenti autorizzati:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
@@ -23665,10 +23878,10 @@ Class AA_SierModule extends AA_GenericModule
             $value=$rendiconti['comune']['straordinario']['dipendenti_effettivi'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
+            "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Dipendenti con straordinario:","value"=>$value,"padding"=>0),
+            "data"=>array("title"=>"Dipendenti con straordinario:","value"=>$value,"padding"=>0,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -23681,22 +23894,22 @@ Class AA_SierModule extends AA_GenericModule
             $value=$rendiconti['comune']['straordinario']['ore_max'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
+            "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Ore autorizzate:","value"=>$value,"padding"=>5)
+            "data"=>array("title"=>"Ore autorizzate:","value"=>$value,"padding"=>5,"value_align"=>"left")
         ));
         $row->AddCol($val);
         $value="n.d.";
-        if(isset($rendiconti['comune']['competenze']['ore_effettive']))
+        if(isset($rendiconti['comune']['straordinario']['ore_effettive']))
         {
-            $value=$rendiconti['comune']['competenze']['ore_effettive'];
+            $value=$rendiconti['comune']['straordinario']['ore_effettive'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
+            "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Ore effettive:","value"=>$value,"padding"=>0),
+            "data"=>array("title"=>"Ore effettive:","value"=>$value,"padding"=>0,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -23705,16 +23918,15 @@ Class AA_SierModule extends AA_GenericModule
 
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $value="n.d.";
-        if(isset($rendiconti['comune']['straordinario']['importo_oneri']))
+        if(isset($rendiconti['comune']['oneri']['importo']))
         {
-            $value=$rendiconti['comune']['straordinario']['importo_oneri'];
+            $value=$rendiconti['comune']['oneri']['importo'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
+            "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo oneri corrisposto:","value"=>$value,"padding"=>5),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+            "data"=>array("title"=>"Importo oneri corrisposto:","value"=>$value,"padding"=>5,"value_align"=>"left")
         ));
         $row->AddCol($val);
         $value="n.d.";
@@ -23723,19 +23935,64 @@ Class AA_SierModule extends AA_GenericModule
             $value=$rendiconti['comune']['straordinario']['importo'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
+            "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>0)
+            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>0,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
         $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
         $box->AddRow($row);
-        $second_row->AddCol($box);
+        $first_row->AddCol($box);
         //---------------------------------------------------
+        $multiview->addCell($generaleLayout);
+        //-------------------------------------------------------------------------------------
 
-        //---------------- Buoni pasto ----------------------
+        //----------------------------- Spese personale a tempo determinato -------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiPersonaleDetBox",array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RendicontiPersonaleDet",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        $generaleLayout->addRow($toolbar);
+        $box=new AA_JSON_Template_Layout($id."_Personale_CompetenzeTempoDet_Box",array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Personale_CompetenzeTempoDet_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $title="Competenze spettanti per l'assunzione di personale a tempo determinato";
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>$title,"align"=>"center")));
+
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $modify_btn=new AA_JSON_Template_Generic($id."_AddnewRendicontiSpesePersonaleCompetenzeTempoDet_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi delle competenze spettanti per l'assunzione di personale a tempo determinato",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiSpesePersonaleCompetenzeTempoDetAddnewDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+        $box->AddRow($toolbar);
+
+        //content
+        $box->addRow(new AA_JSON_Template_Generic());
+
+        $generaleLayout->AddRow($box);
+        $multiview->AddCell($generaleLayout);
+        //-------------------------------------------------------------------------------------
+
+        //------------------------------------ Buoni pasto ------------------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiBuoniBox",array("type"=>"clean"));
         $box=new AA_JSON_Template_Layout($id."_Personale_CompetenzeBuoniPasto_Box",array("type"=>"clean"));
+        $generaleLayout->AddRow($box);
         $toolbar=new AA_JSON_Template_Toolbar($id."_Personale_CompetenzeBuoniPasto_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $title="Competenze spettanti per i buoni pasto dei dipendenti addetti";
@@ -23773,7 +24030,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi provvedimenti di liquidazione:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Estremi provvedimenti di liquidazione:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $box->addRow($val);
@@ -23786,7 +24043,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Estremi mandati di pagamento:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Estremi mandati di pagamento:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $box->addRow($val);
@@ -23799,7 +24056,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Buoni pasto erogati:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Buoni pasto erogati:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $box->addRow($val);
@@ -23812,7 +24069,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Dipendenti che hanno usufruito dei buoni:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Dipendenti che hanno usufruito dei buoni:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $box->addRow($val);
@@ -23825,7 +24082,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Periodo di utilizzo (dal-al):","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Periodo di utilizzo (dal-al):","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $box->addRow($val);
@@ -23839,57 +24096,14 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>2,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>5),
+            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->addCol(new AA_JSON_Template_Generic());
         $row->AddCol($val);
         $box->addRow($row);
-        $first_row->AddCol($box);
-        //---------------------------------------------------
-        $multiview->addCell($generaleLayout);
-        //-------------------------------------------------------------------------------------
-
-        //----------------------------- Spese personale a tempo determinato -------------------
-        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiPersonaleDetBox",array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RendicontiPersonaleDet",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        $generaleLayout->addRow($toolbar);
-
-        $box=new AA_JSON_Template_Layout($id."_Personale_CompetenzeTempoDet_Box",array("type"=>"clean"));
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Personale_CompetenzeTempoDet_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $title="Competenze spettanti per l'assunzione di personale a tempo determinato";
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>$title,"align"=>"center")));
-
-        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
-        {
-            $modify_btn=new AA_JSON_Template_Generic($id."_AddnewRendicontiSpesePersonaleCompetenzeTempoDet_btn",array(
-                "view"=>"button",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-pencil",
-                "label"=>"Aggiungi",
-                "css"=>"webix_primary",
-                "align"=>"right",
-                "width"=>120,
-                "tooltip"=>"Aggiungi delle competenze spettanti per l'assunzione di personale a tempo determinato",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiSpesePersonaleCompetenzeTempoDetAddnewDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
-            ));
-
-            $toolbar->AddElement($modify_btn);
-        }
-        else
-        {
-            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        }
-        $box->AddRow($toolbar);
-
-        //content
-        $box->addRow(new AA_JSON_Template_Generic());
-
-        $generaleLayout->AddRow($box);
         $multiview->AddCell($generaleLayout);
-        //-------------------------------------------------------------------------------------
+        //---------------------------------------------------
 
         //----------------------------- Spese per beni e servizi -------------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiServiziBox",array("type"=>"clean"));
