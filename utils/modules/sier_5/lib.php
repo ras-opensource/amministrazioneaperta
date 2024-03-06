@@ -23685,7 +23685,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         $box->AddRow($toolbar);
 
-        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><div style='width:60%'>Straordinario e oneri connessi</div><div style='width:40%'>Missioni</div></div>"));
+        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><div style='width:60%'>Straordinario</div><div style='width:40%'>Missioni</div></div>"));
         $box->AddRow($header);
 
         //content
@@ -23717,6 +23717,7 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $row->AddCol($val);
         $box->addRow($row);
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $value="n.d.";
         if(isset($rendiconti['comune']['straordinario']['estremi_liquidazione']))
         {
@@ -23729,7 +23730,6 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Estremi provvedimenti di liquidazione:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
-        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $row->AddCol($val);
         $value="n.d.";
         if(isset($rendiconti['comune']['missioni']['estremi_liquidazione']))
@@ -23745,6 +23745,8 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $row->AddCol($val);
         $box->addRow($row);
+
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $value="n.d.";
         if(isset($rendiconti['comune']['straordinario']['estremi_pagamento']))
         {
@@ -23759,7 +23761,6 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $row->AddCol($val);
-
         $value="n.d.";
         if(isset($rendiconti['comune']['missioni']['km']))
         {
@@ -23774,62 +23775,7 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $row->AddCol($val);
         $box->addRow($row);
-        $value="n.d.";
-        if(isset($rendiconti['comune']['oneri']['estremi_pagamento']))
-        {
-            $value=$rendiconti['comune']['oneri']['estremi_pagamento'];
-        }
-        $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
-            "gravity"=>60,
-            "type"=>"clean",
-            "data"=>array("title"=>"Estremi mandati di pagamento oneri:","value"=>$value,"padding"=>5,"value_align"=>"left"),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
-        ));
-        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
-        $row->AddCol($val);
-        $value="n.d.";
-        if(isset($rendiconti['comune']['missioni']['dipendenti']))
-        {
-            $value=$rendiconti['comune']['missioni']['dipendenti'];
-        }
-        $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
-            "gravity"=>40,
-            "type"=>"clean",
-            "data"=>array("title"=>"Dipendenti che hanno effettuato missioni:","value"=>$value,"padding"=>5,"value_align"=>"left"),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
-        ));
-        $row->AddCol($val);
-        $box->addRow($row);
-        $value="n.d.";
-        if(isset($rendiconti['comune']['oneri']['dettaglio']))
-        {
-            $value=$rendiconti['comune']['oneri']['dettaglio'];
-        }
-        $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
-            "gravity"=>60,
-            "type"=>"clean",
-            "data"=>array("title"=>"Dettaglio oneri:","value"=>$value,"padding"=>5,"value_align"=>"left"),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
-        ));
-        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
-        $row->AddCol($val);
-        $value="n.d.";
-        if(isset($rendiconti['comune']['missioni']['importo']))
-        {
-            $value=$rendiconti['comune']['missioni']['importo'];
-        }
-        $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
-            "gravity"=>40,
-            "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>5,"value_align"=>"left"),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
-        ));
-        $row->AddCol($val);
-        $box->addRow($row);
+
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $value="n.d.";
         if(isset($rendiconti['comune']['straordinario']['periodo_autorizzato']))
@@ -23856,8 +23802,21 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
-        $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
+        $value="n.d.";
+        if(isset($rendiconti['comune']['missioni']['dipendenti']))
+        {
+            $value=$rendiconti['comune']['missioni']['dipendenti'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>40,
+            "type"=>"clean",
+            "data"=>array("title"=>"n. dipendenti che hanno effettuato missioni:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $row->AddCol($val);
         $box->AddRow($row);
+
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $value="n.d.";
         if(isset($rendiconti['comune']['straordinario']['dipendenti_max']))
@@ -23868,7 +23827,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Dipendenti autorizzati:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "data"=>array("title"=>"n. dipendenti autorizzati:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
@@ -23881,12 +23840,25 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template_short,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Dipendenti con straordinario:","value"=>$value,"padding"=>0,"value_align"=>"left"),
+            "data"=>array("title"=>"n. dipendenti con straordinario:","value"=>$value,"padding"=>0,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
-        $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
+        $value="n.d.";
+        if(isset($rendiconti['comune']['missioni']['importo']))
+        {
+            $value=$rendiconti['comune']['missioni']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>40,
+            "type"=>"clean",
+            "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $row->AddCol($val);
         $box->AddRow($row);
+
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $value="n.d.";
         if(isset($rendiconti['comune']['straordinario']['ore_max']))
@@ -23918,32 +23890,73 @@ Class AA_SierModule extends AA_GenericModule
 
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $value="n.d.";
-        if(isset($rendiconti['comune']['oneri']['importo']))
-        {
-            $value=$rendiconti['comune']['oneri']['importo'];
-        }
-        $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template_short,
-            "gravity"=>30,
-            "type"=>"clean",
-            "data"=>array("title"=>"Importo oneri corrisposto:","value"=>$value,"padding"=>5,"value_align"=>"left")
-        ));
-        $row->AddCol($val);
-        $value="n.d.";
         if(isset($rendiconti['comune']['straordinario']['importo']))
         {
             $value=$rendiconti['comune']['straordinario']['importo'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template_short,
-            "gravity"=>30,
+            "template"=>$template,
+            "gravity"=>60,
             "type"=>"clean",
             "data"=>array("title"=>"Importo corrisposto:","value"=>$value,"padding"=>0,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
         $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
-        $box->AddRow($row);
+        $box->addRow($row);
+
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><div>Oneri</div></div>"));
+        $box->AddRow($header);
+        $value="n.d.";
+        if(isset($rendiconti['comune']['oneri']['estremi_pagamento']))
+        {
+            $value=$rendiconti['comune']['oneri']['estremi_pagamento'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>60,
+            "type"=>"clean",
+            "data"=>array("title"=>"Estremi mandati di pagamento oneri:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            //"css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $row->AddCol($val);
+        $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
+        $box->addRow($row);
+
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="n.d.";
+        if(isset($rendiconti['comune']['oneri']['dettaglio']))
+        {
+            $value=$rendiconti['comune']['oneri']['dettaglio'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>60,
+            "type"=>"clean",
+            "data"=>array("title"=>"Dettaglio oneri:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            //"css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $row->AddCol($val);
+        $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
+        $box->addRow($row);
+
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="n.d.";
+        if(isset($rendiconti['comune']['oneri']['importo']))
+        {
+            $value=$rendiconti['comune']['oneri']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>30,
+            "type"=>"clean",
+            "data"=>array("title"=>"Importo corrisposto per oneri:","value"=>$value,"padding"=>5,"value_align"=>"left")
+        ));
+        $row->AddCol($val);
+        $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
+        $box->addRow($row);
+       
         $first_row->AddCol($box);
         //---------------------------------------------------
         $multiview->addCell($generaleLayout);
@@ -24069,7 +24082,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Dipendenti che hanno usufruito dei buoni:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "data"=>array("title"=>"n. dipendenti che hanno usufruito dei buoni:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $box->addRow($val);
