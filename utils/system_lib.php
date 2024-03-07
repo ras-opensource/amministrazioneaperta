@@ -3453,8 +3453,10 @@ class AA_GenericModule
         {
             if($params['object']==$idObject && is_string($curTemplate) && method_exists($this,$curTemplate))
             {
-                $content = array("id" => $idObject, "content" => $this->{$curTemplate}($params)->toArray());
-                    
+                $content = array("id" => $idObject, "content" => $this->{$curTemplate}()->toArray());
+                
+                //AA_Log::Log(__METHOD__." - content ".print_r($content,true),100);
+
                 //Codifica il contenuto in base64
                 $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
                 $task->SetLog($sTaskLog);

@@ -4387,7 +4387,7 @@ class AA_Utils
     //Formata un numero
     static public function number_format($number, $decimals='', $sep1='', $sep2='',$round=true) 
     {
-        if($round) return number_format($number, $decimals, $sep1, $sep2);
+        if($round) return number_format(floatval($number), $decimals, $sep1, $sep2);
 
         $resto=($number * pow(10 , $decimals + 1) % 10 );
         if ($resto >= 5)
@@ -4396,7 +4396,7 @@ class AA_Utils
             //AA_Log::Log(__METHOD__." - cambio da: ".$number." a: ".($number-$diff),100);
             $number -= $diff;
         }  
-        return number_format($number, $decimals, $sep1, $sep2);
+        return number_format(floatVal($number), $decimals, $sep1, $sep2);
     }
 
     //Accoda il log attuale al log di sessione
