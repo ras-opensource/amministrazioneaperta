@@ -20982,7 +20982,7 @@ Class AA_SierModule extends AA_GenericModule
         $servizio=array(
             "tipologia"=>$_REQUEST['tipologia'],
             "descrizione"=>trim($_REQUEST['descrizione']),
-            "importo"=>$_REQUEST['importo'],
+            "importo"=>str_replace(",",".",str_replace(".","",$_REQUEST['importo'])),
             "estremi_impegno"=>trim($_REQUEST['estremi_impegno']),
             "estremi_liquidazione"=>trim($_REQUEST['estremi_liquidazione']),
             "estremi_pagamento"=>trim($_REQUEST['estremi_pagamento']),
@@ -24844,9 +24844,9 @@ Class AA_SierModule extends AA_GenericModule
                 $ops="&nbsp;";
                 if($canModify)
                 {
-                    $modify="AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiServiziModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_servizio:\"".$idServizio."\",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')";
-                    $trash="AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiServiziTrashDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_servizio:\"".$idServizio."\",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')";
-                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica il bene/servizio' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                    $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiServiziModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_servizio:'".$idServizio."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiServiziTrashDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_servizio:'".$idServizio."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica il bene/servizio' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
                 }
         
                 $estremi="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%'>";
@@ -25110,7 +25110,7 @@ Class AA_SierModule extends AA_GenericModule
                 $form_data['ditta']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['ditta'];
                 $form_data['estremi_impegno']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_impegno'];
                 $form_data['estremi_liquidazione']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_liquidazione'];
-                $form_data['estremi_pagamewnto']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_pagamento'];
+                $form_data['estremi_pagamento']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_pagamento'];
                 $form_data['estremi_fattura']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_fattura'];
             }
 
