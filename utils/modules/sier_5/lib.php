@@ -24855,8 +24855,7 @@ Class AA_SierModule extends AA_GenericModule
                 $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>pagamento:</div><div>".$curServizio['estremi_pagamento']."</div></div>";
                 $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>fattura:</div><div>".$curServizio['estremi_fattura']."</div></div>";
                 $estremi.="</div>";
-                $cellCss='{tipologia:{"display":"flex","align-items":"center"}}';
-                $data[]=array('$cellCss'=>$cellCss,"id"=>$idServizio,"tipologia"=>$tipologia[$curServizio['tipologia']],"descrizione"=>$curServizio['descrizione'],"ditta"=>$curServizio['ditta'],"importo"=>AA_Utils::number_format($curServizio['importo'],2,",","."),
+                $data[]=array("id"=>$idServizio,"tipologia"=>$tipologia[$curServizio['tipologia']],"descrizione"=>$curServizio['descrizione'],"ditta"=>$curServizio['ditta'],"importo"=>AA_Utils::number_format($curServizio['importo'],2,",","."),
                 "estremi"=>$estremi,
                 "ops"=>$ops
                 );
