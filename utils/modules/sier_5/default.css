@@ -35,6 +35,13 @@
   background: #fff;
 }
 
+.RendicontiServiziTable .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .scrollTextFromLeft {
     /* animation properties */
     -moz-animation: ScrollFromLeftAnimation 15s linear infinite;

@@ -5512,6 +5512,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierComuneRendicontiPersonaleIndeterminatoModifyDlg");
             $taskManager->RegisterTask("UpdateSierComuneRendicontiPersonaleIndeterminato");
             $taskManager->RegisterTask("GetSierComuneRendicontiServiziModifyDlg");
+            $taskManager->RegisterTask("UpdateSierComuneRendicontiServizi");
 
             //feed
             $taskManager->RegisterTask("GetSierFeedRisultatiAffluenza");
@@ -20937,6 +20938,75 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica servizi Comune
+    public function Task_UpdateSierComuneRendicontiServizi($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        $id_servizio=trim($_REQUEST['id_servizio']);
+        if($id_servizio=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("identificativo servizio non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Permessi insufficienti.",false);
+            return false;
+        }
+
+        $rendiconti=$comune->GetRendiconti(true);
+        if(isset($rendiconti['servizi'])) $rendiconti['servizi']=array();
+
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
+        $servizio=array(
+            "tipologia"=>$_REQUEST['tipologia'],
+            "descrizione"=>trim($_REQUEST['descrizione']),
+            "importo"=>$_REQUEST['importo'],
+            "estremi_impegno"=>trim($_REQUEST['estremi_impegno']),
+            "estremi_liquidazione"=>trim($_REQUEST['estremi_liquidazione']),
+            "estremi_pagamento"=>trim($_REQUEST['estremi_pagamento']),
+            "ditta"=>trim($_REQUEST['ditta']),
+            "estremi_fattura"=>trim($_REQUEST['estremi_fattura']),
+
+        );
+
+        $rendiconti['servizi'][$id_servizio]=$servizio;
+
+        $comune->SetRendiconti($rendiconti);
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica/aggiunta rendiconti servizi - id: ".$id_servizio." - tipo: ".$tipologia[$_REQUEST['tipologia']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+
+        return true;
+    }
+
     //Task modifica buoni Comune
     public function Task_UpdateSierComuneRendicontiPersonaleIndeterminato($task)
     {
@@ -23832,8 +23902,8 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $rendiconti=$comune->GetRendiconti(true);
-        $rows_fixed_height=50;
-
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) >0)$canModify=true;
         if($id=="") $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI;
         else  $id.="_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI;
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -23845,7 +23915,6 @@ Class AA_SierModule extends AA_GenericModule
 
         //---------------------------- header --------------------------------
         $header = new AA_JSON_Template_Layout($id . "_Header" . "_".$object->GetId(), array("type" => "clean", "height" => 38, "css" => "AA_SectionContentHeader"));
-        $canModify=false;
         $layout_tab=new AA_JSON_Template_Layout($id . "_Layout_TabBar_".$object->GetId(),array("type"=>"clean","minWidth"=>500));
         $gravity_tabbar=4;
         $layout_tab->AddCol(new AA_JSON_Template_Generic($id . "_TabBar_".$object->GetId(), array(
@@ -24766,6 +24835,7 @@ Class AA_SierModule extends AA_GenericModule
         $generaleLayout->addRow($toolbar);
 
         $rendiconti=$comune->GetRendiconti(true);
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         if(isset($rendiconti['servizi']) && sizeof($rendiconti['servizi'])>0)
         {
             $data=array();
@@ -24776,13 +24846,18 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     $modify="AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiServiziModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_servizio:\"".$idServizio."\",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')";
                     $trash="AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiServiziTrashDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_servizio:\"".$idServizio."\",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')";
-                    $ops="<div class='AA_DataTable_Ops'>&nbsp;<a class='AA_DataTable_Ops_Button_Red' title='Modifica il bene/servizio' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica il bene/servizio' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
                 }
         
-                $data[]=array("id"=>$idServizio,"tipologia"=>$curServizio['tipologia'],"descrizione"=>$curServizio['descrizione'],"ditta"=>$curServizio['ditta'],"importo"=>$curServizio['importo'],"estremi_impegno"=>$curServizio['estremi_impegno'],
-                "estremi_liquidazione"=>$curServizio['estremi_liquidazione'],
-                "estremi_pagamento"=>$curServizio['estremi_pagamento'],
-                "estremi_fattura"=>$curServizio['estremi_fattura'],
+                $estremi="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%'>";
+                $estremi.="<div style='display:flex; width:100%'><div style='width:25%'>impegno:</div><div>".$curServizio['estremi_impegno']."</div></div>";
+                $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>liquidazione:</div><div>".$curServizio['estremi_liquidazione']."</div></div>";
+                $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>pagamento:</div><div>".$curServizio['estremi_pagamento']."</div></div>";
+                $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>fattura:</div><div>".$curServizio['estremi_fattura']."</div></div>";
+                $estremi.="</div>";
+                $cellCss='{tipologia:{"display":"flex","align-items":"center"}}';
+                $data[]=array('$cellCss'=>$cellCss,"id"=>$idServizio,"tipologia"=>$tipologia[$curServizio['tipologia']],"descrizione"=>$curServizio['descrizione'],"ditta"=>$curServizio['ditta'],"importo"=>AA_Utils::number_format($curServizio['importo'],2,",","."),
+                "estremi"=>$estremi,
                 "ops"=>$ops
                 );
             }
@@ -24790,29 +24865,22 @@ Class AA_SierModule extends AA_GenericModule
             if($canModify)
             {
                 $columns=array(
-                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
-                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"estremi_impegno","header"=>array("<div style='text-align: center'>Estremi impegno</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"estremi_liquidazione","header"=>array("<div style='text-align: center'>Estremi liquidazione</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"estremi_pagamento","header"=>array("<div style='text-align: center'>Estremi mandato</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"estremi_fattura","header"=>array("<div style='text-align: center'>Estremi fattura</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
+                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Provvedimenti (estremi)</div>"),"width"=>350,"css"=>array("font-size"=>"smaller")),
                     array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>90, "css"=>array("text-align"=>"center")),
                 );
-                $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
             }
             else
             {
                 $columns=array(
-                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"left")),
-                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"estremi_impegno","header"=>array("<div style='text-align: center'>Estremi impegno</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"estremi_liquidazione","header"=>array("<div style='text-align: center'>Estremi liquidazione</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"estremi_pagamento","header"=>array("<div style='text-align: center'>Estremi mandato</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
-                    array("id"=>"estremi_fattura","header"=>array("<div style='text-align: center'>Estremi fattura</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"center")),
+                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Provvedimenti (estremi)</div>"),"width"=>350,"css"=>array("font-size"=>"smaller"))
                 );
             }
 
@@ -24820,6 +24888,9 @@ Class AA_SierModule extends AA_GenericModule
                 "view"=>"datatable",
                 "scrollX"=>false,
                 "select"=>false,
+                "fixedRowHeight"=>false,
+                "rowHeight"=>100,
+                "rowLineHeight"=>24,
                 "css"=>"AA_Header_DataTable",
                 "hover"=>"AA_DataTable_Row_Hover",
                 "columns"=>$columns,
@@ -25023,9 +25094,10 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['tipologia']=0;
             $form_data['descrizione']="";
             $form_data['importo']=0;
+            $form_data['ditta']="";
             $form_data['estremi_impegno']="";
             $form_data['estremi_liquidazione']="";
-            $form_data['estremi_pagamewnto']="";
+            $form_data['estremi_pagamento']="";
             $form_data['estremi_fattura']="";
 
             $rendiconti=$comune->GetRendiconti(true);
@@ -25035,6 +25107,7 @@ Class AA_SierModule extends AA_GenericModule
                 $form_data['tipologia']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['tipologia'];
                 $form_data['descrizione']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['descrizione'];
                 $form_data['importo']=AA_Utils::number_format($rendiconti['servizi'][$_REQUEST['id_servizio']]['importo'],2,",",".");
+                $form_data['ditta']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['ditta'];
                 $form_data['estremi_impegno']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_impegno'];
                 $form_data['estremi_liquidazione']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_liquidazione'];
                 $form_data['estremi_pagamewnto']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_pagamento'];
@@ -25065,6 +25138,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddTextField("estremi_impegno","Estremi impegno di spesa",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del provvedimento di spesa."));
             $wnd->AddTextField("estremi_liquidazione","Estremi provv. liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del provvedimento di liquidazione."));
             $wnd->AddTextField("estremi_pagamento","Estremi mandato di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del mandato di pagamento."));
+            $wnd->AddTextField("ditta","Ditta",array("required"=>true,"gravity"=>1,"bottomLabel"=>"*inserisci la denominazione della ditta fornitrice."));
             $wnd->AddTextField("estremi_fattura","Estremi fattura",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi della fattura."));
 
             $wnd->EnableCloseWndOnSuccessfulSave();
