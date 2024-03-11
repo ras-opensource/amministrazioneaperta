@@ -5519,6 +5519,10 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSierComuneRendicontiPersonaleDeterminato");
             $taskManager->RegisterTask("GetSierComuneRendicontiConfirmTrashPersonaleDeterminatoDlg");
             $taskManager->RegisterTask("DeleteSierComuneRendicontiPersonaleDeterminato");
+            $taskManager->RegisterTask("GetSierComuneRendicontiRasModifyDlg");
+            $taskManager->RegisterTask("UpdateSierComuneRendicontiRas");
+            $taskManager->RegisterTask("GetSierComuneRendicontiRasLiquidazioniModifyDlg");
+            $taskManager->RegisterTask("UpdateSierComuneRendicontiRasLiquidazioni");
 
             //feed
             $taskManager->RegisterTask("GetSierFeedRisultatiAffluenza");
@@ -14427,13 +14431,13 @@ Class AA_SierModule extends AA_GenericModule
 
             //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true),100);
             $completamento=0;
-            if($analisi[3]['risultati_scrutinio_parziale_check'] == 0 && strpos($analisi[1][0],"Risultati non presenti") !== false) 
+            if($analisi[3]['risultati_scrutinio_parziale_check'] == 0 && isset($analisi[1][0]) && strpos($analisi[1][0],"Risultati non presenti") !== false) 
             {
                 $completamento=100;
             }
             else
             {   
-                if(strpos($analisi[1][0],"Risultati non presenti") === false)
+                if(isset($analisi[1][0]) && strpos($analisi[1][0],"Risultati non presenti") === false)
                 {
                     //AA_Log::Log(__METHOD__." - ".print_r($analisi,true),100);
                     if($analisi[3]['risultati_scrutinio_parziale_check']>0)
@@ -17777,6 +17781,60 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
     
+    //Task modifica rendiconti buoni
+    public function Task_GetSierComuneRendicontiRasModifyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRendicontiRasModifyDlg($object,$comune),true);
+        return true;
+    }
+
+    //Task modifica rendiconti buoni
+    public function Task_GetSierComuneRendicontiRasLiquidazioniModifyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRendicontiRasLiquidazioniModifyDlg($object,$comune),true);
+        return true;
+    }
+
     //Task modifica rendiconti servizi
     public function Task_GetSierComuneRendicontiServiziModifyDlg($task)
     {
@@ -21014,6 +21072,403 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica rendiconti contabile RAS Comune
+    public function Task_UpdateSierComuneRendicontiRas($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Permessi insufficienti.",false);
+            return false;
+        }
+
+        if(isset($_REQUEST['ras|periodo_dal']) && $_REQUEST['ras|periodo_dal']>=$_REQUEST['ras|periodo_al'])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("La data di inizio deve essere successiva a quella di fine.",false);
+            return false;
+        }
+
+        $rendiconti=$comune->GetRendiconti(true);
+        $cp=$object->GetControlPannel();
+        if(!isset($rendiconti['ras'])) $rendiconti['ras']=array();
+        if(isset($_REQUEST['ras|anticipo']))
+        {
+            $num=$_REQUEST['ras|anticipo'];
+            if(strpos($num,".") !==false)
+            {
+                $num=str_replace(".","",trim($num));
+                $num=str_replace(",",".",trim($num));
+            }
+            $rendiconti['ras']['anticipo']=AA_Utils::number_format($num,2,'.','');
+        }
+
+        //verifica importo
+        $totale=0;
+        if(isset($rendiconti['seggi']['competenze']['importo']))
+        {
+            $totale+=$rendiconti['seggi']['competenze']['importo'];
+        }
+        if(isset($rendiconti['seggi']['missioni']['importo']))
+        {
+            $totale+=$rendiconti['seggi']['missioni']['importo'];
+        }
+        if(isset($rendiconti['comune']['straordinario']['importo']))
+        {
+            $totale+=$rendiconti['comune']['straordinario']['importo'];
+        }
+        if(isset($rendiconti['comune']['missioni']['importo']))
+        {
+            $totale+=$rendiconti['comune']['missioni']['importo'];
+        }
+        if(isset($rendiconti['comune']['oneri']['importo']))
+        {
+            $totale+=$rendiconti['comune']['oneri']['importo'];
+        }
+        if(isset($rendiconti['personale_det']))
+        {
+           foreach($rendiconti['personale_det'] as $key=>$val)
+           {
+                $totale=$val['importo']+$val['oneri_importo'];
+           }
+        }
+        if(isset($rendiconti['buoni']['importo']))
+        {
+            $totale+=$rendiconti['buoni']['importo'];
+        }
+        if(isset($rendiconti['servizi']))
+        {
+            foreach($rendiconti['servizi'] as $key=>$val)
+            {
+                $totale+=$val['importo'];
+            }
+        }
+
+        if(isset($_REQUEST['ras|importo']))
+        {
+            $num=$_REQUEST['ras|importo'];
+            if(strpos($num,".") !==false)
+            {
+                $num=str_replace(".","",trim($num));
+                $num=str_replace(",",".",trim($num));
+            }
+            $rendiconti['ras']['importo']=AA_Utils::number_format($num,2,'.','');
+        }
+
+        if($rendiconti['ras']['importo'] > $totale)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'importo ammesso a rimborso non puo' essere superiore alle spese presentate.",false);
+            return false;
+        }
+
+        $update_cp=false;
+        if(isset($_REQUEST['ras|periodo_dal']))
+        {
+            if(!isset($cp['rendiconti'])) $cp['rendiconti']=array();
+            $cp['rendiconti']['periodo_dal']=$_REQUEST['ras|periodo_dal'];
+            $update_cp=true;
+        }
+        if(isset($_REQUEST['ras|periodo_al']))
+        {
+            if(!isset($cp['rendiconti'])) $cp['rendiconti']=array();
+            $cp['rendiconti']['periodo_al']=$_REQUEST['ras|periodo_al'];
+            $update_cp=true;
+        }
+        
+        $comune->SetRendiconti($rendiconti);
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica rendiconti contabile RAS"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        if($update_cp)
+        {
+            $object->SetControlPannel($cp);
+            if(!$object->Update($this->oUser,true,"Modifica periodo utile contabile RAS"))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError(AA_Log::$lastErrorLog,false);
+                return false;            
+            }
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+
+        return true;
+    }
+
+    //Task modifica rendiconti contabile RAS Comune
+    public function Task_UpdateSierComuneRendicontiRasLiquidazioni($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->GetComune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Permessi insufficienti.",false);
+            return false;
+        }
+
+        if($_REQUEST['id_liquidazione']=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("identificativo liquidazione non impostato",false);
+            return false;
+        }
+
+        $rendiconti=$comune->GetRendiconti(true);
+        if(!isset($rendiconti['ras']['liquidazioni'])) $rendiconti['ras']['liquidazioni']=array();
+        $totale=0;
+        foreach($rendiconti['ras']['liquidazioni'] as $key=>$val)
+        {
+            if($key==$_REQUEST['id_liquidazione'])
+            {
+                $num=str_replace(",",".",str_replace(".","",$_REQUEST['importo']));
+                $totale+=$num;
+            }
+            else $totale+=$val['importo'];
+        }
+        if(!isset($rendiconti['ras']['liquidazioni'][$_REQUEST['id_liquidazione']]))
+        {
+            $totale+=str_replace(",",".",str_replace(".","",$_REQUEST['importo']));
+        }
+
+        //AA_Log::Log(__METHOD__." - totale:".$totale." - resto:".($rendiconti['ras']['importo']-$rendiconti['ras']['anticipo']),100);
+        if($totale > ($rendiconti['ras']['importo']-$rendiconti['ras']['anticipo']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("La somma delle liquidazioni + l'anticipo non puo' superare l'importo ammesso a rimborso.",false);
+            return false;
+        }
+
+        $rendiconti['ras']['liquidazioni'][$_REQUEST['id_liquidazione']]=array("data_prov"=>$_REQUEST['data_prov'],"estremi"=>$_REQUEST['estremi'],"importo"=>AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['importo'])),2,"."));
+        
+        $comune->SetRendiconti($rendiconti);
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica rendiconti contabile RAS - liquidazione id: ".$_REQUEST['id_liquidazione']." - data: ".$_REQUEST['data']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+
+        return true;
+    }
+
+    //Template pdf rendicontazione
+    protected function Template_RendicontiPdfExport($object=null,$comune=null,$bToBrowser = true, $title = "Rendicontazione spese elettorali", $index=true, $subTitle="")
+    {
+        include_once "pdf_lib.php";
+
+        if (!($object instanceof AA_Sier)) return "";
+        if (!($comune instanceof AA_Sier_Comune)) return "";
+
+        $count = 6;
+        $rowsForPage=1;
+        $vociIndice=array(
+            0=>"Prospetto riassuntivo generale spese elettorali",
+            1=>"Competenze corrisposte ai componenti dei seggi (comprensiva di missioni)",
+            2=>"Straordinario e missioni dei dipendenti (compresi oneri)",
+            3=>"Assunzione di personale a tempo determinato",
+            4=>"Buoni pasto dei dipendenti addetti al servizio elettorale",
+            5=>"Beni e servizi non forniti direttamente dalla Regione"
+        );
+
+        //nome file
+        $filename = "rendicontazione";
+        $filename .= "-" . date("YmdHis");
+        $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
+
+        $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
+        $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
+        $curRow = 0;
+        $rowForPage = $rowsForPage;
+        $lastRow = $rowForPage - 1;
+        $curPage = null;
+        $curPage_row = "";
+        $curNumPage = 0;
+        $maxItemHeight=intval(100/$rowsForPage);
+        //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
+        //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
+        $rowContentWidth = "width: 99.8%;";
+
+        if ($count > 1) 
+        {
+            //pagina di intestazione (senza titolo)
+            $curPage = $doc->AddPage();
+            $curPage->SetCorpoStyle("display: flex; flex-direction: column; justify-content: center; align-items: center; padding:0;");
+            $curPage->SetFooterStyle("border-top:.2mm solid black");
+            $curPage->ShowPageNumber(false);
+
+            //Intestazione
+            $intestazione = "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Comune di ".$comune->GetProp('denominazione')."</div>";
+            $intestazione = "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>$title</div>";
+            if($subTitle !="")
+            {
+                $intestazione .= "<div style='width: 100%; text-align: center; font-weight: normal; margin-top: 1em;'>".$subTitle."</div>";
+            }
+            $intestazione .= "<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il " . date("Y-m-d") . "</div>";
+
+            $curPage->SetContent($intestazione);
+            $curNumPage++;
+
+            if($index)
+            {
+                //pagine indice (50 nominativi per pagina)
+                $indiceNumVociPerPagina = 50;
+                for ($i = 0; $i < $count / $indiceNumVociPerPagina; $i++) 
+                {
+                    $curPage = $doc->AddPage();
+                    $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
+                    $curNumPage++;
+                }
+            }
+            $curPage=null;
+            #---------------------------------------
+        }
+
+        //Imposta il titolo per le pagine successive
+        $doc->SetTitle("$title - comune di ".$comune->GetProp("denominazione")." - report generato il " . date("Y-m-d"));
+        //$doc->SetTitle("$subTitle - report generato il " . date("Y-m-d"));
+
+        $indice = array();
+        $lastPage = $count / $rowForPage + $curNumPage;
+
+        //Rendering pagine
+        for($i=0;$i<6;$i++)
+        {
+            //inizia una nuova pagina (intestazione)
+            if ($curRow == $rowForPage) $curRow = 0;
+            if ($curRow == 0) {
+                $border = "";
+                if ($curPage != null) 
+                {
+                    if($curPage_row !="")
+                    {
+                        $curPage->SetContent($curPage_row);
+                        $curPage = $doc->AddPage();
+                        $curNumPage++;
+                    }
+                }
+                else 
+                {
+                    $curPage = $doc->AddPage();
+                    $curNumPage++;
+                }
+                
+                $curPage->SetCorpoStyle("display: flex; flex-direction: column;  justify-content: flex-start; padding:0;");
+                $curPage_row = "";
+            }
+
+            $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            $curPage_row .= "<div id='" . $curObject->GetID() . "' style='display:flex;  flex-direction: column; width: 99.8%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
+
+            $template = "";
+
+            //AA_Log::Log($template,100,false,true);
+
+            $curPage_row .= $template;
+            $curPage_row .= "</div>";
+            $curRow++;
+        }
+        if ($curPage != null) $curPage->SetContent($curPage_row);
+        #-----------------------------------------
+
+        if ($count > 1 && $index) {
+            //Aggiornamento indice
+            $curNumPage = 1;
+            $curPage = $doc->GetPage($curNumPage);
+            $vociCount = 0;
+            $curRow = 0;
+            $bgColor = "";
+            $curPage_row = "";
+
+            foreach ($indice as $id => $data) {
+                if ($curNumPage != (int)($vociCount / $indiceNumVociPerPagina) + 1) {
+                    $curPage->SetContent($curPage_row);
+                    $curNumPage = (int)($vociCount / $indiceNumVociPerPagina) + 1;
+                    $curPage = $doc->GetPage($curNumPage);
+                    $curRow = 0;
+                    $bgColor = "";
+                }
+
+                if ($curPage instanceof AA_PDF_Page) {
+                    if ($vociCount % 2 > 0) {
+                        $dati = explode("|", $data);
+                        $curPage_row .= "<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#" . $id . "'>" . $dati['1'] . "</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#" . $id . "'>pag. " . $dati[0] . "</a></div>";
+                        $curPage_row .= "</div>";
+                        if ($vociCount == (sizeof($indice) - 1)) $curPage->SetContent($curPage_row);
+                        $curRow++;
+                    } else {
+                        //Intestazione
+                        if ($curRow == 0) $curPage_row = "<div style='width:100%;text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+
+                        if ($curRow % 2) $bgColor = "background-color: #f5f5f5;";
+                        else $bgColor = "";
+                        $curPage_row .= "<div style='display:flex; " . $rowContentWidth . " align-items: center; justify-content: space-between; text-align: center; padding: .3mm; min-height: 9mm;" . $bgColor . "'>";
+                        $dati = explode("|", $data);
+                        $curPage_row .= "<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#" . $id . "'>" . $dati['1'] . "</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#" . $id . "'>pag. " . $dati[0] . "</a></div>";
+
+                        //ultima voce
+                        if ($vociCount == (sizeof($indice) - 1)) {
+                            $curPage_row .= "<div style='width:40%;text-align: left;padding-left: 10mm'>&nbsp; </div><div style='width:9%;text-align: right;padding-left: 10mm'>&nbsp; </div></div>";
+                            $curPage->SetContent($curPage_row);
+                        }
+                    }
+                }
+
+                $vociCount++;
+            }
+        }
+
+        if ($bToBrowser) $doc->Render();
+        else {
+            $doc->Render(false);
+            return $doc->GetFilePath();
+        }
+    }
+
     //Task modifica buoni Comune
     public function Task_UpdateSierComuneRendicontiBuoni($task)
     {
@@ -21043,7 +21498,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(isset($_REQUEST['buoni|periodo_dal']) && isset($_REQUEST['buoni|periodo_al']) && isset($_REQUEST['buoni|periodo_al'])>=$_REQUEST['buoni|periodo_dal'])
+        if(isset($_REQUEST['buoni|periodo_dal']) && isset($_REQUEST['buoni|periodo_al']) && $_REQUEST['buoni|periodo_al']<=$_REQUEST['buoni|periodo_dal'])
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("La data di inizio deve essere precedente a quella di fine.",false);
@@ -22960,7 +23415,7 @@ Class AA_SierModule extends AA_GenericModule
         
         if($id=="") $id="Template_SierPdfExport_".$object->GetId();
 
-        return new AA_SierPublicReportTemplateView($id,$parent,$object,$user);
+        return new AA_SierPublicReportTemplateView($id,$parent,$object);
     }
 
     //Template dettaglio allegati
@@ -24328,10 +24783,11 @@ Class AA_SierModule extends AA_GenericModule
             "options" => array(
                 array("id"=>$id."_RendicontiRiepilogoBox","value"=>"Riepilogo"),
                 array("id"=>$id."_RendicontiSeggiBox","value"=>"Componenti seggi"),
-                array("id"=>$id."_RendicontiPersonaleBox","value"=>"<span style='font-size:smaller'>Personale a tempo indeterminato</span>"),
-                array("id"=>$id."_RendicontiPersonaleDetBox","value"=>"<span style='font-size:smaller'>Personale a tempo determinato</span>"),
+                array("id"=>$id."_RendicontiPersonaleBox","value"=>"<span style='font-size:smaller'>Straordinario e missioni</span>"),
+                array("id"=>$id."_RendicontiPersonaleDetBox","value"=>"<span style='font-size:smaller'>Assunzione personale a tempo determinato</span>"),
                 array("id"=>$id."_RendicontiBuoniBox","value"=>"Buoni pasto"),
                 array("id"=>$id."_RendicontiServiziBox","value"=>"Beni e servizi"),
+                array("id"=>$id."_RendicontiRasBox","value"=>"Contabile RAS")
             )
         )));
         $header->AddCol($layout_tab);
@@ -24364,6 +24820,8 @@ Class AA_SierModule extends AA_GenericModule
         //---------------------------------------------------------------------
         $layout->AddRow($multiview);
         
+        $cp=$object->GetControlPannel();
+
         //------------------------------ riepilogo -------------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiRiepilogoBox",array("type"=>"clean"));
         $box=new AA_JSON_Template_Layout("",array("type"=>"clean"));
@@ -24383,7 +24841,7 @@ Class AA_SierModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>180,
                 "tooltip"=>"Genera il report in formato pdf con i dati inseriti fino a questo momento",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiSpesePersonaleCompetenzeTempoDetAddnewDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+                "click"=>'AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$this->GetTaskManagerUrl().'?task=RendicontiComuneExportRasPdf&object='.$object->GetId().'&id_comune='.$comune->GetProp('id_comune').'"},"'.$this->id.'")'
             ));
 
             $toolbar->AddElement($modify_btn);
@@ -24416,7 +24874,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Competenze spettanti ai componenti dei seggi (comprensiva di missioni):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Competenze corrisposte ai componenti dei seggi (comprensiva di missioni):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -24441,7 +24899,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Retribuzione per lavoro straordinario dei dipendenti comunali (comprensiva di oneri e missioni):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Straordinario e missioni dei dipendenti (compresi oneri):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
             "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -24459,7 +24917,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Assunzione di personale a tempo determinato (comprensivo di oneri):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Assunzione di personale a tempo determinato:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -24550,6 +25008,15 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
+            "data"=>array("title"=>"Spese postali e telegrafiche:","value"=>AA_Utils::number_format($spese_postali,2,",","."),"value_align"=>"right"),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
             "data"=>array("title"=>"Altre spese indispensabili per gli adempimenti elettorali:","value"=>AA_Utils::number_format($altro,2,",","."),"value_align"=>"right"),
             "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
         ));
@@ -24560,6 +25027,66 @@ Class AA_SierModule extends AA_GenericModule
             "type"=>"clean",
             "height"=>32,
             "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>TOTALE SPESE PRESENTATE A RIMBORSO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($totale,2,",",".")."</span>","value_align"=>"right"),
+            "css"=>array("border-top"=>"2px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $anticipo=0;
+        $totale_saldare=0;
+        $rimborso_concesso=0;
+        $liquidato=0;
+        if(isset($rendiconti['ras']['importo']))
+        {
+            $rimborso_concesso=$rendiconti['ras']['importo'];
+        }
+        if(isset($rendiconti['ras']['anticipo']))
+        {
+            $anticipo=$rendiconti['ras']['anticipo'];
+        }
+        if(isset($rendiconti['ras']['liquidazioni']))
+        {
+            foreach($rendiconti['ras']['liquidazioni'] as $val)
+            {
+                $liquidato+=$val['importo'];
+            }
+        }
+        $totale_saldare=$rimborso_concesso-$anticipo-$liquidato;
+
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>IMPORTO AMMESSO A RIMBORSO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($rimborso_concesso,2,",",".")."</span>","value_align"=>"right"),
+            "css"=>array("border-top"=>"2px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>ANTICIPO CORRISPOSTO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($anticipo,2,",",".")."</span>","value_align"=>"right"),
+            "css"=>array("border-top"=>"2px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>IMPORTO LIQUIDATO (escluso anticipo):</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($liquidato,2,",",".")."</span>","value_align"=>"right"),
+            "css"=>array("border-top"=>"2px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>SALDO DA RIMBORSARE:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($totale_saldare,2,",",".")."</span>","value_align"=>"right"),
             "css"=>array("border-top"=>"2px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -24575,7 +25102,7 @@ Class AA_SierModule extends AA_GenericModule
         $box=new AA_JSON_Template_Layout($id."_Personale_CompetenzeSeggio_Box",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Personale_CompetenzeSeggio_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $title="Competenze spettanti ai componenti dei seggi elettorali";
+        $title="Competenze corrisposte ai componenti dei seggi elettorali";
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>$title,"align"=>"center")));
 
         if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
@@ -24615,7 +25142,7 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Estremi provvedimento di liquidazione:","value"=>$value,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
-        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><span>Missioni</span></div>"));
+        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><span>Trattamento di missione</span></div>"));
         //$row->addCol($val);
         $box->addRow($val);
         $value="n.d.";
@@ -24734,7 +25261,7 @@ Class AA_SierModule extends AA_GenericModule
         $box=new AA_JSON_Template_Layout($id."_Personale_CompetenzeComune_Box",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dadee0 !important")));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Personale_CompetenzeComune_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $title="Competenze spettanti al personale comunale";
+        $title="Competenze spettanti al personale per straordinario e missioni";
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>$title,"align"=>"center")));
 
         if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
@@ -24747,7 +25274,7 @@ Class AA_SierModule extends AA_GenericModule
                 "css"=>"webix_primary",
                 "align"=>"right",
                 "width"=>120,
-                "tooltip"=>"Modifica le competenze spettanti al personale comunale",
+                "tooltip"=>"Modifica le competenze spettanti al personale per straordinario e missioni",
                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiPersonaleIndeterminatoModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
             ));
 
@@ -25044,7 +25571,7 @@ Class AA_SierModule extends AA_GenericModule
         $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiPersonaleDetBox",array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Personale_CompetenzeTempoDet_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        $title="Competenze spettanti per l'assunzione di personale a tempo determinato";
+        $title="Competenze spettanti per il personale a tempo determinato";
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>$title,"align"=>"center")));
 
         if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
@@ -25057,7 +25584,7 @@ Class AA_SierModule extends AA_GenericModule
                 "css"=>"webix_primary",
                 "align"=>"right",
                 "width"=>120,
-                "tooltip"=>"Aggiungi delle competenze spettanti per l'assunzione di personale a tempo determinato",
+                "tooltip"=>"Aggiungi delle competenze spettanti per il personale a tempo determinato",
                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiPersonaleDeterminatoModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
             ));
 
@@ -25116,7 +25643,6 @@ Class AA_SierModule extends AA_GenericModule
             if($canModify)
             {
                 $columns=array(
-                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"qualifica","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"periodo","header"=>array("<div style='text-align: center'>Periodo</div>"),"width"=>120, "css"=>"RendicontiServiziTable"),
                     array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>"),"width"=>130, "css"=>"RendicontiServiziTable"),
@@ -25128,7 +25654,6 @@ Class AA_SierModule extends AA_GenericModule
             else
             {
                 $columns=array(
-                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"RendicontiServiziTable"),
@@ -25374,6 +25899,167 @@ Class AA_SierModule extends AA_GenericModule
 
         $multiview->addCell($generaleLayout);
         //---------------------------------------------------------------------------------------
+
+        //----------------------------- Contabile RAS -------------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiRasBox",array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RendicontiRas",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Contabile RAS","align"=>"center")));
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $modify_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Modifica",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Modifica",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiRasModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+        $generaleLayout->addRow($toolbar);
+
+        $value="n.d.";
+        if(isset($cp['rendiconti']['periodo_dal']))
+        {
+            $value="dal ".substr($cp['rendiconti']['periodo_dal'],0,10);
+        }
+        if(isset($cp['rendiconti']['periodo_al']))
+        {
+            $value.=" al ".substr($cp['rendiconti']['periodo_al'],0,10);
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Periodo utile:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $generaleLayout->addRow($val);
+
+        $value="0";
+        if(isset($rendiconti['ras']['anticipo']))
+        {
+            $value=$rendiconti['ras']['anticipo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Anticipo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $generaleLayout->addRow($val);
+
+        $value="0";
+        if(isset($rendiconti['ras']['importo']))
+        {
+            $value=$rendiconti['ras']['importo'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Importo ammesso a rimborso:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $generaleLayout->addRow($val);
+
+        $box=new AA_JSON_Template_Layout($id."_RendicontiRas_Box",array("gravity"=>7,"type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RendicontiRas",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Liquidazioni","align"=>"center")));
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $modify_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi liquidazione",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiRasLiquidazioniModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+        $box->addRow($toolbar);
+        $rendiconti=$comune->GetRendiconti(true);
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
+        if(isset($rendiconti['ras']['liquidazioni']) && sizeof($rendiconti['ras']['liquidazioni']) > 0)
+        {
+            $data=array();
+            foreach($rendiconti['ras']['liquidazioni'] as $idLiquidazione=>$curLiquidazione)
+            {
+                $ops="&nbsp;";
+                if($canModify)
+                {
+                    $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiRasLiquidazioniModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_liquidazione:'".$idLiquidazione."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiConfirmTrashLiquidazioniDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_liquidazione:'".$idLiquidazione."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica la liquidazione' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina la liquidazione' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                }
+                $data[]=array("id"=>$idLiquidazione,"importo"=>AA_Utils::number_format($curLiquidazione['importo'],2,",","."),
+                "data_prov"=>substr($curLiquidazione['data_prov'],0,10),
+                "estremi"=>$curLiquidazione['estremi'],
+                "ops"=>$ops
+                );
+            }
+
+            if($canModify)
+            {
+                $columns=array(
+                    array("id"=>"data_prov","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>90, "css"=>array("text-align"=>"center")),
+                );
+            }
+            else
+            {
+                $columns=array(
+                    array("id"=>"data","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable")
+                );
+            }
+
+            $table=new AA_JSON_Template_Generic($id."_Comuni", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "fixedRowHeight"=>false,
+                "rowHeight"=>24,
+                "rowLineHeight"=>24,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+
+            $box->addRow($table);
+        }
+        else
+        {
+            $box->addRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display:flex;justify-content:center;align-items:center;width:100%;height:100%'>Non sono presenti elementi.</div>")));
+        }
+
+        $generaleLayout->AddRow($box);
+        $multiview->addCell($generaleLayout);
+        //---------------------------------------------------------------------------------------
         return $layout;
     }
 
@@ -25517,16 +26203,16 @@ Class AA_SierModule extends AA_GenericModule
             //estremi liquidazione
             $section=new AA_FieldSet(uniqid(),"Competenze");
             $section->AddTextField("seggi|competenze|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26"));
-            $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("seggi|competenze|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $wnd->AddGenericObject($section);
 
-            $section=new AA_FieldSet(uniqid(),"Missioni");
-            $section->AddTextField("seggi|missioni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
-            $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section=new AA_FieldSet(uniqid(),"Trattamento di missione");
+            $section->AddTextField("seggi|missioni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
+            $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("seggi|missioni|componenti","n. componenti con missioni",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Numero dei componenti che hanno effettuato missioni."));
             $section->AddTextField("seggi|missioni|km","Km totali",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Km totali percorsi."),false);
-            $section->AddTextField("seggi|missioni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto per missioni (es. 1234,56)."));
+            $section->AddTextField("seggi|missioni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo corrisposto per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
             $wnd->AddGenericObject($section);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -25626,6 +26312,64 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
+    //Template dlg modify rendiconti contabile RAS liquidazioni
+    public function Template_GetSierComuneRendicontiRasLiquidazioniModifyDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiRasLiquidazioniModifyDlg_".uniqid();
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica una liquidazione", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica una liquidazione", $this->id);
+
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp("id");
+            $form_data['id_liquidazione']=uniqid();
+            $form_data['data_prov']="";
+            $form_data['estremi']="";
+            $form_data['importo']=0;
+
+            $rendiconti=$comune->GetRendiconti(true);
+            if(isset($_REQUEST['id_liquidazione']) && isset($rendiconti['ras']['liquidazioni'][$_REQUEST['id_liquidazione']]))
+            {
+                $form_data['id_liquidazione']=$_REQUEST['id_liquidazione'];
+                $form_data['data_prov']=$rendiconti['ras']['liquidazioni'][$_REQUEST['id_liquidazione']]['data_prov'];
+                $form_data['estremi']=$rendiconti['ras']['liquidazioni'][$_REQUEST['id_liquidazione']]['estremi'];
+                $form_data['importo']=AA_Utils::number_format($rendiconti['ras']['liquidazioni'][$_REQUEST['id_liquidazione']]['importo'],2,",",".");
+            }
+
+            $wnd=new AA_GenericFormDlg($id, "Aggiungi/Modifica liquidazione - comune di ".$comune->GetProp("denominazione"), $this->id,$form_data,$form_data);
+                
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(280);
+            $wnd->SetBottomPadding(32);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(780);
+            $wnd->SetHeight(800);
+            
+            //estremi liquidazione
+            $wnd->AddDateField("data_prov","Data del provvedimento",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*inserisci la data del provvedimento."));
+            $wnd->AddTextField("estremi","Estremi del provvedimento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234","bottomLabel"=>"*inserisci gli estremi del provvedimento."));
+            $wnd->AddTextField("importo","Importo",array("required"=>true,"gravity"=>1,"bottomLabel"=>"*inserisci l'importo (es. 1234,56)."));
+            
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+            if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+            $wnd->SetSaveTask("UpdateSierComuneRendicontiRasLiquidazioni");
+
+            return $wnd;    
+        }
+        else
+        {
+            //to do view only
+            $wnd = new AA_GenericWindowTemplate($id,"Aggiungi/modifcia liquidazione - comune di ".$comune->GetProp("denominazione"), $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"L'utente corrente non può apportare modifiche.")));
+
+            return $wnd;
+        }
+    }
+
     //Template dlg modify rendiconti seggi comune
     public function Template_GetSierComuneRendicontiBuoniModifyDlg($object=null,$comune=null)
     {
@@ -25688,8 +26432,8 @@ Class AA_SierModule extends AA_GenericModule
             
             //estremi liquidazione
             //$section=new AA_FieldSet(uniqid(),"Competenze");
-            $wnd->AddTextField("buoni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
-            $wnd->AddTextField("buoni|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $wnd->AddTextField("buoni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
+            $wnd->AddTextField("buoni|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
            
 
             $wnd->AddTextField("buoni|erogati","n. di buoni erogati",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1));
@@ -25714,6 +26458,90 @@ Class AA_SierModule extends AA_GenericModule
         {
             //to do view only
             $wnd = new AA_GenericWindowTemplate($id,"Modifica competenze componenti dei seggi comune di ".$comune->GetProp("denominazione"), $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"L'utente corrente non può apportare modifiche.")));
+
+            return $wnd;
+        }
+    }
+
+    //Template dlg modify contabile RAS comune
+    public function Template_GetSierComuneRendicontiRasModifyDlg($object=null,$comune=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiRasModifyDlg_".uniqid();
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
+
+        $cp=$object->GetControlPannel();
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
+        {
+            $form_data['id']=$object->GetId();
+            $form_data['id_comune']=$comune->GetProp("id");
+            $form_data['ras|periodo_dal']="";
+            if(isset($cp['rendiconti']['periodo_dal'])) $form_data['ras|periodo_dal']=$cp['rendiconti']['periodo_dal'];
+            $form_data['ras|periodo_al']="";
+            if(isset($cp['rendiconti']['periodo_al'])) $form_data['ras|periodo_al']=$cp['rendiconti']['periodo_al'];
+            $form_data['ras|anticipo']=0;
+            $form_data['ras|importo']=0;
+
+            $rendiconti=$comune->GetRendiconti(true);
+            foreach($rendiconti as $key=>$val)
+            {
+                if(is_array($val) && $key=="ras")
+                {
+                    foreach($val as $key_b=>$val_b)
+                    {
+                        if(is_array($val_b))
+                        {
+                            foreach($val_b as $key_c=>$val_c)
+                            {
+                                if($key_c=="importo") $val_c=AA_Utils::number_format($val_c,2,",",".");
+                                $form_data[$key."|".$key_b."|".$key_c]=$val_c;
+                                if($key_c=="anticipo") $val_c=AA_Utils::number_format($val_c,2,",",".");
+                                $form_data[$key."|".$key_b."|".$key_c]=$val_c;
+                            }
+                        }
+                        else
+                        {
+                            if($key_b == "importo") $val_b=AA_Utils::number_format($val_b,2,",",".");
+                            $form_data[$key."|".$key_b]=$val_b;
+                            if($key_b == "anticipo") $val_b=AA_Utils::number_format($val_b,2,",",".");
+                            $form_data[$key."|".$key_b]=$val_b;
+                        }
+                    }
+                }
+            }
+
+            $wnd=new AA_GenericFormDlg($id, "Modifica contabile RAS del comune di ".$comune->GetProp("denominazione"), $this->id,$form_data,$form_data);
+                
+            $wnd->SetLabelAlign("right");
+            $wnd->SetLabelWidth(280);
+            $wnd->SetBottomPadding(32);
+            $wnd->EnableValidation();
+            
+            $wnd->SetWidth(800);
+            $wnd->SetHeight(500);
+            
+            //estremi liquidazione
+            //$section=new AA_FieldSet(uniqid(),"Competenze");
+            $section=new AA_FieldSet(uniqid(),"Periodo utile");
+            $section->AddDateField("ras|periodo_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*Scegli una data dal calendario."));
+            $section->AddDateField("ras|periodo_al","Data fine",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*Scegli una data dal calendario."),false);
+            $wnd->AddGenericObject($section);
+
+            $wnd->AddTextField("ras|anticipo","Anticipo corrisposto",array("required"=>true,"labelWidth"=>200,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56","bottomLabel"=>"*es. 1234,56."));
+            $wnd->AddTextField("ras|importo","Importo ammesso a rimborso",array("required"=>true,"labelWidth"=>230,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*es. 1234,56."),false);
+            
+            $wnd->EnableCloseWndOnSuccessfulSave();
+            if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+            if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+            $wnd->SetSaveTask("UpdateSierComuneRendicontiRas");
+
+            return $wnd;    
+        }
+        else
+        {
+            //to do view only
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica contabile RAS comune di ".$comune->GetProp("denominazione"), $this->id);
             $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"L'utente corrente non può apportare modifiche.")));
 
             return $wnd;
@@ -25795,7 +26623,7 @@ Class AA_SierModule extends AA_GenericModule
                 }
             }
 
-            $wnd=new AA_GenericFormDlg($id, "Modifica competenze personale a tempo indeterminato del comune di ".$comune->GetProp("denominazione"), $this->id,$form_data,$form_data);
+            $wnd=new AA_GenericFormDlg($id, "Modifica spese per straordinario e missioni del personale del comune di ".$comune->GetProp("denominazione"), $this->id,$form_data,$form_data);
                 
             $wnd->SetLabelAlign("right");
             $wnd->SetLabelWidth(280);
@@ -25806,9 +26634,9 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetHeight(1080);
             
             $section=new AA_FieldSet(uniqid(),"Straordinario");
-            $section->AddTextField("comune|straordinario|estremi_autorizzazione","Estremi provvedimenti di autorizzazione",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei  provvedimenti di autorizzione."));
-            $section->AddTextField("comune|straordinario|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."),false);
-            $section->AddTextField("comune|straordinario|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("comune|straordinario|estremi_autorizzazione","Estremi provvedimenti di autorizzazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di autorizzione."));
+            $section->AddTextField("comune|straordinario|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."),false);
+            $section->AddTextField("comune|straordinario|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("comune|straordinario|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo autorizzato","align"=>"center","css"=>array("background"=>"#efefef"))));
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo effettivo","align"=>"center","css"=>array("background"=>"#efefef"))),false);
@@ -25825,7 +26653,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Oneri");
-            $section->AddTextField("comune|oneri|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"labelWidth"=>220, "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("comune|oneri|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"labelWidth"=>220,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("comune|oneri|dettagli_cpdel","Cpdel",array("required"=>true,"gravity"=>1,"labelWidth"=>90,"validateFunction"=>"IsNumber"));
             $section->AddTextField("comune|oneri|dettagli_irap","Irap",array("required"=>true,"gravity"=>1,"labelWidth"=>90,"validateFunction"=>"IsNumber"),false);
             $section->AddTextField("comune|oneri|dettagli_altro","Altro",array("required"=>true,"gravity"=>1,"labelWidth"=>90,"validateFunction"=>"IsNumber"),false);
@@ -25834,8 +26662,8 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddGenericObject($section);
             
             $section=new AA_FieldSet(uniqid(),"Missioni");
-            $section->AddTextField("comune|missioni|estremi_autorizzazione","Estremi provv. di autorizzazione.",array("required"=>true,"gravity"=>1,"labelWidth"=>230, "bottomLabel"=>"*Estremi dei provv. di autorizzazione."));
-            $section->AddTextField("comune|missioni|estremi_liquidazione","Estremi provv. di liquidazione",array("required"=>true,"gravity"=>1, "labelWidth"=>230,"bottomLabel"=>"*Estremi dei provv. di liquidazione."));
+            $section->AddTextField("comune|missioni|estremi_autorizzazione","Estremi provv. di autorizzazione.",array("required"=>true,"gravity"=>1,"labelWidth"=>230,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei provv. di autorizzazione."));
+            $section->AddTextField("comune|missioni|estremi_liquidazione","Estremi provv. di liquidazione",array("required"=>true,"gravity"=>1, "labelWidth"=>230,"placeholder"=>"es. prot. n.12345 del 2024-02-25","bottomLabel"=>"*Estremi dei provv. di liquidazione."));
             $section->AddTextField("comune|missioni|km","Km percorsi",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>110));
             $section->AddTextField("comune|missioni|dipendenti","n. dipendenti che le hanno effettuate",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>2,"labelWidth"=>300),false);
             $section->AddTextField("comune|missioni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
@@ -25851,7 +26679,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             //to do view only
-            $wnd = new AA_GenericWindowTemplate($id,"Modifica competenze personale tempo indeterminato comune di ".$comune->GetProp("denominazione"), $this->id);
+            $wnd = new AA_GenericWindowTemplate($id,"Modifica spese per straordinario e missioni del comune di ".$comune->GetProp("denominazione"), $this->id);
             $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"L'utente corrente non può apportare modifiche.")));
 
             return $wnd;
@@ -25916,12 +26744,12 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetWidth(1200);
             $wnd->SetHeight(800);
             
-            $section=new AA_FieldSet(uniqid(),"Competenze");
-            $section->AddTextField("tipologia","Tipologia contrattuale",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Indicare la tipologia contrattuale."));
-            $section->AddTextField("qualifica","Qualifica funzionale",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Indicare la qualifica funzionale del personale contrattualizzato."),false);
-            $section->AddTextField("estremi_assunzione","Estremi provvedimenti di assunzione",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei  provvedimenti di assunzione."));
-            $section->AddTextField("estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
-            $section->AddTextField("estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section=new AA_FieldSet(uniqid(),"Competenze per personale assunto esclusivamente con rapporto di lavoro subordinato a tempo determinato");
+            //section->AddTextField("tipologia","Tipologia contrattuale",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Indicare la tipologia contrattuale."));
+            $section->AddTextField("qualifica","Qualifica funzionale",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Indicare la qualifica funzionale del personale contrattualizzato."));
+            $section->AddTextField("estremi_assunzione","Estremi provvedimenti di assunzione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei  provvedimenti di assunzione."));
+            $section->AddTextField("estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
+            $section->AddTextField("estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo di assunzione","align"=>"center","css"=>array("background"=>"#efefef"))));
             $section->AddSpacer(false);
             $section->AddDateField("periodo_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
@@ -25930,8 +26758,8 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $wnd->AddGenericObject($section);
 
-            $section=new AA_FieldSet(uniqid(),"Oneri");
-            $section->AddTextField("oneri_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"labelWidth"=>220, "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section=new AA_FieldSet(uniqid(),"Oneri per personale assunto esclusivamente con rapporto di lavoro subordinato a tempo determinato");
+            $section->AddTextField("oneri_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"labelWidth"=>220,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("oneri_cpdel","Cpdel",array("required"=>true,"gravity"=>1,"labelWidth"=>60,"validateFunction"=>"IsNumber"));
             $section->AddTextField("oneri_irap","Irap",array("required"=>true,"gravity"=>1,"labelWidth"=>60,"validateFunction"=>"IsNumber"),false);
             $section->AddTextField("oneri_altro","Altro",array("required"=>true,"gravity"=>1,"labelWidth"=>60,"validateFunction"=>"IsNumber"),false);
