@@ -26034,6 +26034,16 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $generaleLayout->addRow($val);
 
+        $value=$object->BuildRendicontiSerial($rendiconti);
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Seriale:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $generaleLayout->addRow($val);
+
         $box=new AA_JSON_Template_Layout($id."_RendicontiRas_Box",array("gravity"=>7,"type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RendicontiRas",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
