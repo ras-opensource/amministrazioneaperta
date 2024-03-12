@@ -1498,6 +1498,23 @@ Class AA_Sier extends AA_Object_V2
         return $result;
     }
 
+    //construisce il seriale dei rendiconti
+    public function BuildRendicontiSerial($rendiconti=null)
+    {
+        if(!$rendiconti) return hash('sha256',"0000000000000");
+        if(!is_array($rendiconti)) return hash('sha256',$rendiconti);
+
+        $digest=array();
+        if(isset($rendiconti['seggi']))$digest[]=$rendiconti['seggi'];
+        if(isset($rendiconti['buoni']))$digest[]=$rendiconti['buoni'];
+        if(isset($rendiconti['seggi']))$digest[]=$rendiconti['seggi'];
+        if(isset($rendiconti['personale_det']))$digest[]=$rendiconti['personale_det'];
+        if(isset($rendiconti['comune']))$digest[]=$rendiconti['comune'];
+        if(isset($rendiconti['servizi']))$digest[]=$rendiconti['servizi'];
+
+        return hash('sha256',json_encode($digest));
+    }
+
     //costruisce il feed dei candidati
     public function BuildCandidatiFeed($params=array())
     {
@@ -2983,6 +3000,11 @@ Class AA_Sier extends AA_Object_V2
             if(isset($params['senza_rendiconti']) && $params['senza_rendiconti']==1)
             {
                 $query.=" AND rendiconti like ''";
+            }
+
+            if(isset($params['con_rendiconti']) && $params['con_rendiconti']==1)
+            {
+                $query.=" AND rendiconti not like ''";
             }
 
             if(isset($params['scrutinio_parziale']) && $params['scrutinio_parziale']==1)
@@ -14165,6 +14187,11 @@ Class AA_SierModule extends AA_GenericModule
         {
             $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con rendiconti non caricati</span>&nbsp;";
         }
+        
+        if(isset($params['con_rendiconti']) && $params['con_rendiconti'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con rendiconti caricati</span>&nbsp;";
+        }
 
         if(isset($params['con_criticita']) && $params['con_criticita'] > 0)
         {
@@ -14476,10 +14503,17 @@ Class AA_SierModule extends AA_GenericModule
             $class="AA_DataTable_Ops_Button";
             $icon="mdi mdi-eye";
             $text="Vedi e gestisci i rendiconti";
-            if($object->GetProp("rendiconti") == "") 
+            $rendiconti=$curComune->GetRendiconti();
+            if($rendiconti == "") 
             {
                 $class="AA_DataTable_Ops_Button";
                 $icon="mdi mdi-upload";
+                $text="Gestisci i rendiconti";
+            }
+            else
+            {
+                $class="AA_DataTable_Ops_Button";
+                $icon="mdi mdi-eye";
                 $text="Gestisci i rendiconti";
             }
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI;
@@ -14599,7 +14633,7 @@ Class AA_SierModule extends AA_GenericModule
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Comune_Filter", "Parametri di filtraggio",$this->GetId(),$formData,$resetData,$applyActions,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX);
         
-        $dlg->SetHeight(640);
+        $dlg->SetHeight(740);
         $dlg->SetWidth(980);
         $dlg->SetLabelWidth(350);
         
@@ -14630,6 +14664,9 @@ Class AA_SierModule extends AA_GenericModule
         
         //Senza rendiconti
         $dlg->AddSwitchBoxField("senza_rendiconti","Comuni senza rendiconti",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni senza rendiconti."));
+
+        //con rendiconti
+        $dlg->AddSwitchBoxField("con_rendiconti","Comuni con rendiconti",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni con rendiconti."));
 
         //comuni con criticità
         $dlg->AddSwitchBoxField("con_criticita","Comuni con criticità",array("onLabel"=>"mostra esclusivamente","offLabel"=>"mostra tutti","bottomLabel"=>"*Abilita per mostrare ESCLUSIVAMENTE i comuni con criticità."));
@@ -21549,6 +21586,12 @@ Class AA_SierModule extends AA_GenericModule
             if(!isset($rendiconti['buoni'])) $rendiconti['buoni']=array();
             $rendiconti['buoni']['dipendenti']=$_REQUEST['buoni|dipendenti'];
         }
+        if(isset($_REQUEST['buoni|note']))
+        {
+            if(!isset($rendiconti['buoni'])) $rendiconti['buoni']=array();
+            $rendiconti['buoni']['note']=$_REQUEST['buoni|note'];
+        }
+
         $periodo="";
 
         if(isset($_REQUEST['buoni|periodo_dal'])) $periodo=substr($_REQUEST['buoni|periodo_dal'],0,10);
@@ -21628,7 +21671,7 @@ Class AA_SierModule extends AA_GenericModule
             "estremi_pagamento"=>trim($_REQUEST['estremi_pagamento']),
             "ditta"=>trim($_REQUEST['ditta']),
             "estremi_fattura"=>trim($_REQUEST['estremi_fattura']),
-
+            "note"=>trim($_REQUEST['note'])
         );
 
         $rendiconti['servizi'][$id_servizio]=$servizio;
@@ -25612,19 +25655,19 @@ Class AA_SierModule extends AA_GenericModule
                 }
         
                 $estremi="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%'>";
-                $estremi.="<div style='display:flex; width:100%'><div style='width:25%'>assunzione:</div><div>".$val['estremi_assunzione']."</div></div>";
-                $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>liquidazione:</div><div>".$val['estremi_liquidazione']."</div></div>";
-                $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>pagamento:</div><div>".$val['estremi_pagamento']."</div></div>";
+                $estremi.="<div style='display:flex; width:100%'><div style='width:25%;min-width:25%'>Assunzione:</div><div>".$val['estremi_assunzione']."</div></div>";
+                $estremi.="<div style='display:flex;width:100%'><div style='width:25%;min-width:25%'>Liquidazione:</div><div>".$val['estremi_liquidazione']."</div></div>";
+                $estremi.="<div style='display:flex;width:100%'><div style='width:25%;min-width:25%'>Pagamento:</div><div>".$val['estremi_pagamento']."</div></div>";
                 //$estremi.="<div style='display:flex;width:100%'><div style='width:25%'>periodo:</div><div> dal ".$val['periodo_dal']." al ".$val['periodo_al']."</div></div>";
                 $estremi.="</div>";
 
                 $oneri="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%'>";
-                $oneri.="<div style='display:flex; width:100%'><div style='width:40%'>Estremi pagamento:</div><div>".$val['oneri_pagamento']."</div></div>";
-                $oneri.="<div style='display:flex;width:100%'><div style='width:40%'>cpdel:</div><div>".AA_Utils::number_format($val['oneri_cpdel'],2,",",".")."</div></div>";
-                $oneri.="<div style='display:flex;width:100%'><div style='width:40%'>irap:</div><div>".AA_Utils::number_format($val['oneri_irap'],2,",",".")."</div></div>";
-                $oneri.="<div style='display:flex;width:100%'><div style='width:40%'>altro:</div><div>".AA_Utils::number_format($val['oneri_altro'],2,",",".")."</div></div>";
-                $oneri.="<div style='display:flex;width:100%'><div style='width:40%'>altro(descrizione):</div><div>".$val['oneri_altro_desc']."</div></div>";
-                $oneri.="<div style='display:flex;width:100%'><div style='width:40%'>Importo corrisposto:</div><div>".AA_Utils::number_format($val['oneri_importo'],2,",",".")."</div></div>";
+                $oneri.="<div style='display:flex; width:100%'><div style='width:40%;min-width:40%'>Estremi pagamento:</div><div>".$val['oneri_pagamento']."</div></div>";
+                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Cpdel:</div><div>".AA_Utils::number_format($val['oneri_cpdel'],2,",",".")."</div></div>";
+                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Irap:</div><div>".AA_Utils::number_format($val['oneri_irap'],2,",",".")."</div></div>";
+                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Altro:</div><div>".AA_Utils::number_format($val['oneri_altro'],2,",",".")."</div></div>";
+                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Altro(descrizione):</div><div>".$val['oneri_altro_desc']."</div></div>";
+                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Importo corrisposto:</div><div>".AA_Utils::number_format($val['oneri_importo'],2,",",".")."</div></div>";
                 $oneri.="</div>";
 
                 $periodo="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%;font-size:smaller'>";
@@ -25643,7 +25686,7 @@ Class AA_SierModule extends AA_GenericModule
             if($canModify)
             {
                 $columns=array(
-                    array("id"=>"qualifica","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"qualifica","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable_left"),
                     array("id"=>"periodo","header"=>array("<div style='text-align: center'>Periodo</div>"),"width"=>120, "css"=>"RendicontiServiziTable"),
                     array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>"),"width"=>130, "css"=>"RendicontiServiziTable"),
                     array("id"=>"estremi","header"=>array("<div style='text-align: center'>Provvedimenti (estremi)</div>"),"width"=>350,"css"=>array("font-size"=>"smaller")),
@@ -25654,7 +25697,7 @@ Class AA_SierModule extends AA_GenericModule
             else
             {
                 $columns=array(
-                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable_left"),
                     array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"estremi","header"=>array("<div style='text-align: center'>Provvedimenti (estremi)</div>"),"width"=>350,"css"=>array("font-size"=>"smaller"))
@@ -25670,6 +25713,7 @@ Class AA_SierModule extends AA_GenericModule
                 "rowLineHeight"=>24,
                 "css"=>"AA_Header_DataTable",
                 "hover"=>"AA_DataTable_Row_Hover",
+                "eventHandlers"=>array("onresize"=>array("handler"=>"adjustRowHeight","module_id"=>$this->GetId())),
                 "columns"=>$columns,
                 "data"=>$data
             ));
@@ -25795,7 +25839,21 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
-        $row->addCol(new AA_JSON_Template_Generic());
+        $row->AddCol($val);
+        $box->addRow($row);
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="";
+        if(isset($rendiconti['buoni']['note']))
+        {
+            $value=$rendiconti['buoni']['note'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"note:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
         $row->AddCol($val);
         $box->addRow($row);
         $multiview->AddCell($generaleLayout);
@@ -25840,14 +25898,16 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiServiziModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_servizio:'".$idServizio."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
                     $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiConfirmTrashServiziDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_servizio:'".$idServizio."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
-                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica il bene/servizio' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                    if($curServizio['note']!="") $note='<a href="#" title="Visualizza le note" onClick=\'let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($curServizio['note']).'"));AA_MainApp.ui.modalBox(note,"Note")\'><span class="mdi mdi-clipboard-text"></span></a>';
+                    else $note="";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;$note<a class='AA_DataTable_Ops_Button' title='Modifica il bene/servizio' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina il Comune' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
                 }
         
                 $estremi="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%'>";
-                $estremi.="<div style='display:flex; width:100%'><div style='width:25%'>impegno:</div><div>".$curServizio['estremi_impegno']."</div></div>";
-                $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>liquidazione:</div><div>".$curServizio['estremi_liquidazione']."</div></div>";
-                $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>pagamento:</div><div>".$curServizio['estremi_pagamento']."</div></div>";
-                $estremi.="<div style='display:flex;width:100%'><div style='width:25%'>fattura:</div><div>".$curServizio['estremi_fattura']."</div></div>";
+                $estremi.="<div style='display:flex; width:100%'><div style='width:25%;min-width:25%'>Impegno:</div><div>".$curServizio['estremi_impegno']."</div></div>";
+                $estremi.="<div style='display:flex;width:100%'><div style='width:25%;min-width:25%'>Liquidazione:</div><div>".$curServizio['estremi_liquidazione']."</div></div>";
+                $estremi.="<div style='display:flex;width:100%'><div style='width:25%;min-width:25%'>Pagamento:</div><div>".$curServizio['estremi_pagamento']."</div></div>";
+                $estremi.="<div style='display:flex;width:100%'><div style='width:25%;min-width:25%'>Fattura:</div><div>".$curServizio['estremi_fattura']."</div></div>";
                 $estremi.="</div>";
                 $data[]=array("id"=>$idServizio,"tipologia"=>$tipologia[$curServizio['tipologia']],"descrizione"=>$curServizio['descrizione'],"ditta"=>$curServizio['ditta'],"importo"=>AA_Utils::number_format($curServizio['importo'],2,",","."),
                 "estremi"=>$estremi,
@@ -25858,10 +25918,10 @@ Class AA_SierModule extends AA_GenericModule
             if($canModify)
             {
                 $columns=array(
-                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable_left"),
+                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable_left"),
+                    array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable_left"),
+                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>"),"width"=>120,"css"=>"RendicontiServiziTable"),
                     array("id"=>"estremi","header"=>array("<div style='text-align: center'>Provvedimenti (estremi)</div>"),"width"=>350,"css"=>array("font-size"=>"smaller")),
                     array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>90, "css"=>array("text-align"=>"center")),
                 );
@@ -25869,15 +25929,15 @@ Class AA_SierModule extends AA_GenericModule
             else
             {
                 $columns=array(
-                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable_left"),
+                    array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable_left"),
+                    array("id"=>"ditta","header"=>array("<div style='text-align: center'>Ditta</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable_left"),
                     array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"estremi","header"=>array("<div style='text-align: center'>Provvedimenti (estremi)</div>"),"width"=>350,"css"=>array("font-size"=>"smaller"))
                 );
             }
 
-            $table=new AA_JSON_Template_Generic($id."_Comuni", array(
+            $table=new AA_JSON_Template_Generic("", array(
                 "view"=>"datatable",
                 "scrollX"=>false,
                 "select"=>false,
@@ -25887,6 +25947,7 @@ Class AA_SierModule extends AA_GenericModule
                 "css"=>"AA_Header_DataTable",
                 "hover"=>"AA_DataTable_Row_Hover",
                 "columns"=>$columns,
+                "eventHandlers"=>array("onresize"=>array("handler"=>"adjustRowHeight","module_id"=>$this->GetId())),
                 "data"=>$data
             ));
 
@@ -26253,6 +26314,7 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['estremi_liquidazione']="";
             $form_data['estremi_pagamento']="";
             $form_data['estremi_fattura']="";
+            $form_data['note']="";
 
             $rendiconti=$comune->GetRendiconti(true);
             if(isset($_REQUEST['id_servizio']) && isset($rendiconti['servizi'][$_REQUEST['id_servizio']]))
@@ -26266,6 +26328,7 @@ Class AA_SierModule extends AA_GenericModule
                 $form_data['estremi_liquidazione']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_liquidazione'];
                 $form_data['estremi_pagamento']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_pagamento'];
                 $form_data['estremi_fattura']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['estremi_fattura'];
+                $form_data['note']=$rendiconti['servizi'][$_REQUEST['id_servizio']]['note'];
             }
 
             $wnd=new AA_GenericFormDlg($id, "Aggiungi/Modifica un bene/servizio - comune di ".$comune->GetProp("denominazione"), $this->id,$form_data,$form_data);
@@ -26294,6 +26357,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddTextField("estremi_pagamento","Estremi mandato di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del mandato di pagamento."));
             $wnd->AddTextField("ditta","Ditta",array("required"=>true,"gravity"=>1,"bottomLabel"=>"*inserisci la denominazione della ditta fornitrice."));
             $wnd->AddTextField("estremi_fattura","Estremi fattura",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi della fattura."));
+            $wnd->AddTextareaField("note","note",array("gravity"=>1));
 
             $wnd->EnableCloseWndOnSuccessfulSave();
             if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
@@ -26390,6 +26454,7 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['buoni|periodo_dal']="";
             $form_data['buoni|periodo_al']="";
             $form_data['buoni|dipendenti']=0;
+            $form_data['buoni|note']="";
 
             foreach($rendiconti as $key=>$val)
             {
@@ -26428,24 +26493,24 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->EnableValidation();
             
             $wnd->SetWidth(780);
-            $wnd->SetHeight(800);
+            $wnd->SetHeight(600);
             
             //estremi liquidazione
             //$section=new AA_FieldSet(uniqid(),"Competenze");
-            $wnd->AddTextField("buoni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
-            $wnd->AddTextField("buoni|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-           
-
-            $wnd->AddTextField("buoni|erogati","n. di buoni erogati",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1));
-            
-            $wnd->AddTextField("buoni|dipendenti","n. dipendenti che ne hanno usufruito",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1),false);
-            
             $section=new AA_FieldSet(uniqid(),"Periodo di utilizzo");
             $section->AddDateField("buoni|periodo_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*data inizio utilizzo (YYYY-mm-gg)."));
             $section->AddDateField("buoni|periodo_al","Data fine",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*data fine utilizzo (YYYY-mm-gg)."),false);
             $wnd->AddGenericObject($section);
 
+            $wnd->AddTextField("buoni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
+            $wnd->AddTextField("buoni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+
+            $wnd->AddTextField("buoni|erogati","n. di buoni erogati",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1));
+            
+            $wnd->AddTextField("buoni|dipendenti","n. dipendenti che ne hanno usufruito",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1),false);
+            
             $wnd->AddTextField("buoni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $wnd->AddTextareaField("buoni|note","Note",array("gravity"=>1,"labelWidth"=>70,"bottomPadding"=>0));
             
             $wnd->EnableCloseWndOnSuccessfulSave();
             if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();

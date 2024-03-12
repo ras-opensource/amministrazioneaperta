@@ -223,6 +223,17 @@ var <?php echo AA_SierModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sier
     }
 };
 
+//aggiusta automagicamente l'altezza delle righe della tabella
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].adjustRowHeight = function() {
+    try 
+    {
+        //console.log("adjustRowHeight",arguments,this)
+        this.adjustRowHeight(null, true);
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.ExportCandidatiCSV", msg, this);
+    }
+};
+
 //----------------------------------------------  Funzioni di reportistica  ----------------------------------------------
 function AA_SierWebAppGenericParams()
 {
