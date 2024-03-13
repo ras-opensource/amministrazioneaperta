@@ -104,7 +104,7 @@ class AA_XML_Element_Generic
     }
 
     //stile
-    private $sStyle = "";
+    protected $sStyle = "";
     public function SetStyle($style = "", $bAppend = false)
     {
         if (!$bAppend) $this->sStyle = $style;
@@ -112,6 +112,8 @@ class AA_XML_Element_Generic
             if ($this->sStyle != "") $this->sStyle .= ";" . $style;
             else $this->sStyle .= $style;
         }
+
+        //AA_Log::Log(__METHOD__." - style:".$style." - newStyle: ".$this->sStyle,100);
     }
     public function GetStyle()
     {
@@ -1150,23 +1152,43 @@ class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
         $this->aRows[0]->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; width: 100%; font-weight: bold; border-bottom: 1px solid $this->defaultBorderColor; background-color: $this->h_bgcolor;");
     }
 
+    protected $cellPadding="";
+    public function GetCellPadding()
+    {
+        return $this->cellPadding;
+    }
+    public function SetCellPadding($val)
+    {
+        $this->cellPadding=$val;
+    }
+
     //Imposta il contenuto di una cella
-    public function SetCellText($row = 1, $col = 1, $content = "", $alignment = "left", $color = "", $grassetto = "")
+    public function SetCellText($row = 1, $col = 1, $content = "", $alignment = "left", $color = "", $grassetto = "",$padding="")
     {
         $cell = $this->GetCell($row, $col);
         if ($cell instanceof AA_XML_Div_Element) {
             $cell->SetText($content);
-            if (strpos("text-align:", $this->GetStyle()) !== false) $cell->SetStyle(preg_replace("/(text-align:\ [center|left|right];)+/", "text-align: $alignment;", $cell->GetStyle()));
+            if (strpos($cell->GetStyle(), "text-align:") !== false) $cell->SetStyle(preg_replace("/(text-align:\ [center|left|right];)+/", "text-align: $alignment;", $cell->GetStyle()));
             else $cell->SetStyle("text-align: $alignment;", true);
 
             if ($color != "") {
-                if (strpos("color:", $this->GetStyle()) !== false) $cell->SetStyle(preg_replace("/(color:\ [.*];)+/", "color: $color;", $cell->GetStyle()));
+                if (strpos("color:", $cell->GetStyle()) !== false) $cell->SetStyle(preg_replace("/(color:\ [.*];)+/", "color: $color;", $cell->GetStyle()));
                 else $cell->SetStyle("color: $color", true);
             }
 
             if ($grassetto != "") {
-                if (strpos("font-weight:", $this->GetStyle()) !== false) $cell->SetStyle(preg_replace("/(font-weight:\ [.*];)+/", "font-weight: bold;", $cell->GetStyle()));
+                if (strpos($cell->GetStyle(),"font-weight:") !== false) $cell->SetStyle(preg_replace("/(font-weight:\ [.*];)+/", "font-weight: bold;", $cell->GetStyle()));
                 else $cell->SetStyle("font-weight: bold", true);
+            }
+
+            if($padding=='' && $this->cellPadding !="") $padding=$this->cellPadding;
+            if($padding!="")
+            {
+                if(strpos($cell->GetStyle(), "padding:") !== false)
+                {
+                    $cell->SetStyle(preg_replace("/(padding:\ [.*];)+/", "padding: ".$padding.";", $cell->GetStyle()));
+                }
+                else $cell->SetStyle("padding: ".$padding, true);
             }
 
             return true;

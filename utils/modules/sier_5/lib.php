@@ -5545,6 +5545,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSierComuneRendicontiRas");
             $taskManager->RegisterTask("GetSierComuneRendicontiRasLiquidazioniModifyDlg");
             $taskManager->RegisterTask("UpdateSierComuneRendicontiRasLiquidazioni");
+            $taskManager->RegisterTask("GetSierComuneRendicontiExportRasPdf");
 
             //feed
             $taskManager->RegisterTask("GetSierFeedRisultatiAffluenza");
@@ -17504,6 +17505,35 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task affluenza add new Comune
+    public function Task_GetSierComuneRendicontiExportRasPdf($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $comune = $object->Getcomune($_REQUEST['id_comune']);
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido",false);
+            return false;
+        }
+    
+        die($this->Template_GetSierComuneRendicontiExportRasPdf($object,$comune));
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRendicontiExportRasPdf($object,$comune),true);
+        return true;
+    }
+
      //Task affluenza modify affluenza
      public function Task_GetSierComuneAffluenzaModifyDlg($task)
      {
@@ -21052,11 +21082,8 @@ Class AA_SierModule extends AA_GenericModule
             if(!isset($rendiconti['seggi'])) $rendiconti['seggi']=array();
             if(!isset($rendiconti['seggi']['competenze'])) $rendiconti['seggi']['competenze']=array();
             $num=$_REQUEST['seggi|competenze|importo'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $rendiconti['seggi']['competenze']['importo']=AA_Utils::number_format($num,2,'.','');
         }
         if(isset($_REQUEST['seggi|competenze|estremi_liquidazione']))
@@ -21088,11 +21115,8 @@ Class AA_SierModule extends AA_GenericModule
             if(!isset($rendiconti['seggi'])) $rendiconti['seggi']=array();
             if(!isset($rendiconti['seggi']['missioni'])) $rendiconti['seggi']['missioni']=array();
             $num=$_REQUEST['seggi|missioni|importo'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $rendiconti['seggi']['missioni']['importo']=AA_Utils::number_format($num,2,'.','');
         }
         $comune->SetRendiconti($rendiconti);
@@ -21151,11 +21175,9 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['ras|anticipo']))
         {
             $num=$_REQUEST['ras|anticipo'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
+            
             $rendiconti['ras']['anticipo']=AA_Utils::number_format($num,2,'.','');
         }
 
@@ -21203,11 +21225,8 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['ras|importo']))
         {
             $num=$_REQUEST['ras|importo'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $rendiconti['ras']['importo']=AA_Utils::number_format($num,2,'.','');
         }
 
@@ -21334,12 +21353,15 @@ Class AA_SierModule extends AA_GenericModule
     }
 
     //Template pdf rendicontazione
-    protected function Template_RendicontiPdfExport($object=null,$comune=null,$bToBrowser = true, $title = "Rendicontazione spese elettorali", $index=true, $subTitle="")
+    protected function Template_GetSierComuneRendicontiExportRasPdf($object=null,$comune=null,$bToBrowser = true, $title = "Rendicontazione spese elettorali", $index=true, $subTitle="")
     {
         include_once "pdf_lib.php";
 
         if (!($object instanceof AA_Sier)) return "";
-        if (!($comune instanceof AA_Sier_Comune)) return "";
+        if (!($comune instanceof AA_SierComune)) return "";
+
+        $rendiconti=$comune->GetRendiconti(true);
+        $serial=$object->BuildRendicontiSerial($rendiconti);
 
         $count = 6;
         $rowsForPage=1;
@@ -21357,6 +21379,8 @@ Class AA_SierModule extends AA_GenericModule
         $filename .= "-" . date("YmdHis");
         $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
 
+        $doc->SetLogoImage("");
+        $doc->SetHeaderHeight("25mm");
         $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
         $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
         $curRow = 0;
@@ -21379,25 +21403,31 @@ Class AA_SierModule extends AA_GenericModule
             $curPage->ShowPageNumber(false);
 
             //Intestazione
-            $intestazione = "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Comune di ".$comune->GetProp('denominazione')."</div>";
-            $intestazione = "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>$title</div>";
+            $intestazione = "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold; margin-bottom: 2em;'>Comune di ".$comune->GetProp('denominazione')."</div>";
+            $intestazione .= "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold;  margin-bottom: 2em;'>".$object->GetName()."</div>";
+
+            $intestazione .= "<div style='width: 100%; text-align: center; font-size: 18; font-weight: normal'>$title</div>";
             if($subTitle !="")
             {
                 $intestazione .= "<div style='width: 100%; text-align: center; font-weight: normal; margin-top: 1em;'>".$subTitle."</div>";
             }
             $intestazione .= "<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il " . date("Y-m-d") . "</div>";
-
+            
+            $curPage->EnableFooter(true);
+            $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial."</div>");
             $curPage->SetContent($intestazione);
             $curNumPage++;
 
+            $doc->SetTitle("<div style='display:flex;justify-content:space-around;align-items:center;flex-direction:column; height:70%;width:100%;padding-top: 1em'><span style='font-size:18px'>Comune di ".$comune->GetProp("denominazione")."</span><hr style='width:25%'><div><span>".$title."</span><br><span style='font-weight:normal; font-size:smaller'>report generato il " . date("Y-m-d")."</span></div></div>");
             if($index)
             {
                 //pagine indice (50 nominativi per pagina)
-                $indiceNumVociPerPagina = 50;
+                $indiceNumVociPerPagina = 20;
                 for ($i = 0; $i < $count / $indiceNumVociPerPagina; $i++) 
                 {
                     $curPage = $doc->AddPage();
                     $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
+                    $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial."</div>");
                     $curNumPage++;
                 }
             }
@@ -21406,7 +21436,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         //Imposta il titolo per le pagine successive
-        $doc->SetTitle("$title - comune di ".$comune->GetProp("denominazione")." - report generato il " . date("Y-m-d"));
+        
         //$doc->SetTitle("$subTitle - report generato il " . date("Y-m-d"));
 
         $indice = array();
@@ -21439,20 +21469,27 @@ Class AA_SierModule extends AA_GenericModule
             }
 
             $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
-            $curPage_row .= "<div id='" . $curObject->GetID() . "' style='display:flex;  flex-direction: column; width: 99.8%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
+            $curPage_row .= "<div id='".$i."' style='display:flex;  flex-direction: column; width: 99.8%; height:100%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
 
-            $template = "";
-
+            //---------------------------------------- Riepilogo ----------------------------------------------
+            if($i==0)
+            {
+                $curPage_row .= "<div style='width: 100%; font-weight:bold; font-size:18px'>Prospetto riassuntivo generale spese elettorali</div>";
+                $curPage_row.=$this->Template_RendicontiReportProspettoRiassuntivo($object,$comune,$rendiconti);
+            }
+            //-------------------------------------------------------------------------------------------------
             //AA_Log::Log($template,100,false,true);
 
-            $curPage_row .= $template;
+
             $curPage_row .= "</div>";
+            $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial."</div>");
             $curRow++;
         }
         if ($curPage != null) $curPage->SetContent($curPage_row);
         #-----------------------------------------
 
-        if ($count > 1 && $index) {
+        if ($count > 1 && $index) 
+        {
             //Aggiornamento indice
             $curNumPage = 1;
             $curPage = $doc->GetPage($curNumPage);
@@ -21461,7 +21498,8 @@ Class AA_SierModule extends AA_GenericModule
             $bgColor = "";
             $curPage_row = "";
 
-            foreach ($indice as $id => $data) {
+            foreach ($indice as $id => $data) 
+            {
                 if ($curNumPage != (int)($vociCount / $indiceNumVociPerPagina) + 1) {
                     $curPage->SetContent($curPage_row);
                     $curNumPage = (int)($vociCount / $indiceNumVociPerPagina) + 1;
@@ -21470,29 +21508,23 @@ Class AA_SierModule extends AA_GenericModule
                     $bgColor = "";
                 }
 
-                if ($curPage instanceof AA_PDF_Page) {
-                    if ($vociCount % 2 > 0) {
-                        $dati = explode("|", $data);
-                        $curPage_row .= "<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#" . $id . "'>" . $dati['1'] . "</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#" . $id . "'>pag. " . $dati[0] . "</a></div>";
-                        $curPage_row .= "</div>";
-                        if ($vociCount == (sizeof($indice) - 1)) $curPage->SetContent($curPage_row);
-                        $curRow++;
-                    } else {
-                        //Intestazione
-                        if ($curRow == 0) $curPage_row = "<div style='width:100%;text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+                if ($curPage instanceof AA_PDF_Page) 
+                {
+                    //Intestazione
+                    if ($curRow == 0) $curPage_row = "<div style='width:100%;text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+                    if ($curRow % 2) $bgColor = "background-color: #f5f5f5;";
+                    else $bgColor = "";
+                    $curPage_row .= "<div style='display:flex; " . $rowContentWidth . " align-items: center; justify-content: space-between; font-size:larger; padding: .3mm; min-height: 9mm;" . $bgColor . "'>";
+                    $dati = explode("|", $data);
+                    $curPage_row .= "<div style='width:90%;text-align: left;padding-left: 10mm'><a style='text-decoration: none' href='#" . $id . "'>" . $dati['1'] . "</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a style='text-decoration: none' href='#" . $id . "'>pag. " . $dati[0] . "</a></div>";
+                    $curPage_row .= "</div>";
 
-                        if ($curRow % 2) $bgColor = "background-color: #f5f5f5;";
-                        else $bgColor = "";
-                        $curPage_row .= "<div style='display:flex; " . $rowContentWidth . " align-items: center; justify-content: space-between; text-align: center; padding: .3mm; min-height: 9mm;" . $bgColor . "'>";
-                        $dati = explode("|", $data);
-                        $curPage_row .= "<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#" . $id . "'>" . $dati['1'] . "</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#" . $id . "'>pag. " . $dati[0] . "</a></div>";
-
-                        //ultima voce
-                        if ($vociCount == (sizeof($indice) - 1)) {
-                            $curPage_row .= "<div style='width:40%;text-align: left;padding-left: 10mm'>&nbsp; </div><div style='width:9%;text-align: right;padding-left: 10mm'>&nbsp; </div></div>";
-                            $curPage->SetContent($curPage_row);
-                        }
+                    //ultima voce
+                    if ($vociCount == (sizeof($indice) - 1)) 
+                    {
+                        $curPage->SetContent($curPage_row);
                     }
+                    $curRow++;
                 }
 
                 $vociCount++;
@@ -21504,6 +21536,167 @@ Class AA_SierModule extends AA_GenericModule
             $doc->Render(false);
             return $doc->GetFilePath();
         }
+    }
+
+    public function Template_RendicontiReportProspettoRiassuntivo($object=null,$comune=null,$rendiconti=null)
+    {
+    
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        {
+            return "";
+        }
+
+        $layout=new AA_XML_Div_Element(uniqid());
+        $layout->SetStyle("width:99%; height:100%;");
+        $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>true,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("70", "30"));
+        $template->SetCellPadding("10px");
+        $template->SetHeaderLabels(array("Spese presentate a rimborso","Importo totale"));
+        $curRow=1;
+
+        $totale=0;
+        $value=0;
+        if(isset($rendiconti['seggi']['competenze']['importo']))
+        {
+            $value+=$rendiconti['seggi']['competenze']['importo'];
+            $totale+=$rendiconti['seggi']['competenze']['importo'];
+        }
+        if(isset($rendiconti['seggi']['missioni']['importo']))
+        {
+            $value+=$rendiconti['seggi']['missioni']['importo'];
+            $totale+=$rendiconti['seggi']['missioni']['importo'];
+        }
+        $template->SetCellText($curRow,0,"Competenze corrisposte ai componenti dei seggi (comprensiva di missioni)", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($value,2,",","."), "right");
+        $curRow++;
+
+        $value=0;
+        if(isset($rendiconti['comune']['straordinario']['importo']))
+        {
+            $value+=$rendiconti['comune']['straordinario']['importo'];
+            $totale+=$rendiconti['comune']['straordinario']['importo'];
+        }
+        if(isset($rendiconti['comune']['missioni']['importo']))
+        {
+            $value+=$rendiconti['comune']['missioni']['importo'];
+            $totale+=$rendiconti['comune']['missioni']['importo'];
+        }
+        if(isset($rendiconti['comune']['oneri']['importo']))
+        {
+            $value+=$rendiconti['comune']['oneri']['importo'];
+            $totale+=$rendiconti['comune']['oneri']['importo'];
+        }
+        $template->SetCellText($curRow,0,"Straordinario e missioni dei dipendenti (compresi oneri)", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($value,2,",","."), "right");
+        $curRow++;
+
+        $value=0;
+        if(isset($rendiconti['personale_det']))
+        {
+            foreach($rendiconti['personale_det'] as $key=>$val)
+            {
+                    $value+=$val['importo']+$val['oneri_importo'];
+                    $totale=$val['importo']+$val['oneri_importo'];
+            }
+        }
+        $template->SetCellText($curRow,0,"Assunzione di personale a tempo determinato", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($value,2,",","."), "right");
+        $curRow++;
+        $value=0;
+        if(isset($rendiconti['buoni']['importo']))
+        {
+            $value+=$rendiconti['buoni']['importo'];
+            $totale+=$rendiconti['buoni']['importo'];
+        }
+        $template->SetCellText($curRow,0,"Buoni pasto dei dipendenti addetti al servizio elettorale", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($value,2,",","."), "right");
+        $curRow++;
+
+        $software=0;
+        $trasporto=0;
+        $materiale=0;
+        $propaganda=0;
+        $collegamenti=0;
+        $altro=0;
+        $spese_postali=0;
+        if(isset($rendiconti['servizi']))
+        {
+            foreach($rendiconti['servizi'] as $key=>$val)
+            {
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=$val['importo'];              
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=$val['importo'];
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=$val['importo'];
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=$val['importo'];
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=$val['importo'];
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=$val['importo'];
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=$val['importo'];
+                $totale+=$val['importo'];
+            }
+        }
+        $template->SetCellText($curRow,0,"Stampati o software sostitutivi non forniti direttamente dalla Regione o dallo Stato", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($software,2,",","."), "right");
+        $curRow++;
+        $template->SetCellText($curRow,0,"Trasporto del materiale elettorale e degli arredi dei seggi - Allestimento dei seggi", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($trasporto,2,",","."), "right");
+        $curRow++;
+        $template->SetCellText($curRow,0,"Acquisto di materiale di consumo per l’allestimento dei seggi", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($materiale,2,",","."), "right");
+        $curRow++;
+        $template->SetCellText($curRow,0,"Spese per la propaganda elettorale", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($propaganda,2,",","."), "right");
+        $curRow++;
+        $template->SetCellText($curRow,0,"Collegamenti telefonici straordinari ai fini della raccolta dei dati elettorali", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($collegamenti,2,",","."), "right");
+        $curRow++;
+        $template->SetCellText($curRow,0,"Spese postali e telegrafiche", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($spese_postali,2,",","."), "right");
+        $curRow++;
+        $template->SetCellText($curRow,0,"Altre spese indispensabili per gli adempimenti elettorali", "left");
+        $template->SetCellText($curRow,1,AA_Utils::number_format($altro,2,",","."), "right");
+        $curRow++;
+      
+        $anticipo=0;
+        $totale_saldare=0;
+        $rimborso_concesso=0;
+        $liquidato=0;
+        if(isset($rendiconti['ras']['importo']))
+        {
+            $rimborso_concesso=$rendiconti['ras']['importo'];
+        }
+        if(isset($rendiconti['ras']['anticipo']))
+        {
+            $anticipo=$rendiconti['ras']['anticipo'];
+        }
+        if(isset($rendiconti['ras']['liquidazioni']))
+        {
+            foreach($rendiconti['ras']['liquidazioni'] as $val)
+            {
+                $liquidato+=$val['importo'];
+            }
+        }
+        $totale_saldare=$rimborso_concesso-$anticipo-$liquidato;
+
+        $totale_row=new AA_XML_Div_Element(uniqid(),$layout);
+        $totale_row->SetStyle("display:flex; width: 96.8%; font-weight:bold; font-size: larger;text-align:right; border:1px solid gray; padding: 10px");
+        $totale_row->SetText("<div style='width:70%;'>TOTALE SPESE PRESENTATE A RIMBORSO:</div><div style='width:30%'>".AA_Utils::number_format($totale,2,",",".")."</div>");
+
+        $val=new AA_XML_Div_Element(uniqid(),$layout);
+        $val->SetStyle("margin-top: 1em;text-align: justify");
+        $val->SetText("Si attesta che tutte le spese sono congrue, indispensabili e pertinenti agli adempimenti organizzativi inerenti le ".$object->GetName().".");
+
+        $val=new AA_XML_Div_Element(uniqid(),$layout);
+        $val->SetStyle("margin-top: 1em;text-align: justify");
+        $val->SetText("Si attesta che le spese sono correttamente annotate nelle scritture contabili del Comune, che sono state effettuate nel rispetto della normativa concernente la stipulazione dei contratti, che tutte le tipologie di spesa sono comprese fra quelle previste nelle leggi e circolari in materia, che gli originali sono conservati presso il Comune e che non vi sono altre spese per le quali chiedere rimborso.");
+
+        $val=new AA_XML_Div_Element(uniqid(),$layout);
+        $val->SetStyle("margin-top: 5em;text-align: left; font-weight:bold");
+        $val->SetText("La presente versione del rendiconto annulla e sostituisce le precedenti.");
+
+        $val=new AA_XML_Div_Element(uniqid(),$layout);
+        $val->SetStyle("display:flex; justify-content: space-around; font-weight:bold; align-items: end; width:99.8%; height:20%;");
+        $val->SetText("<div>Il Responsabile<br>del Servizio elettorale<br><br><br>_______________________</div><div>Il Responsabile<br>del Servizio finanziario<br><br><br>_______________________</div>");
+
+        return $layout->__toString();
     }
 
     //Task modifica buoni Comune
@@ -21569,11 +21762,8 @@ Class AA_SierModule extends AA_GenericModule
         {
             if(!isset($rendiconti['buoni'])) $rendiconti['buoni']=array();
             $num=$_REQUEST['buoni|importo'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $rendiconti['buoni']['importo']=AA_Utils::number_format($num,2,'.','');
         }
         if(isset($_REQUEST['buoni|erogati']))
@@ -21992,11 +22182,8 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['comune|straordinario|importo']))
         {
             $num=$_REQUEST['comune|straordinario|importo'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $rendiconti['comune']['straordinario']['importo']=AA_Utils::number_format($num,2,'.','');
         }
 
@@ -22059,34 +22246,26 @@ Class AA_SierModule extends AA_GenericModule
         $dettaglio_oneri="";
         if(isset($_REQUEST['comune|oneri|dettagli_cpdel']))
         {
-            $num=$_REQUEST['comune|oneri|dettagli_cpdel'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=$_REQUEST['comune|oneri|dettagli_cpdel'];        
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $dettaglio_oneri=AA_Utils::number_format($num,2,".");
         }
         $dettaglio_oneri.="|";
         if(isset($_REQUEST['comune|oneri|dettagli_irap']))
         {
             $num=$_REQUEST['comune|oneri|dettagli_irap'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $dettaglio_oneri.=AA_Utils::number_format($num,2,".");
         }
         $dettaglio_oneri.="|";
         if(isset($_REQUEST['comune|oneri|dettagli_altro']))
         {
-            $num=$_REQUEST['comune|oneri|dettagli_altro'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=$_REQUEST['comune|oneri|dettagli_altro'];        
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
+        
             $dettaglio_oneri.=AA_Utils::number_format($num,2,".");
         }
         $dettaglio_oneri.="|";
@@ -22098,11 +22277,8 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['comune|oneri|importo']))
         {
             $num=$_REQUEST['comune|oneri|importo'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $rendiconti['comune']['oneri']['importo']=AA_Utils::number_format($num,2,".");
         }
         #---------------
@@ -22131,11 +22307,8 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($_REQUEST['comune|missioni|importo']))
         {
             $num=$_REQUEST['comune|missioni|importo'];
-            if(strpos($num,".") !==false)
-            {
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            }
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
             $rendiconti['comune']['missioni']['importo']=AA_Utils::number_format($num,2,".");
         }
 
@@ -24884,7 +25057,7 @@ Class AA_SierModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>180,
                 "tooltip"=>"Genera il report in formato pdf con i dati inseriti fino a questo momento",
-                "click"=>'AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$this->GetTaskManagerUrl().'?task=RendicontiComuneExportRasPdf&object='.$object->GetId().'&id_comune='.$comune->GetProp('id_comune').'"},"'.$this->id.'")'
+                "click"=>'AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$this->GetTaskManagerUrl().'?task=GetSierComuneRendicontiExportRasPdf&id='.$object->GetId().'&id_comune='.$comune->GetProp('id').'"},"'.$this->id.'")'
             ));
 
             $toolbar->AddElement($modify_btn);
@@ -25185,7 +25358,7 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Estremi provvedimento di liquidazione:","value"=>$value,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
-        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><span>Trattamento di missione</span></div>"));
+        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><span>Trattamento di missione presidenti di seggio</span></div>"));
         //$row->addCol($val);
         $box->addRow($val);
         $value="n.d.";
@@ -25329,7 +25502,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         $box->AddRow($toolbar);
 
-        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><div style='width:60%'>Straordinario</div><div style='width:40%'>Missioni</div></div>"));
+        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><div style='width:60%'>Straordinario</div><div style='width:40%'>Missioni personale comunale</div></div>"));
         $box->AddRow($header);
 
         //content
@@ -26274,13 +26447,13 @@ Class AA_SierModule extends AA_GenericModule
             //estremi liquidazione
             $section=new AA_FieldSet(uniqid(),"Competenze");
             $section->AddTextField("seggi|competenze|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26"));
-            $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("seggi|competenze|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Trattamento di missione");
             $section->AddTextField("seggi|missioni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
-            $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("seggi|missioni|componenti","n. componenti con missioni",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Numero dei componenti che hanno effettuato missioni."));
             $section->AddTextField("seggi|missioni|km","Km totali",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Km totali percorsi."),false);
             $section->AddTextField("seggi|missioni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo corrisposto per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
@@ -26364,7 +26537,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddTextField("importo","Importo",array("required"=>true,"gravity"=>1,"bottomLabel"=>"*inserisci l'importo (es. 1234,56)."));
             $wnd->AddTextField("estremi_impegno","Estremi impegno di spesa",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del provvedimento di spesa."));
             $wnd->AddTextField("estremi_liquidazione","Estremi provv. liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del provvedimento di liquidazione."));
-            $wnd->AddTextField("estremi_pagamento","Estremi mandato di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del mandato di pagamento."));
+            $wnd->AddTextField("estremi_pagamento","Estremi mandato di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del mandato di pagamento."));
             $wnd->AddTextField("ditta","Ditta",array("required"=>true,"gravity"=>1,"bottomLabel"=>"*inserisci la denominazione della ditta fornitrice."));
             $wnd->AddTextField("estremi_fattura","Estremi fattura",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi della fattura."));
             $wnd->AddTextareaField("note","note",array("gravity"=>1));
@@ -26513,7 +26686,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddGenericObject($section);
 
             $wnd->AddTextField("buoni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
-            $wnd->AddTextField("buoni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $wnd->AddTextField("buoni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
 
             $wnd->AddTextField("buoni|erogati","n. di buoni erogati",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1));
             
@@ -26711,7 +26884,7 @@ Class AA_SierModule extends AA_GenericModule
             $section=new AA_FieldSet(uniqid(),"Straordinario");
             $section->AddTextField("comune|straordinario|estremi_autorizzazione","Estremi provvedimenti di autorizzazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di autorizzione."));
             $section->AddTextField("comune|straordinario|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."),false);
-            $section->AddTextField("comune|straordinario|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("comune|straordinario|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("comune|straordinario|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo autorizzato","align"=>"center","css"=>array("background"=>"#efefef"))));
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo effettivo","align"=>"center","css"=>array("background"=>"#efefef"))),false);
@@ -26728,7 +26901,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Oneri");
-            $section->AddTextField("comune|oneri|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"labelWidth"=>220,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("comune|oneri|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"labelWidth"=>220,"placeholder"=>"es. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("comune|oneri|dettagli_cpdel","Cpdel",array("required"=>true,"gravity"=>1,"labelWidth"=>90,"validateFunction"=>"IsNumber"));
             $section->AddTextField("comune|oneri|dettagli_irap","Irap",array("required"=>true,"gravity"=>1,"labelWidth"=>90,"validateFunction"=>"IsNumber"),false);
             $section->AddTextField("comune|oneri|dettagli_altro","Altro",array("required"=>true,"gravity"=>1,"labelWidth"=>90,"validateFunction"=>"IsNumber"),false);
@@ -26824,7 +26997,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("qualifica","Qualifica funzionale",array("required"=>true,"gravity"=>1, "bottomLabel"=>"*Indicare la qualifica funzionale del personale contrattualizzato."));
             $section->AddTextField("estremi_assunzione","Estremi provvedimenti di assunzione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei  provvedimenti di assunzione."));
             $section->AddTextField("estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
-            $section->AddTextField("estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo di assunzione","align"=>"center","css"=>array("background"=>"#efefef"))));
             $section->AddSpacer(false);
             $section->AddDateField("periodo_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
@@ -26834,7 +27007,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Oneri per personale assunto esclusivamente con rapporto di lavoro subordinato a tempo determinato");
-            $section->AddTextField("oneri_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"labelWidth"=>220,"placeholder"=>"es. prot.n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("oneri_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"labelWidth"=>220,"placeholder"=>"es. n. 1234 del 2024-02-23", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("oneri_cpdel","Cpdel",array("required"=>true,"gravity"=>1,"labelWidth"=>60,"validateFunction"=>"IsNumber"));
             $section->AddTextField("oneri_irap","Irap",array("required"=>true,"gravity"=>1,"labelWidth"=>60,"validateFunction"=>"IsNumber"),false);
             $section->AddTextField("oneri_altro","Altro",array("required"=>true,"gravity"=>1,"labelWidth"=>60,"validateFunction"=>"IsNumber"),false);
