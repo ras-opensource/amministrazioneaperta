@@ -413,7 +413,7 @@ Class AA_PDF_Document
         <style>
             html *
             {
-            font-family: "Roboto", "Dejavu",Verdana, Tahoma, sans-serif !important;
+                font-family: "Roboto", "Dejavu",Verdana, Tahoma, sans-serif;
             }
 
             @page {size: %PAGE_WIDTH%%PDF_UNIT% %PAGE_HEIGHT%%PDF_UNIT%; margin: 0;}
