@@ -23035,10 +23035,10 @@ Class AA_SierModule extends AA_GenericModule
             if(sizeof($rendiconti['personale_det'])%2>0) $numPagineRendicontiAssunzioni++;
         }
         $numPagineRendicontiServizi=1;
-        if(isset($rendiconti['servizi']) && sizeof($rendiconti['servizi'])>2) 
+        if(isset($rendiconti['servizi']) && sizeof($rendiconti['servizi'])>3) 
         {
-            $numPagineRendicontiServizi=intVal(sizeof($rendiconti['servizi'])/2);
-            if(sizeof($rendiconti['servizi'])%2>0) $numPagineRendicontiServizi++;
+            $numPagineRendicontiServizi=intVal(sizeof($rendiconti['servizi'])/3);
+            if(sizeof($rendiconti['servizi'])%3>0) $numPagineRendicontiServizi++;
         }
         $count = 4+$numPagineRendicontiAssunzioni+$numPagineRendicontiServizi;
 
@@ -23081,7 +23081,7 @@ Class AA_SierModule extends AA_GenericModule
             $curPage->ShowPageNumber(false);
 
             //Intestazione
-            $intestazione = "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold; margin-bottom: 2em;'>Comune di ".$comune->GetProp('denominazione')."</div>";
+            $intestazione = "<div style='width: 100%; text-align: center; font-size: 28; font-weight: bold; margin-bottom: 2em;'>Comune di ".$comune->GetProp('denominazione')."</div>";
             $intestazione .= "<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold;  margin-bottom: 2em;'>".$object->GetName()."</div>";
 
             $intestazione .= "<div style='width: 100%; text-align: center; font-size: 18; font-weight: normal'>$title</div>";
@@ -23152,7 +23152,6 @@ Class AA_SierModule extends AA_GenericModule
             if($i==3) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
             if($i==(3+$numPagineRendicontiAssunzioni)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
             if($i==(3+$numPagineRendicontiAssunzioni+1)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
-            if($i==(3+$numPagineRendicontiAssunzioni+2)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
 
             $curPage_row .= "<div id='".$i."' style='display:flex;  flex-direction: column; width: 99.8%; height:100%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
 
@@ -23233,11 +23232,13 @@ Class AA_SierModule extends AA_GenericModule
                     $bgColor = "";
                 }
 
+                //$indexBgColor = "#f5f5f5";
+                $indexBgColor = "#fff";
                 if ($curPage instanceof AA_PDF_Page) 
                 {
                     //Intestazione
-                    if ($curRow == 0) $curPage_row = "<div style='width:100%;text-align: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
-                    if ($curRow % 2) $bgColor = "background-color: #f5f5f5;";
+                    if ($curRow == 0) $curPage_row = "<div style='width:100%;text-align: center; font-size: larger; font-weight: bold; border-bottom: 1px solid #dedede; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+                    if ($curRow % 2) $bgColor = "background-color:$indexBgColor;";
                     else $bgColor = "";
                     $curPage_row .= "<div style='display:flex; " . $rowContentWidth . " align-items: center; justify-content: space-between; font-size:larger; padding: .3mm; min-height: 9mm;" . $bgColor . "'>";
                     $dati = explode("|", $data);
@@ -23435,23 +23436,23 @@ Class AA_SierModule extends AA_GenericModule
         $layout=new AA_XML_Div_Element(uniqid());
         $layout->SetStyle("width:99%; height:100%;");
 
-        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
-        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column; padding: .5em;'>";
+        $row_template.="<div style='width:100%;font-weight: bold; margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template.="</div>";
 
         $row_template_2col="<div style='display:flex; width: 96.8%;'>";
-        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template_2col.="</div>";
-        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="<div style='display:flex; width: 49%;flex-direction:column; border-left:1px solid #d7dbdd; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
         $row_template_2col.="</div>";
         $row_template_2col.="</div>";
 
         $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
-        $template->SetCellPadding("10px");
-        $template->SetHeaderLabels(array("Competenze componenti dei seggi"));
+        //$template->SetCellPadding("10px");
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>Competenze componenti dei seggi</span>"));
         $curRow=1;
 
         $rendiconti=$comune->GetRendiconti(true);
@@ -23476,8 +23477,8 @@ Class AA_SierModule extends AA_GenericModule
 
         $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
-        $template->SetCellPadding("10px");
-        $template->SetHeaderLabels(array("Trattamento di missione presidenti di seggio"));
+        //$template->SetCellPadding("10px");
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>Trattamento di missione presidenti di seggio</span>"));
         $curRow=1;
 
          //estremi liquidazione
@@ -23506,9 +23507,9 @@ Class AA_SierModule extends AA_GenericModule
         $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
 
-        $val="Si attesta la effettiva partecipazione dei componenti dei seggi per tutta la durata delle operazioni elettorali e l'applicazione ad essi degli onorari indicati nella circolare dell'Amministrazione regionale in materia di rendicontazione delle spese sostenute dai Comuni.";
+        $val="<ul>Si attesta che:<li>l'effettiva partecipazione dei componenti dei seggi per tutta la durata delle operazioni elettorali e l'applicazione ad essi degli onorari indicati nella circolare dell'Amministrazione regionale in materia di rendicontazione delle spese sostenute dai Comuni.</li></ul>";
         $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
-        $attestazione->SetStyle("text-align:justify;margin-top:5em");
+        $attestazione->SetStyle("text-align:justify;");
         $attestazione->SetText($val);
 
         return $layout->__toString();
@@ -23525,23 +23526,23 @@ Class AA_SierModule extends AA_GenericModule
         $layout=new AA_XML_Div_Element(uniqid());
         $layout->SetStyle("width:99%; height:100%;");
 
-        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
-        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column; padding: .5em;'>";
+        $row_template.="<div style='width:100%;font-weight: bold; margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template.="</div>";
 
         $row_template_2col="<div style='display:flex; width: 96.8%;'>";
-        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template_2col.="</div>";
-        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="<div style='display:flex; width: 49%;flex-direction:column; border-left:1px solid #d7dbdd; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
         $row_template_2col.="</div>";
         $row_template_2col.="</div>";
 
         $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
-        $template->SetCellPadding("10px");
-        $template->SetHeaderLabels(array("Competenze"));
+        //$template->SetCellPadding("10px");
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>Competenze</span>"));
         $curRow=1;
 
         $rendiconti=$comune->GetRendiconti(true);
@@ -23601,23 +23602,23 @@ Class AA_SierModule extends AA_GenericModule
         $layout=new AA_XML_Div_Element(uniqid());
         $layout->SetStyle("width:99%; height:100%;");
 
-        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
-        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column; padding: .5em;'>";
+        $row_template.="<div style='width:100%;font-weight: bold; margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template.="</div>";
 
         $row_template_2col="<div style='display:flex; width: 96.8%;'>";
-        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template_2col.="</div>";
-        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="<div style='display:flex; width: 49%;flex-direction:column; border-left:1px solid #d7dbdd; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
         $row_template_2col.="</div>";
         $row_template_2col.="</div>";
 
         $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
-        $template->SetCellPadding("5px");
-        $template->SetHeaderLabels(array("Straordinario"));
+        //$template->SetCellPadding("5px");
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>Straordinario</span>"));
         $curRow=1;
 
         $rendiconti=$comune->GetRendiconti(true);
@@ -23694,8 +23695,8 @@ Class AA_SierModule extends AA_GenericModule
 
         $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
-        $template->SetCellPadding("5px");
-        $template->SetHeaderLabels(array("Trattamento di missione personale comunale"));
+        //$template->SetCellPadding("5px");
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>Trattamento di missione personale comunale</span>"));
         $curRow=1;
 
         //estremi autorizazione
@@ -23726,8 +23727,8 @@ Class AA_SierModule extends AA_GenericModule
 
         $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
-        $template->SetCellPadding("5px");
-        $template->SetHeaderLabels(array("Oneri"));
+        //$template->SetCellPadding("5px");
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>Oneri</span>"));
         $curRow=1;
 
         //estremi autorizazione
@@ -23759,11 +23760,18 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($rendiconti['comune']['oneri']['importo'])) $value=AA_Utils::number_format($rendiconti['comune']['oneri']['importo'],2,",",".");
         $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
-        
+
+        $val="<ul>Si attesta che:
+        <li>sono stati rispettati i limiti per il lavoro straordinario elettorale previsti nell'art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68 e che la retribuzione per il lavoro straordinario di cui si chiede il rimborso è stata corrisposta ai dipendenti che potevano essere retribuiti con il compenso per prestazioni straordinarie in base al C.C.N.L. da applicarsi per il periodo considerato;</li>
+        <li>sono state rispettate le disposizioni contrattuali e legislative in materia di trattamento di trasferta dei dipendenti comunali e il rispetto dei limiti per il lavoro straordinario elettorale, previsti nell'art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68, complessivamente per le diverse consultazioni;</li></ul>";
+        $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
+        $attestazione->SetStyle("text-align:justify;font-size:smaller");
+        $attestazione->SetText($val);
+
         return $layout->__toString();
     }
 
-    public function Template_RendicontiReportAssunzioni($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true,$page=0)
+    public function Template_RendicontiReportAssunzioni($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true,$page=0,$lastPage=false)
     {
     
         if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
@@ -23774,16 +23782,16 @@ Class AA_SierModule extends AA_GenericModule
         $layout=new AA_XML_Div_Element(uniqid());
         $layout->SetStyle("width:99%; height:100%;");
 
-        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
-        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column; padding: .5em;'>";
+        $row_template.="<div style='width:100%;font-weight: bold; margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template.="</div>";
 
         $row_template_2col="<div style='display:flex; width: 96.8%;'>";
-        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template_2col.="</div>";
-        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="<div style='display:flex; width: 49%;flex-direction:column; border-left:1px solid #d7dbdd; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
         $row_template_2col.="</div>";
         $row_template_2col.="</div>";
 
@@ -23792,14 +23800,17 @@ Class AA_SierModule extends AA_GenericModule
         $count=0;
         if(isset($rendiconti['personale_det']))
         {
+            $numeroVoci=sizeof($rendiconti['personale_det'])-$page*2;
+            if($numeroVoci > 2) $numeroVoci=2;
+
             foreach($rendiconti['personale_det'] as $curPersonale)
             {
-                if($count >= $page*2 && $count <= $page+1)
+                if($count >= $page*2 && $count < ($page*2+2))
                 {
                     $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
                     $template->SetColSizes(array("100"));
-                    $template->SetCellPadding("7px");
-                    $template->SetHeaderLabels(array("<span style='font-weight:bold'>Qualifica:</span> ".$curPersonale['qualifica']));
+                    //$template->SetCellPadding("7px");
+                    $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>Qualifica:</span> ".$curPersonale['qualifica']));
                     $curRow=1;
         
                     //periodo e estremi assunzione
@@ -23831,7 +23842,7 @@ Class AA_SierModule extends AA_GenericModule
         
                     //estremi pagamento
                     $value="n.d.";
-                    if(isset($curPersonale['oneri_pagamento'])) $value=$curPersonale['oneri']['estremi_pagamento'];
+                    if(isset($curPersonale['oneri_pagamento'])) $value=$curPersonale['oneri_pagamento'];
                     $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi mandato di pagamento:",$value),$row_template));
                     $curRow++;
                     
@@ -23855,6 +23866,16 @@ Class AA_SierModule extends AA_GenericModule
                     if(isset($curPersonale['oneri_importo'])) $value=AA_Utils::number_format($curPersonale['oneri_importo'],2,",",".");
                     $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
                     $curRow++;
+                    $numeroVoci--;
+
+                    if($numeroVoci==0)
+                    {
+                        $val="<ul>Si attesta che:<li>la spesa di cui si chiede il rimborso per l'assunzione di personale a tempo determinato è relativa al lavoro prestato nel periodo elettorale indicato nella circolare della Regione in materia di rendicontazione;</li>
+                        <li>i contratti individuali di lavoro a tempo determinato, stipulati dal Comune, danno luogo alla costituzione di un rapporto di lavoro subordinato con l'Ente;</li>";
+                        $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
+                        $attestazione->SetStyle("text-align:left;");
+                        $attestazione->SetText($val);
+                    }
                 }
                 $count++;
             }
@@ -23877,87 +23898,70 @@ Class AA_SierModule extends AA_GenericModule
         $layout=new AA_XML_Div_Element(uniqid());
         $layout->SetStyle("width:99%; height:100%;");
 
-        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
-        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column; padding: .5em;'>";
+        $row_template.="<div style='width:100%;font-weight: bold; margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template.="</div>";
 
         $row_template_2col="<div style='display:flex; width: 96.8%;'>";
-        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
         $row_template_2col.="</div>";
-        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
-        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="<div style='display:flex; width: 49%;flex-direction:column; border-left:1px solid #d7dbdd; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
         $row_template_2col.="</div>";
         $row_template_2col.="</div>";
 
         $rendiconti=$comune->GetRendiconti(true);
-
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         $count=0;
         if(isset($rendiconti['servizi']))
         {
-            foreach($rendiconti['servizi'] as $curPersonale)
+            foreach($rendiconti['servizi'] as $curVal)
             {
-                if($count >= $page*2 && $count <= $page+1)
+                if($count >= $page*3 && $count < ($page*3+3))
                 {
                     $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
                     $template->SetColSizes(array("100"));
-                    $template->SetCellPadding("7px");
-                    $template->SetHeaderLabels(array("<span style='font-weight:bold'>Qualifica:</span> ".$curPersonale['qualifica']));
+                    //$template->SetCellPadding(".8em");
+                    $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>Tipologia:</span> ".$tipologia[$curVal['tipologia']]));
                     $curRow=1;
         
-                    //periodo e estremi assunzione
+                    //descrizione e ditta
                     $value="n.d.";
                     $value_2="n.d.";
-                    if(isset($curPersonale['periodo_dal'])) $value="dal ".substr($curPersonale['periodo_dal'],0,10);
-                    if(isset($curPersonale['periodo_al'])) $value.=" al ".substr($curPersonale['periodo_al'],0,10);
-
-                    if(isset($curPersonale['estremi_assunzione'])) $value_2=$curPersonale['estremi_assunzione'];
-                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Periodo di assunzione:",$value,"Estremi provvedimenti di assunzione:",$value_2),$row_template_2col));
+                    if(isset($curVal['descrizione'])) $value=$curVal['descrizione'];
+                    if(isset($curVal['estremi_impegno'])) $value_2=$curVal['estremi_impegno'];
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Descrizione:",$value,"Estremi provvedimento di impegno:",$value_2),$row_template_2col));
                     $curRow++;
                   
-                    //estremi liquidazione e pagamento
+                    //estremi impegno e liquidazione
                     $value="n.d.";
                     $value_2="n.d.";
-                    if(isset($curPersonale['estremi_pagamento'])) $value_2=$curPersonale['estremi_pagamento'];
-                    if(isset($curPersonale['estremi_liquidazione'])) $value=$curPersonale['estremi_liquidazione'];
+                    if(isset($curVal['estremi_liquidazione'])) $value=$curVal['estremi_liquidazione'];
+                    if(isset($curVal['estremi_pagamento'])) $value_2=$curVal['estremi_pagamento'];
                     $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Estremi del provvedimento di liquidazione:",$value,"Estremi del mandato di pagamento:",$value_2),$row_template_2col));
                     $curRow++;
                     
-                    //importo
-                    $value="n.d.";
-                    if(isset($curPersonale['importo'])) $value=AA_Utils::number_format($curPersonale['importo'],2,",",".");
-                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
-                    $curRow++;
-        
-                    $template->SetCellText($curRow,0,"Oneri","center",null,'bold',null,"#dadee0");
-                    $curRow++;
-        
-                    //estremi pagamento
-                    $value="n.d.";
-                    if(isset($curPersonale['oneri_pagamento'])) $value=$curPersonale['oneri']['estremi_pagamento'];
-                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi mandato di pagamento:",$value),$row_template));
-                    $curRow++;
-                    
-                    //oneri
+                    //estremi pagamento e fattura
                     $value="n.d.";
                     $value_2="n.d.";
-                    $value_3="n.d.";
-                    $value_4="n.d.";
-                    if(isset($curPersonale['oneri_cpdel'])) $value=AA_Utils::number_format($curPersonale['oneri_cpdel'],2,",",".");
-                    if(isset($curPersonale['oneri_irap'])) $value_2=AA_Utils::number_format($curPersonale['oneri_irap'],2,",",".");
-                    if(isset($curPersonale['oneri_altro'])) $value_3=AA_Utils::number_format($curPersonale['oneri_altro'],2,",",".");
-                    if(isset($curPersonale['oneri_altro_desc'])) $value_4=$curPersonale['oneri_altro_desc'];
+                    if(isset($curVal['ditta'])) $value=$curVal['ditta'];
+                    if(isset($curVal['estremi_fattura'])) $value_2=$curVal['estremi_fattura'];
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Ditta:",$value,"Fattura:",$value_2),$row_template_2col));
+                    $curRow++;
 
-                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Cpdel:",$value,"Irap:",$value_2),$row_template_2col));
-                    $curRow++;
-                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Altro:",$value_3,"Altro (descrizione):",$value_4),$row_template_2col));
-                    $curRow++;
-        
                     //importo
                     $value="n.d.";
-                    if(isset($curPersonale['oneri_importo'])) $value=AA_Utils::number_format($curPersonale['oneri_importo'],2,",",".");
+                    if(isset($curVal['importo'])) $value=AA_Utils::number_format($curVal['importo'],2,",",".");
                     $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
                     $curRow++;
+
+                    if(isset($curVal['note']))
+                    {
+                        $value=$curVal['note'];
+                        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Note:",$value),$row_template),"left");
+                        $curRow++;
+                    }                    
                 }
                 $count++;
             }
