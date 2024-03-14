@@ -12965,7 +12965,7 @@ Class AA_SierModule extends AA_GenericModule
             "multiview" => true,
             "view_id" => $id . "_Multiview_".$object->GetId(),
             "options" => array(
-                array("id"=>$id."_RendicontiRiepilogoBox","value"=>"Riepilogo"),
+                array("id"=>$id."_RendicontiRiepilogoBox","value"=>"Prospetto riassuntivo"),
                 array("id"=>$id."_RendicontiSeggiBox","value"=>"Componenti seggi"),
                 array("id"=>$id."_RendicontiPersonaleBox","value"=>"<span style='font-size:smaller'>Straordinario e missioni</span>"),
                 array("id"=>$id."_RendicontiPersonaleDetBox","value"=>"<span style='font-size:smaller'>Assunzione personale a tempo determinato</span>"),
