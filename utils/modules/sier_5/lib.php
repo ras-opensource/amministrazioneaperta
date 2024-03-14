@@ -23408,18 +23408,14 @@ Class AA_SierModule extends AA_GenericModule
 
         $val=new AA_XML_Div_Element(uniqid(),$layout);
         $val->SetStyle("margin-top: 1em;text-align: justify");
-        $val->SetText("Si attesta che tutte le spese sono congrue, indispensabili e pertinenti agli adempimenti organizzativi inerenti le ".$object->GetName().".");
-
-        $val=new AA_XML_Div_Element(uniqid(),$layout);
-        $val->SetStyle("margin-top: 1em;text-align: justify");
-        $val->SetText("Si attesta che le spese sono correttamente annotate nelle scritture contabili del Comune, che sono state effettuate nel rispetto della normativa concernente la stipulazione dei contratti, che tutte le tipologie di spesa sono comprese fra quelle previste nelle leggi e circolari in materia, che gli originali sono conservati presso il Comune e che non vi sono altre spese per le quali chiedere rimborso.");
+        $val->SetText("<ul>Si attesta che:<li>tutte le spese sono congrue, indispensabili e pertinenti agli adempimenti organizzativi inerenti le ".$object->GetName().";</li><li>tutte le spese sono correttamente annotate nelle scritture contabili del Comune e gli originali sono ivi conservati;</li><li>tutte le spese sono state effettuate nel rispetto della normativa concernente la stipulazione dei contratti;</li><li>tutte le tipologie di spesa sono comprese fra quelle previste nelle leggi e circolari in materia;</li><li>non vi sono altre spese per le quali chiedere rimborso;</li></ul>");
 
         $val=new AA_XML_Div_Element(uniqid(),$layout);
         $val->SetStyle("margin-top: 5em;text-align: left; font-weight:bold");
         $val->SetText("La presente versione del rendiconto annulla e sostituisce le precedenti.");
 
         $val=new AA_XML_Div_Element(uniqid(),$layout);
-        $val->SetStyle("display:flex; justify-content: space-around; font-weight:bold; align-items: end; width:99.8%; height:20%;");
+        $val->SetStyle("display:flex; justify-content: space-around; font-weight:bold; align-items: end; width:99.8%; height:15%;");
         $val->SetText("<div>Il Responsabile<br>del Servizio elettorale<br><br><br>_______________________</div><div>Il Responsabile<br>del Servizio finanziario<br><br><br>_______________________</div>");
 
         return $layout->__toString();
