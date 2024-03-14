@@ -1,7 +1,7 @@
 body {
     padding: 0;
     margin: 0;
-    font-family: Roboto, sans-serif;
+    font-family: "Roboto", Verdana, Tahoma, sans-serif;
 }
 
 .AA_GenericTableRowTemplateView_evidenzia:hover {

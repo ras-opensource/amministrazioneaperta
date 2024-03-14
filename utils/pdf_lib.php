@@ -402,10 +402,20 @@ Class AA_PDF_Document
 
         //Crea il file da renderizzare
         $html_file='<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8">';
+        $html_file.='<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />';
+        $html_file.='<link rel="preconnect" href="https://fonts.googleapis.com">';
+        $html_file.='<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
+        $html_file.='<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">';
+
         $html_file.='<link href="'.AA_Config::AA_APP_FILESYSTEM_FOLDER.'/stili/system.css" rel="stylesheet" type="text/css" />';
         $html_file.='<link href="'.AA_Config::AA_APP_FILESYSTEM_FOLDER.'/stili/organismi.css" rel="stylesheet" type="text/css" />';
         $html_file.='
         <style>
+            html *
+            {
+            font-family: "Roboto", "Dejavu",Verdana, Tahoma, sans-serif !important;
+            }
+
             @page {size: %PAGE_WIDTH%%PDF_UNIT% %PAGE_HEIGHT%%PDF_UNIT%; margin: 0;}
             @media print
             {

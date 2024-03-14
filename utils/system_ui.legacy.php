@@ -1139,7 +1139,8 @@ class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
             if (isset($props["title"])) $this->SetText("<div style='width:100%; font-size: 16px; font-weight: bold; border-bottom: 1px solid $this->defaultBorderColor'>" . $props["title"] . "</div>", true);
 
             //evidenzia le righe
-            if (isset($props["evidentiate-rows"])) $this->bEvidenziateRows = true;
+            if (isset($props["evidentiate-rows"]) && $props["evidentiate-rows"]) $this->bEvidenziateRows = true;
+            else $this->bEvidenziateRows = false;
 
             //colore di sfondo dell'intestazione
             if (isset($props['h_bgcolor'])) $this->h_bgcolor = $props['h_bgcolor'];
@@ -1163,7 +1164,7 @@ class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
     }
 
     //Imposta il contenuto di una cella
-    public function SetCellText($row = 1, $col = 1, $content = "", $alignment = "left", $color = "", $grassetto = "",$padding="")
+    public function SetCellText($row = 1, $col = 1, $content = "", $alignment = "left", $color = "", $grassetto = "",$padding="",$bgColor='')
     {
         $cell = $this->GetCell($row, $col);
         if ($cell instanceof AA_XML_Div_Element) {
@@ -1189,6 +1190,15 @@ class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
                     $cell->SetStyle(preg_replace("/(padding:\ [.*];)+/", "padding: ".$padding.";", $cell->GetStyle()));
                 }
                 else $cell->SetStyle("padding: ".$padding, true);
+            }
+
+            if($bgColor!="")
+            {
+                if(strpos($cell->GetStyle(), "background-color:") !== false)
+                {
+                    $cell->SetStyle(preg_replace("/(background-color:\ [.*];)+/", "background-color: ".$bgColor.";", $cell->GetStyle()));
+                }
+                else $cell->SetStyle("background-color: ".$bgColor, true);
             }
 
             return true;

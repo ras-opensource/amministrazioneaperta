@@ -5618,6 +5618,7 @@ Class AA_SierModule extends AA_GenericModule
                 $taskManager->RegisterTask("Update_OC_ComuneRendicontiServizi");
                 $taskManager->RegisterTask("GetSierOCRendicontiConfirmTrashServiziDlg");
                 $taskManager->RegisterTask("Delete_OC_ComuneRendicontiServizi");
+                $taskManager->RegisterTask("GetSierOCRendicontiExportPdf");
                 
                 $taskManager->RegisterTask("GetSierAnalisiRisultatiDlg");
 
@@ -13021,7 +13022,7 @@ Class AA_SierModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>180,
                 "tooltip"=>"Genera il report in formato pdf con i dati inseriti fino a questo momento",
-                "click"=>'AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$this->GetTaskManagerUrl().'?task=RendicontiComuneExportRasPdf&object='.$object->GetId().'&id_comune='.$comune->GetProp('id_comune').'"},"'.$this->id.'")'
+                "click"=>'AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$this->GetTaskManagerUrl().'?task=GetSierOCRendicontiExportPdf&id='.$object->GetId().'&id_comune='.$comune->GetProp('id_comune').'"},"'.$this->id.'")'
             ));
 
             $toolbar->AddElement($modify_btn);
@@ -18778,6 +18779,49 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task affluenza add new Comune
+    public function Task_GetSierOCRendicontiExportPdf($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+    
+        die($this->Template_GetSierComuneRendicontiExportRasPdf($object,$comune));
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierComuneRendicontiExportRasPdf($object,$comune),true);
+        return true;
+    }
+
      //Task affluenza modify affluenza
      public function Task_GetSierComuneAffluenzaModifyDlg($task)
      {
@@ -22984,15 +23028,28 @@ Class AA_SierModule extends AA_GenericModule
         $rendiconti=$comune->GetRendiconti(true);
         $serial=$object->BuildRendicontiSerial($rendiconti);
 
-        $count = 6;
+        $numPagineRendicontiAssunzioni=1;
+        if(isset($rendiconti['personale_det']) && sizeof($rendiconti['personale_det'])>2) 
+        {
+            $numPagineRendicontiAssunzioni=intVal(sizeof($rendiconti['personale_det'])/2);
+            if(sizeof($rendiconti['personale_det'])%2>0) $numPagineRendicontiAssunzioni++;
+        }
+        $numPagineRendicontiServizi=1;
+        if(isset($rendiconti['servizi']) && sizeof($rendiconti['servizi'])>2) 
+        {
+            $numPagineRendicontiServizi=intVal(sizeof($rendiconti['servizi'])/2);
+            if(sizeof($rendiconti['servizi'])%2>0) $numPagineRendicontiServizi++;
+        }
+        $count = 4+$numPagineRendicontiAssunzioni+$numPagineRendicontiServizi;
+
         $rowsForPage=1;
         $vociIndice=array(
             0=>"Prospetto riassuntivo generale spese elettorali",
             1=>"Competenze corrisposte ai componenti dei seggi (comprensiva di missioni)",
             2=>"Straordinario e missioni dei dipendenti (compresi oneri)",
             3=>"Assunzione di personale a tempo determinato",
-            4=>"Buoni pasto dei dipendenti addetti al servizio elettorale",
-            5=>"Beni e servizi non forniti direttamente dalla Regione"
+            (3+$numPagineRendicontiAssunzioni)=>"Buoni pasto dei dipendenti addetti al servizio elettorale",
+            (3+$numPagineRendicontiAssunzioni+1)=>"Beni e servizi non forniti direttamente ed altre spese indispensabili"
         );
 
         //nome file
@@ -23064,7 +23121,7 @@ Class AA_SierModule extends AA_GenericModule
         $lastPage = $count / $rowForPage + $curNumPage;
 
         //Rendering pagine
-        for($i=0;$i<6;$i++)
+        for($i=0;$i<(4+$numPagineRendicontiAssunzioni+$numPagineRendicontiServizi);$i++)
         {
             //inizia una nuova pagina (intestazione)
             if ($curRow == $rowForPage) $curRow = 0;
@@ -23077,10 +23134,12 @@ Class AA_SierModule extends AA_GenericModule
                         $curPage->SetContent($curPage_row);
                         $curPage = $doc->AddPage();
                         $curNumPage++;
+                        $curPage_row="";
                     }
                 }
                 else 
                 {
+                    $curPage_row="";
                     $curPage = $doc->AddPage();
                     $curNumPage++;
                 }
@@ -23089,14 +23148,59 @@ Class AA_SierModule extends AA_GenericModule
                 $curPage_row = "";
             }
 
-            $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i<3) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==3) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==(3+$numPagineRendicontiAssunzioni)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==(3+$numPagineRendicontiAssunzioni+1)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==(3+$numPagineRendicontiAssunzioni+2)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+
             $curPage_row .= "<div id='".$i."' style='display:flex;  flex-direction: column; width: 99.8%; height:100%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
 
             //---------------------------------------- Riepilogo ----------------------------------------------
             if($i==0)
             {
-                $curPage_row .= "<div style='width: 100%; font-weight:bold; font-size:18px'>Prospetto riassuntivo generale spese elettorali</div>";
-                $curPage_row.=$this->Template_RendicontiReportProspettoRiassuntivo($object,$comune,$rendiconti);
+                $curPage_row.= "<div style='width: 100%; font-weight:bold; font-size:18px'>Prospetto riassuntivo generale spese elettorali</div>";
+                $curPage_row.=$this->Template_RendicontiReportProspettoRiassuntivo($object,$comune,$rendiconti,true);
+            }
+            //-------------------------------------------------------------------------------------------------
+
+            //---------------------------------------- seggi ----------------------------------------------
+            if($i==1)
+            {
+                $curPage_row .= "<div style='width: 100%; font-weight:bold; font-size:18px'>Competenze corrisposte ai componenti dei seggi (comprensiva di missioni)</div>";
+                $curPage_row.=$this->Template_RendicontiReportSeggi($object,$comune,$rendiconti,false);
+            }
+            //-------------------------------------------------------------------------------------------------
+
+            //---------------------------------------- Straordinario ----------------------------------------------
+            if($i==2)
+            {
+                $curPage_row .= "<div style='width: 100%; font-weight:bold; font-size:18px'>Straordinario e missioni dei dipendenti (compresi oneri)</div>";
+                $curPage_row.=$this->Template_RendicontiReportStraordinario($object,$comune,$rendiconti,false);
+            }
+            //-------------------------------------------------------------------------------------------------
+
+            //---------------------------------------- Assunzione personale a tempo determinato ----------------------------------------------
+            if($i>=3 && $i < (3+$numPagineRendicontiAssunzioni))
+            {
+            $curPage_row .= "<div style='width: 100%; font-weight:bold; font-size:18px'>Assunzione di personale a tempo determinato</div>";
+            $curPage_row.=$this->Template_RendicontiReportAssunzioni($object,$comune,$rendiconti,false, $i-3);
+            }
+            //-------------------------------------------------------------------------------------------------
+
+            //---------------------------------------- Buoni ----------------------------------------------
+            if($i == (3+$numPagineRendicontiAssunzioni))
+            {
+            $curPage_row .= "<div style='width: 100%; font-weight:bold; font-size:18px'>Buoni pasto dei dipendenti addetti al servizio elettorale</div>";
+            $curPage_row.=$this->Template_RendicontiReportBuoni($object,$comune,$rendiconti,false);
+            }
+            //-------------------------------------------------------------------------------------------------
+
+            //---------------------------------------- Servizi ----------------------------------------------
+            if($i >= (3+$numPagineRendicontiAssunzioni+1))
+            {
+            $curPage_row .= "<div style='width: 100%; font-weight:bold; font-size:18px'>Beni e servizi non forniti direttamente e altre spese indispensabili</div>";
+            $curPage_row.=$this->Template_RendicontiReportServizi($object,$comune,$rendiconti,false,$i-3-$numPagineRendicontiAssunzioni-1);
             }
             //-------------------------------------------------------------------------------------------------
             //AA_Log::Log($template,100,false,true);
@@ -23159,7 +23263,7 @@ Class AA_SierModule extends AA_GenericModule
         }
     }
 
-    public function Template_RendicontiReportProspettoRiassuntivo($object=null,$comune=null,$rendiconti=null)
+    public function Template_RendicontiReportProspettoRiassuntivo($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
     {
     
         if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
@@ -23169,7 +23273,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $layout=new AA_XML_Div_Element(uniqid());
         $layout->SetStyle("width:99%; height:100%;");
-        $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>true,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("70", "30"));
         $template->SetCellPadding("10px");
         $template->SetHeaderLabels(array("Spese presentate a rimborso","Importo totale"));
@@ -23298,8 +23402,8 @@ Class AA_SierModule extends AA_GenericModule
         $totale_saldare=$rimborso_concesso-$anticipo-$liquidato;
 
         $totale_row=new AA_XML_Div_Element(uniqid(),$layout);
-        $totale_row->SetStyle("display:flex; width: 96.8%; font-weight:bold; font-size: larger;text-align:right; border:1px solid gray; padding: 10px");
-        $totale_row->SetText("<div style='width:70%;'>TOTALE SPESE PRESENTATE A RIMBORSO:</div><div style='width:30%'>".AA_Utils::number_format($totale,2,",",".")."</div>");
+        $totale_row->SetStyle("display:flex; width: 96.8%; font-weight:bold; font-size: larger;text-align:right; border:1px solid gray; padding: 10px; background-color: #ebf5fb");
+        $totale_row->SetText("<div style='width:70%; background-color: #ebf5fb'>TOTALE SPESE PRESENTATE A RIMBORSO:</div><div style='width:30%'>".AA_Utils::number_format($totale,2,",",".")."</div>");
 
         $val=new AA_XML_Div_Element(uniqid(),$layout);
         $val->SetStyle("margin-top: 1em;text-align: justify");
@@ -23317,6 +23421,551 @@ Class AA_SierModule extends AA_GenericModule
         $val->SetStyle("display:flex; justify-content: space-around; font-weight:bold; align-items: end; width:99.8%; height:20%;");
         $val->SetText("<div>Il Responsabile<br>del Servizio elettorale<br><br><br>_______________________</div><div>Il Responsabile<br>del Servizio finanziario<br><br><br>_______________________</div>");
 
+        return $layout->__toString();
+    }
+
+    public function Template_RendicontiReportSeggi($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
+    {
+    
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        {
+            return "";
+        }
+
+        $layout=new AA_XML_Div_Element(uniqid());
+        $layout->SetStyle("width:99%; height:100%;");
+
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
+        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template.="</div>";
+
+        $row_template_2col="<div style='display:flex; width: 96.8%;'>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="</div>";
+
+        $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        $template->SetCellPadding("10px");
+        $template->SetHeaderLabels(array("Competenze componenti dei seggi"));
+        $curRow=1;
+
+        $rendiconti=$comune->GetRendiconti(true);
+
+        //estremi liquidazione
+        $value="n.d.";
+        if(isset($rendiconti['seggi']['competenze']['estremi_liquidazione'])) $value=$rendiconti['seggi']['competenze']['estremi_liquidazione'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del provvedimento di liquidazione:",$value),$row_template));
+        $curRow++;
+        
+        //estremi pagamento
+        $value="n.d.";
+        if(isset($rendiconti['seggi']['competenze']['estremi_pagamento'])) $value=$rendiconti['seggi']['competenze']['estremi_pagamento'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del mandato di pagamento:",$value),$row_template));
+        $curRow++;
+
+        //importo
+        $value="n.d.";
+        if(isset($rendiconti['seggi']['competenze']['importo'])) $value=AA_Utils::number_format($rendiconti['seggi']['competenze']['importo'],2,",",".");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $curRow++;
+
+        $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        $template->SetCellPadding("10px");
+        $template->SetHeaderLabels(array("Trattamento di missione presidenti di seggio"));
+        $curRow=1;
+
+         //estremi liquidazione
+         $value="n.d.";
+         if(isset($rendiconti['seggi']['missioni']['estremi_liquidazione'])) $value=$rendiconti['seggi']['missioni']['estremi_liquidazione'];
+         $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del provvedimento di liquidazione:",$value),$row_template));
+         $curRow++;
+
+        //estremi pagamento
+        $value="n.d.";
+        if(isset($rendiconti['seggi']['missioni']['estremi_pagamento'])) $value=$rendiconti['seggi']['missioni']['estremi_pagamento'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del mandato di pagamento:",$value),$row_template));
+        $curRow++;
+
+        //km e componenti
+        $value="n.d.";
+        $value_2="n.d.";
+        if(isset($rendiconti['seggi']['missioni']['km'])) $value=$rendiconti['seggi']['missioni']['km'];
+        if(isset($rendiconti['seggi']['missioni']['componenti'])) $value_2=$rendiconti['seggi']['missioni']['componenti'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Componenti che hanno effettuato missioni:",$value,"Km totali percorsi:",$value_2),$row_template_2col));
+        $curRow++;
+
+        //importo
+        $value="n.d.";
+        if(isset($rendiconti['seggi']['missioni']['importo'])) $value=AA_Utils::number_format($rendiconti['seggi']['missioni']['importo'],2,",",".");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $curRow++;
+
+        $val="Si attesta la effettiva partecipazione dei componenti dei seggi per tutta la durata delle operazioni elettorali e l'applicazione ad essi degli onorari indicati nella circolare dell'Amministrazione regionale in materia di rendicontazione delle spese sostenute dai Comuni.";
+        $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
+        $attestazione->SetStyle("text-align:justify;margin-top:5em");
+        $attestazione->SetText($val);
+
+        return $layout->__toString();
+    }
+
+    public function Template_RendicontiReportBuoni($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
+    {
+    
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        {
+            return "";
+        }
+
+        $layout=new AA_XML_Div_Element(uniqid());
+        $layout->SetStyle("width:99%; height:100%;");
+
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
+        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template.="</div>";
+
+        $row_template_2col="<div style='display:flex; width: 96.8%;'>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="</div>";
+
+        $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        $template->SetCellPadding("10px");
+        $template->SetHeaderLabels(array("Competenze"));
+        $curRow=1;
+
+        $rendiconti=$comune->GetRendiconti(true);
+
+        //estremi liquidazione
+        $value="n.d.";
+        if(isset($rendiconti['buoni']['estremi_liquidazione'])) $value=$rendiconti['buoni']['estremi_liquidazione'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del provvedimento di liquidazione:",$value),$row_template));
+        $curRow++;
+        
+        //estremi pagamento
+        $value="n.d.";
+        if(isset($rendiconti['buoni']['estremi_pagamento'])) $value=$rendiconti['buoni']['estremi_pagamento'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del mandato di pagamento:",$value),$row_template));
+        $curRow++;
+
+        //km e componenti
+        $value="n.d.";
+        $value_2="n.d.";
+        if(isset($rendiconti['buoni']['erogati'])) $value_2=$rendiconti['buoni']['erogati'];
+        if(isset($rendiconti['buoni']['dipendenti'])) $value=$rendiconti['buoni']['dipendenti'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Componenti che hanno usufruito dei buoni:",$value,"n. di buoni erogati:",$value_2),$row_template_2col));
+        $curRow++;
+
+        //importo
+        $value="n.d.";
+        if(isset($rendiconti['buoni']['importo'])) $value=AA_Utils::number_format($rendiconti['seggi']['competenze']['importo'],2,",",".");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $curRow++;
+
+        //note
+        $value="";
+        if(isset($rendiconti['buoni']['note'])) $value=$rendiconti['buoni']['note'];
+        if($value!="")
+        {
+            $note=new AA_XML_Div_Element(uniqid(),$layout);
+            $note->SetStyle("text-align:left");
+            $note->SetText(str_replace(array("#label#","#value#"),array("Note:",$value),$row_template));
+        }
+
+        $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
+        $attestazione->SetStyle("text-align:left;margin-top:5em");
+        $val="<ul>Si attesta che:<li>i buoni pasto sono stati erogati ai dipendenti per le sole giornate di lavoro straordinario elettorale effettuate e nel rispetto delle condizioni e limiti previsti nel C.C.N.L. vigente nel periodo considerato;</li><li>l'Amministrazione comunale aveva già attivato il servizio per l'erogazione dei buoni pasto ai propri dipendenti.</li></ul>";
+        $attestazione->SetText($val);
+
+        return $layout->__toString();
+    }
+
+    public function Template_RendicontiReportStraordinario($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
+    {
+    
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        {
+            return "";
+        }
+
+        $layout=new AA_XML_Div_Element(uniqid());
+        $layout->SetStyle("width:99%; height:100%;");
+
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
+        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template.="</div>";
+
+        $row_template_2col="<div style='display:flex; width: 96.8%;'>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="</div>";
+
+        $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        $template->SetCellPadding("5px");
+        $template->SetHeaderLabels(array("Straordinario"));
+        $curRow=1;
+
+        $rendiconti=$comune->GetRendiconti(true);
+
+        //estremi autorizzazione
+        $value="n.d.";
+        if(isset($rendiconti['comune']['straordinario']['estremi_autorizzazione'])) $value=$rendiconti['comune']['straordinario']['estremi_autorizzazione'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del provvedimento di autorizzazione:",$value),$row_template));
+        $curRow++;
+
+        //estremi liquidazione
+        $value="n.d.";
+        if(isset($rendiconti['comune']['straordinario']['estremi_liquidazione'])) $value=$rendiconti['comune']['straordinario']['estremi_liquidazione'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del provvedimento di liquidazione:",$value),$row_template));
+        $curRow++;
+        
+        //estremi pagamento
+        $value="n.d.";
+        if(isset($rendiconti['comune']['straordinario']['estremi_pagamento'])) $value=$rendiconti['comune']['straordinario']['estremi_pagamento'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del mandato di pagamento:",$value),$row_template));
+        $curRow++;
+
+        //periodo
+        $value="n.d.";
+        $value_2="n.d.";
+        if(isset($rendiconti['comune']['straordinario']['periodo_max']))
+        {
+            $periodo=explode("|",$rendiconti['comune']['straordinario']['periodo_max']);
+            $value="dal ".$periodo[0];
+            $value="al ".$periodo[1];
+        }
+        if(isset($rendiconti['comune']['straordinario']['periodo_effettivo']))
+        {
+            $periodo=explode("|",$rendiconti['comune']['straordinario']['periodo_effettivo']);
+            $value_2="dal ".$periodo[0];
+            $value_2="al ".$periodo[1];
+        }
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Periodo autorizzato:",$value,"Periodo effettivo:",$value_2),$row_template_2col));
+        $curRow++;
+        
+        //ore
+        $value="n.d.";
+        $value_2="n.d.";
+        if(isset($rendiconti['comune']['straordinario']['ore_max']))
+        {
+            $value=$rendiconti['comune']['straordinario']['ore_max'];
+        }
+        if(isset($rendiconti['comune']['straordinario']['ore_effettive']))
+        {
+            $value_2=$rendiconti['comune']['straordinario']['ore_effettive'];
+        }
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Ore autorizzate:",$value,"Ore effettive:",$value_2),$row_template_2col));
+        $curRow++;
+
+        //dipendenti
+        $value="n.d.";
+        $value_2="n.d.";
+        if(isset($rendiconti['comune']['straordinario']['dipendenti_max']))
+        {
+            $value=$rendiconti['comune']['straordinario']['dipendenti_max'];
+        }
+        if(isset($rendiconti['comune']['straordinario']['dipendenti_effettivi']))
+        {
+            $value_2=$rendiconti['comune']['straordinario']['dipendenti_effettivi'];
+        }
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Dipendenti autorizzati:",$value,"Dipendenti effettivi:",$value_2),$row_template_2col));
+        $curRow++;
+
+        //importo
+        $value="n.d.";
+        if(isset($rendiconti['comune']['straordinario']['importo'])) $value=AA_Utils::number_format($rendiconti['comune']['straordinario']['importo'],2,",",".");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $curRow++;
+
+        $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        $template->SetCellPadding("5px");
+        $template->SetHeaderLabels(array("Trattamento di missione personale comunale"));
+        $curRow=1;
+
+        //estremi autorizazione
+        $value="n.d.";
+        if(isset($rendiconti['comune']['missioni']['estremi_autorizzazione'])) $value=$rendiconti['comune']['missioni']['estremi_autorizzazione'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi provvedimento di autorizzazione:",$value),$row_template));
+        $curRow++;
+        
+        //estremi liquidazione
+        $value="n.d.";
+        if(isset($rendiconti['comune']['missioni']['estremi_liquidazione'])) $value=$rendiconti['comune']['missioni']['estremi_liquidazione'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi del provvedimento di liquidazione:",$value),$row_template));
+        $curRow++;
+
+        //km e componenti
+        $value="n.d.";
+        $value_2="n.d.";
+        if(isset($rendiconti['comune']['missioni']['km'])) $value_2=$rendiconti['comune']['missioni']['km'];
+        if(isset($rendiconti['comune']['missioni']['dipendenti'])) $value=$rendiconti['comune']['missioni']['dipendenti'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Personale che ha effettivamente svolto missioni:",$value,"Km totali percorsi:",$value_2),$row_template_2col));
+        $curRow++;
+
+        //importo
+        $value="n.d.";
+        if(isset($rendiconti['comune']['missioni']['importo'])) $value=AA_Utils::number_format($rendiconti['comune']['missioni']['importo'],2,",",".");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $curRow++;
+
+        $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        $template->SetCellPadding("5px");
+        $template->SetHeaderLabels(array("Oneri"));
+        $curRow=1;
+
+        //estremi autorizazione
+        $value="n.d.";
+        if(isset($rendiconti['comune']['oneri']['estremi_pagamento'])) $value=$rendiconti['comune']['oneri']['estremi_pagamento'];
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi mandato di pagamento:",$value),$row_template));
+        $curRow++;
+        
+        //oneri
+        $value="n.d.";
+        $value_2="n.d.";
+        $value_3="n.d.";
+        $value_4="n.d.";
+        if(isset($rendiconti['comune']['oneri']['dettagli']))
+        {
+            $oneri=explode("|",$rendiconti['comune']['oneri']['dettagli']);
+            $value=AA_Utils::number_format($oneri[0],2,",",".");
+            $value_2=AA_Utils::number_format($oneri[1],2,",",".");
+            $value_3=AA_Utils::number_format($oneri[2],2,",",".");
+            $value_4=$oneri[3];
+        } 
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Cpdel:",$value,"Irap:",$value_2),$row_template_2col));
+        $curRow++;
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Altro:",$value_3,"Altro (descrizione):",$value_4),$row_template_2col));
+        $curRow++;
+
+        //importo
+        $value="n.d.";
+        if(isset($rendiconti['comune']['oneri']['importo'])) $value=AA_Utils::number_format($rendiconti['comune']['oneri']['importo'],2,",",".");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $curRow++;
+        
+        return $layout->__toString();
+    }
+
+    public function Template_RendicontiReportAssunzioni($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true,$page=0)
+    {
+    
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        {
+            return "";
+        }
+
+        $layout=new AA_XML_Div_Element(uniqid());
+        $layout->SetStyle("width:99%; height:100%;");
+
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
+        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template.="</div>";
+
+        $row_template_2col="<div style='display:flex; width: 96.8%;'>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="</div>";
+
+        $rendiconti=$comune->GetRendiconti(true);
+
+        $count=0;
+        if(isset($rendiconti['personale_det']))
+        {
+            foreach($rendiconti['personale_det'] as $curPersonale)
+            {
+                if($count >= $page*2 && $count <= $page+1)
+                {
+                    $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+                    $template->SetColSizes(array("100"));
+                    $template->SetCellPadding("7px");
+                    $template->SetHeaderLabels(array("<span style='font-weight:bold'>Qualifica:</span> ".$curPersonale['qualifica']));
+                    $curRow=1;
+        
+                    //periodo e estremi assunzione
+                    $value="n.d.";
+                    $value_2="n.d.";
+                    if(isset($curPersonale['periodo_dal'])) $value="dal ".substr($curPersonale['periodo_dal'],0,10);
+                    if(isset($curPersonale['periodo_al'])) $value.=" al ".substr($curPersonale['periodo_al'],0,10);
+
+                    if(isset($curPersonale['estremi_assunzione'])) $value_2=$curPersonale['estremi_assunzione'];
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Periodo di assunzione:",$value,"Estremi provvedimenti di assunzione:",$value_2),$row_template_2col));
+                    $curRow++;
+                  
+                    //estremi liquidazione e pagamento
+                    $value="n.d.";
+                    $value_2="n.d.";
+                    if(isset($curPersonale['estremi_pagamento'])) $value_2=$curPersonale['estremi_pagamento'];
+                    if(isset($curPersonale['estremi_liquidazione'])) $value=$curPersonale['estremi_liquidazione'];
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Estremi del provvedimento di liquidazione:",$value,"Estremi del mandato di pagamento:",$value_2),$row_template_2col));
+                    $curRow++;
+                    
+                    //importo
+                    $value="n.d.";
+                    if(isset($curPersonale['importo'])) $value=AA_Utils::number_format($curPersonale['importo'],2,",",".");
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+                    $curRow++;
+        
+                    $template->SetCellText($curRow,0,"Oneri","center",null,'bold',null,"#dadee0");
+                    $curRow++;
+        
+                    //estremi pagamento
+                    $value="n.d.";
+                    if(isset($curPersonale['oneri_pagamento'])) $value=$curPersonale['oneri']['estremi_pagamento'];
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi mandato di pagamento:",$value),$row_template));
+                    $curRow++;
+                    
+                    //oneri
+                    $value="n.d.";
+                    $value_2="n.d.";
+                    $value_3="n.d.";
+                    $value_4="n.d.";
+                    if(isset($curPersonale['oneri_cpdel'])) $value=AA_Utils::number_format($curPersonale['oneri_cpdel'],2,",",".");
+                    if(isset($curPersonale['oneri_irap'])) $value_2=AA_Utils::number_format($curPersonale['oneri_irap'],2,",",".");
+                    if(isset($curPersonale['oneri_altro'])) $value_3=AA_Utils::number_format($curPersonale['oneri_altro'],2,",",".");
+                    if(isset($curPersonale['oneri_altro_desc'])) $value_4=$curPersonale['oneri_altro_desc'];
+
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Cpdel:",$value,"Irap:",$value_2),$row_template_2col));
+                    $curRow++;
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Altro:",$value_3,"Altro (descrizione):",$value_4),$row_template_2col));
+                    $curRow++;
+        
+                    //importo
+                    $value="n.d.";
+                    if(isset($curPersonale['oneri_importo'])) $value=AA_Utils::number_format($curPersonale['oneri_importo'],2,",",".");
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+                    $curRow++;
+                }
+                $count++;
+            }
+        }
+        else
+        {
+            $layout->SetText("Non sono presenti assunzioni di personale a tempo determinato.");
+        }
+        return $layout->__toString();
+    }
+
+    public function Template_RendicontiReportServizi($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true,$page=0)
+    {
+    
+        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        {
+            return "";
+        }
+
+        $layout=new AA_XML_Div_Element(uniqid());
+        $layout->SetStyle("width:99%; height:100%;");
+
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column;'>";
+        $row_template.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template.="</div>";
+
+        $row_template_2col="<div style='display:flex; width: 96.8%;'>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="<div style='display:flex; width: 50%;flex-direction:column;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .5em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="</div>";
+
+        $rendiconti=$comune->GetRendiconti(true);
+
+        $count=0;
+        if(isset($rendiconti['servizi']))
+        {
+            foreach($rendiconti['servizi'] as $curPersonale)
+            {
+                if($count >= $page*2 && $count <= $page+1)
+                {
+                    $template= new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+                    $template->SetColSizes(array("100"));
+                    $template->SetCellPadding("7px");
+                    $template->SetHeaderLabels(array("<span style='font-weight:bold'>Qualifica:</span> ".$curPersonale['qualifica']));
+                    $curRow=1;
+        
+                    //periodo e estremi assunzione
+                    $value="n.d.";
+                    $value_2="n.d.";
+                    if(isset($curPersonale['periodo_dal'])) $value="dal ".substr($curPersonale['periodo_dal'],0,10);
+                    if(isset($curPersonale['periodo_al'])) $value.=" al ".substr($curPersonale['periodo_al'],0,10);
+
+                    if(isset($curPersonale['estremi_assunzione'])) $value_2=$curPersonale['estremi_assunzione'];
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Periodo di assunzione:",$value,"Estremi provvedimenti di assunzione:",$value_2),$row_template_2col));
+                    $curRow++;
+                  
+                    //estremi liquidazione e pagamento
+                    $value="n.d.";
+                    $value_2="n.d.";
+                    if(isset($curPersonale['estremi_pagamento'])) $value_2=$curPersonale['estremi_pagamento'];
+                    if(isset($curPersonale['estremi_liquidazione'])) $value=$curPersonale['estremi_liquidazione'];
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Estremi del provvedimento di liquidazione:",$value,"Estremi del mandato di pagamento:",$value_2),$row_template_2col));
+                    $curRow++;
+                    
+                    //importo
+                    $value="n.d.";
+                    if(isset($curPersonale['importo'])) $value=AA_Utils::number_format($curPersonale['importo'],2,",",".");
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+                    $curRow++;
+        
+                    $template->SetCellText($curRow,0,"Oneri","center",null,'bold',null,"#dadee0");
+                    $curRow++;
+        
+                    //estremi pagamento
+                    $value="n.d.";
+                    if(isset($curPersonale['oneri_pagamento'])) $value=$curPersonale['oneri']['estremi_pagamento'];
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Estremi mandato di pagamento:",$value),$row_template));
+                    $curRow++;
+                    
+                    //oneri
+                    $value="n.d.";
+                    $value_2="n.d.";
+                    $value_3="n.d.";
+                    $value_4="n.d.";
+                    if(isset($curPersonale['oneri_cpdel'])) $value=AA_Utils::number_format($curPersonale['oneri_cpdel'],2,",",".");
+                    if(isset($curPersonale['oneri_irap'])) $value_2=AA_Utils::number_format($curPersonale['oneri_irap'],2,",",".");
+                    if(isset($curPersonale['oneri_altro'])) $value_3=AA_Utils::number_format($curPersonale['oneri_altro'],2,",",".");
+                    if(isset($curPersonale['oneri_altro_desc'])) $value_4=$curPersonale['oneri_altro_desc'];
+
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Cpdel:",$value,"Irap:",$value_2),$row_template_2col));
+                    $curRow++;
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("Altro:",$value_3,"Altro (descrizione):",$value_4),$row_template_2col));
+                    $curRow++;
+        
+                    //importo
+                    $value="n.d.";
+                    if(isset($curPersonale['oneri_importo'])) $value=AA_Utils::number_format($curPersonale['oneri_importo'],2,",",".");
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+                    $curRow++;
+                }
+                $count++;
+            }
+        }
+        else
+        {
+            $layout->SetText("Non sono presenti assunzioni di personale a tempo determinato.");
+        }
         return $layout->__toString();
     }
 
@@ -27578,15 +28227,6 @@ Class AA_SierModule extends AA_GenericModule
             "type"=>"clean",
             "height"=>32,
             "data"=>array("title"=>"Spese postali e telegrafiche:","value"=>AA_Utils::number_format($spese_postali,2,",","."),"value_align"=>"right"),
-            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
-        ));
-        $box->AddRow($val);
-        $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
-            "gravity"=>1,
-            "type"=>"clean",
-            "height"=>32,
-            "data"=>array("title"=>"Altre spese indispensabili per gli adempimenti elettorali:","value"=>AA_Utils::number_format($altro,2,",","."),"value_align"=>"right"),
             "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -27595,8 +28235,17 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
+            "data"=>array("title"=>"Altre spese indispensabili per gli adempimenti elettorali:","value"=>AA_Utils::number_format($altro,2,",","."),"value_align"=>"right"),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $box->AddRow($val);
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "height"=>32,
             "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>TOTALE SPESE PRESENTATE A RIMBORSO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($totale,2,",",".")."</span>","value_align"=>"right"),
-            "css"=>array("border-top"=>"2px solid #dadee0 !important")
+            "css"=>array("border-top"=>"2px solid gray !important")
         ));
         $box->AddRow($val);
         $anticipo=0;
