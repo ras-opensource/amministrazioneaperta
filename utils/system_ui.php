@@ -209,6 +209,21 @@ class AA_JSON_Template_Generic
             foreach ($props as $key => $value) {
                 if($key != "eventHandlers") $this->props[$key] = $value;
             }
+
+            if(isset($props['fixedRowHeight']) && !$props['fixedRowHeight'])
+            {
+                if(!isset($props['eventHandlers']))
+                {
+                    $props['eventHandlers']=array("onresize"=>array("handler"=>"adjustRowHeight","module_id"=>""));
+                }
+                else
+                {
+                    if(!isset($props['eventHandlers']['onresize']))
+                    {
+                        $props['eventHandlers']['onresize']=array("handler"=>"adjustRowHeight","module_id"=>"");
+                    }
+                }
+            }
         }
 
         if(isset($props['eventHandlers']) && is_array($props['eventHandlers']))

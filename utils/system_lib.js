@@ -1053,6 +1053,16 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         }
     };
 
+    this.eventHandlers['defaultHandlers'].adjustRowHeight = function() {
+        try 
+        {
+            //console.log("adjustRowHeight",arguments,this)
+            this.adjustRowHeight(null, true);
+        } catch (msg) {
+            console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.adjustRowHeight", msg, this);
+        }
+    };
+
     //evento di cambio pagina sul sezione con multiview
     this.eventHandlers['defaultHandlers'].onGenericSectionViewChange = async function() 
     {

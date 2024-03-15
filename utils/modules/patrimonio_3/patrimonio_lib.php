@@ -1442,12 +1442,11 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->AddDateField("data_inizio","Data inizio",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di decorrenza del canone", "placeholder"=>"inserisci qui la data di decorrenza."));
 
         //data_fine
-        //data_fine
         $wnd->AddDateField("data_fine","Data fine",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di scadenza del canone o la dicitura 9999-12-31 se non è presente una data di scadenza.", "placeholder"=>"inserisci qui la data di scadenza."),false);
 
         //importo
-        $label="Importo";
-        $wnd->AddTextField("importo",$label,array("bottomLabel"=>"*Inserire l'importo, su base annua, in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
+        //$label="Importo";
+        //$wnd->AddTextField("importo",$label,array("bottomLabel"=>"*Inserire l'importo, su base annua, in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
 
         //repertorio
         $label="Repertorio";
@@ -1571,6 +1570,45 @@ Class AA_PatrimonioModule extends AA_GenericModule
             $form_data[$key]=$value;
         }
         $form_data['id']=$object->GetId();
+
+        //calcola i campi annualita'
+        if($canone instanceof AA_Patrimonio_Canone)
+        {
+            $annodal=date("Y",strtotime($canone->GetProp("data_inizio")));
+            $annoal=date("Y",strtotime($canone->GetProp("data_fine")));
+            if(($annoal-date("Y")) > 5)
+            {
+                $annoal=date("Y");
+                if($annoal - $annodal > 5)
+                {
+                    $annodal=$annoal-4;
+                }
+            }
+
+            for($i=$annodal;$i<=$annoal;$i++)
+            {
+                $form_data['importo_'.$i]=0;
+            }
+
+            $importo=json_decode($canone->GetProp("importo"),true);
+            if(!is_array($importo))
+            {
+                $importo=str_replace(",",".",str_replace(".","",$canone->GetProp("importo")));
+                $form_data['importo_'.$annodal]=AA_Utils::number_format($importo,2,",",".");
+            }
+            else
+            {
+                foreach($importo as $key=>$val)
+                {
+                    if($key >= $annodal && $key <= $annoal) $form_data['importo_'.$key]=AA_Utils::number_format($val,2,",",".");
+                }
+            }
+        }
+        else 
+        {
+            $annodal=$annoal=date("Y");
+            $form_data['importo_'.$annodal]=0;
+        }
         
         $wnd=new AA_GenericFormDlg($id, "Modifica canone ".$canone->GetProp("serial"), $this->id,$form_data,$form_data);
         
@@ -1579,7 +1617,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->SetBottomPadding(32);
         
         $wnd->SetWidth(920);
-        $wnd->SetHeight(640);
+        $wnd->SetHeight(800);
         $wnd->EnableValidation();
               
         //tipologia
@@ -1588,6 +1626,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $options[]=array("id"=>$key,"value"=>$value);
         }
+
         $wnd->AddRadioField("tipologia","Tipo",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di canone.","bottomLabel"=>"*Indicare il tipo di canone","placeholder"=>"Scegli una voce...","options"=>$options,"value"=>"1"));
         
         //data_inizio
@@ -1596,17 +1635,23 @@ Class AA_PatrimonioModule extends AA_GenericModule
         //data_fine
         $wnd->AddDateField("data_fine","Data fine",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di scadenza del canone o la dicitura 9999-12-31 se non c'è una data di scadenza.", "placeholder"=>"inserisci qui la data di scadenza."),false);
 
-        //importo
-        $label="Importo";
-        $wnd->AddTextField("importo",$label,array("bottomLabel"=>"*Inserire l'importo, su base annua, in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
+        $section=new AA_FieldSet(uniqid(),"Importo per annualita'");
+        for($i=$annodal;$i<=$annoal;$i++)
+        {
+            //importo
+            $label="Importo per l'anno ".$i;
+            $section->AddTextField("importo_".$i,$label,array("labelWidth"=>200,"bottomLabel"=>"*Inserire l'importo, relativo all'anno indicato, in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
+        }
 
+        $wnd->AddGenericObject($section);
+        
         //repertorio
         $label="Repertorio";
-        $wnd->AddTextField("repertorio",$label,array("bottomLabel"=>"*Indica il numero di repertorio del contratto o la dicitura n.d. se non disponibile o non applicabile.", "required"=>true,"placeholder"=>"Inserisci qui il numero di repertorio"),false);
+        $wnd->AddTextField("repertorio",$label,array("bottomLabel"=>"*Indica il numero di repertorio del contratto o la dicitura n.d. se non disponibile o non applicabile.", "required"=>true,"placeholder"=>"Inserisci qui il numero di repertorio"));
 
         //conduttore
         $label="Conduttore";
-        $wnd->AddTextField("conduttore",$label,array("bottomLabel"=>"*Indica il conduttore.", "required"=>true, "placeholder"=>"Inserisci qui il conduttore"));
+        $wnd->AddTextField("conduttore",$label,array("bottomLabel"=>"*Indica il conduttore.", "required"=>true, "placeholder"=>"Inserisci qui il conduttore"),false);
 
         //note
         $label="Note";
@@ -1926,19 +1971,19 @@ Class AA_PatrimonioModule extends AA_GenericModule
         
         $layout->addRow($toolbar);        
         $columns=array(
-            array("id"=>"tipo","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"serial","header"=>array("<div style='text-align: center'>Id</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"data_inizio","header"=>array("<div style='text-align: center'>Data inizio</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"data_fine","header"=>array("<div style='text-align: center'>Data fine</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"int"),
-            array("id"=>"repertorio","header"=>array("<div style='text-align: center'>Repertorio n.</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>array("text-align"=>"right"),"sort"=>"text"),
-            array("id"=>"conduttore","header"=>array("<div style='text-align: center'>Conduttore</div>",array("content"=>"selectFilter")),"width"=>340, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text")
+            array("id"=>"tipo","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>"CanoniTable_left","sort"=>"text"),
+            array("id"=>"serial","header"=>array("<div style='text-align: center'>Id</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"CanoniTable"),
+            array("id"=>"data_inizio","header"=>array("<div style='text-align: center'>Data inizio</div>",array("content"=>"textFilter")),"width"=>120, "css"=>"CanoniTable","sort"=>"text"),
+            array("id"=>"data_fine","header"=>array("<div style='text-align: center'>Data fine</div>",array("content"=>"textFilter")),"width"=>120, "css"=>"CanoniTable","sort"=>"text"),
+            array("id"=>"importo","header"=>array("<div style='text-align: center'>Importi per anno</div>"),"width"=>180, "css"=>"CanoniTable"),
+            array("id"=>"repertorio","header"=>array("<div style='text-align: center'>Repertorio n.</div>",array("content"=>"selectFilter")),"width"=>120, "css"=>"CanoniTable_left","sort"=>"text"),
+            array("id"=>"conduttore","header"=>array("<div style='text-align: center'>Conduttore</div>",array("content"=>"selectFilter")),"width"=>340, "css"=>"CanoniTable","sort"=>"text"),
+            array("id"=>"note","header"=>array("Note",array("content"=>"textFilter")),"fillspace"=>true, "css"=>"CanoniTable","sort"=>"text")
         );
 
         if(!$object->IsReadOnly())
         {
-            $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
+            $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>"CanoniTable");
         }
 
         $data=array();
@@ -1948,12 +1993,53 @@ Class AA_PatrimonioModule extends AA_GenericModule
         {
             $data[]=$curCanone->GetProps();
             $index=sizeof($data)-1;
+            $data[$index]['data_inizio']=substr($curCanone->GetProp("data_inizio"),0,10);
+            $data[$index]['data_fine']=substr($curCanone->GetProp("data_fine"),0,10);
+            $importo=json_decode($curCanone->GetProp('importo'),true);
+            $label="";
+            if(!is_array($importo))
+            {
+                $anno=date("Y",strtotime($curCanone->GetProp("data_inizio")));
+                $label="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".$anno.":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curCanone->GetProp('importo'))),2,",",".")."</div></div>";
+            }
+            else
+            {
+                $inizio=substr($data[$index]['data_inizio'],0,4);
+                $fine=substr($data[$index]['data_fine'],0,4);
+                if($fine>date("Y"))
+                {
+                    $fine=date("Y");
+                    if($fine - $inizio > 5) $inizio=$fine-4;
+                }
+                foreach($importo as $key=>$val)
+                {
+                    if($key>=$inizio && $key<= $fine) $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".$key.":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($val,2,",",".")."</div></div>";
+                }
+                if($label=="")
+                {
+                    $count=1;
+                    $value=end($importo);
+                    $anno=key($importo);
+                    $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".key($importo).":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($value,2,",",".")."</div></div>";
+                    $value=prev($importo);
+                    while($count < 5 && $value)
+                    {
+                        $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".key($importo).":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($value,2,",",".")."</div></div>";
+                        $value=prev($importo);
+                        $anno=key($importo);
+                        $count++;
+                    }
+                }
+
+                $label="<div style='display:flex; width: 100%;flex-direction:column'>".$label."</div>";
+            }
+            $data[$index]['importo']=$label;
             $data[$index]['tipo']=$tipoCanone[$curCanone->GetProp("tipologia")];
             if(!$object->IsReadOnly())
             {
                 $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioTrashCanoneDlg", params: [{id: "'.$object->GetId().'"},{serial:"'.$curCanone->GetProp("serial").'"}]},"'.$this->id.'")';
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetPatrimonioModifyCanoneDlg", params: [{id: "'.$object->GetId().'"},{serial:"'.$curCanone->GetProp("serial").'"}]},"'.$this->id.'")';
-                $data[$index]['ops']="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+                $data[$index]['ops']="<div style='height:100%;width:100%' class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             }
         }
 
@@ -1965,6 +2051,9 @@ Class AA_PatrimonioModule extends AA_GenericModule
                 "select"=>false,
                 "css"=>"AA_Header_DataTable",
                 "hover"=>"AA_DataTable_Row_Hover",
+                "eventHandlers"=>array("onresize"=>array("handler"=>"adjustRowHeight","module_id"=>$this->GetId())),
+                "fixedRowHeight"=>false,
+                "rowLineHeight"=>24,
                 "columns"=>$columns,
                 "data"=>$data
             ));
@@ -2141,6 +2230,20 @@ Class AA_PatrimonioModule extends AA_GenericModule
 
             return false;
         }
+
+        $importo=array();
+        foreach($_REQUEST as $key=>$val)
+        {
+            if(strpos($key,"importo_") !==false)
+            {
+                $split=explode("_",$key);
+                $importo[$split[1]]=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$val)),2,".");
+            }
+        }
+
+        $_REQUEST['importo']=json_encode($importo);
+        if(isset($_REQUEST['data_inizio'])) $_REQUEST['data_inizio']=substr($_REQUEST['data_inizio'],0,10);
+        if(isset($_REQUEST['data_fine'])) $_REQUEST['data_fine']=substr($_REQUEST['data_fine'],0,10);
 
         if(!$object->UpdateCanone(new AA_Patrimonio_Canone($_REQUEST),$this->oUser))
         {
@@ -3309,7 +3412,7 @@ Class AA_PatrimonioPublicShortReportTemplateView extends AA_GenericObjectTemplat
 
         $table = new AA_GenericTableTemplateView($id."_PatrimonioTable",$this,$object,array("evidentiate-rows"=>true,"title"=>$object->GetName(),"default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
        
-        $table->SetColSizes(array("40", "40","10","10"));
+        $table->SetColSizes(array("40", "30","18","12"));
         $table->SetHeaderLabels(array("Descrizione","Indirizzo","Tipo canone","Importo"));
         $curRow=1;
         
@@ -3323,15 +3426,50 @@ Class AA_PatrimonioPublicShortReportTemplateView extends AA_GenericObjectTemplat
         $canoni=$object->GetCanoni();
         if(sizeof($canoni)>0)
         {
-            //foreach($canoni as $curCanone)
+            $curCanone=end($canoni);
             {
                 //tipologia
-                
                 $table->SetCellText($curRow,2,$tipo[current($canoni)->GetProp("tipologia")], "center");
 
                 //importo
-                $curVal="€ ".preg_replace("/[\)|\(|€|\ |A-Za-z_]/", "", current($canoni)->GetProp("importo"));
-                if($curVal=="€ ") $curVal="n.d.";
+                $importo=json_decode($curCanone->GetProp('importo'),true);
+                $label="";
+                if(!is_array($importo))
+                {
+                    $anno=date("Y",strtotime($curCanone->GetProp("data_inizio")));
+                    $label="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".$anno.":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curCanone->GetProp('importo'))),2,",",".")."</div></div>";
+                }
+                else
+                {
+                    $inizio=substr($curCanone->GetProp("data_inizio"),0,10);
+                    $fine=substr($curCanone->GetProp("data_fine"),0,10);
+                    if($fine>date("Y"))
+                    {
+                        $fine=date("Y");
+                        if($fine - $inizio > 5) $inizio=$fine-4;
+                    }
+                    foreach($importo as $key=>$val)
+                    {
+                        if($key>=$inizio && $key<= $fine) $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".$key.":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($val,2,",",".")."</div></div>";
+                    }
+                    if($label=="")
+                    {
+                        $count=1;
+                        $value=end($importo);
+                        $anno=key($importo);
+                        $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".key($importo).":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($value,2,",",".")."</div></div>";
+                        $value=prev($importo);
+                        while($count < 5 && $value)
+                        {
+                            $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".key($importo).":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($value,2,",",".")."</div></div>";
+                            $value=prev($importo);
+                            $anno=key($importo);
+                            $count++;
+                        }
+                    }
+                }
+                $curVal=$label;
+                if($curVal=="") $curVal="n.d.";
                 $table->SetCellText($curRow,3,$curVal, "right");
             }
         }
@@ -3561,7 +3699,7 @@ Class AA_PatrimonioReportCanoniListTemplateView extends AA_GenericTableTemplateV
 
         if(sizeof($canoni)>0)
         {
-            $this->SetColSizes(array("10", "10","10","10","10","10","10","25"));
+            $this->SetColSizes(array("10", "10","10","10","12","10","10","23"));
             $this->SetHeaderLabels(array("Tipo","Id","Data inizio", "Data fine", "Importo<sup>1</sup>", "Repertorio", "Conduttore","Note"));
          
             $curRow=1;
@@ -3575,14 +3713,51 @@ Class AA_PatrimonioReportCanoniListTemplateView extends AA_GenericTableTemplateV
                 $this->SetCellText($curRow,1,$curCanone->GetProp("serial"), "center");
 
                 //Data inizio
-                $this->SetCellText($curRow,2,$curCanone->GetProp("data_inizio"), "center");
+                $this->SetCellText($curRow,2,substr($curCanone->GetProp("data_inizio"),0,10), "center");
 
                 //Data fine
-                $this->SetCellText($curRow,3,$curCanone->GetProp("data_fine"),"center");
+                $this->SetCellText($curRow,3,substr($curCanone->GetProp("data_fine"),0,10),"center");
 
                 //importo
-                $curVal="€ ".preg_replace("/[\)|\(|€|\ |A-Za-z_]/", "", $curCanone->GetProp("importo"));
-                if($curVal=="€ ") $curVal="n.d.";
+                $importo=json_decode($curCanone->GetProp('importo'),true);
+                $label="";
+                if(!is_array($importo))
+                {
+                    $anno=date("Y",strtotime($curCanone->GetProp("data_inizio")));
+                    $label="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".$anno.":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curCanone->GetProp('importo'))),2,",",".")."</div></div>";
+                }
+                else
+                {
+                    $inizio=substr($curCanone->GetProp("data_inizio"),0,4);
+                    $fine=substr($curCanone->GetProp("data_fine"),0,4);
+                    if($fine>date("Y"))
+                    {
+                        $fine=date("Y");
+                        if($fine - $inizio > 5) $inizio=$fine-4;
+                    }
+                    foreach($importo as $key=>$val)
+                    {
+                        AA_Log::Log(__METHOD__." - inizio: ".$inizio." - fine: ".$fine." - key: $key",100);
+                        if($key>=$inizio && $key<= $fine) $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".$key.":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($val,2,",",".")."</div></div>";
+                    }
+                    if($label=="")
+                    {
+                        $count=1;
+                        $value=end($importo);
+                        $anno=key($importo);
+                        $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".key($importo).":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($value,2,",",".")."</div></div>";
+                        $value=prev($importo);
+                        while($count < 5 && $value)
+                        {
+                            $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".key($importo).":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($value,2,",",".")."</div></div>";
+                            $value=prev($importo);
+                            $anno=key($importo);
+                            $count++;
+                        }
+                    }
+                }
+                $curVal=$label;
+                if($curVal=="") $curVal="n.d.";
                 $this->SetCellText($curRow,4,$curVal, "center");
 
                 //repertorio
