@@ -3737,7 +3737,7 @@ Class AA_PatrimonioReportCanoniListTemplateView extends AA_GenericTableTemplateV
                     }
                     foreach($importo as $key=>$val)
                     {
-                        AA_Log::Log(__METHOD__." - inizio: ".$inizio." - fine: ".$fine." - key: $key",100);
+                        //AA_Log::Log(__METHOD__." - inizio: ".$inizio." - fine: ".$fine." - key: $key",100);
                         if($key>=$inizio && $key<= $fine) $label.="<div style='display:flex; width: 100%; font-size:smaller'><div style='text-align:left;width: 50%;min-width:50%;'>anno ".$key.":</div><div style='width:100%;text-align:right'>".AA_Utils::number_format($val,2,",",".")."</div></div>";
                     }
                     if($label=="")

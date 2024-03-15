@@ -4111,7 +4111,7 @@ class AA_GenericModule
                 "id" => $id . "_SaveAsPdf" . "_$id_org",
                 "value" => "Esporta in pdf",
                 "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file pdf",
-                "icon" => "mdi mdi-file-pdf",
+                "icon" => "mdi mdi-file-pdf-box",
                 "module_id" => $this->id,
                 "handler" => "sectionActionMenu.saveAsPdf",
                 "handler_params" => array("task" => static::AA_UI_TASK_SAVEASPDF_DLG, "object_id" => $object->GetID())
@@ -4437,7 +4437,7 @@ class AA_GenericModule
                     "id" => $id . "_SaveAsPdf" . "_$id_org",
                     "value" => "Esporta in pdf",
                     "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file pdf",
-                    "icon" => "mdi mdi-file-pdf",
+                    "icon" => "mdi mdi-file-pdf-box",
                     "module_id" => $this->id,
                     "handler" => "sectionActionMenu.saveAsPdf",
                     "handler_params" => array("task" => static::AA_UI_TASK_SAVEASPDF_DLG, "object_id" => $object->GetID())
@@ -5541,7 +5541,7 @@ class AA_GenericPagedSectionTemplate
                             "id" => $this->id . "_SaveAsPdf",
                             "value" => "Esporta in pdf",
                             "tooltip" => "Esporta gli elementi selezionati (tutta la lista se non ci sono elementi selezionati) come file pdf",
-                            "icon" => "mdi mdi-file-pdf",
+                            "icon" => "mdi mdi-file-pdf-box",
                             "module_id" => $this->module,
                             "handler" => $this->saveAsPdfHandler, //"defaultHandlers.saveAsPdf",
                             "handler_params" => $this->saveAsPdfHandlerParams, //array($this->id."_Content_Box",true)
