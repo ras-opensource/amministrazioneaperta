@@ -13089,8 +13089,8 @@ Class AA_SierModule extends AA_GenericModule
         {
            foreach($rendiconti['personale_det'] as $key=>$val)
            {
-                $value+=$val['importo']+$val['oneri_importo'];
-                $totale=$val['importo']+$val['oneri_importo'];
+                $value+=floatVal($val['importo'])+floatVal($val['oneri_importo']);
+                $totale+=floatVal($val['importo'])+floatVal($val['oneri_importo']);
            }
         }
         $val=new AA_JSON_Template_Template("",array(
@@ -13129,14 +13129,14 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=$val['importo'];              
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=$val['importo'];
-                $totale+=$val['importo'];
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
+                $totale+=floatVal($val['importo']);
             }
         }
         $val=new AA_JSON_Template_Template("",array(
@@ -22820,7 +22820,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                $totale+=$val['importo'];
+                $totale+=floatVal($val['importo']);
             }
         }
 
@@ -22924,7 +22924,7 @@ Class AA_SierModule extends AA_GenericModule
                 $num=str_replace(",",".",str_replace(".","",$_REQUEST['importo']));
                 $totale+=$num;
             }
-            else $totale+=$val['importo'];
+            else $totale+=floatVal($val['importo']);
         }
         if(!isset($rendiconti['ras']['liquidazioni'][$_REQUEST['id_liquidazione']]))
         {
@@ -23256,8 +23256,8 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['personale_det'] as $key=>$val)
             {
-                    $value+=$val['importo']+$val['oneri_importo'];
-                    $totale=$val['importo']+$val['oneri_importo'];
+                    $value+=floatVal($val['importo'])+floatVal($val['oneri_importo']);
+                    $totale+=floatVal($val['importo'])+floatVal($val['oneri_importo']);
             }
         }
         $template->SetCellText($curRow,0,"Assunzione di personale a tempo determinato", "left");
@@ -23284,14 +23284,14 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=$val['importo'];              
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=$val['importo'];
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=$val['importo'];
-                $totale+=$val['importo'];
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
+                $totale+=floatVal($val['importo']);
             }
         }
         $template->SetCellText($curRow,0,"Stampati o software sostitutivi non forniti direttamente dalla Regione o dallo Stato", "left");
@@ -23332,7 +23332,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['ras']['liquidazioni'] as $val)
             {
-                $liquidato+=$val['importo'];
+                $liquidato+=floatVal($val['importo']);
             }
         }
         $totale_saldare=$rimborso_concesso-$anticipo-$liquidato;
@@ -28134,185 +28134,434 @@ Class AA_SierModule extends AA_GenericModule
 
         $totale=0;
         //content
-        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><div style='width:70%;text-align:center'>Spese presentate a rimborso</div><div style='width:30%; text-align:center'>Importo totale</div></div>"));
+        $header=new AA_JSON_Template_Template("",array("type"=>"clean","height"=>24,"template"=>"<div style='display:flex; align-items:center; justify-content:center; width:100%;height:24px;text-align: center; font-weight:700; background-color:#e7e9f2'><div style='width:60%;text-align:left; padding-left:20px'>Spese presentate a rimborso</div><div style='width:20%; text-align:right;padding-right:20px'>Importo presentato</div><div style='width:20%;text-align:right;padding-right:20px'>Importo ammesso</div></div>"));
         $box->AddRow($header);
-        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:100%;height:100%;'><div style='font-weight:400;width:70%; min-width:70%; padding-left:20px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 20px'>#value#</div></div>";
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:100%;height:100%;'><div style='font-weight:400; width:60%; padding-left:20px'>#title#</div><div style='width: 20%; text-align: #value_align#;padding-right: 20px'>#value#</div><div style='width: 20%; text-align: #value_align_ammesso#;padding-right: 20px'>#value_ammesso#</div></div>";
         //competenze seggi
         $value=0;
+        $ammesso=0;
+        $bAmmesso=true;
+        $bTotaleAmmesso=true;
+        $totale_ammesso=0;
         if(isset($rendiconti['seggi']['competenze']['importo']))
         {
             $value+=$rendiconti['seggi']['competenze']['importo'];
             $totale+=$rendiconti['seggi']['competenze']['importo'];
+            if(isset($rendiconti['ras']['importi_ammessi']['seggi_competenze_importo']))
+            {
+                $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['seggi_competenze_importo']);
+            }
+            else 
+            {
+                if($rendiconti['seggi']['competenze']['importo'] > 0) $bAmmesso=false;
+            }
         }
         if(isset($rendiconti['seggi']['missioni']['importo']))
         {
             $value+=$rendiconti['seggi']['missioni']['importo'];
             $totale+=$rendiconti['seggi']['missioni']['importo'];
+            if(isset($rendiconti['ras']['importi_ammessi']['seggi_missioni_importo']))
+            {
+                $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['seggi_missioni_importo']);
+            }
+            else  
+            {
+                if($rendiconti['seggi']['missioni']['importo'] > 0) $bAmmesso=false;
+            }
+        }
+        if(!$bAmmesso) 
+        {
+            $ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($ammesso);
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Competenze corrisposte ai componenti dei seggi (comprensiva di missioni):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Competenze corrisposte ai componenti dei seggi (comprensiva di missioni):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$ammesso),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+
         $value=0;
+        $ammesso=0;
+        $bAmmesso=true;
         if(isset($rendiconti['comune']['straordinario']['importo']))
         {
             $value+=$rendiconti['comune']['straordinario']['importo'];
             $totale+=$rendiconti['comune']['straordinario']['importo'];
+            if(isset($rendiconti['ras']['importi_ammessi']['comune_straordinario_importo']))
+            {
+                $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['comune_straordinario_importo']);
+            }
+            else  
+            {
+                if($rendiconti['comune']['straordinario']['importo'] > 0) $bAmmesso=false;
+            }
         }
         if(isset($rendiconti['comune']['missioni']['importo']))
         {
             $value+=$rendiconti['comune']['missioni']['importo'];
             $totale+=$rendiconti['comune']['missioni']['importo'];
+            if(isset($rendiconti['ras']['importi_ammessi']['comune_missioni_importo']))
+            {
+                $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['comune_missioni_importo']);
+            }
+            else  
+            {
+                if($rendiconti['comune']['missioni']['importo'] > 0)$bAmmesso=false;
+            }
         }
         if(isset($rendiconti['comune']['oneri']['importo']))
         {
             $value+=$rendiconti['comune']['oneri']['importo'];
             $totale+=$rendiconti['comune']['oneri']['importo'];
+            if(isset($rendiconti['ras']['importi_ammessi']['comune_oneri_importo']))
+            {
+                $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['comune_oneri_importo']);
+            }
+            else  
+            {
+                if($rendiconti['comune']['oneri']['importo'] > 0) $bAmmesso=false;
+            }
+        }
+        if(!$bAmmesso) 
+        {
+            $ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($ammesso);
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Straordinario e missioni dei dipendenti (compresi oneri):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Straordinario e missioni dei dipendenti (compresi oneri):","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$ammesso),
             "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+        
         $value=0;
+        $ammesso=0;
+        $bAmmesso=true;
         if(isset($rendiconti['personale_det']))
         {
            foreach($rendiconti['personale_det'] as $key=>$val)
            {
-                $value+=$val['importo']+$val['oneri_importo'];
-                $totale=$val['importo']+$val['oneri_importo'];
+                $value+=floatVal($val['importo'])+floatVal($val['oneri_importo']);
+                $totale+=floatVal($val['importo'])+floatVal($val['oneri_importo']);
+                if(isset($rendiconti['ras']['importi_ammessi']['personale_det'][$key]['oneri_importo']) && $bAmmesso)
+                {
+                    $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['personale_det'][$key]['oneri_importo']);
+                }
+                else $bAmmesso=false;
+                if(isset($rendiconti['ras']['importi_ammessi']['personale_det'][$key]['importo']) && $bAmmesso)
+                {
+                    $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['personale_det'][$key]['importo']);
+                }
+                else $bAmmesso=false;
            }
+        }
+        if(!$bAmmesso) 
+        {
+            $ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($ammesso);
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Assunzione di personale a tempo determinato:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Assunzione di personale a tempo determinato:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$ammesso),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+        
         $value=0;
+        $ammesso=0;
+        $bAmmesso=true;
         if(isset($rendiconti['buoni']['importo']))
         {
             $value+=$rendiconti['buoni']['importo'];
             $totale+=$rendiconti['buoni']['importo'];
+            if(isset($rendiconti['ras']['importi_ammessi']['buoni_importo']) && $bAmmesso)
+            {
+                $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['buoni_importo']);
+            }
+            else $bAmmesso=false;
+        }
+        if(!$bAmmesso) 
+        {
+            $ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($ammesso);
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Buoni pasto dei dipendenti addetti al servizio elettorale:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Buoni pasto dei dipendenti addetti al servizio elettorale:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$ammesso),
             "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
         
         $software=0;
+        $software_ammesso=0;
+        $bSoftwareAmmesso=true;
         $trasporto=0;
+        $bTrasportoAmmesso=true;
+        $trasporto_ammesso=0;
         $materiale=0;
+        $bMaterialeAmmesso=true;
+        $materiale_ammesso=0;
         $propaganda=0;
+        $bPropagandaAmmesso=true;
+        $propaganda_ammesso=0;
         $collegamenti=0;
+        $bCollegamentiAmmesso=true;
+        $collegamenti_ammesso=0;
         $altro=0;
+        $bAltroAmmesso=true;
+        $altro_ammesso=0;
         $spese_postali=0;
+        $bSpesePostaliAmmesso=true;
+        $spese_postali_ammesso=0;
         if(isset($rendiconti['servizi']))
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) 
+                {
+                    $propaganda+=floatVal($val['importo']);
+                    if(isset($rendiconti['ras']['servizi'][$key]['importo']) && $bPropagandaAmmesso)
+                    {
+                        $propaganda_ammesso+=$rendiconti['ras']['servizi'][$key]['importo'];
+                    }
+                    else $bPropagandaAmmesso=false;
+                }              
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) 
+                {
+                    $collegamenti+=floatVal($val['importo']);
+                    if(isset($rendiconti['ras']['servizi'][$key]['importo']) && $bCollegamentiAmmesso)
+                    {
+                        $collegamenti_ammesso+=$rendiconti['ras']['servizi'][$key]['importo'];
+                    }
+                    else $bCollegamentiAmmesso=false;
+                }
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) 
+                {
+                    $altro+=floatVal($val['importo']);
+                    if(isset($rendiconti['ras']['servizi'][$key]['importo']) && $bAltroAmmesso)
+                    {
+                        $altro_ammesso+=$rendiconti['ras']['servizi'][$key]['importo'];
+                    }
+                    else $bAltroAmmesso=false;
+                }
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) 
+                {
+                    $materiale+=floatVal($val['importo']);
+                    if(isset($rendiconti['ras']['servizi'][$key]['importo']) && $bMaterialeAmmesso)
+                    {
+                        $materiale_ammesso+=$rendiconti['ras']['servizi'][$key]['importo'];
+                    }
+                    else $bMaterialeAmmesso=false;
+                }
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) 
+                {
+                    $spese_postali+=floatVal($val['importo']);
+                    if(isset($rendiconti['ras']['servizi'][$key]['importo']) && $bSpesePostaliAmmesso)
+                    {
+                        $spese_postali_ammesso+=$rendiconti['ras']['servizi'][$key]['importo'];
+                    }
+                    else $bSpesePostaliAmmesso=false;
+                }
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) 
+                {
+                    $software+=floatVal($val['importo']);
+                    if(isset($rendiconti['ras']['servizi'][$key]['importo']) && $bSoftwareAmmesso)
+                    {
+                        $software_ammesso+=$rendiconti['ras']['servizi'][$key]['importo'];
+                    }
+                    else $bSoftwareAmmesso=false;
+                }
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) 
+                {
+                    $trasporto+=floatVal($val['importo']);
+                    if(isset($rendiconti['ras']['servizi'][$key]['importo']) && $bTrasportoAmmesso)
+                    {
+                        $trasporto_ammesso+=$rendiconti['ras']['servizi'][$key]['importo'];
+                    }
+                    else $bTrasportoAmmesso=false;
+                }
                 $totale+=floatVal($val['importo']);
+                if(isset($rendiconti['ras']['servizi'][$key]['importo'])) 
+                {
+                    $totaleAmmesso+=floatVal($rendiconti['ras']['servizi'][$key]['importo']);
+                }
+                else $bTotaleAmmesso=false;
             }
+        }
+        if(!$bSoftwareAmmesso) 
+        {
+            $software_ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($software_ammesso);
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Stampati o software sostitutivi non forniti direttamente dalla Regione o dallo Stato:","value"=>AA_Utils::number_format($software,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Stampati o software sostitutivi non forniti direttamente dalla Regione o dallo Stato:","value"=>AA_Utils::number_format($software,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$software_ammesso),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+
+        if(!$bTrasportoAmmesso) 
+        {
+            $trasporto_ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($trasporto_ammesso);
+        }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Trasporto del materiale elettorale e degli arredi dei seggi - Allestimento dei seggi:","value"=>AA_Utils::number_format($trasporto,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Trasporto del materiale elettorale e degli arredi dei seggi - Allestimento dei seggi:","value"=>AA_Utils::number_format($trasporto,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$trasporto_ammesso),
             "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+
+        if(!$bMaterialeAmmesso) 
+        {
+            $materiale_ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($materiale_ammesso);
+        }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Acquisto di materiale di consumo per l’allestimento dei seggi:","value"=>AA_Utils::number_format($materiale,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Acquisto di materiale di consumo per l’allestimento dei seggi:","value"=>AA_Utils::number_format($materiale,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$materiale_ammesso),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+
+        if(!$bPropagandaAmmesso) 
+        {
+            $propaganda_ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($propaganda_ammesso);
+        }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Spese per la propaganda elettorale:","value"=>AA_Utils::number_format($propaganda,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Spese per la propaganda elettorale:","value"=>AA_Utils::number_format($propaganda,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$propaganda_ammesso),
             "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+
+        if(!$bCollegamentiAmmesso) 
+        {
+            $collegamenti_ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($software_ammesso);
+        }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Collegamenti telefonici straordinari ai fini della raccolta dei dati elettorali:","value"=>AA_Utils::number_format($collegamenti,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Collegamenti telefonici straordinari ai fini della raccolta dei dati elettorali:","value"=>AA_Utils::number_format($collegamenti,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$collegamenti_ammesso),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+
+        if(!$bSpesePostaliAmmesso) 
+        {
+            $spese_postali_ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($spese_postali_ammesso);
+        }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Spese postali e telegrafiche:","value"=>AA_Utils::number_format($spese_postali,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Spese postali e telegrafiche:","value"=>AA_Utils::number_format($spese_postali,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$spese_postali_ammesso),
             "css"=>array("background-color"=>"#f0f0f0 !important","border-bottom"=>"1px solid #dadee0 !important")
         ));
         $box->AddRow($val);
+
+        if(!$bAltroAmmesso) 
+        {
+            $altro_ammesso="n.d.";
+            $bTotaleAmmesso=false;
+        }
+        else
+        {
+            $totale_ammesso+=floatVal($altro_ammesso);
+        }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"Altre spese indispensabili per gli adempimenti elettorali:","value"=>AA_Utils::number_format($altro,2,",","."),"value_align"=>"right"),
+            "data"=>array("title"=>"Altre spese indispensabili per gli adempimenti elettorali:","value"=>AA_Utils::number_format($altro,2,",","."),"value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>$altro_ammesso),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
+        
         $box->AddRow($val);
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>TOTALE SPESE PRESENTATE A RIMBORSO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($totale,2,",",".")."</span>","value_align"=>"right"),
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>TOTALE SPESE PRESENTATE:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($totale,2,",",".")."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
             "css"=>array("border-top"=>"2px solid gray !important")
         ));
         $box->AddRow($val);
         $anticipo=0;
         $totale_saldare=0;
-        $rimborso_concesso=0;
+        $totale_saldare_label="IMPORTO DA LIQUIDARE";
         $liquidato=0;
         if(isset($rendiconti['ras']['importo']))
         {
@@ -28326,17 +28575,28 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['ras']['liquidazioni'] as $val)
             {
-                $liquidato+=$val['importo'];
+                $liquidato+=floatVal($val['importo']);
             }
         }
-        $totale_saldare=$rimborso_concesso-$anticipo-$liquidato;
+        
+        if(!$bTotaleAmmesso)
+        {
+            $totale_saldare=$anticipo+$liquidato;
+            $totale_saldare_label="IMPORTO DA RECUPERARE";
+            $totale_ammesso="n.d.";
+        }
+        else
+        {
+            $totale_saldare=$totale_ammesso-$anticipo-$liquidato;
+            $totale_ammesso=AA_Utils::number_format($totale_ammesso,2,",",".");
+        }
 
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>IMPORTO AMMESSO A RIMBORSO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($rimborso_concesso,2,",",".")."</span>","value_align"=>"right"),
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>TOTALE IMPORTO AMMESSO A RIMBORSO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".$totale_ammesso."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
             "css"=>array("border-top"=>"2px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -28346,7 +28606,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>ANTICIPO CORRISPOSTO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($anticipo,2,",",".")."</span>","value_align"=>"right"),
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>ANTICIPO CORRISPOSTO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($anticipo,2,",",".")."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
             "css"=>array("border-top"=>"2px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -28356,7 +28616,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>IMPORTO DA LIQUIDARE:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($rimborso_concesso-$anticipo,2,",",".")."</span>","value_align"=>"right"),
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>IMPORTO DA LIQUIDARE:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($rimborso_concesso-$anticipo,2,",",".")."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
             "css"=>array("border-top"=>"2px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -28366,7 +28626,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>IMPORTO LIQUIDATO (escluso anticipo):</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($liquidato,2,",",".")."</span>","value_align"=>"right"),
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>IMPORTO LIQUIDATO (escluso anticipo):</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($liquidato,2,",",".")."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
             "css"=>array("border-top"=>"2px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -28376,7 +28636,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>SALDO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($totale_saldare,2,",",".")."</span>","value_align"=>"right"),
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>SALDO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($totale_saldare,2,",",".")."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
             "css"=>array("border-top"=>"2px solid #dadee0 !important")
         ));
         $box->AddRow($val);
