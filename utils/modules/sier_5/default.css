@@ -41,6 +41,15 @@
   align-items: center;
   justify-content: center;
 }
+.AA_RendicontiImportoRow
+{
+  background-color:   #eaf2f8 !important;
+}
+
+.AA_RendicontiImportoRow_Orange
+{
+  color:   red !important;
+}
 
 .RendicontiServiziTable_left .webix_cell
 {
