@@ -1140,6 +1140,154 @@ Class AA_Sier extends AA_Object_V2
         return $analisi;
     }
 
+    public function AnalizeRendiconti($rendiconti=null,$comune=null)
+    {
+        $result=array(false,array(),false);
+        if($rendiconti==null && $comune instanceof AA_SierComune)
+        {
+            $rendiconti=$comune->GetRendiconti(true);
+            //AA_Log::Log(__METHOD__." - risultati: ".print_r($risultati,true),100);
+        }
+
+        //periodo autorizzato
+        if(isset($rendiconti['comune']['straordinario']['periodo_max']))
+        {
+            $periodo_max=explode("|",$rendiconti['comune']['straordinario']['periodo_max']);
+            if($periodo_max[0]>=$periodo_max[1])
+            {
+                $result[0]=true;
+                $result[1][]="Periodo autorizzato - La data di inizio deve essere precedente a quella di fine.";
+            }
+        }
+
+        //periodo effettivo
+        if(isset($rendiconti['comune']['straordinario']['periodo_effettivo']))
+        {
+            $periodo=explode("|",$rendiconti['comune']['straordinario']['periodo_effettivo']);
+            if($periodo_max[0]>=$periodo[1])
+            {
+                $result[0]=true;
+                $result[1][]="Periodo effettivo - La data di inizio deve essere precedente a quella di fine.";
+            }
+
+            if(!isset($rendiconti['comune']['straordinario']['periodo_max']))
+            {
+                $result[0]=true;
+                $result[1][]="Periodo effetttivo deve essere ricompreso all'interno del periodo autorizzato.";
+            }
+            else
+            {
+                $periodo_max=explode("|",$rendiconti['comune']['straordinario']['periodo_max']);
+                if($periodo_max[0]>$periodo[0])
+                {
+                    $result[0]=true;
+                    $result[1][]="Periodo effettivo - La data di inizio non deve essere precedente a quella di inizio del periodo autorizzato.";
+                }
+
+                if($periodo_max[1]<$periodo[1])
+                {
+                    $result[0]=true;
+                    $result[1][]="Periodo effettivo - La data di fine non deve essere successiva a quella di fine del periodo autorizzato.";
+                }
+            }
+        }
+
+        //controllo ore
+        if(isset($rendiconti['comune']['straordinario']['ore_effettive']))
+        {
+           if(!isset($rendiconti['comune']['straordinario']['ore_max']))
+           {
+                $result[0]=true;
+                $result[1][]="Occorre impostare le ore autorizzate.";
+           }
+           else
+           {
+                if($rendiconti['comune']['straordinario']['ore_effettive']>$rendiconti['comune']['straordinario']['ore_max'])
+                {
+                    $result[0]=true;
+                    $result[1][]="Le ore di svolgimento effettivo non possono superare le ore autorizzate.";
+                }
+           }
+        }
+        //------------------------------------------------------
+
+        //controllo dipendenti
+        if(isset($rendiconti['comune']['straordinario']['dipendenti_effettivi']))
+        {
+           if(!isset($rendiconti['comune']['straordinario']['dipendenti_max']))
+           {
+                $result[0]=true;
+                $result[1][]="Occorre impostare il numero di dipendenti autorizzati.";
+           }
+           else
+           {
+                if($rendiconti['comune']['straordinario']['dipendenti_effettivi']>$rendiconti['comune']['straordinario']['dipendenti_max'])
+                {
+                    $result[0]=true;
+                    $result[1][]="I dipendenti che effettivamente hanno svolto straordinario non possono superare il numero di dipendenti autorizzati.";
+                }
+           }
+        }
+        //------------------------------------------------------
+
+        //controllo km e missioni
+        if(isset($rendiconti['comune']['missioni']['km']) && $rendiconti['comune']['missioni']['km']==0 && $rendiconti['comune']['missioni']['dipendenti']>0)
+        {
+            $result[0]=true;
+            $result[1][]="I Km totali percorsi devono essere maggiori di zero in presenza di dipendenti che hanno effettuato missioni.";
+        }
+        if(isset($rendiconti['comune']['missioni']['km']) && $rendiconti['comune']['missioni']['km']>0 && $rendiconti['comune']['missioni']['dipendenti']==0)
+        {
+            $result[0]=true;
+            $result[1][]="I dipendenti che hanno effettuato missioni non possono essere zero se ci sono pkm percorsi.";
+        }
+        //------------------------------------------------------
+
+        //------------------- servizi --------------------------
+        if(isset($rendiconti['servizi']))
+        {
+            foreach($rendiconti['servizi'] as $curServizio)
+            {
+                if(floatVal($curServizio['importo'])==0)
+                {
+                    $result[0]=true;
+                    $result[1][]="Il bene/servizio: ".$curServizio['descrizione']." non puo' avere importo nullo.";
+                }
+            }
+        }
+        //------------------------------------------------------
+
+        //------------------- personale det --------------------------
+        if(isset($rendiconti['personale_det']))
+        {
+            foreach($rendiconti['personale_det'] as $curServizio)
+            {
+                if(floatVal($curServizio['importo'])==0)
+                {
+                    $result[0]=true;
+                    $result[1][]="L'assunzione: ".$curServizio['estremi_assunzione']." non puo' avere importo nullo.";
+                }
+
+                $oneri=floatVal($curServizio['oneri_cpdel'])+floatVal($curServizio['oneri_irap'])+floatVal($curServizio['oneri_altro']);
+                if($oneri==0)
+                {
+                    //AA_Log::Log(__METHOD__." - personale: ".print_r($curServizio,true),100);
+                    $result[0]=true;
+                    $result[1][]="L'assunzione: ".$curServizio['estremi_assunzione']." non puo' avere un importo totale oneri nullo.";
+                }
+
+                if($curServizio['periodo_dal']>=$curServizio['periodo_al'])
+                {
+                    $result[0]=true;
+                    $result[1][]="la data di inizio per l'assunzione: ".$curServizio['estremi_assunzione']." deve essere precedente a quella di fine.";
+                }
+            }
+        }
+        //------------------------------------------------------
+
+        return $result;
+    }
+
     //Verifica se ci sono delle anomalie sui risultati
     public function AnalizeRisultati($risultati=null,$circoscrizione=0,$comune=null)
     {
@@ -3673,7 +3821,7 @@ Class AA_Sier extends AA_Object_V2
         $rendiconti=$newComune->GetProp('rendiconti');
         if($rendiconti!="") $query.=", rendiconti='".addslashes($rendiconti)."'";
         
-        $query.=", logs='".json_encode($newComune->GetLogs(true))."'";
+        $query.=", logs='".addslashes(json_encode($newComune->GetLogs(true)))."'";
 
         $query.=", lastupdate='".date("Y-m-d H:i:s")."'";
         $query.=" WHERE id='".$newComune->GetProp('id')."' LIMIT 1";
@@ -13214,7 +13362,6 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $box->AddRow($val);
         $box->AddRow(new AA_JSON_Template_Generic());
-        
         $generaleLayout->AddRow($box);
         $multiview->AddCell($generaleLayout);
         //------------------------------------------------------------------------
@@ -13294,7 +13441,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>2,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"left"),
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"left"),
             "css"=>array("background-color"=>"","border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
@@ -13366,11 +13513,22 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>2,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"left"),
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
         $box->AddRow($row);
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="<ul>Si attesta:<li>l'effettiva partecipazione dei componenti dei seggi per tutta la durata delle operazioni elettorali e l'applicazione ad essi degli onorari indicati nella circolare dell'Amministrazione regionale in materia di rendicontazione delle spese sostenute dai Comuni.</li></ul>";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>1,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify")
+        ));
+        $row->AddRow($val);
+        $box->AddRow($row);
+        $box->AddRow(new AA_JSON_Template_Generic("",array("height"=>10)));
         $first_row->AddCol($box);
         $multiview->AddCell($generaleLayout);
         //------------------------------------------------------------------------------------------------
@@ -13581,7 +13739,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>40,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -13626,7 +13784,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>60,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>0,"value_align"=>"left"),
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>0,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -13680,12 +13838,37 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto per oneri:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left")
+            "data"=>array("title"=>"Importo presentato per oneri:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left")
         ));
         $row->AddCol($val);
         $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
         $box->addRow($row);
        
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="<ul>Si attesta che:<li>sono stati rispettati i limiti per il lavoro straordinario elettorale previsti nell'art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68;</li>";
+        $value.="<li>la retribuzione per il lavoro straordinario di cui si chiede il rimborso è stata corrisposta ai dipendenti che potevano essere retribuiti con il compenso per prestazioni straordinarie in base al C.C.N.L. da applicarsi per il periodo considerato;</li>";
+        $value.="<li>sono state applicate le tariffe orarie per il lavoro straordinario previste dal C.C.N.L. vigente nel periodo considerato;</li>";
+        $value.="<li>sono state rispettate le disposizioni contrattuali e legislative in materia di trattamento di trasferta dei dipendenti comunali.</li>";
+        $value.="</ul>";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>3,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify","font-size"=>"smaller")
+        ));
+        $row->AddCol($val);
+        $value="<ul>In caso di più consultazioni si attesta:<li>il rispetto dei limiti per il lavoro straordinario elettorale, previsti nell’art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68, complessivamente per le diverse consultazioni;</li>";
+        $value.="<li>il rispetto del riparto delle spese tra gli enti interessati alle consultazioni indicato nelle circolari in materia della Regione e dello Stato:</li>";
+        $value.="</ul>";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>2,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify","font-size"=>"smaller")
+        ));
+        $row->AddCol($val);
+        $box->AddRow($row);
+
         $first_row->AddCol($box);
         //---------------------------------------------------
         $multiview->addCell($generaleLayout);
@@ -13748,7 +13931,7 @@ Class AA_SierModule extends AA_GenericModule
                 $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Irap:</div><div>".AA_Utils::number_format($val['oneri_irap'],2,",",".")."</div></div>";
                 $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Altro:</div><div>".AA_Utils::number_format($val['oneri_altro'],2,",",".")."</div></div>";
                 $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Altro(descrizione):</div><div>".$val['oneri_altro_desc']."</div></div>";
-                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Importo corrisposto:</div><div>".AA_Utils::number_format($val['oneri_importo'],2,",",".")."</div></div>";
+                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Importo presentato:</div><div>".AA_Utils::number_format($val['oneri_importo'],2,",",".")."</div></div>";
                 $oneri.="</div>";
 
                 $periodo="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%;font-size:smaller'>";
@@ -13800,6 +13983,19 @@ Class AA_SierModule extends AA_GenericModule
             ));
 
             $generaleLayout->addRow($table);
+
+            $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+            $value="<ul>Si attesta che:<li>la spesa di cui si chiede il rimborso per l'assunzione di personale a tempo determinato è relativa al lavoro prestato nel periodo elettorale indicato nella circolare della Regione in materia di rendicontazione;</li>";
+            $value.="<li>i contratti individuali di lavoro a tempo determinato, stipulati dal Comune, danno luogo alla costituzione di un rapporto di lavoro subordinato con l'Ente;</li>";
+            $value.="</ul>";
+            $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>1,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify")
+            ));
+            $row->AddRow($val);
+            $generaleLayout->addRow($row);
         }
         else
         {
@@ -13917,7 +14113,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>2,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -13936,6 +14132,18 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
+        $box->addRow($row);
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="<ul>Si attesta che:<li>i buoni pasto sono stati erogati ai dipendenti per le sole giornate di lavoro straordinario elettorale effettuate e nel rispetto delle condizioni e limiti previsti nel C.C.N.L. vigente nel periodo considerato;</li>";
+        $value.="<li>l'Amministrazione comunale aveva già attivato il servizio per l'erogazione dei buoni pasto ai propri dipendenti;</li>";
+        $value.="</ul>";
+        $val=new AA_JSON_Template_Template("",array(
+        "template"=>$value,
+        "gravity"=>1,
+        "autoheight"=>true,
+        "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify")
+        ));
+        $row->AddRow($val);
         $box->addRow($row);
         $multiview->AddCell($generaleLayout);
         //--------------------------------------------------------------------------------------
@@ -14033,6 +14241,19 @@ Class AA_SierModule extends AA_GenericModule
             ));
 
             $generaleLayout->addRow($table);
+            
+            $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+            $value="<ul>Si attesta che:<li>Nell'ipotesi di acquisto di nuovi tabelloni per la propaganda elettorale, si attesta che l'importo di cui si chiede il rimborso costituisce il 10% del totale della relativa spesa:</li>";
+            $value.="<li>l'eventuale spesa richiesta a rimborso per collegamenti telefonici e' relativa al noleggio di telefoni cellulari o all’attivazione di collegamenti telefonici straordinari e al relativo traffico telefonico nei giorni della votazione per la raccolta dei dati elettorali.</li>";
+            $value.="</ul>";
+            $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>1,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify")
+            ));
+            $row->AddRow($val);
+            $generaleLayout->addRow($row);
         }
         else
         {
@@ -23440,7 +23661,7 @@ Class AA_SierModule extends AA_GenericModule
         //importo
         $value="n.d.";
         if(isset($rendiconti['seggi']['competenze']['importo'])) $value=AA_Utils::number_format($rendiconti['seggi']['competenze']['importo'],2,",",".");
-        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
 
         $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
@@ -23472,10 +23693,10 @@ Class AA_SierModule extends AA_GenericModule
         //importo
         $value="n.d.";
         if(isset($rendiconti['seggi']['missioni']['importo'])) $value=AA_Utils::number_format($rendiconti['seggi']['missioni']['importo'],2,",",".");
-        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
 
-        $val="<ul>Si attesta che:<li>l'effettiva partecipazione dei componenti dei seggi per tutta la durata delle operazioni elettorali e l'applicazione ad essi degli onorari indicati nella circolare dell'Amministrazione regionale in materia di rendicontazione delle spese sostenute dai Comuni.</li></ul>";
+        $val="<ul>Si attesta:<li>l'effettiva partecipazione dei componenti dei seggi per tutta la durata delle operazioni elettorali e l'applicazione ad essi degli onorari indicati nella circolare dell'Amministrazione regionale in materia di rendicontazione delle spese sostenute dai Comuni.</li></ul>";
         $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
         $attestazione->SetStyle("text-align:justify;");
         $attestazione->SetText($val);
@@ -23549,7 +23770,7 @@ Class AA_SierModule extends AA_GenericModule
         //importo
         $value="n.d.";
         if(isset($rendiconti['buoni']['importo'])) $value=AA_Utils::number_format($rendiconti['seggi']['competenze']['importo'],2,",",".");
-        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
 
         //note
@@ -23669,7 +23890,7 @@ Class AA_SierModule extends AA_GenericModule
         //importo
         $value="n.d.";
         if(isset($rendiconti['comune']['straordinario']['importo'])) $value=AA_Utils::number_format($rendiconti['comune']['straordinario']['importo'],2,",",".");
-        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
 
         $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
@@ -23705,7 +23926,7 @@ Class AA_SierModule extends AA_GenericModule
         //importo
         $value="n.d.";
         if(isset($rendiconti['comune']['oneri']['importo'])) $value=AA_Utils::number_format($rendiconti['comune']['oneri']['importo'],2,",",".");
-        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
 
         $template = new AA_GenericTableTemplateView(uniqid(),$layout,$object,array("evidentiate-rows"=>$bDifferenziateRowsColor,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
@@ -23737,7 +23958,7 @@ Class AA_SierModule extends AA_GenericModule
         //importo
         $value="n.d.";
         if(isset($rendiconti['comune']['missioni']['importo'])) $value=AA_Utils::number_format($rendiconti['comune']['missioni']['importo'],2,",",".");
-        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
 
         //note
@@ -23784,12 +24005,17 @@ Class AA_SierModule extends AA_GenericModule
         $row_template_2col.="</div>";
         $row_template_2col.="</div>";
 
-        $val="<ul>Si attesta che:
-        <li>sono stati rispettati i limiti per il lavoro straordinario elettorale previsti nell'art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68 e che la retribuzione per il lavoro straordinario di cui si chiede il rimborso è stata corrisposta ai dipendenti che potevano essere retribuiti con il compenso per prestazioni straordinarie in base al C.C.N.L. da applicarsi per il periodo considerato;</li>
-        <li>sono state rispettate le disposizioni contrattuali e legislative in materia di trattamento di trasferta dei dipendenti comunali e il rispetto dei limiti per il lavoro straordinario elettorale, previsti nell'art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68, complessivamente per le diverse consultazioni;</li></ul>";
+        $value="<ul>Si attesta che:<li>sono stati rispettati i limiti per il lavoro straordinario elettorale previsti nell'art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68;</li>";
+        $value.="<li>la retribuzione per il lavoro straordinario di cui si chiede il rimborso è stata corrisposta ai dipendenti che potevano essere retribuiti con il compenso per prestazioni straordinarie in base al C.C.N.L. da applicarsi per il periodo considerato;</li>";
+        $value.="<li>sono state applicate le tariffe orarie per il lavoro straordinario previste dal C.C.N.L. vigente nel periodo considerato;</li>";
+        $value.="<li>sono state rispettate le disposizioni contrattuali e legislative in materia di trattamento di trasferta dei dipendenti comunali.</li>";
+        $value.="</ul>";
+        $value.="<ul>In caso di più consultazioni si attesta:<li>il rispetto dei limiti per il lavoro straordinario elettorale, previsti nell’art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68, complessivamente per le diverse consultazioni;</li>";
+        $value.="<li>il rispetto del riparto delle spese tra gli enti interessati alle consultazioni indicato nelle circolari in materia della Regione e dello Stato:</li>";
+        $value.="</ul>";
         $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
         $attestazione->SetStyle("text-align:justify;");
-        $attestazione->SetText($val);
+        $attestazione->SetText($value);
 
         return $layout->__toString();
     }
@@ -23863,7 +24089,7 @@ Class AA_SierModule extends AA_GenericModule
                     //importo
                     $value="n.d.";
                     if(isset($curPersonale['importo'])) $value=AA_Utils::number_format($curPersonale['importo'],2,",",".");
-                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
                     $curRow++;
         
                     $template->SetCellText($curRow,0,"Oneri","center",null,'bold',null,"#dadee0");
@@ -23893,7 +24119,7 @@ Class AA_SierModule extends AA_GenericModule
                     //importo
                     $value="n.d.";
                     if(isset($curPersonale['oneri_importo'])) $value=AA_Utils::number_format($curPersonale['oneri_importo'],2,",",".");
-                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
                     $curRow++;
                     $numeroVoci--;
 
@@ -23982,7 +24208,7 @@ Class AA_SierModule extends AA_GenericModule
                     //importo
                     $value="n.d.";
                     if(isset($curVal['importo'])) $value=AA_Utils::number_format($curVal['importo'],2,",",".");
-                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo corrisposto:",$value),$row_template),"left",null,null,null," #ebf5fb ");
+                    $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
                     $curRow++;
 
                     if(isset($curVal['note']))
@@ -23994,6 +24220,12 @@ Class AA_SierModule extends AA_GenericModule
                 }
                 $count++;
             }
+            $value="<ul>Si attesta che:<li>Nell'ipotesi di acquisto di nuovi tabelloni per la propaganda elettorale, si attesta che l'importo di cui si chiede il rimborso costituisce il 10% del totale della relativa spesa:</li>";
+            $value.="<li>l'eventuale spesa richiesta a rimborso per collegamenti telefonici e' relativa al noleggio di telefoni cellulari o all’attivazione di collegamenti telefonici straordinari e al relativo traffico telefonico nei giorni della votazione per la raccolta dei dati elettorali.</li>";
+            $value.="</ul>";
+            $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
+            $attestazione->SetStyle("text-align:left;");
+            $attestazione->SetText($value);
         }
         else
         {
@@ -24297,6 +24529,13 @@ Class AA_SierModule extends AA_GenericModule
 
         $rendiconti['servizi'][$id_servizio]=$servizio;
 
+        $analisi=$object->AnalizeRendiconti($rendiconti,$comune);
+        if($analisi[0])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($analisi[1][0],false);
+            return false;          
+        }
         $comune->SetRendiconti($rendiconti);
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica/aggiunta rendiconti servizi - id: ".$id_servizio." - tipo: ".$tipologia[$_REQUEST['tipologia']]))
         {
@@ -24333,7 +24572,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Permessi insufficienti.",false);
@@ -24353,7 +24592,7 @@ Class AA_SierModule extends AA_GenericModule
                 //AA_Log::Log(__METHOD__." - value:".print_r($value,true),100);
                 if(!is_array($value))
                 {
-                    $importo_corrisposto=AA_Utils::number_format(floatVal($value),2,",",".");
+                    $importo_corrisposto=floatVal($value);
                 }
             }
         }
@@ -24361,13 +24600,19 @@ Class AA_SierModule extends AA_GenericModule
         {
             if(isset($rendiconti[$_REQUEST['field']]))
             {
-                $importo_ammesso=AA_Utils::number_format(floatVal($rendiconti[$_REQUEST['field']]),2,",",".");
+                $importo_corrisposto=floatVal($rendiconti[$_REQUEST['field']]);
             }
         }
 
         if(isset($_REQUEST['importo_ammesso']))
         {
-            $importo_ammesso=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['importo_ammesso']))),2,",",".");
+            $importo_ammesso=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['importo_ammesso']))),2,".");
+        }
+        if($importo_ammesso !="n.d." && $importo_ammesso>$importo_corrisposto)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'importo ammesso non puo' superare quello presentato.",false);
+            return false;    
         }
 
         if($importo_ammesso !="n.d.") 
@@ -24375,10 +24620,28 @@ Class AA_SierModule extends AA_GenericModule
             if(!isset($rendiconti['ras'])) $rendiconti['ras']=array();
             if(!isset($rendiconti['ras']['importi_ammessi'])) $rendiconti['ras']['importi_ammessi']=array();
 
-            $rendiconti['ras']['importi_ammessi'][$_REQUEST['field']]=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['importi_ammessi']))),2,".");
-
+            if(strpos($_REQUEST['field'],"personale_det")===false && strpos($_REQUEST['field'],"servizi")===false)
+            {
+                $rendiconti['ras']['importi_ammessi'][$_REQUEST['field']]=$importo_ammesso;
+            }
+            else
+            {
+                if(strpos($_REQUEST['field'],"personale_det")!==false)
+                {
+                    if(!isset($rendiconti['ras']['importi_ammessi']['personale_det'])) $rendiconti['ras']['importi_ammessi']['personale_det']=array();
+                    $field=explode("|",$_REQUEST['field']);
+                    $rendiconti['ras']['importi_ammessi']['personale_det'][$field[1]][$field[2]]=$importo_ammesso;
+                }
+                else
+                {
+                    if(!isset($rendiconti['ras']['importi_ammessi']['servizi'])) $rendiconti['ras']['importi_ammessi']['servizi']=array();
+                    $field=explode("|",$_REQUEST['field']);
+                    $rendiconti['ras']['importi_ammessi']['servizi'][$field[1]][$field[2]]=$importo_ammesso;
+                }
+            }
+            
             $comune->SetRendiconti($rendiconti);
-            if(!$object->UpdateComune($comune,$this->oUser,"Modifica/aggiunta impostazione importo ammesso"));
+            if(!$object->UpdateComune($comune,$this->oUser,"Impostazione importo ammesso per la voce: ".$_REQUEST['voce']))
             {
                 $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
                 $task->SetError(AA_Log::$lastErrorLog,false);
@@ -24460,7 +24723,14 @@ Class AA_SierModule extends AA_GenericModule
         );
 
         $rendiconti['servizi'][$id_servizio]=$servizio;
-
+        
+        $analisi=$object->AnalizeRendiconti($rendiconti,$comune);
+        if($analisi[0])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($analisi[1][0],false);
+            return false;
+        }
         $comune->SetRendiconti($rendiconti);
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica/aggiunta rendiconti servizi - id: ".$id_servizio." - tipo: ".$tipologia[$_REQUEST['tipologia']]." - operatore:".$operatore->GetOperatoreComunaleCf()))
         {
@@ -24525,13 +24795,6 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if($_REQUEST['periodo_al']<=$_REQUEST['periodo_dal'])
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("La data di fine deve essere posteriore a quella di inizio.",false);
-            return false;
-        }
-
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['personale_det'])) $rendiconti['personale_det']=array();
         $personale=array(
@@ -24553,6 +24816,13 @@ Class AA_SierModule extends AA_GenericModule
 
         $rendiconti['personale_det'][$id_personale]=$personale;
 
+        $analisi=$object->AnalizeRendiconti($rendiconti,$comune);
+        if($analisi[0])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($analisi[1][0],false);
+            return false;   
+        }
         $comune->SetRendiconti($rendiconti);
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica/aggiunta rendiconti personale a tempo determinato - id: ".$id_personale." - tipo: ".$_REQUEST['tipologia']))
         {
@@ -24658,6 +24928,14 @@ Class AA_SierModule extends AA_GenericModule
         );
 
         $rendiconti['personale_det'][$id_personale]=$personale;
+
+        $analisi=$object->AnalizeRendiconti($rendiconti,$comune);
+        if($analisi[0])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($analisi[1][0],false);
+            return false;            
+        }
 
         $comune->SetRendiconti($rendiconti);
         if(!$object->UpdateComune($comune,$this->oUser,"Modifica/aggiunta rendiconti personale a tempo determinato - id: ".$id_personale." - tipo: ".$_REQUEST['tipologia']." - operatore: ".$operatore->GetOperatoreComunaleCf()))
@@ -24978,106 +25256,224 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("Permessi insufficienti.",false);
             return false;
         }
-
-        if(isset($_REQUEST['comune|straordinario|periodo_max_dal']) && isset($_REQUEST['comune|straordinario|periodo_max_al']) && $_REQUEST['comune|straordinario|periodo_max_dal']>=$_REQUEST['comune|straordinario|periodo_max_al'])
+        
+        $rendiconti=$comune->GetRendiconti(true);
+        if(!isset($rendiconti['comune'])) $rendiconti['comune']=array();
+        if(!isset($rendiconti['comune']['straordinario'])) $rendiconti['comune']['straordinario']=array();
+        if(!isset($rendiconti['comune']['oneri'])) $rendiconti['comune']['oneri']=array();
+        if(!isset($rendiconti['comune']['missioni'])) $rendiconti['comune']['missioni']=array();
+        if(isset($_REQUEST['comune|straordinario|estremi_liquidazione']))
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo autorizzato - La data di inizio deve essere precedente a quella di fine.",false);
-            return false;
+            $rendiconti['comune']['straordinario']['estremi_liquidazione']=$_REQUEST['comune|straordinario|estremi_liquidazione'];
         }
-        if(isset($_REQUEST['comune|straordinario|periodo_max_dal']) && (!isset($_REQUEST['comune|straordinario|periodo_max_al']) || $_REQUEST['comune|straordinario|periodo_max_al']==""))
+        if(isset($_REQUEST['comune|straordinario|estremi_autorizzazione']))
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo autorizzato - La data di inizio deve essere precedente a quella di fine.",false);
-            return false;
+            $rendiconti['comune']['straordinario']['estremi_autorizzazione']=$_REQUEST['comune|straordinario|estremi_autorizzazione'];
         }
-        if(!isset($_REQUEST['comune|straordinario|periodo_max_dal']) || !isset($_REQUEST['comune|straordinario|periodo_max_al']))
+        if(isset($_REQUEST['comune|straordinario|estremi_pagamento']))
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo autorizzato - Occorre impostare una data di inizio e di fine.",false);
-            return false;
+            $rendiconti['comune']['straordinario']['estremi_pagamento']=$_REQUEST['comune|straordinario|estremi_pagamento'];
         }
-
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_dal']) && isset($_REQUEST['comune|straordinario|periodo_effettivo_al']) && $_REQUEST['comune|straordinario|periodo_effettivo_dal']>=$_REQUEST['comune|straordinario|periodo_effettivo_al'])
+        if(isset($_REQUEST['comune|straordinario|importo']))
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - La data di inizio deve essere precedente a quella di fine.",false);
-            return false;
-        }
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_dal']) && (!isset($_REQUEST['comune|straordinario|periodo_effettivo_al']) || $_REQUEST['comune|straordinario|periodo_effettivo_al']==""))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - La data di inizio deve essere precedente a quella di fine.",false);
-            return false;
-        }
-        if(!isset($_REQUEST['comune|straordinario|periodo_effettivo_dal']) || !isset($_REQUEST['comune|straordinario|periodo_effettivo_al']))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - Occorre impostare una data di inizio e di fine.",false);
-            return false;
+            $num=$_REQUEST['comune|straordinario|importo'];
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
+            $rendiconti['comune']['straordinario']['importo']=AA_Utils::number_format($num,2,'.','');
         }
 
-        //periodo effettivo all'interno del periodo autorizzato
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_dal']) && isset($_REQUEST['comune|straordinario|periodo_max_dal']) && $_REQUEST['comune|straordinario|periodo_max_dal']>$_REQUEST['comune|straordinario|periodo_effettivo_dal'])
+        //periodo max
+        $periodo="";
+        if(isset($_REQUEST['comune|straordinario|periodo_max_dal'])) $periodo=substr($_REQUEST['comune|straordinario|periodo_max_dal'],0,10);
+        if(isset($_REQUEST['comune|straordinario|periodo_max_al'])) 
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - La data di inizio deve essere uguale o successiva a quella di inizio autorizzazione",false);
-            return false;
+            if($periodo!="") $periodo.="|".substr($_REQUEST['comune|straordinario|periodo_max_al'],0,10);
+            else $periodo=substr($_REQUEST['comune|straordinario|periodo_max_al'],0,10);
         }
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_al']) && isset($_REQUEST['comune|straordinario|periodo_max_al']) && $_REQUEST['comune|straordinario|periodo_max_al']<$_REQUEST['comune|straordinario|periodo_effettivo_al'])
+        if($periodo !="")
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - La data di fine non deve essere successiva a quella di fine autorizzazione",false);
-            return false;
+            $rendiconti['comune']['straordinario']['periodo_max']=$periodo;
         }
-        //------------------------------------------------------
 
-        //controllo ore
-        if(isset($_REQUEST['comune|straordinario|ore_effettive']) && isset($_REQUEST['comune|straordinario|ore_max']) && $_REQUEST['comune|straordinario|ore_max']<$_REQUEST['comune|straordinario|ore_effettive'])
+        //periodo effettivo
+        $periodo="";
+        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_dal'])) $periodo=substr($_REQUEST['comune|straordinario|periodo_effettivo_dal'],0,10);
+        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_al'])) 
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Ore effettive - le ore effettive non possono essere maggiori delle ore autorizzate",false);
-            return false;
+            if($periodo!="") $periodo.="|".substr($_REQUEST['comune|straordinario|periodo_effettivo_al'],0,10);
+            else $periodo=substr($_REQUEST['comune|straordinario|periodo_effettivo_al'],0,10);
         }
-        //------------------------------------------------------
+        if($periodo !="")
+        {
+            $rendiconti['comune']['straordinario']['periodo_effettivo']=$periodo;
+        }
 
-        //controllo dipendenti
-        if(isset($_REQUEST['comune|straordinario|dipendenti_effettivi']) && isset($_REQUEST['comune|straordinario|dipendenti_max']) && $_REQUEST['comune|straordinario|dipendenti_max']<$_REQUEST['comune|straordinario|dipendenti_effettivi'])
+        //ore max
+        if(isset($_REQUEST['comune|straordinario|ore_max']))
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Dipendenti effettivi - i dipendenti effettivi non possono essere maggiori dei dipendenti autorizzati",false);
-            return false;
+            $rendiconti['comune']['straordinario']['ore_max']=$_REQUEST['comune|straordinario|ore_max'];
         }
-        //------------------------------------------------------
+        //ore effettive
+        if(isset($_REQUEST['comune|straordinario|ore_effettive']))
+        {
+            $rendiconti['comune']['straordinario']['ore_effettive']=$_REQUEST['comune|straordinario|ore_effettive'];
+        }
 
-        //-------------- controllo oneri -----------------------
-        $cpdel=floatVal(AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['comune|oneri|dettagli_cpdel'])),2,"."));
-        $irap=floatVal(AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['comune|oneri|dettagli_irap'])),2,"."));
-        $altro=floatVal(AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['comune|oneri|dettagli_altro'])),2,"."));
-        //$oneri_importo=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['comune|oneri|importo'])),2,".");
-        $oneri_importo=$cpdel+$irap+$altro;
-        if($cpdel+$irap+$altro != $oneri_importo)
+        //dipendenti max
+        if(isset($_REQUEST['comune|straordinario|dipendenti_max']))
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("La somma dei valori cpdel, irap e altro (".($cpdel+$irap+$altro).") non coincidono con l'importo totale dichiarato ($oneri_importo)",false);
-            return false;
+            $rendiconti['comune']['straordinario']['dipendenti_max']=$_REQUEST['comune|straordinario|dipendenti_max'];
         }
-        //------------------------------------------------------
 
-        //controllo km e missioni
-        if(isset($_REQUEST['comune|missioni|km']) && $_REQUEST['comune|missioni|km']==0 && $_REQUEST['comune|missioni|dipendenti']>0)
+        //dipendenti effettivi
+        if(isset($_REQUEST['comune|straordinario|dipendenti_effettivi']))
+        {
+            $rendiconti['comune']['straordinario']['dipendenti_effettivi']=$_REQUEST['comune|straordinario|dipendenti_effettivi'];
+        }
+
+        //note
+        if(isset($_REQUEST['comune|straordinario|note']))
+        {
+            $rendiconti['comune']['straordinario']['note']=$_REQUEST['comune|straordinario|note'];
+        }
+
+        //mandati oneri
+        if(isset($_REQUEST['comune|oneri|estremi_pagamento']))
+        {
+            $rendiconti['comune']['oneri']['estremi_pagamento']=$_REQUEST['comune|oneri|estremi_pagamento'];
+        }
+
+        //dettaglio oneri
+        $dettaglio_oneri="";
+        $oneri_importo=0;
+
+        if(isset($_REQUEST['comune|oneri|dettagli_cpdel']))
+        {
+            $num=$_REQUEST['comune|oneri|dettagli_cpdel'];        
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
+            $oneri_importo+=floatVal($num);
+            $dettaglio_oneri=AA_Utils::number_format($num,2,".");
+        }
+        $dettaglio_oneri.="|";
+        if(isset($_REQUEST['comune|oneri|dettagli_irap']))
+        {
+            $num=$_REQUEST['comune|oneri|dettagli_irap'];
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
+            $oneri_importo+=floatVal($num);
+            $dettaglio_oneri.=AA_Utils::number_format($num,2,".");
+        }
+        $dettaglio_oneri.="|";
+        if(isset($_REQUEST['comune|oneri|dettagli_altro']))
+        {
+            $num=$_REQUEST['comune|oneri|dettagli_altro'];        
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
+            $oneri_importo+=floatVal($num);
+            $dettaglio_oneri.=AA_Utils::number_format($num,2,".");
+        }
+        $dettaglio_oneri.="|";
+        if(isset($_REQUEST['comune|oneri|dettagli_altro_desc']))
+        {
+            $dettaglio_oneri.=$_REQUEST['comune|oneri|dettagli_altro_desc'];
+        }
+        $rendiconti['comune']['oneri']['dettagli']=$dettaglio_oneri;
+        $rendiconti['comune']['oneri']['importo']=AA_Utils::number_format($oneri_importo,2,".");
+
+        //missioni aut
+        if(isset($_REQUEST['comune|missioni|estremi_autorizzazione']))
+        {
+            $rendiconti['comune']['missioni']['estremi_autorizzazione']=$_REQUEST['comune|missioni|estremi_autorizzazione'];
+        }
+        //missioni liq
+        if(isset($_REQUEST['comune|missioni|estremi_liquidazione']))
+        {
+            $rendiconti['comune']['missioni']['estremi_liquidazione']=$_REQUEST['comune|missioni|estremi_liquidazione'];
+        }
+        //missioni km
+        if(isset($_REQUEST['comune|missioni|km']))
+        {
+            $rendiconti['comune']['missioni']['km']=$_REQUEST['comune|missioni|km'];
+        }
+        //missioni dipendenti
+        if(isset($_REQUEST['comune|missioni|dipendenti']))
+        {
+            $rendiconti['comune']['missioni']['dipendenti']=$_REQUEST['comune|missioni|dipendenti'];
+        }
+        //missioni importo
+        if(isset($_REQUEST['comune|missioni|importo']))
+        {
+            $num=$_REQUEST['comune|missioni|importo'];
+            $num=str_replace(".","",trim($num));
+            $num=str_replace(",",".",trim($num));
+            $rendiconti['comune']['missioni']['importo']=AA_Utils::number_format($num,2,".");
+        }
+
+        $analisi=$object->AnalizeRendiconti($rendiconti,$comune);
+        if($analisi[0])
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("I Km totali percorsi devono essere maggiori di zero in presenza di dipendenti che hanno effettuato missioni.",false);
-            return false;
+            $task->SetError($analisi[1][0],false);
+            return false;            
         }
-        if(isset($_REQUEST['comune|missioni|km']) && $_REQUEST['comune|missioni|km']>0 && $_REQUEST['comune|missioni|dipendenti']==0)
+
+        $comune->SetRendiconti($rendiconti);
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica rendiconti competenze personale a tempo indeterminato"))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("In presenza di dipendenti che hanno effettuato missioni i km totali percorsi non possono essere zero.",false);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+
+        return true;
+    }
+
+    //Task modifica buoni Comune
+    public function Task_Update_OC_ComuneRendicontiPersonaleIndeterminato($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
-        //------------------------------------------------------
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Modifica rendiconti non abilitata.",false);
+            return false;
+        }
 
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['comune'])) $rendiconti['comune']=array();
@@ -25167,11 +25563,14 @@ Class AA_SierModule extends AA_GenericModule
 
         //dettaglio oneri
         $dettaglio_oneri="";
+        $oneri_importo=0;
+
         if(isset($_REQUEST['comune|oneri|dettagli_cpdel']))
         {
             $num=$_REQUEST['comune|oneri|dettagli_cpdel'];        
             $num=str_replace(".","",trim($num));
             $num=str_replace(",",".",trim($num));
+            $oneri_importo+=floatVal($num);
             $dettaglio_oneri=AA_Utils::number_format($num,2,".");
         }
         $dettaglio_oneri.="|";
@@ -25180,6 +25579,7 @@ Class AA_SierModule extends AA_GenericModule
             $num=$_REQUEST['comune|oneri|dettagli_irap'];
             $num=str_replace(".","",trim($num));
             $num=str_replace(",",".",trim($num));
+            $oneri_importo+=floatVal($num);
             $dettaglio_oneri.=AA_Utils::number_format($num,2,".");
         }
         $dettaglio_oneri.="|";
@@ -25188,7 +25588,7 @@ Class AA_SierModule extends AA_GenericModule
             $num=$_REQUEST['comune|oneri|dettagli_altro'];        
             $num=str_replace(".","",trim($num));
             $num=str_replace(",",".",trim($num));
-        
+            $oneri_importo+=floatVal($num);
             $dettaglio_oneri.=AA_Utils::number_format($num,2,".");
         }
         $dettaglio_oneri.="|";
@@ -25197,17 +25597,7 @@ Class AA_SierModule extends AA_GenericModule
             $dettaglio_oneri.=$_REQUEST['comune|oneri|dettagli_altro_desc'];
         }
         $rendiconti['comune']['oneri']['dettagli']=$dettaglio_oneri;
-        
         $rendiconti['comune']['oneri']['importo']=AA_Utils::number_format($oneri_importo,2,".");
-
-        /*if(isset($_REQUEST['comune|oneri|importo']))
-        {
-            $num=$_REQUEST['comune|oneri|importo'];
-            $num=str_replace(".","",trim($num));
-            $num=str_replace(",",".",trim($num));
-            $rendiconti['comune']['oneri']['importo']=AA_Utils::number_format($num,2,".");
-        }*/
-        #---------------
 
         //missioni aut
         if(isset($_REQUEST['comune|missioni|estremi_autorizzazione']))
@@ -25238,327 +25628,12 @@ Class AA_SierModule extends AA_GenericModule
             $rendiconti['comune']['missioni']['importo']=AA_Utils::number_format($num,2,".");
         }
 
-        $comune->SetRendiconti($rendiconti);
-        if(!$object->UpdateComune($comune,$this->oUser,"Modifica rendiconti competenze personale a tempo indeterminato"))
+        $analisi=$object->AnalizeRendiconti($rendiconti,$comune);
+        if($analisi[0])
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError(AA_Log::$lastErrorLog,false);
+            $task->SetError($analisi[1][0],false);
             return false;            
-        }
-
-        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent("Dati aggiornati con successo.",false);
-
-        return true;
-    }
-
-    //Task modifica buoni Comune
-    public function Task_Update_OC_ComuneRendicontiPersonaleIndeterminato($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
-            return false;
-        }
-
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
-        if(!$object->IsValid())
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Oggetto SIER non valido.",false);
-            return false;
-        }
-
-        $operatore=AA_SierOperatoreComunale::GetInstance();
-        if(!$operatore->IsValid())
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Operatore non valido.",false);
-            return false;
-        }
-
-        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Comune non valido.",false);
-            return false;
-        }
-
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Modifica rendiconti non abilitata.",false);
-            return false;
-        }
-
-        if(isset($_REQUEST['comune|straordinario|periodo_max_dal']) && isset($_REQUEST['comune|straordinario|periodo_max_al']) && $_REQUEST['comune|straordinario|periodo_max_dal']>=$_REQUEST['comune|straordinario|periodo_max_al'])
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo autorizzato - La data di inizio deve essere precedente a quella di fine.",false);
-            return false;
-        }
-        if(isset($_REQUEST['comune|straordinario|periodo_max_dal']) && (!isset($_REQUEST['comune|straordinario|periodo_max_al']) || $_REQUEST['comune|straordinario|periodo_max_al']==""))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo autorizzato - La data di inizio deve essere precedente a quella di fine.",false);
-            return false;
-        }
-
-        if(!isset($_REQUEST['comune|straordinario|periodo_max_dal']) || !isset($_REQUEST['comune|straordinario|periodo_max_al']))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo autorizzato - Occorre impostare una data di inizio e di fine.",false);
-            return false;
-        }
-
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_dal']) && isset($_REQUEST['comune|straordinario|periodo_effettivo_al']) && $_REQUEST['comune|straordinario|periodo_effettivo_dal']>=$_REQUEST['comune|straordinario|periodo_effettivo_al'])
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - La data di inizio deve essere precedente a quella di fine.",false);
-            return false;
-        }
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_dal']) && (!isset($_REQUEST['comune|straordinario|periodo_effettivo_al']) || $_REQUEST['comune|straordinario|periodo_effettivo_al']==""))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - La data di inizio non deve essere successiva a quella di fine.",false);
-            return false;
-        }
-        if(!isset($_REQUEST['comune|straordinario|periodo_effettivo_dal']) || !isset($_REQUEST['comune|straordinario|periodo_effettivo_al']))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - Occorre impostare una data di inizio e di fine.",false);
-            return false;
-        }
-
-        //periodo effettivo all'interno del periodo autorizzato
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_dal']) && isset($_REQUEST['comune|straordinario|periodo_max_dal']) && $_REQUEST['comune|straordinario|periodo_max_dal']>$_REQUEST['comune|straordinario|periodo_effettivo_dal'])
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - La data di inizio deve essere uguale o successiva a quella di inizio autorizzazione",false);
-            return false;
-        }
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_al']) && isset($_REQUEST['comune|straordinario|periodo_max_al']) && $_REQUEST['comune|straordinario|periodo_max_al']<$_REQUEST['comune|straordinario|periodo_effettivo_al'])
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Periodo effettivo - La data di fine non deve essere successiva a quella di fine autorizzazione",false);
-            return false;
-        }
-        //------------------------------------------------------
-
-        //controllo ore
-        if(isset($_REQUEST['comune|straordinario|ore_effettive']) && isset($_REQUEST['comune|straordinario|ore_max']) && $_REQUEST['comune|straordinario|ore_max']<$_REQUEST['comune|straordinario|ore_effettive'])
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Ore effettive - le ore effettive non possono essere maggiori delle ore autorizzate",false);
-            return false;
-        }
-        //------------------------------------------------------
-
-        //controllo dipendenti
-        if(isset($_REQUEST['comune|straordinario|dipendenti_effettivi']) && isset($_REQUEST['comune|straordinario|dipendenti_max']) && $_REQUEST['comune|straordinario|dipendenti_max']<$_REQUEST['comune|straordinario|dipendenti_effettivi'])
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Dipendenti effettivi - i dipendenti effettivi non possono essere maggiori dei dipendenti autorizzati",false);
-            return false;
-        }
-        //------------------------------------------------------
-
-        //-------------- controllo oneri -----------------------
-        $cpdel=floatVal(AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['comune|oneri|dettagli_cpdel'])),2,"."));
-        $irap=floatVal(AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['comune|oneri|dettagli_irap'])),2,"."));
-        $altro=floatVal(AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['comune|oneri|dettagli_altro'])),2,"."));
-        //$oneri_importo=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['comune|oneri|importo'])),2,".");
-        $oneri_importo=$cpdel+$irap+$altro;
-        if($cpdel+$irap+$altro != $oneri_importo)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("La somma dei valori cpdel, irap e altro (".($cpdel+$irap+$altro).") non coincidono con l'importo totale dichiarato ($oneri_importo)",false);
-            return false;
-        }
-        //------------------------------------------------------
-
-        //controllo km e missioni
-        if(isset($_REQUEST['comune|missioni|km']) && $_REQUEST['comune|missioni|km']==0 && $_REQUEST['comune|missioni|dipendenti']>0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("I Km totali percorsi devono essere maggiori di zero in presenza di dipendenti che hanno effettuato missioni.",false);
-            return false;
-        }
-        if(isset($_REQUEST['comune|missioni|km']) && $_REQUEST['comune|missioni|km']>0 && $_REQUEST['comune|missioni|dipendenti']==0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("In presenza di dipendenti che hanno effettuato missioni i km totali percorsi non possono essere zero.",false);
-            return false;
-        }
-        //------------------------------------------------------
-
-        $rendiconti=$comune->GetRendiconti(true);
-        if(!isset($rendiconti['comune'])) $rendiconti['comune']=array();
-        if(!isset($rendiconti['comune']['straordinario'])) $rendiconti['comune']['straordinario']=array();
-        if(!isset($rendiconti['comune']['oneri'])) $rendiconti['comune']['oneri']=array();
-        if(!isset($rendiconti['comune']['missioni'])) $rendiconti['comune']['missioni']=array();
-        if(isset($_REQUEST['comune|straordinario|estremi_liquidazione']))
-        {
-            $rendiconti['comune']['straordinario']['estremi_liquidazione']=$_REQUEST['comune|straordinario|estremi_liquidazione'];
-        }
-        if(isset($_REQUEST['comune|straordinario|estremi_autorizzazione']))
-        {
-            $rendiconti['comune']['straordinario']['estremi_autorizzazione']=$_REQUEST['comune|straordinario|estremi_autorizzazione'];
-        }
-        if(isset($_REQUEST['comune|straordinario|estremi_pagamento']))
-        {
-            $rendiconti['comune']['straordinario']['estremi_pagamento']=$_REQUEST['comune|straordinario|estremi_pagamento'];
-        }
-        if(isset($_REQUEST['comune|straordinario|importo']))
-        {
-            $num=$_REQUEST['comune|straordinario|importo'];
-
-            $num=str_replace(".","",trim($num));
-            $num=str_replace(",",".",trim($num));
-            
-            $rendiconti['comune']['straordinario']['importo']=AA_Utils::number_format($num,2,'.','');
-        }
-
-        //periodo max
-        $periodo="";
-        if(isset($_REQUEST['comune|straordinario|periodo_max_dal'])) $periodo=substr($_REQUEST['comune|straordinario|periodo_max_dal'],0,10);
-        if(isset($_REQUEST['comune|straordinario|periodo_max_al'])) 
-        {
-            if($periodo!="") $periodo.="|".substr($_REQUEST['comune|straordinario|periodo_max_al'],0,10);
-            else $periodo=substr($_REQUEST['comune|straordinario|periodo_max_al'],0,10);
-        }
-        if($periodo !="")
-        {
-            $rendiconti['comune']['straordinario']['periodo_max']=$periodo;
-        }
-
-        //periodo effettivo
-        $periodo="";
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_dal'])) $periodo=substr($_REQUEST['comune|straordinario|periodo_effettivo_dal'],0,10);
-        if(isset($_REQUEST['comune|straordinario|periodo_effettivo_al'])) 
-        {
-            if($periodo!="") $periodo.="|".substr($_REQUEST['comune|straordinario|periodo_effettivo_al'],0,10);
-            else $periodo=substr($_REQUEST['comune|straordinario|periodo_effettivo_al'],0,10);
-        }
-        if($periodo !="")
-        {
-            $rendiconti['comune']['straordinario']['periodo_effettivo']=$periodo;
-        }
-
-        //ore max
-        if(isset($_REQUEST['comune|straordinario|ore_max']))
-        {
-            $rendiconti['comune']['straordinario']['ore_max']=$_REQUEST['comune|straordinario|ore_max'];
-        }
-        //ore effettive
-        if(isset($_REQUEST['comune|straordinario|ore_effettive']))
-        {
-            $rendiconti['comune']['straordinario']['ore_effettive']=$_REQUEST['comune|straordinario|ore_effettive'];
-        }
-
-        //dipendenti max
-        if(isset($_REQUEST['comune|straordinario|dipendenti_max']))
-        {
-            $rendiconti['comune']['straordinario']['dipendenti_max']=$_REQUEST['comune|straordinario|dipendenti_max'];
-        }
-
-        //dipendenti effettivi
-        if(isset($_REQUEST['comune|straordinario|dipendenti_effettivi']))
-        {
-            $rendiconti['comune']['straordinario']['dipendenti_effettivi']=$_REQUEST['comune|straordinario|dipendenti_effettivi'];
-        }
-
-        //mandati oneri
-        if(isset($_REQUEST['comune|oneri|estremi_pagamento']))
-        {
-            $rendiconti['comune']['oneri']['estremi_pagamento']=$_REQUEST['comune|oneri|estremi_pagamento'];
-        }
-
-        //dettaglio oneri
-        $dettaglio_oneri="";
-        if(isset($_REQUEST['comune|oneri|dettagli_cpdel']))
-        {
-            $num=$_REQUEST['comune|oneri|dettagli_cpdel'];
-
-            $num=str_replace(".","",trim($num));
-            $num=str_replace(",",".",trim($num));
-            
-            $dettaglio_oneri=AA_Utils::number_format($num,2,".");
-        }
-        $dettaglio_oneri.="|";
-        if(isset($_REQUEST['comune|oneri|dettagli_irap']))
-        {
-            $num=$_REQUEST['comune|oneri|dettagli_irap'];
-
-            $num=str_replace(".","",trim($num));
-            $num=str_replace(",",".",trim($num));
-            
-            $dettaglio_oneri.=AA_Utils::number_format($num,2,".");
-        }
-        $dettaglio_oneri.="|";
-        if(isset($_REQUEST['comune|oneri|dettagli_altro']))
-        {
-            $num=$_REQUEST['comune|oneri|dettagli_altro'];
-
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            
-            $dettaglio_oneri.=AA_Utils::number_format($num,2,".");
-        }
-        $dettaglio_oneri.="|";
-        if(isset($_REQUEST['comune|oneri|dettagli_altro_desc']))
-        {
-            $dettaglio_oneri.=$_REQUEST['comune|oneri|dettagli_altro_desc'];
-        }
-        $rendiconti['comune']['oneri']['dettagli']=$dettaglio_oneri;
-        
-        $rendiconti['comune']['oneri']['importo']=AA_Utils::number_format($oneri_importo,2,".");
-
-        /*
-        if(isset($_REQUEST['comune|oneri|importo']))
-        {
-            $num=$_REQUEST['comune|oneri|importo'];
-
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            
-            $rendiconti['comune']['oneri']['importo']=AA_Utils::number_format($num,2,".");
-        }*/
-        #---------------
-
-        //missioni aut
-        if(isset($_REQUEST['comune|missioni|estremi_autorizzazione']))
-        {
-            $rendiconti['comune']['missioni']['estremi_autorizzazione']=$_REQUEST['comune|missioni|estremi_autorizzazione'];
-        }
-        //missioni liq
-        if(isset($_REQUEST['comune|missioni|estremi_liquidazione']))
-        {
-            $rendiconti['comune']['missioni']['estremi_liquidazione']=$_REQUEST['comune|missioni|estremi_liquidazione'];
-        }
-        //missioni km
-        if(isset($_REQUEST['comune|missioni|km']))
-        {
-            $rendiconti['comune']['missioni']['km']=$_REQUEST['comune|missioni|km'];
-        }
-        //missioni dipendenti
-        if(isset($_REQUEST['comune|missioni|dipendenti']))
-        {
-            $rendiconti['comune']['missioni']['dipendenti']=$_REQUEST['comune|missioni|dipendenti'];
-        }
-        //missioni importo
-        if(isset($_REQUEST['comune|missioni|importo']))
-        {
-            $num=$_REQUEST['comune|missioni|importo'];
-
-                $num=str_replace(".","",trim($num));
-                $num=str_replace(",",".",trim($num));
-            
-            $rendiconti['comune']['missioni']['importo']=AA_Utils::number_format($num,2,".");
         }
 
         $comune->SetRendiconti($rendiconti);
@@ -28361,7 +28436,8 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $totale_ammesso+=floatVal($ammesso);
+            $totale_ammesso+=$ammesso;
+            $ammesso=AA_Utils::number_format(floatVal($ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28423,6 +28499,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($ammesso);
+            $ammesso=AA_Utils::number_format(floatVal($ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28463,6 +28540,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($ammesso);
+            $ammesso=AA_Utils::number_format(floatVal($ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28495,6 +28573,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($ammesso);
+            $ammesso=AA_Utils::number_format(floatVal($ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28610,6 +28689,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($software_ammesso);
+            $software_ammesso=AA_Utils::number_format(floatVal($software_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28629,6 +28709,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($trasporto_ammesso);
+            $trasporto_ammesso=AA_Utils::number_format(floatVal($trasporto_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28648,6 +28729,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($materiale_ammesso);
+            $materiale_ammesso=AA_Utils::number_format(floatVal($materiale_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28667,6 +28749,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($propaganda_ammesso);
+            $propaganda_ammesso=AA_Utils::number_format(floatVal($propaganda_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28686,6 +28769,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($software_ammesso);
+            $software_ammesso=AA_Utils::number_format(floatVal($software_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28705,6 +28789,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($spese_postali_ammesso);
+            $spese_postali_ammesso=AA_Utils::number_format(floatVal($spese_postali_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28724,6 +28809,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($altro_ammesso);
+            $altro_ammesso=AA_Utils::number_format(floatVal($altro_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28833,6 +28919,7 @@ Class AA_SierModule extends AA_GenericModule
         $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px; min-width:280px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 50px'>#value#</div></div>";
         $template_short="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px; min-width:200px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 10px'>#value#</div></div>";
         $template_importo_ammesso="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px; min-width:280px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 50px'>#value#</div><div class='AA_DataTable_Ops_Button' style='min-width: 50px;'><span class='mdi mdi-pencil' style='cursor: pointer' onClick=\"AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiImportoAmmessoModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",field:'#field#',voce:'#voce#',refresh: 1,refresh_obj_id:'".$id."'},module: '" . $this->id . "'},'".$this->id."')\"></span></div></div>";
+        $template_importo_ammesso_short="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px; min-width:200px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 10px'>#value#</div><div class='AA_DataTable_Ops_Button' style='min-width: 50px;'><span class='mdi mdi-pencil' style='cursor: pointer' onClick=\"AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiImportoAmmessoModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",field:'#field#',voce:'#voce#',refresh: 1,refresh_obj_id:'".$id."'},module: '" . $this->id . "'},'".$this->id."')\"></span></div></div>";
         
         //-------------------------------- Competenze seggio -----------------------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiSeggiBox",array("type"=>"clean"));
@@ -28907,7 +28994,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"left"),
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
@@ -28984,8 +29071,7 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $row->AddCol($val);
         $box->AddRow($row);
-        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
-        $row->AddCol(new AA_JSON_Template_Generic());
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean","css"=>"AA_RendicontiImportoRow"));
         $value="n.d.";
         if(isset($rendiconti['seggi']['missioni']['importo']))
         {
@@ -28993,13 +29079,42 @@ Class AA_SierModule extends AA_GenericModule
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
-            "gravity"=>2,
+            "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"left"),
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0")
         ));
         $row->AddCol($val);
+        
+        $value="n.d.";
+        if(isset($rendiconti['ras']['importi_ammessi']['seggi|missioni|importo']))
+        {
+            $value=AA_Utils::number_format(floatVal($rendiconti['ras']['importi_ammessi']['seggi|missioni|importo']),2,",",".");
+        }
+        $ImportoAmmessoClass="AA_RendicontiImportoRow";
+        if($value=="n.d.") $ImportoAmmessoClass="AA_RendicontiImportoRow_Orange";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template_importo_ammesso,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Importo ammesso:","value"=>$value,"value_align"=>"left","field"=>"seggi|missioni|importo","voce"=>"Trattamento di missione presidenti di seggio"),
+            "css"=>$ImportoAmmessoClass
+        ));
+        $row->AddCol($val);
+
         $box->AddRow($row);
+
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="<ul>Si attesta:<li>l'effettiva partecipazione dei componenti dei seggi per tutta la durata delle operazioni elettorali e l'applicazione ad essi degli onorari indicati nella circolare dell'Amministrazione regionale in materia di rendicontazione delle spese sostenute dai Comuni.</li></ul>";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>1,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify")
+        ));
+        $row->AddRow($val);
+        $box->AddRow($row);
+        $box->AddRow(new AA_JSON_Template_Generic("",array("height"=>10)));
         $first_row->AddCol($box);
         $multiview->AddCell($generaleLayout);
         //------------------------------------------------------------------------------------------------
@@ -29210,8 +29325,8 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>40,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
+            "css"=>"AA_RendicontiImportoRow"
         ));
         $row->AddCol($val);
         $box->AddRow($row);
@@ -29242,7 +29357,21 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
-        $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
+        $value="n.d.";
+        if(isset($rendiconti['ras']['importi_ammessi']['comune|missioni|importo']))
+        {
+            $value=AA_Utils::number_format(floatVal($rendiconti['ras']['importi_ammessi']['comune|missioni|importo']),2,",",".");
+        }
+        $ImportoAmmessoClass="AA_RendicontiImportoRow";
+        if($value=="n.d.") $ImportoAmmessoClass="AA_RendicontiImportoRow AA_RendicontiImportoRow_Orange";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template_importo_ammesso,
+            "gravity"=>40,
+            "type"=>"clean",
+            "data"=>array("title"=>"Importo ammesso:","value"=>$value,"value_align"=>"left","field"=>"comune|missioni|importo","voce"=>"Competenze spettanti al personale per missioni"),
+            "css"=>$ImportoAmmessoClass
+        ));
+        $row->AddCol($val);
         $box->AddRow($row);
 
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
@@ -29252,14 +29381,30 @@ Class AA_SierModule extends AA_GenericModule
             $value=$rendiconti['comune']['straordinario']['importo'];
         }
         $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
-            "gravity"=>60,
+            "template"=>$template_short,
+            "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>0,"value_align"=>"left"),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>0,"value_align"=>"left"),
+            "css"=>"AA_RendicontiImportoRow"
         ));
         $row->AddCol($val);
-        $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
+        
+        $value="n.d.";
+        if(isset($rendiconti['ras']['importi_ammessi']['comune|straordinario|importo']))
+        {
+            $value=AA_Utils::number_format(floatVal($rendiconti['ras']['importi_ammessi']['comune|straordinario|importo']),2,",",".");
+        }
+        $ImportoAmmessoClass="AA_RendicontiImportoRow";
+        if($value=="n.d.") $ImportoAmmessoClass="AA_RendicontiImportoRow AA_RendicontiImportoRow_Orange";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template_importo_ammesso_short,
+            "gravity"=>30,
+            "type"=>"clean",
+            "data"=>array("title"=>"Importo ammesso:","value"=>$value,"value_align"=>"left","field"=>"comune|straordinario|importo","voce"=>"Competenze spettanti al personale per lavoro straordinario e missioni"),
+            "css"=>$ImportoAmmessoClass
+        ));
+        $row->AddCol($val);
+        $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40, "css"=>array("border-left"=>"1px solid #dadee0 !important"))));
         $box->addRow($row);
 
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
@@ -29309,12 +29454,53 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>30,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto per oneri:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left")
+            "data"=>array("title"=>"Importo presentato per oneri:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
+            "css"=>"AA_RendicontiImportoRow"
+        ));
+        $row->AddCol($val);
+        $value="n.d.";
+        if(isset($rendiconti['ras']['importi_ammessi']['comune|oneri|importo']))
+        {
+            $value=AA_Utils::number_format(floatVal($rendiconti['ras']['importi_ammessi']['comune|oneri|importo']),2,",",".");
+        }
+        $ImportoAmmessoClass="AA_RendicontiImportoRow";
+        if($value=="n.d.") $ImportoAmmessoClass="AA_RendicontiImportoRow AA_RendicontiImportoRow_Orange";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template_importo_ammesso_short,
+            "gravity"=>30,
+            "type"=>"clean",
+            "data"=>array("title"=>"Importo ammesso:","value"=>$value,"value_align"=>"left","field"=>"comune|oneri|importo","voce"=>"Competenze spettanti al personale per lavoro straordinario (oneri)"),
+            "css"=>$ImportoAmmessoClass
         ));
         $row->AddCol($val);
         $row->AddCol(new AA_JSON_Template_Generic("",array("gravity"=>40)));
         $box->addRow($row);
        
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="<ul>Si attesta che:<li>sono stati rispettati i limiti per il lavoro straordinario elettorale previsti nell'art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68;</li>";
+        $value.="<li>la retribuzione per il lavoro straordinario di cui si chiede il rimborso è stata corrisposta ai dipendenti che potevano essere retribuiti con il compenso per prestazioni straordinarie in base al C.C.N.L. da applicarsi per il periodo considerato;</li>";
+        $value.="<li>sono state applicate le tariffe orarie per il lavoro straordinario previste dal C.C.N.L. vigente nel periodo considerato;</li>";
+        $value.="<li>sono state rispettate le disposizioni contrattuali e legislative in materia di trattamento di trasferta dei dipendenti comunali.</li>";
+        $value.="</ul>";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>3,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify","font-size"=>"smaller")
+        ));
+        $row->AddCol($val);
+        $value="<ul>In caso di più consultazioni si attesta:<li>il rispetto dei limiti per il lavoro straordinario elettorale, previsti nell’art.15 del decreto-legge 18 gennaio 1993, n.8, convertito con modificazioni dalla legge 19 marzo 1993, n.68, complessivamente per le diverse consultazioni;</li>";
+        $value.="<li>il rispetto del riparto delle spese tra gli enti interessati alle consultazioni indicato nelle circolari in materia della Regione e dello Stato:</li>";
+        $value.="</ul>";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>2,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify","font-size"=>"smaller")
+        ));
+        $row->AddCol($val);
+        $box->AddRow($row);
+
         $first_row->AddCol($box);
         //---------------------------------------------------
         $multiview->addCell($generaleLayout);
@@ -29371,13 +29557,25 @@ Class AA_SierModule extends AA_GenericModule
                 //$estremi.="<div style='display:flex;width:100%'><div style='width:25%'>periodo:</div><div> dal ".$val['periodo_dal']." al ".$val['periodo_al']."</div></div>";
                 $estremi.="</div>";
 
+                $op="<span class='AA_DataTable_Ops_Button mdi mdi-pencil' style='cursor: pointer' onClick=\"AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiImportoAmmessoModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",field:'personale_det|".$key."|oneri_importo',voce:'Oneri spettanti per il personale a tempo determinato (".addslashes($val['estremi_assunzione']).")',refresh: 1,refresh_obj_id:'".$id."'},module: '" . $this->id . "'},'".$this->id."')\"></span>";
                 $oneri="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%'>";
                 $oneri.="<div style='display:flex; width:100%'><div style='width:40%;min-width:40%'>Estremi pagamento:</div><div>".$val['oneri_pagamento']."</div></div>";
                 $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Cpdel:</div><div>".AA_Utils::number_format($val['oneri_cpdel'],2,",",".")."</div></div>";
                 $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Irap:</div><div>".AA_Utils::number_format($val['oneri_irap'],2,",",".")."</div></div>";
                 $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Altro:</div><div>".AA_Utils::number_format($val['oneri_altro'],2,",",".")."</div></div>";
                 $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Altro(descrizione):</div><div>".$val['oneri_altro_desc']."</div></div>";
-                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Importo corrisposto:</div><div>".AA_Utils::number_format($val['oneri_importo'],2,",",".")."</div></div>";
+                $oneri.="<div style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Importo presentato:</div><div>".AA_Utils::number_format($val['oneri_importo'],2,",",".")."</div></div>";
+                $importo_ammesso="n.d.";
+                if(isset($rendiconti['ras']['importi_ammessi']['personale_det'][$key]['oneri_importo']))
+                {
+                    $importo_ammesso=AA_Utils::number_format($rendiconti['ras']['importi_ammessi']['personale_det'][$key]['oneri_importo'],2,",",".");
+                }
+                $class="";
+                if($importo_ammesso=="n.d.")
+                {
+                    $class="AA_RendicontiImportoRow_Orange";
+                }
+                $oneri.="<div class='".$class."' style='display:flex;width:100%'><div style='width:40%;min-width:40%'>Importo ammesso:</div><div>".$importo_ammesso."&nbsp; ".$op."</div></div>";
                 $oneri.="</div>";
 
                 $periodo="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%;font-size:smaller'>";
@@ -29385,7 +29583,22 @@ Class AA_SierModule extends AA_GenericModule
                 $periodo.="<div style='display:flex; width:100%'><div style='width:25%'>al:</div><div>".substr($val['periodo_al'],0,10)."</div></div>";
                 $periodo.="</div>";
 
-                $data[]=array("id"=>$key,"tipologia"=>$val['tipologia'],"qualifica"=>$val['qualifica'],"importo"=>AA_Utils::number_format($val['importo'],2,",","."),
+                $op="<span class='AA_DataTable_Ops_Button mdi mdi-pencil' style='cursor: pointer' onClick=\"AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiImportoAmmessoModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",field:'personale_det|".$key."|importo',voce:'Competenze spettanti per il personale a tempo determinato (".addslashes($val['estremi_assunzione']).")',refresh: 1,refresh_obj_id:'".$id."'},module: '" . $this->id . "'},'".$this->id."')\"></span>";
+                $importo="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%'>";
+                $importo.="<div style='display:flex; width:100%'><div style='width:100%;text-align:center'>presentato:<br>".AA_Utils::number_format($val['importo'],2,",",".")."</div></div>";
+                $importo_ammesso="n.d.";
+                if(isset($rendiconti['ras']['importi_ammessi']['personale_det'][$key]['importo']))
+                {
+                    $importo_ammesso=AA_Utils::number_format($rendiconti['ras']['importi_ammessi']['personale_det'][$key]['importo'],2,",",".");
+                }
+                $class="";
+                if($importo_ammesso=="n.d.")
+                {
+                    $class="AA_RendicontiImportoRow_Orange";
+                }
+                $importo.="<div class='".$class."' style='display:flex; width:100%'><div style='width:100%;text-align:center'>ammesso:<br>".$importo_ammesso."&nbsp; ".$op."</div></div>";
+                $importo.="</div>";
+                $data[]=array("id"=>$key,"tipologia"=>$val['tipologia'],"qualifica"=>$val['qualifica'],"importo"=>$importo,
                 "estremi"=>$estremi,
                 "oneri"=>$oneri,
                 "periodo"=>$periodo,
@@ -29429,6 +29642,18 @@ Class AA_SierModule extends AA_GenericModule
             ));
 
             $generaleLayout->addRow($table);
+            $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+            $value="<ul>Si attesta che:<li>la spesa di cui si chiede il rimborso per l'assunzione di personale a tempo determinato è relativa al lavoro prestato nel periodo elettorale indicato nella circolare della Regione in materia di rendicontazione;</li>";
+            $value.="<li>i contratti individuali di lavoro a tempo determinato, stipulati dal Comune, danno luogo alla costituzione di un rapporto di lavoro subordinato con l'Ente;</li>";
+            $value.="</ul>";
+            $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>1,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify")
+            ));
+            $row->AddRow($val);
+            $generaleLayout->addRow($row);
         }
         else
         {
@@ -29546,7 +29771,7 @@ Class AA_SierModule extends AA_GenericModule
             "template"=>$template,
             "gravity"=>2,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
@@ -29565,6 +29790,18 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $row->AddCol($val);
+        $box->addRow($row);
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $value="<ul>Si attesta che:<li>i buoni pasto sono stati erogati ai dipendenti per le sole giornate di lavoro straordinario elettorale effettuate e nel rispetto delle condizioni e limiti previsti nel C.C.N.L. vigente nel periodo considerato;</li>";
+        $value.="<li>l'Amministrazione comunale aveva già attivato il servizio per l'erogazione dei buoni pasto ai propri dipendenti;</li>";
+        $value.="</ul>";
+        $val=new AA_JSON_Template_Template("",array(
+        "template"=>$value,
+        "gravity"=>1,
+        "autoheight"=>true,
+        "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify")
+        ));
+        $row->AddRow($val);
         $box->addRow($row);
         $multiview->AddCell($generaleLayout);
         //--------------------------------------------------------------------------------------
@@ -29662,6 +29899,18 @@ Class AA_SierModule extends AA_GenericModule
             ));
 
             $generaleLayout->addRow($table);
+            $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+            $value="<ul>Si attesta che:<li>Nell'ipotesi di acquisto di nuovi tabelloni per la propaganda elettorale, si attesta che l'importo di cui si chiede il rimborso costituisce il 10% del totale della relativa spesa:</li>";
+            $value.="<li>l'eventuale spesa richiesta a rimborso per collegamenti telefonici e' relativa al noleggio di telefoni cellulari o all’attivazione di collegamenti telefonici straordinari e al relativo traffico telefonico nei giorni della votazione per la raccolta dei dati elettorali.</li>";
+            $value.="</ul>";
+            $val=new AA_JSON_Template_Template("",array(
+            "template"=>$value,
+            "gravity"=>1,
+            "autoheight"=>true,
+            "css"=>array("border-top"=>"1px solid #dadee0 !important;text-align:justify")
+            ));
+            $row->AddRow($val);
+            $generaleLayout->addRow($row);
         }
         else
         {
@@ -29985,7 +30234,7 @@ Class AA_SierModule extends AA_GenericModule
             $section=new AA_FieldSet(uniqid(),"Competenze");
             $section->AddTextField("seggi|competenze|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26"));
             $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-            $section->AddTextField("seggi|competenze|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $section->AddTextField("seggi|competenze|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Trattamento di missione presidenti di seggio");
@@ -29993,7 +30242,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("seggi|missioni|componenti","n. missioni",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*n. presidenti con missioni."));
             $section->AddTextField("seggi|missioni|km","Km totali",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Km totali percorsi."),false);
-            $section->AddTextField("seggi|missioni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo corrisposto per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
+            $section->AddTextField("seggi|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo corrisposto per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
             $wnd->AddGenericObject($section);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -30019,13 +30268,12 @@ Class AA_SierModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiImportoAmmessoModifyDlg_".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
-
-        
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $form_data['id']=$object->GetId();
             $form_data['id_comune']=$comune->GetProp("id");
             $form_data['field']=$_REQUEST['field'];
+            $form_data['voce']=$_REQUEST['voce'];
             $importo_corrisposto=0;
             $importo_ammesso=0;
             $rendiconti=$comune->GetRendiconti(true);
@@ -30043,7 +30291,11 @@ Class AA_SierModule extends AA_GenericModule
                     }
                 }
 
-                if(isset($rendiconti['ras']['importi_ammessi']))
+                if(isset($rendiconti['ras']['importi_ammessi'][$_REQUEST['field']]))
+                {
+                    $importo_ammesso=AA_Utils::number_format(floatVal($rendiconti['ras']['importi_ammessi'][$_REQUEST['field']]),2,",",".");
+                }
+                else
                 {
                     $value=$rendiconti['ras']['importi_ammessi'];
                     for($i=0;$i<sizeof($fields);$i++)
@@ -30080,7 +30332,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetWidth(780);
             $wnd->SetHeight(340);
             
-            $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("autoheight"=>true,"borderless"=>true,"template"=>"<div>Voce di spesa: <span style='font-weight:bold'>#voce#</span></div><div>Importo corrisposto: <span style='font-weight:bold'>#importo_corrisposto#</span></div><hr style='width:50%;color: #dedede'>","data"=>array("voce"=>$_REQUEST['voce'],"importo_corrisposto"=>$importo_corrisposto))));
+            $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("autoheight"=>true,"borderless"=>true,"template"=>"<div>Voce di spesa: <span style='font-weight:bold'>#voce#</span></div><div>Importo presentato: <span style='font-weight:bold'>#importo_corrisposto#</span></div><hr style='width:50%;color: #dedede'>","data"=>array("voce"=>$_REQUEST['voce'],"importo_corrisposto"=>$importo_corrisposto))));
             $wnd->AddTextField("importo_ammesso","Importo ammesso",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Indicare l'importo ammesso a rimborso per la spesa indicata."));
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -30158,7 +30410,7 @@ Class AA_SierModule extends AA_GenericModule
             $section=new AA_FieldSet(uniqid(),"Competenze");
             $section->AddTextField("seggi|competenze|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26"));
             $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-            $section->AddTextField("seggi|competenze|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $section->AddTextField("seggi|competenze|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Trattamento di missione presidenti di seggio");
@@ -30166,7 +30418,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("seggi|missioni|componenti","n. missioni",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Numero dei componenti che hanno effettuato missioni."));
             $section->AddTextField("seggi|missioni|km","Km totali",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Km totali percorsi."),false);
-            $section->AddTextField("seggi|missioni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo corrisposto per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
+            $section->AddTextField("seggi|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo corrisposto per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
             $wnd->AddGenericObject($section);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -30483,7 +30735,7 @@ Class AA_SierModule extends AA_GenericModule
             
             $wnd->AddTextField("buoni|dipendenti","n. dipendenti che ne hanno usufruito",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1),false);
             
-            $wnd->AddTextField("buoni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $wnd->AddTextField("buoni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $wnd->AddTextareaField("buoni|note","Note",array("gravity"=>1,"labelWidth"=>70,"bottomPadding"=>0));
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -30578,7 +30830,7 @@ Class AA_SierModule extends AA_GenericModule
             
             $wnd->AddTextField("buoni|dipendenti","n. dipendenti che ne hanno usufruito",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1),false);
             
-            $wnd->AddTextField("buoni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $wnd->AddTextField("buoni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $wnd->AddTextareaField("buoni|note","Note",array("gravity"=>1,"labelWidth"=>70,"bottomPadding"=>0));
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -30771,7 +31023,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("comune|straordinario|estremi_autorizzazione","Estremi provvedimenti di autorizzazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di autorizzione."));
             $section->AddTextField("comune|straordinario|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."),false);
             $section->AddTextField("comune|straordinario|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-            $section->AddTextField("comune|straordinario|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            $section->AddTextField("comune|straordinario|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo autorizzato","align"=>"center","css"=>array("background"=>"#efefef"))));
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo di effettivo svolgimento","align"=>"center","css"=>array("background"=>"#efefef"))),false);
             $section->AddDateField("comune|straordinario|periodo_max_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
@@ -30792,7 +31044,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("comune|oneri|dettagli_irap","Irap",array("required"=>true,"gravity"=>1,"labelWidth"=>90,"validateFunction"=>"IsNumber"),false);
             $section->AddTextField("comune|oneri|dettagli_altro","Altro",array("required"=>true,"gravity"=>1,"labelWidth"=>90,"validateFunction"=>"IsNumber"),false);
             $section->AddTextField("comune|oneri|dettagli_altro_desc","Altro (Descrizione)",array("gravity"=>1,"labelWidth"=>150));
-            //$section->AddTextField("comune|oneri|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            //$section->AddTextField("comune|oneri|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $section->AddSpacer();
             $wnd->AddGenericObject($section);
             
@@ -30801,7 +31053,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("comune|missioni|estremi_liquidazione","Estremi provv. di liquidazione",array("gravity"=>1, "labelWidth"=>230,"placeholder"=>"es. prot. n.12345 del 2024-02-25","bottomLabel"=>"*Estremi dei provv. di liquidazione."));
             $section->AddTextField("comune|missioni|km","Km percorsi",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>110));
             $section->AddTextField("comune|missioni|dipendenti","n. dipendenti che le hanno effettuate",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>2,"labelWidth"=>300),false);
-            $section->AddTextField("comune|missioni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $section->AddTextField("comune|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $wnd->AddGenericObject($section,false);
 
             $wnd->AddTextareaField("comune|straordinario|note","Note",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>0));
@@ -30907,13 +31159,13 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->EnableValidation();
             
             $wnd->SetWidth(1200);
-            $wnd->SetHeight(1080);
+            $wnd->SetHeight(840);
             
             $section=new AA_FieldSet(uniqid(),"Lavoro straordinario");
             $section->AddTextField("comune|straordinario|estremi_autorizzazione","Estremi provvedimenti di autorizzazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di autorizzione."));
             $section->AddTextField("comune|straordinario|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."),false);
             $section->AddTextField("comune|straordinario|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-            $section->AddTextField("comune|straordinario|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            $section->AddTextField("comune|straordinario|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo autorizzato","align"=>"center","css"=>array("background"=>"#efefef"))));
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo di effettivo svolgimento","align"=>"center","css"=>array("background"=>"#efefef"))),false);
             $section->AddDateField("comune|straordinario|periodo_max_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
@@ -30942,7 +31194,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("comune|missioni|estremi_liquidazione","Estremi provv. di liquidazione",array("gravity"=>1, "labelWidth"=>230,"placeholder"=>"es. prot. n.12345 del 2024-02-25","bottomLabel"=>"*Estremi dei provv. di liquidazione."));
             $section->AddTextField("comune|missioni|km","Km percorsi",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>110));
             $section->AddTextField("comune|missioni|dipendenti","n. dipendenti che le hanno effettuate",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>2,"labelWidth"=>300),false);
-            $section->AddTextField("comune|missioni|importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $section->AddTextField("comune|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
             $wnd->AddGenericObject($section,false);
 
             $wnd->AddTextareaField("comune|straordinario|note","Note",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>0));
@@ -31032,7 +31284,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddDateField("periodo_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
             $section->AddDateField("periodo_al","Data fine",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data fine (YYYY-mm-gg)."),false);
             $section->AddSpacer(false);
-            $section->AddTextField("importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            $section->AddTextField("importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Oneri per personale assunto esclusivamente con rapporto di lavoro subordinato a tempo determinato");
@@ -31046,7 +31298,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("oneri_altro_desc","Altro (Descrizione)",array("gravity"=>4,"labelWidth"=>130));
             $section->AddSpacer(false);
             $section->AddSpacer();
-            //$section->AddTextField("oneri_importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            //$section->AddTextField("oneri_importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $wnd->AddGenericObject($section);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -31135,7 +31387,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddDateField("periodo_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
             $section->AddDateField("periodo_al","Data fine",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data fine (YYYY-mm-gg)."),false);
             $section->AddSpacer(false);
-            $section->AddTextField("importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            $section->AddTextField("importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Oneri per personale assunto esclusivamente con rapporto di lavoro subordinato a tempo determinato");
@@ -31148,7 +31400,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddSpacer(false);
             $section->AddTextField("oneri_altro_desc","Altro (Descrizione)",array("gravity"=>4,"labelWidth"=>130));
             $section->AddSpacer(false);
-            //$section->AddTextField("oneri_importo","Importo corrisposto",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            //$section->AddTextField("oneri_importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
             $wnd->AddGenericObject($section);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
