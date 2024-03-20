@@ -85,6 +85,9 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("HomeUtentiSendCredenzials");
         $taskManager->RegisterTask("GetHomeUtentiAddNewDlg");
         $taskManager->RegisterTask("HomeUtentiAddNew");
+        $taskManager->RegisterTask("GetHomeRngDlg");
+        $taskManager->RegisterTask("HomeRngOut");
+        $taskManager->RegisterTask("HomeRngOutPdf");
         $taskManager->RegisterTask("GetHomeUtentiTrashDlg");
         $taskManager->RegisterTask("HomeUtentiTrash");
         $taskManager->RegisterTask("HomeUtentiResume");
@@ -403,6 +406,30 @@ Class AA_HomeModule extends AA_GenericModule
         return true;
     }
 
+    //Task trash user dlg
+    public function Task_GetHomeRngDlg($task)
+    {
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetHomeRngDlg(),true);
+        return true;
+    }
+
+    //Task rng out
+    public function Task_HomeRngOut($task)
+    {
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        //AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$this->GetTaskManagerUrl().'?task=GetSierComuneRendicontiExportRasPdf&id='.$object->GetId().'&id_comune='.$comune->GetProp('id').'"},"'.$this->id.'")
+        $task->SetStatusAction("pdfPreview",'{"url": "'.$this->GetTaskManagerUrl().'?task=HomeRngOutPdf&start='.$_REQUEST['start'].'&end='.$_REQUEST['end'].'&count='.$_REQUEST['count'].'"}',false);
+        $task->SetContent("Generazione prospetto pdf in corso...",false);
+        return true;
+    }
+
+    //Task rng out pdf
+    public function Task_HomeRngOutPdf($task)
+    {
+        die($this->Template_HomeRngOutPdf($_REQUEST['start'],$_REQUEST['end'],$_REQUEST['count']));
+    }
+    
     //Task modify user dlg
     public function Task_GetHomeUtentiAddNewDlg($task)
     {
@@ -816,14 +843,15 @@ Class AA_HomeModule extends AA_GenericModule
         //mdi-server-security mdi-finance
         $section_box->AddRow(new AA_JSON_Template_Generic("HomeRisorseBoxTitle",array("view"=>"label","align"=>"center","label"=>"<span class='AA_Desktop_Section_Label'>Risorse</span>")));
  
-        if(!$this->oUser->IsSuperUser())
+        $template="<div style='width:100%;height:100%;display:flex;flex-direction:column;'>";
+        $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetHomeRngDlg'},'".$this->id."');\">Generatore estrazioni casuali</a></div>";
+        if($this->oUser->IsSuperUser())
         {
-            $section_box_content=new AA_JSON_Template_Generic();
+            $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetServerStatusDlg', taskManager: AA_MainApp.taskManager},'".$this->id."');\">Stato del server</a></div>";
         }
-        else
-        {
-            $section_box_content=new AA_JSON_Template_Template("AA_ServerStatusLink",array("template"=>"<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetServerStatusDlg', taskManager: AA_MainApp.taskManager},'".$this->id."');\">Stato del server</a></div>"));
-        }
+        $template.="</div>";
+
+        $section_box_content=new AA_JSON_Template_Template("AA_ServerStatusLink",array("template"=>$template));
         $section_box->addRow($section_box_content);
 
         return $section_box;
@@ -1444,6 +1472,282 @@ Class AA_HomeModule extends AA_GenericModule
         $dlg->EnableApplyHotkey();
 
         return $dlg->GetObject();
+    }
+
+    //Template rng dlg
+    public function Template_GetHomeRngDlg()
+    {
+        //Valori runtime
+        $formData=array("start"=>$_REQUEST['start'],"end"=>$_REQUEST['end'],"count"=>$_REQUEST['count']);
+
+        if($formData['start']=="") $formData['start']=1;
+        if($formData['end']=="") $formData['end']=100;
+        if($formData['count']=="") $formData['count']=1;
+        //Valori reset
+        $resetData=array("start"=>1,"end"=>100,"count"=>1);
+        
+        $dlg = new AA_GenericFormDlg(static::AA_UI_PREFIX."_RngDlg", "Estrattore numeri casuali",$this->GetId(),$formData,$resetData);
+        
+        $dlg->SetHeight(480);
+        $dlg->SetWidth(450);
+        
+        //start
+        $dlg->AddTextField("start","Numero minimo",array("required"=>true,"validateFunction"=>"IsNumber","bottomLabel"=>"*Inserisci il numero piu' piccolo."));
+        
+        //end
+        $dlg->AddTextField("end","Numero massimo",array("required"=>true,"validateFunction"=>"IsNumber","bottomLabel"=>"*Inserisci il numero piu' grande."));
+
+        //count
+        $dlg->AddTextField("count","Numero di estrazioni",array("required"=>true,"validateFunction"=>"IsNumber","bottomLabel"=>"*Inserisci il numero di estrazioni."));
+
+        $dlg->SetApplyButtonName("Estrai");
+        $dlg->enableRefreshOnSuccessfulSave(false);
+        $dlg->EnableValidation();
+        $dlg->SetLabelWidth(190);
+        $dlg->SetSaveTask("HomeRngOut");
+        $dlg->EnableApplyHotkey();
+
+        return $dlg;
+    }
+
+    //Template pdf rendicontazione
+    protected function Template_HomeRngOutPdf($start=1,$end=100,$numCount=1,$bToBrowser=true)
+    {
+        include_once "pdf_lib.php";
+
+        $count = 1;
+
+        $rowsForPage=1;
+        $vociIndice=array(
+            0=>"Estrazione"
+        );
+
+        //nome file
+        $filename = "estrazione";
+        $filename .= "-" . date("YmdHis");
+        $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
+
+        $doc->SetHeaderHeight("25mm");
+        $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
+        $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
+        $curRow = 0;
+        $rowForPage = $rowsForPage;
+        $lastRow = $rowForPage - 1;
+        $curPage = null;
+        $curPage_row = "";
+        $curNumPage = 0;
+        $maxItemHeight=intval(100/$rowsForPage);
+        //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
+        //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
+        $rowContentWidth = "width: 99.8%;";
+
+        if ($count > 1) 
+        {
+            //pagina di intestazione (senza titolo)
+            $curPage = $doc->AddPage();
+            $curPage->SetCorpoStyle("display: flex; flex-direction: column; justify-content: center; align-items: center; padding:0;");
+            $curPage->SetFooterStyle("border-top:.2mm solid black");
+            $curPage->ShowPageNumber(false);
+
+            //Intestazione
+            $intestazione = "<div style='width: 100%; text-align: center; font-size: 28; font-weight: bold; margin-bottom: 2em;'>Titolo</div>";
+            $intestazione .= "<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il " . date("Y-m-d") . "</div>";
+            
+            $curPage->EnableFooter(true);
+            $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." </div>");
+            $curPage->SetContent($intestazione);
+            $curNumPage++;
+
+            $doc->SetTitle("<div style='display:flex;justify-content:space-around;align-items:center;flex-direction:column; height:70%;width:100%;padding-top: 1em'><span style='font-size:18px'>Comune di ".$comune->GetProp("denominazione")."</span><hr style='width:25%'><div><span>".$title."</span><br><span style='font-weight:normal; font-size:smaller'>" . $object->GetName()."</span></div></div>");
+            if($index)
+            {
+                //pagine indice (50 nominativi per pagina)
+                $indiceNumVociPerPagina = 20;
+                for ($i = 0; $i < $count / $indiceNumVociPerPagina; $i++) 
+                {
+                    $curPage = $doc->AddPage();
+                    $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
+                    $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." - documento generato il " . date("Y-m-d")."</div>");
+                    $curNumPage++;
+                }
+            }
+            $curPage=null;
+            #---------------------------------------
+        }
+
+        //Imposta il titolo per le pagine successive
+        
+        //$doc->SetTitle("$subTitle - report generato il " . date("Y-m-d"));
+
+        $indice = array();
+        $lastPage = $count / $rowForPage + $curNumPage;
+
+        //Rendering pagine
+        for($i=0;$i<$count;$i++)
+        {
+            //inizia una nuova pagina (intestazione)
+            if ($curRow == $rowForPage) $curRow = 0;
+            if ($curRow == 0) {
+                $border = "";
+                if ($curPage != null) 
+                {
+                    if($curPage_row !="")
+                    {
+                        $curPage->SetContent($curPage_row);
+                        $curPage = $doc->AddPage();
+                        $curNumPage++;
+                        $curPage_row="";
+                    }
+                }
+                else 
+                {
+                    $curPage_row="";
+                    $curPage = $doc->AddPage();
+                    $curNumPage++;
+                }
+                
+                $curPage->SetCorpoStyle("display: flex; flex-direction: column;  justify-content: flex-start; padding:0;");
+                $curPage_row = "";
+            }
+
+            if($i<3) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==4) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==(4+$numPagineRendicontiAssunzioni)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==(4+$numPagineRendicontiAssunzioni+1)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+
+            $curPage_row .= "<div id='".$i."' style='display:flex;  flex-direction: column; width: 99.8%; height:100%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
+
+            //---------------------------------------- Estrazione ----------------------------------------------
+            if($i==0)
+            {
+                $curPage_row.= "<div style='width: 100%; font-weight:bold; font-size:18px'>Estrazione numeri casuali</div>";
+                $curPage_row.=$this->Template_RngEstrazionePage($start,$end,$numCount);
+            }
+            //-------------------------------------------------------------------------------------------------
+
+            $curPage_row .= "</div>";
+            $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>documento generato il " . date("Y-m-d")."</div>");
+            $curRow++;
+        }
+        if ($curPage != null) $curPage->SetContent($curPage_row);
+        #-----------------------------------------
+
+        if ($count > 1 && $index) 
+        {
+            //Aggiornamento indice
+            $curNumPage = 1;
+            $curPage = $doc->GetPage($curNumPage);
+            $vociCount = 0;
+            $curRow = 0;
+            $bgColor = "";
+            $curPage_row = "";
+
+            foreach ($indice as $id => $data) 
+            {
+                if ($curNumPage != (int)($vociCount / $indiceNumVociPerPagina) + 1) {
+                    $curPage->SetContent($curPage_row);
+                    $curNumPage = (int)($vociCount / $indiceNumVociPerPagina) + 1;
+                    $curPage = $doc->GetPage($curNumPage);
+                    $curRow = 0;
+                    $bgColor = "";
+                }
+
+                //$indexBgColor = "#f5f5f5";
+                $indexBgColor = "#fff";
+                if ($curPage instanceof AA_PDF_Page) 
+                {
+                    //Intestazione
+                    if ($curRow == 0) $curPage_row = "<div style='width:100%;text-align: center; font-size: larger; font-weight: bold; border-bottom: 1px solid #dedede; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+                    if ($curRow % 2) $bgColor = "background-color:$indexBgColor;";
+                    else $bgColor = "";
+                    $curPage_row .= "<div style='display:flex; " . $rowContentWidth . " align-items: center; justify-content: space-between; font-size:larger; padding: .3mm; min-height: 9mm;" . $bgColor . "'>";
+                    $dati = explode("|", $data);
+                    $curPage_row .= "<div style='width:90%;text-align: left;padding-left: 10mm'><a style='text-decoration: none' href='#" . $id . "'>" . $dati['1'] . "</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a style='text-decoration: none' href='#" . $id . "'>pag. " . $dati[0] . "</a></div>";
+                    $curPage_row .= "</div>";
+
+                    //ultima voce
+                    if ($vociCount == (sizeof($indice) - 1)) 
+                    {
+                        $curPage->SetContent($curPage_row);
+                    }
+                    $curRow++;
+                }
+
+                $vociCount++;
+            }
+        }
+
+        if ($bToBrowser) $doc->Render();
+        else {
+            $doc->Render(false);
+            return $doc->GetFilePath();
+        }
+    }
+
+    public function Template_RngEstrazionePage($start=1,$end=100,$count=1)
+    {
+        $layout=new AA_XML_Div_Element(uniqid());
+        $layout->SetStyle("width:99%; height:100%;");
+
+        if($start<0) $start=0;
+        if($end<0 || $end<=$start) $end=$start+100;
+        if($count<=0) $count=1;
+        
+        if($count>($end-$start)/2) $count=1;
+        
+        $val="<ul>Si attesta che:";
+        $val.="<li>Ogni numero puo' essere estratto una sola volta.</li>";
+        if($count>1) $val.="<li>Sono stati estratti ".$count." numeri diversi.</li>";
+        $val.="<li>I numeri estratti appartengono all'intervallo: [".$start."-".$end."] estremi compresi.</li>";
+        $val.="<li>L'estrazione e' stata effettuata in data: ".date("d-m-Y")." alle ".date("H:i").".</li>";
+        $val.="</ul>";
+        $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
+        $attestazione->SetStyle("text-align:justify;");
+        $attestazione->SetText($val);
+
+        $row_template="<div style='display:flex; width: 96.8%;flex-direction:column; padding: .5em;'>";
+        $row_template.="<div style='width:100%;font-weight: bold; margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template.="</div>";
+
+        $row_template_2col="<div style='display:flex; width: 96.8%;'>";
+        $row_template_2col.="<div style='display:flex; width: 50%;min-width:50%; flex-direction:column; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label#</div><div style='width:100%'>#value#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="<div style='display:flex; width: 49%;flex-direction:column; border-left:1px solid #d7dbdd; padding: .5em;'>";
+        $row_template_2col.="<div style='width:100%;font-weight: bold;margin-bottom: .2em;'>#label_2#</div><div style='width:100%'>#value_2#</div>";
+        $row_template_2col.="</div>";
+        $row_template_2col.="</div>";
+
+        $template= new AA_GenericTableTemplateView(uniqid(),$layout,null,array("evidentiate-rows"=>true,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"99.7%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Numero estratto";
+        if($count>1) $titolo="Numeri estratti";
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+
+        $rngExtract=array();
+        while(sizeof($rngExtract)<$count)
+        {
+            $num=random_int($start,$end);
+            while(array_search($num,$rngExtract) !==false)
+            {
+                $num=random_int($start,$end);
+            }
+
+            $rngExtract[]=$num;
+        }
+
+        $content="<div style='display:flex;justify-content:space-around'>";
+        foreach($rngExtract as $curVal)
+        {
+            if($content=="") $content.="<span>".$curVal."</span>";
+            else $content.="<span>".$curVal."</span>";
+        }
+        $content.="</div>";
+        $template->SetCellText($curRow,0,$content,"center");
+        
+        return $layout->__toString();
     }
 
     //Template filtro di ricerca utenti

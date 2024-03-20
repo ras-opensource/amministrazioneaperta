@@ -12068,7 +12068,7 @@ Class AA_SierModule extends AA_GenericModule
         $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
 
         $layout=new AA_JSON_Template_Layout($id."_Aiuto_box",array("type"=>"clean"));
-        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>50)));
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
         $toolbar_oc=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("type"=>"clean","borderless"=>true));
 
         //manuale operatore comunale
@@ -12076,15 +12076,37 @@ Class AA_SierModule extends AA_GenericModule
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-help-circle",
-            "label"=>"Manuale operatore comunale",
+            "label"=>"Manuale caricamento risultati",
             "align"=>"center",
             "inputWidth"=>300,
             "click"=>$action,
-            "tooltip"=>"Visualizza o scarica il manuale operatore comunale"
+            "tooltip"=>"Visualizza o scarica il manuale operatore comunale per iul caricamento dei risultati elettorali"
         ));
+
         $toolbar_oc->AddCol($btn);
         $layout->AddRow($toolbar_oc);
-        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>50)));
+
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+
+        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("type"=>"clean","borderless"=>true));
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale_oc_rendiconti.pdf";
+        $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
+        //manuale operatore comunale rendiconti
+        $btn=new AA_JSON_Template_Generic($id."_ManualeRendiconti_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-help-circle",
+            "label"=>"Manuale caricamento rendiconti",
+            "align"=>"center",
+            "inputWidth"=>300,
+            "click"=>$action,
+            "tooltip"=>"Visualizza o scarica il manuale operatore comunale per la compilazione dei rendiconti"
+        ));
+
+        $toolbar_oc->AddCol($btn);
+        $layout->AddRow($toolbar_oc);
+
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
 
         $wnd->AddView($layout);        
 
@@ -23276,7 +23298,7 @@ Class AA_SierModule extends AA_GenericModule
             {
                 $intestazione .= "<div style='width: 100%; text-align: center; font-weight: normal; margin-top: 1em;'>".$subTitle."</div>";
             }
-            $intestazione .= "<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il " . date("Y-m-d") . "</div>";
+            $intestazione .= "<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il " . date("Y-m-d")." alle ".date("H:i") . "</div>";
             
             $curPage->EnableFooter(true);
             $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." </div>");
@@ -23292,7 +23314,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     $curPage = $doc->AddPage();
                     $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
-                    $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." - documento generato il " . date("Y-m-d")."</div>");
+                    $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." - documento generato il " . date("Y-m-d")." alle ".date("H:i")."</div>");
                     $curNumPage++;
                 }
             }
@@ -23399,7 +23421,7 @@ Class AA_SierModule extends AA_GenericModule
             //-------------------------------------------------------------------------------------------------
 
             $curPage_row .= "</div>";
-            $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." - documento generato il " . date("Y-m-d")."</div>");
+            $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." - documento generato il " . date("Y-m-d")." alle ".date("H:i")."</div>");
             $curRow++;
         }
         if ($curPage != null) $curPage->SetContent($curPage_row);
@@ -24220,7 +24242,7 @@ Class AA_SierModule extends AA_GenericModule
                 }
                 $count++;
             }
-            $value="<ul>Si attesta che:<li>Nell'ipotesi di acquisto di nuovi tabelloni per la propaganda elettorale, si attesta che l'importo di cui si chiede il rimborso costituisce il 10% del totale della relativa spesa:</li>";
+            $value="<ul>Si attesta che:<li>Nell'ipotesi di acquisto di nuovi tabelloni per la propaganda elettorale, l'importo di cui si chiede il rimborso costituisce il 10% del totale della relativa spesa:</li>";
             $value.="<li>l'eventuale spesa richiesta a rimborso per collegamenti telefonici e' relativa al noleggio di telefoni cellulari o all’attivazione di collegamenti telefonici straordinari e al relativo traffico telefonico nei giorni della votazione per la raccolta dei dati elettorali.</li>";
             $value.="</ul>";
             $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
@@ -28769,7 +28791,7 @@ Class AA_SierModule extends AA_GenericModule
         else
         {
             $totale_ammesso+=floatVal($software_ammesso);
-            $software_ammesso=AA_Utils::number_format(floatVal($software_ammesso),2,",",".");
+            $collegamenti_ammesso=AA_Utils::number_format(floatVal($collegamenti_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -28833,6 +28855,7 @@ Class AA_SierModule extends AA_GenericModule
         $anticipo=0;
         $totale_saldare=0;
         $totale_saldare_label="IMPORTO DA LIQUIDARE";
+        $saldo_label="SALDO";
         $liquidato=0;
         if(isset($rendiconti['ras']['importo']))
         {
@@ -28852,14 +28875,27 @@ Class AA_SierModule extends AA_GenericModule
         
         if(!$bTotaleAmmesso)
         {
-            $totale_saldare=$anticipo+$liquidato;
-            $totale_saldare_label="IMPORTO DA RECUPERARE";
+            $totale_saldare="n.d.";
             $totale_ammesso="n.d.";
+            $saldo="n.d.";
         }
         else
         {
-            $totale_saldare=$totale_ammesso-$anticipo-$liquidato;
+            $totale_saldare=$totale_ammesso-$anticipo;
+            $saldo=$totale_ammesso-($anticipo+$liquidato);
+            if($totale_saldare<0) 
+            {
+                $totale_saldare_label="IMPORTO DA RECUPERARE";
+                $totale_saldare=$totale_saldare*-1;
+            }
+            if($saldo<0)
+            {
+                $saldo_label="SALDO";
+            }
+
             $totale_ammesso=AA_Utils::number_format($totale_ammesso,2,",",".");
+            $totale_saldare=AA_Utils::number_format($totale_saldare,2,",",".");
+            $saldo=AA_Utils::number_format($saldo,2,",",".");
         }
 
         $val=new AA_JSON_Template_Template("",array(
@@ -28887,7 +28923,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>IMPORTO DA LIQUIDARE:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($rimborso_concesso-$anticipo,2,",",".")."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>".$totale_saldare_label.":</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".$totale_saldare."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
             "css"=>array("border-top"=>"2px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -28907,7 +28943,7 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "height"=>32,
-            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>SALDO:</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".AA_Utils::number_format($totale_saldare,2,",",".")."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
+            "data"=>array("title"=>"<div style='width:100%; text-align: right; font-size:larger;font-weight:bold;'>".$saldo_label.":</div>","value"=>"<span style='font-size:larger;font-weight: 700'>".$saldo."</span>","value_align"=>"right","value_align_ammesso"=>"right","value_ammesso"=>""),
             "css"=>array("border-top"=>"2px solid #dadee0 !important")
         ));
         $box->AddRow($val);
@@ -29761,7 +29797,7 @@ Class AA_SierModule extends AA_GenericModule
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $box->addRow($val);
-        $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $row=new AA_JSON_Template_Layout("",array("type"=>"clean","css"=>"AA_RendicontiImportoRow"));
         $value="n.d.";
         if(isset($rendiconti['buoni']['importo']))
         {
@@ -29769,12 +29805,28 @@ Class AA_SierModule extends AA_GenericModule
         }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
-            "gravity"=>2,
+            "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+            "data"=>array("title"=>"Importo presentato:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left")
         ));
         $row->AddCol($val);
+
+        $value="n.d.";
+        if(isset($rendiconti['ras']['importi_ammessi']['buoni|importo']))
+        {
+            $value=AA_Utils::number_format(floatVal($rendiconti['ras']['importi_ammessi']['buoni|importo']),2,",",".");
+        }
+        $ImportoAmmessoClass="AA_RendicontiImportoRow";
+        if($value=="n.d.") $ImportoAmmessoClass="AA_RendicontiImportoRow_Orange";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template_importo_ammesso,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Importo ammesso:","value"=>$value,"value_align"=>"left","field"=>"buoni|importo","voce"=>"Competenze spettanti per i buoni pasto dei dipendenti addetti"),
+            "css"=>$ImportoAmmessoClass
+        ));
+        $row->AddCol($val);
+
         $box->addRow($row);
         $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $value="";
@@ -29856,7 +29908,24 @@ Class AA_SierModule extends AA_GenericModule
                 $estremi.="<div style='display:flex;width:100%'><div style='width:25%;min-width:25%'>Pagamento:</div><div>".$curServizio['estremi_pagamento']."</div></div>";
                 $estremi.="<div style='display:flex;width:100%'><div style='width:25%;min-width:25%'>Fattura:</div><div>".$curServizio['estremi_fattura']."</div></div>";
                 $estremi.="</div>";
-                $data[]=array("id"=>$idServizio,"tipologia"=>$tipologia[$curServizio['tipologia']],"descrizione"=>$curServizio['descrizione'],"ditta"=>$curServizio['ditta'],"importo"=>AA_Utils::number_format($curServizio['importo'],2,",","."),
+
+                $op="<span class='AA_DataTable_Ops_Button mdi mdi-pencil' style='cursor: pointer' onClick=\"AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiImportoAmmessoModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",field:'servizi|".$idServizio."|importo',voce:'Beni e servizi non forniti direttamente dalla Regione (".addslashes($tipologia[$curServizio['tipologia']]).")',refresh: 1,refresh_obj_id:'".$id."'},module: '" . $this->id . "'},'".$this->id."')\"></span>";
+                $importo="<div style='display:flex;justify-content: center; flex-direction:column;width:100%;height:100%'>";
+                $importo.="<div style='display:flex; width:100%'><div style='width:100%;text-align:center'>presentato:<br>".AA_Utils::number_format($curServizio['importo'],2,",",".")."</div></div>";
+                $importo_ammesso="n.d.";
+                if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$idServizio]['importo']))
+                {
+                    $importo_ammesso=AA_Utils::number_format($rendiconti['ras']['importi_ammessi']['servizi'][$idServizio]['importo'],2,",",".");
+                }
+                $class="";
+                if($importo_ammesso=="n.d.")
+                {
+                    $class="AA_RendicontiImportoRow_Orange";
+                }
+                $importo.="<div class='".$class."' style='display:flex; width:100%'><div style='width:100%;text-align:center'>ammesso:<br>".$importo_ammesso."&nbsp; ".$op."</div></div>";
+                $importo.="</div>";
+
+                $data[]=array("id"=>$idServizio,"tipologia"=>$tipologia[$curServizio['tipologia']],"descrizione"=>$curServizio['descrizione'],"ditta"=>$curServizio['ditta'],"importo"=>$importo,
                 "estremi"=>$estremi,
                 "ops"=>$ops
                 );
@@ -29900,7 +29969,7 @@ Class AA_SierModule extends AA_GenericModule
 
             $generaleLayout->addRow($table);
             $row=new AA_JSON_Template_Layout("",array("type"=>"clean"));
-            $value="<ul>Si attesta che:<li>Nell'ipotesi di acquisto di nuovi tabelloni per la propaganda elettorale, si attesta che l'importo di cui si chiede il rimborso costituisce il 10% del totale della relativa spesa:</li>";
+            $value="<ul>Si attesta che:<li>Nell'ipotesi di acquisto di nuovi tabelloni per la propaganda elettorale, l'importo di cui si chiede il rimborso costituisce il 10% del totale della relativa spesa:</li>";
             $value.="<li>l'eventuale spesa richiesta a rimborso per collegamenti telefonici e' relativa al noleggio di telefoni cellulari o all’attivazione di collegamenti telefonici straordinari e al relativo traffico telefonico nei giorni della votazione per la raccolta dei dati elettorali.</li>";
             $value.="</ul>";
             $val=new AA_JSON_Template_Template("",array(
