@@ -1729,10 +1729,10 @@ Class AA_HomeModule extends AA_GenericModule
         $rngExtract=array();
         while(sizeof($rngExtract)<$count)
         {
-            $num=random_int($start,$end);
+            $num=rand($start,$end);
             while(array_search($num,$rngExtract) !==false)
             {
-                $num=random_int($start,$end);
+                $num=rand($start,$end);
             }
 
             $rngExtract[]=$num;

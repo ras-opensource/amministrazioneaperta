@@ -3663,6 +3663,10 @@ class AA_User
 
             //AA_Log::Log(get_class()."->UpdateUser($idUser, $params)", 100, false,true);
         }
+        else
+        {
+            $flags=$user->GetLegacyFlags();
+        }
 
         //la modifica delle schede pubblicate può essere abilitata anche dagli altri utenti amministratori
         if (isset($params['unlock']) && $params['livello'] == 0) {
