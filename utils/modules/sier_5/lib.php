@@ -23791,7 +23791,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //importo
         $value="n.d.";
-        if(isset($rendiconti['buoni']['importo'])) $value=AA_Utils::number_format($rendiconti['seggi']['competenze']['importo'],2,",",".");
+        if(isset($rendiconti['buoni']['importo'])) $value=AA_Utils::number_format($rendiconti['buoni']['importo'],2,",",".");
         $template->SetCellText($curRow,0,str_replace(array("#label#","#value#"),array("Importo presentato:",$value),$row_template),"left",null,null,null," #ebf5fb ");
         $curRow++;
 
@@ -30303,7 +30303,7 @@ Class AA_SierModule extends AA_GenericModule
             $section=new AA_FieldSet(uniqid(),"Competenze");
             $section->AddTextField("seggi|competenze|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26"));
             $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-            $section->AddTextField("seggi|competenze|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $section->AddTextField("seggi|competenze|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."));
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Trattamento di missione presidenti di seggio");
@@ -30311,7 +30311,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("seggi|missioni|componenti","n. missioni",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*n. presidenti con missioni."));
             $section->AddTextField("seggi|missioni|km","Km totali",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Km totali percorsi."),false);
-            $section->AddTextField("seggi|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo corrisposto per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
+            $section->AddTextField("seggi|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo presentato per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
             $wnd->AddGenericObject($section);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -30478,16 +30478,16 @@ Class AA_SierModule extends AA_GenericModule
             //estremi liquidazione
             $section=new AA_FieldSet(uniqid(),"Competenze");
             $section->AddTextField("seggi|competenze|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26"));
-            $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-            $section->AddTextField("seggi|competenze|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $section->AddTextField("seggi|competenze|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("seggi|competenze|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."));
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Trattamento di missione presidenti di seggio");
             $section->AddTextField("seggi|missioni|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."));
-            $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
+            $section->AddTextField("seggi|missioni|estremi_pagamento","Estremi mandati di pagamento",array("gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25; n.345 del 2024-02-26", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
             $section->AddTextField("seggi|missioni|componenti","n. missioni",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Numero dei componenti che hanno effettuato missioni."));
             $section->AddTextField("seggi|missioni|km","Km totali",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Km totali percorsi."),false);
-            $section->AddTextField("seggi|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo corrisposto per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
+            $section->AddTextField("seggi|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*Importo complessivo presentato per missioni (spese viaggio, albergo, pasti, rimborsi chilometrici)."));
             $wnd->AddGenericObject($section);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -30650,7 +30650,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddTextField("importo","Importo",array("required"=>true,"gravity"=>1,"bottomLabel"=>"*inserisci l'importo (es. 1234,56)."));
             $wnd->AddTextField("estremi_impegno","Estremi impegno di spesa",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del provvedimento di spesa."));
             $wnd->AddTextField("estremi_liquidazione","Estremi provv. liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del provvedimento di liquidazione."));
-            $wnd->AddTextField("estremi_pagamento","Estremi mandato di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del mandato di pagamento."));
+            $wnd->AddTextField("estremi_pagamento","Estremi mandato di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi del mandato di pagamento."));
             $wnd->AddTextField("ditta","Ditta",array("required"=>true,"gravity"=>1,"bottomLabel"=>"*inserisci la denominazione della ditta fornitrice."));
             $wnd->AddTextField("estremi_fattura","Estremi fattura",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n. 1234 del 2024-02-25","bottomLabel"=>"*inserisci gli estremi della fattura."));
             $wnd->AddTextareaField("note","note",array("gravity"=>1));
@@ -30804,7 +30804,7 @@ Class AA_SierModule extends AA_GenericModule
             
             $wnd->AddTextField("buoni|dipendenti","n. dipendenti che ne hanno usufruito",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1),false);
             
-            $wnd->AddTextField("buoni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $wnd->AddTextField("buoni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."));
             $wnd->AddTextareaField("buoni|note","Note",array("gravity"=>1,"labelWidth"=>70,"bottomPadding"=>0));
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -30899,7 +30899,7 @@ Class AA_SierModule extends AA_GenericModule
             
             $wnd->AddTextField("buoni|dipendenti","n. dipendenti che ne hanno usufruito",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1),false);
             
-            $wnd->AddTextField("buoni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $wnd->AddTextField("buoni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."));
             $wnd->AddTextareaField("buoni|note","Note",array("gravity"=>1,"labelWidth"=>70,"bottomPadding"=>0));
             
             $wnd->EnableCloseWndOnSuccessfulSave();
@@ -31092,7 +31092,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("comune|straordinario|estremi_autorizzazione","Estremi provvedimenti di autorizzazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di autorizzione."));
             $section->AddTextField("comune|straordinario|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."),false);
             $section->AddTextField("comune|straordinario|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-            $section->AddTextField("comune|straordinario|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            $section->AddTextField("comune|straordinario|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."),false);
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo autorizzato","align"=>"center","css"=>array("background"=>"#efefef"))));
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo di effettivo svolgimento","align"=>"center","css"=>array("background"=>"#efefef"))),false);
             $section->AddDateField("comune|straordinario|periodo_max_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
@@ -31122,7 +31122,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("comune|missioni|estremi_liquidazione","Estremi provv. di liquidazione",array("gravity"=>1, "labelWidth"=>230,"placeholder"=>"es. prot. n.12345 del 2024-02-25","bottomLabel"=>"*Estremi dei provv. di liquidazione."));
             $section->AddTextField("comune|missioni|km","Km percorsi",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>110));
             $section->AddTextField("comune|missioni|dipendenti","n. dipendenti che le hanno effettuate",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>2,"labelWidth"=>300),false);
-            $section->AddTextField("comune|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $section->AddTextField("comune|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."));
             $wnd->AddGenericObject($section,false);
 
             $wnd->AddTextareaField("comune|straordinario|note","Note",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>0));
@@ -31234,7 +31234,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("comune|straordinario|estremi_autorizzazione","Estremi provvedimenti di autorizzazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di autorizzione."));
             $section->AddTextField("comune|straordinario|estremi_liquidazione","Estremi provvedimenti di liquidazione",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei  provvedimenti di liquidazione."),false);
             $section->AddTextField("comune|straordinario|estremi_pagamento","Estremi mandati di pagamento",array("required"=>true,"gravity"=>1,"placeholder"=>"es. prot. n.12345 del 2024-02-25", "bottomLabel"=>"*Estremi dei mandati di pagamento."));
-            $section->AddTextField("comune|straordinario|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            $section->AddTextField("comune|straordinario|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."),false);
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo autorizzato","align"=>"center","css"=>array("background"=>"#efefef"))));
             $section->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Periodo di effettivo svolgimento","align"=>"center","css"=>array("background"=>"#efefef"))),false);
             $section->AddDateField("comune|straordinario|periodo_max_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
@@ -31263,7 +31263,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddTextField("comune|missioni|estremi_liquidazione","Estremi provv. di liquidazione",array("gravity"=>1, "labelWidth"=>230,"placeholder"=>"es. prot. n.12345 del 2024-02-25","bottomLabel"=>"*Estremi dei provv. di liquidazione."));
             $section->AddTextField("comune|missioni|km","Km percorsi",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>110));
             $section->AddTextField("comune|missioni|dipendenti","n. dipendenti che le hanno effettuate",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>2,"labelWidth"=>300),false);
-            $section->AddTextField("comune|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."));
+            $section->AddTextField("comune|missioni|importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>1,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."));
             $wnd->AddGenericObject($section,false);
 
             $wnd->AddTextareaField("comune|straordinario|note","Note",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>0));
@@ -31353,7 +31353,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddDateField("periodo_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
             $section->AddDateField("periodo_al","Data fine",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data fine (YYYY-mm-gg)."),false);
             $section->AddSpacer(false);
-            $section->AddTextField("importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            $section->AddTextField("importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."),false);
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Oneri per personale assunto esclusivamente con rapporto di lavoro subordinato a tempo determinato");
@@ -31456,7 +31456,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddDateField("periodo_dal","Data inizio",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data inizio (YYYY-mm-gg)."));
             $section->AddDateField("periodo_al","Data fine",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>2, "bottomLabel"=>"*data fine (YYYY-mm-gg)."),false);
             $section->AddSpacer(false);
-            $section->AddTextField("importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo corrisposto (es. 1234,56)."),false);
+            $section->AddTextField("importo","Importo presentato",array("required"=>true,"validateFunction"=>"IsNumber","gravity"=>3,"labelWidth"=>150, "bottomLabel"=>"*Importo complessivo presentato (es. 1234,56)."),false);
             $wnd->AddGenericObject($section);
 
             $section=new AA_FieldSet(uniqid(),"Oneri per personale assunto esclusivamente con rapporto di lavoro subordinato a tempo determinato");
