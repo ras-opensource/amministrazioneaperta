@@ -3147,12 +3147,12 @@ Class AA_Sier extends AA_Object_V2
 
             if(isset($params['senza_rendiconti']) && $params['senza_rendiconti']==1)
             {
-                $query.=" AND rendiconti like ''";
+                $query.=" AND (rendiconti like '' OR rendiconti not like '%,\"estremi_rendiconto\":%')";
             }
 
             if(isset($params['con_rendiconti']) && $params['con_rendiconti']==1)
             {
-                $query.=" AND rendiconti not like ''";
+                $query.=" AND rendiconti like '%,\"estremi_rendiconto\":%'";
             }
 
             if(isset($params['scrutinio_parziale']) && $params['scrutinio_parziale']==1)
@@ -23055,6 +23055,11 @@ Class AA_SierModule extends AA_GenericModule
             $rendiconti['ras']['anticipo']=AA_Utils::number_format($num,2,'.','');
         }
 
+        if(isset($_REQUEST['ras|estremi_rendiconto']))
+        {   
+            $rendiconti['ras']['estremi_rendiconto']=$_REQUEST['ras|estremi_rendiconto'];
+        }
+
         //verifica importo
         $totale=0;
         if(isset($rendiconti['seggi']['competenze']['importo']))
@@ -24159,7 +24164,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $layout->SetText("Non sono presenti assunzioni di personale a tempo determinato.");
+            $layout->SetText("<div style='margin-top: 10em;'>Non sono state presentate spese per l'assunzione di personale con contratto di lavoro subordinato a tempo determinato.</div>");
         }
         return $layout->__toString();
     }
@@ -28857,10 +28862,7 @@ Class AA_SierModule extends AA_GenericModule
         $totale_saldare_label="IMPORTO DA LIQUIDARE";
         $saldo_label="SALDO";
         $liquidato=0;
-        if(isset($rendiconti['ras']['importo']))
-        {
-            $rimborso_concesso=$rendiconti['ras']['importo'];
-        }
+
         if(isset($rendiconti['ras']['anticipo']))
         {
             $anticipo=$rendiconti['ras']['anticipo'];
@@ -30048,16 +30050,11 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $generaleLayout->addRow($val);
 
-        $value="0";
-        if(isset($rendiconti['ras']['importo']))
-        {
-            $value=$rendiconti['ras']['importo'];
-        }
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
             "gravity"=>1,
             "type"=>"clean",
-            "data"=>array("title"=>"Importo ammesso a rimborso:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
+            "data"=>array("title"=>"Importo ammesso a rimborso:","value"=>$totale_ammesso,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $generaleLayout->addRow($val);
@@ -30068,6 +30065,20 @@ Class AA_SierModule extends AA_GenericModule
             "gravity"=>1,
             "type"=>"clean",
             "data"=>array("title"=>"Seriale:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $generaleLayout->addRow($val);
+
+        $value="n.d.";
+        if(isset($rendiconti['ras']['estremi_rendiconto']))
+        {
+            $value=$rendiconti['ras']['estremi_rendiconto'];
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Estremi pec rendicontazione:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
         $generaleLayout->addRow($val);
@@ -30935,7 +30946,7 @@ Class AA_SierModule extends AA_GenericModule
             $form_data['ras|periodo_al']="";
             if(isset($cp['rendiconti']['periodo_al'])) $form_data['ras|periodo_al']=$cp['rendiconti']['periodo_al'];
             $form_data['ras|anticipo']=0;
-            $form_data['ras|importo']=0;
+            $form_data['ras|estremi_rendiconto']="";
 
             $rendiconti=$comune->GetRendiconti(true);
             foreach($rendiconti as $key=>$val)
@@ -30982,8 +30993,8 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddDateField("ras|periodo_al","Data fine",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*Scegli una data dal calendario."),false);
             $wnd->AddGenericObject($section);
 
-            $wnd->AddTextField("ras|anticipo","Acconto corrisposto",array("required"=>true,"labelWidth"=>200,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56","bottomLabel"=>"*es. 1234,56."));
-            $wnd->AddTextField("ras|importo","Importo ammesso a rimborso",array("required"=>true,"labelWidth"=>230,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56", "bottomLabel"=>"*es. 1234,56."),false);
+            $wnd->AddTextField("ras|anticipo","Acconto corrisposto",array("required"=>true,"labelWidth"=>150,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56","bottomLabel"=>"*es. 1234,56."));
+            $wnd->AddTextField("ras|estremi_rendiconto","Estremi pec rendiconto",array("labelWidth"=>200,"gravity"=>2,"placeholder"=>"es. prot.n. 1234 del 2024-03-24", "bottomLabel"=>"*Estremi protocollo di ricevimento del rendiconto inviato dal comune."),false);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
             if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
