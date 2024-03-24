@@ -804,7 +804,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         parent::__construct($params);
     }
 
-    public static function Search($params=null)
+    public static function Search($params=null, $class="")
     {
         if(static::$dbDataTable == "") return array();
  
@@ -878,7 +878,14 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
             }
         }
 
-        $query.=$where.$order;
+        //limit
+        $limit="";
+        if(isset($params['LIMIT']) && $params['LIMIT'] !="")
+        {
+            $limit=" LIMIT ".$params['LIMIT'];
+        }
+
+        $query.=$where.$order.$limit;
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
@@ -889,7 +896,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         
         $rs=$db->GetResultSet();
         $return=array();
-        $class=__CLASS__;
+        if($class=="" || !class_exists($class)) $class=__CLASS__;
 
         foreach($rs as $id=>$row)
         {
