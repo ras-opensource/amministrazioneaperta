@@ -1120,6 +1120,7 @@ class AA_GenericTableTemplateView extends AA_GenericObjectTemplateView
             if (isset($props["style"])) {
                 $this->SetStyle($props["style"], true);
             }
+            
             if (isset($props["col_sizes"])) $this->SetColSizes($props["col_sizes"]);
             if (isset($props["col_label"])) $this->SetColLabels($props["col_label"]);
             if (isset($props["align-items"])) $this->SetStyle("align-items: " . $props["align-items"], true);

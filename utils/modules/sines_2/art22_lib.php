@@ -3535,64 +3535,67 @@ class AA_Organismi extends AA_Object
                 //AA_Log::Log(__METHOD__." - ".print_r($incarichi,TRUE),100);
                 foreach($incarichi as $id_incarico=>$incarico)
                 {
-                    //dati incarichi organigramma per riepilogo
-                    $curTipoIncarico=$incarico->GetTipologia(true);
-                    $scaduto=false;
-                    $vacante=true;
-                    $opzionale=false;
-                    $ras=false;
-                    $tempo_indeterminato=false;
-                    if($incarico->IsOpzionale()) 
+                    if($incarico->IsScadenzarioEnabled())
                     {
-                        $opzionale=true;
-                    }
-                    if($incarico->IsNominaRas())
-                    {
-                        $ras=true;
-                    }
-                    if(!is_array($nomine_index[$curTipoIncarico])) $nomine_index[$curTipoIncarico]=array($incarico->getProp('ras')=>0);
-                    
-                    //if($this->GetId()==25) AA_Log::Log(__METHOD__." - curTipoIncarico: $curTipoIncarico - NominaRas: ".$incarico->getProp('ras')." - ".print_r($nomine[$curTipoIncarico][$incarico->getProp('ras')],TRUE),100);
+                        //dati incarichi organigramma per riepilogo
+                        $curTipoIncarico=$incarico->GetTipologia(true);
+                        $scaduto=false;
+                        $vacante=true;
+                        $opzionale=false;
+                        $ras=false;
+                        $tempo_indeterminato=false;
+                        if($incarico->IsOpzionale()) 
+                        {
+                            $opzionale=true;
+                        }
+                        if($incarico->IsNominaRas())
+                        {
+                            $ras=true;
+                        }
+                        if(!is_array($nomine_index[$curTipoIncarico])) $nomine_index[$curTipoIncarico]=array($incarico->getProp('ras')=>0);
+                        
+                        //if($this->GetId()==25) AA_Log::Log(__METHOD__." - curTipoIncarico: $curTipoIncarico - NominaRas: ".$incarico->getProp('ras')." - ".print_r($nomine[$curTipoIncarico][$incarico->getProp('ras')],TRUE),100);
 
-                    if(is_array($nomine[$curTipoIncarico][$incarico->getProp('ras')]) && sizeof($nomine[$curTipoIncarico][$incarico->getProp('ras')]) > $nomine_index[$curTipoIncarico][$incarico->getProp('ras')])
-                    {
-                        $curNominaIndex=0+$nomine_index[$curTipoIncarico][$incarico->getProp('ras')];
-                        if($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] < $now) 
+                        if(is_array($nomine[$curTipoIncarico][$incarico->getProp('ras')]) && sizeof($nomine[$curTipoIncarico][$incarico->getProp('ras')]) > $nomine_index[$curTipoIncarico][$incarico->getProp('ras')])
                         {
-                            $scaduto=true;
+                            $curNominaIndex=0+$nomine_index[$curTipoIncarico][$incarico->getProp('ras')];
+                            if($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] < $now) 
+                            {
+                                $scaduto=true;
+                            }
+                            $dataScadenza=$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'];
+                            if($dataScadenza == "9999-12-31") $tempo_indeterminato=true;
+                            if(!$opzionale || ($opzionale && !$scaduto))
+                            {
+                                $vacante=false;
+                                $nomine_index[$curTipoIncarico][$incarico->getProp('ras')]+=1;
+                            }
                         }
-                        $dataScadenza=$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'];
-                        if($dataScadenza == "9999-12-31") $tempo_indeterminato=true;
-                        if(!$opzionale || ($opzionale && !$scaduto))
-                        {
-                            $vacante=false;
-                            $nomine_index[$curTipoIncarico][$incarico->getProp('ras')]+=1;
-                        }
-                    }
 
-                    //nomina scaduta
-                    if($scaduto && !$vacante)
-                    {
-                        //if((!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="") || ( isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al'])) 
+                        //nomina scaduta
+                        if($scaduto && !$vacante)
                         {
-                            $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
-                            $nomina=new AA_OrganismiNomine($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['id'],$this,$this->oUser);
-                            $result[$curTipoIncarico][$index]=$nomina;    
+                            //if((!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="") || ( isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al'])) 
+                            {
+                                $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
+                                $nomina=new AA_OrganismiNomine($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['id'],$this,$this->oUser);
+                                $result[$curTipoIncarico][$index]=$nomina;    
+                            }
                         }
-                    }
-                    //-------------------------
+                        //-------------------------
 
-                    //nomina in scadenza
-                    if(!$scaduto && !$vacante)
-                    {
-                        if((isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al']) || (!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="")) 
+                        //nomina in scadenza
+                        if(!$scaduto && !$vacante)
                         {
-                            $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
-                            $nomina=new AA_OrganismiNomine($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['id'],$this,$this->oUser);
-                            $result[$curTipoIncarico][$index]=$nomina;    
+                            if((isset($params['scadenzario_al']) && $params['scadenzario_al'] !="" && $nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['data_fine'] <= $params['scadenzario_al']) || (!isset($params['scadenzario_al']) || $params['scadenzario_al'] =="")) 
+                            {
+                                $index = trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']))."|".trim(strtolower($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['codice_fiscale']));
+                                $nomina=new AA_OrganismiNomine($nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['id'],$this,$this->oUser);
+                                $result[$curTipoIncarico][$index]=$nomina;    
+                            }
                         }
+                        //-----------------------    
                     }
-                    //-----------------------
                 }
             }
         }
@@ -9275,6 +9278,147 @@ Class AA_OrganismiPublicReportTemplateGeneralPageView extends AA_GenericObjectTe
 }
 
 #Classe template per la gestione del report pdf dell'organismo (pagina generale)
+Class AA_OrganismiReportScadenzarioTemplateGeneralPageView extends AA_GenericObjectTemplateView
+{
+    public function __construct($id="AA_OrganismiPublicReportTemplateGeneralPageView",$parent=null,$organismo=null, $user=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return;
+            }
+        }
+
+        if(!($organismo instanceof AA_Organismi))
+        {
+            AA_Log::Log(__METHOD__." - organismo non valido.", 100,false,true);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$organismo);
+        
+        $this->SetStyle("width: 99%; display:flex; flex-direction: column; align-items: center;");
+
+        #Parte generale---------------------------------
+        $generale=new AA_XML_Div_Element("AA_OrganismiScadenzarioReportTemplateView-generale",$this);
+        $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%");
+
+        #Denominazione----------------------------------
+        $denominazione=new AA_XML_Div_Element("generale-tab-denominazione",$generale);
+        $denominazione->SetStyle('width:100%; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .2em; font-size: 20px; font-weight: bold');
+        $denominazione->SetText($organismo->GetDenominazione()."<br><span style='font-size: x-small; font-weight: normal'>".$organismo->GetTipologia()."</span>");
+        #-----------------------------------------------
+
+        //left panel-------
+        $left_panel= new AA_XML_Div_Element("generale-tab-left-panel",$generale);
+        $left_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; width:49.9%");
+
+        //Piva
+        $val=$organismo->GetPivaCf();
+        if($val=="") $val="n.d.";
+        $piva=new AA_XML_Div_Element("piva",$left_panel);
+        $piva->SetStyle("width: 100%; margin-bottom: .8em");
+        $piva->SetText('<span style="font-weight:bold">Partita Iva/Codice fiscale:</span><br/>'.$val);
+
+        //Sede legale
+        $val=$organismo->GetSedeLegale();
+        if($val=="") $val="n.d.";
+        $sede_legale = new AA_XML_Div_Element("sede",$left_panel);
+        $sede_legale->SetStyle("width: 100%; margin-bottom: .8em");
+        $sede_legale->SetText('<span style="font-weight:bold">Sede legale:</span>'."<br/>".$val);
+        
+        //Pec
+        $val=$organismo->GetPec();
+        if($val=="") $val="n.d.";
+        $pec = new AA_XML_Div_Element("pec",$left_panel);
+        $pec->SetStyle("width: 100%; margin-bottom: .8em");
+        $pec->SetText('<span style="font-weight:bold">PEC:</span>'."<br/>".$val); 
+
+        //Sito web
+        $val=$organismo->GetSitoWeb();
+        if($val=="") $val="n.d.";
+        $sito_web = new AA_XML_Div_Element("sito_web",$left_panel);
+        $sito_web->SetStyle("width: 100%; margin-bottom: .8em");
+        $sito_web->SetText('<span style="font-weight:bold">Sito web:</span><br/><a href="'.$val.'" target="_blank">'.$val."</a>");
+        #-------------------
+
+        //right panel ------
+        $right_panel= new AA_XML_Div_Element("generale-tab-right-panel",$generale);
+        $right_panel->SetStyle("display:flex; flex-direction: column; justify-content: space-between; align-items: left; width:49.9%");
+        
+        if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
+        {
+            //Data inizio impegno
+            $val=$organismo->GetDataInizioImpegno();
+            if($val=="0000-00-00") $val="n.d.";
+            $data_inizio = new AA_XML_Div_Element("generale-tab-right-panel-data_inizio",$right_panel);
+            $data_inizio->SetStyle("width:100%; margin-bottom: .8em");
+            $data_inizio->SetText('<span style="font-weight:bold">Data inizio impegno:</span><br/>'.$val);
+
+            //Data fine impegno
+            $val=$organismo->GetDataFineImpegno();
+            if($val=="0000-00-00") $val="n.d.";
+            if(trim($val)=="9999-12-31") $val="a tempo indeterminato";
+            $data_fine = new AA_XML_Div_Element("generale-tab-right-panel-data_fine",$right_panel);
+            $data_fine->SetStyle("width:100%; margin-bottom: .8em");
+            $data_fine->SetText('<span style="font-weight:bold">Data fine impegno:</span><br/>'.$val);
+
+            //partecipazione
+            $val=$organismo->GetPartecipazione();
+            if($val=="" || $val=="0") $val="indiretta";
+            else
+            {
+                $part=explode("/",$val);
+                $val="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
+            }
+            $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
+            $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
+            $partecipazione->SetText('<span style="font-weight:bold">Partecipazione:</span><br/>'.$val);
+        }
+        else
+        {
+            //Data inizio impegno
+            $val=$organismo->GetDataInizioImpegno();
+            if($val=="0000-00-00") $val="n.d.";
+            $data_inizio = new AA_XML_Div_Element("generale-tab-right-panel-data_inizio",$right_panel);
+            $data_inizio->SetStyle("width:100%; margin-bottom: .8em");
+            $data_inizio->SetText('<span style="font-weight:bold">Data costituzione:</span><br/>'.$val);
+
+            //Data fine impegno
+            $val=$organismo->GetDataFineImpegno();
+            if($val=="0000-00-00") $val="n.d.";
+            if(trim($val)=="9999-12-31") $val="a tempo indeterminato";
+            $data_fine = new AA_XML_Div_Element("generale-tab-right-panel-data_fine",$right_panel);
+            $data_fine->SetStyle("width:100%; margin-bottom: .8em");
+            $data_fine->SetText('<span style="font-weight:bold">Data cessazione:</span><br/>'.$val);
+        }
+
+        //Funzioni attribuite
+        $val=$organismo->GetFunzioni();
+        if($val=="") $val="n.d.";
+        $funzioni = new AA_XML_Div_Element("funzioni",$generale);
+        $funzioni->SetStyle("width: 100%; margin-bottom: .8em; border-top: 1px solid gray; text-align: left;");
+        $funzioni->SetText('<span style="font-weight:bold">Funzioni attribuite:</span><br>'.$val);
+
+        //note
+        $note=new AA_XML_Div_Element("generale-tab-note",$generale);
+        $note->SetStyle('width:100%; border-top: 1px solid gray; margin-bottom: .8em;text-align: left;');
+        $note->SetText(nl2br($organismo->GetNote()));
+        #-------------------
+
+        //legenda
+        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+        $this->SetText($footer,false);
+    }
+}
+
+#Classe template per la gestione del report pdf dell'organismo (pagina generale)
 Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemplateView
 {
     public function __construct($id="AA_OrganismiFullReportTemplateGeneralPageView",$parent=null,$organismo=null, $user=null)
@@ -9858,12 +10002,23 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
         }
         
         $nomine=$organismo->GetNomineScadenzario($params_nomine);
+
+        $organigrammi=$organismo->GetOrganigrammi();
+        $organigrammi_scadenzario=array();
+        foreach($organigrammi as $id=>$curOrganigramma)
+        {
+            if($curOrganigramma->IsScadenzarioEnabled()) $organigrammi_scadenzario[$id]=$curOrganigramma;
+        }
+
         $nomine_list=array();
         
-        foreach($nomine as $nomina)
+        foreach($nomine as $tipoIncarico=>$nomina)
         {
             foreach($nomina as $curNomina)
             {
+                $organigramma_label="";
+                $tipo_organigramma="";
+
                 $datafine=new DateTime($curNomina->GetDataFine());
                 $datainizio=new DateTime($curNomina->GetDataInizio());
                 
@@ -9904,14 +10059,80 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                 
                 if($view)
                 {
+                    //recupera l'organigramma di cui fa parte
+                    foreach($organigrammi_scadenzario as $id=>$curOrganigramma)
+                    {
+                        $incarichi=$curOrganigramma->GetIncarichi();
+                        foreach($incarichi as $curIncarico)
+                        {
+                            if($curIncarico->IsNominaRas() && $curIncarico->GetTipologia(true)==$curNomina->GetTipologia(true)) 
+                            {
+                                $organigramma_label=$tipo_organigramma=$curOrganigramma->GetTipologia();
+                            }
+
+                            if($organigramma_label!="") break;
+                        }
+                        if($organigramma_label!="") break;
+                    }
+
+                    $dati=array();
+                                        
                     $nomina_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
-                    
+                    $dati['nome']=$curNomina->GetNome()." ".$curNomina->GetCognome();
+
+                    if($organigramma_label !="")
+                    {
+                        $organigramma_label="<div><span style='font-weight:900; font-size:larger'>".$organigramma_label."</span></div>";
+                    }
                     //AA_Log::Log(__METHOD__." - inserisco: ".$nomina_label,100);
-                    if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
+                    //if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
                     $nominaRas="";
-                    if($curNomina->IsNominaRas()) $nominaRas="<div><span style='font-size: smaller'>nomina Ras</span></div>";
-                    if(!$curNomina->IsFacenteFunzione()) $nomine_list[$index][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div>".$label_scadenza.$curNomina->GetDataFine()." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
-                    else $nomine_list[$index][]="<div class='AA_Label AA_Label_LightYellow' style='margin-right: 1em; margin-bottom:1em'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div><span>facente funzione dal:</span><br/><span>".$curNomina->GetDataInizio()."</span> <span style='font-size: smaller'>(".$data_scadenzario->diff($datainizio)->format("%a")." gg)</span></div></div>";
+                    if($curNomina->IsNominaRas()) 
+                    {
+                        $nominaRas="<div style='margin-top: .5em;'><span style='font-size: smaller'>Nomina Ras</span>";
+                        $dati['ras']=1;
+                    }
+                    else 
+                    {
+                        $dati['ras']=0;
+                        $nominaRas="<div style='margin-top: .5em;'>";
+                    }
+
+                    if($curNomina->GetEstremiProvvedimento() !="")
+                    {
+                        if($curNomina->IsNominaRas()) $nominaRas.="<br>";
+                        $nominaRas.="<span style='font-size: smaller'>".$curNomina->GetEstremiProvvedimento()."</span></div>";
+                        $dati['estremi']=$curNomina->GetEstremiProvvedimento();
+                    }
+                    else
+                    {
+                        $nominaRas.="</div>";
+                        $dati['estremi']="";
+                    }
+
+                    if(!$curNomina->IsFacenteFunzione()) 
+                    {
+                        $nomine_list[$index][$tipo_organigramma]['text'].="<div class='AA_Label ".$label_class."' style='margin-right: 1em; margin-bottom:1em;font-size:larger; padding:10px'>".$organigramma_label."<div style='font-weight: 900; margin-top: .5em'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>$nominaRas<div style='margin-top: .5em'>".$label_scadenza.$curNomina->GetDataFine()." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
+                        
+                        $dati['tipo_nomina']=$curNomina->GetTipologia();
+                        $dati['ff']=0;
+                        $dati['cessazione']="<div style=''>".date("d-m-Y",strtotime($curNomina->GetDataFine()))." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div>";
+
+                        if(!isset($nomine_list[$index][$tipo_organigramma]['struct'])) $nomine_list[$index][$tipo_organigramma]['struct']=array();
+                        $nomine_list[$index][$tipo_organigramma]['struct'][]=$dati;
+                    }
+                    else
+                    {
+
+                        $dati['tipo_nomina']=$curNomina->GetTipologia();
+                        $dati['ff']=1;
+                        $dati['cessazione']="<div style=''>".date("d-m-Y",strtotime($curNomina->GetDataFine()))." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div>";
+
+                        $nomine_list[$index][$tipo_organigramma]['text'].="<div class='AA_Label AA_Label_LightYellow' style='margin-right: 1em; margin-bottom:1em;font-size:larger; padding:10px'>".$organigramma_label."<div style='font-weight: 900; margin-top: .5em'>".$curNomina->GetTipologia()."<br><span style='font-weight:normal;font-size:smaller'>(facente funzione)</span></div><div>".$nomina_label."</div>$nominaRas<div style='margin-top: .5em'>".$label_scadenza.$curNomina->GetDataFine()." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
+                        
+                        if(!isset($nomine_list[$index][$tipo_organigramma]['struct'])) $nomine_list[$index][$tipo_organigramma]['struct']=array();
+                        $nomine_list[$index][$tipo_organigramma]['struct'][]=$dati;
+                    }
                 }
             }
         }
@@ -9921,36 +10142,76 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
         else $mese="mesi";
         $data=date_format($data_scadenzario,"Y-m-d");
 
+        $table_colors["in_corso"]="AA_Label_LightGreen";
+        $table_colors["in_scadenza"]="AA_Label_LightYellow";
+        $table_colors["recenti"]="AA_Label_LightOrange";
+        $table_colors["cessate"]="AA_Label_LightRed";
+
+        $box=array();
+        $box["in_corso"]=new AA_XML_Div_Element("AA_OrganismiReportScadenzarioNomineTableTemplateView_label_in_corso".$organismo->GetId(),$this);
+        $box["in_scadenza"]=new AA_XML_Div_Element("AA_OrganismiReportScadenzarioNomineTableTemplateView_label_in_scadenza".$organismo->GetId(),$this);
+        $box["recenti"]=new AA_XML_Div_Element("AA_OrganismiReportScadenzarioNomineTableTemplateView_label_recenti".$organismo->GetId(),$this);
+        $box["cessate"]=new AA_XML_Div_Element("AA_OrganismiReportScadenzarioNomineTableTemplateView_label_cessate".$organismo->GetId(),$this);
+
         foreach($nomine_list as $index=>$x)
         {     
             $result="";       
             $title="";
 
-            foreach($x as $y)
+            $curRow=0;
+            foreach($x as $tipo_organigramma=>$y)
             {
-                $result.=$y;
+                $table_data=new AA_GenericTableTemplateView($id,$box[$index],$organismo,array("evidentiate-rows"=>false,"title"=>"<div style='padding: 5px; font-size:smaller; background-color: #fff; '>".$tipo_organigramma."</div>","border"=>"1px solid gray;","style"=>"margin-bottom: 1em; margin-top: 1em;"));
+                //$table_data->SetClass($table_colors[$index]);
+                $table_data->SetColSizes(array("30","20","20","30"));
+                $table_data->SetCellPadding("5px");
+                $table_data->SetHeaderLabels(array("<div style='text-align: left'>Incarico</div>","<div style='text-align: left'>Nome e cognome</div>","Data cessazione", "<div style='text-align: left'>estremi atto di nomina</div>"));
+                $curRow=1;
+                foreach($y['struct'] as $val)
+                {
+                    $tipo_nomina=$val['tipo_nomina'];
+                    if($val['ff']) $tipo_nomina.=" (f.f.)";
+                    if($val['ras']) $tipo_nomina.="<br><span style='font-size:smaller'>nomina ras</span>";
+                    $table_data->SetCellText($curRow,0,$tipo_nomina);
+                    $table_data->SetCellText($curRow,1,$val['nome']);
+                    $table_data->SetCellText($curRow,2,$val['cessazione'],"center");
+                    $table_data->SetCellText($curRow,3,$val['estremi']);
+                
+                    $curRow+=1;
+                }
+               
+                $result.=$y['text'];
             }
             
             if($index=="in_corso")
             {
-                $title="<div>Nomine <b>in corso</b> che <b>scadranno tra più di ".$parametri['finestra_temporale']." $mese</b> a far data del ".$data.":</div>";
+                $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
+                //$box[$index]->SetClass($table_colors[$index]);
+                $box[$index]->SetText("<div style='font-size: larger'>Nomine <span style='color: red; font-weight: bold'>in corso che scadranno tra più di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
             
             if($index=="in_scadenza") 
             {
-                $title= "<div>Nomine <b>in corso</b> che <b>scadranno entro ".$parametri['finestra_temporale']." $mese</b> a far data del ".$data.":</div>";
+                $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
+                //$box[$index]->SetClass($table_colors[$index]);
+                $box[$index]->SetText("<div style='font-size: larger'>Nomine <span style='color: red; font-weight: bold'>in corso che scadranno entro ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
 
             if($index=="recenti")
             {
-                $title="<div>Nomine <b>scadute da meno di ".$parametri['finestra_temporale']." $mese</b> a far data del ".$data.":</div>";
+                $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
+                //$box[$index]->SetClass($table_colors[$index]);
+                $box[$index]->SetText("<div style='font-size: larger'>Nomine <span style='color: red; font-weight: bold'>scadute da meno di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
             
             if($index=="scadute") 
             {
-                $title="<div>Nomine <b>scadute da più di ".$parametri['finestra_temporale']." $mese</b> a far data del ".$data.":</div>";
+                $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
+                //$box[$index]->SetClass($table_colors[$index]);
+                $box[$index]->SetText("<div style='font-size: larger'>Nomine <span style='color: red; font-weight: bold'>scadute da più di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
 
+            /*
             if($title != "")
             {
                 $table=new AA_XML_Div_Element("AA_OrganismiReportScadenzarioNomineTableTemplateView_label_".$index."_".$organismo->GetId(),$this);
@@ -9959,8 +10220,9 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
 
                 $table=new AA_XML_Div_Element("AA_OrganismiReportScadenzarioNomineTableTemplateView_items_".$index."_".$organismo->GetId(),$this);
                 $table->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 10mm; gap: 1em 1em");
-                $table->SetText($result);
-            }
+                $table->SetText($table_data->__toString());
+                //$table->SetText($result);
+            }*/
         }
     }
 }
