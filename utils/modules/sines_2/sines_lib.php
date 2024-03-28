@@ -674,17 +674,17 @@ Class AA_SinesModule extends AA_GenericModule
                     $eta_alert="";
                     if($view && $curNomina->IsOver65())
                     {
-                            $eta_alert='<span class="mdi mdi-alert">';
+                            //$eta_alert='<span class="mdi mdi-alert">';
                     }
 
                     if($view)
                     {
                         $nomina_label=$eta_alert.$curNomina->GetNome()." ".$curNomina->GetCognome();
-                        if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
+                        //if($curNomina->GetCodiceFiscale() !="") $nomina_label.=" <span style='font-size: smaller'>(".trim($curNomina->GetCodiceFiscale()).")</span>";
                         $nominaRas="";
                         if($curNomina->IsNominaRas()) $nominaRas="<div><span style='font-size: smaller'>nomina Ras</span></div>";
-                        if(!$curNomina->IsFacenteFunzione()) $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em;'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>".$nominaRas."<div>".$label_scadenza."<br/><span style='font-size: smaller'>".$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
-                        else $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label AA_Label_LightYellow' style='margin-right: 1em;'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>".$nominaRas."<div> facente funzione dal:<br/><span style='font-size: smaller'>".$curNomina->GetDataInizio()." (".$data_scadenzario->diff($datainizio)->format("%a")." gg)</span></div></div>";
+                        if(!$curNomina->IsFacenteFunzione()) $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label ".$label_class."' style='margin-right: 1em; height: 90%; min-width:170px;display:flex; justify-content:space-between; align-items:center;flex-direction:column'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>".$nominaRas."<div style='text-align: center'><span style='font-size:smaller;'>".$label_scadenza."</span><br/><span style='font-size: smaller'>".$curNomina->GetDataFine()." (".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
+                        else $nomine_list[$curNomina->GetTipologia()][]="<div class='AA_Label AA_Label_LightYellow' style='margin-right: 1em;height: 90%;min-width:170px; display:flex; justify-content:space-between; align-items:center;flex-direction:column'><div style='font-weight: 900'>".$curNomina->GetTipologia()."</div><div>".$nomina_label."</div>".$nominaRas."<div> facente funzione dal:<br/><span style='font-size: smaller'>".$curNomina->GetDataInizio()." (".$data_scadenzario->diff($datainizio)->format("%a")." gg)</span></div></div>";
                     }
                 }
                 //$curNomina=current($nomina);
@@ -4203,7 +4203,7 @@ Class AA_SinesModule extends AA_GenericModule
             foreach($incarichi as $id_incarico=>$incarico)
             {
                 //dati incarichi organigramma per riepilogo
-                $riepilogo_incarico_label="<b>".$incarico->GetTipologia()."</b><br/>";
+                $riepilogo_incarico_label="<div style='display:flex;flex-direction: column; align-items:center'><b>".$incarico->GetTipologia()."</b>";
                 $curTipoIncarico=$incarico->GetTipologia(true);
                 $scaduto=false;
                 $vacante=true;
@@ -4239,30 +4239,32 @@ Class AA_SinesModule extends AA_GenericModule
                     if($dataScadenza == "9999-12-31") $tempo_indeterminato=true;
                     if(!$opzionale || ($opzionale && !$scaduto))
                     {
-                        $riepilogo_incarico_label.="<p>".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']."</p>";
+                        $riepilogo_incarico_label.="<span>".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['nome']." ".$nomine[$curTipoIncarico][$incarico->getProp('ras')][$curNominaIndex]['cognome']."</span></div>";
                         $vacante=false;
                         $nomine_index[$curTipoIncarico][$incarico->getProp('ras')]+=1;
                     }
                 }
-                if($vacante) $riepilogo_incarico_label.="<p>vacante</p>";
-                if($incarico->IsNominaRas()) $riepilogo_incarico_label.="<span style='font-size: smaller;'>nomina RAS</span>&nbsp;";
+                if($vacante) $riepilogo_incarico_label.="<span>vacante</span></div>";
+                $riepilogo_incarico_label.="<div style='display:flex;align-items:center;flex-direction:column'>";
+                if($incarico->IsNominaRas()) $riepilogo_incarico_label.="<span style='font-size: smaller;'>nomina RAS</span>";
                 if($opzionale) 
                 {
-                    $riepilogo_incarico_label.="<span style='font-size: smaller;'>(opzionale)</span>&nbsp;";
+                    $riepilogo_incarico_label.="<span style='font-size: smaller;'>(opzionale)</span>";
                 }
 
-                if($scaduto && !$vacante && !$facenteFunzione) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>cessato il: ".$dataScadenza."</span>";
-                if(!$scaduto && !$vacante && !$tempo_indeterminato && !$facenteFunzione) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>cessa il: ".$dataScadenza."</span>";
-                if($facenteFunzione) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>facente funzione</span><br/><span style='font-size: smaller;'>dal: ".$dataInizio."</span>";
-                if($tempo_indeterminato && !$facenteFunzione) $riepilogo_incarico_label.="<br/><span style='font-size: smaller;'>a tempo indeterminato</span>";
-                
+                if($scaduto && !$vacante && !$facenteFunzione) $riepilogo_incarico_label.="<span style='font-size: smaller;'>cessato il: ".$dataScadenza."</span>";
+                if(!$scaduto && !$vacante && !$tempo_indeterminato && !$facenteFunzione) $riepilogo_incarico_label.="<span style='font-size: smaller;'>cessa il: ".$dataScadenza."</span>";
+                if($facenteFunzione) $riepilogo_incarico_label.="<span style='font-size: smaller;'>facente funzione</span><br/><span style='font-size: smaller;'>dal: ".$dataInizio."</span>";
+                if($tempo_indeterminato && !$facenteFunzione) $riepilogo_incarico_label.="<span style='font-size: smaller;'>a tempo indeterminato</span>";
+                $riepilogo_incarico_label.="</div>";
+
                 if($ras) $labelTheme="AA_Label_LightGreen";
                 else $labelTheme="AA_Label_LightBlue";
                 if($vacante) $labelTheme="AA_Label_LightYellow";
                 if($opzionale && $vacante) $labelTheme="AA_Label_LightOrange";
                 if($scaduto && !$opzionale) $labelTheme="AA_Label_LightRed";
                 if($facenteFunzione) $labelTheme="AA_Label_LightYellow";
-                $riepilogo_data_item['incarichi'].="<div class='AA_Label $labelTheme' style='text-align: center; margin-right: 5px;'>".$riepilogo_incarico_label."</div>";
+                $riepilogo_data_item['incarichi'].="<div class='AA_Label $labelTheme' style='display:flex;justify-content:space-between; align-items:center; flex-direction:column; text-align: center; margin-right: 5px;'>".$riepilogo_incarico_label."</div>";
                 //-------------------------
 
                 //Dati tabella
