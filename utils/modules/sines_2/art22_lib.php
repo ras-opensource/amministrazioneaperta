@@ -10187,28 +10187,28 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
             {
                 $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
                 //$box[$index]->SetClass($table_colors[$index]);
-                $box[$index]->SetText("<div style='font-size: larger'>Nomine <span style='color: red; font-weight: bold'>in corso che scadranno tra più di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
+                $box[$index]->SetText("<div style='font-size: larger'>Incarichi <span style='color:  #138d75; font-weight: bold'> che cesseranno tra più di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
             
             if($index=="in_scadenza") 
             {
                 $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
                 //$box[$index]->SetClass($table_colors[$index]);
-                $box[$index]->SetText("<div style='font-size: larger'>Nomine <span style='color: red; font-weight: bold'>in corso che scadranno entro ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
+                $box[$index]->SetText("<div style='font-size: larger'>Incarichi <span style='color: #f39c12; font-weight: bold'> che cesseranno entro ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
 
             if($index=="recenti")
             {
                 $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
                 //$box[$index]->SetClass($table_colors[$index]);
-                $box[$index]->SetText("<div style='font-size: larger'>Nomine <span style='color: red; font-weight: bold'>scadute da meno di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
+                $box[$index]->SetText("<div style='font-size: larger'>Incarichi <span style='color: red; font-weight: bold'>cessati da meno di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
             
             if($index=="scadute") 
             {
                 $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
                 //$box[$index]->SetClass($table_colors[$index]);
-                $box[$index]->SetText("<div style='font-size: larger'>Nomine <span style='color: red; font-weight: bold'>scadute da più di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
+                $box[$index]->SetText("<div style='font-size: larger'>Incarichi <span style='color: red; font-weight: bold'>cessati da più di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
 
             /*

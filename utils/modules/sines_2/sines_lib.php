@@ -9482,7 +9482,7 @@ Class AA_SinesModule extends AA_GenericModule
         $filename.="-".date("YmdHis");
         $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
         
-        $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
+        $doc->SetDocumentStyle("font-family: 'Roboto', verdana, sans-serif; font-size: 3mm;");
         $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
         $curRow=0;
         $rowForPage=1;
@@ -9500,7 +9500,8 @@ Class AA_SinesModule extends AA_GenericModule
         $curPage->ShowPageNumber(false);
 
         //Intestazione
-        $intestazione="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Scadenzario nomine Organismi RAS</div>";
+        $intestazione="<div style='width: 100%; text-align: center; font-size: 32; font-weight: bold; margin-bottom: 2em;'>SINES<br><span style='font-size: smaller;font-weight: normal'>Sistema informativo Enti e Societa'</span></div>";
+        $intestazione.="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Estratto scadenzario incarichi</div>";
         if($tipo_organismo !="") 
         {
             $intestazione.="<div style='width: 100%; text-align: center; font-size: 18; font-weight: bold;'>".$tipo[$tipo_organismo]."</div>";
@@ -9521,7 +9522,7 @@ Class AA_SinesModule extends AA_GenericModule
         #---------------------------------------
 
         //Imposta il titolo per le pagine successive
-        $doc->SetTitle("Scadenzario nomine Organismi RAS- report generato il ".date("Y-m-d"));
+        $doc->SetTitle("SINES - Estratto scadenzario incarichi Organismi RAS- report generato il ".date("Y-m-d"));
   
         $indice=array();
         $lastPage=$count/$rowForPage+$curNumPage;
@@ -9581,7 +9582,7 @@ Class AA_SinesModule extends AA_GenericModule
                 if($vociCount%2 > 0)
                 {
                   $dati=explode("|",$data);
-                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a style='text-decoration:none' href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a style='text-decoration:none' href='#".$id."'>pag. ".$dati[0]."</a></div>";
                   $curPage_row.="</div>";
                   if($vociCount == (sizeof($indice)-1)) $curPage->SetContent($curPage_row);
                   $curRow++;
@@ -9595,7 +9596,7 @@ Class AA_SinesModule extends AA_GenericModule
                   else $bgColor="";
                   $curPage_row.="<div style='display:flex; ".$rowContentWidth." align-items: center; justify-content: space-between; text-align: center; padding: .3mm; min-height: 9mm;".$bgColor."'>";
                   $dati=explode("|",$data);
-                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a href='#".$id."'>pag. ".$dati[0]."</a></div>";
+                  $curPage_row.="<div style='width:40%;text-align: left;padding-left: 10mm'><a style='text-decoration:none' href='#".$id."'>".$dati['1']."</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a style='text-decoration:none' href='#".$id."'>pag. ".$dati[0]."</a></div>";
 
                   //ultima voce
                   if($vociCount == (sizeof($indice)-1))

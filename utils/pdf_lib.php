@@ -420,9 +420,9 @@ Class AA_PDF_Document
             @media print
             {
                 div.AA_PDF_Page_box {display: flex; flex-direction: column; align-items: stretch; page-break-after: always; width: %PAGEBOX_WIDTH%%PDF_UNIT%;height: %PAGEBOX_HEIGHT%%PDF_UNIT%; margin: %MARGIN_TOP%%PDF_UNIT% %MARGIN_LEFT%%PDF_UNIT% %MARGIN_BOTTOM%%PDF_UNIT% %MARGIN_RIGHT%%PDF_UNIT%;}
-                div.AA_PDF_Page_footer_box {padding: 1mm; height: %FOOTER_HEIGHT%%PDF_UNIT%;}
-                div.AA_PDF_Page_header_box {padding: 1mm; height: %HEADER_HEIGHT%%PDF_UNIT%;}
-                div.AA_PDF_Page_corpo_box {flex: 1; padding: 1mm; height: %CORPO_HEIGHT%%PDF_UNIT%}
+                div.AA_PDF_Page_footer_box {padding: 1mm; height: %FOOTER_HEIGHT%%PDF_UNIT%; min-height: %FOOTER_HEIGHT%%PDF_UNIT%;}
+                div.AA_PDF_Page_header_box {padding: 1mm; margin-top: 5mm; height: %HEADER_HEIGHT%%PDF_UNIT%; min-height: %HEADER_HEIGHT%%PDF_UNIT%;}
+                div.AA_PDF_Page_corpo_box {flex: 1; padding: 1mm; height: %CORPO_HEIGHT%%PDF_UNIT%; min-height: %HEADER_HEIGHT%%PDF_UNIT%;}
             }
         </style>
         %HEAD_CONTENT%
