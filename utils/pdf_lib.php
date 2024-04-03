@@ -514,7 +514,7 @@ Class AA_PDF_Document
     
     public function GetFilePath()
     {
-        if(!is_file($this->dest_dir."/".$this->id.".pdf"))
+        if(is_file($this->dest_dir."/".$this->id.".pdf"))
         {
             return $this->dest_dir."/".$this->id.".pdf";
         }

@@ -124,6 +124,13 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                     this.refreshCurSection();
                 }
 
+                //Verifica se ci sono ulteriori azioni da intraprendere
+                if (AA_MainApp.utils.isDefined(result.status.action)) {
+                    console.log(this.name + "doTask", result.status.action);
+                    if(AA_MainApp.utils.isDefined(result.status.action_params)) AA_MainApp.utils.callHandler(result.status.action, JSON.parse(result.status.action_params), this.id);
+                    else AA_MainApp.utils.callHandler(result.status.action, null, this.id);
+                }
+
                 return true;
             } else {
                 console.error(this.name + ".doTask", result.error.value);
@@ -1157,7 +1164,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
 
                         //Verifica se ci sono ulteriori azioni da intraprendere
                         if (AA_MainApp.utils.isDefined(result.status.action)) {
-                            console.log(this.name + "eventHandlers.defaultHandlers.saveData", result.status);
+                            console.log(this.name + "eventHandlers.defaultHandlers.saveData", result.status.action);
                             if(AA_MainApp.utils.isDefined(result.status.action_params)) AA_MainApp.utils.callHandler(result.status.action, JSON.parse(result.status.action_params), this.id);
                             else AA_MainApp.utils.callHandler(result.status.action, null, this.id);
                         }
@@ -1318,6 +1325,10 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 } else {
                     console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.pdfPreview", result.error.value, this);
                 }
+            }
+            else
+            {
+                console.error("eventHandlers.defaultHandlers.pdfPreview - url non definita",params);
             }
         } catch (msg) {
             console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.pdfPreview", msg, this);

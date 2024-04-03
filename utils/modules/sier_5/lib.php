@@ -5696,7 +5696,10 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierComuneRendicontiExportRasPdf");
             $taskManager->RegisterTask("GetSierComuneRendicontiImportoAmmessoModifyDlg");
             $taskManager->RegisterTask("UpdateSierComuneRendicontiImportoAmmesso");
-
+            $taskManager->RegisterTask("DoSorteggioComuniRendicontazione");
+            $taskManager->RegisterTask("GetSierConfirmDeleteSorteggioDocDlg");
+            $taskManager->RegisterTask("DeleteSorteggioComuniRendicontazione");
+            
             //feed
             $taskManager->RegisterTask("GetSierFeedRisultatiAffluenza");
             $taskManager->RegisterTask("GetSierFeedCandidati");
@@ -11575,7 +11578,74 @@ Class AA_SierModule extends AA_GenericModule
         ));
         $section->AddGenericObject($btn,false);
 
+        //corpo elettorale
+        $btn=new AA_JSON_Template_Generic($id."_ExportCorpoElettoraleComuni_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Corpo Elettorale",
+            "align"=>"right",
+            "width"=>150,
+            "tooltip"=>"Esporta i dati del corpo elettorale di tutti i Comuni in formato csv",
+            "click"=>"AA_MainApp.utils.callHandler('ExportCorpoElettoraleCSV', {task:\"ExportCorpoElettoraleComuniCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+
+        $section->AddSpacer(false);
+        $section->AddGenericObject($btn,false);
+
         $wnd->AddGenericObject($section);
+
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        {
+            //rendiconti
+            $section=new AA_FieldSet($id."_Section_CP_Rendiconti","Sorteggio dei Comuni per la verifica dei rendiconti");
+            if(isset($cp['estrazione_comuni']))
+            {
+                $btn=new AA_JSON_Template_Generic("",array(
+                    "view"=>"button",
+                    "type"=>"icon",
+                    "icon"=>"mdi mdi-eye",
+                    "label"=>"consulta il risultato del sorteggio",
+                    "align"=>"right",
+                    "width"=>280,
+                    "tooltip"=>"Consulta il documento relativo all'estrazione dei comuni sorteggiati per il controllo della rendicontazione.",
+                    "click"=>'AA_MainApp.utils.callHandler("pdfPreview", { url: "'.AA_Const::AA_WWW_ROOT."/storage.php?object=".$cp['estrazione_comuni'].'" }, "'.$this->GetId().'");'
+                ));
+
+                $section->AddGenericObject($btn);
+                $section->AddSpacer(false);
+
+                $btn=new AA_JSON_Template_Generic("",array(
+                    "view"=>"button",
+                    "type"=>"icon",
+                    "icon"=>"mdi mdi-trash-can",
+                    "label"=>"rimuovi",
+                    "align"=>"right",
+                    "width"=>150,
+                    "tooltip"=>"Elimina il documento relativo all'estrazione dei comuni sorteggiati per il controllo della rendicontazione.",
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierConfirmDeleteSorteggioDocDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+                ));
+                $section->AddGenericObject($btn,false);
+            }
+            else
+            {
+                $btn=new AA_JSON_Template_Generic("",array(
+                    "view"=>"button",
+                    "type"=>"icon",
+                    "icon"=>"mdi mdi-dice-multiple",
+                    "label"=>"effettua il sorteggio dei comuni",
+                    "align"=>"right",
+                    "width"=>280,
+                    "tooltip"=>"Effettua l'estrazione dei comuni sorteggiati per il controllo della rendicontazione.",
+                    "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"DoSorteggioComuniRendicontazione\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+                ));
+
+                $section->AddGenericObject($btn);
+                $section->AddSpacer(false);
+            }
+            
+            $wnd->AddGenericObject($section,false);
+        }
 
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
@@ -11623,6 +11693,393 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetSaveTask("UpdateSierControlPannel");
         
         return $wnd;
+    }
+
+
+    //Template pdf sorteggio comuni
+    protected function Template_BuildSorteggioComuniRendicontazione($object=null)
+    {
+        include_once "pdf_lib.php";
+
+        $count = 1;
+
+        $rowsForPage=1;
+        $vociIndice=array(
+            0=>"Estrazione"
+        );
+
+        //nome file
+        $filename = "estrazione";
+        $filename .= "-" . date("YmdHis");
+        $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
+
+        $doc->SetHeaderHeight("25mm");
+        $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
+        $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
+        $curRow = 0;
+        $rowForPage = $rowsForPage;
+        $lastRow = $rowForPage - 1;
+        $curPage = null;
+        $curPage_row = "";
+        $curNumPage = 0;
+        $maxItemHeight=intval(100/$rowsForPage);
+        //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
+        //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
+        $rowContentWidth = "width: 99.8%;";
+
+        if ($count > 1) 
+        {
+            //pagina di intestazione (senza titolo)
+            $curPage = $doc->AddPage();
+            $curPage->SetCorpoStyle("display: flex; flex-direction: column; justify-content: center; align-items: center; padding:0;");
+            $curPage->SetFooterStyle("border-top:.2mm solid black");
+            $curPage->ShowPageNumber(false);
+
+            //Intestazione
+            $intestazione = "<div style='width: 100%; text-align: center; font-size: 28; font-weight: bold; margin-bottom: 2em;'>Titolo</div>";
+            $intestazione .= "<div style='width: 100%; text-align: center; font-size: x-small; font-weight: normal;margin-top: 3em;'>documento generato il " . date("Y-m-d") . "</div>";
+            
+            $curPage->EnableFooter(true);
+            $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." </div>");
+            $curPage->SetContent($intestazione);
+            $curNumPage++;
+
+            $doc->SetTitle("<div style='display:flex;justify-content:space-around;align-items:center;flex-direction:column; height:70%;width:100%;padding-top: 1em'><span style='font-size:18px'>Comune di ".$comune->GetProp("denominazione")."</span><hr style='width:25%'><div><span>".$title."</span><br><span style='font-weight:normal; font-size:smaller'>" . $object->GetName()."</span></div></div>");
+            if($index)
+            {
+                //pagine indice (50 nominativi per pagina)
+                $indiceNumVociPerPagina = 20;
+                for ($i = 0; $i < $count / $indiceNumVociPerPagina; $i++) 
+                {
+                    $curPage = $doc->AddPage();
+                    $curPage->SetCorpoStyle("display: flex; flex-direction: column; padding:0;");
+                    $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>seriale: ".$serial." - documento generato il " . date("Y-m-d")."</div>");
+                    $curNumPage++;
+                }
+            }
+            $curPage=null;
+            #---------------------------------------
+        }
+
+        //Imposta il titolo per le pagine successive
+        
+        $doc->SetTitle("SIER (Sistema Informativo Elettorale Regionale)");
+
+        $indice = array();
+        $lastPage = $count / $rowForPage + $curNumPage;
+
+        //Rendering pagine
+        for($i=0;$i<$count;$i++)
+        {
+            //inizia una nuova pagina (intestazione)
+            if ($curRow == $rowForPage) $curRow = 0;
+            if ($curRow == 0) {
+                $border = "";
+                if ($curPage != null) 
+                {
+                    if($curPage_row !="")
+                    {
+                        $curPage->SetContent($curPage_row);
+                        $curPage = $doc->AddPage();
+                        $curNumPage++;
+                        $curPage_row="";
+                    }
+                }
+                else 
+                {
+                    $curPage_row="";
+                    $curPage = $doc->AddPage();
+                    $curNumPage++;
+                }
+                
+                $curPage->SetCorpoStyle("display: flex; flex-direction: column;  justify-content: flex-start; padding:0;");
+                $curPage_row = "";
+            }
+
+            if($i<3) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==4) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==(4+$numPagineRendicontiAssunzioni)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+            if($i==(4+$numPagineRendicontiAssunzioni+1)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+
+            $curPage_row .= "<div id='".$i."' style='display:flex;  flex-direction: column; width: 99.8%; height:100%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
+
+            //---------------------------------------- Estrazione ----------------------------------------------
+            if($i==0)
+            {
+                $curPage_row.= "<div style='width: 100%; font-weight:bold; font-size:18px'>".$object->GetName()."</div>";
+                $curPage_row.= "<div style='width: 100%; font-size:14px; margin-top:1em;'>Verbale sorteggio dei Comuni che sarranno sottoposti alle verifiche della rendicontazione delle spese elettorali.</div>";
+                $curPage_row.=$this->Template_RngEstrazionePage($object);
+            }
+            //-------------------------------------------------------------------------------------------------
+
+            $curPage_row .= "</div>";
+            $curPage->SetFooterContent("<div style='width: 100%; text-align: center; font-weight: normal;font-size:smaller'>documento generato il " . date("d-m-Y")."</div>");
+            $curRow++;
+        }
+        if ($curPage != null) $curPage->SetContent($curPage_row);
+        #-----------------------------------------
+
+        if ($count > 1 && $index) 
+        {
+            //Aggiornamento indice
+            $curNumPage = 1;
+            $curPage = $doc->GetPage($curNumPage);
+            $vociCount = 0;
+            $curRow = 0;
+            $bgColor = "";
+            $curPage_row = "";
+
+            foreach ($indice as $id => $data) 
+            {
+                if ($curNumPage != (int)($vociCount / $indiceNumVociPerPagina) + 1) {
+                    $curPage->SetContent($curPage_row);
+                    $curNumPage = (int)($vociCount / $indiceNumVociPerPagina) + 1;
+                    $curPage = $doc->GetPage($curNumPage);
+                    $curRow = 0;
+                    $bgColor = "";
+                }
+
+                //$indexBgColor = "#f5f5f5";
+                $indexBgColor = "#fff";
+                if ($curPage instanceof AA_PDF_Page) 
+                {
+                    //Intestazione
+                    if ($curRow == 0) $curPage_row = "<div style='width:100%;text-align: center; font-size: larger; font-weight: bold; border-bottom: 1px solid #dedede; margin-bottom: .5em; margin-top: .3em;'>Indice</div>";
+                    if ($curRow % 2) $bgColor = "background-color:$indexBgColor;";
+                    else $bgColor = "";
+                    $curPage_row .= "<div style='display:flex; " . $rowContentWidth . " align-items: center; justify-content: space-between; font-size:larger; padding: .3mm; min-height: 9mm;" . $bgColor . "'>";
+                    $dati = explode("|", $data);
+                    $curPage_row .= "<div style='width:90%;text-align: left;padding-left: 10mm'><a style='text-decoration: none' href='#" . $id . "'>" . $dati['1'] . "</a></div><div style='width:9%;text-align: right;padding-right: 10mm'><a style='text-decoration: none' href='#" . $id . "'>pag. " . $dati[0] . "</a></div>";
+                    $curPage_row .= "</div>";
+
+                    //ultima voce
+                    if ($vociCount == (sizeof($indice) - 1)) 
+                    {
+                        $curPage->SetContent($curPage_row);
+                    }
+                    $curRow++;
+                }
+
+                $vociCount++;
+            }
+        }
+
+        if(!$doc->Render(false))
+        {
+            AA_Log::Log(__METHOD__." -  errore durante la generazione del report.",100);
+        }
+        else
+        {
+            $filePath=$doc->GetFilePath();
+            //AA_Log::Log(__METHOD__." -  filePath: ".$filePath,100);    
+        }
+
+        $storage=AA_Storage::GetInstance($this->oUser);
+        if($storage->IsValid())
+        {
+            $file=$storage->AddFile($filePath,"estrazione_comuni_".date("Ymd"),"application/pdf",1);
+            
+            //elimina il file temporaneo
+            if(is_file($doc->GetFilePath()))
+            {
+                unlink($doc->GetFilePath());
+            }
+
+            if($file->IsValid()) return $file;
+            else
+            {
+                AA_Log::Log(__METHOD__." -  errore nella generazione del file relativo all'estrazione.",100);
+                return false;
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." -  storage non abilitato.",100);
+            return false;
+        }
+    }
+
+    public function Template_RngEstrazionePage($object=null)
+    {
+        $layout=new AA_XML_Div_Element(uniqid());
+        $layout->SetStyle("width:99%; height:100%;");
+
+        $start=0;
+        $end=$start+100;
+        $count=1;
+        
+        //costruisce la lista dei comuni
+        $comuni=$object->GetComuni();
+        $comuniCircoscrizione=array();
+        foreach($comuni as $id=>$curComune)
+        {
+            if(!isset($comuniCircoscrizione[$curComune->GetProp('id_circoscrizione')])) $comuniCircoscrizione[$curComune->GetProp('id_circoscrizione')]=array();
+            $comuniCircoscrizione[$curComune->GetProp('id_circoscrizione')][]=$id;
+        }
+
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        $comuniEstratti=array();
+        $limitiCircoscrizione=array(
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI=>11,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS=>3,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO=>4,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_NUORO=>8,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA=>3,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO=>4,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO=>13,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI=>10
+        );
+
+        foreach($circoscrizioni as $idCircoscrizione=>$curCircoscrizione)
+        {
+            $comuniEstratti[$idCircoscrizione]=array();
+            $count=0;
+            $from=0;
+            $to=sizeof($comuniCircoscrizione[$idCircoscrizione])-1;
+            $end=$limitiCircoscrizione[$idCircoscrizione];
+            
+            while($count<$end)
+            {
+                $num=rand($from,$to);
+                while(array_search($comuniCircoscrizione[$idCircoscrizione][$num],$comuniEstratti[$idCircoscrizione],true) !==false)
+                {
+                    $num=rand($from,$to);
+                }
+                
+                $comuniEstratti[$idCircoscrizione][]=$comuniCircoscrizione[$idCircoscrizione][$num];
+                $count++;
+            }
+        }
+        
+        if($count>($end-$start)/2) $count=1;
+        
+        $val="<div style='margin-top:1em; margin-bottom:1em;'> <ul>Si attesta che:";
+        $val.="<li>ogni Comune puo' essere estratto una sola volta e l'estrazione e' di tipo casuale;</li>";
+        foreach($limitiCircoscrizione as $idCircoscrizione=>$limit)
+        {
+            $val.="<li>sono stati estratti ".$limit." Comuni per la circoscrizione di ".$circoscrizioni[$idCircoscrizione].";</li>";
+        }
+        $val.="<li>l'estrazione e' stata effettuata in data: ".date("d-m-Y")." alle ".date("H:i").";</li>";
+        $val.="</ul></div>";
+        $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
+        $attestazione->SetStyle("text-align:justify;");
+        $attestazione->SetText($val);
+
+        $intestazione=new AA_XML_Div_Element(uniqid(),$layout);
+        $intestazione->SetStyle("text-align:center; margin-top:2em;width:99.7%; border-bottom: 1px solid #dedede");
+        $intestazione->SetText("<span style='font-weight:bold;line-height: 18px;'>Comuni estratti</span>");
+
+        $firstRow= new AA_XML_Div_Element(uniqid(),$layout);
+        $firstRow->SetStyle("width:99%; height:30%;display:flex;justify-content:space-between; align-items:start;");
+        
+        //Cagliari
+        $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI];
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI] as $curComune)
+        {
+            $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
+            $curRow++;
+        }
+        
+        //Carbonia
+        $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS];
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS] as $curComune)
+        {
+            $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
+            $curRow++;
+        }
+
+        //medio camidano
+        $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO];
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO] as $curComune)
+        {
+            $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
+            $curRow++;
+        }
+        
+        //Nuoro
+        $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_NUORO];
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_NUORO] as $curComune)
+        {
+            $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
+            $curRow++;
+        }
+
+        $secondRow= new AA_XML_Div_Element(uniqid(),$layout);
+        $secondRow->SetStyle("width:99%; height:30%;display:flex;justify-content:space-between; align-items:start;");
+
+        //Ogliastra
+        $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA];
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA] as $curComune)
+        {
+            $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
+            $curRow++;
+        }
+
+        //Olbia
+        $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO];
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO] as $curComune)
+        {
+            $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
+            $curRow++;
+        }
+
+        //Oristano
+        $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO];
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO] as $curComune)
+        {
+            $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
+            $curRow++;
+        }
+
+        //Sassari
+        $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
+        $template->SetColSizes(array("100"));
+        //$template->SetCellPadding("10px");
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI];
+        $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
+        $curRow=1;
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI] as $curComune)
+        {
+            $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
+            $curRow++;
+        }
+
+        return $layout->__toString();
     }
 
     //Template confirm reset comunicazioni comuni
@@ -11920,6 +12377,39 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetApplyButtonName("Procedi");
         $wnd->EnableResetButton(false);
         $wnd->SetSaveTask("ResetRisultatiComuni");
+        
+        return $wnd;
+    }
+
+    //Template confirm delete report sorteggio
+    public function Template_GetSierConfirmDeleteSorteggioDocDlg($object=null)
+    {
+        $id=$this->GetId()."_ConfirmDeleteSortegioDoc_Dlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione report sorteggio comuni", $this->id);
+        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+        //$form_data['id_comune']=$comune->GetProp("id");
+        
+        $wnd=new AA_GenericFormDlg($id, "Conferma eliminazione report sorteggio comuni", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(400);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>eliminera' definitvamente il report del sorteggio dei comuni ai fini della verifica della rendicontazione delle spese elettorali.</b></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("DeleteSorteggioComuniRendicontazione");
         
         return $wnd;
     }
@@ -17452,7 +17942,7 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-    //Task modifica elemento
+    //Task pannello di controllo dlg
     public function Task_GetSierControlPannelDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -17476,6 +17966,171 @@ Class AA_SierModule extends AA_GenericModule
         
         $task->SetLog($sTaskLog);
         
+        return true;
+    }
+
+    public function Task_GetSierConfirmDeleteSorteggioDocDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi sufficienti per completare l'operazione richiesta.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierConfirmDeleteSorteggioDocDlg($object),true);
+
+        return true;
+    }
+
+    //Task sorteggio comuni
+    public function Task_DoSorteggioComuniRendicontazione($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi sufficienti per completare l'operazione richiesta.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+
+        $cp=$object->GetControlPannel();
+        if(isset($cp['estrazione_comuni']))
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Estrazione gia' presente.",false);
+            $task->SetStatusAction("pdfPreview",json_encode(array("url"=>AA_Const::AA_WWW_ROOT."/storage.php?object=".$cp['estrazione_comuni'])));
+        }
+        else
+        {
+            $file=$this->Template_BuildSorteggioComuniRendicontazione($object);
+            if($file===false)
+            {
+                $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+                $task->SetError("Errore nella generazione del report di estrazione.",false);
+                return false;
+            }
+            //aggiornamento pannello dio controllo
+            if(isset($cp['estrazione_comuni']))
+            {
+                $storage=AA_Storage::GetInstance($this->oUser);
+                if($storage->IsValid())
+                {
+                    if(!$storage->DelFile($cp['estrazione_comuni']))
+                    {
+                        AA_Log::Log(__METHOD__." - eliminazione vecchio report non riuscita.",100);
+                    }
+                }
+            }
+
+            $cp['estrazione_comuni']=$file->GetFileHash();
+            $object->SetControlPannel($cp);
+            if(!$object->Update($this->oUser,true," - Aggiornamento documento risultati sorteggio comuni per la rendicontaszione"))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Errore nell'aggiornamento dell'oggetto",false);
+                return false;
+            }
+
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            //$task->SetStatusAction("pdfPreview",json_encode(array("url"=>AA_Const::AA_WWW_ROOT."/storage.php?object=".$cp['estrazione_comuni'])));
+            $task->SetStatusAction("RefreshControlPannel",json_encode(array("id"=>$object->GetId())));
+            $task->SetContent("Documento generato.",false);
+        }
+        
+        return true;
+    }
+
+    //Task sorteggio comuni
+    public function Task_DeleteSorteggioComuniRendicontazione($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi sufficienti per completare l'operazione richiesta.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+
+        $cp=$object->GetControlPannel();
+       
+        if(isset($cp['estrazione_comuni']))
+        {
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                if(!$storage->DelFile($cp['estrazione_comuni']))
+                {
+                    AA_Log::Log(__METHOD__." - eliminazione vecchio report non riuscita.",100);
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("Eliminazione vecchio report non riuscita.",false);
+                    return false;
+                }
+            }
+        }
+
+        unset($cp['estrazione_comuni']);
+        $object->SetControlPannel($cp);
+        if(!$object->Update($this->oUser,true," - Eliminazione documento risultati sorteggio comuni per la rendicontaszione"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dell'oggetto",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Report rimosso correttamente.",false);
+        $task->SetStatusAction("RefreshControlPannel",json_encode(array("id"=>$object->GetId())));
+
         return true;
     }
     
