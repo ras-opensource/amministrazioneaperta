@@ -11807,7 +11807,7 @@ Class AA_SierModule extends AA_GenericModule
             if($i==0)
             {
                 $curPage_row.= "<div style='width: 100%; font-weight:bold; font-size:18px'>".$object->GetName()."</div>";
-                $curPage_row.= "<div style='width: 100%; font-size:14px; margin-top:1em;'>Verbale sorteggio dei Comuni che sarranno sottoposti alle verifiche della rendicontazione delle spese elettorali.</div>";
+                $curPage_row.= "<div style='width: 100%; font-size:14px; margin-top:1em;'>Risultato del sorteggio dei comuni che dovranno inviare la documentazione giustificativa delle spese</div>";
                 $curPage_row.=$this->Template_RngEstrazionePage($object);
             }
             //-------------------------------------------------------------------------------------------------
@@ -11952,15 +11952,15 @@ Class AA_SierModule extends AA_GenericModule
         }
         
         if($count>($end-$start)/2) $count=1;
-        
-        $val="<div style='margin-top:1em; margin-bottom:1em;'> <ul>Si attesta che:";
-        $val.="<li>ogni Comune puo' essere estratto una sola volta e l'estrazione e' di tipo casuale;</li>";
-        foreach($limitiCircoscrizione as $idCircoscrizione=>$limit)
+        $val="<div style='margin-top:1em; margin-bottom:1em; text-align: center'>ALLEGATO 1</div>";
+        $val.="<div style='margin-top:1em; margin-bottom:1em;'>In data ".date("d-m-Y")." alle ore ".date("H:i").", tramite il sistema di sorteggio informatizzato del SIER (Sistema Informativo Elettorale Regionale), sono stati estratti i 56 comuni, di seguito elencati, il cui rendiconto delle spese elettorali sarà assoggettato a verifica della documentazione giustificativa delle spese.";
+        //$val.="<li>ogni Comune puo' essere estratto una sola volta e l'estrazione e' di tipo casuale;</li>";
+        //foreach($limitiCircoscrizione as $idCircoscrizione=>$limit)
         {
-            $val.="<li>sono stati estratti ".$limit." Comuni per la circoscrizione di ".$circoscrizioni[$idCircoscrizione].";</li>";
+            //$val.="<li>sono stati estratti ".$limit." Comuni per la circoscrizione di ".$circoscrizioni[$idCircoscrizione].";</li>";
         }
-        $val.="<li>l'estrazione e' stata effettuata in data: ".date("d-m-Y")." alle ".date("H:i").";</li>";
-        $val.="</ul></div>";
+        //$val.="<li>l'estrazione e' stata effettuata in data: ".date("d-m-Y")." alle ".date("H:i").";</li>";
+        $val.="</div>";
         $attestazione=new AA_XML_Div_Element(uniqid(),$layout);
         $attestazione->SetStyle("text-align:justify;");
         $attestazione->SetText($val);
