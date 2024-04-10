@@ -2988,6 +2988,49 @@ Class AA_Sier extends AA_Object_V2
         return $csv;
     }
 
+    public function ExportDatiComuniCSV($circoscrizione=null)
+    {
+        if(!$this->bValid)
+        {
+            return "id|id_sier|denominazione|indirizzo|contatti|risultati|affluenza|operatori|sezioni|elettori_m|elettori_f|id_circoscrizione|rendiconti|pec|comunicazioni|sezioni_ospedaliere|sezioni_ordinarie|luoghi_cura_sub100|luoghi_cura_over100|luoghi_detenzione|elettori_esteri_m|elettori_esteri_f";
+        }
+        
+        $csv="id|id_sier|denominazione|indirizzo|contatti|risultati|affluenza|operatori|sezioni|elettori_m|elettori_f|id_circoscrizione|rendiconti|pec|comunicazioni|sezioni_ospedaliere|sezioni_ordinarie|luoghi_cura_sub100|luoghi_cura_over100|luoghi_detenzione|elettori_esteri_m|elettori_esteri_f";
+        $comuni=$this->GetComuni($circoscrizione);
+        $log=$this->GetLog()->GetLog();
+        $msg=array_column($log,"msg");
+
+        //AA_Log::Log(__METHOD__." - messaggi: ".print_r($msg,true),100);
+
+        foreach($comuni as $idComune=>$curComune)
+        {
+            $csv.="\n".$idComune."|";
+            $csv.=$curComune->GetProp("id_sier")."|";
+            $csv.=$curComune->GetProp("denominazione")."|";
+            $csv.=base64_encode($curComune->GetProp("indirizzo"))."|";
+            $csv.=base64_encode($curComune->GetProp("contatti"))."|";
+            $csv.=base64_encode($curComune->GetProp("risultati"))."|";
+            $csv.=base64_encode($curComune->GetProp("affluenza"))."|";
+            $csv.=base64_encode($curComune->GetProp("operatori"))."|";
+            $csv.=$curComune->GetProp("sezioni")."|";
+            $csv.=$curComune->GetProp("elettori_m")."|";
+            $csv.=$curComune->GetProp("elettori_f")."|";
+            $csv.=$curComune->GetProp("id_circoscrizione")."|";
+            $csv.=base64_encode($curComune->GetProp("rendiconti"))."|";
+            $csv.=$curComune->GetProp("pec")."|";
+            $csv.=base64_encode($curComune->GetProp("comunicazioni"))."|";
+            $csv.=$curComune->GetProp("sezioni_ospedaliere")."|";
+            $csv.=$curComune->GetProp("sezioni_ordinarie")."|";
+            $csv.=$curComune->GetProp("luoghi_cura_sub100")."|";
+            $csv.=$curComune->GetProp("luoghi_cura_over100")."|";
+            $csv.=$curComune->GetProp("luoghi_detenzione")."|";
+            $csv.=$curComune->GetProp("elettori_esteri_m")."|";
+            $csv.=$curComune->GetProp("elettori_esteri_f");
+        }
+
+        return $csv;
+    }
+
     public function ExportCandidatiCSV($circoscrizione=null)
     {
         if(!$this->bValid) 
@@ -5549,6 +5592,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("UpdateSierControlPannel");
             $taskManager->RegisterTask("GetSierOCEmailsCSV");
             $taskManager->RegisterTask("ExportCorpoElettoraleComuniCSV");
+            $taskManager->RegisterTask("ExportDatiComuniCSV");
             $taskManager->RegisterTask("GetSierConfirmResetComunicazioniComuniDlg");
             $taskManager->RegisterTask("ResetComunicazioniComuni");
             $taskManager->RegisterTask("ResetAffluenzaComuni");
@@ -11552,15 +11596,15 @@ Class AA_SierModule extends AA_GenericModule
 
         $section=new AA_FieldSet($id."_Section_CP_ExportComuni","Export dati dei Comuni");
         //corpo elettorale
-        $btn=new AA_JSON_Template_Generic($id."_ExportCorpoElettoraleComuni_btn",array(
+        $btn=new AA_JSON_Template_Generic($id."_ExportDatiComuni_btn",array(
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-file-table",
-            "label"=>"Corpo Elettorale",
+            "label"=>"Tutto",
             "align"=>"right",
             "width"=>150,
-            "tooltip"=>"Esporta i dati del corpo elettorale di tutti i Comuni in formato csv",
-            "click"=>"AA_MainApp.utils.callHandler('ExportCorpoElettoraleCSV', {task:\"ExportCorpoElettoraleComuniCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            "tooltip"=>"Esporta tutti i dati di tutti i Comuni in formato csv",
+            "click"=>"AA_MainApp.utils.callHandler('ExportCorpoElettoraleCSV', {task:\"ExportDatiComuniCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn);
         $section->AddSpacer(false);
@@ -16746,6 +16790,13 @@ Class AA_SierModule extends AA_GenericModule
             "affluenza"=>-1,
             "operatori"=>-1,
             "sezioni"=>-1,
+            "sezioni_ordinarie"=>-1,
+            "sezioni_ospedaliere"=>-1,
+            "luoghi_cura_sub100"=>-1,
+            "luoghi_cura_over100"=>-1,
+            "luoghi_detenzione"=>-1,
+            "elettori_esteri_m"=>-1,
+            "elettori_esteri_f"=>-1,
             "elettori_m"=>-1,
             "elettori_f"=>-1,
             "id_circoscrizione"=>-1,
@@ -16792,6 +16843,41 @@ Class AA_SierModule extends AA_GenericModule
                             if($fieldName=="id_circoscrizione")
                             {
                                 $curDataValues['circoscrizione']=$circoscrizioni[intVal($csvValues[$pos])];
+                            }
+                            
+                            if($fieldName=="indirizzo")
+                            {
+                                $curDataValues['indirizzo']=base64_decode($csvValues[$pos]);
+                            }
+
+                            if($fieldName=="contatti")
+                            {
+                                $curDataValues['contatti']=base64_decode($csvValues[$pos]);
+                            }
+
+                            if($fieldName=="affluenza")
+                            {
+                                $curDataValues['affluenza']=base64_decode($csvValues[$pos]);
+                            }
+
+                            if($fieldName=="risultati")
+                            {
+                                $curDataValues['risultati']=base64_decode($csvValues[$pos]);
+                            }
+
+                            if($fieldName=="operatori")
+                            {
+                                $curDataValues['operatori']=base64_decode($csvValues[$pos]);
+                            }
+
+                            if($fieldName=="rendiconti")
+                            {
+                                $curDataValues['rendiconti']=base64_decode($csvValues[$pos]);
+                            }
+
+                            if($fieldName=="comunicazioni")
+                            {
+                                $curDataValues['comunicazioni']=base64_decode($csvValues[$pos]);
                             }
                         }
                     }
@@ -19222,6 +19308,39 @@ Class AA_SierModule extends AA_GenericModule
         {
             header('Content-Type: text/csv');
             die($object->ExportCorpoElettoraleComuniCSV());
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+    }
+
+    //Task export csv comuni
+    public function Task_ExportDatiComuniCSV($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
+        {
+            header('Content-Type: text/csv');
+            die($object->ExportDatiComuniCSV());
         }
         else
         {
@@ -31602,6 +31721,7 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($cp['rendiconti']['periodo_al'])) $form_data['ras|periodo_al']=$cp['rendiconti']['periodo_al'];
             $form_data['ras|anticipo']=0;
             $form_data['ras|estremi_rendiconto']="";
+            $form_data['ras|allegati']=0;
 
             $rendiconti=$comune->GetRendiconti(true);
             foreach($rendiconti as $key=>$val)
