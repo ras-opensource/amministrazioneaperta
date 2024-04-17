@@ -28519,7 +28519,7 @@ Class AA_SierModule extends AA_GenericModule
 
             $section=new AA_FieldSet($id."_Section_DatiSezione","Luoghi di cura");
             $section->AddTextField("luoghi_cura_sub100", "con meno di 100 posti letto", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger"));
-            $section->AddTextField("luoghi_cura_over100", "con più di 100 posti letto", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger"),false);
+            $section->AddTextField("luoghi_cura_over100", "con 100 o piu' posti letto", array("required"=>true,"readonly"=>$readonly,"bottomPadding"=>32,"validateFunction"=>"IsInteger"),false);
 
             $wnd->AddGenericObject($section);
 
@@ -29135,29 +29135,6 @@ Class AA_SierModule extends AA_GenericModule
         $header->AddCol($layout_tab);
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#ebf0fa","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        //$toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning",array("view"=>"label","label"=>$warning,"align"=>"center")));
-        /*
-        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
-        {
-            $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiGenerali_btn",array(
-                "view"=>"button",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-pencil",
-                "label"=>"Modifica",
-                "css"=>"webix_primary",
-                "align"=>"right",
-                "width"=>120,
-                "tooltip"=>"Modifica dati generali dei risultati",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRisultatiGeneraliModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
-            ));
-
-            $toolbar->AddElement($modify_btn);
-        }
-        else
-        {
-            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
-        }*/
-        //$layout->AddRow($toolbar);
         $layout->AddRow($header);
         //---------------------------------------------------------------------
         $layout->AddRow($multiview);
@@ -30768,6 +30745,13 @@ Class AA_SierModule extends AA_GenericModule
 
         //----------------------------- Contabile RAS -------------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiRasBox",array("type"=>"clean"));
+        $leftPanel=new AA_JSON_Template_Layout("",array("type"=>"clean","css"=>array("border-right"=>"1px solid #d0d0d0 !important")));
+        $rightPanel=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+        $generaleLayout->AddCol($leftPanel);
+        $generaleLayout->AddCol($leftRight);
+
+        $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px; min-width:220px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 50px'>#value#</div></div>";
+
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RendicontiRas",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Contabile RAS","align"=>"center")));
@@ -30791,7 +30775,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         }
-        $generaleLayout->addRow($toolbar);
+        $leftPanel->addRow($toolbar);
 
         $value="n.d.";
         if(isset($cp['rendiconti']['periodo_dal']))
@@ -30809,7 +30793,7 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Periodo utile:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
-        $generaleLayout->addRow($val);
+        $leftPanel->addRow($val);
 
         $value="0";
         if(isset($rendiconti['ras']['anticipo']))
@@ -30823,7 +30807,7 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Acconto corrisposto:","value"=>AA_Utils::number_format($value,2,",","."),"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
-        $generaleLayout->addRow($val);
+        $leftPanel->addRow($val);
 
         $val=new AA_JSON_Template_Template("",array(
             "template"=>$template,
@@ -30832,17 +30816,7 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Importo ammesso a rimborso:","value"=>$totale_ammesso,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
-        $generaleLayout->addRow($val);
-
-        $value=$object->BuildRendicontiSerial($rendiconti);
-        $val=new AA_JSON_Template_Template("",array(
-            "template"=>$template,
-            "gravity"=>1,
-            "type"=>"clean",
-            "data"=>array("title"=>"Seriale:","value"=>$value,"padding"=>5,"value_align"=>"left"),
-            "css"=>array("border-right"=>"1px solid #dadee0 !important")
-        ));
-        $generaleLayout->addRow($val);
+        $leftPanel->addRow($val);
 
         $value="n.d.";
         if(isset($rendiconti['ras']['estremi_rendiconto']))
@@ -30856,9 +30830,35 @@ Class AA_SierModule extends AA_GenericModule
             "data"=>array("title"=>"Estremi pec rendicontazione:","value"=>$value,"padding"=>5,"value_align"=>"left"),
             "css"=>array("border-right"=>"1px solid #dadee0 !important")
         ));
-        $generaleLayout->addRow($val);
+        $leftPanel->addRow($val);
+
+        $value="<span class='AA_Label AA_Label_LightRed'>disabilitato</span>";
+        if(isset($rendiconti['ras']['caricamento_allegati']) && $rendiconti['ras']['caricamento_allegati']==1)
+        {
+            $value="<span class='AA_Label AA_Label_LightGreen'>abilitato</span>";
+        }
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Caricamento allegati:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $leftPanel->addRow($val);
+
+        $value=$object->BuildRendicontiSerial($rendiconti);
+        $template_serial="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='width: 100%; min-width:220px'><span style='font-weight:700;'>#title#</span><br>#value#</div>";
+        $val=new AA_JSON_Template_Template("",array(
+            "template"=>$template_serial,
+            "gravity"=>1,
+            "type"=>"clean",
+            "data"=>array("title"=>"Seriale:","value"=>$value,"padding"=>5,"value_align"=>"left"),
+            "css"=>array("border-right"=>"1px solid #dadee0 !important")
+        ));
+        $leftPanel->addRow($val);
 
         $box=new AA_JSON_Template_Layout($id."_RendicontiRas_Box",array("gravity"=>7,"type"=>"clean"));
+        $leftPanel->AddRow($box);
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RendicontiRas",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Liquidazioni","align"=>"center")));
@@ -30907,18 +30907,18 @@ Class AA_SierModule extends AA_GenericModule
             if($canModify)
             {
                 $columns=array(
-                    array("id"=>"data_prov","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"data_prov","header"=>array("<div style='text-align: center'>Data</div>"),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>"),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>"),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
                     array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>90, "css"=>array("text-align"=>"center")),
                 );
             }
             else
             {
                 $columns=array(
-                    array("id"=>"data","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable")
+                    array("id"=>"data","header"=>array("<div style='text-align: center'>Data</div>"),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>"),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo</div>"),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable")
                 );
             }
 
@@ -30942,7 +30942,89 @@ Class AA_SierModule extends AA_GenericModule
             $box->addRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display:flex;justify-content:center;align-items:center;width:100%;height:100%'>Non sono presenti elementi.</div>")));
         }
 
-        $generaleLayout->AddRow($box);
+        $box_files=new AA_JSON_Template_Layout("",array("gravity"=>7,"type"=>"clean"));
+        $rightPanel->AddRow($box_files);
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Allegati","align"=>"center")));
+        if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE) > 0)
+        {
+            $modify_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi allegato",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierComuneRendicontiRasAllegatiModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+        $box_files->addRow($toolbar);
+        $rendiconti=$comune->GetRendiconti(true);
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
+        if(isset($rendiconti['ras']['allegati']) && sizeof($rendiconti['ras']['allegati']) > 0)
+        {
+            $data=array();
+            foreach($rendiconti['ras']['allegati'] as $idAllegato=>$curAllegato)
+            {
+                $ops="&nbsp;";
+                if($canModify)
+                {
+                    $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiRasAllegatiModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_allegato:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiConfirmTrashAllegatoDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_allegato:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica l\'allegato' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina l\'allegato' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                }
+                $data[]=array("id"=>$idAllegato,"file"=>$curAllegato['file'],
+                "data_prov"=>substr($curAllegato['data_prov'],0,10),
+                "estremi"=>$curAllegato['estremi'],
+                "ops"=>$ops
+                );
+            }
+
+            if($canModify)
+            {
+                $columns=array(
+                    array("id"=>"data_prov","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>90, "css"=>array("text-align"=>"center")),
+                );
+            }
+            else
+            {
+                $columns=array(
+                    array("id"=>"data","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable")
+                );
+            }
+
+            $table=new AA_JSON_Template_Generic("", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "fixedRowHeight"=>false,
+                "rowHeight"=>24,
+                "rowLineHeight"=>24,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+
+            $box_files->addRow($table);
+        }
+        else
+        {
+            $box_files->addRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display:flex;justify-content:center;align-items:center;width:100%;height:100%'>Non sono presenti elementi.</div>")));
+        }
+        $generaleLayout->AddCol($rightPanel);
         $multiview->addCell($generaleLayout);
         //---------------------------------------------------------------------------------------
         return $layout;
