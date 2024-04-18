@@ -4807,16 +4807,33 @@ Class AA_Sier extends AA_Object_V2
         }
 
         //elimina i rendiconti
-
-        //to do
+        $rendiconti=$comune->GetRendiconti(true);
+        if(isset($rendiconti['ras']) && isset($rendiconti['ras']['allegati']) && sizeof($rendiconti['ras']['allegati'])>0)
+        {
+            $storage=AA_Storage::GetInstance($user);
+            if($storage->IsValid())
+            {
+                foreach($rendiconti['ras']['allegati'] as $curAllegato)
+                {
+                    if($curAllegato['file'] !='')
+                    {
+                        $storage->DelFile($curAllegato['file']);
+                    }
+                }
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - storage non configurato.",100);
+            }
+        }
         
         $query="DELETE FROM ".static::AA_COMUNI_DB_TABLE;
-        $query.=" WHERE id='".addslashes($comune->GetProp("id"))."'";
-        $query.="LIMIT 1";
+        $query.=" WHERE id='".addslashes($comune->GetProp("id"))."' and id_sier='".$this->nId_Data."'";
+        $query.=" LIMIT 1";
         
         $db= new AA_Database();
         
-        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
+        AA_Log::Log(__METHOD__." - query: ".$query, 100);
         
         if(!$db->Query($query))
         {
@@ -5705,6 +5722,8 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierAnalisiCorpoElettoraleDlg");
             $taskManager->RegisterTask("GetSierComuneLogsDlg");
             $taskManager->RegisterTask("GetSierComuneRendicontiViewDlg");
+            $taskManager->RegisterTask("GetSierTrashComuneDlg");
+            $taskManager->RegisterTask("DeleteSierComune");
 
             //$taskManager->RegisterTask("GetSierComuneRisultatiPreferenzeTrashDlg");
             //$taskManager->RegisterTask("TrashSierComuneRisultatiPreferenze");
@@ -7753,6 +7772,55 @@ Class AA_SierModule extends AA_GenericModule
         
         return $wnd;
     }
+
+    //Template dlg trash comune
+    public function Template_GetSierTrashComuneDlg($object=null,$comune=null)
+    {
+        $id=$this->id."_TrashComune_Dlg";
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina Comune", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("denominazione"=>$comune->GetProp("denominazione"),"circoscrizione"=>$comune->GetProp("circoscrizione"));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente Comune verrà eliminato, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"denominazione", "header"=>"Denominazione", "fillspace"=>true),
+              array("id"=>"circoscrizione", "header"=>"Circoscrizione", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteSierComune");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp("id")));
+        
+        return $wnd;
+    }
+
 
     //Template dlg trash curriculum
     public function Template_GetSierTrashCandidatoCVDlg($object=null,$candidato=null)
@@ -27305,6 +27373,61 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task elimina comune
+    public function Task_DeleteSierComune($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid() || $object->GetId()<=0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return true;
+        }
+
+        $comune=$object->GetComune($_REQUEST['id_comune']);
+        if($comune==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo comune non valido (".$_REQUEST['id_comune'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        
+        if(!$object->DeleteComune($comune))
+        {   
+            $task->SetError("Errore durante l'eliminazione del Comune: ".$comune->GetProp("denominazione"));
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore durante l'eliminazione del Comune: ".$comune->GetProp("denominazione")."</error>";
+            $task->SetLog($sTaskLog);
+            
+            return false;
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Comune eliminato con successo.";
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
     //Task modifica allegato
     public function Task_GetSierModifyAllegatoDlg($task)
     {
@@ -27541,6 +27664,52 @@ Class AA_SierModule extends AA_GenericModule
 
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         $sTaskLog.= $this->Template_GetSierTrashAllegatoDlg($object,$allegato)->toBase64();
+        $sTaskLog.="</content>";
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    //Task trash allegato
+    public function Task_GetSierTrashComuneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid() || $object->GetId()<= 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $comune=$object->GetComune($_REQUEST['id_comune']);
+        if($comune==null)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>identificativo comune non valido (".$_REQUEST['id_comune'].").</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+
+        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+        $sTaskLog.= $this->Template_GetSierTrashComuneDlg($object,$comune)->toBase64();
         $sTaskLog.="</content>";
         $task->SetLog($sTaskLog);
 
