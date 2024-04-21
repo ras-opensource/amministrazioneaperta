@@ -3169,6 +3169,8 @@ async function AA_RefreshMainUi(params) {
 async function AA_SetupMainUi() {
     console.log("System::AA_SetupMainUi()");
 
+    webix.i18n.setLocale("it-IT");
+    
     if (webix.CustomScroll && !webix.env.touch) webix.CustomScroll.init();
 
     //Verifica se si sta visualizzando da un cellulare
