@@ -5834,6 +5834,10 @@ Class AA_SierModule extends AA_GenericModule
                 $taskManager->RegisterTask("Update_OC_ComuneRendicontiServizi");
                 $taskManager->RegisterTask("GetSierOCRendicontiConfirmTrashServiziDlg");
                 $taskManager->RegisterTask("Delete_OC_ComuneRendicontiServizi");
+                $taskManager->RegisterTask("GetSierOCRendicontiAllegatiModifyDlg");
+                $taskManager->RegisterTask("Update_OC_ComuneRendicontiAllegati");
+                $taskManager->RegisterTask("GetSierOCRendicontiConfirmTrashAllegatiDlg");
+                $taskManager->RegisterTask("Delete_OC_ComuneRendicontiAllegati");
                 $taskManager->RegisterTask("GetSierOCRendicontiExportPdf");
                 
                 $taskManager->RegisterTask("GetSierAnalisiRisultatiDlg");
@@ -7615,6 +7619,64 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato->GetId()));
         $wnd->SetSaveTask("UpdateSierAllegato");
+        
+        return $wnd;
+    }
+
+    //Template dlg modifca allegato/link
+    public function Template_GetSierOCRendicontiModifyAllegatoDlg($object=null,$allegato=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSierModifyAllegatoDlg";
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array();
+        $form_data["estremi"]="";
+        $form_data["aggiornamento"]=date("Y-m-d");
+        $form_data["file"]="";
+
+        if(is_array($allegato))
+        {
+            $form_data["estremi"]=$allegato['estremi'];
+            $form_data["file"]=$allegato['file'];
+        }
+
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi/Modifica allegato", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(800);
+
+        /*//tipo
+        $tipologia=AA_Sier_Const::GetTipoAllegati();
+        $options=array();
+        foreach($tipologia as $id=>$descr)
+        {
+            $options[]=array("id"=>$id,"value"=>$descr);
+        }
+        $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));*/
+
+        //descrizione
+        $wnd->AddTextField("estremi", "Descrizione", array("gravity"=>3,"required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato", "placeholder" => "es. Determina n.xxx del yyyy ..."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+
+        $section=new AA_FieldSet($id."_Section_Url","Scegliere un file da allegare");
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("Update_OC_ComuneRendicontiAllegati");
         
         return $wnd;
     }
@@ -12311,6 +12373,48 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template confirm delete servizi OC comuni
+    public function Template_GetSierOCRendicontiConfirmTrashAllegatiDlg($object=null,$comune=null,$allegato=null)
+    {
+        $id=$this->GetId()."_".uniqid();
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione allegato", $this->id);
+        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione allegato", $this->id);
+
+        $rendiconti=$comune->GetRendiconti(true);
+        if(!isset($rendiconti['ras']['allegati'][$allegato]) || $allegato==null)
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione allegato", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"<div style='display:flex;justify-content:center;align-items:center;width:100%;height:100%'>Identificativo allegato non valido.</div>")));
+            return $wnd;
+        }
+
+        $form_data=array();
+        $form_data['id']=$object->GetID();
+        $form_data['id_comune']=$comune->GetProp("id");
+        $form_data['file']=$allegato;
+        $wnd=new AA_GenericFormDlg($id, "Conferma eliminazione rendicontazione allegato", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(480);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>eliminera' l'allegato relativo a:<p><b>".$rendiconti['ras']['allegati'][$allegato]['estremi']."</b></p></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("Delete_OC_ComuneRendicontiAllegati");
+        
+        return $wnd;
+    }
+
     //Template confirm delete personale detyerminato comuni
     public function Template_GetSierComuneRendicontiConfirmTrashPersonaleDeterminatoDlg($object=null,$comune=null,$id_personale_det)
     {
@@ -12352,6 +12456,7 @@ Class AA_SierModule extends AA_GenericModule
         
         return $wnd;
     }
+
 
     //Template confirm delete personale detyerminato comuni
     public function Template_GetSierOCRendicontiConfirmTrashPersonaleDeterminatoDlg($object=null,$comune=null,$id_personale_det)
@@ -13731,6 +13836,18 @@ Class AA_SierModule extends AA_GenericModule
         $header = new AA_JSON_Template_Layout($id . "_Header" . "_".$object->GetId(), array("type" => "clean", "height" => 38, "css" => "AA_SectionContentHeader"));
         $layout_tab=new AA_JSON_Template_Layout($id . "_Layout_TabBar_".$object->GetId(),array("type"=>"clean","minWidth"=>500));
         $gravity_tabbar=4;
+        $rendicontiOpts=array(
+            array("id"=>$id."_RendicontiRiepilogoBox","value"=>"Prospetto riassuntivo"),
+            array("id"=>$id."_RendicontiSeggiBox","value"=>"Componenti seggi"),
+            array("id"=>$id."_RendicontiPersonaleBox","value"=>"<span style='font-size:smaller'>Lavoro straordinario e missioni</span>"),
+            array("id"=>$id."_RendicontiPersonaleDetBox","value"=>"<span style='font-size:smaller'>Assunzione personale a tempo determinato</span>"),
+            array("id"=>$id."_RendicontiBuoniBox","value"=>"Buoni pasto"),
+            array("id"=>$id."_RendicontiServiziBox","value"=>"Beni e servizi"));
+        if($rendiconti['ras']['caricamento_allegati']==1)
+        {
+            $rendicontiOpts[]= array("id"=>$id."_RendicontiAllegatiBox","value"=>"Allegati");
+        }
+
         $layout_tab->AddCol(new AA_JSON_Template_Generic($id . "_TabBar_".$object->GetId(), array(
             "view" => "tabbar",
             "gravity"=>$gravity_tabbar,
@@ -13739,15 +13856,9 @@ Class AA_SierModule extends AA_GenericModule
             "css" => "AA_Header_TabBar",
             "multiview" => true,
             "view_id" => $id . "_Multiview_".$object->GetId(),
-            "options" => array(
-                array("id"=>$id."_RendicontiRiepilogoBox","value"=>"Prospetto riassuntivo"),
-                array("id"=>$id."_RendicontiSeggiBox","value"=>"Componenti seggi"),
-                array("id"=>$id."_RendicontiPersonaleBox","value"=>"<span style='font-size:smaller'>Lavoro straordinario e missioni</span>"),
-                array("id"=>$id."_RendicontiPersonaleDetBox","value"=>"<span style='font-size:smaller'>Assunzione personale a tempo determinato</span>"),
-                array("id"=>$id."_RendicontiBuoniBox","value"=>"Buoni pasto"),
-                array("id"=>$id."_RendicontiServiziBox","value"=>"Beni e servizi")
+            "options" => $rendicontiOpts
             )
-        )));
+        ));
         $header->AddCol($layout_tab);
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("background-color"=>"#ebf0fa","border-bottom"=>"1px solid #dadee0 !important")));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
@@ -14884,6 +14995,100 @@ Class AA_SierModule extends AA_GenericModule
             $generaleLayout->addRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display:flex;justify-content:center;align-items:center;width:100%;height:100%'>Non sono presenti elementi.</div>")));
         }
 
+        $multiview->addCell($generaleLayout);
+        //---------------------------------------------------------------------------------------
+
+        //----------------------------------------- Allegati ----------------------------------------------
+        $generaleLayout=new AA_JSON_Template_Layout($id."_RendicontiAllegatiBox",array("type"=>"clean"));
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RendicontiAllegati",array("height"=>38,"css"=>array("background-color"=>"#dadee0 !important","border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Allegati","align"=>"center")));
+        if($canModify > 0)
+        {
+            $modify_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi un nuovo allegato",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierOCRendicontiAllegatiModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+        $generaleLayout->addRow($toolbar);
+
+        $box_files=new AA_JSON_Template_Layout("",array("gravity"=>7,"type"=>"clean"));
+        if(isset($rendiconti['ras']['allegati']) && sizeof($rendiconti['ras']['allegati']) > 0)
+        {
+            $data=array();
+            foreach($rendiconti['ras']['allegati'] as $idAllegato=>$curAllegato)
+            {
+                $ops="&nbsp;";
+                $view="AA_MainApp.utils.callHandler('pdfPreview', {url: 'storage.php?object=".$curAllegato['file']."'},'".$this->id."')";
+                if($canModify)
+                {
+                    
+                    $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierOCRendicontiAllegatiModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",file:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierOCRendicontiConfirmTrashAllegatiDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",file:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Consulta l\'allegato' onClick=\"".$view."\"><span class='mdi mdi-eye'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica l\'allegato' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina l\'allegato' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                }
+                else
+                {
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Consulta l\'allegato' onClick=\"".$view."\"><span class='mdi mdi-eye'></span></a>&nbsp;</div>";
+                }
+                $data[]=array("id"=>$idAllegato,"file"=>$curAllegato['file'],
+                "data_prov"=>substr($curAllegato['aggiornamento'],0,10),
+                "estremi"=>$curAllegato['estremi'],
+                "ops"=>$ops
+                );
+            }
+
+            if($canModify)
+            {
+                $columns=array(
+                    //array("id"=>"data_prov","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: left'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>150, "css"=>array("text-align"=>"center")),
+                );
+            }
+            else
+            {
+                $columns=array(
+                    //array("id"=>"data","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
+                );
+            }
+
+            $table=new AA_JSON_Template_Generic("", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "fixedRowHeight"=>false,
+                "rowHeight"=>24,
+                "rowLineHeight"=>24,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+
+            $box_files->addRow($table);
+        }
+        else
+        {
+            $box_files->addRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display:flex;justify-content:center;align-items:center;width:100%;height:100%'>Non sono presenti elementi.</div>")));
+        }
+
+        $generaleLayout->AddRow($box_files);
         $multiview->addCell($generaleLayout);
         //---------------------------------------------------------------------------------------
 
@@ -20399,6 +20604,50 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica rendiconti buoni 
+    public function Task_GetSierOCRendicontiAllegatiModifyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $allegato=null;
+        if(isset($_REQUEST['file']))
+        {
+            $rendiconti=$comune->GetRendiconti(true);
+            if(isset($rendiconti['ras']['allegati'][$_REQUEST['file']]))
+            {
+                $allegato=$rendiconti['ras']['allegati'][$_REQUEST['file']];
+            }
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierOCRendicontiModifyAllegatoDlg($object,$allegato),true);
+        return true;
+    }
+
     //Task modifica rendiconti servizi
     public function Task_GetSierComuneRendicontiConfirmTrashServiziDlg($task)
     {
@@ -20515,46 +20764,89 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
-     //Task modifica rendiconti personale determinato
-     public function Task_GetSierOCRendicontiConfirmTrashPersonaleDeterminatoDlg($task)
-     {
-         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-         
-         $object=new AA_Sier($_SESSION['oc_sier_object']);
-         if(!$object->IsValid())
-         {
-             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-             $task->SetError("Oggetto SIER non valido.",false);
-             return false;
-         }
- 
-         $operatore=AA_SierOperatoreComunale::GetInstance();
-         if(!$operatore->IsValid())
-         {
-             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-             $task->SetError("Operatore non valido.",false);
-             return false;
-         }
- 
-         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-         if(!($comune instanceof AA_SierComune))
-         {
-             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-             $task->SetError("Comune non valido.",false);
-             return false;
-         } 
-     
-         if(!isset($_REQUEST['id_personale_det']))
-         {
-             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-             $task->SetError("Identificativo non valido",false);
-             return false;
-         }
- 
-         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-         $task->SetContent($this->Template_GetSierOCRendicontiConfirmTrashPersonaleDeterminatoDlg($object,$comune,$_REQUEST['id_personale_det']),true);
-         return true;
-     }
+    //Task conferma eliminazione rendiconti personale determinato
+    public function Task_GetSierOCRendicontiConfirmTrashPersonaleDeterminatoDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        } 
+    
+        if(!isset($_REQUEST['id_personale_det']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo non valido",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierOCRendicontiConfirmTrashPersonaleDeterminatoDlg($object,$comune,$_REQUEST['id_personale_det']),true);
+        return true;
+    }
+
+    //Task conferma eliminazione allegato rendicontazione
+    public function Task_GetSierOCRendicontiConfirmTrashAllegatiDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        $rendiconti=$comune->GetRendiconti(true);
+    
+        if(!isset($rendiconti['ras']['allegati'][$_REQUEST['file']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo allegato non valido",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierOCRendicontiConfirmTrashAllegatiDlg($object,$comune,$_REQUEST['file']),true);
+        return true;
+    }
 
     //Task modifica rendiconti personale tempo indeterminato
     public function Task_GetSierComuneRendicontiPersonaleIndeterminatoModifyDlg($task)
@@ -23951,6 +24243,12 @@ Class AA_SierModule extends AA_GenericModule
             $rendiconti['ras']['importo']=AA_Utils::number_format($num,2,'.','');
         }
 
+        if(isset($_REQUEST['ras|caricamento_allegati']))
+        {
+           if($_REQUEST['ras|caricamento_allegati']!=0) $rendiconti['ras']['caricamento_allegati']=1;
+           else $rendiconti['ras']['caricamento_allegati']=0;
+        }
+
         if($rendiconti['ras']['importo'] > $totale)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -25958,6 +26256,90 @@ Class AA_SierModule extends AA_GenericModule
         return true;
     }
 
+    //Task elimina servizi Comune
+    public function Task_Delete_OC_ComuneRendicontiAllegati($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Modifica rendiconti non abilitata.",false);
+            return false;
+        }
+
+        $allegato=trim($_REQUEST['file']);
+        if($allegato=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("identificativo allegato non valido.",false);
+            return false;
+        }
+
+        $rendiconti=$comune->GetRendiconti(true);
+        if(!isset($rendiconti['ras']['allegati'][$allegato]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("identificativo allegato non valido.",false);
+            return false;
+        }
+
+        $storage=AA_Storage::GetInstance($this->oUser);
+        if($storage->IsValid())
+        {
+          if(!$storage->DelFile($allegato))
+          {
+            AA_Log::Log(__METHOD__." - Allegato non eliminato.",100);
+          }
+        }
+
+        $descrizione=$rendiconti['ras']['allegati'][$allegato]['estremi'];
+        unset($rendiconti['ras']['allegati'][$allegato]);
+
+        $comune->SetRendiconti($rendiconti);
+        if(!$object->UpdateComune($comune,$this->oUser,"Eliminazione rendicontazione allegato - id: ".$allegato." - descrizione: ".$descrizione." - operatore:".$operatore->GetoperatoreComunaleCf()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+
+        return true;
+    }
 
     //Task elimina servizi Comune
     public function Task_DeleteSierComuneRendicontiPersonaleDeterminato($task)
@@ -27314,6 +27696,164 @@ Class AA_SierModule extends AA_GenericModule
         $sTaskLog.= "Allegato aggiornato con successo.";
         $sTaskLog.="</content>";
         $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    //Task aggiorna allegato
+    public function Task_Update_OC_ComuneRendicontiAllegati($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non può accedere come utente comunale",false);
+            return false;
+        }
+
+        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Oggetto SIER non valido.",false);
+            return false;
+        }
+
+        $operatore=AA_SierOperatoreComunale::GetInstance();
+        if(!$operatore->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Operatore non valido.",false);
+            return false;
+        }
+
+        $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
+        if(!($comune instanceof AA_SierComune))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Comune non valido.",false);
+            return false;
+        }
+
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Modifica risultati non abilitata.",false);
+            return false;
+        }
+
+        $rendiconti=$comune->GetRendiconti(true);
+
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+        
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
+            $task->SetLog($sTaskLog);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+        
+            return true;
+        }
+
+
+        if($uploadedFile->isValid()) 
+        {
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                //Se l'allegato era sullo storage lo elimina
+                $oldFile=$_REQUEST['file'];
+                if($oldFile !="")
+                {
+                    if(!$storage->DelFile($oldFile))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
+                    }
+
+                    if(isset($rendiconti['ras']['allegati'][$_REQUEST['file']]))
+                    {
+                        unset($rendiconti['ras']['allegati'][$_REQUEST['file']]);
+                    }
+                }
+
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $_REQUEST['file']=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
+        if($aggiornamento=="") $aggiornamento=date("Y-m-d");
+        
+        if(!is_array($rendiconti['ras']['allegati'])) $rendiconti['ras']['allegati']=array();
+
+        $rendiconti['ras']['allegati'][$_REQUEST['file']]=array('estremi'=>trim($_REQUEST['estremi']),"aggiornamento"=>$_REQUEST['aggiornamento'],"file"=>$_REQUEST['file']);
+
+        $comune->SetRendiconti($rendiconti);
+        if(!$object->UpdateComune($comune,$this->oUser,"Modifica rendiconti - modifica/aggiunta allegato (".$_REQUEST['estremi'].") - operatore: ".$operatore->GetOperatoreComunaleCf()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
 
         return true;
     }
@@ -30917,7 +31457,7 @@ Class AA_SierModule extends AA_GenericModule
         $leftPanel=new AA_JSON_Template_Layout("",array("type"=>"clean","css"=>array("border-right"=>"1px solid #d0d0d0 !important")));
         $rightPanel=new AA_JSON_Template_Layout("",array("type"=>"clean"));
         $generaleLayout->AddCol($leftPanel);
-        $generaleLayout->AddCol($leftRight);
+        $generaleLayout->AddCol($rightPanel);
 
         $template="<div style='display: flex; align-items:center;justify-content: flex-start; width:99%;height:100%;padding-left:5px;'><div style='font-weight:700;width: 350px; min-width:220px'>#title#</div><div style='width: 100%; text-align: #value_align#;padding-right: 50px'>#value#</div></div>";
 
@@ -31138,21 +31678,26 @@ Class AA_SierModule extends AA_GenericModule
         }
         $box_files->addRow($toolbar);
         $rendiconti=$comune->GetRendiconti(true);
-        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         if(isset($rendiconti['ras']['allegati']) && sizeof($rendiconti['ras']['allegati']) > 0)
         {
             $data=array();
             foreach($rendiconti['ras']['allegati'] as $idAllegato=>$curAllegato)
             {
                 $ops="&nbsp;";
+                $view="AA_MainApp.utils.callHandler('pdfPreview', {url: 'storage.php?object=".$curAllegato['file']."'},'".$this->id."')";
                 if($canModify)
                 {
-                    $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiRasAllegatiModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_allegato:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
-                    $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierComuneRendicontiConfirmTrashAllegatoDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_allegato:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
-                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica l\'allegato' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina l\'allegato' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                    
+                    $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierRendicontiAllegatiModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",file:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierRendicontiConfirmTrashAllegatiDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",file:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Consulta l\'allegato' onClick=\"".$view."\"><span class='mdi mdi-eye'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica l\'allegato' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina l\'allegato' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                }
+                else
+                {
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Consulta l\'allegato' onClick=\"".$view."\"><span class='mdi mdi-eye'></span></a>&nbsp;</div>";
                 }
                 $data[]=array("id"=>$idAllegato,"file"=>$curAllegato['file'],
-                "data_prov"=>substr($curAllegato['data_prov'],0,10),
+                "data_prov"=>substr($curAllegato['aggiornamento'],0,10),
                 "estremi"=>$curAllegato['estremi'],
                 "ops"=>$ops
                 );
@@ -31161,16 +31706,17 @@ Class AA_SierModule extends AA_GenericModule
             if($canModify)
             {
                 $columns=array(
-                    array("id"=>"data_prov","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>90, "css"=>array("text-align"=>"center")),
+                    //array("id"=>"data_prov","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: left'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>150, "css"=>array("text-align"=>"center")),
                 );
             }
             else
             {
                 $columns=array(
-                    array("id"=>"data","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
-                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable")
+                    //array("id"=>"data","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"RendicontiServiziTable"),
+                    array("id"=>"ops","header"=>array("<div style='text-align: center'>Operazioni</div>"),"width"=>120, "css"=>array("text-align"=>"center")),
                 );
             }
 
@@ -31193,7 +31739,6 @@ Class AA_SierModule extends AA_GenericModule
         {
             $box_files->addRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display:flex;justify-content:center;align-items:center;width:100%;height:100%'>Non sono presenti elementi.</div>")));
         }
-        $generaleLayout->AddCol($rightPanel);
         $multiview->addCell($generaleLayout);
         //---------------------------------------------------------------------------------------
         return $layout;
@@ -31973,7 +32518,7 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($cp['rendiconti']['periodo_al'])) $form_data['ras|periodo_al']=$cp['rendiconti']['periodo_al'];
             $form_data['ras|anticipo']=0;
             $form_data['ras|estremi_rendiconto']="";
-            $form_data['ras|allegati']=0;
+            $form_data['ras|caricamento_allegati']=0;
 
             $rendiconti=$comune->GetRendiconti(true);
             foreach($rendiconti as $key=>$val)
@@ -32010,7 +32555,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetBottomPadding(32);
             $wnd->EnableValidation();
             
-            $wnd->SetWidth(800);
+            $wnd->SetWidth(980);
             $wnd->SetHeight(500);
             
             //estremi liquidazione
@@ -32020,7 +32565,7 @@ Class AA_SierModule extends AA_GenericModule
             $section->AddDateField("ras|periodo_al","Data fine",array("required"=>true,"labelWidth"=>120,"validateFunction"=>"IsIsoDate","gravity"=>1, "bottomLabel"=>"*Scegli una data dal calendario."),false);
             $wnd->AddGenericObject($section);
 
-            $wnd->AddTextField("ras|anticipo","Acconto corrisposto",array("required"=>true,"labelWidth"=>150,"validateFunction"=>"IsNumber","gravity"=>1,"placeholder"=>"es. 1234,56","bottomLabel"=>"*es. 1234,56."));
+            $wnd->AddSwitchBoxField("ras|caricamento_allegati","Caricamento allegati",array("required"=>true,"labelWidth"=>150,"onLabel"=>"Abilitato","gravity"=>1,"offLabel"=>"Disabilitato","bottomLabel"=>"Abilita il caricamento degli allegati."));
             $wnd->AddTextField("ras|estremi_rendiconto","Estremi pec rendiconto",array("labelWidth"=>200,"gravity"=>2,"placeholder"=>"es. prot.n. 1234 del 2024-03-24", "bottomLabel"=>"*Estremi protocollo di ricevimento del rendiconto inviato dal comune."),false);
             
             $wnd->EnableCloseWndOnSuccessfulSave();
