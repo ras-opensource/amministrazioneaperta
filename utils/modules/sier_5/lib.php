@@ -27736,10 +27736,10 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Modifica risultati non abilitata.",false);
+            $task->SetError("Modifica rendiconti non abilitata.",false);
             return false;
         }
 
