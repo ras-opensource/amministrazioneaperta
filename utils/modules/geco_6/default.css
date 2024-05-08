@@ -1,0 +1,91 @@
+.AA_DataView_Sier_item 
+{
+    background: #fafafa !important;
+    border: 1px solid #5ccce7 !important;
+    border-radius: 5px;
+    padding: 5px;
+    min-height: 60px;
+}
+
+.AA_SierWebAppDataviewItem
+{
+  background: #f4f5f9;
+  border: 0px;
+  padding: 2px;
+  padding-bottom: 0px;
+  cursor: default;
+}
+
+.AA_SierWebAppCandidatiDataviewItem
+{
+  background: transparent;
+  border: 0px;
+  padding: 2px;
+  padding-bottom: 0px;
+  cursor: default;
+}
+
+.AA_SierWebAppHeader_TabBar .webix_item_tab {
+
+  background: #e7e9f2;
+}
+
+.AA_SierWebAppHeader_TabBar .webix_selected {
+
+  background: #fff;
+}
+
+.RendicontiServiziTable .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+}
+.AA_RendicontiImportoRow
+{
+  background-color:   #eaf2f8 !important;
+}
+
+.AA_RendicontiImportoRow_Orange
+{
+  color:   red !important;
+}
+
+.RendicontiServiziTable_left .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: start;
+}
+
+.scrollTextFromLeft {
+    /* animation properties */
+    -moz-animation: ScrollFromLeftAnimation 15s linear infinite;
+    -webkit-animation: ScrollFromLeftAnimation 15s linear infinite;
+    animation: ScrollFromLeftAnimation 15s linear infinite;
+  }
+  
+  /* for Firefox */
+  @-moz-keyframes ScrollFromLeftAnimation {
+    from { -moz-transform: translateX(380px); }
+    to { -moz-transform: translateX(-100%); }
+  }
+  
+  /* for Chrome */
+  @-webkit-keyframes ScrollFromLeftAnimation {
+    from { -webkit-transform: translateX(380px); }
+    to { -webkit-transform: translateX(-100%); }
+  }
+  
+  @keyframes ScrollFromLeftAnimation {
+    from {
+      -moz-transform: translateX(380px);
+      -webkit-transform: translateX(380px);
+      transform: translateX(380px);
+    }
+    to {
+      -moz-transform: translateX(-100%);
+      -webkit-transform: translateX(-100%);
+      transform: translateX(-100%);
+    }
+}

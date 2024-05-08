@@ -130,7 +130,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_DOC_PROVVEDIMENTO_NOMINA=32;
     const AA_ORGANISMI_DOC_PROVVEDIMENTO_PROROGA=64;
     const AA_ORGANISMI_DOC_PROVVEDIMENTO_REVOCA=128;
-    const AA_ORGANISMI_DOC_MASK=126;
+    const AA_ORGANISMI_DOC_MASK=254;
     
     //Tipo di provvedimenti
     static private $TIPO_PROVV=null;

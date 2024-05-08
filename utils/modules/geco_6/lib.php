@@ -11,946 +11,11 @@ include_once "system_lib.php";
 #Costanti
 Class AA_Geco_Const extends AA_Const
 {
-    const AA_USER_FLAG_SIER="sier";
-    const AA_USER_FLAG_SIER_OC="sier_oc";
-
-    const AA_USER_FLAG_SIER_PREF="sier_pref";
-
-    //percorso file
-    const AA_SIER_ALLEGATI_PATH="/sier/allegati";
-    const AA_SIER_IMMAGINI_PUBLIC_PATH="/img";
-    const AA_SIER_ALLEGATI_PUBLIC_PATH="/pubblicazioni/sier/docs.php";
-
-    //Flags
-    const AA_SIER_FLAG_CARICAMENTO_DATIGENERALI=256;
-    const AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE=1;
-    const AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI=128;
-    const AA_SIER_FLAG_CARICAMENTO_AFFLUENZA=2;
-    const AA_SIER_FLAG_CARICAMENTO_RISULTATI=4;
-    const AA_SIER_FLAG_EXPORT_AFFLUENZA=8;
-    const AA_SIER_FLAG_EXPORT_RISULTATI=16;
-    const AA_SIER_FLAG_ACCESSO_OPERATORI=32;
-    const AA_SIER_FLAG_CARICAMENTO_RENDICONTI=64;
-
-    static protected $aFlags=null;
-    public static function GetFlags()
-    {
-        if(static::$aFlags==null)
-        {
-            static::$aFlags=array(
-                32=>"Abilita l'accesso da parte degli operatori comunali",
-                256=>"Abilita l'aggiornamento dei dati generali dei comuni da parte degli operatori",
-                1=>"Abilita l'aggiornamento dei dati del corpo elettorale dei comuni da parte degli operatori",
-                128=>"Abilita l'aggiornamento delle comunicazioni da parte degli operatori",
-                2=>"Abilita l'aggiornamento dei dati sull'affluenza da parte degli operatori",
-                4=>"Abilita l'aggiornamento dei risultati elettorali da parte degli operatori",
-                64=>"Abilita l'aggiornamento dei resoconti dei comuni da parte degli operatori",
-                16=>"Abilita l'esportazione dei risultati per la visualizzazione sul sito istituzionale"
-            );
-        }
-        return static::$aFlags;
-    }
-
-    static protected $aFlagsForTags=null;
-    public static function GetFlagsForTags()
-    {
-        if(static::$aFlagsForTags==null)
-        {
-            static::$aFlagsForTags=array(
-                32=>"accesso",
-                256=>"dati generali",
-                1=>"corpo elettorale",
-                2=>"affluenza",
-                4=>"risultati",
-                64=>"rendiconti",
-                8=>"export affluenza",
-                16=>"export risultati"
-            );
-        }
-        return static::$aFlagsForTags;
-    }
-
-    //Circoscrizioni
-    const AA_SIER_CIRCOSCRIZIONE_CAGLIARI=1;
-    const AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS=2;
-    const AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO=4;
-    const AA_SIER_CIRCOSCRIZIONE_NUORO=8;
-    const AA_SIER_CIRCOSCRIZIONE_OGLIASTRA=16;
-    const AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO=32;
-    const AA_SIER_CIRCOSCRIZIONE_ORISTANO=64;
-    const AA_SIER_CIRCOSCRIZIONE_SASSARI=128;
-
-    protected static $aCircoscrizioni=null;
-
-    public static function GetCircoscrizioni()
-    {
-        if(static::$aCircoscrizioni==null)
-        {
-            static::$aCircoscrizioni=array(
-                static::AA_SIER_CIRCOSCRIZIONE_CAGLIARI=>"Cagliari",
-                static::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS=>"Carbonia-Iglesias",
-                static::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO=>"Medio Campidano",
-                static::AA_SIER_CIRCOSCRIZIONE_NUORO=>"Nuoro",
-                static::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA=>"Ogliastra",
-                static::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO=>"Olbia-Tempio",
-                static::AA_SIER_CIRCOSCRIZIONE_ORISTANO=>"Oristano",
-                static::AA_SIER_CIRCOSCRIZIONE_SASSARI=>"Sassari"
-            );
-        }
-
-        return static::$aCircoscrizioni;
-    }
-
-    public static function GetCircoscrizione($id=0)
-    {
-        $circoscrizioni=static::GetCircoscrizioni();
-        if(isset($circoscrizioni[$id]))
-        {
-            return array('id'=>$id,"value"=>$circoscrizioni[$id]);
-        }
-
-        return null;
-    }
-
-    protected static $aTipoAllegati=null;
-    const AA_SIER_ALLEGATO_INFORMAZIONI=1;
-    const AA_SIER_ALLEGATO_NORMATIVA=2;
-    const AA_SIER_ALLEGATO_MODULISTICA=4;
-    const AA_SIER_ALLEGATO_COMUNICAZIONI=8;
-    const AA_SIER_ALLEGATO_RISULTATI=16;
-    const AA_SIER_ALLEGATO_AVVISI=32;
-    const AA_SIER_ALLEGATO_CIRCOLARI=64;
-    const AA_SIER_ALLEGATO_ISTRUZIONI=128;
-    const AA_SIER_ALLEGATO_MANIFESTI=256;
-
-    public static function GetTipoAllegati()
-    {
-        if(static::$aTipoAllegati==null)
-        {
-            static::$aTipoAllegati=array(
-                static::AA_SIER_ALLEGATO_AVVISI=>"Avvisi",
-                static::AA_SIER_ALLEGATO_CIRCOLARI=>"Circolari",
-                static::AA_SIER_ALLEGATO_COMUNICAZIONI=>"Comunicazioni",
-                static::AA_SIER_ALLEGATO_INFORMAZIONI=>"Info generali",
-                static::AA_SIER_ALLEGATO_ISTRUZIONI=>"Istruzioni",
-                static::AA_SIER_ALLEGATO_MANIFESTI=>"Manifesti",
-                static::AA_SIER_ALLEGATO_MODULISTICA=>"Modulistica",
-                static::AA_SIER_ALLEGATO_NORMATIVA=>"Normativa",
-                static::AA_SIER_ALLEGATO_RISULTATI=>"Risultati"
-            );
-        }
-
-        return static::$aTipoAllegati;
-    }
-
-    protected static $aRendicontiServizi=null;
-    const AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE=1;
-    const AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE=2;
-    const AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO=3;
-    const AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO=4;
-    const AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI=5;
-    const AA_SIER_RENDICONTI_SERVIZI_ALTRO=6;
-    const AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI=7;
-    public static function GetTipoRendicontiServizi()
-    {
-        if(static::$aRendicontiServizi==null)
-        {
-            static::$aRendicontiServizi=array(
-                static::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI=>"Collegamenti telefonici straordinari",
-                static::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO=>"Materiale di consumo per l'allestimento dei seggi",
-                static::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE=>"Propaganda elettorale",
-                static::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE=>"Stampati e software",
-                static::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO=>"Trasporto del materiale e dell'arredo dei seggi",
-                static::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI=>"Spese postali e telegrafiche",
-                static::AA_SIER_RENDICONTI_SERVIZI_ALTRO=>"Altre spese indispensabili"
-            );
-        }
-
-        return static::$aRendicontiServizi;
-    }
-
-    protected static $aDestinatari=null;
-    const AA_SIER_ALLEGATO_COMUNI=1;
-    const AA_SIER_ALLEGATO_CANDIDATI=2;
-    const AA_SIER_ALLEGATO_PREFETTURE=4;
-    const AA_SIER_ALLEGATO_CITTADINI=8;
-    const AA_SIER_ALLEGATO_SEGGI=16;
-
-
-    public static function GetDestinatari()
-    {
-        if(static::$aDestinatari==null)
-        {
-            static::$aDestinatari=array(
-                static::AA_SIER_ALLEGATO_CANDIDATI=>"Candidati",
-                static::AA_SIER_ALLEGATO_CITTADINI=>"Cittadini",
-                static::AA_SIER_ALLEGATO_COMUNI=>"Comuni",
-                static::AA_SIER_ALLEGATO_PREFETTURE=>"Prefetture",
-                static::AA_SIER_ALLEGATO_SEGGI=>"Seggi"
-            );
-        }
-
-        return static::$aDestinatari;
-    }
+    const AA_USER_FLAG_GECO="geco";
 }
 
-#Classe Coalizioni
-Class AA_SierCoalizioni
-{
-    protected $aProps=array();
-    
-    //Importa i valori da un array
-    protected function Parse($values=null)
-    {
-        if(is_array($values))
-        {
-            foreach($values as $key=>$value)
-            {
-                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
-            }
-        }
-    }
-    public function GetListe()
-    {
-        return $this->aProps['liste'];
-    }
-
-    public function toArray($full=false)
-    {
-        if(!$full)
-        {
-            return $this->aProps;
-        }
-        else
-        {
-            return $this->aProps;
-        }
-    }
-
-    public function __construct($params=null)
-    {
-        //Definisce le proprietà dell'oggetto e i valori di default
-        $this->aProps['id']=0;
-        $this->aProps['id_sier']=0;
-        $this->aProps['denominazione']="";
-        $this->aProps['nome_candidato']="";
-        $this->aProps['liste']=array();
-        $this->aProps['image']="";
-        $this->aProps['cv']="";
-        $this->aProps['cg']="";
-        $this->aProps['ordine']=0;
-
-        if(is_array($params)) $this->Parse($params);
-    }
-
-    //imposta il valore di una propietà
-    public function SetProp($prop="",$value="")
-    {
-        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
-    }
-
-    //restituisce il valore di una propietà
-    public function GetProp($prop="")
-    {
-        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
-        else return "";
-    }
-
-    //restituisce tutte le propietà
-    public function GetProps()
-    {
-        return $this->aProps;
-    }
-}
-
-#Classe Lista
-Class AA_SierLista
-{
-    protected $aProps=array();
-    
-    //Importa i valori da un array
-    protected function Parse($values=null)
-    {
-        if(is_array($values))
-        {
-            foreach($values as $key=>$value)
-            {
-                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
-            }
-        }
-    }
-
-    public function toArray($full=false)
-    {
-        if(!$full)
-        {
-            return $this->aProps;
-        }
-        else
-        {
-            return $this->aProps;
-        }
-    }
-
-    public function GetCandidati($circoscrizione="")
-    {
-        return array();
-    }
-
-    public function __construct($params=null)
-    {
-        //Definisce le proprietà dell'oggetto e i valori di default
-        $this->aProps['id']=0;
-        $this->aProps['id_coalizione']=0;
-        $this->aProps['denominazione']="";
-        $this->aProps['image']="";
-        $this->aProps['ordine']=0;
-        $this->aProps['candidati']=array();
-        foreach(AA_Geco_Const::GetCircoscrizioni() as $key=>$val)
-        {
-            $this->aProps["ordine_".$key]=0;
-        }
-
-        if(is_array($params)) $this->Parse($params);
-    }
-
-    //imposta il valore di una propietà
-    public function SetProp($prop="",$value="")
-    {
-        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
-    }
-
-    //restituisce il valore di una propietà
-    public function GetProp($prop="")
-    {
-        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
-        else return "";
-    }
-
-    //restituisce tutte le propietà
-    public function GetProps()
-    {
-        return $this->aProps;
-    }
-}
-
-#Classe CAndidato
-Class AA_SierCandidato
-{
-    protected $aProps=array();
-    
-    //Importa i valori da un array
-    protected function Parse($values=null)
-    {
-        if(is_array($values))
-        {
-            foreach($values as $key=>$value)
-            {
-                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
-            }
-        }
-    }
-
-    public function toArray($full=false)
-    {
-        if(!$full)
-        {
-            return $this->aProps;
-        }
-        else
-        {
-            return $this->aProps;
-        }
-    }
-    public function __construct($params=null)
-    {
-        //Definisce le proprietà dell'oggetto e i valori di default
-        $this->aProps['id']=0;
-        $this->aProps['ordine']=0;
-        $this->aProps['id_lista']=0;
-        $this->aProps['lista']="";
-        $this->aProps['id_coalizione']=0;
-        $this->aProps['coalizione']="";
-        $this->aProps['id_circoscrizione']=0;
-        $this->aProps['circoscrizione']=0;
-        $this->aProps['nome']="";
-        $this->aProps['cognome']="";
-        $this->aProps['cf']="";
-        $this->aProps['cv']="";
-        $this->aProps['cg']="";
-
-        if(is_array($params)) $this->Parse($params);
-    }
-
-    //imposta il valore di una propietà
-    public function SetProp($prop="",$value="")
-    {
-        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
-    }
-
-    //restituisce il valore di una propietà
-    public function GetProp($prop="")
-    {
-        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
-        else return "";
-    }
-
-    //restituisce tutte le propietà
-    public function GetProps()
-    {
-        return $this->aProps;
-    }
-}
-
-#Classe Comune
-Class AA_SierComune
-{
-    protected $aProps=array();
-    
-    //Importa i valori da un array
-    protected function Parse($values=null)
-    {
-        if(is_array($values))
-        {
-            foreach($values as $key=>$value)
-            {
-                if(isset($this->aProps[$key]) && $key != "") $this->aProps[$key]=$value;
-            }
-        }
-    }
-
-    public function toArray($full=false)
-    {
-        if(!$full)
-        {
-            return $this->aProps;
-        }
-        else
-        {
-            if($this->aProps['risultati']=="") $this->aProps['risultati'] = $this->GetRisultati();
-            if($this->aProps['feed_risultati']=="") $this->aProps['feed_risultati'] = $this->GetFeedRisultati();
-            $this->aProps['logs']=$this->GetLogs();
-
-            return $this->aProps;
-        }
-    }
-    public function AddLog($msg="",$user="",$oc="",$date="")
-    {
-        if($date=="") $date=date("Y-m-d H:i:s");
-        if($user=="")
-        {
-            $user=AA_User::GetCurrentUser();
-            $user=$user->GetUsername();
-        }
-
-        if(!is_array($this->aProps['logs'])) $this->aProps['logs']=array();
-
-        $uid=uniqid();
-        $this->aProps['logs'][$uid]=array("data"=>$date,"user"=>$user,"oc"=>$oc,"msg"=>$msg);
-
-        if(sizeof($this->aProps['logs'])>1000) $this->aProps['logs']=array_slice($this->aProps['logs'], -1000);
-    }
-
-    public function GetOperatori($bAsObject=false)
-    {
-        $ret="";
-        if($bAsObject) $ret=array();
-        if(!isset($this->aProps['operatori']) || $this->aProps['operatori']=="") return $ret;
-        
-        if($bAsObject)
-        {
-            $ret=json_decode($this->aProps['operatori'],true);
-            if($ret) return $ret;
-            else
-            {
-                AA_Log::Log(__METHOD__." - Errore nell'importazione degli operatori del comune: ".$this->aProps['id'],100);
-                return array();
-            }
-        }
-
-        return $this->aProps['operatori'];
-    }
-
-    public function GetComunicazioni($bAsObject=false)
-    {
-        $ret="";
-        if($bAsObject) $ret=array();
-        if(!isset($this->aProps['comunicazioni']) || $this->aProps['comunicazioni']=="") return $ret;
-        
-        if($bAsObject)
-        {
-            $ret=json_decode($this->aProps['comunicazioni'],true);
-            if($ret) return $ret;
-            else
-            {
-                AA_Log::Log(__METHOD__." - Errore nell'importazione delle comunicazioni del comune: ".$this->aProps['id'],100);
-                return array();
-            }
-        }
-
-        return $this->aProps['comunicazioni'];
-    }
-
-    public function GetSavedLogs($bAsObject=false)
-    {
-        if($this->aProps['id']>0)
-        {
-            $db= new AA_Database();
-            $query="SELECT logs FROM ".AA_Sier::AA_COMUNI_DB_TABLE." WHERE id='".$this->aProps['id']."' LIMIT 1";
-
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__." - ".$db->GetLastErrorMessage(),100);
-            }
-
-            $rs=$db->GetResultSet();
-            if($rs[0]['logs'] !="") $logs = json_decode($rs[0]['logs'],true);
-            else $logs=null;
-        }
-
-        $ret="";
-        if($bAsObject) $ret=array();
-        if(!$logs) return $ret;
-        
-        if($bAsObject)
-        {
-            return $logs;
-        }
-
-        return $rs[0]['logs'];
-    }
-
-    public function GetLogs($bAsObject=false)
-    {
-        if($bAsObject) return array_merge($this->GetSavedLogs(true),$this->aProps['logs']);
-        else return json_encode(array_merge($this->GetSavedLogs(true),$this->aProps['logs']));
-    }
-
-    public function GetAffluenza($bAsObject=false)
-    {
-        $ret="";
-        if($bAsObject) $ret=array();
-        if(!isset($this->aProps['affluenza']) || $this->aProps['affluenza']=="") return $ret;
-        
-        if($bAsObject)
-        {
-            $ret=json_decode($this->aProps['affluenza'],true);
-            //AA_Log::Log(__METHOD__." - affluenza: ".print_r($ret,true),100);
-
-            if($ret) return $ret;
-            else
-            {
-                AA_Log::Log(__METHOD__." - Errore nell'importazione dell'affluenza del comune: ".$this->aProps['id'],100);
-                return array();
-            }
-        }
-
-        return $this->aProps['affluenza'];
-    }
-
-    public function GetAnalisiRisultati($bAsObject=false)
-    {
-        $ret="";
-        if($bAsObject) $ret=array();
-        if(!isset($this->aProps['analisi_risultati']) || $this->aProps['analisi_risultati']=="") return $ret;
-        
-        if($bAsObject)
-        {
-            $ret=json_decode($this->aProps['analisi_risultati'],true);
-            //AA_Log::Log(__METHOD__." - affluenza: ".print_r($ret,true),100);
-
-            if($ret) return $ret;
-            else
-            {
-                AA_Log::Log(__METHOD__." - Errore nell'importazione dell'analisi dei risultati del comune: ".$this->aProps['id'],100);
-                return array();
-            }
-        }
-
-        return $this->aProps['analisi_risultati'];
-    }
-
-    public function GetRisultati($bAsObject=false)
-    {
-        if($this->aProps['risultati'] != "")
-        {
-            if($bAsObject) 
-            {
-                $feed = json_encode($this->aProps['risultati'],true);
-                if(!$feed) return array();
-                else return $feed;
-            }
-            else return $this->aProps['risultati'];
-        } 
-
-        if($this->aProps['id']>0)
-        {
-            $db= new AA_Database();
-            $query="SELECT risultati FROM ".AA_Sier::AA_COMUNI_DB_TABLE." WHERE id='".$this->aProps['id']."' LIMIT 1";
-
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__." - ".$db->GetLastErrorMessage(),100);
-            }
-
-            $rs=$db->GetResultSet();
-            if($rs[0]['risultati'] !="") $feed = json_decode($rs[0]['risultati'],true);
-            else $feed=null;
-        }
-
-        $ret="";
-        if($bAsObject) $ret=array();
-        if(!$feed) return $ret;
-        
-        if($bAsObject)
-        {
-            return $feed;
-        }
-
-        return $rs[0]['risultati'];
-    }
-
-    public function GetRendiconti($bAsObject=false)
-    {
-        if($this->aProps['rendiconti'] != "")
-        {
-            if($bAsObject) 
-            {
-                $feed = json_encode($this->aProps['rendiconti'],true);
-                if(!$feed) return array();
-                else return $feed;
-            }
-            else return $this->aProps['rendiconti'];
-        } 
-
-        if($this->aProps['id']>0)
-        {
-            $db= new AA_Database();
-            $query="SELECT rendiconti FROM ".AA_Sier::AA_COMUNI_DB_TABLE." WHERE id='".$this->aProps['id']."' LIMIT 1";
-
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__." - ".$db->GetLastErrorMessage(),100);
-            }
-
-            $rs=$db->GetResultSet();
-            if($rs[0]['rendiconti'] !="") $feed = json_decode($rs[0]['rendiconti'],true);
-            else $feed=null;
-        }
-
-        $ret="";
-        if($bAsObject) $ret=array();
-        if(!$feed) return $ret;
-        
-        if($bAsObject)
-        {
-            return $feed;
-        }
-
-        return $rs[0]['rendiconti'];
-    }
-
-    public function SetOperatori($operatori="")
-    {
-        if(is_array($operatori))
-        {
-            if(sizeof($operatori)>0)
-            {
-                $operatori=json_encode($operatori);
-                if($operatori===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($operatori,true),100);
-                    return false;
-                }    
-            }
-            else $operatori="";
-        }
-
-        $this->SetProp("operatori",$operatori);
-        return true;
-    }
-
-    public function SetComunicazioni($comunicazioni="")
-    {
-        if(is_array($comunicazioni))
-        {
-            if(sizeof($comunicazioni)>0)
-            {
-                $comunicazioni=json_encode($comunicazioni);
-                if($comunicazioni===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($comunicazioni,true),100);
-                    return false;
-                }    
-            }
-            else $comunicazioni="";
-        }
-
-        $this->SetProp("comunicazioni",$comunicazioni);
-        return true;
-    }
-
-    public function SetAffluenza($val="")
-    {
-        if(is_array($val))
-        {
-            if(sizeof($val)>0)
-            {
-                $affluenza=json_encode($val);
-                if($affluenza===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($affluenza,true),100);
-                    return false;
-                }    
-            }
-            else $affluenza="";
-        }
-
-        $this->SetProp("affluenza",$affluenza);
-        return true;
-    }
-
-    public function SetAnalisiRisultati($val="")
-    {
-        if(is_array($val))
-        {
-            if(sizeof($val)>0)
-            {
-                $affluenza=json_encode($val);
-                if($affluenza===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($affluenza,true),100);
-                    return false;
-                }    
-            }
-            else $affluenza="";
-        }
-
-        $this->SetProp("analisi_risultati",$affluenza);
-        return true;
-    }
-
-    public function SetRisultati($val="")
-    {
-        if(is_array($val))
-        {
-            if(sizeof($val)>0)
-            {
-                $risultati=json_encode($val);
-                if($risultati===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica dei risultati. ".print_r($risultati,true),100);
-                    return false;
-                }    
-            }
-            else $risultati="";
-        }
-
-        $this->SetProp("risultati",$risultati);
-        return true;
-    }
-
-    public function SetRendiconti($val="")
-    {
-        if(is_array($val))
-        {
-            if(sizeof($val)>0)
-            {
-                $rendiconti=json_encode($val);
-                if($rendiconti===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica dei rendiconti. ".print_r($rendiconti,true),100);
-                    return false;
-                }    
-            }
-            else $rendiconti="";
-        }
-
-        $this->SetProp("rendiconti",$rendiconti);
-        return true;
-    }
-
-
-    public function SetFeedRisultati($val="")
-    {
-        if(is_array($val))
-        {
-            if(sizeof($val)>0)
-            {
-                $risultati=json_encode($val);
-                if($risultati===false)
-                {
-                    AA_Log::Log(__METHOD__." - Errore nella codifica del feed risultati. ".print_r($risultati,true),100);
-                    return false;
-                }    
-            }
-            else $risultati="";
-        }
-
-        $this->SetProp("feed_risultati",$risultati);
-        return true;
-    }
-
-
-    public function __construct($params=null)
-    {
-        //Definisce le proprietà dell'oggetto e i valori di default
-        $this->aProps['id']=0;
-        $this->aProps['id_sier']=0;
-        $this->aProps['id_circoscrizione']=0;
-        $this->aProps['circoscrizione']="";
-        $this->aProps['denominazione']="";
-        $this->aProps['pec']="";
-        $this->aProps['contatti']="";
-        $this->aProps['indirizzo']="";
-        $this->aProps['sezioni']=0;
-        $this->aProps['elettori_m']=0;
-        $this->aProps['elettori_f']=0;
-        $this->aProps['affluenza']="";
-        $this->aProps['risultati']="";
-        $this->aProps['analisi_risultati']="";
-        $this->aProps['rendiconti']="";
-        $this->aProps['operatori']="";
-        $this->aProps['comunicazioni']="";
-        $this->aProps['lastupdate']="";
-        $this->aProps['feed_risultati']="";
-        $this->aProps['sezioni_ordinarie']=0;
-        $this->aProps['sezioni_ospedaliere']=0;
-        $this->aProps['luoghi_cura_sub100']=0;
-        $this->aProps['luoghi_cura_over100']=0;
-        $this->aProps['elettori_esteri_f']=0;
-        $this->aProps['luoghi_detenzione']=0;
-        $this->aProps['elettori_esteri_m']=0;
-        $this->aProps['logs']=array();
-
-        if(is_array($params)) $this->Parse($params);
-    }
-
-    //restiruisce il feed dei risultati (cached)
-    public function GetFeedRisultati($bAsObject=false)
-    {
-        if($this->aProps['feed_risultati'] != "")
-        {
-            if($bAsObject) 
-            {
-                $feed = json_encode($this->aProps['feed_risultati'],true);
-                if(!$feed)
-                {
-                    return array(
-                        "denominazione"=>$this->aProps['denominazione'],
-                        "circoscrizione"=>$this->aProps['circoscrizione'],
-                        "id_circoscrizione"=>intVal($this->aProps['id_circoscrizione']),
-                        "sezioni"=>intVal($this->aProps['sezioni']),
-                        "elettori_m"=>intVal($this->aProps['elettori_m']),
-                        "elettori_f"=>intVal($this->aProps['elettori_f']),
-                        "elettori_tot"=>$this->aProps['elettori_m']+$this->aProps['elettori_f'],
-                        "affluenza"=>array(),
-                        "risultati"=>array(
-                            "sezioni_scrutinate"=>0,
-                            "votanti_m"=>0,
-                            "votanti_f"=>0,
-                            "votanti_tot"=>0,
-                            "votanti_percent"=>0,
-                            "voti_presidente"=>array(
-                                "sezioni_scrutinate"=>0,
-                                "voti_tot"=>0
-                            ),
-                            "voti_lista"=>array(
-                                "sezioni_scrutinate"=>0,
-                                "voti_tot"=>0
-                            ),
-                            "voti_candidato"=>array(
-                                "sezioni_scrutinate"=>0,
-                                "voti_tot"=>0
-                            )
-                        ),
-                    );
-                } 
-                else return $feed;
-            }
-            else return $this->aProps['feed_risultati'];
-        }
-
-        if($this->aProps['id']>0)
-        {
-            $db= new AA_Database();
-            $query="SELECT feed_risultati FROM ".AA_Sier::AA_COMUNI_DB_TABLE." WHERE id='".$this->aProps['id']."' LIMIT 1";
-
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__." - ".$db->GetLastErrorMessage(),100);
-            }
-
-            $rs=$db->GetResultSet();
-            if($rs[0]['feed_risultati'] !="") $feed = json_decode($rs[0]['feed_risultati'],true);
-            else $feed=null;
-        }
-
-        if(!$feed)
-        {
-            //struttura vuota
-            $feed=array(
-                "denominazione"=>$this->aProps['denominazione'],
-                "circoscrizione"=>$this->aProps['circoscrizione'],
-                "id_circoscrizione"=>intVal($this->aProps['id_circoscrizione']),
-                "sezioni"=>intVal($this->aProps['sezioni']),
-                "elettori_m"=>intVal($this->aProps['elettori_m']),
-                "elettori_f"=>intVal($this->aProps['elettori_f']),
-                "elettori_tot"=>$this->aProps['elettori_m']+$this->aProps['elettori_f'],
-                "affluenza"=>array(),
-                "risultati"=>array(
-                    "sezioni_scrutinate"=>0,
-                    "votanti_m"=>0,
-                    "votanti_f"=>0,
-                    "votanti_tot"=>0,
-                    "votanti_percent"=>0,
-                    "voti_presidente"=>array(
-                        "sezioni_scrutinate"=>0,
-                        "voti_tot"=>0
-                    ),
-                    "voti_lista"=>array(
-                        "sezioni_scrutinate"=>0,
-                        "voti_tot"=>0
-                    ),
-                    "voti_candidato"=>array(
-                        "sezioni_scrutinate"=>0,
-                        "voti_tot"=>0
-                    )
-                ),
-            );
-
-            if($bAsObject) return $feed;
-            else return json_encode($feed);
-        }
-        else
-        {
-            if($bAsObject) return $feed;
-            else return $rs[0]['feed_risultati'];
-        }
-    }
-
-    //imposta il valore di una propietà
-    public function SetProp($prop="",$value="")
-    {
-        if($prop !="" && isset($this->aProps[$prop])) $this->aProps[$prop]=$value;
-    }
-
-    //restituisce il valore di una propietà
-    public function GetProp($prop="")
-    {
-        if($prop !="" && isset($this->aProps[$prop])) return $this->aProps[$prop];
-        else return "";
-    }
-
-    //restituisce tutte le propietà
-    public function GetProps()
-    {
-        return $this->aProps;
-    }
-}
-
-#Classe oggetto elezioni
-Class AA_Sier extends AA_Object_V2
+#Classe oggetto geco
+Class AA_Geco extends AA_Object_V2
 {
     //tabella dati db
     const AA_DBTABLE_DATA="aa_sier_data";
@@ -1065,7 +130,7 @@ Class AA_Sier extends AA_Object_V2
             return $analisi;
         }
 
-        if(!($comune instanceof AA_SierComune) && !is_array($comunicazioni))
+        if(!($comune instanceof AA_GecoComune) && !is_array($comunicazioni))
         {
             $analisi[0]=true;
             $analisi[1][]="Comune e comunicazioni non validi.";
@@ -1143,7 +208,7 @@ Class AA_Sier extends AA_Object_V2
     public function AnalizeRendiconti($rendiconti=null,$comune=null)
     {
         $result=array(false,array(),false);
-        if($rendiconti==null && $comune instanceof AA_SierComune)
+        if($rendiconti==null && $comune instanceof AA_GecoComune)
         {
             $rendiconti=$comune->GetRendiconti(true);
             //AA_Log::Log(__METHOD__." - risultati: ".print_r($risultati,true),100);
@@ -1292,7 +357,7 @@ Class AA_Sier extends AA_Object_V2
     public function AnalizeRisultati($risultati=null,$circoscrizione=0,$comune=null)
     {
         $result=array(false,array(),false,array('risultati_voti_presidente_check'=>0,'risultati_voti_lista_check'=>0,'risultati_voti_candidato_check'=>0,'risultati_scrutinio_parziale_check'=>0));
-        if($risultati==null && $comune instanceof AA_SierComune)
+        if($risultati==null && $comune instanceof AA_GecoComune)
         {
             $risultati=$comune->GetRisultati(true);
             //AA_Log::Log(__METHOD__." - risultati: ".print_r($risultati,true),100);
@@ -1319,7 +384,7 @@ Class AA_Sier extends AA_Object_V2
         $votanti=intVal($risultati['votanti_m']+$risultati['votanti_f']);
         $sezioni_scrutinate=intVal($risultati['sezioni_scrutinate']);
 
-        if($comune instanceof AA_SierComune)
+        if($comune instanceof AA_GecoComune)
         {
             if($sezioni_scrutinate > $comune->GetProp("sezioni"))
             {
@@ -1633,12 +698,12 @@ Class AA_Sier extends AA_Object_V2
                 {
                     foreach($db->GetResultSet() as $curLista)
                     {
-                        $liste[$curLista['id']]=new AA_SierLista($curLista);
+                        $liste[$curLista['id']]=new AA_GecoLista($curLista);
                     }
                     $curRow['liste']=$liste;
                 }
 
-                $curCoalizione= new AA_SierCoalizioni($curRow);
+                $curCoalizione= new AA_GecoCoalizioni($curRow);
                 $result[$curRow['id']]=$curCoalizione;
             }
         }
@@ -1674,7 +739,7 @@ Class AA_Sier extends AA_Object_V2
         $liste=$this->GetListe();
         $coalizioni=$this->GetCoalizioni();
         $platform=AA_Platform::GetInstance();
-        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
+        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_GecoModule::AA_ID_MODULE)."/img";
 
         foreach($coalizioni as $idCoalizione=>$curCoalizione)
         {
@@ -1825,7 +890,7 @@ Class AA_Sier extends AA_Object_V2
         $update_candidati=true;
 
         $platform=AA_Platform::GetInstance();
-        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
+        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_GecoModule::AA_ID_MODULE)."/img";
                     
         //Non aggiorna i risultati se non è abilitato l'aggiornamento su scrutinio parziale e non sono state scrutinate tutte le sezioni
         if($cp['risultati_scrutinio_parziale_check'] == 0 && $analisi_risultati[3]["risultati_scrutinio_parziale_check"]>0 && $analisi_risultati[0]) $update=false;
@@ -2150,7 +1215,7 @@ Class AA_Sier extends AA_Object_V2
         $coalizioni=$this->GetCoalizioni();
         $liste=$this->GetListe();
         $platform=AA_Platform::GetInstance();
-        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_SierModule::AA_ID_MODULE)."/img";
+        $DefaultImagePath=AA_Const::AA_WWW_ROOT."/".$platform->GetModulePathURL(AA_GecoModule::AA_ID_MODULE)."/img";
 
         $candidati=$this->GetCandidati();
 
@@ -2739,12 +1804,12 @@ Class AA_Sier extends AA_Object_V2
                 {
                     foreach($db->GetResultSet() as $curLista)
                     {
-                        $liste[$curLista['id']]=new AA_SierLista($curLista);
+                        $liste[$curLista['id']]=new AA_GecoLista($curLista);
                     }
                     $curRow['liste']=$liste;
                 }
 
-                $result = new AA_SierCoalizioni($curRow);
+                $result = new AA_GecoCoalizioni($curRow);
             }
         }
 
@@ -2759,7 +1824,7 @@ Class AA_Sier extends AA_Object_V2
         $db=new AA_Database();
         $query="SELECT ".static::AA_LISTE_DB_TABLE.".* from ".static::AA_LISTE_DB_TABLE." INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
-        if($coalizione instanceof AA_SierCoalizioni)
+        if($coalizione instanceof AA_GecoCoalizioni)
         {
             $query.=" AND ".static::AA_COALIZIONI_DB_TABLE.".id='".addslashes($coalizione->GetProp('id'))."'";
         }
@@ -2787,7 +1852,7 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
-                $result[$curRow['id']]=new AA_SierLista($curRow);
+                $result[$curRow['id']]=new AA_GecoLista($curRow);
             }
         }
 
@@ -2825,7 +1890,7 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
-                $result=new AA_SierLista($curRow);
+                $result=new AA_GecoLista($curRow);
             }
         }
 
@@ -3065,13 +2130,13 @@ Class AA_Sier extends AA_Object_V2
         $order=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome, ".static::AA_CANDIDATI_DB_TABLE.".ordine, ".static::AA_CANDIDATI_DB_TABLE.".id";
         $query="SELECT ".static::AA_CANDIDATI_DB_TABLE.".*,".static::AA_COALIZIONI_DB_TABLE.".id as id_coalizione,".static::AA_COALIZIONI_DB_TABLE.".denominazione as coalizione,".static::AA_LISTE_DB_TABLE.".denominazione as lista from ".static::AA_CANDIDATI_DB_TABLE." INNER JOIN ".static::AA_LISTE_DB_TABLE." ON ".static::AA_CANDIDATI_DB_TABLE.".id_lista=".static::AA_LISTE_DB_TABLE.".id INNER JOIN ".static::AA_COALIZIONI_DB_TABLE." ON ".static::AA_LISTE_DB_TABLE.".id_coalizione=".static::AA_COALIZIONI_DB_TABLE.".id WHERE ".static::AA_COALIZIONI_DB_TABLE.".id_sier='".$this->nId_Data."'";
 
-        if($coalizione instanceof AA_SierCoalizioni)
+        if($coalizione instanceof AA_GecoCoalizioni)
         {
             $query.=" AND ".static::AA_COALIZIONI_DB_TABLE.".id='".addslashes($coalizione->GetProp('id'))."'";
             $order=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".id_lista, ".static::AA_CANDIDATI_DB_TABLE.".ordine, ".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome";
         }
 
-        if($lista instanceof AA_SierLista)
+        if($lista instanceof AA_GecoLista)
         {
             $query.=" AND ".static::AA_CANDIDATI_DB_TABLE.".id_lista='".addslashes($lista->GetProp('id'))."'";
             //$order=" ORDER by ".static::AA_CANDIDATI_DB_TABLE.".ordine, ".static::AA_CANDIDATI_DB_TABLE.".cognome, ".static::AA_CANDIDATI_DB_TABLE.".nome";
@@ -3098,7 +2163,7 @@ Class AA_Sier extends AA_Object_V2
             {
                 $circoscrizione=AA_Geco_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
-                $result[$curRow['id']]=new AA_SierCandidato($curRow);
+                $result[$curRow['id']]=new AA_GecoCandidato($curRow);
             }
         }
 
@@ -3134,7 +2199,7 @@ Class AA_Sier extends AA_Object_V2
             {
                 $circoscrizione=AA_Geco_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
-                $result=new AA_SierCandidato($curRow);
+                $result=new AA_GecoCandidato($curRow);
             }
         }
 
@@ -3243,7 +2308,7 @@ Class AA_Sier extends AA_Object_V2
             {
                 $circoscrizione=AA_Geco_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
-                $result[$curRow['id']]=new AA_SierComune($curRow);
+                $result[$curRow['id']]=new AA_GecoComune($curRow);
             }
         }
 
@@ -3308,7 +2373,7 @@ Class AA_Sier extends AA_Object_V2
             {
                 $circoscrizione=AA_Geco_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
-                $result=new AA_SierComune($curRow);
+                $result=new AA_GecoComune($curRow);
             }
         }
 
@@ -3329,7 +2394,7 @@ Class AA_Sier extends AA_Object_V2
         else $user=AA_User::GetCurrentUser();
 
         //---------local checks-------------
-        $params['class']="AA_Sier";
+        $params['class']="AA_Geco";
         //----------------------------------
 
         return parent::Search($params,$user);
@@ -3353,14 +2418,14 @@ Class AA_Sier extends AA_Object_V2
         //------------local checks---------------
 
         //Se l'utente non ha il flag può al massimo visualizzare la scheda
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER) && !$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO) && !$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $perms = AA_Const::AA_PERMS_READ;
         }
         //---------------------------------------
 
         //Se l'utente ha il flag e può modificare la scheda allora può fare tutto
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && $user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && $user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $perms = AA_Const::AA_PERMS_ALL;
         }
@@ -3386,14 +2451,14 @@ Class AA_Sier extends AA_Object_V2
         $bSaveData=true; //enable save data
 
         //Chi non ha il flag non può inserire nuovi elementi
-        if(!$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUserName()." non ha i permessi per inserire nuovi elementi.",100);
             return false;
         }
 
         //Verifica validità oggetto
-        if(!($object instanceof AA_Sier))
+        if(!($object instanceof AA_Geco))
         {
             AA_Log::Log(__METHOD__." - Errore: oggetto non valido (".print_r($object,true).").",100);
             return false;
@@ -3442,7 +2507,7 @@ Class AA_Sier extends AA_Object_V2
             $id_sier=$this->nId_Data_Rev;
         }
 
-        $query="SELECT * FROM ".AA_Sier::AA_ALLEGATI_DB_TABLE." WHERE id_sier='".$id_sier."'";
+        $query="SELECT * FROM ".AA_Geco::AA_ALLEGATI_DB_TABLE." WHERE id_sier='".$id_sier."'";
         $query.=" AND id='".addslashes($id)."' LIMIT 1";
         
         $db= new AA_Database();
@@ -3456,7 +2521,7 @@ Class AA_Sier extends AA_Object_V2
         if($db->GetAffectedRows() > 0)
         {
             $rs=$db->GetResultSet();
-            $object=new AA_SierAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento'],$rs[0]['destinatari'],$rs[0]['ordine']);
+            $object=new AA_GecoAllegati($rs[0]['id'],$id_sier,$rs[0]['estremi'],$rs[0]['url'],$rs[0]['file'],$rs[0]['tipo'],$rs[0]['aggiornamento'],$rs[0]['destinatari'],$rs[0]['ordine']);
             
             return $object;
         }
@@ -3494,13 +2559,13 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
             return false;
         }
 
-        if(!($lista instanceof AA_SierLista))
+        if(!($lista instanceof AA_GecoLista))
         {
             AA_Log::Log(__METHOD__." - Dati Lista non validi.", 100,false,true);
             return false;
@@ -3581,13 +2646,13 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
             return false;
         }
 
-        if(!($lista instanceof AA_SierLista))
+        if(!($lista instanceof AA_GecoLista))
         {
             AA_Log::Log(__METHOD__." - Dati Lista non validi.", 100,false,true);
             return false;
@@ -3653,7 +2718,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($newCoalizione instanceof AA_SierCoalizioni))
+        if(!($newCoalizione instanceof AA_GecoCoalizioni))
         {
             AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
             return false;
@@ -3722,7 +2787,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($newCoalizione instanceof AA_SierCoalizioni))
+        if(!($newCoalizione instanceof AA_GecoCoalizioni))
         {
             AA_Log::Log(__METHOD__." - Dati Coalizione non validi.", 100,false,true);
             return false;
@@ -3796,7 +2861,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($newComune instanceof AA_SierComune))
+        if(!($newComune instanceof AA_GecoComune))
         {
             AA_Log::Log(__METHOD__." - Dati Comune non validi.", 100,false,true);
             return false;
@@ -3821,7 +2886,7 @@ Class AA_Sier extends AA_Object_V2
 
         if($AppendLog=="") $AppendLog="Modifica";
         
-        $oc=AA_SierOperatoreComunale::GetInstance();
+        $oc=AA_GecoOperatoreComunale::GetInstance();
         if($oc->IsValid())
         {
             $oc=$oc->GetOperatoreComunaleCf();
@@ -3912,7 +2977,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             if($coalizione == "" && $coalizione == null)
             {
@@ -4039,7 +3104,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             if($coalizione == "" && $coalizione == null)
             {
@@ -4063,7 +3128,7 @@ Class AA_Sier extends AA_Object_V2
 
         $liste=$coalizione->GetListe();
 
-        if(!($lista instanceof AA_SierLista))
+        if(!($lista instanceof AA_GecoLista))
         {
             if($lista == "" || $lista == null)
             {
@@ -4166,7 +3231,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             AA_Log::Log(__METHOD__." - Candidato non valido.", 100,false,true);
             return false;
@@ -4247,7 +3312,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             AA_Log::Log(__METHOD__." - Comune non valido.", 100,false,true);
             return false;
@@ -4338,7 +3403,7 @@ Class AA_Sier extends AA_Object_V2
         {
             if(is_array($curComune))
             {
-                if($this->AddNewComune(new AA_SierComune($curComune))===false)
+                if($this->AddNewComune(new AA_GecoComune($curComune))===false)
                 {
                     $result[1]+=1;
                 }
@@ -4379,7 +3444,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             AA_Log::Log(__METHOD__." - Candidato non valido.", 100,false,true);
             return false;
@@ -4447,7 +3512,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($allegato instanceof AA_SierAllegati))
+        if(!($allegato instanceof AA_GecoAllegati))
         {
             AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
             return false;
@@ -4532,7 +3597,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($allegato instanceof AA_SierAllegati))
+        if(!($allegato instanceof AA_GecoAllegati))
         {
             AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
             return false;
@@ -4618,7 +3683,7 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($allegato instanceof AA_SierAllegati))
+        if(!($allegato instanceof AA_GecoAllegati))
         {
             AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
             return false;
@@ -4704,12 +3769,12 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $candidato=$this->GetCandidato($candidato);
         }
 
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {            
             AA_Log::Log(__METHOD__." - Candidato non valido.", 100,false,true);
             return false;
@@ -4795,12 +3860,12 @@ Class AA_Sier extends AA_Object_V2
             return false;
         }
 
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $comune=$this->Getcomune($comune);
         }
 
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {            
             AA_Log::Log(__METHOD__." - Comune non valido.", 100,false,true);
             return false;
@@ -5235,7 +4300,7 @@ Class AA_Sier extends AA_Object_V2
         }
 
         //Impostazione dei parametri
-        $query="SELECT * from ".AA_Sier::AA_ALLEGATI_DB_TABLE." WHERE";
+        $query="SELECT * from ".AA_Geco::AA_ALLEGATI_DB_TABLE." WHERE";
 
         $query.=" id_sier='".$idData."'";
         
@@ -5253,7 +4318,7 @@ Class AA_Sier extends AA_Object_V2
         $rs=$db->GetResultSet();
         foreach($rs as $curRec)
         {   
-            $allegato=new AA_SierAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento'],$curRec['destinatari'],$curRec['ordine']);
+            $allegato=new AA_GecoAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento'],$curRec['destinatari'],$curRec['ordine']);
             $result[$curRec['id']]=$allegato;
         }
 
@@ -5262,7 +4327,7 @@ Class AA_Sier extends AA_Object_V2
 }
 
 #Classe operatore comunale
-Class AA_SierOperatoreComunale
+Class AA_GecoOperatoreComunale
 {
     protected static $oInstance=null;
     protected function __construct()
@@ -5272,23 +4337,23 @@ Class AA_SierOperatoreComunale
 
     static public function GetInstance()
     {
-        if(static::$oInstance instanceof AA_SierOperatoreComunale) return static::$oInstance;
+        if(static::$oInstance instanceof AA_GecoOperatoreComunale) return static::$oInstance;
 
         if(isset($_SESSION['oc_object']) && static::$oInstance == null)
         {
             static::$oInstance=unserialize($_SESSION['oc_object']);
 
-            if(static::$oInstance instanceof AA_SierOperatoreComunale) return static::$oInstance;
-            else return new AA_SierOperatoreComunale();
+            if(static::$oInstance instanceof AA_GecoOperatoreComunale) return static::$oInstance;
+            else return new AA_GecoOperatoreComunale();
         }
 
-        return new AA_SierOperatoreComunale();
+        return new AA_GecoOperatoreComunale();
     }
 
     #funzioni di autenticazione
     public function ChallengeLogin($cf="",$objectId=0)
     {
-        $object= new AA_Sier($objectId);
+        $object= new AA_Geco($objectId);
         if(!$object->IsValid())
         {
             AA_Log::Log(__METHOD__." - Oggetto SIER non valido.",100);
@@ -5480,17 +4545,17 @@ Class AA_SierOperatoreComunale
 }
 
 #Classe per il modulo art23 - provvedimenti dirigenziali e accordi
-Class AA_SierModule extends AA_GenericModule
+Class AA_GecoModule extends AA_GenericModule
 {
-    const AA_UI_PREFIX="AA_Sier";
+    const AA_UI_PREFIX="AA_Geco";
 
     //Id modulo
     const AA_ID_MODULE="AA_MODULE_SIER";
 
     //main ui layout box
-    const AA_UI_MODULE_MAIN_BOX="AA_Sier_module_layout";
+    const AA_UI_MODULE_MAIN_BOX="AA_Geco_module_layout";
 
-    const AA_MODULE_OBJECTS_CLASS="AA_Sier";
+    const AA_MODULE_OBJECTS_CLASS="AA_Geco";
 
     //Task per la gestione dei dialoghi standard
     const AA_UI_TASK_PUBBLICATE_FILTER_DLG="GetSierPubblicateFilterDlg";
@@ -5559,7 +4624,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         #-------------------------------- Verifica se è un operatore comunale ----------------
-        if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1 && isset($_SESSION['oc_sier_object']) && $_SESSION['oc_sier_object'] > 0 && $user->IsValid() && $user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1 && isset($_SESSION['oc_sier_object']) && $_SESSION['oc_sier_object'] > 0 && $user->IsValid() && $user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $this->bOperatoreComunaleInterface=true;
             $bDefaultSections=false;
@@ -5786,7 +4851,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $oc=AA_SierOperatoreComunale::GetInstance();
+            $oc=AA_GecoOperatoreComunale::GetInstance();
             //AA_Log::Log(__METHOD__." - operatore: ".print_r($oc,true),100);
             $template="TemplateSection_OC_Desktop";
 
@@ -5871,7 +4936,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         if(self::$oInstance==null)
         {
-            self::$oInstance=new AA_SierModule($user);
+            self::$oInstance=new AA_GecoModule($user);
         }
         
         return self::$oInstance;
@@ -5893,7 +4958,7 @@ Class AA_SierModule extends AA_GenericModule
     public function TemplateSection_Pubblicate($params=array())
     {
         $bCanModify=false;
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $bCanModify=true;
         }
@@ -5915,7 +4980,7 @@ Class AA_SierModule extends AA_GenericModule
         //anno rif
         if($params['Anno'] > 0)
         {
-            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".anno = '".addslashes($params['AnnoRiferimento'])."'";
+            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['AnnoRiferimento'])."'";
         }
        return $params;
     }
@@ -5923,7 +4988,7 @@ Class AA_SierModule extends AA_GenericModule
      //Personalizza il template dei dati delle schede pubblicate per il modulo corrente
      protected function GetDataSectionPubblicate_CustomDataTemplate($data = array(),$object=null)
      {
-        if($object instanceof AA_Sier)
+        if($object instanceof AA_Geco)
         {
 
             $data['pretitolo']=$object->GetProp("Anno");
@@ -5950,7 +5015,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneAddNewMultiDlg($object=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneAddNewMultiDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
 
         $form_data=array("id"=>$object->GetId());
         $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV", $this->id,$form_data,$form_data);
@@ -5994,7 +5059,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiPreferenzeCsvImportDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiPreferenzeCsvImportDlg";
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
 
         $form_data=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp("id"),"csv_reset"=>1,"refresh_obj_id"=>$_REQUEST['refresh_obj_id'],"refresh"=>$_REQUEST['refresh']);
         $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV", $this->id,$form_data,$form_data);
@@ -6044,7 +5109,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRisultatiPreferenzeCsvImportDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCRisultatiPreferenzeCsvImportDlg";
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV", $this->id);
 
         $form_data=array("id"=>$object->GetId(),"id_comune"=>$comune->GetProp("id"),"csv_reset"=>1,"refresh_obj_id"=>$_REQUEST['refresh_obj_id'],"refresh"=>$_REQUEST['refresh']);
         $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV dei voti candidati Consiglio regionale", $this->id,$form_data,$form_data);
@@ -6094,7 +5159,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg";
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_sierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_sierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
 
         $data=AA_SessionVar::Get("SierComuneRisultatiPreferenzeCSV_ParsedData")->GetValue();
         if(!is_array($data))
@@ -6177,7 +5242,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRisultatiPreferenzeCsvImportPreviewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiPreferenzeCsvImportPreviewDlg";
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_sierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_sierComune)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
 
         $form_data=array();
         
@@ -6243,7 +5308,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneAddNewMultiPreviewDlg($object=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneAddNewMultiPreviewDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id);
 
         $form_data=array();
         
@@ -6313,7 +5378,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneAddNewMultiResultDlg($object=null,$count=array(0,0))
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneAddNewMultiResultDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 3 di 3", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 3 di 3", $this->id);
 
         $wnd=new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 3 di 3");
         
@@ -6337,7 +5402,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         $is_enabled= false;
        
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO) || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $is_enabled=true;
         }
@@ -6356,7 +5421,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $content=$this->TemplateGenericSection_Bozze($params,false);
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $content->EnableAddNew(false);
             $content->EnablePublish(false);
@@ -6370,7 +5435,7 @@ Class AA_SierModule extends AA_GenericModule
     //Restituisce i dati delle bozze
     public function GetDataSectionBozze_List($params=array())
     {
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER) && !$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO) && !$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             AA_Log::Log(__METHOD__." - ERRORE: l'utente corrente: ".$this->oUser->GetUserName()." non è abilitato alla visualizzazione delle bozze.",100);
             return array();
@@ -6385,7 +5450,7 @@ Class AA_SierModule extends AA_GenericModule
         //anno rif
         if($params['Anno'] > 0)
         {
-            $params['where'][]=" AND ".AA_Sier::AA_DBTABLE_DATA.".anno = '".addslashes($params['AnnoRiferimento'])."'";
+            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['AnnoRiferimento'])."'";
         }
 
         return $params;
@@ -6395,7 +5460,7 @@ Class AA_SierModule extends AA_GenericModule
     protected function GetDataSectionBozze_CustomDataTemplate($data = array(),$object=null)
     {
         
-        if($object instanceof AA_Sier)
+        if($object instanceof AA_Geco)
         {
 
             $data['pretitolo']=$object->GetProp("Anno");
@@ -6430,7 +5495,7 @@ Class AA_SierModule extends AA_GenericModule
             
             foreach($ids as $curId)
             {
-                $organismo=new AA_Sier($curId,$this->oUser);
+                $organismo=new AA_Geco($curId,$this->oUser);
                 if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_PUBLISH)>0)
                 {
                     $ids_final[$curId]=$organismo->GetDescr();
@@ -6813,7 +5878,7 @@ Class AA_SierModule extends AA_GenericModule
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $form_data=array();
-        if($coalizione instanceof AA_SierCoalizioni)
+        if($coalizione instanceof AA_GecoCoalizioni)
         {
             $form_data['denominazione']=$coalizione->GetProp("denominazione");
             $form_data['nome_candidato']=$coalizione->GetProp("nome_candidato");
@@ -6869,7 +5934,7 @@ Class AA_SierModule extends AA_GenericModule
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $form_data=array("aggiornamento"=>date("Y-m-d"));
-        if($lista instanceof AA_SierLista)
+        if($lista instanceof AA_GecoLista)
         {
             $form_data['id_lista']=$lista->GetProp("id");
         }
@@ -7556,7 +6621,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetHeight(800);
 
         /*//tipo
-        $tipologia=AA_Sier_Const::GetTipoAllegati();
+        $tipologia=AA_Geco_Const::GetTipoAllegati();
         $options=array();
         foreach($tipologia as $id=>$descr)
         {
@@ -7652,7 +6717,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetHeight(800);
 
         /*//tipo
-        $tipologia=AA_Sier_Const::GetTipoAllegati();
+        $tipologia=AA_Geco_Const::GetTipoAllegati();
         $options=array();
         foreach($tipologia as $id=>$descr)
         {
@@ -7718,7 +6783,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetHeight(800);
 
         /*//tipo
-        $tipologia=AA_Sier_Const::GetTipoAllegati();
+        $tipologia=AA_Geco_Const::GetTipoAllegati();
         $options=array();
         foreach($tipologia as $id=>$descr)
         {
@@ -8286,7 +7351,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -8354,7 +7419,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -8430,7 +7495,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $uploadedFile=AA_SessionFileUpload::Get("SierWebAppQRCode_file");
         
         if(!$object->isValid())
@@ -8453,7 +7518,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC) && !$this->oUser->IsSuperUser())
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC) && !$this->oUser->IsSuperUser())
         {
             $sTaskLog="<status id='status'>0</status><content id='content'>";
             $sTaskLog.= "operazioni concluse.";
@@ -8589,7 +7654,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -8917,7 +7982,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
         
         if(!$object->isValid())
@@ -9048,7 +8113,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $ordine=0;
         if(isset($_REQUEST['ordine']) && $_REQUEST['ordine']>0) $ordine=$_REQUEST['ordine'];
-        $allegato=new AA_SierAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari),addslashes($ordine));
+        $allegato=new AA_GecoAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari),addslashes($ordine));
         
         //AA_Log::Log(__METHOD__." - "."allegato: ".print_r($allegato, true),100);
         
@@ -9075,7 +8140,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -9109,7 +8174,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $lista=$object->GetLista($_REQUEST['id_lista']);
         //AA_Log::Log(__METHOD__." - lista: ".print_r($lista,true),100);
-        if(!($lista instanceof AA_SierLista))
+        if(!($lista instanceof AA_GecoLista))
         {
             AA_Log::Log(__METHOD__." - "."Lista non valida: ".print_r($lista,true)." - parametri".print_r($_REQUEST,true),100);
             $task->SetError("Occorre indicare una lista valida.");
@@ -9126,7 +8191,7 @@ Class AA_SierModule extends AA_GenericModule
             "cognome"=>trim($_REQUEST['cognome']),
             "cf"=>trim($_REQUEST['cf'])
         );
-        $candidato=new AA_SierCandidato($params);
+        $candidato=new AA_GecoCandidato($params);
         
         //AA_Log::Log(__METHOD__." - "."Provvedimento: ".print_r($elemento, true),100);
         $newId=$object->AddNewCandidato($candidato, $this->oUser);
@@ -9161,7 +8226,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -9180,7 +8245,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCV");
         
         if(!$object->isValid())
@@ -9321,7 +8386,7 @@ Class AA_SierModule extends AA_GenericModule
             "cv"=>$fileHash,
             "ordine"=>$candidato->GetProp('ordine')
         );
-        $candidato=new AA_SierCandidato($params);
+        $candidato=new AA_GecoCandidato($params);
         
         //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
 
@@ -9355,7 +8420,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCG");
         
         if(!$object->isValid())
@@ -9497,7 +8562,7 @@ Class AA_SierModule extends AA_GenericModule
             "ordine"=>$candidato->GetProp('ordine')
 
         );
-        $candidato=new AA_SierCandidato($params);
+        $candidato=new AA_GecoCandidato($params);
         
         //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
 
@@ -9524,7 +8589,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -9568,7 +8633,7 @@ Class AA_SierModule extends AA_GenericModule
             "cg"=>$candidato->GetProp('cg'),
             "ordine"=>$ordine
         );
-        $candidato=new AA_SierCandidato($params);
+        $candidato=new AA_GecoCandidato($params);
         
         //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
 
@@ -9595,7 +8660,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCG");
         
         if(!$object->isValid())
@@ -9736,7 +8801,7 @@ Class AA_SierModule extends AA_GenericModule
             "cg"=>$fileHash,
             "ordine"=>$candidato->GetProp('ordine')
         );
-        $candidato=new AA_SierCandidato($params);
+        $candidato=new AA_GecoCandidato($params);
         
         //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
 
@@ -9763,7 +8828,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCV");
         
         if(!$object->isValid())
@@ -9904,7 +8969,7 @@ Class AA_SierModule extends AA_GenericModule
             "cv"=>$fileHash,
             "ordine"=>$candidato->GetProp('ordine')
         );
-        $candidato=new AA_SierCandidato($params);
+        $candidato=new AA_GecoCandidato($params);
         
         //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
 
@@ -9931,7 +8996,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCV");
         
         if(!$object->isValid())
@@ -10096,7 +9161,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewCandidatoCG");
         
         if(!$object->isValid())
@@ -10261,7 +9326,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -10320,7 +9385,7 @@ Class AA_SierModule extends AA_GenericModule
             "cv"=>"",
             "ordine"=>$candidato->GetProp('ordine')
         );
-        $candidato=new AA_SierCandidato($params);
+        $candidato=new AA_GecoCandidato($params);
         
         //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
 
@@ -10347,7 +9412,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -10406,7 +9471,7 @@ Class AA_SierModule extends AA_GenericModule
             "cg"=>"",
             "ordine"=>$candidato->GetProp('ordine')
         );
-        $candidato=new AA_SierCandidato($params);
+        $candidato=new AA_GecoCandidato($params);
         
         //AA_Log::Log(__METHOD__." - candidato: ".print_r($candidato, true),100);
 
@@ -10433,7 +9498,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -10506,7 +9571,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -10579,7 +9644,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -10632,7 +9697,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $fileUpload = AA_SessionFileUpload::Get("NewListaImage");
 
         if(!$object->isValid())
@@ -10679,7 +9744,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Verifica coalizione
         $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             $task->SetError("Coalizione non valida");
             $sTaskLog="<status id='status'>-1</status><error id='error'>Coalizione non valida</error>";
@@ -10757,8 +9822,8 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($_REQUEST['ordine_'.$key])) $params['ordine_'.$key]=$_REQUEST['ordine_'.$key];
         }
 
-        $lista=new AA_SierLista($params);
-        if(!($lista instanceof AA_SierLista))
+        $lista=new AA_GecoLista($params);
+        if(!($lista instanceof AA_GecoLista))
         {
             $task->SetError("dati Lista non validi");
             $sTaskLog="<status id='status'>-1</status><error id='error'>dati Lista non validi</error>";
@@ -10803,7 +9868,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $fileUpload = AA_SessionFileUpload::Get("UpdateListaImage");
 
         if(!$object->isValid())
@@ -10850,7 +9915,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Verifica coalizione
         $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             $task->SetError("Coalizione non valida");
             $sTaskLog="<status id='status'>-1</status><error id='error'>Coalizione non valida</error>";
@@ -10873,7 +9938,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //verifica lista
         $liste=$coalizione->GetListe();
-        if(!($liste[$_REQUEST['id_lista']] instanceof AA_SierLista))
+        if(!($liste[$_REQUEST['id_lista']] instanceof AA_GecoLista))
         {
             $task->SetError("Lista non valida");
             $sTaskLog="<status id='status'>-1</status><error id='error'>Lista non valida</error>";
@@ -10962,8 +10027,8 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($_REQUEST['ordine_'.$key])) $params['ordine_'.$key]=$_REQUEST['ordine_'.$key];
         }
 
-        $lista=new AA_SierLista($params);
-        if(!($lista instanceof AA_SierLista))
+        $lista=new AA_GecoLista($params);
+        if(!($lista instanceof AA_GecoLista))
         {
             $task->SetError("dati Lista non validi");
             $sTaskLog="<status id='status'>-1</status><error id='error'>dati Lista non validi</error>";
@@ -11010,7 +10075,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $fileUpload = AA_SessionFileUpload::Get("NewCoalizioneImage");
 
         if(!$object->isValid())
@@ -11113,7 +10178,7 @@ Class AA_SierModule extends AA_GenericModule
             'image'=>$imageFileHash
         );
 
-        $newCoalizione=new AA_SierCoalizioni($params);
+        $newCoalizione=new AA_GecoCoalizioni($params);
 
         if(!$object->AddNewCoalizione($newCoalizione, $this->oUser))
         {        
@@ -11139,7 +10204,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         $fileUpload = AA_SessionFileUpload::Get("NewCoalizioneImage");
 
         if(!$object->isValid())
@@ -11333,7 +10398,7 @@ Class AA_SierModule extends AA_GenericModule
         $params['image'] = $imageFileHash;
         if($imageFileHash == "") $params['image']=$coalizione->GetProp('image');
 
-        $newCoalizione=new AA_SierCoalizioni($params);
+        $newCoalizione=new AA_GecoCoalizioni($params);
         //AA_Log::Log(__METHOD__." - newCoalizione: ".print_r($newCoalizione,true),100);
 
         if(!$object->UpdateCoalizione($newCoalizione, $this->oUser))
@@ -11360,7 +10425,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid() || $object->GetId()<=0)
         {
@@ -11404,7 +10469,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid() || $object->GetId()<=0)
         {
@@ -11447,7 +10512,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali", $this->id);
 
         $form_data['id']=$object->GetID();
         $form_data['nome']=$object->GetName();
@@ -11495,34 +10560,34 @@ Class AA_SierModule extends AA_GenericModule
         $label="Note";
         $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni.", "placeholder"=>"Inserisci qui le note..."));
 
-        $abilitazioni = new AA_FieldSet("AA_SIER_ABILITAZIONI","Abilitazioni");
+        $abilitazioni = new AA_FieldSet("AA_GECO_ABILITAZIONI","Abilitazioni");
 
         //Accesso operatori
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_ACCESSO_OPERATORI,"Accesso operatori",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato accesso operatori comunali."));
+        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_ACCESSO_OPERATORI,"Accesso operatori",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato accesso operatori comunali."));
 
         //rendicontazione
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI,"Rendiconti",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato caricamento rendiconti."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI,"Rendiconti",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato caricamento rendiconti."),false);
 
         //Modifica info generali
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI,"Info generali",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita la modifica info generali del comune."));
+        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_DATIGENERALI,"Info generali",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita la modifica info generali del comune."));
 
         //Caricamento corpo elettorale
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE,"Corpo elettorale",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dati corpo elettorale."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_CORPO_ELETTORALE,"Corpo elettorale",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dati corpo elettorale."),false);
 
         //comunicazioni
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI,"Comunicazioni",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento delle comunicazioni."));
+        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_COMUNICAZIONI,"Comunicazioni",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento delle comunicazioni."));
 
         //Affluenza
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA,"Affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_AFFLUENZA,"Affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."),false);
 
         //Risultati
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI,"Risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."));
+        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI,"Risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."));
 
         //esportazione Affluenza
-        //$abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA,"Esporta affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dell'affluenza."));
+        //$abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_EXPORT_AFFLUENZA,"Esporta affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dell'affluenza."));
 
         //esportazione Risultati
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_EXPORT_RISULTATI,"Esporta risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dei risultati."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_EXPORT_RISULTATI,"Esporta risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dei risultati."),false);
 
         $wnd->AddGenericObject($abilitazioni);
 
@@ -11537,14 +10602,14 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierControlPannelDlg($object=null)
     {
         $id=$this->GetId()."_ControlPannel_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Pannello di controllo", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Pannello di controllo", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
 
         $cp=$object->GetControlPannel();
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $section=new AA_FieldSet($id."_Section_CP","Opzioni di esportazione dei risultati comunali sul feed pubblico generale","",2);
 
@@ -11582,7 +10647,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(800);
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $wnd->SetHeight(920);
             $wnd->SetWidth(1280);
@@ -11769,7 +10834,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd->AddGenericObject($section);
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             //rendiconti
             $section=new AA_FieldSet($id."_Section_CP_Rendiconti","Sorteggio dei Comuni per la verifica dei rendiconti");
@@ -11821,7 +10886,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddGenericObject($section,false);
         }
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $section=new AA_FieldSet($id."_Section_CP_Corpoelettorale","Opzioni corpo elettorale");
             $section->AddSwitchBoxField("abilita_cert_corpo_elettorale","Certificazione del corpo elettorale",array("labelWidth"=>360,"onLabel"=>"abilitata","offLabel"=>"disabilitata","bottomLabel"=>"Abilita/Disabilita la certificazione del corpo elettorale da parte dei comuni.","bottomPadding"=>32));
@@ -12094,14 +11159,14 @@ Class AA_SierModule extends AA_GenericModule
         $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
         $comuniEstratti=array();
         $limitiCircoscrizione=array(
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI=>11,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS=>3,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO=>4,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_NUORO=>8,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA=>3,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO=>4,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO=>13,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI=>10
+            AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_CAGLIARI=>11,
+            AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_CARBONIAIGLESIAS=>3,
+            AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_MEDIOCAMPIDANO=>4,
+            AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_NUORO=>8,
+            AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_OGLIASTRA=>3,
+            AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_OLBIATEMPIO=>4,
+            AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_ORISTANO=>13,
+            AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_SASSARI=>10
         );
 
         foreach($circoscrizioni as $idCircoscrizione=>$curCircoscrizione)
@@ -12150,10 +11215,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_CAGLIARI];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI] as $curComune)
+        foreach($comuniEstratti[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_CAGLIARI] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12163,10 +11228,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_CARBONIAIGLESIAS];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS] as $curComune)
+        foreach($comuniEstratti[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_CARBONIAIGLESIAS] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12176,10 +11241,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_MEDIOCAMPIDANO];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO] as $curComune)
+        foreach($comuniEstratti[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_MEDIOCAMPIDANO] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12189,10 +11254,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_NUORO];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_NUORO];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_NUORO] as $curComune)
+        foreach($comuniEstratti[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_NUORO] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12205,10 +11270,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_OGLIASTRA];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA] as $curComune)
+        foreach($comuniEstratti[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_OGLIASTRA] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12218,10 +11283,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_OLBIATEMPIO];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO] as $curComune)
+        foreach($comuniEstratti[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_OLBIATEMPIO] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12231,10 +11296,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_ORISTANO];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO] as $curComune)
+        foreach($comuniEstratti[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_ORISTANO] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12244,10 +11309,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_SASSARI];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI] as $curComune)
+        foreach($comuniEstratti[AA_Geco_Const::AA_GECO_CIRCOSCRIZIONE_SASSARI] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12260,8 +11325,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierConfirmResetComunicazioniComuniDlg($object=null)
     {
         $id=$this->GetId()."_ConfirmResetComunicazioniComuni_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12293,8 +11358,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiConfirmTrashServiziDlg($object=null,$comune=null,$id_servizio)
     {
         $id=$this->GetId()."_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione bene/servizio", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione bene/servizio", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione bene/servizio", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione bene/servizio", $this->id);
 
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['servizi'][$id_servizio]) || $id_servizio=="")
@@ -12335,8 +11400,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRendicontiConfirmTrashServiziDlg($object=null,$comune=null,$id_servizio)
     {
         $id=$this->GetId()."_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione bene/servizio", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione bene/servizio", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione bene/servizio", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione bene/servizio", $this->id);
 
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['servizi'][$id_servizio]) || $id_servizio=="")
@@ -12377,8 +11442,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRendicontiConfirmTrashAllegatiDlg($object=null,$comune=null,$allegato=null)
     {
         $id=$this->GetId()."_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione allegato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione allegato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione allegato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione allegato", $this->id);
 
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['ras']['allegati'][$allegato]) || $allegato==null)
@@ -12419,8 +11484,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiConfirmTrashPersonaleDeterminatoDlg($object=null,$comune=null,$id_personale_det)
     {
         $id=$this->GetId()."_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione contratto personale a tempo determinato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione contratto personale a tempo determinato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione contratto personale a tempo determinato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione contratto personale a tempo determinato", $this->id);
 
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['personale_det'][$id_personale_det]) || $id_personale_det=="")
@@ -12462,8 +11527,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRendicontiConfirmTrashPersonaleDeterminatoDlg($object=null,$comune=null,$id_personale_det)
     {
         $id=$this->GetId()."_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione contratto personale a tempo determinato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione contratto personale a tempo determinato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione contratto personale a tempo determinato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione rendicontazione contratto personale a tempo determinato", $this->id);
 
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['personale_det'][$id_personale_det]) || $id_personale_det=="")
@@ -12503,8 +11568,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierConfirmResetFeedRisultatiComuniDlg($object=null)
     {
         $id=$this->GetId()."_ConfirmResetFeedRisultatiComuni_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset feed risultati Comuni", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma reset feed risultati Comuni", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12536,8 +11601,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierConfirmUpdateFeedRisultatiGeneraliDlg($object=null)
     {
         $id=$this->GetId()."_GetSierConfirmUpdateFeedRisultatiGeneraliDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma aggiornamento feed pubblici risultati", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma aggiornamento feed pubblici risultati", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12569,8 +11634,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierConfirmResetRisultatiComuniDlg($object=null)
     {
         $id=$this->GetId()."_ConfirmResetRisultatiComuni_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset risultati Comuni", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma reset risultati Comuni", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12602,8 +11667,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierConfirmDeleteSorteggioDocDlg($object=null)
     {
         $id=$this->GetId()."_ConfirmDeleteSortegioDoc_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione report sorteggio comuni", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione report sorteggio comuni", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12634,8 +11699,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierConfirmTrashWebAppQRCodeDlg($object=null)
     {
         $id=$this->GetId()."_GetSierConfirmTrashWebAppQRCodeDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione QR code", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma eliminazione QR code", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12667,8 +11732,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierConfirmUpdateFeedRisultatiComuniDlg($object=null)
     {
         $id=$this->GetId()."_ConfirmUpdateFeedRisultatiComuni_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma aggiornamento del feed risultati dei Comuni", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma aggiornamento del feed risultati dei Comuni", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12700,8 +11765,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_ConfirmCertCorpoElettoraleDlg($object=null,$comune=null)
     {
         $id=$this->GetId()."_ConfirmCertCorpoElettoraleDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma certificazione del Corpo elettorale", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma certificazione del Corpo elettorale", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12733,8 +11798,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierConfirmResetAffluenzaComuniDlg($object=null)
     {
         $id=$this->GetId()."_ConfirmResetAffluenzaComuni_Dlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Conferma reset dell'affluenza Comuni", $this->id);
-        //if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Conferma reset dell'affluenza Comuni", $this->id);
+        //if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Conferma reset comunicazioni Comuni", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetID();
@@ -12828,13 +11893,13 @@ Class AA_SierModule extends AA_GenericModule
         //Gestione dei tab
         //$id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$params['id'];
         //$params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"));
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER)) $params['readonly']=true;
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $params['readonly']=true;
         
         $params['MultiviewEventHandlers']=array("onViewChange"=>array("handler"=>"onDetailViewChange"));
 
         $params['disable_SaveAsPdf']=true;
         $params['disable_SaveAsCsv']=true;
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER)) $params['disable_MenuAzioni']=true;
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $params['disable_MenuAzioni']=true;
         
         $detail = $this->TemplateGenericSection_Detail($params);
 
@@ -12846,13 +11911,13 @@ Class AA_SierModule extends AA_GenericModule
     {
         $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX;
 
-        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Geco)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
 
         $rows_fixed_height=50;
         $canModify=false;
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER)) $canModify=true;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $canModify=true;
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC)|| $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO) || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC)|| $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF))
         {
             $cp=$object->GetControlPannel();
             $url=$cp['url_feed_risultati'];
@@ -12952,9 +12017,9 @@ Class AA_SierModule extends AA_GenericModule
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP;
 
-        if(!($object instanceof AA_Sier))
+        if(!($object instanceof AA_Geco))
         {
-            $object=new AA_Sier($_SESSION['oc_sier_object']);
+            $object=new AA_Geco($_SESSION['oc_sier_object']);
             if(!$object->IsValid())
             {
                 return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Accesso operatore comunale"));
@@ -12965,7 +12030,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //login disabilitato
         $sier_flags=$object->GetAbilitazioni();
-        if(($sier_flags&AA_Geco_Const::AA_SIER_FLAG_ACCESSO_OPERATORI)==0)
+        if(($sier_flags&AA_Geco_Const::AA_GECO_FLAG_ACCESSO_OPERATORI)==0)
         {
             $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='display: flex; justify-content:center; align-items: center;width:100%;height:100%; font-weight: bold'><span>Accesso operatori temporaneamente disabilitato.</span></div>")));
             return $layout;
@@ -13030,19 +12095,19 @@ Class AA_SierModule extends AA_GenericModule
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_OC_DESKTOP;
 
-        if(!($object instanceof AA_Sier))
+        if(!($object instanceof AA_Geco))
         {
-            $object=new AA_Sier($_SESSION['oc_sier_object']);
+            $object=new AA_Geco($_SESSION['oc_sier_object']);
             if(!$object->IsValid())
             {
                 return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi","name"=>"Accesso operatore comunale"));
             }
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
         $intestazione="Cruscotto operatore - comune di ";
-        if($comune instanceof AA_SierComune)
+        if($comune instanceof AA_GecoComune)
         {
             $intestazione.=$comune->GetProp("denominazione");     
         }
@@ -13129,7 +12194,7 @@ Class AA_SierModule extends AA_GenericModule
         //-------------------------------------------------------
 
         //-------------------   Scheda generale  ------------------------------
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0) $canModify=true;
+        if (($sier_flags&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_DATIGENERALI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Generale_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_DatiGenerali",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -13179,7 +12244,7 @@ Class AA_SierModule extends AA_GenericModule
         $giornate=$object->GetGiornate();
         $giornateKeys=array_keys($giornate);
         $now=date("Y-m-d");
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0 && $now >= $giornateKeys[0]) $canModify=true;
+        if (($sier_flags&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_COMUNICAZIONI) > 0 && $now >= $giornateKeys[0]) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Comunicazioni_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Comunicazioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -13226,7 +12291,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //-------------------   Affluenza  ------------------------------
         $canModify=false;
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0) $canModify=true;
+        if (($sier_flags&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_AFFLUENZA) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Affluenza",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -13271,7 +12336,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //------------------------------  Risultati  ---------------------------------
         $canModify=false;
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0) $canModify=true;
+        if (($sier_flags&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Risultati_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Risultati",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //torna al riepilogo
@@ -13295,7 +12360,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //--------------------------------   Rendiconti  -----------------------------
         $canModify=false;
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0 && $operatore->GetOperatoreComunaleRuolo() > 1) $canModify=true;
+        if (($sier_flags&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI) > 0 && $operatore->GetOperatoreComunaleRuolo() > 1) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Rendiconti",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //torna al riepilogo
@@ -13353,7 +12418,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_Generale($id,$object=null,$comune=null,$modify=false)
     {
         $id.=$id."_Generale_Content";
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
         //Descrizione
@@ -13584,7 +12649,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //AA_Log::Log(__METHOD__." - comunicazioni: ".print_r($comunicazioni,true),100);
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0 && $temp_modify)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0 && $temp_modify)
         {
             if($cp['abilita_cert_corpo_elettorale']>0)
             {
@@ -13668,7 +12733,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_Comunicazioni($id,$object=null,$comune=null,$modify=false)
     {
         $id.=$id."_Comunicazioni_Content";
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
         $giornate=$object->GetGiornate();
@@ -13706,7 +12771,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_Documenti($id,$object=null,$comune=null,$modify=false)
     {
         $id.=$id."_Documenti_Content";
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         $canModify=false;
 
         #documenti----------------------------------
@@ -13803,9 +12868,9 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_Rendiconti($id,$object=null,$comune=null,$canModify=false)
     {
         $id.=$id."_Rendiconti_Content";
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
 
-        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object) $object=new AA_Geco($_REQUEST['id']);
         if(!$object->isValid())
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -13814,7 +12879,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
             $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati del comune.</span></div>")));
@@ -14014,13 +13079,13 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
                 $totale+=floatVal($val['importo']);
             }
         }
@@ -15099,10 +14164,10 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_Risultati($id,$object=null,$comune=null,$modify=false)
     {
         $id.=$id."_Risultati_Content";
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
-        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object) $object=new AA_Geco($_REQUEST['id']);
         if(!$object->isValid())
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -15111,7 +14176,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
             $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati del comune.</span></div>")));
@@ -15180,7 +14245,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiGenerali_btn",array(
@@ -15324,7 +14389,7 @@ Class AA_SierModule extends AA_GenericModule
         //----------------------------- Risultati voti coalizioni -----------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiCoalizioniBox",array("type"=>"clean"));
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiCoalizioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -15387,7 +14452,7 @@ Class AA_SierModule extends AA_GenericModule
         //------------------------------- Risultati voti liste --------------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiListeBox",array("type"=>"clean"));
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiListe",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -15473,7 +14538,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_WarningRisultati",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0)
         {   
             $modify_btn=new AA_JSON_Template_Generic($id."_OCCsvImportRisultatiPreferenze_btn",array(
                 "view"=>"button",
@@ -15510,13 +14575,13 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"voti","header"=>array("<div style='text-align: center'>Voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"int")
         );
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
         }
 
         $data=array();
-        //$circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        //$circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
 
         $candidati=$object->GetCandidati(null,null,$comune->GetProp('id_circoscrizione'));
         foreach($candidati as $curCandidato)
@@ -15528,7 +14593,7 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($risultati['voti_candidato'][$curCandidato->GetProp('id')])) $data[$index]['voti']=$risultati['voti_candidato'][$curCandidato->GetProp('id')]['voti'];
             //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
 
-            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0)
             {
                 //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$comune->GetProp('id').'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOCModifyRisultatiPreferenzeDlg", postParams: {id: "'.$object->GetId().'",id_comune:"'.$comune->GetProp('id').'",id_candidato:"'.$curCandidato->GetProp("id").'",refresh: 1,refresh_obj_id:"'.$id.'"},module: "' . $this->id . '"},"'.$this->id.'")';
@@ -15568,11 +14633,11 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_Affluenza($id,$object=null,$comune=null,$modify=false)
     {
         $id.=$id."_Affluenza_Content";
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
         
-        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object) $object=new AA_Geco($_REQUEST['id']);
         if(!$object->isValid())
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -15581,7 +14646,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
             $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati del comune.</span></div>")));
@@ -15609,7 +14674,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOCAffluenzaModifyDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($giornata).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
                     $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOCAffluenzaTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($giornata).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
-                    if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA)>0) $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica dato' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina dato' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
+                    if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_AFFLUENZA)>0) $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica dato' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina dato' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
                     else $ops="&nbsp;";
                 }
                 $data[]=array("id"=>$giornata,"ops"=>$ops, "giornata"=>$giornata,"ore_12"=>$curAffluenza['ore_12'],"ore_19"=>$curAffluenza['ore_19'],"ore_22"=>$curAffluenza['ore_22']);
@@ -15638,7 +14703,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX;
 
-        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Geco)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
         $rows_fixed_height=50;
         $canModify=false;
@@ -15875,7 +14940,7 @@ Class AA_SierModule extends AA_GenericModule
     {
        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX;
 
-        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Geco)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
 
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
 
@@ -16203,7 +15268,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX;
 
-        if(!($object instanceof AA_Sier)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Geco)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
 
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
         
@@ -16266,7 +15331,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $data=array();
-        //$circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        //$circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
 
         $candidati=$object->GetCandidati();
         foreach($candidati as $curCandidato)
@@ -16362,11 +15427,11 @@ Class AA_SierModule extends AA_GenericModule
     {
        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX;
 
-        if(!($object instanceof AA_Sier))
+        if(!($object instanceof AA_Geco))
         {
             if(isset($_REQUEST['id']))
             {
-                $object=new AA_Sier($_REQUEST['id'],$this->oUser);
+                $object=new AA_Geco($_REQUEST['id'],$this->oUser);
                 if(!$object->IsValid())
                 {
                     return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
@@ -16620,12 +15685,12 @@ Class AA_SierModule extends AA_GenericModule
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneComunicazioniViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             if($analisi[0]==false) 
             {
-                if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']=$data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><span style='color:green' class='mdi mdi-checkbox-marked-circle'></span>";
+                if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']=$data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><span style='color:green' class='mdi mdi-checkbox-marked-circle'></span>";
                 else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             }
             else 
             {
-                if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
+                if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
                 else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
             }
             $data[$index]['comunicazioni'].="</div>";
@@ -16813,8 +15878,8 @@ Class AA_SierModule extends AA_GenericModule
     {
 
         $id=static::AA_UI_PREFIX."_GetSierComuneLogsDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
         
         $wnd=new AA_GenericWindowTemplate($id, "Logs comune di ".$comune->GetProp("denominazione"), $this->id);
         $wnd->SetWidth("720");
@@ -16922,7 +15987,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi di modifica dell'elemento</error>";
@@ -16954,7 +16019,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $task->SetError("L'utente corrente non ha i permessi per cestinare l'elemento");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per cestinare l'elemento</error>";
@@ -16994,7 +16059,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
          
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $task->SetError("L'utente corrente non ha i permessi per eliminare l'elemento");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per eliminare l'elemento</error>";
@@ -17011,7 +16076,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -17174,7 +16239,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -17230,7 +16295,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiungere nuovi elementi</error>";
@@ -17260,7 +16325,7 @@ Class AA_SierModule extends AA_GenericModule
        
         $filter=$_REQUEST["filter"];
 
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -17273,7 +16338,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if($comune instanceof AA_SierComune)
+        if($comune instanceof AA_GecoComune)
         {
            $circoscrizione=$comune->GetProp("id_circoscrizione");
         }
@@ -17296,7 +16361,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -17314,7 +16379,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($_REQUEST['id_comune']);
-        if(!$comune instanceof AA_SierComune)
+        if(!$comune instanceof AA_GecoComune)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Identificativo comune non valido. (".$_REQUEST['id_comune'].")",false);
@@ -17464,7 +16529,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17472,7 +16537,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17481,7 +16546,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -17628,7 +16693,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object=new AA_Sier($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -17646,7 +16711,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($_REQUEST['id_comune']);
-        if(!$comune instanceof AA_SierComune)
+        if(!$comune instanceof AA_GecoComune)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Identificativo comune non valido. (".$_REQUEST['id_comune'].")",false);
@@ -17732,14 +16797,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17747,7 +16812,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17756,14 +16821,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -17848,14 +16913,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17872,14 +16937,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune("",$cf);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Operatore non abilitato.",false);
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->ChallengeLogin($cf,$object->GetId()))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17899,14 +16964,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17914,7 +16979,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->VerifyLogin($_REQUEST['codice']))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17932,14 +16997,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17947,7 +17012,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17956,7 +17021,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -17973,14 +17038,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17988,7 +17053,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -17997,7 +17062,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -18014,14 +17079,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18029,7 +17094,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18038,7 +17103,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -18055,14 +17120,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18070,7 +17135,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18079,7 +17144,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -18096,14 +17161,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18111,7 +17176,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18120,7 +17185,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -18137,14 +17202,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18152,7 +17217,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18161,7 +17226,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -18189,14 +17254,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18204,7 +17269,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -18213,7 +17278,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -18269,7 +17334,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18279,7 +17344,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         if(!$object->isValid())
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
@@ -18306,7 +17371,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         if(!$object->isValid())
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
@@ -18332,7 +17397,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         if(!$object->isValid())
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
@@ -18343,7 +17408,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18364,7 +17429,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         if(!$object->isValid())
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
@@ -18375,7 +17440,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18438,7 +17503,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         if(!$object->isValid())
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
@@ -18449,7 +17514,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18498,7 +17563,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18535,7 +17600,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18574,7 +17639,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18614,7 +17679,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18683,7 +17748,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18706,7 +17771,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -18743,7 +17808,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -18789,7 +17854,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -18835,7 +17900,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -18907,7 +17972,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -18967,7 +18032,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -18980,7 +18045,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19015,7 +18080,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19028,7 +18093,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19063,7 +18128,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19076,7 +18141,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19111,7 +18176,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19124,7 +18189,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19159,7 +18224,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19172,7 +18237,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19207,7 +18272,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19220,7 +18285,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19255,7 +18320,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19268,7 +18333,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19303,7 +18368,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19316,7 +18381,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19351,7 +18416,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19364,7 +18429,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19399,7 +18464,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19412,7 +18477,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19447,7 +18512,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19460,7 +18525,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19495,7 +18560,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19532,7 +18597,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19565,7 +18630,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19577,7 +18642,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF))
         {
             header('Content-Type: text/csv');
             die($object->ExportCorpoElettoraleComuniCSV());
@@ -19598,7 +18663,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19610,7 +18675,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF))
         {
             header('Content-Type: text/csv');
             die($object->ExportDatiComuniCSV());
@@ -19631,7 +18696,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19643,7 +18708,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF))
         {
             header('Content-Type: text/csv');
             die($object->ExportCandidatiCSV());
@@ -19664,7 +18729,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19677,7 +18742,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19712,7 +18777,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19725,7 +18790,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $coalizione=$object->GetCoalizione($_REQUEST['id_coalizione']);
-        if(!($coalizione instanceof AA_SierCoalizioni))
+        if(!($coalizione instanceof AA_GecoCoalizioni))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -19775,7 +18840,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19812,7 +18877,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19822,7 +18887,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -19839,7 +18904,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19849,7 +18914,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -19867,7 +18932,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19877,7 +18942,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -19894,7 +18959,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19904,7 +18969,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -19921,7 +18986,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19940,7 +19005,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19959,7 +19024,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19969,7 +19034,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -19986,7 +19051,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -19996,7 +19061,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20015,14 +19080,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20030,7 +19095,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20039,7 +19104,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -20058,7 +19123,7 @@ Class AA_SierModule extends AA_GenericModule
      {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20068,7 +19133,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20100,7 +19165,7 @@ Class AA_SierModule extends AA_GenericModule
      {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20110,7 +19175,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20142,7 +19207,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20152,7 +19217,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20169,7 +19234,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20179,7 +19244,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20196,7 +19261,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20206,7 +19271,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20223,7 +19288,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20233,7 +19298,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20250,7 +19315,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20260,7 +19325,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20291,7 +19356,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20301,7 +19366,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20318,7 +19383,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20328,7 +19393,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20345,7 +19410,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20355,7 +19420,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20372,7 +19437,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20382,7 +19447,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20399,7 +19464,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20409,7 +19474,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20426,7 +19491,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20436,7 +19501,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20453,7 +19518,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20463,7 +19528,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20480,7 +19545,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20488,7 +19553,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20497,7 +19562,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -20514,7 +19579,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20524,7 +19589,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20541,7 +19606,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20549,7 +19614,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20558,7 +19623,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -20575,7 +19640,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20583,7 +19648,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20592,7 +19657,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -20609,7 +19674,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20617,7 +19682,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20626,7 +19691,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -20653,7 +19718,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20663,7 +19728,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20687,14 +19752,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20702,7 +19767,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20711,7 +19776,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -20735,7 +19800,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20745,7 +19810,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20769,7 +19834,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20777,7 +19842,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20786,7 +19851,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -20810,7 +19875,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20818,7 +19883,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -20827,7 +19892,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -20853,7 +19918,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20863,7 +19928,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20879,7 +19944,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20889,7 +19954,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20920,7 +19985,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20930,7 +19995,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20938,7 +20003,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Candidato non valido",false);
@@ -20969,7 +20034,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -20979,7 +20044,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -20996,7 +20061,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21006,7 +20071,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21033,7 +20098,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21041,7 +20106,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21050,7 +20115,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21077,7 +20142,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21087,7 +20152,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21111,7 +20176,7 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        if(!($lista instanceof AA_SierLista))
+        if(!($lista instanceof AA_GecoLista))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Lista non valida",false);
@@ -21142,7 +20207,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21152,7 +20217,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21177,7 +20242,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21187,7 +20252,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21218,7 +20283,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21226,7 +20291,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21235,7 +20300,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21252,7 +20317,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21260,7 +20325,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21269,7 +20334,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21286,7 +20351,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21294,7 +20359,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21303,7 +20368,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21320,7 +20385,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21328,7 +20393,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21337,7 +20402,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21368,7 +20433,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21376,7 +20441,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21385,7 +20450,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21415,7 +20480,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21423,7 +20488,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21432,7 +20497,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21440,7 +20505,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $candidato=$object->GetCandidato($_REQUEST['id_candidato']);
-        if(!($candidato instanceof AA_SierCandidato))
+        if(!($candidato instanceof AA_GecoCandidato))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Candidato non valido",false);
@@ -21471,7 +20536,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21479,7 +20544,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21488,7 +20553,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21519,7 +20584,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21527,7 +20592,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21536,7 +20601,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
@@ -21560,7 +20625,7 @@ Class AA_SierModule extends AA_GenericModule
             }
         }
 
-        if(!($lista instanceof AA_SierLista))
+        if(!($lista instanceof AA_GecoLista))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Lista non valida",false);
@@ -21591,7 +20656,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21601,7 +20666,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21631,8 +20696,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Task_GetOCLoginVerifyDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        if(isset($_SESSION['oc_sier_object'])) $object=new AA_Sier($_SESSION['oc_sier_object'],$this->oUser);
-        else $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        if(isset($_SESSION['oc_sier_object'])) $object=new AA_Geco($_SESSION['oc_sier_object'],$this->oUser);
+        else $object= new AA_Geco($_REQUEST['id'],$this->oUser);
 
         if(!$object->isValid())
         {
@@ -21641,7 +20706,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -21659,7 +20724,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21669,7 +20734,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21685,7 +20750,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21695,7 +20760,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21710,7 +20775,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21728,7 +20793,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21746,7 +20811,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21764,7 +20829,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21774,7 +20839,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21791,7 +20856,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21801,7 +20866,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21818,7 +20883,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21828,7 +20893,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21899,7 +20964,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -21909,7 +20974,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -21979,7 +21044,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22034,7 +21099,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22044,7 +21109,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -22088,7 +21153,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22135,7 +21200,7 @@ Class AA_SierModule extends AA_GenericModule
                         $logs[$idLog]['msg']=str_replace("comunicazioni",'voti Presidente',$logs[$idLog]['msg']);
                     }
     
-                    if(!$db->Query("UPDATE ".AA_Sier::AA_COMUNI_DB_TABLE." set logs='".addslashes(json_encode($logs))."' WHERE id='".$curComune->GetProp('id')."' LIMIT 1"))
+                    if(!$db->Query("UPDATE ".AA_Geco::AA_COMUNI_DB_TABLE." set logs='".addslashes(json_encode($logs))."' WHERE id='".$curComune->GetProp('id')."' LIMIT 1"))
                     {
                         AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage(),100);
                     }
@@ -22152,7 +21217,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22162,7 +21227,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -22284,7 +21349,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22294,7 +21359,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -22381,7 +21446,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22391,7 +21456,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -22476,7 +21541,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22486,7 +21551,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -22613,7 +21678,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22623,7 +21688,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -22734,7 +21799,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -22744,7 +21809,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -22790,14 +21855,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -22805,7 +21870,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -22814,14 +21879,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -22899,14 +21964,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -22914,7 +21979,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -22923,14 +21988,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -23050,14 +22115,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23065,7 +22130,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23074,14 +22139,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -23186,14 +22251,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23201,7 +22266,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23210,14 +22275,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -23332,14 +22397,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23347,7 +22412,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23356,14 +22421,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_AFFLUENZA)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica affluenza non abilitata.",false);
@@ -23397,7 +22462,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
 
         $affluenza=$comune->GetAffluenza(true);
         if(!is_array($affluenza)) $affluenza=array();
@@ -23428,14 +22493,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23443,7 +22508,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23452,21 +22517,21 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_COMUNICAZIONI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica comunicazioni non abilitata.",false);
             return false;
         }       
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
 
         $giornate=$object->GetGiornate();
         $comunicazioni=$comune->GetComunicazioni(true);
@@ -23499,14 +22564,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23514,7 +22579,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23523,14 +22588,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         } 
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
 
         $giornate=$object->GetGiornate();
         $giornateKeys=array_keys($giornate);
@@ -23578,14 +22643,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23593,7 +22658,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -23602,14 +22667,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -23686,7 +22751,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -23696,7 +22761,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -23761,7 +22826,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -23771,7 +22836,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -23837,7 +22902,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -23847,7 +22912,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->Getcomune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -23891,7 +22956,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -23901,7 +22966,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -23932,7 +22997,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -23942,7 +23007,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -24030,14 +23095,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -24045,7 +23110,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -24054,14 +23119,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -24146,7 +23211,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -24156,7 +23221,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -24300,7 +23365,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -24310,7 +23375,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -24376,8 +23441,8 @@ Class AA_SierModule extends AA_GenericModule
     {
         include_once "pdf_lib.php";
 
-        if (!($object instanceof AA_Sier)) return "";
-        if (!($comune instanceof AA_SierComune)) return "";
+        if (!($object instanceof AA_Geco)) return "";
+        if (!($comune instanceof AA_GecoComune)) return "";
 
         $rendiconti=$comune->GetRendiconti(true);
         $serial=$object->BuildRendicontiSerial($rendiconti);
@@ -24627,7 +23692,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_RendicontiReportProspettoRiassuntivo($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
     {
     
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune) || !is_array($rendiconti))
         {
             return "";
         }
@@ -24709,13 +23774,13 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
                 $totale+=floatVal($val['importo']);
             }
         }
@@ -24784,7 +23849,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_RendicontiReportSeggi($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
     {
     
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune) || !is_array($rendiconti))
         {
             return "";
         }
@@ -24874,7 +23939,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_RendicontiReportBuoni($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
     {
     
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune) || !is_array($rendiconti))
         {
             return "";
         }
@@ -24961,7 +24026,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_RendicontiReportStraordinario($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
     {
     
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune) || !is_array($rendiconti))
         {
             return "";
         }
@@ -25151,7 +24216,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_RendicontiReportStraordinarioAttestazioni($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true)
     {
     
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune) || !is_array($rendiconti))
         {
             return "";
         }
@@ -25190,7 +24255,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_RendicontiReportAssunzioni($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true,$page=0,$lastPage=false)
     {
     
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune) || !is_array($rendiconti))
         {
             return "";
         }
@@ -25312,7 +24377,7 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_RendicontiReportServizi($object=null,$comune=null,$rendiconti=null,$bDifferenziateRowsColor=true,$page=0)
     {
     
-        if(!($object instanceof AA_Sier) || !($comune instanceof AA_SierComune) || !is_array($rendiconti))
+        if(!($object instanceof AA_Geco) || !($comune instanceof AA_GecoComune) || !is_array($rendiconti))
         {
             return "";
         }
@@ -25406,7 +24471,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -25416,7 +24481,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -25518,14 +24583,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -25533,7 +24598,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -25542,14 +24607,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -25646,7 +24711,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -25656,7 +24721,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -25722,7 +24787,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -25732,14 +24797,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Permessi insufficienti.",false);
@@ -25827,14 +24892,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -25842,7 +24907,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -25851,14 +24916,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -25917,7 +24982,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -25927,7 +24992,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -26009,14 +25074,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26024,7 +25089,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26033,14 +25098,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26123,7 +25188,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -26140,7 +25205,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -26185,14 +25250,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26200,7 +25265,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26209,14 +25274,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26261,14 +25326,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26276,7 +25341,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26285,14 +25350,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26346,7 +25411,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -26363,7 +25428,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -26408,14 +25473,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26423,7 +25488,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26432,14 +25497,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26484,7 +25549,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -26494,7 +25559,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -26688,14 +25753,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26703,7 +25768,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -26712,14 +25777,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26906,7 +25971,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -26923,7 +25988,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
@@ -26991,7 +26056,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27001,14 +26066,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido",false);
             return false;
         }
 
-        if(!$this->oUser->IsSuperUser() && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if(!$this->oUser->IsSuperUser() && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
             $task->SetContent(" ",false);
@@ -27050,7 +26115,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27084,7 +26149,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27111,7 +26176,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27138,7 +26203,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27165,7 +26230,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27192,7 +26257,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27219,7 +26284,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27245,7 +26310,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27272,7 +26337,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27306,7 +26371,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27339,7 +26404,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27373,7 +26438,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27407,7 +26472,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27441,7 +26506,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27475,7 +26540,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -27523,7 +26588,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
 
         if(!$object->isValid())
@@ -27681,7 +26746,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $ordine=0;
         if(isset($_REQUEST['ordine']) && $_REQUEST['ordine']>0) $ordine=$_REQUEST['ordine'];
-        $allegato=new AA_SierAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari),addslashes($ordine));
+        $allegato=new AA_GecoAllegati($_REQUEST['id_allegato'],$allegato->GetIdSier(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari),addslashes($ordine));
         
         if(!$object->UpdateAllegato($allegato, $this->oUser))
         {        
@@ -27705,14 +26770,14 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
             return false;
         }
 
-        $object=new AA_Sier($_SESSION['oc_sier_object']);
+        $object=new AA_Geco($_SESSION['oc_sier_object']);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -27720,7 +26785,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $operatore=AA_SierOperatoreComunale::GetInstance();
+        $operatore=AA_GecoOperatoreComunale::GetInstance();
         if(!$operatore->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -27729,14 +26794,14 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $comune=$object->GetComune($operatore->GetOperatoreComunaleComune());
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Comune non valido.",false);
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -27863,7 +26928,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid() || $object->GetId()<=0)
         {
@@ -27918,7 +26983,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid() || $object->GetId()<=0)
         {
@@ -27973,7 +27038,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -28019,7 +27084,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid())
         {
@@ -28065,7 +27130,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid() || $object->GetId()<= 0)
         {
@@ -28111,7 +27176,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid() || $object->GetId()<= 0)
         {
@@ -28169,7 +27234,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid() || $object->GetId()<= 0)
         {
@@ -28215,7 +27280,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         
         if(!$object->isValid() || $object->GetId()<= 0)
         {
@@ -28291,7 +27356,7 @@ Class AA_SierModule extends AA_GenericModule
      {
          AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
          
-         $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+         $object= new AA_Geco($_REQUEST['id'],$this->oUser);
          if(!$object->isValid())
          {
              $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
@@ -28311,7 +27376,7 @@ Class AA_SierModule extends AA_GenericModule
     //Task NavBarContent
     public function Task_GetNavbarContent($task)
     {
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $_REQUEST['section']=static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX;
         }
@@ -28361,7 +27426,7 @@ Class AA_SierModule extends AA_GenericModule
         $selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
         $options=array();
         $options[0]="Qualunque";
-        foreach(AA_Sier_Const::GetListaTipologia() as $key=>$value)
+        foreach(AA_Geco_Const::GetListaTipologia() as $key=>$value)
         {
             $options[]=array("id"=>$key,"value"=>$value);
         }
@@ -28418,7 +27483,7 @@ Class AA_SierModule extends AA_GenericModule
         /*$selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
         $options=array();
         $options[0]="Qualunque";
-        foreach(AA_Sier_Const::GetListaTipologia() as $key=>$value)
+        foreach(AA_Geco_Const::GetListaTipologia() as $key=>$value)
         {
             $options[]=array("id"=>$key,"value"=>$value);
         }
@@ -28458,14 +27523,14 @@ Class AA_SierModule extends AA_GenericModule
     //Template pdf export single
     public function Template_SierPdfExport($id="", $parent=null,$object=null,$user=null)
     {
-        if(!($object instanceof AA_Sier))
+        if(!($object instanceof AA_Geco))
         {
             return "";
         }
         
         if($id=="") $id="Template_SierPdfExport_".$object->GetId();
 
-        return new AA_SierPublicReportTemplateView($id,$parent,$object);
+        return new AA_GecoPublicReportTemplateView($id,$parent,$object);
     }
 
     //Template dettaglio allegati
@@ -28632,8 +27697,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneDatiGeneraliViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliViewDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -28694,8 +27759,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneComunicazioniViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneComunicazioniViewDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
 
         $giornate=$object->GetGiornate();
         $comunicazioni=$comune->GetComunicazioni(true);
@@ -28708,7 +27773,7 @@ Class AA_SierModule extends AA_GenericModule
         $inizio=false;
 
         $admin=false;
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $admin=true;
         }
@@ -28719,7 +27784,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $readonly=true;
             if($giornata<=$now || $admin) $readonly=false;
-            if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF) && !$admin) $readonly=true;
+            if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF) && !$admin) $readonly=true;
 
             $label_inizio="Apertura operazioni uffici elettorali di sezione";
             if(sizeof($sections)==0) $label_inizio="Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale";
@@ -28756,7 +27821,7 @@ Class AA_SierModule extends AA_GenericModule
             
             $wnd->EnableCloseWndOnSuccessfulSave();
             $wnd->enableRefreshOnSuccessfulSave();
-            if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF) && !$admin) $wnd->SetApplyButtonName("Chiudi");
+            if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF) && !$admin) $wnd->SetApplyButtonName("Chiudi");
             $wnd->SetSaveTask("UpdateSierComuneComunicazioni");
             
             return $wnd;    
@@ -28774,8 +27839,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCAffluenzaAddNewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCAffluenzaAddNewDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Nuovo dato affluenza", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Nuovo dato affluenza", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Nuovo dato affluenza", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Nuovo dato affluenza", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -28862,8 +27927,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneAffluenzaAddNewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneAffluenzaAddNewDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Nuovo dato affluenza", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Nuovo dato affluenza", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Nuovo dato affluenza", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Nuovo dato affluenza", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -28940,8 +28005,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneAffluenzaModifyDlg($object=null,$comune=null,$giornata="")
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneAffluenzaModifyDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica affluenza", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica affluenza", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica affluenza", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica affluenza", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -29023,8 +28088,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_DatiGeneraliModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliModifyDlg".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Dati generali", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Dati generali", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Dati generali e corpo elettorale", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -29046,7 +28111,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetWidth(800);
             $height=0;
 
-            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI)>0)
+            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_DATIGENERALI)>0)
             {
                 $height+=350;
                 //pec
@@ -29079,8 +28144,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_OC_CorpoElettoraleModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneDatiGeneraliModifyDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -29108,7 +28173,7 @@ Class AA_SierModule extends AA_GenericModule
             $height=0;
 
             //Dati corpo elettorale
-            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
+            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
             {
                 $height+=640;
                 $section=new AA_FieldSet($id."_Section_DatiSezione","Sezioni elettorali","",2);
@@ -29156,8 +28221,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneCorpoElettoraleViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneCorpoElettoraleViewDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Sezioni e corpo elettorale", $this->id);
 
         $form_data=array();
         $giornate=$object->GetGiornate();
@@ -29247,7 +28312,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template layout risultati
     public function Template_GetSierComuneRisultatiViewLayout($object=null,$comune=null,$id="")
     {
-        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object) $object=new AA_Geco($_REQUEST['id']);
         if(!$object->isValid())
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -29256,7 +28321,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
             $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati del comune.</span></div>")));
@@ -29676,7 +28741,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $data=array();
-        //$circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
+        //$circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
 
         $candidati=$object->GetCandidati(null,null,$comune->GetProp('id_circoscrizione'));
         foreach($candidati as $curCandidato)
@@ -29739,7 +28804,7 @@ Class AA_SierModule extends AA_GenericModule
                 $curImagePath=$DefaultImagePath."/placeholder_coalizioni.png";
             }
 
-            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0)
             {
                 $modify="<a title='Modifica' class='AA_Button_Link' onclick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"GetSierComuneRisultatiPreferenzeModifyDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_candidato:".$idCandidato.",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},\"".$this->id."\")'><span class='mdi mdi-pencil'></span></a>";
                 $trash="<a title='Rimuovi' class='AA_Button_Link AA_DataTable_Ops_Button_Red' style='color: red' onclick='AA_MainApp.utils.callHandler(\"dlg\", {task:\"GetSierComuneRisultatiPreferenzeTrashDlg\", postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",id_candidato:".$idCandidato.",refresh: 1,refresh_obj_id:\"$id\"},module: \"" . $this->id . "\"},\"".$this->id."\")'><span class='mdi mdi-trash-can'></span></a>";
@@ -29791,7 +28856,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template layout rendiconti
     public function Template_GetSierComuneRendicontiViewLayout($object=null,$comune=null,$id="")
     {
-        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object) $object=new AA_Geco($_REQUEST['id']);
         if(!$object->isValid())
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -29800,7 +28865,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
             $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati del comune.</span></div>")));
@@ -30098,7 +29163,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) 
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) 
                 {
                     $propaganda+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bPropagandaAmmesso)
@@ -30107,7 +29172,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bPropagandaAmmesso=false;
                 }              
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) 
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_COLLEGAMENTI) 
                 {
                     $collegamenti+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bCollegamentiAmmesso)
@@ -30116,7 +29181,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bCollegamentiAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) 
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_ALTRO) 
                 {
                     $altro+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bAltroAmmesso)
@@ -30125,7 +29190,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bAltroAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) 
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) 
                 {
                     $materiale+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bMaterialeAmmesso)
@@ -30134,7 +29199,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bMaterialeAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) 
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_SPESE_POSTALI) 
                 {
                     $spese_postali+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bSpesePostaliAmmesso)
@@ -30143,7 +29208,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bSpesePostaliAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) 
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) 
                 {
                     $software+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bSoftwareAmmesso)
@@ -30152,7 +29217,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bSoftwareAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) 
+                if($val['tipologia']==AA_Geco_Const::AA_GECO_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) 
                 {
                     $trasporto+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bTrasportoAmmesso)
@@ -31748,8 +30813,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiGeneraliModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiGeneraliModifyDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica risultati generali", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica risultati generali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica risultati generali", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica risultati generali", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -31831,8 +30896,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiSeggiModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiSeggiModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze componenti dei seggi", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze componenti dei seggi", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze componenti dei seggi", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze componenti dei seggi", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -31917,9 +30982,9 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiImportoAmmessoModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiImportoAmmessoModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
             $form_data['id']=$object->GetId();
             $form_data['id_comune']=$comune->GetProp("id");
@@ -32007,8 +31072,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRendicontiSeggiModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_OC_RendicontiSeggiModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze componenti dei seggi", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze componenti dei seggi", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze componenti dei seggi", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze componenti dei seggi", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32092,8 +31157,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiServiziModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiServiziModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica un bene/servizio", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica un bene/servizio", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica un bene/servizio", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica un bene/servizio", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32175,8 +31240,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRendicontiServiziModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCComuneRendicontiServiziModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica un bene/servizio", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica un bene/servizio", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica un bene/servizio", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica un bene/servizio", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32257,8 +31322,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiRasLiquidazioniModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiRasLiquidazioniModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica una liquidazione", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica una liquidazione", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica una liquidazione", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Aggiungi/Modifica una liquidazione", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32315,8 +31380,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiBuoniModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiBuoniModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32410,8 +31475,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRendicontiBuoniModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCComuneRendicontiBuoniModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32504,8 +31569,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiRasModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiRasModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze spettanti per i buoni pasto dei dipendenti addetti", $this->id);
 
         $cp=$object->GetControlPannel();
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32589,8 +31654,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiPersonaleIndeterminatoModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiPersonaleModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32731,8 +31796,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRendicontiPersonaleIndeterminatoModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCComuneRendicontiPersonaleModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32871,8 +31936,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiPersonaleDeterminatoModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiPersonaleModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -32974,8 +32039,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCRendicontiPersonaleDeterminatoModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCComuneRendicontiPersonaleModifyDlg_".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica competenze personale a tempo determinato", $this->id);
 
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -33075,8 +32140,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiCoalizioniModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
         $coalizioni=$object->GetCoalizioni();
 
         if(sizeof($coalizioni)==0)
@@ -33140,9 +32205,9 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiPreferenzeModifyDlg($object=null,$comune=null,$candidato=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
-        if(!($candidato instanceof AA_SierCandidato)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($candidato instanceof AA_GecoCandidato)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         
         $risultati=$comune->GetRisultati(true);
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
@@ -33196,9 +32261,9 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiPreferenzeModifyMultiDlg($object=null,$comune=null,$lista=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiCoalizioniModifyDlg".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
-        if(!($lista instanceof AA_SierLista)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($lista instanceof AA_GecoLista)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
         
         $risultati=$comune->GetRisultati(true);
         $candidati=$object->GetCandidati(null,$lista,$comune->GetProp("id_circoscrizione"));
@@ -33274,12 +32339,12 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCModifyRisultatiPreferenzeDlg($object=null,$comune=null,$candidato=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiCoalizioniDlg".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
-        if(!($candidato instanceof AA_SierCandidato)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($candidato instanceof AA_GecoCandidato)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
 
         $risultati=$comune->GetRisultati(true);
-        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
+        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)>0)
         {
             $form_data['id']=$object->GetId();
             $form_data['id_sier']=$object->GetId();
@@ -33327,13 +32392,13 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCModifyRisultatiPreferenzeMultiDlg($object=null,$comune=null,$lista=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiCoalizioniDlg".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
-        if(!($lista instanceof AA_SierLista)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
+        if(!($lista instanceof AA_GecoLista)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
 
         $risultati=$comune->GetRisultati(true);
         $candidati=$object->GetCandidati(null,$lista,$comune->GetProp("id_circoscrizione"));
-        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
+        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)>0)
         {
             $form_data['id']=$object->GetId();
             $form_data['id_sier']=$object->GetId();
@@ -33404,8 +32469,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiListeModifyDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierComuneRisultatiListeModifyDlg".uniqid();
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti voti Liste circoscrizionali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica voti voti Liste circoscrizionali", $this->id);
         $liste=$object->GetListe(null,$comune->GetProp('id_circoscrizione'));
 
         if(sizeof($liste)==0)
@@ -33497,8 +32562,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCModifyRisultatiGeneraliDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiGeneraliDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica risultati generali", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica risultati generali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica risultati generali", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica risultati generali", $this->id);
 
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)>0)
         {
@@ -33583,8 +32648,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCModifyComunicazioniDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCModifyComunicazioniDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Comunicazioni operazioni uffici elettorali", $this->id);
 
         $giornate=$object->GetGiornate();
         $comunicazioni=$comune->GetComunicazioni(true);
@@ -33610,7 +32675,7 @@ Class AA_SierModule extends AA_GenericModule
             $sections[]=$section;
         }
 
-        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)>0)
+        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_COMUNICAZIONI)>0)
         {
             $risultati=$comune->GetRisultati(true);
             foreach($risultati as $key=>$val)
@@ -33656,8 +32721,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCModifyRisultatiCoalizioniDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiCoalizioniDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica voti candidati Presidente", $this->id);
         $coalizioni=$object->GetCoalizioni();
 
         if(sizeof($coalizioni)==0)
@@ -33720,8 +32785,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierOCModifyRisultatiListeDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_GetSierOCModifyRisultatiListeDlg";
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Modifica voti Liste circoscrizionali", $this->id);
         $liste=$object->Getliste(null,$comune->GetProp("id_circoscrizione"));
 
         if(sizeof($liste)==0)
@@ -33732,7 +32797,7 @@ Class AA_SierModule extends AA_GenericModule
             return $wnd;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
+        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI)>0)
         {
             $listeToAdd=array();
             $form_data['id']=$object->GetId();
@@ -33809,8 +32874,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRisultatiViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_RISULTATI_COMUNALI;
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Gestione risultati", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Gestione risultati", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Gestione risultati", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Gestione risultati", $this->id);
 
         $wnd = new AA_GenericWindowTemplate($id, "Gestione risultati comune di ".$comune->GetProp("denominazione"), $this->id);
 
@@ -33823,8 +32888,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneRendicontiViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI;
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Gestione rendiconti", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Gestione rendiconti", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Gestione rendiconti", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Gestione rendiconti", $this->id);
 
         $wnd = new AA_GenericWindowTemplate($id, "Gestione rendiconti comune di ".$comune->GetProp("denominazione"), $this->id);
 
@@ -33940,7 +33005,7 @@ Class AA_SierModule extends AA_GenericModule
          //Tree view select
          $layout_liste=new AA_JSON_Template_Layout($id."_DettaglioTreeBox",array("type"=>"clean"));
 
-         $template_content="<div id='AA_SierWebAppSideMenuBox'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
+         $template_content="<div id='AA_GecoWebAppSideMenuBox'style='display: flex; justify-content: center; align-items: center;width: 100%; height: 100%; border-radius:15px; background-color:#ebedf0'>";
          $template_content.="</div>";
  
          $layout_liste->AddRow(new AA_JSON_Template_Template($id."_DettaglioTreeBoxContent",array("css"=>array("background-color"=>"#f4f5f9"),"filtered"=>true,"template"=>$template_content)));
@@ -33955,8 +33020,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneAffluenzaViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE;
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Gestione affluenza", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Gestione affluenza", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Gestione affluenza", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Gestione affluenza", $this->id);
 
 
         $wnd = new AA_GenericWindowTemplate($id, "Affluenza alle urne - comune di ".$comune->GetProp("denominazione"), $this->id);
@@ -33969,7 +33034,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template layout affluenza
     public function Template_GetSierComuneAffluenzaViewLayout($object=null,$comune=null,$id="")
     {
-        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object) $object=new AA_Geco($_REQUEST['id']);
         if(!$object->isValid())
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -33978,7 +33043,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
             $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati del comune.</span></div>")));
@@ -34055,8 +33120,8 @@ Class AA_SierModule extends AA_GenericModule
     public function Template_GetSierComuneOperatoriViewDlg($object=null,$comune=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_OPERATORI_COMUNALI;
-        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
-        if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
+        if(!($comune instanceof AA_GecoComune)) return new AA_GenericWindowTemplate($id, "Gestione operatori comunali", $this->id);
 
 
         $wnd = new AA_GenericWindowTemplate($id, "Gestione operatori comune di ".$comune->GetProp("denominazione"), $this->id);
@@ -34069,7 +33134,7 @@ Class AA_SierModule extends AA_GenericModule
     //Template layout operatori comune
     public function Template_GetSierComuneOperatoriViewLayout($object=null,$comune=null,$id="")
     {
-        if(!$object) $object=new AA_Sier($_REQUEST['id']);
+        if(!$object) $object=new AA_Geco($_REQUEST['id']);
         if(!$object->isValid())
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -34078,7 +33143,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         if(!$comune) $comune = $object->GetComune($_REQUEST['id_comune']);
-        if(!($comune instanceof AA_SierComune))
+        if(!($comune instanceof AA_GecoComune))
         {
             $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
             $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero della lista degli operatori.</span></div>")));
@@ -34252,7 +33317,7 @@ Class AA_SierModule extends AA_GenericModule
         $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","title"=>"Abilitazioni di caricamento per gli operatori ed esportazione info per il sito istituzionale.","gravity"=>10));
 
         //oggetto non valido
-        if(!($object instanceof AA_Sier) || !$object->isValid())
+        if(!($object instanceof AA_Geco) || !$object->isValid())
         {
             $layout->addRow(new AA_JSON_Template_Generic());
             return $layout;
@@ -34263,7 +33328,7 @@ Class AA_SierModule extends AA_GenericModule
         //Abilitazione accesso operatori
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
         
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_ACCESSO_OPERATORI) > 0) 
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_ACCESSO_OPERATORI) > 0) 
         {
             $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         }
@@ -34278,7 +33343,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione modifica info generali
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_DATIGENERALI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_DatiGenerali",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34290,7 +33355,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione modifica corpo elettorale
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_CORPO_ELETTORALE) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_DatiGenerali",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34302,7 +33367,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //Abilitazione modifica comunicazioni
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_COMUNICAZIONI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Comunicazioni",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34314,7 +33379,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione caricamento affluenza
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Affluenza",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34326,7 +33391,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione caricamento risultati
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Risultati",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34338,7 +33403,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //Abilitazione caricamento rendicontazione
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Rendiconti",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34350,7 +33415,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione esportazione affluenza
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_EXPORT_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_ExportAffluenza",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34363,7 +33428,7 @@ Class AA_SierModule extends AA_GenericModule
         //Abilitazione esportazione risultati
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
         $color="#000000";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_EXPORT_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Geco_Const::AA_GECO_FLAG_EXPORT_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_ExportRisultati",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34378,11 +33443,11 @@ Class AA_SierModule extends AA_GenericModule
 }
 
 #Classe template per la gestione del report pdf dell'oggetto
-Class AA_SierPublicReportTemplateView extends AA_GenericObjectTemplateView
+Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
 {
-    public function __construct($id="AA_SierPublicReportTemplateView",$parent=null,$object=null)
+    public function __construct($id="AA_GecoPublicReportTemplateView",$parent=null,$object=null)
     {
-        if(!($object instanceof AA_Sier))
+        if(!($object instanceof AA_Geco))
         {
             AA_Log::Log(__METHOD__." - oggetto non valido.", 100,false,true);
             return;
@@ -34410,7 +33475,7 @@ Class AA_SierPublicReportTemplateView extends AA_GenericObjectTemplateView
         $oggetto->SetText(substr($object->GetName(),0,320));
         #-----------------------------------------------
 
-        /*if($object->GetTipo(true) == AA_Sier_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE)
+        /*if($object->GetTipo(true) == AA_Geco_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE)
         {
             #modalità----------------------------------
             $oggetto=new AA_XML_Div_Element($id."_modalita",$this);
@@ -34436,7 +33501,7 @@ Class AA_SierPublicReportTemplateView extends AA_GenericObjectTemplateView
 }
 
 //Classe per la gestione degli allegati
-Class AA_SierAllegati
+Class AA_GecoAllegati
 {
     protected $id=0;
     public function GetId()
@@ -34547,9 +33612,9 @@ Class AA_SierAllegati
 
     public function GetFilePath()
     {
-        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf"))
+        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_GECO_ALLEGATI_PATH."/".$this->id.".pdf"))
         {
-            return AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf";
+            return AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_GECO_ALLEGATI_PATH."/".$this->id.".pdf";
         }
         
         return "";
@@ -34562,9 +33627,9 @@ Class AA_SierAllegati
     
     public function GetFilePublicPath()
     {
-        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf"))
+        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_GECO_ALLEGATI_PATH."/".$this->id.".pdf"))
         {
-            return AA_Geco_Const::AA_WWW_ROOT.AA_Geco_Const::AA_SIER_ALLEGATI_PUBLIC_PATH."?id=".$this->id."&id_sier=".$this->id_sier;
+            return AA_Geco_Const::AA_WWW_ROOT.AA_Geco_Const::AA_GECO_ALLEGATI_PUBLIC_PATH."?id=".$this->id."&id_sier=".$this->id_sier;
         }
         
         return "";
