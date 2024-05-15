@@ -62,6 +62,7 @@ Class AA_Geco extends AA_Object_V2
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
         //Db data binding
+        $this->AddProp("Descrizione","","descrizione");
         $this->AddProp("Note","","note");
         $this->AddProp("Norma","","norma");
         $this->AddProp("Anno","","anno");
@@ -505,39 +506,14 @@ Class AA_GecoModule extends AA_GenericModule
     //------------------------------------
 
     //Dialoghi
-    const AA_UI_WND_OPERATORI_COMUNALI="OperatoriComunaliWnd";
-    const AA_UI_LAYOUT_OPERATORI_COMUNALI="OperatoriComunaliLayout";
-    const AA_UI_WND_RENDICONTI_COMUNALI="RendicontiComunaliWnd";
-    const AA_UI_LAYOUT_RENDICONTI_COMUNALI="RendicontiComunaliLayout";
-    const AA_UI_WND_RISULTATI_COMUNALI="RisultatiComunaliWnd";
-    const AA_UI_LAYOUT_RISULTATI_COMUNALI="RisultatiComunaliLayout";
-    const AA_UI_WND_AFFLUENZA_COMUNALE="AffluenzaComunaleWnd";
-    const AA_UI_LAYOUT_AFFLUENZA_COMUNALE="AffluenzaComunaleLayout";
-    const AA_UI_WND_COMUNICAZIONI_COMUNALE="ComunicazioniComunaleWnd";
-    const AA_UI_LAYOUT_COMUNICAZIONI_COMUNALE="ComunicazioniComunaleLayout";
-    const AA_UI_TASK_ADDNEWMULTI_DLG="GetGecoComuneAddNewMultiDlg";
+    
 
     //report
-    const AA_UI_WND_REPORT_RISULTATI="ReportRisultatiWnd";
-    const AA_UI_LAYOUT_REPORT_RISULTATI="ReportRisultatiLayout";
-
+   
     //Section id
-    const AA_ID_SECTION_OC_LOGIN="OperatoriComunaliLogin";
-    const AA_ID_SECTION_OC_DESKTOP= "OperatoriComunaliDesktop";
 
     //section ui ids
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
-    const AA_UI_DETAIL_LISTE_BOX = "Liste_Box";
-    const AA_UI_DETAIL_CANDIDATI_BOX = "Candidati_Box";
-    const AA_UI_DETAIL_COMUNI_BOX = "Comuni_Box";
-    const AA_UI_DETAIL_REPORT_BOX = "Report_Box";
-    const AA_UI_DETAIL_CRUSCOTTO_BOX = "Cruscotto_Box";
-    const AA_UI_DETAIL_ALLEGATI_BOX = "Allegati_Box";
-    const AA_UI_SECTION_OC_LOGIN = "OperatoriComunaliLoginBox";
-    const AA_UI_SECTION_OC_DESKTOP= "OperatoriComunaliDesktopBox";
-
-    //Risultati App id
-    const AA_ID_APP= "GecoWebApp";
 
     public function __construct($user=null,$bDefaultSections=true)
     {
@@ -556,7 +532,7 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecoBozzeFilterDlg");
 
 
-        //elezioni
+        //dati
         $taskManager->RegisterTask("GetGecoModifyDlg");
         $taskManager->RegisterTask("GetGecoAddNewDlg");
         $taskManager->RegisterTask("GetGecoTrashDlg");
@@ -583,12 +559,7 @@ Class AA_GecoModule extends AA_GenericModule
         
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGecoDettaglio_Generale_Tab"),
-            //array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CRUSCOTTO_TAB, "value"=>"Cruscotto","tooltip"=>"Cruscotto di gestione","template"=>"TemplateGecoDettaglio_Cruscotto_Tab"),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_LISTE_BOX, "value"=>"<span style='font-size: smaller'>Coalizioni e Liste</span>","tooltip"=>"Gestione coalizioni e liste","template"=>"TemplateGecoDettaglio_Coalizioni_Tab","enable_preview"=>true),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_CANDIDATI_BOX, "value"=>"Candidati","tooltip"=>"Gestione dei Candidati","template"=>"TemplateGecoDettaglio_Candidati_Tab","enable_preview"=>true),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_COMUNI_BOX, "value"=>"Comuni","tooltip"=>"Gestione dei Comuni","template"=>"TemplateGecoDettaglio_Comuni_Tab","enable_preview"=>true),
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX, "value"=>"<span style='font-size: smaller'>Documenti</span>","tooltip"=>"Gestione degli allegati e links","template"=>"TemplateGecoDettaglio_Allegati_Tab","enable_preview"=>true),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGecoDettaglio_Generale_Tab")
         ));
 
         //Rendiconti layout object template
@@ -2484,8 +2455,8 @@ Class AA_GecoModule extends AA_GenericModule
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
       
-        //Revisionate
-        //$dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
+        //Revocate
+        $dlg->AddSwitchBoxField("revocati","Revocati",array("onLabel"=>"mostra esclusivamente","offLabel"=>"Mostra tutto","bottomLabel"=>"*Mostra i contributi revocati esclusivamente o insieme agli altri."));
         
         //oggetto
         $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del elemento/accordo.", "placeholder"=>"Oggetto..."));
@@ -2515,7 +2486,7 @@ Class AA_GecoModule extends AA_GenericModule
     }
     
     //Funzione di esportazione in pdf (da specializzare)
-    public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.23 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="")
+    public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.26-27 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="")
     {
         return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_GecoPdfExport", $rowsForPage, $index,$subTitle);
     }

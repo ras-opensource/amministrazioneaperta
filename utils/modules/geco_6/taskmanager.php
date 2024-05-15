@@ -28,15 +28,15 @@ if($_REQUEST['task'] == "")
 
 $task=$_REQUEST['task'];
 
-$module= AA_SierModule::GetInstance($user);
+$module= AA_GecoModule::GetInstance($user);
 
-$taskManager = $module->GetTaskManager($user);
+$taskManager = $module->GetTaskManager();
 
 if($taskManager->IsManaged($task))
 {
   if(!$taskManager->RunTask($task))
   {
-    AA_Log::Log("sier task manager - task: ".$task." - ".$taskManager->GetTaskError($task),100,false,true);
+    AA_Log::Log("task manager - task: ".$task." - ".$taskManager->GetTaskError($task),100,false,true);
   }
   die($taskManager->GetTaskLog($task));
 }

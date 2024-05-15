@@ -1149,7 +1149,7 @@ Class AA_HomeModule extends AA_GenericModule
                             if(sizeof($platform_modules) <=5) $moduli_box->AddRow($moduli_view);
                             else $moduli_box->AddSlide($moduli_view);
                             $nSlide++;
-                            $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"space"));
+                            $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
                         }
                     }
                 }
