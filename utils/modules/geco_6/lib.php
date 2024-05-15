@@ -12,6 +12,30 @@ include_once "system_lib.php";
 Class AA_Geco_Const extends AA_Const
 {
     const AA_USER_FLAG_GECO="geco";
+
+    //modalita' scelta del beneficiario
+    protected static $aModalita=null;
+    const AA_GECO_MODALITA_AVVISO_PUBBLICO=1;
+    const AA_GECO_MODALITA_ASSEGNAZIONE_DIRETTA=2;
+    const AA_GECO_MODALITA_ATTO_NORMATIVO=4;
+    const AA_GECO_MODALITA_CONCORSO_PUBBLICO=8;
+    const AA_GECO_MODALITA_PROCEDURA_EVIDENZA_PUBBLICA=16;
+    public static function GetListaModalita()
+    {
+        if(static::$aModalita==null)
+        {
+            static::$aModalita=array(
+                static::AA_GECO_MODALITA_AVVISO_PUBBLICO=>"Avviso pubblico",
+                static::AA_GECO_MODALITA_ASSEGNAZIONE_DIRETTA=>"Assegnazione diretta su istanza individuale",
+                static::AA_GECO_MODALITA_ATTO_NORMATIVO=>"Beneficiario individuato da atto normativo",
+                static::AA_GECO_MODALITA_CONCORSO_PUBBLICO=>"Concorso pubblico",
+                static::AA_GECO_MODALITA_PROCEDURA_EVIDENZA_PUBBLICA=>"Procedura di evidenza pubblica"
+            );
+        }
+
+        return static::$aModalita;
+    }
+
 }
 
 #Classe oggetto geco
@@ -62,7 +86,6 @@ Class AA_Geco extends AA_Object_V2
         $this->SetDbDataTable(static::AA_DBTABLE_DATA);
 
         //Db data binding
-        $this->AddProp("Descrizione","","descrizione");
         $this->AddProp("Note","","note");
         $this->AddProp("Norma","","norma");
         $this->AddProp("Anno","","anno");
@@ -562,8 +585,8 @@ Class AA_GecoModule extends AA_GenericModule
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGecoDettaglio_Generale_Tab")
         ));
 
-        //Rendiconti layout object template
-        $this->AddObjectTemplate(static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI,"Template_GetGecoComuneRendicontiViewLayout");
+        //Custom object template
+        //$this->AddObjectTemplate(static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI,"Template_GetGecoComuneRendicontiViewLayout");
     }
     
     //istanza
@@ -777,45 +800,124 @@ Class AA_GecoModule extends AA_GenericModule
     //Template dlg addnew provvedimenti
     public function Template_GetGecoAddNewDlg()
     {
-        $id=$this->GetId()."_AddNew_Dlg";
+        $id=$this->GetId()."_AddNew_Dlg_".uniqid();
         
         $form_data=array();
         
         $form_data['Note']="";
         $form_data['Anno']=date("Y");
-        $form_data['Flags']=0;
-        $form_data['nome']="Elezioni regionali ".date("Y");
+        $form_data['nome']="";
         $form_data['descrizione']="";
+        $form_data['Modalita_tipo']=0;
+        $form_data['Modalita_link']='';
+
+        $form_data['Norma_estremi']='';
+        $form_data['Norma_link']='';
         
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi elezioni regionali", $this->id,$form_data,$form_data);
+        $form_data['Beneficiario_denominazione']="";
+        $form_data['Beneficiario_cf']="";
+        $form_data['Beneficiario_piva']="";
+        $form_data['Beneficiario_tipo']=0;
+        $form_data['Beneficiario_privacy']=0;
+
+        $form_data['Responsabile_denominazione']="";
+
+        $form_data['Importo_impegnato']="";
+        $form_data['Importo_erogato']=0;
+
+        $form_data['Note']="";
+
+        $modalita=AA_Geco_Const::GetListaModalita();
+        $modalita_options=array();
+        foreach($modalita as $id=>$val)
+        {
+            $modalita_options[]=array("id"=>$id,"value"=>$val);
+        }
+
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo contributo", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(640);
-        $wnd->SetHeight(400);
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(820);
         $wnd->EnableValidation();
               
-        $anno_fine=date("Y")+5;
-        $anno_start=($anno_fine-10);
+        $anno_fine=date("Y");
+        $anno_start=($anno_fine-5);
         //anno riferimento
         $options=array();
         for($i=$anno_fine; $i>=$anno_start; $i--)
         {
             $options[]=array("id"=>$i, "value"=>$i);
         }
-        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare l'anno in cui si dovrebbero svolgere le elezioni.", "placeholder"=>"...","options"=>$options,"value"=>Date('Y')));
+        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"...","options"=>$options,"value"=>Date('Y')));
 
         //Nome
-        $wnd->AddTextField("nome","Titolo",array("required"=>true, "bottomLabel"=>"*Inserisci il titolo.", "placeholder"=>"es. Nuove elezioni regionali..."));
+        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci il titolo (max 255 caratteri).", "placeholder"=>"es. Contributo per..."),false);
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione.", "placeholder"=>"Inserisci qui la descrizione..."));
+        $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Breve descrizione (max 1024 caratteri).", "placeholder"=>"Inserisci qui la descrizione..."));
+
+        //Responsabile
+        $wnd->AddTextField("Responsabile_denominazione","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile del procedimento amministrativo.", "placeholder"=>"es. Direttore del servizio..."));
+
+        //Norma
+        $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
+
+        //estremi
+        $section->AddTextField("Norma_estremi","Estremi",array("required"=>true, "gravity"=>2,"labelWidth"=>90,"bottomLabel"=>"*Inserisci gli estremi della norma o dell'atto amministrativo generale.", "placeholder"=>"es. art.26 del d.lgs. 33/2013..."));
+
+        //link alla norma
+        $section->AddTextField("Norma_link","Link",array("required"=>true,"gravity"=>3,"labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link alla norma o all'atto amministrativo generale.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
+
+        $wnd->AddGenericObject($section);
+
+        //Modalita' di scelta del beneficiario
+        $section=new AA_FieldSet($id."_Beneficiario","Modalita' di scelta del beneficiario");
+
+        //Modalita'
+        $section->AddSelectField("Modalita_tipo","Modalita'",array("required"=>true, "gravity"=>2, "labelWidth"=>90, "validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare la modalita' di scelta del beneficiario.", "placeholder"=>"...","options"=>$modalita_options),false);
+
+        //link alla modalita'
+        $section->AddTextField("Modalita_link","Link",array("required"=>true,"gravity"=>3, "labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link al documento indicante le modalita' di scelta del beneficiario.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
+
+        $wnd->AddGenericObject($section);
+        //Beneficiario
+        $section=new AA_FieldSet($id."_Beneficario","Beneficiario");
+        
+        //Tipo
+        $section->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica."));
+
+        //Privacy
+        $section->AddCheckBoxField("Beneficiario_privacy","Oscuramento dati personali",array("bottomPadding"=>32,"gravity"=>2, "labelWidth"=>200, "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
+
+        //Nome e cognome
+        $section->AddTextField("Beneficiario_denominazione","Nome",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
+        
+        //cf
+        $section->AddTextField("Beneficiario_cf","C.F.",array("required"=>true, "gravity"=>1,"bottomPadding"=>32,"labelWidth"=>60,"bottomLabel"=>"*Inserisci il codice fiscale del beneficiario."),false);
+
+        //piva
+        $section->AddTextField("Beneficiario_piva","P.IVA",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la partita iva del beneficiario (se applicabile)."),false);
+
+        $wnd->AddGenericObject($section);
+
+        //Importi
+        $section=new AA_FieldSet($id."_Importi","Importi");
+        
+        //Impegnato
+        $section->AddTextField("Importo_impegnato","Impegnato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'importo impegnato.", "placeholder"=>"es. 12345,67"));
+        
+        //Erogato
+        $section->AddTextField("Importo_Erogato","Erogato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32, "bottomLabel"=>"*Inserisci l'importo erogato (se presente, diversamente inserisci il valore 0).", "placeholder"=>"es. 12345,67"),false);
+        
+        $wnd->AddGenericObject($section);
 
         //Note
-        $label="Note";
-        $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni.", "placeholder"=>"Inserisci qui le note..."));
+        //$label="Note";
+        //$wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
         
         $wnd->EnableCloseWndOnSuccessfulSave();
 
@@ -1943,19 +2045,15 @@ Class AA_GecoModule extends AA_GenericModule
        
         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per istanziare nuovi elementi.</error>";
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
         }
         else
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGecoAddNewDlg()->toBase64();
-            $sTaskLog.="</content>";
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGecoAddNewDlg(),true);
         }
-        
-        $task->SetLog($sTaskLog);
-        
+
         return true;
     }
 
