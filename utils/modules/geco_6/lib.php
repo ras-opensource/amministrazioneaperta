@@ -2637,9 +2637,6 @@ Class AA_GecoModule extends AA_GenericModule
         $content = "";
 
         switch ($_REQUEST['section']) {
-            case static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_OC_DESKTOP:
-                $content = $this->TemplateActionMenu_OC_Desktop();
-                break;
             default:
                 return parent::Task_GetActionMenu($task);
         }
