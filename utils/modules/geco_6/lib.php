@@ -887,12 +887,6 @@ Class AA_GecoModule extends AA_GenericModule
         //Beneficiario
         $section=new AA_FieldSet($id."_Beneficario","Beneficiario");
         
-        //Tipo
-        $section->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica."));
-
-        //Privacy
-        $section->AddCheckBoxField("Beneficiario_privacy","Oscuramento dati personali",array("bottomPadding"=>32,"gravity"=>2, "labelWidth"=>200, "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
-
         //Nome e cognome
         $section->AddTextField("Beneficiario_denominazione","Nome",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
         
@@ -901,6 +895,12 @@ Class AA_GecoModule extends AA_GenericModule
 
         //piva
         $section->AddTextField("Beneficiario_piva","P.IVA",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la partita iva del beneficiario (se applicabile)."),false);
+
+        //Tipo
+        $section->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica."));
+
+        //Privacy
+        $section->AddCheckBoxField("Beneficiario_privacy","Oscuramento dati personali",array("bottomPadding"=>32,"gravity"=>2, "labelWidth"=>200, "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
 
         $wnd->AddGenericObject($section);
 
