@@ -1684,7 +1684,7 @@ class AA_Organismi extends AA_Object
         }
         
         //Verifica utente
-        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
+        /*if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
         {
             $user=AA_User::GetCurrentUser();
         
@@ -1693,7 +1693,7 @@ class AA_Organismi extends AA_Object
                 AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
                 return null;
             }
-        }
+        }*/
 
         //Verifica Flags
         if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_READ)==0)
@@ -9267,6 +9267,49 @@ Class AA_OrganismiPublicReportTemplateGeneralPageView extends AA_GenericObjectTe
         $note->SetText(nl2br($organismo->GetNote()));
         #-------------------
 
+        //Provvedimenti
+        $provvedimenti=$organismo->GetProvvedimenti();
+
+        if(sizeof($provvedimenti) > 0)
+        {
+            //Chiama il costruttore della classe base
+            $provvedimenti_table= new AA_GenericTableTemplateView($id."_provvedimenti_table",$generale,$organismo,array("evidentiate-rows"=>true,"title"=>"Provvedimenti","border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+
+            $provvedimenti_table->SetColSizes(array("5","30","50","10"));
+            $provvedimenti_table->SetHeaderLabels(array("Anno","Tipo","Estremi","Url"));    
+
+            $curRow=1;
+            foreach($provvedimenti as $id=>$curProvvedimento)
+            {
+                //Anno
+                $provvedimenti_table->SetCellText($curRow,0,$curProvvedimento->GetAnno(), "center");
+
+                //tipo provvedimento
+                $curval=$curProvvedimento->GetTipologia();
+                if($curval=="" || $curval=="n.d.") $curval="n.d.";
+                $provvedimenti_table->SetCellText($curRow,1,$curval,"center");
+
+                //estremi
+                $note=$curProvvedimento->GetEstremi();
+                $text_align="left";
+                $provvedimenti_table->SetCellText($curRow,2,$note, $text_align);
+
+                if($curProvvedimento->GetUrl() !="")
+                {
+                    //url
+                    $url="<a href='".$curProvvedimento->GetUrl()."' target='_blank'>consulta</a>";
+                    $provvedimenti_table->SetCellText($curRow,3,$url, "center");
+                }
+                else
+                {
+                    $url="<a href='https://".AA_Config::AA_DOMAIN_NAME.$curProvvedimento->GetFilePublicPath()."' target='_blank'>consulta</a>";
+                    $provvedimenti_table->SetCellText($curRow,3,$url, "center");
+                }
+
+                $curRow++;
+            }
+        }
+
         //Aggiunge i dati contabili
         $bilanci=new AA_OrganismiReportDatiContabiliListTemplateView("AA_OrganismiReportDatiContabiliListTemplateView",null,$organismo, $user);
         $this->AppendChild($bilanci);
@@ -9584,9 +9627,17 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
                 $text_align="left";
                 $provvedimenti_table->SetCellText($curRow,2,$note, $text_align);
 
-                //url
-                $url="<a href='".$curProvvedimento->GetUrl()."' target='_blank'>consulta</a>";
-                $provvedimenti_table->SetCellText($curRow,3,$url, "center");
+                if($curProvvedimento->GetUrl() !="")
+                {
+                    //url
+                    $url="<a href='".$curProvvedimento->GetUrl()."' target='_blank'>consulta</a>";
+                    $provvedimenti_table->SetCellText($curRow,3,$url, "center");
+                }
+                else
+                {
+                    $url="<a href='https://".AA_Config::AA_DOMAIN_NAME.$curProvvedimento->GetFilePublicPath()."' target='_blank'>consulta</a>";
+                    $provvedimenti_table->SetCellText($curRow,3,$url, "center");
+                }
 
                 $curRow++;
             }

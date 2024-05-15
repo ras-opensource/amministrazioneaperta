@@ -64,41 +64,20 @@ Class AA_Geco extends AA_Object_V2
         //Db data binding
         $this->AddProp("Note","","note");
         $this->AddProp("Norma","","norma");
-        $this->AddProp("Norma_link","","norma_link");
         $this->AddProp("Anno","","anno");
         $this->AddProp("Modalita",0,"modalita");
+        $this->AddProp("Revoca","","revoca");
         $this->AddProp("Responsabile","","responsabile");
         $this->AddProp("Beneficiario","","beneficiario");
-        $this->AddProp("Beneficiario_tipo",1,"beneficiario_tipo");
-        $this->AddProp("Beneficiario_cf",1,"beneficiario_cf");
-        $this->AddProp("Beneficiario_piva",1,"beneficiario_piva");
         $this->AddProp("Importo_impegnato",0,"importo_impegnato");
         $this->AddProp("Importo_erogato",0,"importo_erogato");
         $this->AddProp("Allegati","","allegati");
-
-        //Valori iniziali
-        //$this->SetProp("IdData",0);
-        //$this->SetProp("Flags",0);
 
         //disabilita la revisione
         $this->EnableRevision(false);
 
         //chiama il costruttore genitore
         parent::__construct($id,$user);
-
-        /*
-        //Carica i dati dell'oggetto
-        if($this->bValid && $this->nId > 0)
-        {
-            if(!$this->LoadData($user))
-            {
-                $this->bValid=false;
-            }
-        }
-        else
-        {
-            $this->bValid=false;
-        }*/
     }
 
     //funzione di ricerca
@@ -2730,5 +2709,17 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
         $oggetto->SetStyle('width:19%; font-size: .6em; padding: .1em');
         $oggetto->SetText($object->GetProp("Estremi"));
         #-----------------------------------------------        
+    }
+}
+
+Class AA_GecoAllegato extends AA_GenericParsableObject
+{
+    public function __construct($params = null)
+    {
+        $this->aProps['descrizione']="";
+        $this->aProps['url']="";
+        $this->aProps['file']="";
+
+        parent::__construct($params);
     }
 }
