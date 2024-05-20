@@ -5866,8 +5866,9 @@ class AA_Object_V2
             }
         } else $user = AA_User::GetCurrentUser();
 
-        
-        $logs=explode("\n",$this->sLog);
+        if($this->sLog != "") $logs=explode("\n",$this->sLog);
+        else $logs=array();
+
         $logs[]=Date("Y-m-d H:i:s") . "|" . $user->GetUsername() . "|" . $actionType . "|" . $log;
 
         if(sizeof($logs)>1000)

@@ -9,7 +9,7 @@ include_once "config.php";
 include_once "system_lib.php";
 
 #Costanti
-Class AA_Geco_Const extends AA_Const
+Class AA_Sier_Const extends AA_Const
 {
     const AA_USER_FLAG_SIER="sier";
     const AA_USER_FLAG_SIER_OC="sier_oc";
@@ -306,7 +306,7 @@ Class AA_SierLista
         $this->aProps['image']="";
         $this->aProps['ordine']=0;
         $this->aProps['candidati']=array();
-        foreach(AA_Geco_Const::GetCircoscrizioni() as $key=>$val)
+        foreach(AA_Sier_Const::GetCircoscrizioni() as $key=>$val)
         {
             $this->aProps["ordine_".$key]=0;
         }
@@ -2156,7 +2156,7 @@ Class AA_Sier extends AA_Object_V2
 
         $giornateAffluenza=$this->GetGiornate();
         //$cp=$this->GetControlPannel();
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
 
         $aggiornamento_generale="";
         $aggiornamento_presidente="";
@@ -2895,7 +2895,7 @@ Class AA_Sier extends AA_Object_V2
             $feed['voti_candidato'][$idCandidato]=array("nome"=>$curCandidato->GetProp("nome"),"cognome"=>$curCandidato->GetProp("cognome"),"id_lista"=>$curCandidato->GetProp("id_lista"),"circoscrizione"=>$curCandidato->Getprop("circoscrizione"));
         }
 
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         foreach($circoscrizioni as $idCircoscrizione=>$curCircoscrizione)
         {
             $feed['circoscrizioni'][$idCircoscrizione]=array("denominazione"=>$curCircoscrizione);
@@ -3096,7 +3096,7 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
-                $circoscrizione=AA_Geco_Const::GetCircoscrizione($curRow['id_circoscrizione']);
+                $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
                 $result[$curRow['id']]=new AA_SierCandidato($curRow);
             }
@@ -3132,7 +3132,7 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
-                $circoscrizione=AA_Geco_Const::GetCircoscrizione($curRow['id_circoscrizione']);
+                $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
                 $result=new AA_SierCandidato($curRow);
             }
@@ -3241,7 +3241,7 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
-                $circoscrizione=AA_Geco_Const::GetCircoscrizione($curRow['id_circoscrizione']);
+                $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
                 $result[$curRow['id']]=new AA_SierComune($curRow);
             }
@@ -3306,7 +3306,7 @@ Class AA_Sier extends AA_Object_V2
             $rs=$db->GetResultSet();
             foreach($rs as $curRow)
             {
-                $circoscrizione=AA_Geco_Const::GetCircoscrizione($curRow['id_circoscrizione']);
+                $circoscrizione=AA_Sier_Const::GetCircoscrizione($curRow['id_circoscrizione']);
                 if($circoscrizione) $curRow['circoscrizione']=$circoscrizione['value'];
                 $result=new AA_SierComune($curRow);
             }
@@ -3353,14 +3353,14 @@ Class AA_Sier extends AA_Object_V2
         //------------local checks---------------
 
         //Se l'utente non ha il flag può al massimo visualizzare la scheda
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER) && !$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) && !$user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $perms = AA_Const::AA_PERMS_READ;
         }
         //---------------------------------------
 
         //Se l'utente ha il flag e può modificare la scheda allora può fare tutto
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && $user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && $user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $perms = AA_Const::AA_PERMS_ALL;
         }
@@ -3386,7 +3386,7 @@ Class AA_Sier extends AA_Object_V2
         $bSaveData=true; //enable save data
 
         //Chi non ha il flag non può inserire nuovi elementi
-        if(!$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUserName()." non ha i permessi per inserire nuovi elementi.",100);
             return false;
@@ -3537,7 +3537,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", denominazione='".addslashes($lista->GetProp('denominazione'))."'";
         $query.=", image='".addslashes($lista->GetProp('image'))."'";
         
-        foreach(AA_Geco_Const::GetCircoscrizioni() as $key=>$val)
+        foreach(AA_Sier_Const::GetCircoscrizioni() as $key=>$val)
         {
             $query.=" ,ordine_".$key." = '".$lista->GetProp("ordine_".$key)."'";
         }
@@ -3597,7 +3597,7 @@ Class AA_Sier extends AA_Object_V2
         $query.=", denominazione='".addslashes($lista->GetProp('denominazione'))."'";
         $query.=", image='".addslashes($lista->GetProp('image'))."'";
          
-        foreach(AA_Geco_Const::GetCircoscrizioni() as $key=>$val)
+        foreach(AA_Sier_Const::GetCircoscrizioni() as $key=>$val)
         {
             $query.=" ,ordine_".$key." = '".$lista->GetProp("ordine_".$key)."'";
         }
@@ -5559,7 +5559,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         #-------------------------------- Verifica se è un operatore comunale ----------------
-        if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1 && isset($_SESSION['oc_sier_object']) && $_SESSION['oc_sier_object'] > 0 && $user->IsValid() && $user->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1 && isset($_SESSION['oc_sier_object']) && $_SESSION['oc_sier_object'] > 0 && $user->IsValid() && $user->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $this->bOperatoreComunaleInterface=true;
             $bDefaultSections=false;
@@ -5893,7 +5893,7 @@ Class AA_SierModule extends AA_GenericModule
     public function TemplateSection_Pubblicate($params=array())
     {
         $bCanModify=false;
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $bCanModify=true;
         }
@@ -5935,7 +5935,7 @@ Class AA_SierModule extends AA_GenericModule
             }
             else
             {
-                foreach(AA_Geco_Const::GetFlagsForTags() as $key=>$value)
+                foreach(AA_Sier_Const::GetFlagsForTags() as $key=>$value)
                 {
                     if(($flags & $key) > 0) $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
                 }
@@ -6337,7 +6337,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         $is_enabled= false;
        
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $is_enabled=true;
         }
@@ -6356,7 +6356,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $content=$this->TemplateGenericSection_Bozze($params,false);
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $content->EnableAddNew(false);
             $content->EnablePublish(false);
@@ -6370,7 +6370,7 @@ Class AA_SierModule extends AA_GenericModule
     //Restituisce i dati delle bozze
     public function GetDataSectionBozze_List($params=array())
     {
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER) && !$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) && !$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             AA_Log::Log(__METHOD__." - ERRORE: l'utente corrente: ".$this->oUser->GetUserName()." non è abilitato alla visualizzazione delle bozze.",100);
             return array();
@@ -6407,7 +6407,7 @@ Class AA_SierModule extends AA_GenericModule
             }
             else
             {
-                foreach(AA_Geco_Const::GetFlagsForTags() as $key=>$value)
+                foreach(AA_Sier_Const::GetFlagsForTags() as $key=>$value)
                 {
                     if(($flags & $key) > 0) $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
                 }
@@ -6655,7 +6655,7 @@ Class AA_SierModule extends AA_GenericModule
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $form_data=array("id_coalizione"=>$coalizione->GetProp('id'));
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         foreach($circoscrizioni as $key=>$val)
         {
             $form_data["ordine_".$key]=0;
@@ -6711,7 +6711,7 @@ Class AA_SierModule extends AA_GenericModule
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $form_data=array("id_coalizione"=>$coalizione->GetProp('id'),"id_lista"=>$lista->GetProp('id'),"denominazione"=>$lista->GetProp("denominazione"),'ordine'=>$lista->GetProp("ordine"));
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         foreach($circoscrizioni as $key=>$val)
         {
             $form_data["ordine_".$key]=$lista->GetProp("ordine_".$key);
@@ -6902,7 +6902,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
 
         //Circoscrizione
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         $options=array();
         foreach($circoscrizioni as $id=>$descr)
         {
@@ -7093,7 +7093,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddTextField("cf", "Codice fiscale", array("bottomLabel" => "*Indicare il codice fisclae del candidato, se presente."));
         
         //Circoscrizione
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         $options=array();
         foreach($circoscrizioni as $id=>$descr)
         {
@@ -7466,7 +7466,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
         //categorie
-        $tipi=AA_Geco_Const::GetTipoAllegati();$curRow=1;
+        $tipi=AA_Sier_Const::GetTipoAllegati();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
         $curRow=0;
         foreach($tipi as $tipo=>$descr)
@@ -7481,7 +7481,7 @@ Class AA_SierModule extends AA_GenericModule
         //----------------------
 
         //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();$curRow=1;
+        $destinatari=AA_Sier_Const::GetDestinatari();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Destinatari","Destinatari");
         $curRow=0;
         foreach($destinatari as $destinatario=>$descr)
@@ -7573,7 +7573,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
         //categorie
-        $tipi=AA_Geco_Const::GetTipoAllegati();$curRow=1;
+        $tipi=AA_Sier_Const::GetTipoAllegati();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
         $curRow=0;
         foreach($tipi as $tipo=>$descr)
@@ -7588,7 +7588,7 @@ Class AA_SierModule extends AA_GenericModule
         //----------------------
 
         //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();$curRow=1;
+        $destinatari=AA_Sier_Const::GetDestinatari();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Destinatari","Destinatari");
         $curRow=0;
         foreach($destinatari as $destinatario=>$descr)
@@ -7735,7 +7735,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
         //categorie
-        $tipi=AA_Geco_Const::GetTipoAllegati();$curRow=1;
+        $tipi=AA_Sier_Const::GetTipoAllegati();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
         $curRow=0;
         foreach($tipi as $tipo=>$descr)
@@ -7750,7 +7750,7 @@ Class AA_SierModule extends AA_GenericModule
         //----------------------
 
         //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();$curRow=1;
+        $destinatari=AA_Sier_Const::GetDestinatari();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Destinatari","Destinatari");
         $curRow=0;
         foreach($destinatari as $destinatario=>$descr)
@@ -8453,7 +8453,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC) && !$this->oUser->IsSuperUser())
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC) && !$this->oUser->IsSuperUser())
         {
             $sTaskLog="<status id='status'>0</status><content id='content'>";
             $sTaskLog.= "operazioni concluse.";
@@ -9029,7 +9029,7 @@ Class AA_SierModule extends AA_GenericModule
         if($aggiornamento=="") $aggiornamento=date("Y-m-d");
 
         //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();
+        $destinatari=AA_Sier_Const::GetDestinatari();
         $newDestinatari=array();
         foreach($destinatari as $destinatario=>$descr)
         {
@@ -9038,7 +9038,7 @@ Class AA_SierModule extends AA_GenericModule
         //----
 
         //tipologia
-        $tipi=AA_Geco_Const::GetTipoAllegati();
+        $tipi=AA_Sier_Const::GetTipoAllegati();
         $newTipo=array();
         foreach($tipi as $tipo=>$descr)
         {
@@ -9095,7 +9095,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;            
         }
         
-        $circoscrizione=AA_Geco_Const::GetCircoscrizione($_REQUEST['id_circoscrizione']);
+        $circoscrizione=AA_Sier_Const::GetCircoscrizione($_REQUEST['id_circoscrizione']);
         //AA_Log::Log(__METHOD__." - circoscrizione: ".print_r($circoscrizione,true),100);
         if(!is_array($circoscrizione))
         {
@@ -10751,7 +10751,7 @@ Class AA_SierModule extends AA_GenericModule
             'image'=>$imageFileHash
         );
 
-        foreach(AA_Geco_Const::GetCircoscrizioni() as $key=>$val)
+        foreach(AA_Sier_Const::GetCircoscrizioni() as $key=>$val)
         {
             $params["ordine_".$key]=0;
             if(isset($_REQUEST['ordine_'.$key])) $params['ordine_'.$key]=$_REQUEST['ordine_'.$key];
@@ -10956,7 +10956,7 @@ Class AA_SierModule extends AA_GenericModule
             'image'=>$imageFileHash
         );
          
-        foreach(AA_Geco_Const::GetCircoscrizioni() as $key=>$val)
+        foreach(AA_Sier_Const::GetCircoscrizioni() as $key=>$val)
         {
             $params["ordine_".$key]=0;
             if(isset($_REQUEST['ordine_'.$key])) $params['ordine_'.$key]=$_REQUEST['ordine_'.$key];
@@ -11454,7 +11454,7 @@ Class AA_SierModule extends AA_GenericModule
         $form_data['descrizione']=$object->GetDescr();
 
         $flags=$object->GetAbilitazioni();
-        foreach(AA_Geco_Const::GetFlags() as $key=>$value)
+        foreach(AA_Sier_Const::GetFlags() as $key=>$value)
         {
             if(($flags & $key) >0) $form_data[$key]=1;
             else $form_data[$key] = 0;
@@ -11498,31 +11498,31 @@ Class AA_SierModule extends AA_GenericModule
         $abilitazioni = new AA_FieldSet("AA_SIER_ABILITAZIONI","Abilitazioni");
 
         //Accesso operatori
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_ACCESSO_OPERATORI,"Accesso operatori",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato accesso operatori comunali."));
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI,"Accesso operatori",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato accesso operatori comunali."));
 
         //rendicontazione
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI,"Rendiconti",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato caricamento rendiconti."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI,"Rendiconti",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato caricamento rendiconti."),false);
 
         //Modifica info generali
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI,"Info generali",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita la modifica info generali del comune."));
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI,"Info generali",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita la modifica info generali del comune."));
 
         //Caricamento corpo elettorale
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE,"Corpo elettorale",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dati corpo elettorale."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE,"Corpo elettorale",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dati corpo elettorale."),false);
 
         //comunicazioni
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI,"Comunicazioni",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento delle comunicazioni."));
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI,"Comunicazioni",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento delle comunicazioni."));
 
         //Affluenza
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA,"Affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA,"Affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."),false);
 
         //Risultati
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI,"Risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."));
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI,"Risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."));
 
         //esportazione Affluenza
         //$abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA,"Esporta affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dell'affluenza."));
 
         //esportazione Risultati
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_SIER_FLAG_EXPORT_RISULTATI,"Esporta risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dei risultati."),false);
+        $abilitazioni->AddSwitchBoxField(AA_Sier_Const::AA_SIER_FLAG_EXPORT_RISULTATI,"Esporta risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dei risultati."),false);
 
         $wnd->AddGenericObject($abilitazioni);
 
@@ -11544,7 +11544,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $cp=$object->GetControlPannel();
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $section=new AA_FieldSet($id."_Section_CP","Opzioni di esportazione dei risultati comunali sul feed pubblico generale","",2);
 
@@ -11582,7 +11582,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(800);
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $wnd->SetHeight(920);
             $wnd->SetWidth(1280);
@@ -11769,7 +11769,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $wnd->AddGenericObject($section);
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             //rendiconti
             $section=new AA_FieldSet($id."_Section_CP_Rendiconti","Sorteggio dei Comuni per la verifica dei rendiconti");
@@ -11821,7 +11821,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->AddGenericObject($section,false);
         }
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $section=new AA_FieldSet($id."_Section_CP_Corpoelettorale","Opzioni corpo elettorale");
             $section->AddSwitchBoxField("abilita_cert_corpo_elettorale","Certificazione del corpo elettorale",array("labelWidth"=>360,"onLabel"=>"abilitata","offLabel"=>"disabilitata","bottomLabel"=>"Abilita/Disabilita la certificazione del corpo elettorale da parte dei comuni.","bottomPadding"=>32));
@@ -12091,17 +12091,17 @@ Class AA_SierModule extends AA_GenericModule
             $comuniCircoscrizione[$curComune->GetProp('id_circoscrizione')][]=$id;
         }
 
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         $comuniEstratti=array();
         $limitiCircoscrizione=array(
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI=>11,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS=>3,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO=>4,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_NUORO=>8,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA=>3,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO=>4,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO=>13,
-            AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI=>10
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI=>11,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS=>3,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO=>4,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_NUORO=>8,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA=>3,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO=>4,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO=>13,
+            AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI=>10
         );
 
         foreach($circoscrizioni as $idCircoscrizione=>$curCircoscrizione)
@@ -12150,10 +12150,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI] as $curComune)
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CAGLIARI] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12163,10 +12163,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS] as $curComune)
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_CARBONIAIGLESIAS] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12176,10 +12176,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO] as $curComune)
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_MEDIOCAMPIDANO] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12189,10 +12189,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$firstRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_NUORO];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_NUORO];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_NUORO] as $curComune)
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_NUORO] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12205,10 +12205,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA] as $curComune)
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OGLIASTRA] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12218,10 +12218,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO] as $curComune)
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_OLBIATEMPIO] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12231,10 +12231,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO] as $curComune)
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_ORISTANO] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12244,10 +12244,10 @@ Class AA_SierModule extends AA_GenericModule
         $template= new AA_GenericTableTemplateView(uniqid(),$secondRow,null,array("evidentiate-rows"=>false,"title"=>"","default-border-color"=>"#d7dbdd","h_bgcolor"=>"#d7dbdd","border"=>"1px solid #d7dbdd;","width"=>"24%","style"=>"margin-bottom: 1em; margin-top: 1em"));
         $template->SetColSizes(array("100"));
         //$template->SetCellPadding("10px");
-        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI];
+        $titolo="Circoscrizione<br>".$circoscrizioni[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI];
         $template->SetHeaderLabels(array("<span style='font-weight:bold;line-height:18px;'>".$titolo."</span>"));
         $curRow=1;
-        foreach($comuniEstratti[AA_Geco_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI] as $curComune)
+        foreach($comuniEstratti[AA_Sier_Const::AA_SIER_CIRCOSCRIZIONE_SASSARI] as $curComune)
         {
             $template->SetCellText($curRow,0,$comuni[$curComune]->GetProp("denominazione"),"left");
             $curRow++;
@@ -12828,13 +12828,13 @@ Class AA_SierModule extends AA_GenericModule
         //Gestione dei tab
         //$id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$params['id'];
         //$params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSierDettaglio_Generale_Tab"));
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER)) $params['readonly']=true;
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $params['readonly']=true;
         
         $params['MultiviewEventHandlers']=array("onViewChange"=>array("handler"=>"onDetailViewChange"));
 
         $params['disable_SaveAsPdf']=true;
         $params['disable_SaveAsCsv']=true;
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER)) $params['disable_MenuAzioni']=true;
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $params['disable_MenuAzioni']=true;
         
         $detail = $this->TemplateGenericSection_Detail($params);
 
@@ -12850,9 +12850,9 @@ Class AA_SierModule extends AA_GenericModule
 
         $rows_fixed_height=50;
         $canModify=false;
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER)) $canModify=true;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER)) $canModify=true;
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC)|| $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC)|| $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
         {
             $cp=$object->GetControlPannel();
             $url=$cp['url_feed_risultati'];
@@ -12965,7 +12965,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //login disabilitato
         $sier_flags=$object->GetAbilitazioni();
-        if(($sier_flags&AA_Geco_Const::AA_SIER_FLAG_ACCESSO_OPERATORI)==0)
+        if(($sier_flags&AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI)==0)
         {
             $layout->AddRow(new AA_JSON_Template_Template($id."_TemplateVoid",array("template"=>"<div style='display: flex; justify-content:center; align-items: center;width:100%;height:100%; font-weight: bold'><span>Accesso operatori temporaneamente disabilitato.</span></div>")));
             return $layout;
@@ -13129,7 +13129,7 @@ Class AA_SierModule extends AA_GenericModule
         //-------------------------------------------------------
 
         //-------------------   Scheda generale  ------------------------------
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0) $canModify=true;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Generale_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_DatiGenerali",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -13179,7 +13179,7 @@ Class AA_SierModule extends AA_GenericModule
         $giornate=$object->GetGiornate();
         $giornateKeys=array_keys($giornate);
         $now=date("Y-m-d");
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0 && $now >= $giornateKeys[0]) $canModify=true;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0 && $now >= $giornateKeys[0]) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Comunicazioni_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Comunicazioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -13226,7 +13226,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //-------------------   Affluenza  ------------------------------
         $canModify=false;
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0) $canModify=true;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Affluenza_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Affluenza",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -13271,7 +13271,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //------------------------------  Risultati  ---------------------------------
         $canModify=false;
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0) $canModify=true;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Risultati_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Risultati",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //torna al riepilogo
@@ -13295,7 +13295,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //--------------------------------   Rendiconti  -----------------------------
         $canModify=false;
-        if (($sier_flags&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0 && $operatore->GetOperatoreComunaleRuolo() > 1) $canModify=true;
+        if (($sier_flags&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0 && $operatore->GetOperatoreComunaleRuolo() > 1) $canModify=true;
         $layout_generale=new AA_JSON_Template_Layout($id."_Rendiconti_".$operatore->GetOperatoreComunaleComune(),array("type"=>"clean"));
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_Rendiconti",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #c0c0c0 !important","background-color"=>"#dedede !important")));
         //torna al riepilogo
@@ -13584,7 +13584,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //AA_Log::Log(__METHOD__." - comunicazioni: ".print_r($comunicazioni,true),100);
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0 && $temp_modify)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0 && $temp_modify)
         {
             if($cp['abilita_cert_corpo_elettorale']>0)
             {
@@ -14014,13 +14014,13 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
                 $totale+=floatVal($val['importo']);
             }
         }
@@ -14911,7 +14911,7 @@ Class AA_SierModule extends AA_GenericModule
         $generaleLayout->addRow($toolbar);
 
         $rendiconti=$comune->GetRendiconti(true);
-        $tipologia=AA_Geco_Const::GetTipoRendicontiServizi();
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         if(isset($rendiconti['servizi']) && sizeof($rendiconti['servizi'])>0)
         {
             $data=array();
@@ -15180,7 +15180,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Warning",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             
             $modify_btn=new AA_JSON_Template_Generic($id."_ModifyRisultatiGenerali_btn",array(
@@ -15324,7 +15324,7 @@ Class AA_SierModule extends AA_GenericModule
         //----------------------------- Risultati voti coalizioni -----------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiCoalizioniBox",array("type"=>"clean"));
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiCoalizioni",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -15387,7 +15387,7 @@ Class AA_SierModule extends AA_GenericModule
         //------------------------------- Risultati voti liste --------------------------------
         $generaleLayout=new AA_JSON_Template_Layout($id."_RisultatiListeBox",array("type"=>"clean"));
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_RisultatiListe",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -15473,7 +15473,7 @@ Class AA_SierModule extends AA_GenericModule
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic($id."_WarningRisultati",array("view"=>"label","label"=>$warning,"align"=>"center")));
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {   
             $modify_btn=new AA_JSON_Template_Generic($id."_OCCsvImportRisultatiPreferenze_btn",array(
                 "view"=>"button",
@@ -15510,7 +15510,7 @@ Class AA_SierModule extends AA_GenericModule
             array("id"=>"voti","header"=>array("<div style='text-align: center'>Voti</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right"),"sort"=>"int")
         );
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
         {
             $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>100, "css"=>array("text-align"=>"center"));
         }
@@ -15528,7 +15528,7 @@ Class AA_SierModule extends AA_GenericModule
             if(isset($risultati['voti_candidato'][$curCandidato->GetProp('id')])) $data[$index]['voti']=$risultati['voti_candidato'][$curCandidato->GetProp('id')]['voti'];
             //AA_Log::Log(__METHOD__." - candidato: ".print_r($curCandidato,true),100);
 
-            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
+            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)
             {
                 //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashCandidatoDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$comune->GetProp('id').'"},{id_candidato:"'.$curCandidato->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOCModifyRisultatiPreferenzeDlg", postParams: {id: "'.$object->GetId().'",id_comune:"'.$comune->GetProp('id').'",id_candidato:"'.$curCandidato->GetProp("id").'",refresh: 1,refresh_obj_id:"'.$id.'"},module: "' . $this->id . '"},"'.$this->id.'")';
@@ -15609,7 +15609,7 @@ Class AA_SierModule extends AA_GenericModule
                 {
                     $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOCAffluenzaModifyDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($giornata).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
                     $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetSierOCAffluenzaTrashDlg",postParams: {id: '.$object->GetId().',id_comune:'.$comune->GetProp('id').', giornata: "'.strtolower($giornata).'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
-                    if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA)>0) $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica dato' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina dato' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
+                    if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA)>0) $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica dato' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina dato' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
                     else $ops="&nbsp;";
                 }
                 $data[]=array("id"=>$giornata,"ops"=>$ops, "giornata"=>$giornata,"ore_12"=>$curAffluenza['ore_12'],"ore_19"=>$curAffluenza['ore_19'],"ore_22"=>$curAffluenza['ore_22']);
@@ -16620,12 +16620,12 @@ Class AA_SierModule extends AA_GenericModule
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneComunicazioniViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';
             if($analisi[0]==false) 
             {
-                if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']=$data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><span style='color:green' class='mdi mdi-checkbox-marked-circle'></span>";
+                if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']=$data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><span style='color:green' class='mdi mdi-checkbox-marked-circle'></span>";
                 else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'></span></a>";
             }
             else 
             {
-                if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
+                if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF) && !$this->oUser->IsSuperUser()) $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
                 else $data[$index]['comunicazioni']="<div class='AA_DataTable_Ops' style='justify-content: space-evenly'><a class='".$class."' title='$text' onClick='".$view."'><span class='mdi $icon'>&nbsp;</span></a><a class='".$class."' title='Visualizza le criticità riscontrate sulle comunicazioni' onClick='".$view_analisi_comunicazioni."'><span class='mdi mdi-alert' style='color:".$color."'>&nbsp;</span></a>";
             }
             $data[$index]['comunicazioni'].="</div>";
@@ -16922,7 +16922,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi di modifica dell'elemento</error>";
@@ -16931,7 +16931,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        $flags=array_keys(AA_Geco_Const::GetFlags());
+        $flags=array_keys(AA_Sier_Const::GetFlags());
         
         $abilitazioni=0;
         foreach($_REQUEST as $key=>$value)
@@ -16954,7 +16954,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $task->SetError("L'utente corrente non ha i permessi per cestinare l'elemento");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per cestinare l'elemento</error>";
@@ -16994,7 +16994,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
          
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $task->SetError("L'utente corrente non ha i permessi per eliminare l'elemento");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per eliminare l'elemento</error>";
@@ -17051,7 +17051,7 @@ Class AA_SierModule extends AA_GenericModule
             unlink($csv["tmp_name"]);
         }
 
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         
         //Parsing della posizione dei campi
         //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
@@ -17230,7 +17230,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiungere nuovi elementi</error>";
@@ -17344,7 +17344,7 @@ Class AA_SierModule extends AA_GenericModule
             unlink($csv["tmp_name"]);
         }
 
-        $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+        $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
         
         //Parsing della posizione dei campi
         //denominazione,indirizzo,contatti,risultati,affluenza,operatori,sezioni,elettori_m,elettori_f,id_circoscrizione,rendiconti,pec,lastupdate
@@ -17732,7 +17732,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -17763,7 +17763,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -17848,7 +17848,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -17899,7 +17899,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -17932,7 +17932,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -17973,7 +17973,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -18014,7 +18014,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -18055,7 +18055,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -18096,7 +18096,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -18137,7 +18137,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -18189,7 +18189,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -18269,7 +18269,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18343,7 +18343,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18375,7 +18375,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18449,7 +18449,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18498,7 +18498,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18535,7 +18535,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18574,7 +18574,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+         if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18614,7 +18614,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18683,7 +18683,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
             $sTaskLog.= "{}";
@@ -18876,7 +18876,7 @@ Class AA_SierModule extends AA_GenericModule
         $id_circoscrizione=0;
         if($_REQUEST['circoscrizione_desc'] !="")
         {
-            foreach(AA_Geco_Const::GetCircoscrizioni() as $id=>$curCircoscrizione)
+            foreach(AA_Sier_Const::GetCircoscrizioni() as $id=>$curCircoscrizione)
             {
                 if($curCircoscrizione==$_REQUEST['circoscrizione_desc']) $id_circoscrizione=$id;
             }
@@ -19577,7 +19577,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
         {
             header('Content-Type: text/csv');
             die($object->ExportCorpoElettoraleComuniCSV());
@@ -19610,7 +19610,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
         {
             header('Content-Type: text/csv');
             die($object->ExportDatiComuniCSV());
@@ -19643,7 +19643,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
         
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
         {
             header('Content-Type: text/csv');
             die($object->ExportCandidatiCSV());
@@ -20015,7 +20015,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -20687,7 +20687,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -22790,7 +22790,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -22821,7 +22821,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -22899,7 +22899,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -22930,7 +22930,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -23050,7 +23050,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -23081,7 +23081,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -23186,7 +23186,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -23217,7 +23217,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -23332,7 +23332,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -23363,7 +23363,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica affluenza non abilitata.",false);
@@ -23428,7 +23428,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -23459,7 +23459,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica comunicazioni non abilitata.",false);
@@ -23499,7 +23499,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -23578,7 +23578,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -23609,7 +23609,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica risultati non abilitata.",false);
@@ -24030,7 +24030,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -24061,7 +24061,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -24709,13 +24709,13 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) $propaganda+=floatVal($val['importo']);              
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) $collegamenti+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) $altro+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) $materiale+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) $spese_postali+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) $software+=floatVal($val['importo']);
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) $trasporto+=floatVal($val['importo']);
                 $totale+=floatVal($val['importo']);
             }
         }
@@ -25334,7 +25334,7 @@ Class AA_SierModule extends AA_GenericModule
         $row_template_2col.="</div>";
 
         $rendiconti=$comune->GetRendiconti(true);
-        $tipologia=AA_Geco_Const::GetTipoRendicontiServizi();
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         $count=0;
         if(isset($rendiconti['servizi']))
         {
@@ -25518,7 +25518,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -25549,7 +25549,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -25681,7 +25681,7 @@ Class AA_SierModule extends AA_GenericModule
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['servizi'])) $rendiconti['servizi']=array();
 
-        $tipologia=AA_Geco_Const::GetTipoRendicontiServizi();
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         $servizio=array(
             "tipologia"=>$_REQUEST['tipologia'],
             "descrizione"=>trim($_REQUEST['descrizione']),
@@ -25739,7 +25739,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Permessi insufficienti.",false);
@@ -25827,7 +25827,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -25858,7 +25858,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -25876,7 +25876,7 @@ Class AA_SierModule extends AA_GenericModule
         $rendiconti=$comune->GetRendiconti(true);
         if(!isset($rendiconti['servizi'])) $rendiconti['servizi']=array();
 
-        $tipologia=AA_Geco_Const::GetTipoRendicontiServizi();
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         $servizio=array(
             "tipologia"=>$_REQUEST['tipologia'],
             "descrizione"=>trim($_REQUEST['descrizione']),
@@ -26009,7 +26009,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -26040,7 +26040,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26185,7 +26185,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -26216,7 +26216,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26261,7 +26261,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -26292,7 +26292,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26408,7 +26408,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -26439,7 +26439,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -26688,7 +26688,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -26719,7 +26719,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -27008,7 +27008,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->IsSuperUser() && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF))
+        if(!$this->oUser->IsSuperUser() && $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
             $task->SetContent(" ",false);
@@ -27662,7 +27662,7 @@ Class AA_SierModule extends AA_GenericModule
         if($aggiornamento=="") $aggiornamento=date("Y-m-d");
         
         //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();
+        $destinatari=AA_Sier_Const::GetDestinatari();
         $newDestinatari=array();
         foreach($destinatari as $destinatario=>$descr)
         {
@@ -27671,7 +27671,7 @@ Class AA_SierModule extends AA_GenericModule
         //----
 
         //tipologia
-        $tipi=AA_Geco_Const::GetTipoAllegati();
+        $tipi=AA_Sier_Const::GetTipoAllegati();
         $newTipo=array();
         foreach($tipi as $tipo=>$descr)
         {
@@ -27705,7 +27705,7 @@ Class AA_SierModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_OC))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non può accedere come utente comunale",false);
@@ -27736,7 +27736,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI)==0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Modifica rendiconti non abilitata.",false);
@@ -28311,7 +28311,7 @@ Class AA_SierModule extends AA_GenericModule
     //Task NavBarContent
     public function Task_GetNavbarContent($task)
     {
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $_REQUEST['section']=static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX;
         }
@@ -28656,7 +28656,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetHeight(450);
             
             //circoscrizione
-            $circoscrizioni=AA_Geco_Const::GetCircoscrizioni();
+            $circoscrizioni=AA_Sier_Const::GetCircoscrizioni();
             foreach($circoscrizioni as $key=>$value)
             {
                 $options[]=array("id"=>$key,"value"=>$value);
@@ -28708,7 +28708,7 @@ Class AA_SierModule extends AA_GenericModule
         $inizio=false;
 
         $admin=false;
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $admin=true;
         }
@@ -28719,7 +28719,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $readonly=true;
             if($giornata<=$now || $admin) $readonly=false;
-            if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF) && !$admin) $readonly=true;
+            if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF) && !$admin) $readonly=true;
 
             $label_inizio="Apertura operazioni uffici elettorali di sezione";
             if(sizeof($sections)==0) $label_inizio="Avvenuta costituzione degli uffici elettorali di sezione e riscontro materiale elettorale";
@@ -28756,7 +28756,7 @@ Class AA_SierModule extends AA_GenericModule
             
             $wnd->EnableCloseWndOnSuccessfulSave();
             $wnd->enableRefreshOnSuccessfulSave();
-            if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER_PREF) && !$admin) $wnd->SetApplyButtonName("Chiudi");
+            if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_PREF) && !$admin) $wnd->SetApplyButtonName("Chiudi");
             $wnd->SetSaveTask("UpdateSierComuneComunicazioni");
             
             return $wnd;    
@@ -29046,7 +29046,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetWidth(800);
             $height=0;
 
-            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI)>0)
+            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI)>0)
             {
                 $height+=350;
                 //pec
@@ -29108,7 +29108,7 @@ Class AA_SierModule extends AA_GenericModule
             $height=0;
 
             //Dati corpo elettorale
-            if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
+            if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE)>0)
             {
                 $height+=640;
                 $section=new AA_FieldSet($id."_Section_DatiSezione","Sezioni elettorali","",2);
@@ -30098,7 +30098,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             foreach($rendiconti['servizi'] as $key=>$val)
             {
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) 
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_PROPAGANDA_ELETTORALE) 
                 {
                     $propaganda+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bPropagandaAmmesso)
@@ -30107,7 +30107,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bPropagandaAmmesso=false;
                 }              
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) 
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_COLLEGAMENTI) 
                 {
                     $collegamenti+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bCollegamentiAmmesso)
@@ -30116,7 +30116,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bCollegamentiAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) 
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_ALTRO) 
                 {
                     $altro+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bAltroAmmesso)
@@ -30125,7 +30125,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bAltroAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) 
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_MATERIALE_ALLESTIMENTO) 
                 {
                     $materiale+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bMaterialeAmmesso)
@@ -30134,7 +30134,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bMaterialeAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) 
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_SPESE_POSTALI) 
                 {
                     $spese_postali+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bSpesePostaliAmmesso)
@@ -30143,7 +30143,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bSpesePostaliAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) 
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_STAMPATI_SOFTWARE) 
                 {
                     $software+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bSoftwareAmmesso)
@@ -30152,7 +30152,7 @@ Class AA_SierModule extends AA_GenericModule
                     }
                     else $bSoftwareAmmesso=false;
                 }
-                if($val['tipologia']==AA_Geco_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) 
+                if($val['tipologia']==AA_Sier_Const::AA_SIER_RENDICONTI_SERVIZI_TRASPORTO_ARREDAMENTO) 
                 {
                     $trasporto+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bTrasportoAmmesso)
@@ -31349,7 +31349,7 @@ Class AA_SierModule extends AA_GenericModule
         $generaleLayout->addRow($toolbar);
 
         $rendiconti=$comune->GetRendiconti(true);
-        $tipologia=AA_Geco_Const::GetTipoRendicontiServizi();
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         if(isset($rendiconti['servizi']) && sizeof($rendiconti['servizi'])>0)
         {
             $data=array();
@@ -31593,7 +31593,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         $box->addRow($toolbar);
         $rendiconti=$comune->GetRendiconti(true);
-        $tipologia=AA_Geco_Const::GetTipoRendicontiServizi();
+        $tipologia=AA_Sier_Const::GetTipoRendicontiServizi();
         if(isset($rendiconti['ras']['liquidazioni']) && sizeof($rendiconti['ras']['liquidazioni']) > 0)
         {
             $data=array();
@@ -31919,7 +31919,7 @@ Class AA_SierModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiImportoAmmessoModifyDlg_".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
         {
             $form_data['id']=$object->GetId();
             $form_data['id_comune']=$comune->GetProp("id");
@@ -32137,7 +32137,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetHeight(800);
             
             //estremi liquidazione
-            $rendicontiServizi=AA_Geco_Const::GetTipoRendicontiServizi();
+            $rendicontiServizi=AA_Sier_Const::GetTipoRendicontiServizi();
             $options=array();
             foreach($rendicontiServizi as $key=>$val)
             {
@@ -32220,7 +32220,7 @@ Class AA_SierModule extends AA_GenericModule
             $wnd->SetHeight(800);
             
             //estremi liquidazione
-            $rendicontiServizi=AA_Geco_Const::GetTipoRendicontiServizi();
+            $rendicontiServizi=AA_Sier_Const::GetTipoRendicontiServizi();
             $options=array();
             foreach($rendicontiServizi as $key=>$val)
             {
@@ -33279,7 +33279,7 @@ Class AA_SierModule extends AA_GenericModule
         if(!($candidato instanceof AA_SierCandidato)) return new AA_GenericWindowTemplate($id, "Modifica voti candidato", $this->id);
 
         $risultati=$comune->GetRisultati(true);
-        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
+        if(($object->GetAbilitazioni() & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
         {
             $form_data['id']=$object->GetId();
             $form_data['id_sier']=$object->GetId();
@@ -33333,7 +33333,7 @@ Class AA_SierModule extends AA_GenericModule
 
         $risultati=$comune->GetRisultati(true);
         $candidati=$object->GetCandidati(null,$lista,$comune->GetProp("id_circoscrizione"));
-        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
+        if(($object->GetAbilitazioni() & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
         {
             $form_data['id']=$object->GetId();
             $form_data['id_sier']=$object->GetId();
@@ -33610,7 +33610,7 @@ Class AA_SierModule extends AA_GenericModule
             $sections[]=$section;
         }
 
-        if(($object->GetAbilitazioni() & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)>0)
+        if(($object->GetAbilitazioni() & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI)>0)
         {
             $risultati=$comune->GetRisultati(true);
             foreach($risultati as $key=>$val)
@@ -33732,7 +33732,7 @@ Class AA_SierModule extends AA_GenericModule
             return $wnd;
         }
 
-        if(($object->GetAbilitazioni()&AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
+        if(($object->GetAbilitazioni()&AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI)>0)
         {
             $listeToAdd=array();
             $form_data['id']=$object->GetId();
@@ -34263,7 +34263,7 @@ Class AA_SierModule extends AA_GenericModule
         //Abilitazione accesso operatori
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
         
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_ACCESSO_OPERATORI) > 0) 
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_ACCESSO_OPERATORI) > 0) 
         {
             $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         }
@@ -34278,7 +34278,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione modifica info generali
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_DATIGENERALI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_DatiGenerali",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34290,7 +34290,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione modifica corpo elettorale
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_CORPO_ELETTORALE) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_DatiGenerali",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34302,7 +34302,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //Abilitazione modifica comunicazioni
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_COMUNICAZIONI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Comunicazioni",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34314,7 +34314,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione caricamento affluenza
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Affluenza",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34326,7 +34326,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione caricamento risultati
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Risultati",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34338,7 +34338,7 @@ Class AA_SierModule extends AA_GenericModule
         
         //Abilitazione caricamento rendicontazione
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_CARICAMENTO_RENDICONTI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_Rendiconti",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34350,7 +34350,7 @@ Class AA_SierModule extends AA_GenericModule
 
         //Abilitazione esportazione affluenza
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_AFFLUENZA) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_ExportAffluenza",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34363,7 +34363,7 @@ Class AA_SierModule extends AA_GenericModule
         //Abilitazione esportazione risultati
         $value="<span class='AA_Label AA_Label_LightGray'>Disabilitato</span>";
         $color="#000000";
-        if(($abilitazioni & AA_Geco_Const::AA_SIER_FLAG_EXPORT_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
+        if(($abilitazioni & AA_Sier_Const::AA_SIER_FLAG_EXPORT_RISULTATI) > 0)  $value="<span class='AA_Label AA_Label_LightGreen'>Abilitato</span>";
         $campo=new AA_JSON_Template_Template($id."_ExportRisultati",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -34470,7 +34470,7 @@ Class AA_SierAllegati
     }
     public function GetTipoDescr($asArray=false)
     {
-        $tipi=AA_Geco_Const::GetTipoAllegati();
+        $tipi=AA_Sier_Const::GetTipoAllegati();
         
         $result=array();
         $tipo=explode(",",$this->sTipo);
@@ -34497,7 +34497,7 @@ Class AA_SierAllegati
     }
     public function GetDestinatariDescr($asArray=false)
     {
-        $destinatari=AA_Geco_Const::GetDestinatari();
+        $destinatari=AA_Sier_Const::GetDestinatari();
         
         $result=array();
         $destinatario=explode(",",$this->sDestinatari);
@@ -34547,9 +34547,9 @@ Class AA_SierAllegati
 
     public function GetFilePath()
     {
-        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf"))
+        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf"))
         {
-            return AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf";
+            return AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf";
         }
         
         return "";
@@ -34562,9 +34562,9 @@ Class AA_SierAllegati
     
     public function GetFilePublicPath()
     {
-        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Geco_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf"))
+        if(is_file(AA_Const::AA_UPLOADS_PATH.AA_Sier_Const::AA_SIER_ALLEGATI_PATH."/".$this->id.".pdf"))
         {
-            return AA_Geco_Const::AA_WWW_ROOT.AA_Geco_Const::AA_SIER_ALLEGATI_PUBLIC_PATH."?id=".$this->id."&id_sier=".$this->id_sier;
+            return AA_Sier_Const::AA_WWW_ROOT.AA_Sier_Const::AA_SIER_ALLEGATI_PUBLIC_PATH."?id=".$this->id."&id_sier=".$this->id_sier;
         }
         
         return "";

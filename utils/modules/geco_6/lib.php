@@ -13,6 +13,8 @@ Class AA_Geco_Const extends AA_Const
 {
     const AA_USER_FLAG_GECO="geco";
 
+    const AA_USER_FLAG_GECO_RO="geco_ro";
+
     //modalita' scelta del beneficiario
     protected static $aModalita=null;
     const AA_GECO_MODALITA_AVVISO_PUBBLICO=1;
@@ -67,6 +69,103 @@ Class AA_Geco extends AA_Object_V2
     {
         $result=get_object_vars($this);
         return json_encode($result);
+    }
+
+    //Modalita'
+    protected $modalita=null;
+    public function GetModalita()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->modalita))
+        {
+            $this->modalita=json_decode($this->GetProp('Modalita'),true);
+            if(!is_array($this->modalita))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing della modalita'",100);
+                return array();
+            }
+
+            $this->modalita['descrizione']=AA_Geco_Const::GetListaModalita()[$this->modalita['tipo']];
+        }
+
+        return $this->modalita;
+    }
+
+    //Norma
+    protected $norma=null;
+    public function GetNorma()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->norma))
+        {
+            $this->norma=json_decode($this->GetProp('Norma'),true);
+            if(!is_array($this->norma))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing della norma'",100);
+                return array();
+            }
+        }
+
+        return $this->norma;
+    }
+
+    //Beneficiario
+    protected $beneficiario=null;
+    public function GetBeneficiario()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->beneficiario))
+        {
+            $this->beneficiario=json_decode($this->GetProp('Beneficiario'),true);
+            if(!is_array($this->beneficiario))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing del beneficiario'",100);
+                return array();
+            }
+        }
+
+        return $this->beneficiario;
+    }
+
+    //Responsabile
+    protected $responsabile=null;
+    public function GetResponsabile()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->responsabile))
+        {
+            $this->responsabile=json_decode($this->GetProp('Responsabile'),true);
+            if(!is_array($this->responsabile))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing del responsabile'",100);
+                return array();
+            }
+        }
+
+        return $this->responsabile;
+    }
+
+    //Revoca
+    protected $revoca=null;
+    public function GetRevoca()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->revoca))
+        {
+            $this->revoca=json_decode($this->GetProp('Revoca'),true);
+            if(!is_array($this->revoca))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing dei dati dio revoca'",100);
+                return array();
+            }
+        }
+
+        return $this->revoca;
     }
 
     //Funzione di clonazione dei dati
@@ -557,6 +656,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //dati
         $taskManager->RegisterTask("GetGecoModifyDlg");
+        $taskManager->RegisterTask("GetGecoBeneficiarioModifyDlg");
         $taskManager->RegisterTask("GetGecoAddNewDlg");
         $taskManager->RegisterTask("GetGecoTrashDlg");
         $taskManager->RegisterTask("TrashGeco");
@@ -641,7 +741,7 @@ Class AA_GecoModule extends AA_GenericModule
         //anno rif
         if($params['Anno'] > 0)
         {
-            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['AnnoRiferimento'])."'";
+            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['Anno'])."'";
         }
        return $params;
     }
@@ -649,23 +749,13 @@ Class AA_GecoModule extends AA_GenericModule
      //Personalizza il template dei dati delle schede pubblicate per il modulo corrente
      protected function GetDataSectionPubblicate_CustomDataTemplate($data = array(),$object=null)
      {
+        $tag="";
         if($object instanceof AA_Geco)
         {
 
             $data['pretitolo']=$object->GetProp("Anno");
-            $tag="";
-            $flags=$object->GetProp('Flags');
-            if($flags==0)
-            {
-                $tag="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>accesso disabilitato</span>";
-            }
-            else
-            {
-                foreach(AA_Geco_Const::GetFlagsForTags() as $key=>$value)
-                {
-                    if(($flags & $key) > 0) $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
-                }
-            }
+            $modalita=$object->GetModalita();
+            $tag="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$modalita['descrizione']."</span>";
         }
 
         $data['tags']=$tag;
@@ -675,7 +765,7 @@ Class AA_GecoModule extends AA_GenericModule
     //Restituisce i dati delle bozze
     public function GetDataSectionBozze_List($params=array())
     {
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO) && !$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO) && !$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_RO))
         {
             AA_Log::Log(__METHOD__." - ERRORE: l'utente corrente: ".$this->oUser->GetUserName()." non è abilitato alla visualizzazione delle bozze.",100);
             return array();
@@ -690,7 +780,7 @@ Class AA_GecoModule extends AA_GenericModule
         //anno rif
         if($params['Anno'] > 0)
         {
-            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['AnnoRiferimento'])."'";
+            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['Anno'])."'";
         }
 
         return $params;
@@ -704,19 +794,10 @@ Class AA_GecoModule extends AA_GenericModule
         {
 
             $data['pretitolo']=$object->GetProp("Anno");
-            $tag="";
-            $flags=$object->GetProp('Flags');
-            if($flags==0)
-            {
-                $tag="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>accesso disabilitato</span>";
-            }
-            else
-            {
-                foreach(AA_Geco_Const::GetFlagsForTags() as $key=>$value)
-                {
-                    if(($flags & $key) > 0) $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$value."</span>";
-                }
-            }
+            $beneficiario=$object->GetBeneficiario();
+            $class="AA_DataView_Tag AA_Label AA_Label_Green";
+            if($beneficiario['tipo']==1) $class.=' mdi mdi-account';
+            $tag="<span class='".$class."'>".$beneficiario['nome']."</span>";
         }
 
         $data['tags']=$tag;
@@ -814,13 +895,13 @@ Class AA_GecoModule extends AA_GenericModule
         $form_data['Norma_estremi']='';
         $form_data['Norma_link']='';
         
-        $form_data['Beneficiario_denominazione']="";
+        $form_data['Beneficiario_nome']="";
         $form_data['Beneficiario_cf']="";
         $form_data['Beneficiario_piva']="";
         $form_data['Beneficiario_tipo']=0;
         $form_data['Beneficiario_privacy']=0;
 
-        $form_data['Responsabile_denominazione']="";
+        $form_data['Responsabile_nome']="";
 
         $form_data['Importo_impegnato']="";
         $form_data['Importo_erogato']=0;
@@ -854,14 +935,14 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddSelectField("Anno","Anno",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"...","options"=>$options,"value"=>Date('Y')));
 
         //Nome
-        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci il titolo (max 255 caratteri).", "placeholder"=>"es. Contributo per..."),false);
+        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci un testo breve al fine di facilitare la ricerca della pubblicazione (max 255 caratteri, visibilita' solo interna).", "placeholder"=>"Titolo a uso interno..."),false);
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Breve descrizione (max 1024 caratteri).", "placeholder"=>"Inserisci qui la descrizione..."));
+        $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Inserisci un breve testo esplicativo per il cittadino (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"Breve descrizione ad uso esterno..."));
 
         //Responsabile
-        $wnd->AddTextField("Responsabile_denominazione","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile del procedimento amministrativo.", "placeholder"=>"es. Direttore del servizio..."));
+        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile del procedimento amministrativo.", "placeholder"=>"es. Direttore del servizio..."));
 
         //Norma
         $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
@@ -875,7 +956,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddGenericObject($section);
 
         //Modalita' di scelta del beneficiario
-        $section=new AA_FieldSet($id."_Beneficiario","Modalita' di scelta del beneficiario");
+        $section=new AA_FieldSet($id."_Modalita","Modalita' di scelta del beneficiario");
 
         //Modalita'
         $section->AddSelectField("Modalita_tipo","Modalita'",array("required"=>true, "gravity"=>2, "labelWidth"=>90, "validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare la modalita' di scelta del beneficiario.", "placeholder"=>"...","options"=>$modalita_options),false);
@@ -884,11 +965,12 @@ Class AA_GecoModule extends AA_GenericModule
         $section->AddTextField("Modalita_link","Link",array("required"=>true,"gravity"=>3, "labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link al documento indicante le modalita' di scelta del beneficiario.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
 
         $wnd->AddGenericObject($section);
+        
         //Beneficiario
         $section=new AA_FieldSet($id."_Beneficario","Beneficiario");
         
         //Nome e cognome
-        $section->AddTextField("Beneficiario_denominazione","Nome",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
+        $section->AddTextField("Beneficiario_nome","Nome",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
         
         //cf
         $section->AddTextField("Beneficiario_cf","C.F.",array("required"=>true, "gravity"=>1,"bottomPadding"=>32,"labelWidth"=>60,"bottomLabel"=>"*Inserisci il codice fiscale del beneficiario."),false);
@@ -911,7 +993,7 @@ Class AA_GecoModule extends AA_GenericModule
         $section->AddTextField("Importo_impegnato","Impegnato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'importo impegnato.", "placeholder"=>"es. 12345,67"));
         
         //Erogato
-        $section->AddTextField("Importo_Erogato","Erogato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32, "bottomLabel"=>"*Inserisci l'importo erogato (se presente, diversamente inserisci il valore 0).", "placeholder"=>"es. 12345,67"),false);
+        $section->AddTextField("Importo_erogato","Erogato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32, "bottomLabel"=>"*Inserisci l'importo erogato (se presente, diversamente inserisci il valore 0).", "placeholder"=>"es. 12345,67"),false);
         
         $wnd->AddGenericObject($section);
 
@@ -1323,88 +1405,163 @@ Class AA_GecoModule extends AA_GenericModule
     public function Template_GetGecoModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg";
-        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali", $this->id);
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali del contributo", $this->id);
 
-        $form_data['id']=$object->GetID();
+        $form_data=array();
+
+        $form_data['Anno']=$object->GetProp('Anno');
         $form_data['nome']=$object->GetName();
         $form_data['descrizione']=$object->GetDescr();
 
-        $flags=$object->GetAbilitazioni();
-        foreach(AA_Geco_Const::GetFlags() as $key=>$value)
+        $modalita=$object->GetModalita();
+        $form_data['Modalita_tipo']=$modalita['tipo'];
+        $form_data['Modalita_link']=$modalita['link'];
+
+        $norma=$object->GetNorma();
+        $form_data['Norma_estremi']=$norma['estremi'];
+        $form_data['Norma_link']=$norma['link'];
+
+        $responsabile=$object->GetResponsabile();
+        $form_data['Responsabile_nome']=$responsabile['nome'];
+
+        $form_data['Importo_impegnato']=AA_utils::number_format(floatVal($object->GetProp('Importo_impegnato')),2,",",".");
+        $form_data['Importo_erogato']=AA_utils::number_format(floatVal($object->GetProp('Importo_erogato')),2,",",".");
+
+        $form_data['note']=$object->GetProp('Note');
+
+        $modalita=AA_Geco_Const::GetListaModalita();
+        $modalita_options=array();
+        foreach($modalita as $id=>$val)
         {
-            if(($flags & $key) >0) $form_data[$key]=1;
-            else $form_data[$key] = 0;
+            $modalita_options[]=array("id"=>$id,"value"=>$val);
         }
 
-        foreach($object->GetDbBindings() as $prop=>$field)
-        {
-            $form_data[$prop]=$object->GetProp($prop);
-        }
-        
-        $wnd=new AA_GenericFormDlg($id, "Modifica i dati generali", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Modifica i dati generali del contributo", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(820);
         $wnd->EnableValidation();
-        
-        $wnd->SetWidth(1024);
-        $wnd->SetHeight(640);
-        
-        $anno_fine=date("Y")+5;
-        $anno_start=($anno_fine-10);
+              
+        $anno_fine=date("Y");
+        $anno_start=($anno_fine-5);
         //anno riferimento
         $options=array();
         for($i=$anno_fine; $i>=$anno_start; $i--)
         {
             $options[]=array("id"=>$i, "value"=>$i);
         }
-        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"width"=>200,"validateFunction"=>"IsSelected","tooltip"=>"*Indicare l'anno in cui si dovrebbero svolgere le elezioni.", "placeholder"=>"...","options"=>$options));
+        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"...","options"=>$options,"value"=>Date('Y')));
 
-        //titolo
-        $wnd->AddTextField("nome","Titolo",array("required"=>true, "bottomLabel"=>"*Inserisci il titolo.", "placeholder"=>"es. Nuove elezioni regionali..."),false);
+        //Nome
+        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci un testo breve al fine di facilitare la ricerca della pubblicazione (max 255 caratteri, visibilita' solo interna).", "placeholder"=>"Titolo a uso interno..."),false);
 
         //Descrizione
         $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("bottomLabel"=>"*Breve descrizione.", "placeholder"=>"Inserisci qui la descrizione..."));
+        $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Inserisci un breve testo esplicativo per il cittadino (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"Breve descrizione ad uso esterno..."));
+
+        //Responsabile
+        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile del procedimento amministrativo.", "placeholder"=>"es. Direttore del servizio..."));
+
+        //Norma
+        $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
+
+        //estremi
+        $section->AddTextField("Norma_estremi","Estremi",array("required"=>true, "gravity"=>2,"labelWidth"=>90,"bottomLabel"=>"*Inserisci gli estremi della norma o dell'atto amministrativo generale.", "placeholder"=>"es. art.26 del d.lgs. 33/2013..."));
+
+        //link alla norma
+        $section->AddTextField("Norma_link","Link",array("required"=>true,"gravity"=>3,"labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link alla norma o all'atto amministrativo generale.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
+
+        $wnd->AddGenericObject($section);
+
+        //Modalita' di scelta del beneficiario
+        $section=new AA_FieldSet($id."_Modalita","Modalita' di scelta del beneficiario");
+
+        //Modalita'
+        $section->AddSelectField("Modalita_tipo","Modalita'",array("required"=>true, "gravity"=>2, "labelWidth"=>90, "validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare la modalita' di scelta del beneficiario.", "placeholder"=>"...","options"=>$modalita_options),false);
+
+        //link alla modalita'
+        $section->AddTextField("Modalita_link","Link",array("required"=>true,"gravity"=>3, "labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link al documento indicante le modalita' di scelta del beneficiario.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
+
+        $wnd->AddGenericObject($section);
+
+        //Importi
+        $section=new AA_FieldSet($id."_Importi","Importi");
+        
+        //Impegnato
+        $section->AddTextField("Importo_impegnato","Impegnato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'importo impegnato.", "placeholder"=>"es. 12345,67"));
+        
+        //Erogato
+        $section->AddTextField("Importo_erogato","Erogato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32, "bottomLabel"=>"*Inserisci l'importo erogato (se presente, diversamente inserisci il valore 0).", "placeholder"=>"es. 12345,67"),false);
+        
+        $wnd->AddGenericObject($section);
+
+        //Nota
+        $label="Note";
+        $wnd->AddTextareaField("Note",$label,array("required"=>true,"bottomLabel"=>"*Inserisci qui le note (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"..."));
 
         //Note
-        $label="Note";
-        $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni.", "placeholder"=>"Inserisci qui le note..."));
-
-        $abilitazioni = new AA_FieldSet("AA_GECO_ABILITAZIONI","Abilitazioni");
-
-        //Accesso operatori
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_ACCESSO_OPERATORI,"Accesso operatori",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato accesso operatori comunali."));
-
-        //rendicontazione
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RENDICONTI,"Rendiconti",array("onLabel"=>"Abilitato","labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Stato caricamento rendiconti."),false);
-
-        //Modifica info generali
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_DATIGENERALI,"Info generali",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita la modifica info generali del comune."));
-
-        //Caricamento corpo elettorale
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_CORPO_ELETTORALE,"Corpo elettorale",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dati corpo elettorale."),false);
-
-        //comunicazioni
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_COMUNICAZIONI,"Comunicazioni",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento delle comunicazioni."));
-
-        //Affluenza
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_AFFLUENZA,"Affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dell'affluenza."),false);
-
-        //Risultati
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_CARICAMENTO_RISULTATI,"Risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita il caricamento dei risultati."));
-
-        //esportazione Affluenza
-        //$abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_EXPORT_AFFLUENZA,"Esporta affluenza",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dell'affluenza."));
-
-        //esportazione Risultati
-        $abilitazioni->AddSwitchBoxField(AA_Geco_Const::AA_GECO_FLAG_EXPORT_RISULTATI,"Esporta risultati",array("onLabel"=>"Abilitato","bottomPadding"=>28,"labelWidth"=>150,"offLabel"=>"Disabilitato","bottomLabel"=>"*Abilita/disabilita l'esportazione dei risultati."),false);
-
-        $wnd->AddGenericObject($abilitazioni);
+        //$label="Note";
+        //$wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("UpdateGeco");
+        $wnd->SetSaveTask("UpdateGecoDatiGenerali");
+        
+        return $wnd;
+    }
+
+    //Template dlg modify sier
+    public function Template_GetGecoBeneficiarioModifyDlg($object=null)
+    {
+        $id=$this->GetId()."_Modify_Dlg";
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati beneficiario", $this->id);
+
+        $beneficiario=$object->GetBeneficiario();
+        $form_data=array();
+        $form_data['Beneficiario_nome']=$beneficiario['nome'];
+        $form_data['Beneficiario_cf']=$beneficiario['cf'];
+        $form_data['Beneficiario_piva']=$beneficiario['piva'];
+        $form_data['Beneficiario_tipo']=$beneficiario['tipo'];
+        $form_data['Beneficiario_privacy']=$beneficiario['privacy'];
+
+        $wnd=new AA_GenericFormDlg($id, "Modifica i dati beneficiario", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(820);
+        $wnd->EnableValidation();
+              
+        //Beneficiario
+        //$section=new AA_FieldSet($id."_Beneficario","Beneficiario");
+        
+        //Nome e cognome
+        $wnd->AddTextField("Beneficiario_nome","Nome",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
+        
+        //cf
+        $wnd->AddTextField("Beneficiario_cf","C.F.",array("required"=>true, "gravity"=>1,"bottomPadding"=>32,"labelWidth"=>60,"bottomLabel"=>"*Inserisci il codice fiscale del beneficiario."),false);
+
+        //piva
+        $wnd->AddTextField("Beneficiario_piva","P.IVA",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la partita iva del beneficiario (se applicabile)."),false);
+
+        //Tipo
+        $wnd->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica."));
+
+        //Privacy
+        $wnd->AddCheckBoxField("Beneficiario_privacy","Oscuramento dati personali",array("bottomPadding"=>32,"gravity"=>2, "labelWidth"=>200, "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
+
+        //$wnd->AddGenericObject($section);
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateGecoDatiBeneficiario");
         
         return $wnd;
     }
@@ -1497,47 +1654,18 @@ Class AA_GecoModule extends AA_GenericModule
         $canModify=false;
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $canModify=true;
 
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO) || $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_OC)|| $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_PREF))
+        $revoca=$object->GetRevoca();
+        if(sizeof($revoca)>0)
         {
-            $cp=$object->GetControlPannel();
-            $url=$cp['url_feed_risultati'];
-            if(strpos($url,"mini=1")===false)
-            {
-                if(strpos($url,"?") !==false) $url."&mini=1";
-                else $url.="?mini=1";
-            }
-            $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_ControlPannel",array("height"=>32,"type"=>"clean","borderless"=>true));
-            $modify_btn=new AA_JSON_Template_Generic($id."_ShowReports_btn",array(
-                "view"=>"button",
-                 "type"=>"icon",
-                 "icon"=>"mdi mdi-account-search",
-                 "label"=>"Reports",
-                 "align"=>"right",
-                 "width"=>120,
-                 "tooltip"=>"Consulta la reportistica sui risultati delle consultazioni",
-                 "click"=>"AA_MainApp.utils.callHandler('StartRisultatiApp', {url:\"".addslashes($url)."\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
-            ));
+            $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>32,"type"=>"clean","borderless"=>true));
+            $revocato="<span class='mdi mdi-trash-can' style='font-size:larger;color: #fff'>&nbsp;Contributo revocato</span>";
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$revocato,"width"=>240, "css"=>array("background"=>"#6cb456 !important","border-radius"=>"10px"),"align"=>"center")));
             $toolbar->AddElement(new AA_JSON_Template_Generic());
-            $toolbar->AddElement($modify_btn);  
-
-            if($canModify)
-            {
-                $modify_btn=new AA_JSON_Template_Generic($id."_GeneraleOtions_btn",array(
-                    "view"=>"button",
-                     "type"=>"icon",
-                     "icon"=>"mdi mdi-tools",
-                     "label"=>"Strumenti",
-                     "align"=>"right",
-                     "width"=>120,
-                     "tooltip"=>"Pannello di controllo",
-                     "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoControlPannelDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
-                ));
-                $toolbar->AddElement($modify_btn);
-            }
+           
+            $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
         }
-        else $toolbar=null;
+        else $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,null,$canModify);
         
-        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
 
         //Descrizione
         $value=$object->GetDescr();
@@ -1554,39 +1682,251 @@ Class AA_GecoModule extends AA_GenericModule
         $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "gravity"=>1,
+            "width"=>90,
             "data"=>array("title"=>"Anno:","value"=>$value)
         ));
         
+        //modalita'
+        $modalita=$object->GetModalita();
+        if(sizeof($modalita)==0)$value="n.d.";
+        else
+        {
+            $value="<a href='".$modalita['link']."' target='_blank'>".$modalita['descrizione']."</a>";
+        }
+        $modalita_text=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Modalita' di scelta del beneficiario:","value"=>$value)
+        ));
+
+        //norma
+        $norma=$object->GetNorma();
+        if(sizeof($norma)==0)$value="n.d.";
+        else
+        {
+            $value="<a href='".$norma['link']."' target='_blank'>".$norma['estremi']."</a>";
+        }
+        $norma_text=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Norma:","value"=>$value)
+        ));
+
         //note
         $value = $object->GetProp("Note");
         $note=new AA_JSON_Template_Template($id."_Note",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
-        
+
+        //responsabile
+        $value = $object->GetResponsabile();
+        $responsabile=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "width"=>250,
+            "data"=>array("title"=>"Responsabile:","value"=>$value['nome'])
+        ));
+
+        //importo impegnato
+        $value = AA_Utils::number_format(floatVal($object->GetProp("Importo_impegnato")),2,",",".");
+        $importo_impegnato=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "width"=>200,
+            "data"=>array("title"=>"Importo impegnato:","value"=>$value)
+        ));
+
+        //importo erogato
+        $value = AA_Utils::number_format(floatVal($object->GetProp("Importo_erogato")),2,",",".");
+        $importo_liquidato=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "width"=>200,
+            "data"=>array("title"=>"Importo erogato:","value"=>$value)
+        ));
         
         //prima riga
-        $riga=new AA_JSON_Template_Layout($id."_FirstRow",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $riga=new AA_JSON_Template_Layout("",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         $riga->AddCol($anno_rif);
-        $riga->AddCol($this->TemplateDettaglio_Abilitazioni($object,$id."_Abilitazioni"));
+        $riga->AddCol($modalita_text);
+        $riga->AddCol($norma_text);
+        $riga->AddCol($responsabile);
+        $riga->AddCol($importo_impegnato);
+        $riga->AddCol($importo_liquidato);
         $layout->AddRow($riga);
 
         //seconda riga
-        $riga=new AA_JSON_Template_Layout($id."_SecondRow",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $layout_gen=new AA_JSON_Template_Layout($id."_DescrNoteLayout",array("gravity"=>3,"type"=>"clean"));
+        $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $layout_gen=new AA_JSON_Template_Layout("",array("gravity"=>3,"type"=>"clean"));
         $layout_gen->addRow($descr);
         $layout_gen->addRow($note);
         $riga->addCol($layout_gen);
+        $layout->AddRow($riga);
+
+        //terza riga
+        $riga=new AA_JSON_Template_Layout("",array("gravity"=>1));
+        $beneficiario_box=new AA_JSON_Template_Layout("",array("type"=>"clean","gravity"=>1,"minWidth"=>400,"css"=>array("border-right"=>"1px solid #dadee0 !important")));
+        $revoca_box=new AA_JSON_Template_Layout("",array("type"=>"clean","gravity"=>1,"minWidth"=>400,"css"=>array("border-right"=>"1px solid #dadee0 !important")));
+        $allegati_box=new AA_JSON_Template_Layout("",array("type"=>"clean","gravity"=>2,"minWidth"=>400));
+        $riga->AddCol($beneficiario_box);
+        $riga->AddCol($revoca_box);
+        $riga->AddCol($allegati_box);
+
+        //-------------------- Beneficiario --------------------------------------
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Beneficiario</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        if($canModify)
+        {
+            $modify_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-pencil",
+                 "label"=>"Modifica",
+                 "css"=>"webix_primary",
+                 "align"=>"right",
+                 "autowidth"=>true,
+                 "tooltip"=>"Modifica i dati del beneficiario",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoBeneficiarioModifyDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+             ));
+             $toolbar->AddElement($modify_btn);
+        }
+
+        $beneficiario_box->AddRow($toolbar);
+        if($canModify)
+        {
+            $beneficiario=$object->GetBeneficiario();
+            if(sizeof($beneficiario)==0)
+            {
+                $beneficiario['nome']="n.d.";
+                $beneficiario['cf']="n.d.";
+                $beneficiario['piva']="n.d.";
+                $beneficiario['tipo_descr']="n.d.";
+                $beneficiario['privacy_descr']="n.d.";
+            }
+
+            if($beneficiario['privacy']==0) $beneficiario['privacy_descr']="Visibili";
+            else $beneficiario['privacy_descr']="Oscurati";
+
+            if($beneficiario['tipo']==1) $beneficiario['tipo_descr']="Persona fisica";
+            else 
+            {
+                $beneficiario['tipo_descr']="Persona giuridica";
+                $beneficiario['privacy_descr']="Non applicabile";
+            }
+
+            $nome=new AA_JSON_Template_Template("",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "height"=>48,
+                "data"=>array("title"=>"Nome:","value"=>$beneficiario['nome'])
+            ));
+
+            $cf=new AA_JSON_Template_Template("",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "height"=>48,
+                "data"=>array("title"=>"C.f.:","value"=>$beneficiario['cf'])
+            ));
+
+            $piva=new AA_JSON_Template_Template("",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "height"=>48,
+                "data"=>array("title"=>"P.Iva:","value"=>$beneficiario['piva'])
+            ));
+
+            $tipo=new AA_JSON_Template_Template("",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "height"=>48,
+                "data"=>array("title"=>"Tipologia:","value"=>$beneficiario['tipo_descr'])
+            ));
+
+            $privacy=new AA_JSON_Template_Template("",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "data"=>array("title"=>"Dati personali:","value"=>$beneficiario['privacy_descr'])
+            ));
+
+            $beneficiario_box->AddRow($nome);
+            $beneficiario_box->AddRow($cf);
+            $beneficiario_box->AddRow($piva);
+            $beneficiario_box->AddRow($tipo);
+            $beneficiario_box->AddRow($privacy);
+        }
+        else
+        {
+            $beneficiario_box->AddRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display: flex; width:100%; height:100%; justify-content:center; align-items: center'>Dati non visualizzati a tutela della privacy del beneficiario</div>")));
+        }
+        //------------------------------------------------------------------------
+
+        //-------------------- Revoca --------------------------------------
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Revoca</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        if($canModify)
+        {
+            $modify_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-pencil",
+                 "label"=>"Modifica",
+                 "css"=>"webix_primary",
+                 "align"=>"right",
+                 "autowidth"=>true,
+                 "tooltip"=>"Modifica i dati di revoca",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetRevocaDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+             ));
+             $toolbar->AddElement($modify_btn);
+        }
+        $revoca_box->AddRow($toolbar);
+        if(sizeof($revoca)==0)
+        {
+            $revoca['data']="n.d.";
+            $revoca['estremi']="n.d.";
+            $revoca['causale']="n.d.";
+        }
+        else
+        {
+            $revoca['data']=date("d-m-Y",strtotime($revoca['data']));
+        }
+
+        $data=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "height"=>48,
+            "data"=>array("title"=>"Data provvedimento:","value"=>$revoca['data'])
+        ));
+
+        $estremi=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "height"=>48,
+            "data"=>array("title"=>"Estremi provvedimento:","value"=>$revoca['estremi'])
+        ));
+
+        $causale=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Causale:","value"=>$revoca['causale'])
+        ));
+
+        $revoca_box->AddRow($data);
+        $revoca_box->AddRow($estremi);
+        $revoca_box->AddRow($causale);
+        //------------------------------------------------------------------------
+
+        //-------------------- Allegati --------------------------------------
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Allegati</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        $allegati_box->AddRow($toolbar);
+        $allegati_box->AddRow(new AA_JSON_Template_Generic());
+
+        //------------------------------------------------------------------------
 
         //$riga->addCol($this->TemplateDettaglio_Allegati($object,$id,$canModify));
-        $riga->addCol($this->TemplateDettaglio_Giornate($object,$id,$canModify));
+        //$riga->addCol($this->TemplateDettaglio_Giornate($object,$id,$canModify));
 
         //$layout->AddRow($riga);
 
         //terza riga
         //$riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>1));
       
-
         $layout->AddRow($riga);
 
         return $layout;
@@ -1814,17 +2154,98 @@ Class AA_GecoModule extends AA_GenericModule
         
         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
-            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per aggiungere nuovi elementi</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi",false);
 
             return false;
         }
         
+        //----------- verify values ---------------------
+        if(trim($_REQUEST['nome']) == "" || trim($_REQUEST['descrizione']) =="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il titolo e la descrizione non possono essere vuoti o composti da soli spazi.",false);
+
+            return false;
+        }
+
+        $modalita=array();
+        $norma=array();
+        $beneficiario=array();
+        $responsabile=array();
+        
+        if(isset($_REQUEST['Modalita_tipo'])) $modalita['tipo']=intVal($_REQUEST['Modalita_tipo']);
+        if(isset($_REQUEST['Modalita_link'])) $modalita['link']=trim($_REQUEST['Modalita_link']);
+        if(strpos($_REQUEST['Modalita_link'],"https") === false)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il link al documento indicante le modalita' di scelta deve essere una URL pubblica accessbile tramite protocollo https.",false);
+
+            return false;
+        }
+        if(intVal($_REQUEST['Modalita_tipo']) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Tipo di modalita' errato.",false);
+
+            return false;
+        }
+        
+        if(isset($_REQUEST['Responsabile_nome'])) $responsabile['nome']=trim($_REQUEST['Responsabile_nome']);
+        
+        if(isset($_REQUEST['Norma_estremi'])) $norma['estremi']=trim($_REQUEST['Norma_estremi']);
+        if(isset($_REQUEST['Norma_link'])) $norma['link']=trim($_REQUEST['Norma_link']);
+        if(strpos($_REQUEST['Norma_link'],"https") === false)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il link alla norma deve essere una URL pubblica accessbile tramite protocollo https.",false);
+
+            return false;
+        }
+
+        if(isset($_REQUEST['Beneficiario_nome'])) $beneficiario['nome']=trim($_REQUEST['Beneficiario_nome']);
+        if(isset($_REQUEST['Beneficiario_cf'])) $beneficiario['cf']=trim($_REQUEST['Beneficiario_cf']);
+
+        if(trim($_REQUEST['Beneficiario_nome']) == "" || trim($_REQUEST['Beneficiario_cf']) =="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il nome e il codice fiscale del beneficiario non possono essere vuoti o composti da soli spazi.",false);
+
+            return false;
+        }
+        if(isset($_REQUEST['Beneficiario_piva'])) $beneficiario['piva']=trim($_REQUEST['Beneficiario_piva']);
+        if(isset($_REQUEST['Beneficiario_tipo'])) $beneficiario['tipo']=intVal($_REQUEST['Beneficiario_tipo']);
+        if(isset($_REQUEST['Beneficiario_privacy'])) $beneficiario['privacy']=intVal($_REQUEST['Beneficiario_privacy']);
+
+        if(isset($_REQUEST['Importo_impegnato'])) $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
+        if(isset($_REQUEST['Importo_erogato'])) $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
+        if($importo['impegnato'] <= 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'importo impegnato non puo' essere nullo o negativo.",false);
+
+            return false;
+        }
+        if($importo['erogato'] < 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'importo erogato non puo' essere negativo.",false);
+
+            return false;
+        }
+        $_REQUEST['Importo_impegnato']=$importo['impegnato'];
+        $_REQUEST['Importo_erogato']=$importo['erogato'];
+
+        $_REQUEST['Modalita']=json_encode($modalita);
+        $_REQUEST['Norma']=json_encode($norma);
+        $_REQUEST['Beneficiario']=json_encode($beneficiario);
+        $_REQUEST['Responsabile']=json_encode($responsabile);
+        //-----------------------------------------------
+
         return $this->Task_GenericAddNew($task,$_REQUEST);
     }
 
-    //Task modifica elemento
+    //Task modifica dati generali elemento
     public function Task_GetGecoModifyDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -1853,6 +2274,43 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
             $sTaskLog.= $this->Template_GetGecoModifyDlg($object)->toBase64();
+            $sTaskLog.="</content>";
+        }
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task modifica dati beneficiario
+    public function Task_GetGecoBeneficiarioModifyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modifcare l'elemento.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
+            $task->SetLog($sTaskLog);
+        
+            return false;
+        }
+        else
+        {
+            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+            $sTaskLog.= $this->Template_GetGecoBeneficiarioModifyDlg($object)->toBase64();
             $sTaskLog.="</content>";
         }
         
