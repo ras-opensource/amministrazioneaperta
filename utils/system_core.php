@@ -1340,7 +1340,7 @@ class AA_User
     //Reset password email params
     protected static $aResetPasswordEmailParams=array(
         "oggetto"=>'Amministrazione Aperta - Credenziali accesso.',
-        "incipit"=>"<p>Buongiorno,<br>Di seguito le credenziali per l'accesso alla piattaforma applicativa \"Amministrazione Aperta\":<br>url d'accesso: https://#www#:",
+        "incipit"=>"<p>Buongiorno,<br>Di seguito le credenziali per l'accesso alla piattaforma applicativa \"Amministrazione Aperta\":<br>url d'accesso: https://#www#",
         "bShowStruct"=>true,
         "sendToUs"=>true,
         "post"=>'<br/>E\' possibile cambiare la password accedendo al proprio profilo utente, dopo aver effettuato il login sulla piattaforma.<br>E&apos; anche possibile effettuare il login sulla piattaforma indicando l\'indirizzo email in vece del nome utente.<br>Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',

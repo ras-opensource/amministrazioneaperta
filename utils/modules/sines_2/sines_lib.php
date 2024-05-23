@@ -2260,7 +2260,7 @@ Class AA_SinesModule extends AA_GenericModule
 
         //Anno
         $anno_fine=Date('Y');
-        $anno_start=($anno_fine-50);
+        $anno_start=($anno_fine-115);
         for($i=$anno_fine; $i>=$anno_start; $i--)
         {
             $options[]=array("id"=>$i, "value"=>$i);
@@ -2406,7 +2406,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //Anno
         $anno_fine=Date('Y');
-        $anno_start=($anno_fine-50);
+        $anno_start=($anno_fine-115);
         for($i=$anno_fine; $i>=$anno_start; $i--)
         {
             $options[]=array("id"=>$i, "value"=>$i);
@@ -4209,6 +4209,8 @@ Class AA_SinesModule extends AA_GenericModule
                 $vacante=true;
                 $opzionale=false;
                 $facenteFunzione=false;
+                $dataScadenza="";
+                $dataInizio="";
                 $ras=false;
                 $tempo_indeterminato=false;
                 if($incarico->IsOpzionale()) 
