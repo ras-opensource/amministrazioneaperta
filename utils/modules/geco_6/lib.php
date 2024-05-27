@@ -160,7 +160,7 @@ Class AA_Geco extends AA_Object_V2
             $this->revoca=json_decode($this->GetProp('Revoca'),true);
             if(!is_array($this->revoca))
             {
-                AA_Log::Log(__METHOD__." - errore nel parsing dei dati dio revoca'",100);
+                AA_Log::Log(__METHOD__." - errore nel parsing dei dati di revoca'",100);
                 return array();
             }
         }
@@ -292,6 +292,12 @@ Class AA_Geco extends AA_Object_V2
         //----------------------------------------------
 
         return parent::AddNew($object,$user,$bSaveData);
+    }
+
+    public function Update($user = null, $bSaveData = true, $logMsg = '')
+    {
+        //AA_Log::Log(__METHOD__." - Aggiornamento: ".print_r($this,true),100);
+        return parent::Update($user,true,$logMsg);
     }
 
     //Aggiunge un nuovo allegato
@@ -668,14 +674,14 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecoPublishDlg");
         $taskManager->RegisterTask("ReassignGeco");
         $taskManager->RegisterTask("AddNewGeco");
-        $taskManager->RegisterTask("UpdateGeco");
+        $taskManager->RegisterTask("UpdateGecoDatiGenerali");
         $taskManager->RegisterTask("PublishGeco");
+        $taskManager->RegisterTask("GetGecoConfirmPrivacyDlg");
         
         //Allegati
         $taskManager->RegisterTask("GetGecoAddNewAllegatoDlg");
         $taskManager->RegisterTask("AddNewGecoAllegato");
         $taskManager->RegisterTask("GetGecoModifyAllegatoDlg");
-        $taskManager->RegisterTask("GetGecoCopyAllegatoDlg");
         $taskManager->RegisterTask("UpdateGecoAllegato");
         $taskManager->RegisterTask("GetGecoTrashAllegatoDlg");
         $taskManager->RegisterTask("DeleteGecoAllegato");
@@ -878,7 +884,7 @@ Class AA_GecoModule extends AA_GenericModule
         return $this->Template_GetGenericObjectDeleteDlg($params,"DeleteGeco");
     }
         
-    //Template dlg addnew provvedimenti
+    //Template dlg addnew
     public function Template_GetGecoAddNewDlg()
     {
         $id=$this->GetId()."_AddNew_Dlg_".uniqid();
@@ -910,9 +916,9 @@ Class AA_GecoModule extends AA_GenericModule
 
         $modalita=AA_Geco_Const::GetListaModalita();
         $modalita_options=array();
-        foreach($modalita as $id=>$val)
+        foreach($modalita as $num=>$val)
         {
-            $modalita_options[]=array("id"=>$id,"value"=>$val);
+            $modalita_options[]=array("id"=>$num,"value"=>$val);
         }
 
         $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo contributo", $this->id,$form_data,$form_data);
@@ -967,7 +973,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddGenericObject($section);
         
         //Beneficiario
-        $section=new AA_FieldSet($id."_Beneficario","Beneficiario");
+        $section=new AA_FieldSet($id."_Beneficiario","Beneficiario");
         
         //Nome e cognome
         $section->AddTextField("Beneficiario_nome","Nome",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
@@ -979,7 +985,7 @@ Class AA_GecoModule extends AA_GenericModule
         $section->AddTextField("Beneficiario_piva","P.IVA",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la partita iva del beneficiario (se applicabile)."),false);
 
         //Tipo
-        $section->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica."));
+        $section->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica.", "eventHandlers"=>array("onChange"=>array("handler"=>"onPersonaFisicaChange","module_id"=>$this->GetId()))));
 
         //Privacy
         $section->AddCheckBoxField("Beneficiario_privacy","Oscuramento dati personali",array("bottomPadding"=>32,"gravity"=>2, "labelWidth"=>200, "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
@@ -1004,6 +1010,63 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
 
         $wnd->SetSaveTask("AddNewGeco");
+        
+        return $wnd;
+    }
+
+    //Template confirm 
+    public function Template_GetGecoConfirmPrivacyDlg($form_id='')
+    {
+        $id=$this->GetId()."_".uniqid();
+
+        $wnd=new AA_GenericWindowTemplate($id, "Conferma oscuramento dati personali", $this->id);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(400);
+        
+        $layout=new AA_JSON_Template_Layout("",array("type"=>"clean"));
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p style='padding:10px'>Dalla pubblicazione e' possibile ricavare, <u>anche solo potenzialmente</u>, informazioni relative allo <b>stato di salute</b> e/o alla situazione di <b>disagio economico-sociale</b> del beneficiario?</p></div>";
+        $layout->AddRow(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+
+        $flag_action='AA_MainApp.utils.callHandler("flagPrivacy", { form: "'.$form_id.'",value : 1}, "'.$this->GetId().'");$$("'.$id.'_Wnd").close();';
+        $unflag_action='AA_MainApp.utils.callHandler("flagPrivacy", { form: "'.$form_id.'",value : 0}, "'.$this->GetId().'");$$("'.$id.'_Wnd").close();';
+
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+        $toolbar=new AA_JSON_Template_Toolbar("",array("type"=>"clean","borderless"=>true));
+
+        //oscura i dati personali
+        $flag_btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-check-circle",
+            "label"=>"Si",
+            "css"=>"webix_primary",
+            "align"=>"center",
+            "inputWidth"=>80,
+            "click"=>$flag_action,
+            "tooltip"=>"Oscura i dati personali."
+        ));
+
+        //manuale operatore comunale
+        $unflag_btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-alert-circle",
+            "label"=>"No",
+            "align"=>"center",
+            "inputWidth"=>80,
+            "click"=>$unflag_action,
+            "tooltip"=>"Lascia in chiaro i dati personali."
+        ));
+
+        $toolbar->addElement($unflag_btn);
+        $toolbar->addElement(new AA_JSON_Template_Generic(""));
+        $toolbar->addElement($flag_btn);
+        $layout->AddRow($toolbar);
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+
+        $wnd->AddView($layout);
         
         return $wnd;
     }
@@ -1409,6 +1472,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         $form_data=array();
 
+        $form_data['id']=$object->GetId();
         $form_data['Anno']=$object->GetProp('Anno');
         $form_data['nome']=$object->GetName();
         $form_data['descrizione']=$object->GetDescr();
@@ -1500,7 +1564,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //Nota
         $label="Note";
-        $wnd->AddTextareaField("Note",$label,array("required"=>true,"bottomLabel"=>"*Inserisci qui le note (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"..."));
+        $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Inserisci qui le note (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"..."));
 
         //Note
         //$label="Note";
@@ -1551,7 +1615,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddTextField("Beneficiario_piva","P.IVA",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la partita iva del beneficiario (se applicabile)."),false);
 
         //Tipo
-        $wnd->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica."));
+        $wnd->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica.","eventHandlers"=>array("onChange"=>array("handler"=>"onPersonaFisicaChange","module_id"=>$this->GetId()))));
 
         //Privacy
         $wnd->AddCheckBoxField("Beneficiario_privacy","Oscuramento dati personali",array("bottomPadding"=>32,"gravity"=>2, "labelWidth"=>200, "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
@@ -2059,7 +2123,7 @@ Class AA_GecoModule extends AA_GenericModule
     }
    
     //Task Update Geco
-    public function Task_UpdateGeco($task)
+    public function Task_UpdateGecoDatiGenerali($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -2072,22 +2136,97 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $flags=array_keys(AA_Geco_Const::GetFlags());
-        
-        $abilitazioni=0;
-        foreach($_REQUEST as $key=>$value)
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
         {
-            if($value==1 && in_array($key,$flags))
-            {
-                $abilitazioni+=$key;
-            } 
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
         }
 
-        //AA_Log::Log(__METHOD__." - Flags: ".$abilitazioni,100);
+        //----------- verify values ---------------------
+        if(trim($_REQUEST['nome']) == "" || trim($_REQUEST['descrizione']) =="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il titolo e la descrizione non possono essere vuoti o composti da soli spazi.",false);
 
-        $_REQUEST['Flags']=$abilitazioni;
+            return false;
+        }
+
+        $modalita=array();
+        $norma=array();
+        $responsabile=array();
         
-        return $this->Task_GenericUpdateObject($task,$_REQUEST,true);   
+        if(isset($_REQUEST['Modalita_tipo'])) $modalita['tipo']=intVal($_REQUEST['Modalita_tipo']);
+        if(isset($_REQUEST['Modalita_link'])) $modalita['link']=trim($_REQUEST['Modalita_link']);
+        if(strpos($_REQUEST['Modalita_link'],"https") === false)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il link al documento indicante le modalita' di scelta deve essere una URL pubblica accessbile tramite protocollo https.",false);
+
+            return false;
+        }
+        if(intVal($_REQUEST['Modalita_tipo']) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Tipo di modalita' errato.",false);
+
+            return false;
+        }
+        
+        if(isset($_REQUEST['Responsabile_nome'])) $responsabile['nome']=trim($_REQUEST['Responsabile_nome']);
+        
+        if(isset($_REQUEST['Norma_estremi'])) $norma['estremi']=trim($_REQUEST['Norma_estremi']);
+        if(isset($_REQUEST['Norma_link'])) $norma['link']=trim($_REQUEST['Norma_link']);
+        if(strpos($_REQUEST['Norma_link'],"https") === false)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il link alla norma deve essere una URL pubblica accessbile tramite protocollo https.",false);
+
+            return false;
+        }
+
+        if(isset($_REQUEST['Importo_impegnato'])) $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
+        if(isset($_REQUEST['Importo_erogato'])) $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
+        if($importo['impegnato'] <= 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'importo impegnato non puo' essere nullo o negativo.",false);
+
+            return false;
+        }
+        if($importo['erogato'] < 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'importo erogato non puo' essere negativo.",false);
+
+            return false;
+        }
+        $_REQUEST['Importo_impegnato']=$importo['impegnato'];
+        $_REQUEST['Importo_erogato']=$importo['erogato'];
+
+        $_REQUEST['Modalita']=json_encode($modalita);
+        $_REQUEST['Norma']=json_encode($norma);
+        $_REQUEST['Responsabile']=json_encode($responsabile);
+        //-----------------------------------------------
+        
+        $object->Parse($_REQUEST);
+
+        if(!$object->Update($this->oUser,true,"Aggiornamento dati generali"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei dati generali.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
     }
     
     //Task trash Geco
@@ -2217,6 +2356,12 @@ Class AA_GecoModule extends AA_GenericModule
         if(isset($_REQUEST['Beneficiario_tipo'])) $beneficiario['tipo']=intVal($_REQUEST['Beneficiario_tipo']);
         if(isset($_REQUEST['Beneficiario_privacy'])) $beneficiario['privacy']=intVal($_REQUEST['Beneficiario_privacy']);
 
+        //Se il beneficiario non e' una persona fisica disabilita l'oscuramento dei dati personali.
+        if($beneficiario['tipo'] == 0) 
+        {
+            $beneficiario['privacy'] = 0;
+        }
+
         if(isset($_REQUEST['Importo_impegnato'])) $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
         if(isset($_REQUEST['Importo_erogato'])) $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
         if($importo['impegnato'] <= 0)
@@ -2278,6 +2423,47 @@ Class AA_GecoModule extends AA_GenericModule
         }
         
         $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task richiesta oscurtamento dati personali
+    public function Task_GetGecoConfirmPrivacyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        {
+            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
+            $sTaskLog.= "{}";
+            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'elemento.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $form_id=$_REQUEST['form'];
+        if($form_id=="")
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Non e' stato impostato l'identificativo del form corrispondente.",false);
+        
+            return false;
+        }
+
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGecoConfirmPrivacyDlg($form_id),true);
+        }
         
         return true;
     }
