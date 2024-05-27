@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Mag 15, 2024 alle 12:10
+-- Creato il: Mag 27, 2024 alle 16:03
 -- Versione del server: 10.11.6-MariaDB
--- Versione PHP: 8.3.6
+-- Versione PHP: 8.3.7
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -34,7 +34,7 @@ CREATE TABLE `aa_geco_data` (
   `anno` varchar(4) NOT NULL,
   `descrizione` varchar(1024) NOT NULL DEFAULT '',
   `note` varchar(4096) NOT NULL DEFAULT '',
-  `modalita` int(11) NOT NULL DEFAULT 0,
+  `modalita` varchar(1024) NOT NULL DEFAULT '',
   `revoca` varchar(4096) NOT NULL DEFAULT '',
   `responsabile` varchar(255) NOT NULL,
   `beneficiario` varchar(2048) NOT NULL,
