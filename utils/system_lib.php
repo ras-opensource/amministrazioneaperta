@@ -5298,6 +5298,12 @@ class AA_GenericPagedSectionTemplate
             . "</div>";
     }
 
+    protected $showDetailSectionFunc="showDetailView";
+    public function SetShowDetailSectionFunc($val="")
+    {
+        $this->showDetailSectionFunc=$val;
+    }
+    
     protected function Update()
     {
         if (!($this->content_box instanceof AA_JSON_Template_Generic)) {
@@ -5305,7 +5311,7 @@ class AA_GenericPagedSectionTemplate
             if ($this->module == "") $module = "AA_MainApp.curModule";
 
             $selectionChangeEvent = "try{AA_MainApp.utils.getEventHandler('onSelectChange','" . $this->module . "','" . $this->id . "_List_Box')}catch(msg){console.error(msg)}";
-            $onDblClickEvent = "try{AA_MainApp.utils.getEventHandler('showDetailView','" . $this->module . "','" . $this->id . "_List_Box')}catch(msg){console.error(msg)}";
+            $onDblClickEvent = "try{AA_MainApp.utils.getEventHandler('".$this->showDetailSectionFunc."','" . $this->module . "','" . $this->id . "_List_Box')}catch(msg){console.error(msg)}";
             if (sizeof($this->contentBoxData) > 0 && $this->contentBoxTemplate != "") {
 
                 $this->content_box = new AA_JSON_Template_Generic($this->id . "_List_Box", array(
