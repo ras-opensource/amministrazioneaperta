@@ -55,29 +55,6 @@ Class AA_Geco_Const extends AA_Const
         return static::$aTipoAllegati;
     }
 
-    /*
-    Agricoltura
-Allevamento
-Ambiente
-Artigianato
-Commercio
-Industria 
-Informazione
-Innovazione tecnologica
-Internazionalizzazione
-Istruzione
-Lavoro
-Pesca
-Politiche giovanili
-Politiche sociali
-Sanità 
-Servizi
-Sport
-Trasporti e mobilità
-Turismo
-Volontariato
-*/
-
     protected static $aCategorieAllegati=null;
     const AA_GECO_CATEGORIA_ALLEGATO_AGRICOLTURA=1;
     const AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=2;
@@ -111,10 +88,10 @@ Volontariato
                 static::AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=>"Artigianato",
                 static::AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=>"Commercio",
                 static::AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=>"Industria",
-                static::AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=>"Informazione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=>"Cultura e informazione",
                 static::AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=>"Innovazione",
                 static::AA_GECO_CATEGORIA_ALLEGATO_INTERNAZIONALIZZAZIONE=>"Internazionalizzazione",
-                static::AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=>"Istruzione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=>"Cultura e istruzione",
                 static::AA_GECO_CATEGORIA_ALLEGATO_LAVORO=>"Lavoro",
                 static::AA_GECO_CATEGORIA_ALLEGATO_PESCA=>"Pesca",
                 static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_GIOVANILI=>"Politiche giovanili",
@@ -147,9 +124,10 @@ Class AA_Geco extends AA_Object_V2
         if($idData != $this->nId_Data && $idData != $this->nId_Data_Rev) return false;
 
         //Cancella tutti gli allegati
-        foreach($this->GetAllegati($idData) as $curAllegato)
+        $allegati=$this->GetAllegati();
+        foreach( $allegati as $key=>$curAllegato)
         {
-            if(!$this->DeleteAllegato($curAllegato,$user))
+            if(!$this->DeleteAllegato($key,$user))
             {
                 return false;
             }
@@ -565,10 +543,8 @@ Class AA_Geco extends AA_Object_V2
     }
 
     //Elimina un allegato esistente
-    public function DeleteAllegato($allegato=null, $user=null)
+    public function DeleteAllegato($id_allegato="", $user=null)
     {
-        AA_Log::Log(__METHOD__."()");
-
         if(!$this->isValid())
         {
                 AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
@@ -594,57 +570,37 @@ Class AA_Geco extends AA_Object_V2
             return false;
         }
 
-        if(!($allegato instanceof AA_GecoAllegati))
+        $allegati=$this->GetAllegati();
+        if(!isset($allegati[$id_allegato]))
         {
-            AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
+            AA_Log::Log(__METHOD__." - Allegato/link non valido.", 100,false,true);
             return false;
         }
+
+        $allegato=$allegati[$id_allegato];
+        $fileHash=$allegato['filehash'];
+        
+        if($fileHash !="")
+        {
+            $storage=AA_Storage::GetInstance($user);
+            if($storage->IsValid())
+            {
+                if(!$storage->DelFile($fileHash))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella rimozione del file sullo storage. (".$fileHash.")", 100,false,true);
+                }
+            }
+        }
+        
+        unset($allegati[$id_allegato]);
+        $this->SetAllegati($allegati);
 
         $this->IsChanged();
 
         //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true, "Rimozione allegato: ".$allegato->GetEstremi()))
+        if(!$this->Update($user,true, "Rimozione allegato/link: ".$id_allegato))
         {
             return false;
-        }
-
-        $allegato->SetIdGeco($this->nId_Data);
-        if($this->nId_Data_Rev > 0)
-        {
-            $allegato->SetIdGeco($this->nId_Data_Rev);
-        }
-        
-        $query="DELETE FROM ".static::AA_ALLEGATI_DB_TABLE;
-        $query.=" WHERE id='".addslashes($allegato->GetId())."'";
-        if($this->nId_Data_Rev > 0)
-        {
-            $query.=" AND id_sier = '".$this->nId_Data_Rev."'";
-        }
-        else $query.=" AND id_sier = '".$this->nId_Data."'";
-        
-        $query.="LIMIT 1";
-        
-        $db= new AA_Database();
-        
-        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
-        
-        if(!$db->Query($query))
-        {
-            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
-            return false;            
-        }
-        
-        $fileHash=$allegato->GetFileHash();
-        
-        if($fileHash=="") return true;
-        
-        $storage=AA_Storage::GetInstance($user);
-        if($storage->IsValid())
-        {
-            if(!$storage->DelFile($fileHash))
-            {
-                AA_Log::Log(__METHOD__." - Errore nella rimozione del file sullo storage. (".$fileHash.")", 100,false,true);
-            }
         }
 
         return true;
@@ -668,6 +624,27 @@ Class AA_Geco extends AA_Object_V2
         }
 
         return $this->allegati;
+    }
+
+    public function GetAllegato($id_allegato="")
+    {
+         if(!$this->IsValid() || $id_allegato <=0 || $id_allegato=="") return null;
+
+        if(!is_array($this->allegati))
+        {
+            $this->allegati=json_decode($this->GetProp('Allegati'),true);
+            if(!is_array($this->allegati))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing  degli allegati'",100);
+                return null;
+            }
+        }
+
+        if(!isset($this->allegati[$id_allegato])) return null;
+        $allegato=$this->allegati[$id_allegato];
+        $allegato['id']=$id_allegato;
+
+        return $allegato;
     }
 
     public function SetAllegati($val="")
@@ -1221,7 +1198,6 @@ Class AA_GecoModule extends AA_GenericModule
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $form_data=array();
-        $form_data["id_allegato"]=$allegato['id'];
         $form_data["descrizione"]=$allegato['descrizione'];
         $form_data["url"]=$allegato['url'];
         $form_data["tipo"]=$allegato['tipo'];
@@ -1277,7 +1253,7 @@ Class AA_GecoModule extends AA_GenericModule
     //Template dlg trash allegato
     public function Template_GetGecoTrashAllegatoDlg($object=null,$allegato=null)
     {
-        $id=$this->id."_TrashProvvedimentoAllegato_Dlg";
+        $id=uniqid();
         
         $form_data=array();
         
@@ -1296,18 +1272,18 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->SetApplyButtonName("Procedi");
                 
         $tabledata=array();
-        $url=$allegato->GetUrl();
+        $url=$allegato['url'];
         if($url =="") $url="file locale";
-        $tabledata[]=array("estremi"=>$allegato->GetEstremi(),"url"=>$url);
+        $tabledata[]=array("descrizione"=>$allegato['descrizione'],"url"=>$url);
       
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente allegato verrà eliminato, vuoi procedere?")));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente allegato/link verrà eliminato, vuoi procedere?")));
 
         $table=new AA_JSON_Template_Generic($id."_Table", array(
             "view"=>"datatable",
             "autoheight"=>true,
             "scrollX"=>false,
             "columns"=>array(
-              array("id"=>"estremi", "header"=>"Descrizione", "fillspace"=>true),
+              array("id"=>"descrizione", "header"=>"Descrizione", "fillspace"=>true),
               array("id"=>"url", "header"=>"Url", "fillspace"=>true)
             ),
             "select"=>false,
@@ -1319,7 +1295,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("DeleteGecoAllegato");
-        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato->GetId()));
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato['id']));
         
         return $wnd;
     }
@@ -2142,6 +2118,89 @@ Class AA_GecoModule extends AA_GenericModule
         else $layout->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         #--------------------------------------
         
+        return $layout;
+    }
+
+    //Template section criteri
+    public function TemplateSectionCriteri($params=array())
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_CRITERI_BOX;
+        $canModify=false;
+
+        #documenti----------------------------------
+        $curId=$id;
+        $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","name"=>"Criteri e modalita'","gravity"=>1));
+        $options_documenti=array();
+
+        $options_documenti[]=array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"center"),"sort"=>"int");
+        $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"center"));
+        $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+        $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>120,"css"=>array("text-align"=>"center"));
+   
+        $documenti=new AA_JSON_Template_Generic($curId."_Criteri_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","hover"=>"AA_DataTable_Row_Hover","columns"=>$options_documenti));
+
+        $storage=AA_Storage::GetInstance();
+
+        $documenti_data=array();
+        foreach($object->GetAllegati() as $id_doc=>$curDoc)
+        {
+            if($curDoc->GetUrl() == "")
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
+                $view_icon="mdi-floppy";
+                $tip="Scarica";
+
+                if($storage->IsValid())
+                {
+                    $file=$storage->GetFileByHash($curDoc->GetFileHash());
+                    if($file->IsValid())
+                    {
+                        if(strpos($file->GetmimeType(),"pdf",0) !==false)
+                        {
+                            $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
+                            $view_icon="mdi-eye";
+                            $tip="Consulta";
+                        }
+                    }
+                }
+            }
+            else 
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetUrl().'"},"'.$this->id.'")';
+                $view_icon="mdi-eye";
+                $tip="Naviga (in un'altra finestra)";
+            }
+            
+            
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetSierCopyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+            $docDestinatari=array();
+            foreach($curDoc->GetDestinatariDescr(true) as $curDestinatario)
+            {
+                $docDestinatari[]="<span class='AA_Label AA_Label_LightGreen'>".$curDestinatario."</span>";
+            }
+            $docTipo=array();
+            foreach($curDoc->GetTipoDescr(true) as $curTipo)
+            {
+                $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$curTipo."</span>";
+            }
+            
+            $documenti_data[]=array("id"=>$id_doc,"ordine"=>$curDoc->GetOrdine(),"destinatariDescr"=>implode("&nbsp;",$docDestinatari),"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>implode("&nbsp;",$docTipo),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
+        }
+        $documenti->SetProp("data",$documenti_data);
+        if(sizeof($documenti_data) > 0) 
+        {
+            $layout->AddRow($documenti);
+        }
+        else 
+        {
+            $layout->AddRow(new AA_JSON_Template_Template($id."_OC_Documenti_Void",array("type"=>"clean","template"=>"<div style='display:flex; justify-content:center; align-items:center; width:100%;height:100%'><span>Non sono presenti documenti</span></div>")));
+        }
+        #--------------------------------------
+
         return $layout;
     }
 
@@ -2974,54 +3033,45 @@ Class AA_GecoModule extends AA_GenericModule
     //Task elimina allegato
     public function Task_DeleteGecoAllegato($task)
     {
-        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
-        
-        if(!$object->isValid() || $object->GetId()<=0)
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+            return false;
+        }
+
+        if($_REQUEST['id_allegato']=="" || $_REQUEST['id_allegato']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo allegato non valido.",false);
+            return false;
+        }
+
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
             return false;
         }
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").",false);
             return true;
         }
 
-        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
-        if($allegato==null)
-        {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
-            $task->SetLog($sTaskLog);
-        
-            return false;
-        }
-        
-        if(!$object->DeleteAllegato($allegato))
-        {   
-            $task->SetError("Errore durante l'eliminazione dell'allegato: ".$allegato->GetEstremi());
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore durante l'eliminazione dell'allegato: ".$allegato->GetEstremi()."</error>";
-            $task->SetLog($sTaskLog);
+        if(!$object->DeleteAllegato($_REQUEST['id_allegato'],$this->oUser))
+        {        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nella rimozione dell'allegato/link. (".AA_Log::$lastErrorLog.")",false);
             
-            return false;
+            return false;       
         }
         
-        $sTaskLog="<status id='status'>0</status><content id='content'>";
-        $sTaskLog.= "Allegato eliminato con successo.";
-        $sTaskLog.="</content>";
-        $task->SetLog($sTaskLog);
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Allegato/link rimosso con successo.",false);
 
         return true;
     }
@@ -3086,46 +3136,46 @@ Class AA_GecoModule extends AA_GenericModule
     //Task trash allegato
     public function Task_GetGecoTrashAllegatoDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
-        
-        if(!$object->isValid() || $object->GetId()<= 0)
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
             return false;
         }
 
+        if($_REQUEST['id_allegato']=="" || $_REQUEST['id_allegato']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo allegato non valido.",false);
+            return false;
+        }
+
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
+            return false;
+        }
+        
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
-            $task->SetLog($sTaskLog);
-        
-            return false;
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").",false);
+            return true;
         }
 
-        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
+        $allegato=$object->GetAllegato($_REQUEST['id_allegato']);
         if($allegato==null)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("identificativo allegato non valido (".$_REQUEST['id_allegato'].").",false);
         
             return false;
         }
 
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        $sTaskLog.= $this->Template_GetGecoTrashAllegatoDlg($object,$allegato)->toBase64();
-        $sTaskLog.="</content>";
-        $task->SetLog($sTaskLog);
-
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoTrashAllegatoDlg($object,$allegato),true);
         return true;
     }
 
@@ -3471,17 +3521,5 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
         $oggetto->SetStyle('width:19%; font-size: .6em; padding: .1em');
         $oggetto->SetText($object->GetProp("Estremi"));
         #-----------------------------------------------        
-    }
-}
-
-Class AA_GecoAllegato extends AA_GenericParsableObject
-{
-    public function __construct($params = null)
-    {
-        $this->aProps['descrizione']="";
-        $this->aProps['url']="";
-        $this->aProps['file']="";
-
-        parent::__construct($params);
     }
 }
