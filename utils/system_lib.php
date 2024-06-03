@@ -232,6 +232,7 @@ class AA_GenericModuleTask extends AA_GenericTask
         if($json)
         {
             if($val instanceof AA_JSON_Template_Generic) $content=$val->__toString();
+            if(is_array($val))  $content=json_encode($val);
             $this->sContentType="json";
         }
 

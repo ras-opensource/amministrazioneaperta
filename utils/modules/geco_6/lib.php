@@ -38,6 +38,99 @@ Class AA_Geco_Const extends AA_Const
         return static::$aModalita;
     }
 
+    protected static $aTipoAllegati=null;
+    const AA_GECO_TIPO_ALLEGATO_CURRICULUM=1;
+
+    const AA_GECO_TIPO_ALLEGATO_PROGETTO=2;
+    public static function GetListaTipoAllegati()
+    {
+        if(static::$aTipoAllegati==null)
+        {
+            static::$aTipoAllegati=array(
+                static::AA_GECO_TIPO_ALLEGATO_CURRICULUM=>"Curriculum",
+                static::AA_GECO_TIPO_ALLEGATO_PROGETTO=>"Progetto"
+            );
+        }
+
+        return static::$aTipoAllegati;
+    }
+
+    /*
+    Agricoltura
+Allevamento
+Ambiente
+Artigianato
+Commercio
+Industria 
+Informazione
+Innovazione tecnologica
+Internazionalizzazione
+Istruzione
+Lavoro
+Pesca
+Politiche giovanili
+Politiche sociali
+Sanità 
+Servizi
+Sport
+Trasporti e mobilità
+Turismo
+Volontariato
+*/
+
+    protected static $aCategorieAllegati=null;
+    const AA_GECO_CATEGORIA_ALLEGATO_AGRICOLTURA=1;
+    const AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=2;
+    const AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=4;
+    const AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=8;
+    const AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=16;
+    const AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=32;
+    const AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=64;
+    const AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=128;
+    const AA_GECO_CATEGORIA_ALLEGATO_INTERNAZIONALIZZAZIONE=256;
+    const AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=512;
+    const AA_GECO_CATEGORIA_ALLEGATO_LAVORO=1024;
+    const AA_GECO_CATEGORIA_ALLEGATO_PESCA=2048;
+    const AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_GIOVANILI=4096;
+    const AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_SOCIALI=8192;
+    const AA_GECO_CATEGORIA_ALLEGATO_SANITA=16384;
+    const AA_GECO_CATEGORIA_ALLEGATO_SERVIZI=32768;
+    const AA_GECO_CATEGORIA_ALLEGATO_SPORT=65536;
+    const AA_GECO_CATEGORIA_ALLEGATO_TRASPORTI=131072;
+    const AA_GECO_CATEGORIA_ALLEGATO_TURISMO=262144;
+    const AA_GECO_CATEGORIA_ALLEGATO_VOLONTARIATO=524288;
+
+    public static function GetCategorieAllegati()
+    {
+        if(static::$aCategorieAllegati==null)
+        {
+            static::$aCategorieAllegati=array(
+                static::AA_GECO_CATEGORIA_ALLEGATO_AGRICOLTURA=>"Agricoltura",
+                static::AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=>"Allevamento",
+                static::AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=>"Ambiente",
+                static::AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=>"Artigianato",
+                static::AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=>"Commercio",
+                static::AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=>"Industria",
+                static::AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=>"Informazione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=>"Innovazione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_INTERNAZIONALIZZAZIONE=>"Internazionalizzazione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=>"Istruzione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_LAVORO=>"Lavoro",
+                static::AA_GECO_CATEGORIA_ALLEGATO_PESCA=>"Pesca",
+                static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_GIOVANILI=>"Politiche giovanili",
+                static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_SOCIALI=>"Politiche sociali",
+                static::AA_GECO_CATEGORIA_ALLEGATO_SANITA=>"Sanita'",
+                static::AA_GECO_CATEGORIA_ALLEGATO_SERVIZI=>"Servizio",
+                static::AA_GECO_CATEGORIA_ALLEGATO_SPORT=>"Sport",
+                static::AA_GECO_CATEGORIA_ALLEGATO_TRASPORTI=>"Trasporti",
+                static::AA_GECO_CATEGORIA_ALLEGATO_TURISMO=>"Turismo",
+                static::AA_GECO_CATEGORIA_ALLEGATO_VOLONTARIATO=>"Volontariato"
+            );
+        }
+
+        return static::$aCategorieAllegati;
+    }
+
 }
 
 #Classe oggetto geco
@@ -557,53 +650,30 @@ Class AA_Geco extends AA_Object_V2
         return true;
     }
 
+    protected $allegati=null;
+
     //Restituisce gli allegati
-    public function GetAllegati($idData=0)
+    public function GetAllegati()
     {
-        AA_Log::Log(__METHOD__."()");
+         if(!$this->IsValid()) return array();
 
-        if(!$this->IsValid())
+        if(!is_array($this->allegati))
         {
-            AA_Log::Log(__METHOD__."() - oggetto non valido.");
-
-            return array();
-        }
-
-        if($idData==0 || $idData == "") $idData=$this->nId_Data;
-
-        if($idData != $this->nId_Data && $idData !=$this->nId_Data_Rev && $idData > 0)
-        {
-            $idData=$this->nId_Data;
-            if($this->nId_Data_Rev > 0)
+            $this->allegati=json_decode($this->GetProp('Allegati'),true);
+            if(!is_array($this->allegati))
             {
-                $idData=$this->nId_Data_Rev;
+                AA_Log::Log(__METHOD__." - errore nel parsing  degli allegati'",100);
+                return array();
             }
         }
 
-        //Impostazione dei parametri
-        $query="SELECT * from ".AA_Geco::AA_ALLEGATI_DB_TABLE." WHERE";
+        return $this->allegati;
+    }
 
-        $query.=" id_sier='".$idData."'";
-        
-        $query.= " ORDER by aggiornamento DESC, id DESC";
-
-        $db=new AA_Database();
-        if(!$db->Query($query))
-        {
-            AA_Log::Log(__METHOD__." - errore nella query: ".$query,100);
-            return array();
-        }
-
-        $result=array();
-
-        $rs=$db->GetResultSet();
-        foreach($rs as $curRec)
-        {   
-            $allegato=new AA_GecoAllegati($curRec['id'],$idData,$curRec['estremi'],$curRec['url'],$curRec['file'],$curRec['tipo'],$curRec['aggiornamento'],$curRec['destinatari'],$curRec['ordine']);
-            $result[$curRec['id']]=$allegato;
-        }
-
-        return $result;
+    public function SetAllegati($val="")
+    {
+        if(is_array($val)) $this->aProps['Allegati']=json_encode($val);
+        else $this->aProps['Allegati']=$val;
     }
 }
 
@@ -675,6 +745,7 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("ReassignGeco");
         $taskManager->RegisterTask("AddNewGeco");
         $taskManager->RegisterTask("UpdateGecoDatiGenerali");
+        $taskManager->RegisterTask("UpdateGecoDatiBeneficiario");
         $taskManager->RegisterTask("PublishGeco");
         $taskManager->RegisterTask("GetGecoConfirmPrivacyDlg");
         
@@ -1074,12 +1145,11 @@ Class AA_GecoModule extends AA_GenericModule
     //Template dlg aggiungi allegato/link
     public function Template_GetGecoAddNewAllegatoDlg($object=null)
     {
-        $id=static::AA_UI_PREFIX."_GetGecoAddNewAllegatoDlg";
+        $id=uniqid();
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
-        $form_data=array("aggiornamento"=>date("Y-m-d"),"ordine"=>0);
-        
+        $form_data=array();
         $wnd=new AA_GenericFormDlg($id, "Aggiungi allegato/link", $this->id,$form_data,$form_data);
         
         //$wnd->SetLabelAlign("right");
@@ -1088,46 +1158,37 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(720);
-        $wnd->SetHeight(800);
+        $wnd->SetHeight(520);
 
-        //descrizione
-        $wnd->AddTextField("estremi", "Descrizione", array("gravity"=>3,"required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
+        //Tipo
+        $options=array();
+        $tipo_allegati=AA_Geco_Const::GetListaTipoAllegati();
+        foreach($tipo_allegati as $key=>$val)
+        {
+            $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("tipo", "Tipologia", array("gravity"=>1,"required"=>true,"validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere la tipologia di allegato/link", "placeholder" => "Scegli un elemento della lista...","options"=>$options));
         
-        //ordine
-        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto","labelAlign"=>"right"),false);
+        //Descrizione
+        $wnd->AddTextField("descrizione", "Descrizione", array("gravity"=>1,"required"=>true,"bottomLabel" => "*Inserisci una breve descrizione dell'allegato/link","placeholder" => "es. DGR..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
         //categorie
-        $tipi=AA_Geco_Const::GetTipoAllegati();$curRow=1;
+        /*$tipi=AA_Geco_Const::GetCategorieAllegati();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
         $curRow=0;
         foreach($tipi as $tipo=>$descr)
         {
             $newLine=false;
             if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("tipo_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $section->AddCheckBoxField("tipo_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelWidth"=>160),$newLine);
             $curRow++;
         }
         $wnd->AddGenericObject($section);
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         //----------------------
-
-        //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();$curRow=1;
-        $section=new AA_FieldSet($id."_Section_Destinatari","Destinatari");
-        $curRow=0;
-        foreach($destinatari as $destinatario=>$descr)
-        {
-            $newLine=false;
-            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("destinatari_".$destinatario, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
-            $curRow++;
-        }
-        $wnd->AddGenericObject($section);
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
-        //----------------------
-        
+        */
         //file upload------------------
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
@@ -1160,83 +1221,39 @@ Class AA_GecoModule extends AA_GenericModule
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
         $form_data=array();
-        $form_data["estremi"]=$allegato->GetEstremi();
-        $form_data["url"]=$allegato->GetUrl();
-        $form_data["tipo"]=$allegato->GetTipo();
-        $form_data["aggiornamento"]=date("Y-m-d");
-        $form_data["ordine"]=$allegato->GetOrdine();
-
-        $destinatari=$allegato->GetDestinatari(true);
-        foreach($destinatari as $curDestinatario)
-        {
-            $form_data["destinatari_".$curDestinatario]=1;
-        }
-
-        $tipi=$allegato->GetTipo(true);
-        foreach($tipi as $curTipo)
-        {
-            $form_data["tipo_".$curTipo]=1;
-        }
+        $form_data["id_allegato"]=$allegato['id'];
+        $form_data["descrizione"]=$allegato['descrizione'];
+        $form_data["url"]=$allegato['url'];
+        $form_data["tipo"]=$allegato['tipo'];
 
         $wnd=new AA_GenericFormDlg($id, "Modifica allegato/link", $this->id,$form_data,$form_data);
-        
+
         //$wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(100);
         $wnd->SetBottomPadding(30);
         $wnd->EnableValidation();
         
         $wnd->SetWidth(720);
-        $wnd->SetHeight(800);
+        $wnd->SetHeight(520);
 
-        /*//tipo
-        $tipologia=AA_Geco_Const::GetTipoAllegati();
+        //Tipo
         $options=array();
-        foreach($tipologia as $id=>$descr)
+        $tipo_allegati=AA_Geco_Const::GetListaTipoAllegati();
+        foreach($tipo_allegati as $key=>$val)
         {
-            $options[]=array("id"=>$id,"value"=>$descr);
+            $options[]=array("id"=>$key,"value"=>$val);
         }
-        $wnd->AddSelectField("tipo", "Categoria", array("required"=>true, "validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere una categoria dalla lista", "placeholder" => "...","options"=>$options));*/
-
-        //descrizione
-        $wnd->AddTextField("estremi", "Descrizione", array("gravity"=>3,"required"=>true,"bottomLabel" => "*Indicare una descrizione per l'allegato o il link", "placeholder" => "es. DGR ..."));
-
-        //ordine
-        $wnd->AddTextField("ordine", "Ordine", array("gravity"=>1,"bottomLabel" => "*0=auto","labelAlign"=>"right"),false);
+        $wnd->AddSelectField("tipo", "Tipologia", array("gravity"=>1,"required"=>true,"validateFunction"=>"IsSelected","bottomLabel" => "*Scegliere la tipologia di allegato/link", "placeholder" => "Scegli un elemento della lista...","options"=>$options));
+        
+        //Descrizione
+        $wnd->AddTextField("descrizione", "Descrizione", array("gravity"=>1,"required"=>true,"bottomLabel" => "*Inserisci una breve descrizione dell'allegato/link","placeholder" => "es. DGR..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
-        //categorie
-        $tipi=AA_Geco_Const::GetTipoAllegati();$curRow=1;
-        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
-        $curRow=0;
-        foreach($tipi as $tipo=>$descr)
-        {
-            $newLine=false;
-            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("tipo_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
-            $curRow++;
-        }
-        $wnd->AddGenericObject($section);
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
-        //----------------------
-
-        //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();$curRow=1;
-        $section=new AA_FieldSet($id."_Section_Destinatari","Destinatari");
-        $curRow=0;
-        foreach($destinatari as $destinatario=>$descr)
-        {
-            $newLine=false;
-            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("destinatari_".$destinatario, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
-            $curRow++;
-        }
-        $wnd->AddGenericObject($section);
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
-        //----------------------
+        //file upload------------------
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
         $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
-        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
         //url
         $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
@@ -1244,13 +1261,14 @@ Class AA_GecoModule extends AA_GenericModule
         $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
 
         //file
-        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf (dimensione max: 2Mb).","accept"=>"application/pdf"));
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 30Mb).","accept"=>"application/pdf,application/zip"));
         
         $wnd->AddGenericObject($section);
+        //---------------------------------
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato->GetId()));
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato['id']));
         $wnd->SetSaveTask("UpdateGecoAllegato");
         
         return $wnd;
@@ -1308,17 +1326,36 @@ Class AA_GecoModule extends AA_GenericModule
 
     //Task Aggiungi allegato
     public function Task_AddNewGecoAllegato($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
+    {        
         $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+            
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
-            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
 
             //Elimina il file temporaneo
             if($uploadedFile->isValid())
@@ -1338,9 +1375,8 @@ Class AA_GecoModule extends AA_GenericModule
         
         if($object->IsReadOnly())
         {
-            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi"));
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetProp("estremi")."</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetName(),false);
 
             //Elimina il file temporaneo
             if($uploadedFile->isValid())
@@ -1357,34 +1393,32 @@ Class AA_GecoModule extends AA_GenericModule
 
             return false;            
         }
-        
-        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "")
+
+        if(!isset($_REQUEST['descrizione']) || $_REQUEST['descrizione'] == "")
         {   
             AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetError("Parametri non validi occorre indicare un url o un file.");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Parametri non validi: occorre indicare un url o un file.</error>";
-            $task->SetLog($sTaskLog);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }     
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre specificare una descrizione.",false);
             
             return false;
         }
-        
-        $id_sier=$object->GetIdData();
-        if($object->GetIdDataRev() > 0)
-        {
-            $id_sier=$object->GetIdDataRev();
+
+        if(!isset($_REQUEST['tipo']) || $_REQUEST['tipo'] <= 0)
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre specificare una tipo di allegato/link.",false);
+            
+            return false;
+        }
+
+        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre indicare un url o un file.",false);
+            
+            return false;
         }
         
         $fileHash="";
@@ -1419,48 +1453,36 @@ Class AA_GecoModule extends AA_GenericModule
             }
         }
 
-        $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
-        if($aggiornamento=="") $aggiornamento=date("Y-m-d");
+        $allegati=$object->GetAllegati();
+        $allegati[uniqid()]=array(
+            "descrizione"=>$_REQUEST['descrizione'],
+            "tipo"=>$_REQUEST['tipo'],
+            "url"=>$_REQUEST['url'],
+            "filehash"=>$fileHash
+        );
 
-        //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();
-        $newDestinatari=array();
-        foreach($destinatari as $destinatario=>$descr)
+        if(sizeof($allegati) > 0)
         {
-            if(isset($_REQUEST['destinatari_'.$destinatario]) && $_REQUEST['destinatari_'.$destinatario]==1) $newDestinatari[]=$destinatario;
-        }
-        //----
+            $object->SetAllegati($allegati);
 
-        //tipologia
-        $tipi=AA_Geco_Const::GetTipoAllegati();
-        $newTipo=array();
-        foreach($tipi as $tipo=>$descr)
-        {
-            if(isset($_REQUEST['tipo_'.$tipo]) && $_REQUEST['tipo_'.$tipo]==1) $newTipo[]=$tipo;
-        }
-        //--------------
+            if(!$object->Update($this->oUser,true,"Aggiunta allegato/link"))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Errore nell'aggiunta allegato/link.",false);
 
-        $ordine=0;
-        if(isset($_REQUEST['ordine']) && $_REQUEST['ordine']>0) $ordine=$_REQUEST['ordine'];
-        $allegato=new AA_GecoAllegati(0,$id_sier,$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari),addslashes($ordine));
-        
-        //AA_Log::Log(__METHOD__." - "."allegato: ".print_r($allegato, true),100);
-        
-        if(!$object->AddNewAllegato($allegato, $this->oUser))
-        {        
-            $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
-            $task->SetLog($sTaskLog);
+                return false;
+            }
+            else
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+                $task->SetContent("Allegato/link aggiunto con successo.",false);
 
-            return false;       
+                return true;
+            }
         }
-        
-        $sTaskLog="<status id='status'>0</status><content id='content'>";
-        $sTaskLog.= "Allegato caricato con successo.";
-        $sTaskLog.="</content>";
-        
-        $task->SetLog($sTaskLog);
-        
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Nessun allegato o link da aggiungere.",false);
         return true;
     }
 
@@ -1587,6 +1609,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         $beneficiario=$object->GetBeneficiario();
         $form_data=array();
+        $form_data['id']=$object->GetId();
         $form_data['Beneficiario_nome']=$beneficiario['nome'];
         $form_data['Beneficiario_cf']=$beneficiario['cf'];
         $form_data['Beneficiario_piva']=$beneficiario['piva'];
@@ -1974,12 +1997,12 @@ Class AA_GecoModule extends AA_GenericModule
         //------------------------------------------------------------------------
 
         //-------------------- Allegati --------------------------------------
-        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Allegati</span>", "align"=>"center")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        $allegati_box->AddRow($toolbar);
-        $allegati_box->AddRow(new AA_JSON_Template_Generic());
+        //$toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Allegati</span>", "align"=>"center")));
+        //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        //$allegati_box->AddRow($toolbar);
+        $allegati_box->AddRow($this->TemplateDettaglio_Allegati($object,$id,$canModify));
 
         //------------------------------------------------------------------------
 
@@ -2126,12 +2149,11 @@ Class AA_GecoModule extends AA_GenericModule
     public function Task_UpdateGecoDatiGenerali($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
-            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento");
-            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi di modifica dell'elemento</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
 
             return false;
         }
@@ -2141,6 +2163,14 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
 
             return false;
         }
@@ -2217,6 +2247,79 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Errore nell'aggiornamento dei dati generali.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
+    //Task Update Geco
+    public function Task_UpdateGecoDatiBeneficiario($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $beneficiario=array();
+
+        //----------- verify values ---------------------
+        if(isset($_REQUEST['Beneficiario_nome'])) $beneficiario['nome']=trim($_REQUEST['Beneficiario_nome']);
+        if(isset($_REQUEST['Beneficiario_cf'])) $beneficiario['cf']=trim($_REQUEST['Beneficiario_cf']);
+
+        if(trim($_REQUEST['Beneficiario_nome']) == "" || trim($_REQUEST['Beneficiario_cf']) =="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Il nome e il codice fiscale del beneficiario non possono essere vuoti o composti da soli spazi.",false);
+
+            return false;
+        }
+        if(isset($_REQUEST['Beneficiario_piva'])) $beneficiario['piva']=trim($_REQUEST['Beneficiario_piva']);
+        if(isset($_REQUEST['Beneficiario_tipo'])) $beneficiario['tipo']=intVal($_REQUEST['Beneficiario_tipo']);
+        if(isset($_REQUEST['Beneficiario_privacy'])) $beneficiario['privacy']=intVal($_REQUEST['Beneficiario_privacy']);
+
+        //Se il beneficiario non e' una persona fisica disabilita l'oscuramento dei dati personali.
+        if($beneficiario['tipo'] == 0) 
+        {
+            $beneficiario['privacy'] = 0;
+        }
+        //-----------------------------------------------
+        
+        $_REQUEST['Beneficiario']=json_encode($beneficiario);
+        $object->Parse($_REQUEST);
+
+        if(!$object->Update($this->oUser,true,"Aggiornamento dati beneficiario"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei dati beneficiario.",false);
 
             return false;
         }
@@ -2395,35 +2498,33 @@ Class AA_GecoModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non può modifcare l'elemento.</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
 
             return false;
         }
 
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
-        if(!$object->isValid())
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
             return false;
         }
-        else
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGecoModifyDlg($object)->toBase64();
-            $sTaskLog.="</content>";
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
         }
-        
-        $task->SetLog($sTaskLog);
-        
+            
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoModifyDlg($object),true);
         return true;
     }
 
@@ -2431,39 +2532,18 @@ Class AA_GecoModule extends AA_GenericModule
     public function Task_GetGecoConfirmPrivacyDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
-        {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non può modificare l'elemento.</error>";
-            $task->SetLog($sTaskLog);
-
-            return false;
-        }
 
         $form_id=$_REQUEST['form'];
         if($form_id=="")
         {
-            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Non e' stato impostato l'identificativo del form corrispondente.",false);
         
             return false;
         }
-
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
-        if(!$object->isValid())
-        {
-            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
-            $task->SetError("Elemento non valido o permessi insufficienti.",false);
-
-            return false;
-        }
-        else
-        {
-            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGecoConfirmPrivacyDlg($form_id),true);
-        }
+        
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoConfirmPrivacyDlg($form_id),true);
         
         return true;
     }
@@ -2473,35 +2553,34 @@ Class AA_GecoModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non può modifcare l'elemento.</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
 
             return false;
         }
 
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
-        if(!$object->isValid())
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
             return false;
         }
-        else
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGecoBeneficiarioModifyDlg($object)->toBase64();
-            $sTaskLog.="</content>";
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
         }
-        
-        $task->SetLog($sTaskLog);
-        
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoBeneficiarioModifyDlg($object),true);
+
         return true;
     }
 
@@ -2512,30 +2591,21 @@ Class AA_GecoModule extends AA_GenericModule
         
         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per ripristinare elementi.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
             return false;
         }
 
         if($_REQUEST['ids']!="")
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGenericResumeObjectDlg($_REQUEST,"ResumeGeco")->toBase64();
-            $sTaskLog.="</content>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGenericResumeObjectDlg($_REQUEST,"ResumeGeco"),true);
             return true;
         }    
         else
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Identificativi non presenti.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativi non presenti.",false);
             return false;
         }
     }
@@ -2547,32 +2617,21 @@ Class AA_GecoModule extends AA_GenericModule
         
         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per pubblicare elementi.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
             return false;
         }
         
         if($_REQUEST['ids']!="")
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGenericPublishObjectDlg($_REQUEST,"PublishGeco")->toBase64();
-            $sTaskLog.="</content>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGenericPublishObjectDlg($_REQUEST,"PublishGeco"),true);
             return true;
         }    
         else
         {
-            // to do lista da recuperare con filtro
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Identificativi non presenti.</error>";
-            
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativi non presenti.",false);
             return false;
         }
     }
@@ -2582,72 +2641,48 @@ Class AA_GecoModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per riassegnare elementi.</error>";
-            
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
             return false;
         }
+
         if($_REQUEST['ids']!="")
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGenericReassignObjectDlg($_REQUEST,"ReassignGeco")->toBase64();
-            $sTaskLog.="</content>";
-            
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGenericReassignObjectDlg($_REQUEST,"ReassignGeco"),true);
             return true;
         }    
         else
         {
-            // to do lista da recuperare con filtro
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Identificativi non presenti.</error>";
-            
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativi non presenti.",false);
             return false;
         }
     }
     
-    //Task elimina organismo
+    //Task elimina
     public function Task_GetGecoTrashDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per cestinare/eliminare elementi di questo tipo.</error>";
-            
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
             return false;
         }
         if($_REQUEST['ids']!="")
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGenericObjectTrashDlg($_REQUEST,"TrashGeco")->toBase64();
-            $sTaskLog.="</content>";
-            
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGenericObjectTrashDlg($_REQUEST,"TrashGeco"),true);
             return true;
         }    
         else
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Identificativi non presenti.</error>";
-            
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativi non presenti.",false);
             return false;
         }
     }
@@ -2657,29 +2692,24 @@ Class AA_GecoModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22) && !$this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per cestinare/eliminare organismi.</error>";
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
+            return false;
         }
         if($_REQUEST['ids']!="")
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGecoDeleteDlg($_REQUEST)->toBase64();
-            $sTaskLog.="</content>";
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGecoDeleteDlg($_REQUEST),true);
+            return true;
         }    
         else
         {
-            // to do lista da recuperare con filtro
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Identificativi non presenti.</error>";
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativi non presenti.",false);
+            return false;
         }
-        
-        $task->SetLog($sTaskLog);
-        
-        return true;
     }
     
     //Task aggiunta 
@@ -2691,14 +2721,14 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
+            return false;
         }
         else
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
             $task->SetContent($this->Template_GetGecoAddNewDlg(),true);
+            return true;
         }
-
-        return true;
     }
 
     //Task aggiungi allegato
@@ -2706,36 +2736,34 @@ Class AA_GecoModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
-        
-        if(!$object->isValid())
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
             return false;
         }
-        
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0)
+
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
         {
-            $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-            $sTaskLog.= $this->Template_GetGecoAddNewAllegatoDlg($object)->toBase64();
-            $sTaskLog.="</content>";
-            $task->SetLog($sTaskLog);
-        
-            return true;
-        }
-        else
-        {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
             return false;
         }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoAddNewAllegatoDlg($object),true);
+        return true;
     }
 
     
@@ -2743,16 +2771,56 @@ Class AA_GecoModule extends AA_GenericModule
     public function Task_UpdateGecoAllegato($task)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
         $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+            
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        if($_REQUEST['id_allegato']=="" || $_REQUEST['id_allegato']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo allegato non valido.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
 
         if(!$object->isValid())
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Elemento non valido o permessi insufficienti.</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
 
             //Elimina il file temporaneo
             if($uploadedFile->isValid())
@@ -2766,16 +2834,14 @@ Class AA_GecoModule extends AA_GenericModule
                     }
                 }
             }     
-        
+
             return false;
         }
         
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").",false);
 
             //Elimina il file temporaneo
             if($uploadedFile->isValid())
@@ -2793,13 +2859,12 @@ Class AA_GecoModule extends AA_GenericModule
             return true;
         }
 
-        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
+        $allegati=$object->GetAllegati();
+        $allegato=$allegati[$_REQUEST['id_allegato']];
         if($allegato==null)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
-            $task->SetLog($sTaskLog);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("identificativo allegato non valido (".$_REQUEST['id_allegato'].").",false);
 
             //Elimina il file temporaneo
             if($uploadedFile->isValid())
@@ -2818,7 +2883,6 @@ Class AA_GecoModule extends AA_GenericModule
         }
 
         //Se c'è un file uploadato l'url non viene salvata.
-        $fileHash=$allegato->GetFileHash();
         if($uploadedFile->isValid()) 
         {
             $_REQUEST['url']="";
@@ -2827,7 +2891,7 @@ Class AA_GecoModule extends AA_GenericModule
             if($storage->IsValid())
             {
                 //Se l'allegato era sullo storage lo elimina
-                $oldFile=$allegato->GetFileHash();
+                $oldFile=$allegato['filehash'];
                 if($oldFile !="")
                 {
                     if(!$storage->DelFile($oldFile))
@@ -2840,7 +2904,7 @@ Class AA_GecoModule extends AA_GenericModule
                 $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
                 if($storageFile->IsValid())
                 {
-                    $fileHash=$storageFile->GetFileHash();
+                    $allegato['filehash']=$storageFile->GetFileHash();
                 }
                 else
                 {
@@ -2860,63 +2924,49 @@ Class AA_GecoModule extends AA_GenericModule
         }
 
         //Elimina il file precedentemente associato se viene impostato un url
-        if($_REQUEST['url'] !="" && $allegato->GetFileHash() !="")
+        if($_REQUEST['url'] !="" && $allegato['filehash'] !="")
         {
-            $fileHash="";
+            $allegato['url']=$_REQUEST['url'];
             $storage=AA_Storage::GetInstance($this->oUser);
             if($storage->IsValid())
             {
                 //Se l'allegato era sullo storage lo elimina
-                $oldFile=$allegato->GetFileHash();
+                $oldFile=$allegato['filehash'];
                 if($oldFile !="")
                 {
                     if(!$storage->DelFile($oldFile))
                     {
                         AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$oldFile,100);
                     }
+                    $allegato['filehash']="";
                 }
             }
             else AA_Log::Log(__METHOD__." - storage non inizializzato. file non eliminato.",100);
         }
 
-        $aggiornamento=substr($_REQUEST['aggiornamento'],0,10);
-        if($aggiornamento=="") $aggiornamento=date("Y-m-d");
-        
-        //destinatari
-        $destinatari=AA_Geco_Const::GetDestinatari();
-        $newDestinatari=array();
-        foreach($destinatari as $destinatario=>$descr)
+        if(isset($_REQUEST['descrizione']) && $_REQUEST['descrizione'] !="")
         {
-            if(isset($_REQUEST['destinatari_'.$destinatario]) && $_REQUEST['destinatari_'.$destinatario]==1) $newDestinatari[]=$destinatario;
+            $allegato['descrizione']=$_REQUEST['descrizione'];
         }
-        //----
 
-        //tipologia
-        $tipi=AA_Geco_Const::GetTipoAllegati();
-        $newTipo=array();
-        foreach($tipi as $tipo=>$descr)
+        if(isset($_REQUEST['tipo']) && $_REQUEST['tipo'] > 0)
         {
-            if(isset($_REQUEST['tipo_'.$tipo]) && $_REQUEST['tipo_'.$tipo]==1) $newTipo[]=$tipo;
+            $allegato['tipo']=$_REQUEST['tipo'];
         }
-        //--------------
 
-        $ordine=0;
-        if(isset($_REQUEST['ordine']) && $_REQUEST['ordine']>0) $ordine=$_REQUEST['ordine'];
-        $allegato=new AA_GecoAllegati($_REQUEST['id_allegato'],$allegato->GetIdGeco(),$_REQUEST['estremi'],$_REQUEST['url'],$fileHash,implode(",",$newTipo),$aggiornamento,implode(",",$newDestinatari),addslashes($ordine));
+        $allegati[$_REQUEST['id_allegato']]=$allegato;
+        $object->SetAllegati($allegati);
         
-        if(!$object->UpdateAllegato($allegato, $this->oUser))
+        if(!$object->Update($this->oUser,true,"Aggiornamento allegato: ".$_REQUEST['id_allegato']))
         {        
-            $task->SetError(AA_Log::$lastErrorLog);
-            $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nell'aggiornamento dell'allegato. (".AA_Log::$lastErrorLog.")</error>";
-            $task->SetLog($sTaskLog);
-
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dell'allegato. (".AA_Log::$lastErrorLog.")",false);
+            
             return false;       
         }
         
-        $sTaskLog="<status id='status'>0</status><content id='content'>";
-        $sTaskLog.= "Allegato aggiornato con successo.";
-        $sTaskLog.="</content>";
-        $task->SetLog($sTaskLog);
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Allegato aggiornato con successo.",false);
 
         return true;
     }
@@ -2982,43 +3032,53 @@ Class AA_GecoModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
-        
-        if(!$object->isValid())
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>Provvedimento non valido o permessi insufficienti.</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
             return false;
         }
 
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        if($_REQUEST['id_allegato']=="" || $_REQUEST['id_allegato']<=0)
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetId().").</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo allegato non valido.",false);
+
             return false;
         }
 
-        $allegato=$object->GetAllegato($_REQUEST['id_allegato'],$this->oUser);
-        if($allegato==null)
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
         {
-            $sTaskLog="<status id='status'>-1</status><content id='content' type='json'>";
-            $sTaskLog.= "{}";
-            $sTaskLog.="</content><error id='error'>identificativo allegato non valido (".$_REQUEST['id_allegato'].").</error>";
-            $task->SetLog($sTaskLog);
-        
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
             return false;
         }
 
-        $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        $sTaskLog.= $this->Template_GetGecoModifyAllegatoDlg($object,$allegato)->toBase64();
-        $sTaskLog.="</content>";
-        $task->SetLog($sTaskLog);
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $allegati=$object->GetAllegati();
+        if(!isset($allegati[$_REQUEST['id_allegato']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo allegato non valido.",false);
+
+            return false;
+        }
+
+        $allegato=$allegati[$_REQUEST['id_allegato']];
+        $allegato['id']=$_REQUEST['id_allegato'];
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoModifyAllegatoDlg($object,$allegato),true);
 
         return true;
     }
@@ -3297,42 +3357,34 @@ Class AA_GecoModule extends AA_GenericModule
 
         $options_documenti=array();
 
-        if($canModify)
-        {
-            $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
-        }
-        else
-        {
-            $options_documenti[]=array("id"=>"aggiornamento","header"=>array("<div style='text-align: center'>Data</div>",array("content"=>"textFilter")),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Tipo</div>",array("content"=>"selectFilter")),"width"=>200, "css"=>array("text-align"=>"center"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
-            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
-        }
-
+      
+        $options_documenti[]=array("id"=>"tipo","header"=>array("<div style='text-align: center'>Tipo</div>"),"width"=>100, "css"=>array("text-align"=>"left"),"sort"=>"text");
+        $options_documenti[]=array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>"),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+        $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+    
         $documenti=new AA_JSON_Template_Generic($curId."_Allegati_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
 
         $documenti_data=array();
-        foreach($object->GetAllegati() as $id_doc=>$curDoc)
+        $allegati=$object->GetAllegati();
+        $listaTipo=AA_Geco_Const::GetListaTipoAllegati();
+        foreach($allegati as $id_doc=>$curDoc)
         {
-            if($curDoc->GetUrl() == "")
+            if($curDoc['filehash'] != "")
             {
-                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc['filehash'].'"},"'.$this->id.'")';
                 $view_icon="mdi-floppy";
             }
             else 
             {
-                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetUrl().'"},"'.$this->id.'")';
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc['url'].'"},"'.$this->id.'")';
                 $view_icon="mdi-eye";
             }
             
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$id_doc.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$id_doc.'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-            $documenti_data[]=array("id"=>$id_doc,"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>$curDoc->GetTipoDescr(),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
+            $documenti_data[]=array("id"=>$id_doc,"descrizione"=>$curDoc['descrizione'],"tipo"=>$listaTipo[$curDoc['tipo']],"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) $provvedimenti->AddRow($documenti);
