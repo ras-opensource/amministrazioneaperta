@@ -22,6 +22,28 @@ if($task=="ResetPassword")
   die("<status id='status'>0</status><content id='content'>Le nuove credenziali sono state inviate alla casella indicata.</content><error id='error'>Le nuove credenziali sono state inviate alla casella indicata.</error>");
 }
 
+//email auth
+if($task=="MailUserAuth")
+{
+    $result=AA_User::MailOTPAuthChallenge($_REQUEST['email'],$_REQUEST['remember_me']);
+    if(!$result)
+    {
+        die("<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>");
+    }
+    else die("<status id='status'>0</status><error id='error'>Codice di verifica inviato alla email indicata.</error>");
+}
+
+//email auth verify
+if($task=="MailUserAuthChallengeVerify")
+{
+    $result=AA_User::MailOTPAuthChallengeVerify($_REQUEST['codice']);
+    if(!$result)
+    {
+        die("<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>");
+    }
+    else die("<status id='status'>0</status><error id='error'>Codice verificato con successo.</error>");
+}
+
 //auth
 if($task=="UserAuth")
 {

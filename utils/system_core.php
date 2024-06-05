@@ -25,9 +25,6 @@ class AA_Database extends PDO_Database
 //Costanti
 class AA_Const extends AA_Config
 {
-    //Tabella db oggetti
-    const AA_DBTABLE_OBJECTS = "aa_objects";
-
     //Tabella Assessorati
     const AA_DBTABLE_ASSESSORATI = "assessorati";
 
@@ -1352,6 +1349,22 @@ class AA_User
         <img src="https://#www#/immagini/logo.jpg" data-mce-src="https://#www#/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
     );
 
+    //send OTP password email params
+    protected static $aOTPAuthEmailParams=array(
+        "oggetto"=>'Amministrazione Aperta - OTP accesso piattaforma.',
+        "incipit"=>"<p>Gentile collega,<br>è pervenuta una richiesta di accesso alla piattaforma applicativa \"<b><i>A</i></b>mministrazione <b><i>A</i></b>perta\" con il tuo indirizzo email.<br>Di seguito il codice temporaneo per l'accesso; hai a disposizione 5 minuti per utilizzarlo, trascorsi i quali dovrai ripetere la procedura.",
+        "post"=>'Qualora non dovessi essere tu l\'autore della richiesta ti invitiamo a segnalarci l\'anomalia inviando una mail alla casella:: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p><p>Cordiali Saluti.</p>',
+        "firma"=>'<div>--
+        <div><strong><i>A</i>mministrazione <i>A</i>perta</strong></div>
+        <div>Presidenza</div>
+        <div>Direzione generale della Presidenza</div>
+        <div>Servizio supporti direzionali</div>
+        <div>V.le Trento, 69 - 09123 Cagliari</div>
+        <div>url d\'accesso: https://#www#</div>
+        <div>email: amministrazioneaperta@regione.sardegna.it</div>
+        <img src="https://#www#/immagini/logo.jpg" data-mce-src="https://#www#/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
+    );
+
     public static function SetResetPwdEmailParams($params=array())
     {
         foreach($params as $key=>$val)
@@ -1441,7 +1454,7 @@ class AA_User
         }
 
         $db = new AA_Database();
-        $db->Query("SELECT ".static::AA_DB_TABLE.".id from ".static::AA_DB_TABLE." where email = '" . $email . "' and status > 0");
+        $db->Query("SELECT ".static::AA_DB_TABLE.".id from ".static::AA_DB_TABLE." where email = '" . $email . "' and status > 0 ORDER by lastlogin desc");
         if($db->GetAffectedRows() > 0)
         {
             $rs = $db->GetResultSet();
@@ -1640,19 +1653,24 @@ class AA_User
 
                     $concurrent=false;
                     if($user->IsConcurrentEnabled()) $concurrent=true;
-                    $_SESSION['token'] = AA_User::GenerateToken($user->GetId(),$remember_me,$concurrent);
+                    
+                    //imposta l'utente corrente
+                    static::$oCurrentUser=$user;
 
-                    if($remember_me)
+                    if(!$bTemporary)
                     {
-                        //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
-                        setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
+                        $_SESSION['token'] = AA_User::GenerateToken($user->GetId(),$remember_me,$concurrent);
+
+                        if($remember_me)
+                        {
+                            //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
+                            setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
+                        }
+    
+                        //update last login time
+                        $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = '".date("Y-m-d")."' WHERE id='".$user->GetId()."' LIMIT 1");
                     }
 
-                    //update last login time
-                    $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = '".date("Y-m-d")."' WHERE id='".$user->GetId()."' LIMIT 1");
-                    
-                    static::$oCurrentUser=$user;
-                    
                     return $user;
                 }
 
@@ -1679,7 +1697,7 @@ class AA_User
 
         if($bTemporary) return AA_User::Guest();
 
-        if ($sToken == null || $sToken == "") 
+        if ($sToken == null || $sToken == "" || $_COOKIE["AA_AUTH_TOKEN"] !="") 
         {
             if(static::$oCurrentUser instanceof AA_User) return static::$oCurrentUser;
 
@@ -2003,7 +2021,104 @@ class AA_User
         return false;
     }
 
-    
+    //Autenticazione via mail OTP - passo 1
+    static public function MailOTPAuthChallenge($email = null,$remember_me=false)
+    {
+        //AA_Log::Log(__METHOD__." - Authenticate mail OTP");
+
+        unset($_SESSION['MailOTP-code']);
+        unset($_SESSION['MailOTP-email']);
+        unset($_SESSION['MailOTP-remember']);
+
+        $email = str_replace("'", "", trim($email));
+
+        if ($email == "") {
+            AA_Log::Log(__METHOD__." - mail non impostata.", 100, true, true);
+            return false;
+        }
+
+        $users=static::LoadUsersFromEmail($email);
+        if(sizeof($users) == 0)
+        {
+            AA_Log::Log(__METHOD__ . " - Nessuna utenza trovata.", 100);
+            return false;
+        }
+
+        //genera ed invia il codice di controllo alla email indicata
+        $code = substr(md5(uniqid(mt_rand(), true)), 0, 6);
+        $_SESSION['MailOTP-code'] = $code;
+        $_SESSION['MailOTP-email'] = $email;
+        if($remember_me) $_SESSION['MailOTP-remember'] = true;
+        else  $_SESSION['MailOTP-remember'] = false;
+
+        $subject =AA_User::$aOTPAuthEmailParams['oggetto'];
+        $body = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT,AA_User::$aOTPAuthEmailParams['incipit']);
+        $body .= "<p>codice OTP: <span style='font-weight: bold; font-size: 150%;'>" . $code . "</span></p>";
+        $body .= str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT,AA_User::$aOTPAuthEmailParams['post'].AA_User::$aOTPAuthEmailParams['firma']);
+
+        if(AA_Const::AA_ENABLE_SENDMAIL)
+        {
+            $result = SendMail(array(0 => $email), "", $subject, $body);
+
+            if (!$result) {
+                AA_Log::Log(__METHOD__." - invio mail fallito - errore: " . $result, 100, true, true);
+                return false;
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__ . " - OTP: " . $code, 100);
+            return true;
+        }
+       
+        return true;
+    }
+    //-------------------------------
+
+    //Autenticazione via mail OTP - passo 2
+    static public function MailOTPAuthChallengeVerify($code="")
+    {
+        //AA_Log::Log(__METHOD__. " - Verifica mail OTP");
+        
+        if(!isset($_SESSION['MailOTP-code']) || !isset($_SESSION['MailOTP-email']))
+        {
+            AA_Log::Log(__METHOD__. " - Errore nella verifica del codice OTP (0)", 100);
+            return false;
+        }
+
+        if($code =="" || $code != $_SESSION['MailOTP-code'])
+        {
+            AA_Log::Log(__METHOD__. " - Errore nella verifica del codice OTP (1)", 100);
+            return false;
+        }
+
+        unset($_SESSION['MailOTP-code']);
+        
+        $remember_me=$_SESSION['MailOTP-remember'];
+        $users=AA_User::LoadUsersFromEmail($_SESSION['MailOTP-email']);
+        
+        unset($_SESSION['MailOTP-email']);
+        unset($_SESSION['MailOTP-remember']);
+
+        if(sizeof($users)>0)
+        {
+            $user=array_shift($users);
+            $_SESSION['token'] = AA_User::GenerateToken($user->GetId(),$remember_me);
+
+            if($remember_me)
+            {
+                //token di autenticazione valido per 30 giorni, utilizzabile solo in https.
+                setcookie("AA_AUTH_TOKEN",$_SESSION['token'],time()+(86400 * 30), "/",AA_Const::AA_DOMAIN_NAME,true, true);
+            }
+        }
+        else
+        {
+            return false;
+        }
+                
+        return true;
+    }
+    //-------------------------------
 
     //Autenticazione via mail OTP - passo 1
     static public function MailOTPAuthSend($email = null, $register = true)
@@ -5696,6 +5811,9 @@ class AA_Object_Log
 //AA_Object v2
 class AA_Object_V2
 {
+    //tabella oggetti
+    static protected $AA_DBTABLE_OBJECTS = "aa_objects";
+
     //identificativo
     protected $nId = 0;
     public function GetId()
@@ -6075,11 +6193,11 @@ class AA_Object_V2
 
         //Salvataggio sul db        
         if ($object->GetId() == 0) {
-            $query = "INSERT INTO " . AA_Const::AA_DBTABLE_OBJECTS . " SET ";
+            $query = "INSERT INTO " . static::$AA_DBTABLE_OBJECTS . " SET ";
             $where = "";
         } else {
-            $query = "UPDATE " . AA_Const::AA_DBTABLE_OBJECTS . " SET ";
-            $where = " WHERE " . AA_Const::AA_DBTABLE_OBJECTS . ".id='" . addslashes($object->GetId()) . "' LIMIT 1";
+            $query = "UPDATE " . static::$AA_DBTABLE_OBJECTS . " SET ";
+            $where = " WHERE " . static::$AA_DBTABLE_OBJECTS . ".id='" . addslashes($object->GetId()) . "' LIMIT 1";
         }
 
         $struct = $object->GetStruct();
@@ -6495,7 +6613,7 @@ class AA_Object_V2
                     }
 
                     $db = new AA_Database();
-                    $query = "DELETE from " . AA_Const::AA_DBTABLE_OBJECTS . " WHERE id = '" . $this->GetId() . "' LIMIT 1";
+                    $query = "DELETE from " . static::$AA_DBTABLE_OBJECTS . " WHERE id = '" . $this->GetId() . "' LIMIT 1";
                     if (!$db->Query($query)) {
                         AA_Log::Log(__METHOD__ . " - Errore durante l'eliminazione dell'oggetto (" . $this->GetId() . ") - " . $db->GetErrorMessage(), 100);
                         return false;
@@ -6576,7 +6694,7 @@ class AA_Object_V2
         } else $user = AA_User::GetCurrentUser();
 
         $db = new AA_Database();
-        $query = "SELECT * from " . AA_Const::AA_DBTABLE_OBJECTS . " WHERE id ='" . addslashes($id) . "' LIMIT 1";
+        $query = "SELECT * from " . static::$AA_DBTABLE_OBJECTS . " WHERE id ='" . addslashes($id) . "' LIMIT 1";
         if (!$db->Query($query)) 
         {
             AA_Log::Log(__METHOD__ . " - Errore: " . $db->GetErrorMessage(), 100);
@@ -6714,7 +6832,7 @@ class AA_Object_V2
         if ($id > 0) 
         {
             $db = new AA_Database();
-            $query = "SELECT * from " . AA_Const::AA_DBTABLE_OBJECTS . " WHERE id ='" . addslashes($id) . "' LIMIT 1";
+            $query = "SELECT * from " . static::$AA_DBTABLE_OBJECTS . " WHERE id ='" . addslashes($id) . "' LIMIT 1";
             if (!$db->Query($query)) 
             {
                 AA_Log::Log(__METHOD__ . " - Errore: " . $db->GetErrorMessage(), 100);
@@ -6917,25 +7035,25 @@ class AA_Object_V2
         }
 
         //Imposta la query base
-        $select = "SELECT DISTINCT " . AA_Const::AA_DBTABLE_OBJECTS . ".id FROM " . AA_Const::AA_DBTABLE_OBJECTS . " ";
+        $select = "SELECT DISTINCT " . static::$AA_DBTABLE_OBJECTS . ".id FROM " . static::$AA_DBTABLE_OBJECTS . " ";
         $join = "";
         $where = "";
-        $group = " GROUP by " . AA_Const::AA_DBTABLE_OBJECTS . ".id";
+        $group = " GROUP by " . static::$AA_DBTABLE_OBJECTS . ".id";
         $having = "";
         $order = "";
 
         //Verifica del parametro class
         if ($params['class'] == "" || !class_exists($params['class']) || $params['class'] == null) {
             $params['class'] = "AA_Object_V2";
-            $where .= " WHERE " . AA_Const::AA_DBTABLE_OBJECTS . ".class='AA_Object_V2' ";
+            $where .= " WHERE " . static::$AA_DBTABLE_OBJECTS . ".class='AA_Object_V2' ";
         } else {
-            $where .= " WHERE " . AA_Const::AA_DBTABLE_OBJECTS . ".class='" . addslashes($params['class']) . "' ";
+            $where .= " WHERE " . static::$AA_DBTABLE_OBJECTS . ".class='" . addslashes($params['class']) . "' ";
         }
 
         //Collegamento tabella dati
         if ($params['class']::AA_DBTABLE_DATA != "") {
-            //$join .= " INNER JOIN " . $params['class']::AA_DBTABLE_DATA . " ON " . $params['class']::AA_DBTABLE_DATA . ".id in (" . AA_Const::AA_DBTABLE_OBJECTS . ".id_data," . AA_Const::AA_DBTABLE_OBJECTS . ".id_data_rev)";
-            $join .= " INNER JOIN " . $params['class']::AA_DBTABLE_DATA . " ON " . $params['class']::AA_DBTABLE_DATA . ".id = ". AA_Const::AA_DBTABLE_OBJECTS . ".id_data ";
+            //$join .= " INNER JOIN " . $params['class']::AA_DBTABLE_DATA . " ON " . $params['class']::AA_DBTABLE_DATA . ".id in (" . static::$AA_DBTABLE_OBJECTS . ".id_data," . static::$AA_DBTABLE_OBJECTS . ".id_data_rev)";
+            $join .= " INNER JOIN " . $params['class']::AA_DBTABLE_DATA . " ON " . $params['class']::AA_DBTABLE_DATA . ".id = ". static::$AA_DBTABLE_OBJECTS . ".id_data ";
         }
 
         //Parametro status non impostato o non valido
@@ -6948,24 +7066,24 @@ class AA_Object_V2
                 //Visualizza solo quelle della sua struttura
                 if ($userStruct->GetAssessorato(true) > 0) {
                     $params['id_assessorato'] = $userStruct->GetAssessorato(true);
-                    //$where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_assessorato='".$userStruct->GetAssessorato(true)."'";    
+                    //$where.=" AND ".static::$AA_DBTABLE_OBJECTS.".id_assessorato='".$userStruct->GetAssessorato(true)."'";    
                 }
 
                 if ($userStruct->GetDirezione(true) > 0) {
                     $params['id_direzione'] = $userStruct->GetDirezione(true);
-                    //$where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_direzione='".$userStruct->GetDirezione(true)."'";    
+                    //$where.=" AND ".static::$AA_DBTABLE_OBJECTS.".id_direzione='".$userStruct->GetDirezione(true)."'";    
                 }
 
                 if ($userStruct->GetServizio(true) > 0) {
                     $params['id_servizio'] = $userStruct->GetServizio(true);
-                    //$where.=" AND ".AA_Const::AA_DBTABLE_OBJECTS.".id_servizio='".$userStruct->GetDirezione(true)."'";    
+                    //$where.=" AND ".static::$AA_DBTABLE_OBJECTS.".id_servizio='".$userStruct->GetDirezione(true)."'";    
                 }
             }
         }
 
         //Filtra solo oggetti della RAS
         if ($userStruct->GetTipo() == 0) {
-            $join .= " INNER JOIN " . AA_Const::AA_DBTABLE_ASSESSORATI . " ON " . AA_Const::AA_DBTABLE_OBJECTS . ".id_assessorato=" . AA_Const::AA_DBTABLE_ASSESSORATI . ".id ";
+            $join .= " INNER JOIN " . AA_Const::AA_DBTABLE_ASSESSORATI . " ON " . static::$AA_DBTABLE_OBJECTS . ".id_assessorato=" . AA_Const::AA_DBTABLE_ASSESSORATI . ".id ";
 
             //RAS
             $where .= " AND " . AA_Const::AA_DBTABLE_ASSESSORATI . ".tipo = 0";
@@ -6978,15 +7096,15 @@ class AA_Object_V2
 
         //filtro struttura
         if (isset($params['id_assessorato']) && $params['id_assessorato'] != "" && $params['id_assessorato'] > 0) {
-            $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id_assessorato = '" . addslashes($params['id_assessorato']) . "'";
+            $where .= " AND " . static::$AA_DBTABLE_OBJECTS . ".id_assessorato = '" . addslashes($params['id_assessorato']) . "'";
         }
 
         if (isset($params['id_direzione']) && $params['id_direzione'] != "" && $params['id_direzione'] > 0) {
-            $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id_direzione = '" . addslashes($params['id_direzione']) . "'";
+            $where .= " AND " . static::$AA_DBTABLE_OBJECTS . ".id_direzione = '" . addslashes($params['id_direzione']) . "'";
         }
 
         if (isset($params['id_servizio']) && $params['id_servizio'] != "" && $params['id_servizio'] > 0) {
-            $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id_servizio = '" . addslashes($params['id_servizio']) . "'";
+            $where .= " AND " . static::$AA_DBTABLE_OBJECTS . ".id_servizio = '" . addslashes($params['id_servizio']) . "'";
         }
         //------------------------
 
@@ -6997,12 +7115,12 @@ class AA_Object_V2
 
             //filtra in base al nome
             if (isset($params['nome']) && $params['nome'] != "") {
-                $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".nome like '%" . addslashes($params['nome']) . "%'";
+                $where .= " AND " . static::$AA_DBTABLE_OBJECTS . ".nome like '%" . addslashes($params['nome']) . "%'";
             }
 
             //filtra in base alla descrizione
             if (isset($params['descrizione']) && $params['descrizione'] != "") {
-                $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".descrizione like '%" . addslashes($params['descrizione']) . "%'";
+                $where .= " AND " . static::$AA_DBTABLE_OBJECTS . ".descrizione like '%" . addslashes($params['descrizione']) . "%'";
             }
         }
 
@@ -7012,8 +7130,8 @@ class AA_Object_V2
             preg_match("/([0-9]+\,*)+/", $params['id'], $ids);
 
             if (count($ids) > 0) {
-                $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id in (" . $ids[0] . ")";
-            } else $where .= " AND " . AA_Const::AA_DBTABLE_OBJECTS . ".id = '" . addslashes($params['id']) . "'";
+                $where .= " AND " . static::$AA_DBTABLE_OBJECTS . ".id in (" . $ids[0] . ")";
+            } else $where .= " AND " . static::$AA_DBTABLE_OBJECTS . ".id = '" . addslashes($params['id']) . "'";
         }
 
         //aggiunge i join

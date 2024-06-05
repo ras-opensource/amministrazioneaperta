@@ -2810,6 +2810,26 @@ var AA_MainApp = {
                     AA_MainApp.ui.alert(msg);
                     return Promise.reject(msg);
                 }
+            },
+
+            UserProfileDlg: async function(taskParams = "", params = ""){
+                try 
+                {
+                    let result = await AA_VerboseTask("GetCurrentUserProfileDlg", AA_MainApp.taskManager, taskParams);
+                    if (result.status.value != 0) {
+                        console.error("AA_MainApp.ui.MainUI.GetCurrentUserProfileDlg.show", params, result.error.value);
+                        AA_MainApp.ui.alert(result.error.value);
+                        return false;
+                    }
+
+                    console.log("AA_MainApp.ui.MainUI.GetCurrentUserProfileDlg",result.content.value);
+                    webix.ui(result.content.value).show();
+                    
+                } catch (msg) {
+                    console.error("AA_MainApp.ui.MainUI.GetCurrentUserProfileDlg", params, msg);
+                    AA_MainApp.ui.alert(msg);
+                    return Promise.reject(msg);
+                }
             }
         },
         SearchDlg: {
@@ -2859,6 +2879,15 @@ async function AA_DefaultSystemInitialization(params) {
         if (AA_MainApp.ui.enableGui && !AA_MainApp.bEnableLegacy) {
 
             AA_MainApp.ui.overlay.show();
+
+            //imposta il dialogo login su email
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.get("emailLogin")=="true")
+            {
+                console.log("AA_DefaultSystemInitialization", urlParams);
+                AA_MainApp.logIn=AA_MailUserAuth;
+                AA_MainApp.userAuth=AA_MailUserAuth;
+            }
 
             if (params) {
                 //titolo dell'App
@@ -3110,7 +3139,6 @@ async function AA_RefreshMainUi(params) {
             //Aggiorna il nome utente
             var user = $(getAppStatus.content.value)[0].childNodes[0].innerText;
             if (user.length > 0 && $$("AA_icon_user")) {
-                $$("AA_icon_user").define("tooltip", user);
                 $$("AA_icon_user").define("data", { "user_image_path": $(getAppStatus.content.value)[0].childNodes[5].nextSibling.data });
                 AA_MainApp.ui.user = user;
             }
@@ -3144,6 +3172,18 @@ async function AA_RefreshMainUi(params) {
                             return true;
                         }
                     }
+                }
+            }
+
+            //seleziona il modulo impostato sull'url
+            if(urlParams.get("module") != "")
+            {
+
+                let module = AA_MainApp.getModule(urlParams.get("module"));
+                if(module)
+                {
+                    await AA_MainApp.setCurrentModule(urlParams.get("module"));
+                    return true;
                 }
             }
 
@@ -3335,8 +3375,8 @@ async function AA_SetupMainUi() {
                     { view: "label", label: AA_MainApp.ui.MainUI.appTitle, align: "center", minWidth: 500 },
                     {},
                     { view: "spacer", width: "36" },
-                    { id: "AA_icon_user", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-account", click:AA_MainApp.ui.MainUI.UserChangePwdDlg },
-                    { id: "AA_icon_logout", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-logout", tooltip: "Esci", click: AA_MainApp.logOut },
+                    { id: "AA_icon_user", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-account-cog", tooltip: "Visualizza il pannello di controllo",click:AA_MainApp.ui.MainUI.UserProfileDlg },
+                    { id: "AA_icon_logout", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-logout", tooltip: "Effettua il logout dalla piattaforma", click: AA_MainApp.logOut },
                     { view: "spacer", width: "44" }
                 ]
             },
@@ -3775,74 +3815,103 @@ async function AA_UserAuth(params = null) {
 
             let apply_btn = {
                 view: "layout",
-                height: 38,
                 cols: [
                     {},
                     {
-                        id: "AA_UserAuth_Apply_btn",
-                        view: "button",
-                        label: "Accedi",
-                        hotkey: "enter",
-                        type: "icon",
-                        css: "webix_primary ",
-                        icon: "mdi mdi-login",
-                        width: 100,
-                        align: "center",
-                        params: params,
-                        click: async function() {
-                            try {
-                                //console.log("AA_UserAuth", arguments);
-
-                                if (!$$("AA_UserAuth_Form").validate()) {
-                                    return;
+                        rows: 
+                        [
+                            {
+                                id: "AA_UserAuth_Apply_btn",
+                                view: "button",
+                                label: "Accedi",
+                                hotkey: "enter",
+                                type: "icon",
+                                css: "webix_primary ",
+                                icon: "mdi mdi-login",
+                                width: 100,
+                                align: "center",
+                                params: params,
+                                click: async function() {
+                                    try {
+                                        //console.log("AA_UserAuth", arguments);
+        
+                                        if (!$$("AA_UserAuth_Form").validate()) {
+                                            return;
+                                        }
+        
+                                        let button = $$(arguments[0]);
+                                        let lastTask = "";
+                                        if (button) {
+                                            //console.log("AA_UserAuth",button);
+                                            lastTask = button.config.params[0];
+                                        }
+        
+                                        let form_data = $$("AA_UserAuth_Form").getValues();
+        
+                                        if (form_data['user'].length < 1) {
+                                            AA_MainApp.ui.alert("Occorre indicare il nome utente");
+                                            return;
+                                        }
+        
+                                        if (form_data['pwd'].length < 1) {
+                                            AA_MainApp.ui.alert("Occorre indicare una password");
+                                            return;
+                                        }
+        
+                                        //Hashing password
+                                        form_data['pwd'] = form_data['pwd'];
+        
+                                        //console.log("AA_UserAuth",form_data);
+        
+                                        let result = await AA_VerboseTask("UserAuth", AA_MainApp.taskManager, "", form_data);
+        
+                                        //console.log("AA_UserAuth", result);
+        
+                                        if (result.status.value == 0) {
+                                            $$("AA_UserAuthDlg").close();
+        
+                                            //ricarica la pagina
+                                            window.location.reload();
+        
+                                            //AA_MainApp.ui.MainUI.refresh();
+                                            return;
+                                        } else {
+                                            AA_MainApp.ui.alert(result.error.value);
+                                            console.error("AA_UserAuthDlg - " + result.error.value);
+                                        }
+                                    } catch (msg) {
+                                        console.error("AA_MainApp.AA_UserAuth", msg);
+                                        AA_MainApp.ui.alert(msg);
+                                        return;
+                                    }
                                 }
-
-                                let button = $$(arguments[0]);
-                                let lastTask = "";
-                                if (button) {
-                                    //console.log("AA_UserAuth",button);
-                                    lastTask = button.config.params[0];
+                            },
+                            {view: "label", label: "oppure", align: "center"},
+                            {
+                                id: "AA_UserAuth_EmailLogin_btn",
+                                view: "button",
+                                label: "Accedi con email",
+                                type: "icon",
+                                css: "webix_primary ",
+                                icon: "mdi mdi-email-fast",
+                                width: 180,
+                                align: "center",
+                                params: params,
+                                click: async function() {
+                                    try {
+                                        //console.log("AA_UserAuth", arguments);
+                                        $$("AA_UserAuthDlg").close();
+                                        
+                                        await AA_MailUserAuth();
+        
+                                    } catch (msg) {
+                                        console.error("AA_MainApp.AA_UserAuth", msg);
+                                        AA_MainApp.ui.alert(msg);
+                                        return;
+                                    }
                                 }
-
-                                let form_data = $$("AA_UserAuth_Form").getValues();
-
-                                if (form_data['user'].length < 1) {
-                                    AA_MainApp.ui.alert("Occorre indicare il nome utente");
-                                    return;
-                                }
-
-                                if (form_data['pwd'].length < 1) {
-                                    AA_MainApp.ui.alert("Occorre indicare una password");
-                                    return;
-                                }
-
-                                //Hashing password
-                                form_data['pwd'] = form_data['pwd'];
-
-                                //console.log("AA_UserAuth",form_data);
-
-                                let result = await AA_VerboseTask("UserAuth", AA_MainApp.taskManager, "", form_data);
-
-                                //console.log("AA_UserAuth", result);
-
-                                if (result.status.value == 0) {
-                                    $$("AA_UserAuthDlg").close();
-
-                                    //ricarica la pagina
-                                    window.location.reload();
-
-                                    //AA_MainApp.ui.MainUI.refresh();
-                                    return;
-                                } else {
-                                    AA_MainApp.ui.alert(result.error.value);
-                                    console.error("AA_UserAuthDlg - " + result.error.value);
-                                }
-                            } catch (msg) {
-                                console.error("AA_MainApp.AA_UserAuth", msg);
-                                AA_MainApp.ui.alert(msg);
-                                return;
                             }
-                        }
+                        ]
                     },
                     {}
                 ]
@@ -3914,6 +3983,291 @@ async function AA_UserAuth(params = null) {
         }
     } catch (msg) {
         console.error("AA_UserAuth() - " + msg);
+        AA_MainApp.ui.alert(msg);
+        return Promise.reject(msg);
+    }
+}
+
+async function AA_MailUserAuth(params = null) {
+    try {
+        if ($$("AA_MailUserAuthDlg")) {
+            $$("AA_MailUserAuthDlg").show();
+        } else {
+            let login_dlg = {
+                id: "AA_MailUserAuthDlg",
+                view: "window",
+                height: 400,
+                width: 400,
+                position: "center",
+                modal: true,
+                css: "AA_Wnd"
+            }
+
+            let header_box = {
+                css: "AA_Wnd_header_box",
+                view: "toolbar",
+                height: 38,
+                elements: [{
+                    css: "AA_Wnd_title",
+                    template: "Autenticazione"
+                }]
+            }
+
+            let apply_btn = {
+                view: "layout",
+                rows: [
+                    {
+                        id: "AA_MailUserAuth_Apply_btn",
+                        view: "button",
+                        label: "Accedi",
+                        hotkey: "enter",
+                        type: "icon",
+                        css: "webix_primary ",
+                        icon: "mdi mdi-login",
+                        width: 100,
+                        align: "center",
+                        params: params,
+                        click: async function() {
+                            try {
+                                //console.log("AA_UserAuth", arguments);
+                                if (!$$("AA_MailUserAuth_Form").validate()) {
+                                    return;
+                                }
+
+                                let button = $$(arguments[0]);
+
+                                let form_data = $$("AA_MailUserAuth_Form").getValues();
+
+                                //console.log("AA_UserAuth",form_data);
+
+                                let result = await AA_VerboseTask("MailUserAuth", AA_MainApp.taskManager, "", form_data);
+
+                                console.log("AA_MailUserAuth", result);
+
+                                if (result.status.value == 0) {
+                                    $$("AA_MailUserAuthDlg").close();
+
+                                    await AA_MailUserAuthVerify();
+
+                                    return;
+                                } else {
+                                    AA_MainApp.ui.alert(result.error.value);
+                                    console.error("AA_MailUserAuthDlg - " + result.error.value);
+                                }
+                            } catch (msg) {
+                                console.error("AA_MainApp.AA_MailUserAuth", msg);
+                                AA_MainApp.ui.alert(msg);
+                                return;
+                            }
+                        }
+                    },
+                    {view: "label", label:"oppure",align:"center"},
+                    {
+                        id: "AA_MailUserAuth_return_btn",
+                        view: "button",
+                        label: "Accedi con credenziali",
+                        type: "icon",
+                        css: "webix_primary ",
+                        icon: "mdi mdi-key",
+                        width: 200,
+                        align: "center",
+                        params: params,
+                        click: async function() {
+                            try {
+                                //console.log("AA_UserAuth", arguments);
+                                $$("AA_MailUserAuthDlg").close();
+
+                                AA_MainApp.userAuth();
+
+                            } catch (msg) {
+                                console.error("AA_MainApp.AA_MailUserAuth", msg);
+                                AA_MainApp.ui.alert(msg);
+                                return;
+                            }
+                        }
+                    }
+                ]
+            }
+
+            let body = {
+                view: "layout",
+                type: "clean",
+                rows: [{
+                    id: "AA_MailUserAuth_Form",
+                    view: "form",
+                    borderless: true,
+                    rules:{
+                        "email":webix.rules.isEmail
+                    },
+                    elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
+                    elements: [{
+                            view: "text",
+                            icon: "mdi mdi-email",
+                            name: "email",
+                            bottomLabel: "Inserisci la tua email.",
+                            required: true,
+                            label: "email"
+                        },
+                        {
+                            type: "space",
+                            css: { "background-color": "transparent" },
+                            cols: [
+                                {
+                                    view: "checkbox",
+                                    id: "remember_me",
+                                    name: "remember_me",
+                                    label: "Ricordami",
+                                    //labelRight:"Ricordami",
+                                    labelAlign: "right",
+                                    labelPosition: "right",
+                                    labelWidth: 95,
+                                    align: "right",
+                                    bottomPadding: 0,
+                                    tooltip: "Se abilitato, ricorda l'utente (su questo browser) per 30 giorni.",
+                                    value: 0,
+                                },
+                                {
+                                    rows:
+                                    [
+                                        apply_btn
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }]
+            }
+
+            login_dlg['head'] = header_box;
+            login_dlg['body'] = body;
+
+            webix.ui(login_dlg).show();
+        }
+    } catch (msg) {
+        console.error("AA_MailUserAuth() - " + msg);
+        AA_MainApp.ui.alert(msg);
+        return Promise.reject(msg);
+    }
+}
+
+//verifica codice OTP
+async function AA_MailUserAuthVerify(params = null) {
+    try {
+        if ($$("AA_MailUserAuthVerifyDlg")) {
+            $$("AA_MailUserAuthVerifyDlg").show();
+        } else {
+            let login_dlg = {
+                id: "AA_MailUserAuthVerifyDlg",
+                view: "window",
+                height: 400,
+                width: 400,
+                position: "center",
+                modal: true,
+                css: "AA_Wnd"
+            }
+
+            let header_box = {
+                css: "AA_Wnd_header_box",
+                view: "toolbar",
+                height: 38,
+                elements: [{
+                    css: "AA_Wnd_title",
+                    template: "Autenticazione"
+                }]
+            }
+
+            let apply_btn = {
+                view: "layout",
+                height: 38,
+                cols: [
+                    {},
+                    {
+                        id: "AA_MailUserAuthVerify_Apply_btn",
+                        view: "button",
+                        label: "Verifica",
+                        hotkey: "enter",
+                        type: "icon",
+                        css: "webix_primary ",
+                        icon: "mdi mdi-login",
+                        width: 100,
+                        align: "center",
+                        params: params,
+                        click: async function() {
+                            try {
+                                //console.log("AA_UserAuth", arguments);
+
+                                if (!$$("AA_MailUserAuthVerify_Form").validate()) {
+                                    return;
+                                }
+
+                                let form_data = $$("AA_MailUserAuthVerify_Form").getValues();
+
+                                //console.log("AA_UserAuth",form_data);
+
+                                let result = await AA_VerboseTask("MailUserAuthChallengeVerify", AA_MainApp.taskManager, "", form_data);
+
+                                console.log("AA_MailUserAuthVerify", result);
+
+                                if (result.status.value == 0) {
+                                    $$("AA_MailUserAuthVerifyDlg").close();
+
+                                    //ricarica la pagina
+                                    window.location.reload();
+
+                                    //AA_MainApp.ui.MainUI.refresh();
+                                    return;
+                                } else {
+                                    AA_MainApp.ui.alert(result.error.value);
+                                    console.error("AA_MailUserAuthVerifyDlg - " + result.error.value);
+                                }
+                            } catch (msg) {
+                                console.error("AA_MainApp.AA_MailUserAuthVerify", msg);
+                                AA_MainApp.ui.alert(msg);
+                                return;
+                            }
+                        }
+                    },
+                    {}
+                ]
+            }
+
+            let body = {
+                view: "layout",
+                type: "clean",
+                rows: [{
+                    id: "AA_MailUserAuthVerify_Form",
+                    view: "form",
+                    borderless: true,
+                    rules:{
+                        "codice":webix.rules.isNotEmpty
+                    },
+                    elementsConfig: { labelWidth: 90, labelAlign: "left", labelPosition: "top", iconPosition: "left" },
+                    elements: [{
+                            view: "text",
+                            icon: "mdi mdi-check",
+                            name: "codice",
+                            bottomLabel: "Inserisci il codice OTP che hai ricevuto via email.",
+                            required: true,
+                            label: "codice OTP"
+                        },
+                        {
+                            type: "space",
+                            css: { "background-color": "transparent" },
+                            cols: [
+                                apply_btn
+                            ]
+                        }
+                    ]
+                }]
+            }
+
+            login_dlg['head'] = header_box;
+            login_dlg['body'] = body;
+
+            webix.ui(login_dlg).show();
+        }
+    } catch (msg) {
+        console.error("AA_MailUserAuthVerify() - " + msg);
         AA_MainApp.ui.alert(msg);
         return Promise.reject(msg);
     }
