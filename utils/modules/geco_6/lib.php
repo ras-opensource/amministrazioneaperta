@@ -3531,10 +3531,9 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
 //Oggetto criteri e modalita
 Class AA_Geco_Criteri extends AA_GenericParsableDbObject
 {
+    protected static $dbDataTable=AA_Geco_Const::AA_GECO_DBTABLE_CRITERI;
     public function __construct($params=null)
     {
-        static::$dbDataTable=AA_Geco_Const::AA_GECO_DBTABLE_CRITERI;
-
         $this->aProps['estremi']="";
         $this->aProps['anno']="";
         $this->aProps['categorie']=0;
