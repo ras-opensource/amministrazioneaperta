@@ -808,6 +808,64 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         parent::__construct($params);
     }
 
+    protected function Sync()
+    {
+        if(static::$dbDataTable == "") 
+        {
+            AA_Log::Log(__METHOD__." - Tabella non definita.",100);
+            return false;
+        }
+ 
+        $db=new AA_Database();
+        
+        if($this->aProps['id']<=0)
+        {
+            $query="INSERT INTO ".static::$dbDataTable." SET ";
+            $this->aProps['id']=0;
+        }
+        else
+        {
+            $query="UPDATE ".static::$dbDataTable." SET ";
+        }
+
+        $sep="";
+        foreach($this->aProps as $key=>$val)
+        {
+            if($key !="id")
+            {
+                $query.=$sep.$key."='".addslashes($val)."'";
+                $sep=",";
+            }
+        }
+
+        if($this->aProps['id']>0)
+        {
+            $query.=" WHERE id='".intVal($this->aProps['id'])."' LIMIT 1";
+        }
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+            return false;
+        }
+
+        if($this->aProps['id']>0)
+        {
+            return $this->aProps['id'];
+        }
+        else return AA_Database::GetLastInsertId();
+    }
+
+    public function Update($params=null, $user=null)
+    {
+        if(is_array($params))
+        {
+            $this->Parse($params);
+        }
+        
+        return $this->Sync();
+    }
+
     public static function Search($params=null, $class="")
     {
         if(static::$dbDataTable == "") return array();

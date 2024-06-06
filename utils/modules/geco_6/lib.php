@@ -15,6 +15,9 @@ Class AA_Geco_Const extends AA_Const
 
     const AA_USER_FLAG_GECO_RO="geco_ro";
 
+    //tabella criteri e modaliota'
+    const AA_GECO_DBTABLE_CRITERI="aa_geco_criteri";
+
     //modalita' scelta del beneficiario
     protected static $aModalita=null;
     const AA_GECO_MODALITA_AVVISO_PUBBLICO=1;
@@ -3521,5 +3524,83 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
         $oggetto->SetStyle('width:19%; font-size: .6em; padding: .1em');
         $oggetto->SetText($object->GetProp("Estremi"));
         #-----------------------------------------------        
+    }
+}
+
+
+//Oggetto criteri e modalita
+Class AA_Geco_Criteri extends AA_GenericParsableDbObject
+{
+    public function __construct($params=null)
+    {
+        static::$dbDataTable=AA_Geco_Const::AA_GECO_DBTABLE_CRITERI;
+
+        $this->aProps['estremi']="";
+        $this->aProps['anno']="";
+        $this->aProps['categorie']=0;
+        $this->aProps['struttura']=0;
+
+        if(is_array($params))
+        {
+            $this->Parse($params);
+        }
+    }
+
+    public function Parse($params=null)
+    {
+        if(is_array($params))
+        {
+            if(isset($params['struttura'])) $params['struttura']=intVal($params['struttura']); 
+            if(isset($params['categorie'])) $params['categorie']=intVal($params['categorie']);
+        }
+        
+        return parent::Parse($params);
+    }
+
+    public function Update($params=null,$user=null)
+    {
+        if(!($user instanceof AA_User))
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if(!$user->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Utente non valido.", 100);
+            return false;
+        }
+
+        $struct=$user->GetStruct();
+        $user_struct_level_0=intVal($struct->GetAssessorato(true)*1000000);
+        $user_struct_level_1=intVal($struct->GetDirezione(true)*1000);
+        $user_struct_level_2=intVal($struct->GetServizio(true));
+        if($user_struct_level_0 > 0)
+        {
+            if($user_struct_level_0-intVal($this->aProps['struttura']*0,000001) != 0)
+            {
+                AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
+                return false;
+            }            
+        }
+
+        if($user_struct_level_1 > 0)
+        {
+            if($user_struct_level_1-intVal(($this->aProps['struttura']-$user_struct_level_0)*0,001) != 0)
+            {
+                AA_Log::Log(__METHOD__." - Direzione differente.", 100);
+                return false;
+            }            
+        }
+
+        if($user_struct_level_2 > 0)
+        {
+            if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0-$user_struct_level_1) != 0)
+            {
+                AA_Log::Log(__METHOD__." - Servizio differente.", 100);
+                return false;
+            }            
+        }
+
+        return parent::Update($params, $user);
     }
 }
