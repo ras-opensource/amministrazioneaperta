@@ -802,6 +802,7 @@ Class AA_GenericParsableObject
 Class AA_GenericParsableDbObject extends AA_GenericParsableObject
 {
     static protected $dbDataTable="";
+    static protected $ObjectClass="AA_GenericParsableObject";
 
     public function __construct($params=null)
     {
@@ -849,11 +850,12 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
             return false;
         }
 
-        if($this->aProps['id']>0)
+        if($this->aProps['id']==0)
         {
-            return $this->aProps['id'];
+            $this->aProps['id']=AA_Database::GetLastInsertId();
         }
-        else return AA_Database::GetLastInsertId();
+
+        return true;
     }
 
     public function Update($params=null, $user=null)
@@ -862,7 +864,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         {
             $this->Parse($params);
         }
-        
+
         return $this->Sync();
     }
 
@@ -958,7 +960,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         
         $rs=$db->GetResultSet();
         $return=array();
-        if($class=="" || !class_exists($class)) $class=__CLASS__;
+        if($class=="" || !class_exists($class)) $class=static::$ObjectClass;
 
         foreach($rs as $id=>$row)
         {
@@ -968,7 +970,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         return $return;
     }
 
-    public static function Load($id=0)
+    protected function LoadDataFromDb($id=0)
     {
         if($id<=0 || static::$dbDataTable=="") return null;
 
@@ -986,18 +988,28 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         if($db->GetAffectedRows() == 0) return null;
         
         $rs=$db->GetResultSet();
-        $class=__CLASS__;
 
-        return new $class($rs[0]);
+        return $rs[0];
+    }
+
+    public function Load($id=0,$user=null)
+    {
+        $data=$this->LoadDataFromDb($id);
+        if(is_array($data))
+        {
+            $this->Parse($data);
+            return true;
+        }
+
+        return false;
     }
 }
 
 Class AA_GenericNews extends AA_GenericParsableDbObject
 {
+    static protected $dbDataTable="aa_news";
     public function __construct($params = null)
     {
-        static::$dbDataTable="aa_news";
-        
         $this->aProps['timestamp']="";
         $this->aProps['tags']="";
         $this->aProps['oggetto']="";

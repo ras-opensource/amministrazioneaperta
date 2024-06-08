@@ -3532,29 +3532,53 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
 Class AA_Geco_Criteri extends AA_GenericParsableDbObject
 {
     protected static $dbDataTable=AA_Geco_Const::AA_GECO_DBTABLE_CRITERI;
-    public function __construct($params=null)
+    protected static $ObjectClass=__CLASS__;
+    public function __construct($params=null,$user=null)
     {
+        if(!($user instanceof AA_User))
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        $struct=$user->GetStruct();
+        $user_struct_level_0=intVal($struct->GetAssessorato(true)*1000000);
+        $user_struct_level_1=intVal($struct->GetDirezione(true)*1000);
+        $user_struct_level_2=intVal($struct->GetServizio(true));
+
         $this->aProps['estremi']="";
         $this->aProps['anno']="";
         $this->aProps['categorie']=0;
-        $this->aProps['struttura']=0;
+        $this->aProps['struttura']=$user_struct_level_0+$user_struct_level_1+$user_struct_level_2;
 
         if(is_array($params))
         {
-            $this->Parse($params);
+            $params['id']=0;
+            parent::__construct($params);
         }
     }
 
-    public function Parse($params=null)
+    public function Parse($params=null, $user=null)
     {
         if(is_array($params))
         {
-            if(isset($params['struttura'])) $params['struttura']=intVal($params['struttura']); 
+            if(isset($params['id'])) unset($params['id']);
             if(isset($params['categorie'])) $params['categorie']=intVal($params['categorie']);
         }
         
         return parent::Parse($params);
     }
+
+    public function Load($id=0,$user=null)
+    {
+        $data=$this->LoadDataFromDb($id);
+        if(is_array($data))
+        {
+            parent::Parse($data);
+            return true;
+        }
+
+        return false;
+    } 
 
     public function Update($params=null,$user=null)
     {
@@ -3570,12 +3594,12 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         }
 
         $struct=$user->GetStruct();
-        $user_struct_level_0=intVal($struct->GetAssessorato(true)*1000000);
-        $user_struct_level_1=intVal($struct->GetDirezione(true)*1000);
+        $user_struct_level_0=intVal($struct->GetAssessorato(true));
+        $user_struct_level_1=intVal($struct->GetDirezione(true));
         $user_struct_level_2=intVal($struct->GetServizio(true));
         if($user_struct_level_0 > 0)
         {
-            if($user_struct_level_0-intVal($this->aProps['struttura']*0,000001) != 0)
+            if($user_struct_level_0-intVal($this->aProps['struttura']*0.000001) != 0)
             {
                 AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
                 return false;
@@ -3584,7 +3608,7 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
 
         if($user_struct_level_1 > 0)
         {
-            if($user_struct_level_1-intVal(($this->aProps['struttura']-$user_struct_level_0)*0,001) != 0)
+            if($user_struct_level_1-intVal(($this->aProps['struttura']*0.001-$user_struct_level_0*1000) != 0))
             {
                 AA_Log::Log(__METHOD__." - Direzione differente.", 100);
                 return false;
@@ -3593,11 +3617,43 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
 
         if($user_struct_level_2 > 0)
         {
-            if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0-$user_struct_level_1) != 0)
+            if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
             {
                 AA_Log::Log(__METHOD__." - Servizio differente.", 100);
                 return false;
             }            
+        }
+
+        if(is_array($params))
+        {
+            if(isset($params['id'])) unset($params['id']);
+
+            if(isset($params['struttura']))
+            {
+                if($user_struct_level_0 > 0)
+                {
+                    if(($user_struct_level_0-$params['struttura']*0.000001) != 0)
+                    {
+                       $params['struttura']=$this->aProps['struttura'];
+                    }            
+                }
+
+                if($user_struct_level_1 > 0)
+                {
+                    if($user_struct_level_1-intVal(($params['struttura']*0.001-$user_struct_level_0*1000)) != 0)
+                    {
+                        $params['struttura']=$this->aProps['struttura'];
+                    }            
+                }
+
+                if($user_struct_level_2 > 0)
+                {
+                    if($user_struct_level_2-intVal($params['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
+                    {
+                        $params['struttura']=$this->aProps['struttura'];
+                    }            
+                }
+            }
         }
 
         return parent::Update($params, $user);
