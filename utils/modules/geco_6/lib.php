@@ -757,50 +757,6 @@ Class AA_GecoModule extends AA_GenericModule
         //Custom object template
         //$this->AddObjectTemplate(static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI,"Template_GetGecoComuneRendicontiViewLayout");
     }
-
-    protected function Task_GetGenericActionMenu($task)
-    {
-        $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-
-        $content = "";
-
-        switch ($_REQUEST['section']) {
-            case static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_CRITERI:
-                $content = $this->TemplateActionMenu_Criteri();
-                break;
-            default:
-                return parent::Task_GetGenericActionMenu($task);
-        }
-
-        if ($content != "") $sTaskLog .= $content->toBase64();
-
-        $sTaskLog .= "</content>";
-
-        $task->SetLog($sTaskLog);
-
-        return true;
-    }
-
-    protected function TemplateActionMenu_Criteri()
-    {
-        $menu = new AA_JSON_Template_Generic(
-            "AA_ActionMenuBozze_".uniqid(),
-            array(
-                "view" => "contextmenu",
-                "data" => array(array(
-                    "id" => "refresh_criteri",
-                    "value" => "Aggiorna",
-                    "icon" => "mdi mdi-reload",
-                    "module_id" => $this->GetId(),
-                    "handler" => "refreshUiObject",
-                    "handler_params" => array(static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_CRITERI, true)
-                ))
-            )
-        );
-
-        return $menu;
-    }
-
     
     protected function TemplateGenericNavbar_Atti($level = 1, $last = false, $refresh_view = true)
     {

@@ -2226,7 +2226,13 @@ class AA_GenericModule
                 $content = $this->TemplateActionMenu_Detail();
                 break;
             default:
+                $sections=$this->GetSections();
                 $content = new AA_JSON_Template_Generic();
+
+                foreach($sections as $curSection)
+                {
+                    if($curSection->GetViewId()==$_REQUEST['section']) $content=$curSection->TemplateActionMenu();
+                }
                 break;
         }
 
@@ -4996,6 +5002,31 @@ class AA_GenericModuleSection
         $this->detail = $detail;
         $this->icon = $icon;
         $this->template=$template;
+    }
+
+    public function TemplateActionMenu()
+    {
+        return $this->TemplateGenericActionMenu();
+    }
+
+    protected function TemplateGenericActionMenu()
+    {
+        $menu = new AA_JSON_Template_Generic(
+            "AA_ActionMenu_".uniqid(),
+            array(
+                "view" => "contextmenu",
+                "data" => array(array(
+                    "id" => "refresh_".$this->GetId(),
+                    "value" => "Aggiorna",
+                    "icon" => "mdi mdi-reload",
+                    "module_id" => $this->GetModuleId(),
+                    "handler" => "refreshUiObject",
+                    "handler_params" => array($this->GetViewId(), true)
+                ))
+            )
+        );
+
+        return $menu;
     }
 }
 #----------------------------------------------
