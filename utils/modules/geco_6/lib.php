@@ -2281,7 +2281,7 @@ Class AA_GecoModule extends AA_GenericModule
              "align"=>"right",
              "width"=>120,
              "tooltip"=>"Opzioni di filtraggio",
-             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoFilterCriteriDlg\",params: {postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:'GetGecoFilterCriteriDlg'},'".$this->id."')"
         ));
         $toolbar->AddElement($modify_btn);
 
