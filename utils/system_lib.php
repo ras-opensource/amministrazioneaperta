@@ -5664,7 +5664,7 @@ class AA_GenericPagedSectionTemplate
                         "width" => 100,
                         "disabled" => !$this->detailEnable,
                         "tooltip" => "Visualizza i dettagli dell'elemento selezionato",
-                        "click" => "AA_MainApp.utils.callHandler('showDetailView',$$('" . $this->id . "_List_Box').getSelectedItem(),'" . $this->module . "','" . $this->id . "_Content_Box')"
+                        "click" => "AA_MainApp.utils.callHandler('".$this->showDetailSectionFunc."',$$('" . $this->id . "_List_Box').getSelectedItem(),'" . $this->module . "','" . $this->id . "_Content_Box')"
                     )));
                 }
 
