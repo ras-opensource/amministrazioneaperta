@@ -3529,7 +3529,7 @@ class AA_GenericModule
                 "",
                 array(
                     "type" => "clean",
-                    "section_id" => "Bozze",
+                    "section_id" => $section->GetId(),
                     "module_id" => $this->GetId(),
                     "refresh_view" => $refresh_view,
                     "tooltip" => "Fai click per visualizzare la sezione relativa a ".$section->GetName(),

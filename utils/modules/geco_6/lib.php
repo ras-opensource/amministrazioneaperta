@@ -807,7 +807,7 @@ Class AA_GecoModule extends AA_GenericModule
         $class = "n" . $level;
         if ($last) $class .= " AA_navbar_terminator_left";
         $navbar =  new AA_JSON_Template_Template(
-            static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_UI_SECTION_PUBBLICATE_NAME,
+            "",
             array(
                 "type" => "clean",
                 "section_id" => static::AA_ID_SECTION_PUBBLICATE,
