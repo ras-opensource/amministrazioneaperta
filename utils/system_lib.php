@@ -1003,6 +1003,31 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
 
         return false;
     }
+
+    public function Delete($user=null)
+    {
+        if($this->aProps['id']>0) return $this->DeleteFromDb();
+        return true;
+    }
+
+    protected function DeleteFromDb()
+    {
+        if($this->aProps['id']<=0 || static::$dbDataTable == "")
+        {
+            AA_Log::Log(__METHOD__." - Identificativo non valido o tabella non definita.",100);
+            return false;
+        } 
+        $db=new AA_Database();
+
+        $id=intVal($this->aProps['id']);
+        if(!$db->Query("DELETE FROM ".static::$dbDataTable." WHERE id='".addslashes($id)."' LIMIT 1"))
+        {
+            AA_Log::Log(__METHOD__." - ".$db->GetErrorMessage(),100);
+            return false;
+        }
+
+        return true;
+    }
 }
 
 Class AA_GenericNews extends AA_GenericParsableDbObject
@@ -5306,6 +5331,17 @@ class AA_GenericPagedSectionTemplate
     {
         return $this->contentItemsForPage;
     }
+
+    protected $contentItemsForRow = 1;
+    public function SetContentItemsForRow($val = 1)
+    {
+        $this->contentItemsForRow = $val;
+    }
+    public function GetContentItemsForRow()
+    {
+        return $this->contentItemsForRow;
+    }
+
     protected $contentItemHeight = "auto";
     public function SetContentItemHeight($val = "auto")
     {
@@ -5428,7 +5464,7 @@ class AA_GenericPagedSectionTemplate
                     "pager_id" => $this->id . "_Pager",
                     "filtered" => $this->filtered,
                     "filter_id" => $this->saveFilterId,
-                    "xCount" => 1,
+                    "xCount" => $this->contentItemsForRow,
                     "yCount" => $this->contentItemsForPage,
                     "select" => $this->contentEnableSelect,
                     "multiselect" => $this->contentEnableMultiSelect,
