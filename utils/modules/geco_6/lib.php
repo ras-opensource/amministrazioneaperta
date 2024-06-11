@@ -15,6 +15,8 @@ Class AA_Geco_Const extends AA_Const
 
     const AA_USER_FLAG_GECO_RO="geco_ro";
 
+    const AA_USER_FLAG_GECO_CRITERI="geco_criteri";
+
     //tabella criteri e modaliota'
     const AA_GECO_DBTABLE_CRITERI="aa_geco_criteri";
 
@@ -689,9 +691,11 @@ Class AA_GecoModule extends AA_GenericModule
     //report
    
     //Section id
-
+    const AA_ID_SECTION_CRITERI="Criteri";
     //section ui ids
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
+
+    const AA_UI_SECTION_CRITERI="Criteri";
 
     public function __construct($user=null,$bDefaultSections=true)
     {
@@ -742,10 +746,80 @@ Class AA_GecoModule extends AA_GenericModule
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGecoDettaglio_Generale_Tab")
         ));
 
+        $criteri=new AA_GenericModuleSection(static::AA_ID_SECTION_CRITERI,"Criteri e modalita'",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_CRITERI,$this->GetId(),false,true,false,false,'mdi-text-box-multiple',"TemplateSection_Criteri");
+        $this->AddSection($criteri);
+
+        $pubblicate=$this->GetSection(static::AA_ID_SECTION_PUBBLICATE);
+        $pubblicate->SetNavbarTemplate(array($this->TemplateGenericNavbar_Bozze(1)->toArray(),$this->TemplateGenericNavbar_Section($criteri,2,true)->toArray()));
+
+        $criteri->SetNavbarTemplate(array($this->TemplateGenericNavbar_Atti(1,true,true)->toArray()));
+
         //Custom object template
         //$this->AddObjectTemplate(static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI,"Template_GetGecoComuneRendicontiViewLayout");
     }
+
+    protected function Task_GetGenericActionMenu($task)
+    {
+        $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+
+        $content = "";
+
+        switch ($_REQUEST['section']) {
+            case static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_CRITERI:
+                $content = $this->TemplateActionMenu_Criteri();
+                break;
+            default:
+                return parent::Task_GetGenericActionMenu($task);
+        }
+
+        if ($content != "") $sTaskLog .= $content->toBase64();
+
+        $sTaskLog .= "</content>";
+
+        $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+    protected function TemplateActionMenu_Criteri()
+    {
+        $menu = new AA_JSON_Template_Generic(
+            "AA_ActionMenuBozze_".uniqid(),
+            array(
+                "view" => "contextmenu",
+                "data" => array(array(
+                    "id" => "refresh_criteri",
+                    "value" => "Aggiorna",
+                    "icon" => "mdi mdi-reload",
+                    "module_id" => $this->GetId(),
+                    "handler" => "refreshUiObject",
+                    "handler_params" => array(static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_CRITERI, true)
+                ))
+            )
+        );
+
+        return $menu;
+    }
+
     
+    protected function TemplateGenericNavbar_Atti($level = 1, $last = false, $refresh_view = true)
+    {
+        $class = "n" . $level;
+        if ($last) $class .= " AA_navbar_terminator_left";
+        $navbar =  new AA_JSON_Template_Template(
+            static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_UI_SECTION_PUBBLICATE_NAME,
+            array(
+                "type" => "clean",
+                "section_id" => static::AA_ID_SECTION_PUBBLICATE,
+                "module_id" => $this->GetId(),
+                "refresh_view" => $refresh_view,
+                "tooltip" => "Fai click per visualizzare la sezione relativa agli atti di concessione",
+                "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" . static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_UI_SECTION_PUBBLICATE_NAME . "' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"".static::AA_ID_SECTION_PUBBLICATE."\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                "data" => array("label" => "Atti di concessione", "icon" => "mdi mdi-certificate", "class" => $class)
+            )
+        );
+        return $navbar;
+    }
     //istanza
     protected static $oInstance=null;
     
@@ -1833,8 +1907,6 @@ Class AA_GecoModule extends AA_GenericModule
         $revoca_box=new AA_JSON_Template_Layout("",array("type"=>"clean","gravity"=>1,"minWidth"=>400,"css"=>array("border-right"=>"1px solid #dadee0 !important")));
         $allegati_box=new AA_JSON_Template_Layout("",array("type"=>"clean","gravity"=>2,"minWidth"=>400));
         $riga->AddCol($beneficiario_box);
-        $riga->AddCol($revoca_box);
-        $riga->AddCol($allegati_box);
 
         //-------------------- Beneficiario --------------------------------------
         $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
@@ -1921,60 +1993,64 @@ Class AA_GecoModule extends AA_GenericModule
         }
         //------------------------------------------------------------------------
 
-        //-------------------- Revoca --------------------------------------
-        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Revoca</span>", "align"=>"center")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        if($canModify)
+        if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
         {
-            $modify_btn=new AA_JSON_Template_Generic("",array(
-                "view"=>"button",
-                 "type"=>"icon",
-                 "icon"=>"mdi mdi-pencil",
-                 "label"=>"Modifica",
-                 "css"=>"webix_primary",
-                 "align"=>"right",
-                 "autowidth"=>true,
-                 "tooltip"=>"Modifica i dati di revoca",
-                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetRevocaDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
-             ));
-             $toolbar->AddElement($modify_btn);
+            //-------------------- Revoca --------------------------------------
+            $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Revoca</span>", "align"=>"center")));
+            $toolbar->AddElement(new AA_JSON_Template_Generic(""));
+            if($canModify)
+            {
+                $modify_btn=new AA_JSON_Template_Generic("",array(
+                    "view"=>"button",
+                    "type"=>"icon",
+                    "icon"=>"mdi mdi-pencil",
+                    "label"=>"Modifica",
+                    "css"=>"webix_primary",
+                    "align"=>"right",
+                    "autowidth"=>true,
+                    "tooltip"=>"Modifica i dati di revoca",
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetRevocaDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                ));
+                $toolbar->AddElement($modify_btn);
+            }
+            $revoca_box->AddRow($toolbar);
+            if(sizeof($revoca)==0)
+            {
+                $revoca['data']="n.d.";
+                $revoca['estremi']="n.d.";
+                $revoca['causale']="n.d.";
+            }
+            else
+            {
+                $revoca['data']=date("d-m-Y",strtotime($revoca['data']));
+            }
+
+            $data=new AA_JSON_Template_Template("",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "height"=>48,
+                "data"=>array("title"=>"Data provvedimento:","value"=>$revoca['data'])
+            ));
+
+            $estremi=new AA_JSON_Template_Template("",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "height"=>48,
+                "data"=>array("title"=>"Estremi provvedimento:","value"=>$revoca['estremi'])
+            ));
+
+            $causale=new AA_JSON_Template_Template("",array(
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "data"=>array("title"=>"Causale:","value"=>$revoca['causale'])
+            ));
+
+            $revoca_box->AddRow($data);
+            $revoca_box->AddRow($estremi);
+            $revoca_box->AddRow($causale);
+            //------------------------------------------------------------------------
+            $riga->AddCol($revoca_box);
         }
-        $revoca_box->AddRow($toolbar);
-        if(sizeof($revoca)==0)
-        {
-            $revoca['data']="n.d.";
-            $revoca['estremi']="n.d.";
-            $revoca['causale']="n.d.";
-        }
-        else
-        {
-            $revoca['data']=date("d-m-Y",strtotime($revoca['data']));
-        }
-
-        $data=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "height"=>48,
-            "data"=>array("title"=>"Data provvedimento:","value"=>$revoca['data'])
-        ));
-
-        $estremi=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "height"=>48,
-            "data"=>array("title"=>"Estremi provvedimento:","value"=>$revoca['estremi'])
-        ));
-
-        $causale=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Causale:","value"=>$revoca['causale'])
-        ));
-
-        $revoca_box->AddRow($data);
-        $revoca_box->AddRow($estremi);
-        $revoca_box->AddRow($causale);
-        //------------------------------------------------------------------------
-
+        
         //-------------------- Allegati --------------------------------------
         //$toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
@@ -1982,7 +2058,7 @@ Class AA_GecoModule extends AA_GenericModule
         //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
         //$allegati_box->AddRow($toolbar);
         $allegati_box->AddRow($this->TemplateDettaglio_Allegati($object,$id,$canModify));
-
+        $riga->AddCol($allegati_box);
         //------------------------------------------------------------------------
 
         //$riga->addCol($this->TemplateDettaglio_Allegati($object,$id,$canModify));
@@ -2125,19 +2201,116 @@ Class AA_GecoModule extends AA_GenericModule
     }
 
     //Template section criteri
-    public function TemplateSectionCriteri($params=array())
+    public function TemplateSection_Criteri($params=array())
     {
-        $id=static::AA_UI_PREFIX."_".static::AA_CRITERI_BOX;
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_CRITERI;
         $canModify=false;
 
         #documenti----------------------------------
         $curId=$id;
-        $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","name"=>"Criteri e modalita'","gravity"=>1));
+        $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","name"=>"Criteri e modalita'","filtered"=>true,"gravity"=>1));
+
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        
+        //pulsante di filtro
+        $filter="";
+
+        $session_params=AA_SessionVar::Get($id);
+        if($session_params->IsValid())
+        {
+            $params=(array)$session_params->GetValue();
+            //AA_Log::Log(__METHOD__." - session var: ".$id." - value: ".print_r($params,true),100);
+        }
+        foreach($params as $key=>$curParam)
+        {
+            if(isset($_REQUEST[$key])) $params[$key]=$_REQUEST[$key];
+        }
+
+        if(isset($params['senza_operatori']) && $params['senza_operatori'])
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con operatori non caricati</span>&nbsp;";
+        }
+
+        if(isset($params['senza_affluenza']) && $params['senza_affluenza'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con affluenza non caricata</span>&nbsp;";
+        }
+
+        if(isset($params['senza_risultati']) && $params['senza_risultati'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con risultati non caricati</span>&nbsp;";
+        }
+
+        if(isset($params['senza_voti_lista']) && $params['senza_voti_lista'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni senza voti di lista</span>&nbsp;";
+        }
+
+        if(isset($params['scrutinio_parziale']) && $params['scrutinio_parziale'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con scrutinio parziale</span>&nbsp;";
+        }
+
+        if(isset($params['senza_rendiconti']) && $params['senza_rendiconti'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con rendiconti non caricati</span>&nbsp;";
+        }
+        
+        if(isset($params['con_rendiconti']) && $params['con_rendiconti'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con rendiconti caricati</span>&nbsp;";
+        }
+
+        if(isset($params['con_criticita']) && $params['con_criticita'] > 0)
+        {
+            $filter.="<span class='AA_Label AA_Label_LightOrange'>solo comuni con criticità</span>&nbsp;";
+        }
+
+        if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
+        
+        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+
+        //filtro
+        $modify_btn=new AA_JSON_Template_Generic($id."_FilterCriteri_btn",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-filter-cog",
+             "label"=>"Filtra",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Opzioni di filtraggio",
+             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoFilterCriteriDlg\",params: {postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $toolbar->AddElement($modify_btn);
+
+        //Pulsante di aggiunta
+        $canModify=false;
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI)) $canModify=true;
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic($id."_AddNew_btn_".uniqid(),array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil-plus",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi un nuovo criterio",
+                //"click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierAddNewCandidatoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoAddNewCriteriDlg\"},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        $layout->AddRow($toolbar);
+
         $options_documenti=array();
 
         $options_documenti[]=array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"center"),"sort"=>"int");
-        $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"center"));
         $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+        $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"center"));
         $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>120,"css"=>array("text-align"=>"center"));
    
         $documenti=new AA_JSON_Template_Generic($curId."_Criteri_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","hover"=>"AA_DataTable_Row_Hover","columns"=>$options_documenti));
@@ -2145,22 +2318,24 @@ Class AA_GecoModule extends AA_GenericModule
         $storage=AA_Storage::GetInstance();
 
         $documenti_data=array();
-        foreach($object->GetAllegati() as $id_doc=>$curDoc)
+        $criteri=AA_Geco_Criteri::Search();
+        $categorie=AA_Geco_Const::GetCategorieAllegati();
+        foreach($criteri as $id_doc=>$curDoc)
         {
-            if($curDoc->GetUrl() == "")
+            if($curDoc->GetProp("url") == "")
             {
-                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
                 $view_icon="mdi-floppy";
                 $tip="Scarica";
 
                 if($storage->IsValid())
                 {
-                    $file=$storage->GetFileByHash($curDoc->GetFileHash());
+                    $file=$storage->GetFileByHash($curDoc->GetProp("file"));
                     if($file->IsValid())
                     {
                         if(strpos($file->GetmimeType(),"pdf",0) !==false)
                         {
-                            $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetFileHash().'"},"'.$this->id.'")';
+                            $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
                             $view_icon="mdi-eye";
                             $tip="Consulta";
                         }
@@ -2169,29 +2344,25 @@ Class AA_GecoModule extends AA_GenericModule
             }
             else 
             {
-                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetUrl().'"},"'.$this->id.'")';
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetProp("url").'"},"'.$this->id.'")';
                 $view_icon="mdi-eye";
                 $tip="Naviga (in un'altra finestra)";
             }
             
             
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSierTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSierModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
-            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetSierCopyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashCriteriDlg", params: [{id_criteri:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyCriteriDlg", params: [{id_criteri:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoCopyCriteriDlg", params: [{id_criteri:"'.$curDoc->GetProp().'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-            $docDestinatari=array();
-            foreach($curDoc->GetDestinatariDescr(true) as $curDestinatario)
-            {
-                $docDestinatari[]="<span class='AA_Label AA_Label_LightGreen'>".$curDestinatario."</span>";
-            }
+
             $docTipo=array();
-            foreach($curDoc->GetTipoDescr(true) as $curTipo)
+            foreach($curDoc->GetCategorie() as $curCategoria)
             {
-                $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$curTipo."</span>";
+                $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$curCategoria."</span>";
             }
             
-            $documenti_data[]=array("id"=>$id_doc,"ordine"=>$curDoc->GetOrdine(),"destinatariDescr"=>implode("&nbsp;",$docDestinatari),"estremi"=>$curDoc->GetEstremi(),"tipoDescr"=>implode("&nbsp;",$docTipo),"tipo"=>$curDoc->GetTipo(),"aggiornamento"=>$curDoc->GetAggiornamento(),"ops"=>$ops);
+            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GeProp("anno"),"estremi"=>$curDoc->GeProp("estremi"),"tipoDescr"=>implode("&nbsp;",$docTipo),"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) 
@@ -2200,7 +2371,7 @@ Class AA_GecoModule extends AA_GenericModule
         }
         else 
         {
-            $layout->AddRow(new AA_JSON_Template_Template($id."_OC_Documenti_Void",array("type"=>"clean","template"=>"<div style='display:flex; justify-content:center; align-items:center; width:100%;height:100%'><span>Non sono presenti documenti</span></div>")));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_OC_Documenti_Void",array("type"=>"clean","template"=>"<div style='display:flex; justify-content:center; align-items:center; width:100%;height:100%'><span>Non sono presenti elementi</span></div>")));
         }
         #--------------------------------------
 
@@ -3548,6 +3719,8 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         $this->aProps['estremi']="";
         $this->aProps['anno']="";
         $this->aProps['categorie']=0;
+        $this->aProps['url']="";
+        $this->aProps['file']=0;
         $this->aProps['struttura']=$user_struct_level_0+$user_struct_level_1+$user_struct_level_2;
 
         if(is_array($params))
@@ -3657,5 +3830,57 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         }
 
         return parent::Update($params, $user);
+    }
+
+    public function Delete($user=null)
+    {
+        if(!($user instanceof AA_User))
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if(!$user->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Utente non valido.", 100);
+            return false;
+        }
+
+        $struct=$user->GetStruct();
+        $user_struct_level_0=intVal($struct->GetAssessorato(true));
+        $user_struct_level_1=intVal($struct->GetDirezione(true));
+        $user_struct_level_2=intVal($struct->GetServizio(true));
+        if($user_struct_level_0 > 0)
+        {
+            if($user_struct_level_0-intVal($this->aProps['struttura']*0.000001) != 0)
+            {
+                AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
+                return false;
+            }            
+        }
+
+        if($user_struct_level_1 > 0)
+        {
+            if($user_struct_level_1-intVal(($this->aProps['struttura']*0.001-$user_struct_level_0*1000) != 0))
+            {
+                AA_Log::Log(__METHOD__." - Direzione differente.", 100);
+                return false;
+            }            
+        }
+
+        if($user_struct_level_2 > 0)
+        {
+            if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
+            {
+                AA_Log::Log(__METHOD__." - Servizio differente.", 100);
+                return false;
+            }            
+        }
+
+        return parent::Delete();
+    }
+
+    public static function Search($params=null)
+    {
+        return parent::Search($params);
     }
 }

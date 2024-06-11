@@ -802,7 +802,7 @@ Class AA_GenericParsableObject
 Class AA_GenericParsableDbObject extends AA_GenericParsableObject
 {
     static protected $dbDataTable="";
-    static protected $ObjectClass="AA_GenericParsableObject";
+    static protected $ObjectClass=__CLASS__;
 
     public function __construct($params=null)
     {
@@ -868,7 +868,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         return $this->Sync();
     }
 
-    public static function Search($params=null, $class="")
+    public static function Search($params=null)
     {
         if(static::$dbDataTable == "") return array();
  
@@ -960,7 +960,8 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         
         $rs=$db->GetResultSet();
         $return=array();
-        if($class=="" || !class_exists($class)) $class=static::$ObjectClass;
+        $class=static::$ObjectClass;
+        if(!class_exists($class)) $class=__CLASS__;
 
         foreach($rs as $id=>$row)
         {
@@ -1033,6 +1034,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
 Class AA_GenericNews extends AA_GenericParsableDbObject
 {
     static protected $dbDataTable="aa_news";
+    static protected $objectClass=__CLASS__;
     public function __construct($params = null)
     {
         $this->aProps['timestamp']="";
@@ -2011,13 +2013,13 @@ class AA_GenericModule
 
             //Schede pubblicate
             $navbarTemplate = array($this->TemplateNavbar_Bozze(1, true)->toArray());
-            $section = new AA_GenericModuleSection(static::AA_ID_SECTION_PUBBLICATE, static::AA_UI_SECTION_PUBBLICATE_NAME, true, static::AA_UI_PREFIX . "_" . static::AA_UI_PUBBLICATE_BOX, $this->GetId(), true, true, false, true);
+            $section = new AA_GenericModuleSection(static::AA_ID_SECTION_PUBBLICATE, static::AA_UI_SECTION_PUBBLICATE_NAME, true, static::AA_UI_PREFIX . "_" . static::AA_UI_PUBBLICATE_BOX, $this->GetId(), true, true, false, true, "mdi-certificate");
             $section->SetNavbarTemplate($navbarTemplate);
             $this->AddSection($section);
 
             //Bozze
             $navbarTemplate = $this->TemplateNavbar_Pubblicate(1, true)->toArray();
-            $section = new AA_GenericModuleSection(static::AA_ID_SECTION_BOZZE, static::AA_UI_SECTION_BOZZE_NAME, true, static::AA_UI_PREFIX . "_" . static::AA_UI_BOZZE_BOX, $this->GetId(), false, true, false, true);
+            $section = new AA_GenericModuleSection(static::AA_ID_SECTION_BOZZE, static::AA_UI_SECTION_BOZZE_NAME, true, static::AA_UI_PREFIX . "_" . static::AA_UI_BOZZE_BOX, $this->GetId(), false, true, false, true."mdi-file-document-edit");
             $section->SetNavbarTemplate($navbarTemplate);
             $this->AddSection($section);
 
@@ -3514,6 +3516,33 @@ class AA_GenericModule
                 "data" => array("label" => "Bozze", "icon" => "mdi mdi-file-document-edit", "class" => $class)
             )
         );
+        return $navbar;
+    }
+
+    protected function TemplateGenericNavbar_Section($section=null, $level = 1, $last = false, $refresh_view = true)
+    {
+        if($section instanceof AA_GenericModuleSection)
+        {
+            $class = "n" . $level;
+            if ($last) $class .= " AA_navbar_terminator_left";
+            $navbar =  new AA_JSON_Template_Template(
+                "",
+                array(
+                    "type" => "clean",
+                    "section_id" => "Bozze",
+                    "module_id" => $this->GetId(),
+                    "refresh_view" => $refresh_view,
+                    "tooltip" => "Fai click per visualizzare la sezione relativa a ".$section->GetName(),
+                    "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" . $section->GetViewId() . "' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"".$section->GetId()."\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                    "data" => array("label" => $section->GetName(), "icon" => "mdi ".$section->GetIcon(), "class" => $class)
+                )
+            );
+        }
+        else
+        {
+            $navbar=$this->TemplateGenericNavbar_Void($level,$last);
+        }
+       
         return $navbar;
     }
 
