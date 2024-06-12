@@ -20002,7 +20002,7 @@ Class AA_SierModule extends AA_GenericModule
             $task->SetError("Comune non valido",false);
             return false;
         }
-    
+
         die($this->Template_GetSierComuneRendicontiExportRasPdf($object,$comune));
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
@@ -20046,6 +20046,8 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
     
+        $object->Update($this->oUser,true,' - Generazione report rendicontazione - operatore: '.$operatore->GetOperatoreComunaleCf());
+
         die($this->Template_GetSierComuneRendicontiExportRasPdf($object,$comune));
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
