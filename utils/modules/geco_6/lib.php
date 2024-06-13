@@ -120,6 +120,7 @@ Class AA_Geco extends AA_Object_V2
 {
     //tabella dati db
     const AA_DBTABLE_DATA="aa_geco_data";
+    static protected $AA_DBTABLE_OBJECTS="aa_geco_objects";
 
     //Funzione di cancellazione
     protected function DeleteData($idData = 0, $user = null)
@@ -683,11 +684,11 @@ Class AA_GecoModule extends AA_GenericModule
     const AA_UI_TASK_DELETE_DLG="GetGecoDeleteDlg";
     const AA_UI_TASK_ADDNEW_DLG="GetGecoAddNewDlg";
     const AA_UI_TASK_MODIFY_DLG="GetGecoModifyDlg";
+    const AA_UI_TASK_ADDNEWMULTI_DLG="GetGecoAddNewMultiDlg";
     //------------------------------------
 
     //Dialoghi
     
-
     //report
    
     //Section id
@@ -732,6 +733,8 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateGecoDatiBeneficiario");
         $taskManager->RegisterTask("PublishGeco");
         $taskManager->RegisterTask("GetGecoConfirmPrivacyDlg");
+        $taskManager->RegisterTask("GetGecoRevocaModifyDlg");
+        $taskManager->RegisterTask("UpdateGecoDatiRevoca");
         
         //Allegati
         $taskManager->RegisterTask("GetGecoAddNewAllegatoDlg");
@@ -813,6 +816,23 @@ Class AA_GecoModule extends AA_GenericModule
 
         $content=$this->TemplateGenericSection_Pubblicate($params,$bCanModify);
         $content->EnableExportFunctions(false);
+        $content->EnableTrash(false);
+
+        return $content->toObject();
+    }
+
+    //Template pubblicate content
+    public function TemplateSection_Bozze($params=array())
+    {
+        $bCanModify=false;
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        {
+            $bCanModify=true;
+        }
+
+        $params['enableAddNewMultiFromCsv']=true;
+        $content=$this->TemplateGenericSection_Bozze($params,null);
+
         return $content->toObject();
     }
 
@@ -830,7 +850,30 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['Anno'])."'";
         }
-       return $params;
+        
+        //revocate
+        if(isset($params['revocate']) &&  $params['revocate']>0)
+        {
+            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".revoca like '{\"data\":\"%\",%'";
+        }
+
+        //beneficiario
+        if(isset($params['Beneficiario']) &&  $params['Beneficiario']!="")
+        {
+            $query=AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{\"nome\":\"%". addslashes($params['Beneficiario'])."%\",%'";
+            $query.=" OR ".AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{%,\"cf\":\"%". addslashes($params['Beneficiario'])."%\",%'";
+            $query.=" OR ".AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{%,\"piva\":\"%". addslashes($params['Beneficiario'])."%\",%'";
+            $params['where'][]=" AND (".$query.")";
+        }
+
+        //responsabile
+        if(isset($params['Responsabile']) &&  $params['Responsabile']!="")
+        {
+            $query=AA_Geco::AA_DBTABLE_DATA.".responsabile like '{\"nome\":\"%". addslashes($params['Responsabile'])."%\"%'";
+            $params['where'][]=" AND ".$query;
+        }
+
+        return $params;
     }
 
      //Personalizza il template dei dati delle schede pubblicate per il modulo corrente
@@ -839,10 +882,27 @@ Class AA_GecoModule extends AA_GenericModule
         $tag="";
         if($object instanceof AA_Geco)
         {
-
             $data['pretitolo']=$object->GetProp("Anno");
+            
+            $tag="";
             $modalita=$object->GetModalita();
-            $tag="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$modalita['descrizione']."</span>";
+            $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$modalita['descrizione']."</span>";
+
+            $beneficiario=$object->GetBeneficiario();
+            if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0 || $beneficiario['privacy']==0)
+            {
+                $class="AA_DataView_Tag AA_Label AA_Label_LightYellow";
+                if($beneficiario['tipo']==1) $class.=' mdi mdi-account-eye';
+                if($beneficiario['privacy']==1) $class.=' mdi mdi-account-off';
+
+                $tag.="<span class='".$class."'>".$beneficiario['nome']."</span>";
+            }
+           
+            $revoca=$object->GetRevoca();
+            if(isset($revoca['data']) && $revoca['data'] !="")
+            {
+                 $tag.="&nbsp;<span class='AA_Label AA_Label_LightOrange'>Revocato</span>";
+            }
         }
 
         $data['tags']=$tag;
@@ -870,6 +930,22 @@ Class AA_GecoModule extends AA_GenericModule
             $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['Anno'])."'";
         }
 
+        //beneficiario
+        if(isset($params['Beneficiario']) &&  $params['Beneficiario']!="")
+        {
+            $query=AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{\"nome\":\"%". addslashes($params['Beneficiario'])."%\",%'";
+            $query.=" OR ".AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{%,\"cf\":\"%". addslashes($params['Beneficiario'])."%\",%'";
+            $query.=" OR ".AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{%,\"piva\":\"%". addslashes($params['Beneficiario'])."%\",%'";
+            $params['where'][]=" AND (".$query.")";
+        }
+
+        //responsabile
+        if(isset($params['Responsabile']) &&  $params['Responsabile']!="")
+        {
+            $query=AA_Geco::AA_DBTABLE_DATA.".responsabile like '{\"nome\":\"%". addslashes($params['Responsabile'])."%\"%'";
+            $params['where'][]=" AND ".$query;
+        }
+
         return $params;
     }
 
@@ -881,10 +957,16 @@ Class AA_GecoModule extends AA_GenericModule
         {
 
             $data['pretitolo']=$object->GetProp("Anno");
+            
+            $tag="";
+            $modalita=$object->GetModalita();
+            $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$modalita['descrizione']."</span>";
+
             $beneficiario=$object->GetBeneficiario();
-            $class="AA_DataView_Tag AA_Label AA_Label_Green";
-            if($beneficiario['tipo']==1) $class.=' mdi mdi-account';
-            $tag="<span class='".$class."'>".$beneficiario['nome']."</span>";
+            $class="AA_DataView_Tag AA_Label AA_Label_LightYellow";
+            if($beneficiario['tipo']==1) $class.=' mdi mdi-account-eye';
+            if($beneficiario['privacy']==1) $class.=' mdi mdi-account-off';
+            $tag.="<span class='".$class."'>".$beneficiario['nome']."</span>";
         }
 
         $data['tags']=$tag;
@@ -1610,7 +1692,7 @@ Class AA_GecoModule extends AA_GenericModule
         return $wnd;
     }
 
-    //Template dlg modify sier
+    //Template dlg modify beneficiario
     public function Template_GetGecoBeneficiarioModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg";
@@ -1658,6 +1740,63 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("UpdateGecoDatiBeneficiario");
+        
+        return $wnd;
+    }
+
+    //Template dlg modify beneficiario
+    public function Template_GetGecoRevocaDlg($object=null)
+    {
+        $id=$this->GetId()."_Revoca_Dlg_".uniqid();
+        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati di revoca", $this->id);
+
+        $revoca=$object->GetRevoca();
+        $form_data=array();
+        $form_data['id']=$object->GetId();
+        $form_data['Revoca']=0;
+        if(isset($revoca['data']) && $revoca['data'] != "")
+        {
+            $form_data['Revocata']=1;
+            $form_data['Revoca_data']=$revoca['data'];
+            $form_data['Revoca_estremi']=$revoca['estremi'];
+            $form_data['Revoca_causale']=$revoca['causale'];
+        }
+        else
+        {
+            $form_data['Revoca_data']="";
+            $form_data['Revoca_estremi']="";
+            $form_data['Revoca_causale']="";    
+        }
+       
+        $wnd=new AA_GenericFormDlg($id, "Modifica i dati di revoca", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(520);
+        $wnd->EnableValidation();
+              
+        //Revocata
+        $wnd->AddCheckBoxField("Revocata","Contributo revocato", array("bottomPadding"=>32,"labelWidth"=>140, "gravity"=>1, "bottomLabel"=>"*Abilita se il contributo e' stato revocato.","relatedView"=>$id."_Dati_revoca", "relatedAction"=>"show"));
+
+        $section=new AA_FieldSet($id."_Dati_revoca","Dati di revoca",$wnd->GetFormId(),1,array("type"=>"clean","hidden"=>true));
+        
+        $section->AddDateField("Revoca_data","Data",array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>80));
+
+        $section->AddSpacer(false);
+
+        $section->AddTextField("Revoca_estremi","Estremi",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci gli estremi del documento di revoca (max 250 caratteri).", "placeholder"=>"es. prot.n. 123 del 2024-06-01..."));
+       
+        $section->AddTextareaField("Revoca_causale","Causale",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci una breve descrizione dei motivi della revoca (max 1000 caratteri).", "placeholder"=>"es. Revocato per assenza dei requisiti..."));
+
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateGecoDatiRevoca");
         
         return $wnd;
     }
@@ -1732,6 +1871,9 @@ Class AA_GecoModule extends AA_GenericModule
 
         $params['disable_SaveAsPdf']=true;
         $params['disable_SaveAsCsv']=true;
+        //$params['disable_trash']=true;
+        $params['disable_public_trash']=true;
+
         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $params['disable_MenuAzioni']=true;
         
         $detail = $this->TemplateGenericSection_Detail($params);
@@ -1751,11 +1893,12 @@ Class AA_GecoModule extends AA_GenericModule
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $canModify=true;
 
         $revoca=$object->GetRevoca();
-        if(sizeof($revoca)>0)
+        if(isset($revoca['data']) && AA_Utils::validateDate($revoca['data']))
         {
             $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>32,"type"=>"clean","borderless"=>true));
-            $revocato="<span class='mdi mdi-trash-can' style='font-size:larger;color: #fff'>&nbsp;Contributo revocato</span>";
-            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$revocato,"width"=>240, "css"=>array("background"=>"#6cb456 !important","border-radius"=>"10px"),"align"=>"center")));
+            $revocato="<span class='AA_Label AA_Label_LightOrange mdi mdi-cash-off' style='font-size:larger;line-height: 28px;'>&nbsp;Contributo revocato</span>";
+            $toolbar->AddElement(new AA_JSON_Template_Generic());
+            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$revocato,"width"=>240,"align"=>"center")));
             $toolbar->AddElement(new AA_JSON_Template_Generic());
            
             $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
@@ -1967,42 +2110,40 @@ Class AA_GecoModule extends AA_GenericModule
                     "align"=>"right",
                     "autowidth"=>true,
                     "tooltip"=>"Modifica i dati di revoca",
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetRevocaDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoRevocaModifyDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
                 ));
                 $toolbar->AddElement($modify_btn);
             }
             $revoca_box->AddRow($toolbar);
-            if(sizeof($revoca)==0)
+            if(isset($revoca['data']) && $revoca['data'] !="")
             {
-                $revoca['data']="n.d.";
-                $revoca['estremi']="n.d.";
-                $revoca['causale']="n.d.";
+                $revoca['data']=date("d-m-Y",strtotime($revoca['data']));
+
+                $data=new AA_JSON_Template_Template("",array(
+                    "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                    "height"=>48,
+                    "data"=>array("title"=>"Data provvedimento:","value"=>$revoca['data'])
+                ));
+    
+                $estremi=new AA_JSON_Template_Template("",array(
+                    "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                    "height"=>48,
+                    "data"=>array("title"=>"Estremi provvedimento:","value"=>$revoca['estremi'])
+                ));
+    
+                $causale=new AA_JSON_Template_Template("",array(
+                    "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                    "data"=>array("title"=>"Causale:","value"=>$revoca['causale'])
+                ));
+    
+                $revoca_box->AddRow($data);
+                $revoca_box->AddRow($estremi);
+                $revoca_box->AddRow($causale);
             }
             else
             {
-                $revoca['data']=date("d-m-Y",strtotime($revoca['data']));
+                $revoca_box->AddRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display: flex; justify-content:center; align-items:center;widht:100%;height:100%'><span>Contributo non revocato</span></div>")));
             }
-
-            $data=new AA_JSON_Template_Template("",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "height"=>48,
-                "data"=>array("title"=>"Data provvedimento:","value"=>$revoca['data'])
-            ));
-
-            $estremi=new AA_JSON_Template_Template("",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "height"=>48,
-                "data"=>array("title"=>"Estremi provvedimento:","value"=>$revoca['estremi'])
-            ));
-
-            $causale=new AA_JSON_Template_Template("",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "data"=>array("title"=>"Causale:","value"=>$revoca['causale'])
-            ));
-
-            $revoca_box->AddRow($data);
-            $revoca_box->AddRow($estremi);
-            $revoca_box->AddRow($causale);
             //------------------------------------------------------------------------
             $riga->AddCol($revoca_box);
         }
@@ -2520,6 +2661,98 @@ Class AA_GecoModule extends AA_GenericModule
             return true;
         }
     }
+
+    //Task Update Geco Revoca
+    public function Task_UpdateGecoDatiRevoca($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $revoca=array();
+
+        //----------- verify values ---------------------
+        if($_REQUEST['Revocata']==1)
+        {
+            if(!isset($_REQUEST['Revoca_data']) || !AA_Utils::validateDate($_REQUEST['Revoca_data'],"Y-m-d H:i:s"))
+            {
+                $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+                $task->SetError("La data indicata non e' valida.",false);
+    
+                return false;
+            }
+
+            if(!isset($_REQUEST['Revoca_estremi']) || trim($_REQUEST['Revoca_estremi'])=="")
+            {
+                $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+                $task->SetError("Occorre indicare gli estremi del documento di revoca.",false);
+    
+                return false;
+            }
+
+            if(!isset($_REQUEST['Revoca_causale']) || trim($_REQUEST['Revoca_causale'])=="")
+            {
+                $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+                $task->SetError("Occorre indicare la causale della revoca.",false);
+    
+                return false;
+            }
+
+            $revoca['data']=substr($_REQUEST['Revoca_data'],0,10);
+            $revoca['estremi']=trim($_REQUEST['Revoca_estremi']);
+            $revoca['causale']=trim($_REQUEST['Revoca_causale']);
+        }
+        else
+        {
+            $revoca['data']="";
+            $revoca['estremi']="";
+            $revoca['causale']="";
+        }
+        //--------------------------------------------------------------------------
+        
+        $_REQUEST['Revoca']=json_encode($revoca);
+        $object->Parse($_REQUEST);
+        
+        //AA_Log::Log(__METHOD__." - object: ".print_r($object,true),100);
+        
+        if(!$object->Update($this->oUser,true,"Aggiornamento dati di revoca"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei dati di revoca.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
     
     //Task trash Geco
     public function Task_TrashGeco($task)
@@ -2714,6 +2947,41 @@ Class AA_GecoModule extends AA_GenericModule
             
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetGecoModifyDlg($object),true);
+        return true;
+    }
+
+    //Task modifica dati generali elemento
+    public function Task_GetGecoRevocaModifyDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+            
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoRevocaDlg($object),true);
         return true;
     }
 
@@ -3355,39 +3623,42 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"descrizione"=>$params['descrizione'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Tipo"=>$params['Tipo'],"Estremi"=>$params['Estremi']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"revocate"=>$params['revocate'],"Responsabile"=>$params['Responsabile'],"Beneficiario"=>$params['Beneficiario']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
         if($params['id_assessorato']=="") $formData['id_assessorato']=0;
         if($params['id_direzione']=="") $formData['id_direzione']=0;
         if($params['id_servizio']=="") $formData['id_servizio']=0;
-        if($params['cestinate']=="") $formData['cestinate']=0;
-        if($params['revisionate']=="") $formData['revisionate']=0;
-        if($params['Tipo']=="") $formData['Tipo']=0;
+        if($params['revocate']=="") $formData['revocate']=0;
+        if($params['nome']=="") $formData['nome']="";
+        if($params['Responsabile']=="") $formData['Responsabile']="";
+        if($params['Beneficiario']=="") $formData['Beneficiario']="";
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","descrizione"=>"","nome"=>"","cestinate"=>0,"revisionate"=>0,"Estremi"=>"", "Tipo"=>0);
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","revocate"=>0,"Responsabile"=>"", "Beneficiario"=>"");
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter_".uniqid(), "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 
         //Cestinate
-        $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
+        $dlg->AddCheckBoxField("revocate","Revocati",array("bottomLabel"=>"*Abilita per mostrare esclusivamente i contributi revocati."));
       
-        //Revisionate
-        //$dlg->AddSwitchBoxField("revisionate","Revisionate",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede revisionate."));
-        
-        //oggetto
-        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del elemento/accordo.", "placeholder"=>"Oggetto..."));
+        //titolo
+        $dlg->AddTextField("nome","Titolo",array("bottomLabel"=>"*Filtra in base al titolo dell'elemento.", "placeholder"=>"..."));
         
         //Struttura
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
         
+        //Beneficiario
+        $dlg->AddTextField("Beneficiario","Beneficiario",array("bottomLabel"=>"*Filtra in base al nominativo/cf/piva del beneficiario.", "placeholder"=>"..."));
+
+        //Responsabile
+        $dlg->AddTextField("Responsabile","Responsabile",array("bottomLabel"=>"*Filtra in base al nominativo del responsabile del procedimento.", "placeholder"=>"..."));
         //tipo
         /*
         $selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
@@ -3414,7 +3685,7 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"descrizione"=>$params['descrizione'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Tipo"=>$params['Tipo'],"Estremi"=>$params['Estremi']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Beneficiario"=>$params['Beneficiario'],"Responsabile"=>$params['Responsabile']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -3422,45 +3693,34 @@ Class AA_GecoModule extends AA_GenericModule
         if($params['id_direzione']=="") $formData['id_direzione']=0;
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
-        if($params['Tipo']=="") $formData['Tipo']=0;
+        if($params['nome']=="") $formData['nome']="";
+        if($params['Responsabile']=="") $formData['Responsabile']="";
+        if($params['Beneficiario']=="") $formData['Beneficiario']="";
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","descrizione"=>"","nome"=>"","cestinate"=>0,"revisionate"=>0,"Estremi"=>"", "Tipo"=>0);
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"Responsabile"=>"","Beneficiario"=>"");
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter", "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Bozze_Filter".uniqid(), "Parametri di ricerca per le schede in bozza",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
       
-        //Revocate
-        $dlg->AddSwitchBoxField("revocati","Revocati",array("onLabel"=>"mostra esclusivamente","offLabel"=>"Mostra tutto","bottomLabel"=>"*Mostra i contributi revocati esclusivamente o insieme agli altri."));
-        
-        //oggetto
-        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del elemento/accordo.", "placeholder"=>"Oggetto..."));
+        //titolo
+        $dlg->AddTextField("nome","Titolo",array("bottomLabel"=>"*Filtra in base al titolo dell'elemento.", "placeholder"=>"..."));
         
         //Struttura
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
         
-        //tipo
-        /*$selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
-        $options=array();
-        $options[0]="Qualunque";
-        foreach(AA_Geco_Const::GetListaTipologia() as $key=>$value)
-        {
-            $options[]=array("id"=>$key,"value"=>$value);
-        }
-        $dlg->AddSelectField("Tipo","Tipo",array("bottomLabel"=>"*filtra in base al tipo di elemento","placeholder"=>"Scegli una voce...","options"=>$options));*/
+        //Beneficiario
+        $dlg->AddTextField("Beneficiario","Beneficiario",array("bottomLabel"=>"*Filtra in base al nominativo/cf/piva del beneficiario.", "placeholder"=>"..."));
 
-        //descrizione
-        $dlg->AddTextField("descrizione","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione del elemento/accordo.", "placeholder"=>"Descrizione..."));
-
-        //Estremi elemento
-        $dlg->AddTextField("Estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del elemento/accordo.", "placeholder"=>"Estremi..."));
+        //Responsabile
+        $dlg->AddTextField("Responsabile","Responsabile",array("bottomLabel"=>"*Filtra in base al nominativo del responsabile del procedimento.", "placeholder"=>"..."));
 
         $dlg->SetApplyButtonName("Filtra");
 

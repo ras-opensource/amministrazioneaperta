@@ -3839,13 +3839,6 @@ async function AA_UserAuth(params = null) {
                                             return;
                                         }
         
-                                        let button = $$(arguments[0]);
-                                        let lastTask = "";
-                                        if (button) {
-                                            //console.log("AA_UserAuth",button);
-                                            lastTask = button.config.params[0];
-                                        }
-        
                                         let form_data = $$("AA_UserAuth_Form").getValues();
         
                                         if (form_data['user'].length < 1) {

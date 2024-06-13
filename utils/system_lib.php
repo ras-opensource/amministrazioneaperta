@@ -2005,6 +2005,7 @@ class AA_GenericModule
         $taskManager->RegisterTask("GetSectionContent");
         $taskManager->RegisterTask("GetObjectContent");
         $taskManager->RegisterTask("GetObjectData");
+        $taskManager->RegisterTask("GetLogDlg");
         $taskManager->RegisterTask("PdfExport");
         $taskManager->RegisterTask("AMAAI_Start");
 
@@ -2121,7 +2122,7 @@ class AA_GenericModule
 
                 //utente e log
                 $lastLog = $object->GetLog()->GetLastLog();
-                $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: " . $object->GetId() . "}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
+                $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: " . $object->GetId() . ",object_class:'".get_class($object)."'}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
 
                 //id
                 $details .= "</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;" . $object->GetId() . "</span>";
@@ -2445,6 +2446,74 @@ class AA_GenericModule
         }
     }
 
+    //Task Generic Update object
+    public function Task_GetLogDlg($task)
+    {
+        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+
+        if (class_exists(static::AA_MODULE_OBJECTS_CLASS)) {
+            $objectClass = static::AA_MODULE_OBJECTS_CLASS;
+            $object = new $objectClass($_REQUEST['id'], $this->oUser);
+            if (!$object->isValid()) {
+                $task->SetError("Identificativo oggetto non valido: " . $_REQUEST['id']);
+                $sTaskLog = "<status id='status'>-1</status><error id='error'>Identificativo oggetto non valido: " . $_REQUEST['id'] . "</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;
+            }
+
+            if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+                $task->SetError("L'utente corrente (" . $this->oUser->GetName() . ") non ha i privileggi per modificare l'oggetto: " . $object->GetName());
+                $sTaskLog = "<status id='status'>-1</status><error id='error'>L'utente corrente (" . $this->oUser->GetName() . ") non ha i privileggi per modificare l'oggetto: " . $object->GetName() . "</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;
+            }
+
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GenericLogDlg($object),true);
+            return true;
+
+        } else {
+            AA_Log::Log(__METHOD__ . " - ERRORE: Classe di gestione degli elementi non trovata (" . static::AA_MODULE_OBJECTS_CLASS . ")", 100);
+            $task->SetError(AA_Log::$lastErrorLog);
+            $sTaskLog = "<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (" . AA_Log::$lastErrorLog . ")</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+    }
+
+    public function Template_GenericLogDlg($object=null)
+    {
+        $wnd=new AA_GenericWindowTemplate(uniqid(),"Logs utente",$this->id);
+
+        $wnd->SetWidth("720");
+        $wnd->SetHeight("576");
+
+        $logs = $object->GetLog();
+
+        AA_Log::Log(__METHOD__." - logs:".print_r($logs,true),100);
+
+        $table = new AA_JSON_Template_Generic(uniqid(), array(
+            "view" => "datatable",
+            "scrollX" => false,
+            "select" => false,
+            "columns" => array(
+                array("id" => "data", "header" => array("Data", array("content" => "textFilter")), "width" => 150, "css" => array("text-align" => "left")),
+                array("id" => "user", "header" => array("<div style='text-align: center'>Utente</div>", array("content" => "selectFilter")), "width" => 120, "css" => array("text-align" => "center")),
+                array("id" => "msg", "header" => array("Operazione", array("content" => "textFilter")), "fillspace" => true, "css" => array("text-align" => "left"))
+            ),
+            "data" => $logs->GetLog()
+        ));
+
+        //riquadro di visualizzazione preview pdf
+        $wnd->AddView($table);
+        $wnd->AddView(new AA_JSON_Template_Generic("", array("view" => "spacer", "height" => 38)));
+
+        return $wnd;
+    }
+
     //Template object trash dlg
     public function Template_GetGenericObjectTrashDlg($params, $saveTask = "TrashObject")
     {
@@ -2681,6 +2750,7 @@ class AA_GenericModule
             }
 
             //Esiste almeno un elemento che può essere ripristinato dall'utente corrente
+            $result_error=array();
             if (sizeof($ids_final) > 0) {
                 $count = 0;
                 foreach ($ids_final as $id => $object) {
@@ -4019,7 +4089,7 @@ class AA_GenericModule
 
                 //utente e log
                 $lastLog = $object->GetLog()->GetLastLog();
-                $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: " . $object->GetId() . "}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
+                $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: " . $object->GetId() . ",object_class:'".get_class($object)."'}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
 
                 //id
                 $details .= "</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;" . $object->GetId() . "</span>";
@@ -4178,7 +4248,7 @@ class AA_GenericModule
             //utente
             $lastLog = $object->GetLog()->GetLastLog();
             //AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
-            $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: " . $object->GetId() . "}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
+            $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: " . $object->GetId() . ",object_class:'".get_class($object)."'}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
             $details .= "</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;" . $object->GetId() . "</span>";
         } else {
             if ($object->GetAggiornamento() != "") $details = "<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;" . $object->GetAggiornamento() . "</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;" . $object->GetId() . "</span>";
@@ -4307,7 +4377,7 @@ class AA_GenericModule
         #-------------------------------------
 
         //Inserisce la voce di eliminazione
-        if (($perms & AA_Const::AA_PERMS_DELETE) > 0) {
+        if (($perms & AA_Const::AA_PERMS_DELETE) > 0 && !isset($params['disable_trash']) && !(isset($params['disable_public_trash']) && $object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)) {
             if (($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) == 0) {
                 //if($menu_spacer) $menu_data[]=array("\$template"=>"Separator");
                 //$menu_spacer=true;
@@ -4500,7 +4570,7 @@ class AA_GenericModule
                     //utente
                     $lastLog = $object->GetLog()->GetLastLog();
                     //AA_Log::Log(__METHOD__." - ".print_r($lastLog,true),100);
-                    $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', taskManager: AA_MainApp.taskManager,'params': {id: " . $object->GetId() . "}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
+                    $details .= "<span class='AA_Label AA_Label_LightBlue' title=\"Nome dell'utente che ha compiuto l'ultima azione - Fai click per visualizzare il log delle azioni\"><span class='mdi mdi-account' onClick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetLogDlg', 'params': {id: " . $object->GetId() . ", object_class:'".get_class($object)."'}},'" . $this->GetId() . "');\">" . $lastLog['user'] . "</span>&nbsp;";
                     $details .= "</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;" . $object->GetId() . "</span>";
                 } else {
                     if ($object->GetAggiornamento() != "") $details = "<span class='AA_Label AA_Label_LightBlue' title='Data ultimo aggiornamento'><span class='mdi mdi-update'></span>&nbsp;" . $object->GetAggiornamento() . "</span>&nbsp;<span class='AA_Label AA_Label_LightBlue' title='Identificativo'><span class='mdi mdi-identifier'></span>&nbsp;" . $object->GetId() . "</span>";
@@ -5254,7 +5324,19 @@ class AA_GenericLogDlg extends AA_GenericWindowTemplate
             return;
         }
 
-        $object = AA_Object_V2::Load($_REQUEST['id'], $user, false);
+        if(!isset($_REQUEST['object_class'])) $class="AA_Object_V2";
+        else
+        {
+            if(class_exists($_REQUEST['object_class']))
+            {
+                $class=$_REQUEST['object_class'];
+            }
+            else $class="AA_Object_V2";
+
+            AA_Log::Log(__METHOD__." - classe: ".$class,100);
+        }
+
+        $object = $class::Load($_REQUEST['id'], $user, false);
 
         //Invalid object
         if (!$object->IsValid()) {
@@ -5693,7 +5775,7 @@ class AA_GenericPagedSectionTemplate
                         "enableOnItemSelected" => true,
                         "align" => "right",
                         "width" => 100,
-                        "disabled" => !$this->detailEnable,
+                        "disabled" => true,
                         "tooltip" => "Visualizza i dettagli dell'elemento selezionato",
                         "click" => "AA_MainApp.utils.callHandler('".$this->showDetailSectionFunc."',$$('" . $this->id . "_List_Box').getSelectedItem(),'" . $this->module . "','" . $this->id . "_Content_Box')"
                     )));

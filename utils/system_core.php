@@ -4662,6 +4662,13 @@ class AA_Utils
         return true;
     }
 
+    //Verifica che la stringa siua una data valida
+    static function validateDate($date, $format = 'Y-m-d')
+    {
+        $d = DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) == $date;
+    }
+
     //Rimuove le informazioni di autenticazione più vecchie di 1 giorno
     static public function CleanOldTokens()
     {
