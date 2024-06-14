@@ -47,13 +47,15 @@ Class AA_Geco_Const extends AA_Const
     const AA_GECO_TIPO_ALLEGATO_CURRICULUM=1;
 
     const AA_GECO_TIPO_ALLEGATO_PROGETTO=2;
+    const AA_GECO_TIPO_ALLEGATO_LINK_NORMA=4;
     public static function GetListaTipoAllegati()
     {
         if(static::$aTipoAllegati==null)
         {
             static::$aTipoAllegati=array(
                 static::AA_GECO_TIPO_ALLEGATO_CURRICULUM=>"Curriculum",
-                static::AA_GECO_TIPO_ALLEGATO_PROGETTO=>"Progetto"
+                static::AA_GECO_TIPO_ALLEGATO_PROGETTO=>"Progetto",
+                static::AA_GECO_TIPO_ALLEGATO_LINK_NORMA=>"Normativa"
             );
         }
 
@@ -736,6 +738,12 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecoRevocaModifyDlg");
         $taskManager->RegisterTask("UpdateGecoDatiRevoca");
         
+        //criteri
+        $taskManager->RegisterTask("GetGecoAddNewCriteriDlg");
+        $taskManager->RegisterTask("AddNewGecoCriteri");
+        $taskManager->RegisterTask("GetGecoModifyCriteriDlg");
+        $taskManager->RegisterTask("UpdateGecoCriteri");
+
         //Allegati
         $taskManager->RegisterTask("GetGecoAddNewAllegatoDlg");
         $taskManager->RegisterTask("AddNewGecoAllegato");
@@ -846,7 +854,7 @@ Class AA_GecoModule extends AA_GenericModule
     protected function GetDataSectionPubblicate_CustomFilter($params = array())
     {
         //anno rif
-        if($params['Anno'] > 0)
+        if(isset($params['Anno']) && $params['Anno']> 0)
         {
             $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['Anno'])."'";
         }
@@ -870,6 +878,13 @@ Class AA_GecoModule extends AA_GenericModule
         if(isset($params['Responsabile']) &&  $params['Responsabile']!="")
         {
             $query=AA_Geco::AA_DBTABLE_DATA.".responsabile like '{\"nome\":\"%". addslashes($params['Responsabile'])."%\"%'";
+            $params['where'][]=" AND ".$query;
+        }
+
+        //modalita'
+        if(isset($params['Modalita']) &&  $params['Modalita']>0)
+        {
+            $query=AA_Geco::AA_DBTABLE_DATA.".modalita like '{\"tipo\":". addslashes($params['Modalita']).",%'";
             $params['where'][]=" AND ".$query;
         }
 
@@ -925,7 +940,7 @@ Class AA_GecoModule extends AA_GenericModule
     protected function GetDataSectionBozze_CustomFilter($params = array())
     {
         //anno rif
-        if($params['Anno'] > 0)
+        if(isset($params['Anno']) && $params['Anno'] > 0)
         {
             $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['Anno'])."'";
         }
@@ -943,6 +958,13 @@ Class AA_GecoModule extends AA_GenericModule
         if(isset($params['Responsabile']) &&  $params['Responsabile']!="")
         {
             $query=AA_Geco::AA_DBTABLE_DATA.".responsabile like '{\"nome\":\"%". addslashes($params['Responsabile'])."%\"%'";
+            $params['where'][]=" AND ".$query;
+        }
+
+        //modalita'
+        if(isset($params['Modalita']) &&  $params['Modalita']>0)
+        {
+            $query=AA_Geco::AA_DBTABLE_DATA.".modalita like '{\"tipo\":". addslashes($params['Modalita']).",%'";
             $params['where'][]=" AND ".$query;
         }
 
@@ -1305,6 +1327,160 @@ Class AA_GecoModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg aggiungi criteri
+    public function Template_GetGecoAddNewCriteriDlg()
+    {
+        $id=uniqid();
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $form_data=array();
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi Criteri e modalita'", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(840);
+        $wnd->SetHeight(800);
+
+        //anno
+        $options=array();
+        for($id=date("Y"); $id>=date("Y")-20;$id--)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
+        }
+        $wnd->AddSelectField("anno","Anno",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare l'anno di riferimento.","options"=>$options,"value"=>"0"));
+
+        //Descrizione
+        $wnd->AddTextField("estremi", "Estremi", array("gravity"=>2,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."),false);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        //categorie
+        $tipi=AA_Geco_Const::GetCategorieAllegati();$curRow=1;
+        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
+        $curRow=0;
+        foreach($tipi as $tipo=>$descr)
+        {
+            $newLine=false;
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>160),$newLine);
+            $curRow++;
+        }
+        $wnd->AddGenericObject($section);
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //----------------------
+    
+        //file upload------------------
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 30Mb).","accept"=>"application/pdf,application/zip"));
+        
+        $wnd->AddGenericObject($section);
+        //---------------------------------
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("AddNewGecoCriteri");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi criteri
+    public function Template_GetGecoModifyCriteriDlg($criterio=null)
+    {
+        $id=uniqid();
+        
+        if(!($criterio instanceof AA_Geco_Criteri))
+        {
+            $wnd=new AA_GenericWindowTemplate($id, "Modifica Criteri e modalita'", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<div>id criterio non valido.</div>")));
+
+            return $wnd;
+        }
+
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        $form_data=array(
+            "id"=>$criterio->GetProp('id'),
+            "estremi"=>$criterio->GetProp('estremi'),
+            "url"=>$criterio->GetProp('url'),
+            "anno"=>$criterio->GetProp('anno')
+        );
+
+        //categorie
+        $tipi=AA_Geco_Const::GetCategorieAllegati();
+        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
+        $categorie=$criterio->GetProp('categorie');
+        $curRow=0;
+        foreach($tipi as $tipo=>$descr)
+        {
+            $newLine=false;
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>160),$newLine);
+            if(($categorie&$tipo)>0) $form_data['categoria_'.$tipo]=1;
+            $curRow++;
+        }
+        //----------------------
+
+        $wnd=new AA_GenericFormDlg($id, "Modifica Criteri e modalita'", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(840);
+        $wnd->SetHeight(800);
+
+        //anno
+        $options=array();
+        for($id=date("Y"); $id>=date("Y")-20;$id--)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
+        }
+        $wnd->AddSelectField("anno","Anno",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare l'anno di riferimento.","options"=>$options,"value"=>"0"));
+
+        //Descrizione
+        $wnd->AddTextField("estremi", "Estremi", array("gravity"=>2,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."),false);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        
+        $wnd->AddGenericObject($section);
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+    
+        //file upload------------------
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 30Mb).","accept"=>"application/pdf,application/zip"));
+        
+        $wnd->AddGenericObject($section);
+        //---------------------------------
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateGecoCriteri");
+        
+        return $wnd;
+    }
+
     //Template dlg modifca allegato/link
     public function Template_GetGecoModifyAllegatoDlg($object=null,$allegato=null)
     {
@@ -1577,10 +1753,315 @@ Class AA_GecoModule extends AA_GenericModule
         return true;
     }
 
-    //Template dlg modify sier
+    //Task Aggiungi criterio
+    public function Task_AddNewGecoCriteri($task)
+    {        
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        if(!isset($_REQUEST['estremi']) || $_REQUEST['estremi'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre specificare gli estremi del documento.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }   
+            return false;
+        }
+
+        if(!isset($_REQUEST['anno']) || $_REQUEST['anno'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre specificare l'anno di riferimento.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }   
+            return false;
+        }
+
+        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre indicare un url o un file.",false);
+
+            return false;
+        }
+        
+        if($uploadedFile->isValid()) 
+        {
+            //Se c'è un file uploadato l'url non viene salvata.
+            $_REQUEST['url']="";
+
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $_REQUEST['file']=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        $categorie=0;
+        $lista_categorie=AA_Geco_Const::GetCategorieAllegati();
+        foreach($lista_categorie as $key=>$val)
+        {
+            if(isset($_REQUEST['categoria_'.$key]) && $_REQUEST['categoria_'.$key]==1) $categorie+=intVal($key);
+        }
+        $_REQUEST['categorie']=$categorie;
+
+        $criterio=new AA_Geco_Criteri();
+
+        if(!$criterio->Update($_REQUEST,$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiunta del nuovo criterio/modalita'.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Criterio/modalita' aggiunta con successo.",false);
+
+            return true;
+        }
+    }
+
+    public function Task_UpdateGecoCriteri($task)
+    {        
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        $criterio=new AA_Geco_Criteri();
+        if(!$criterio->Load($_REQUEST['id'],$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Criterio non trovato.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        if(!isset($_REQUEST['estremi']) || $_REQUEST['estremi'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre specificare gli estremi del documento.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }   
+            return false;
+        }
+
+        if(!isset($_REQUEST['anno']) || $_REQUEST['anno'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre specificare l'anno di riferimento.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }   
+            return false;
+        }
+
+        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "" && $criterio->GetProp('file') == "" && $criterio->GetProp('url')=="")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Parametri non validi occorre indicare un url o un file.",false);
+
+            return false;
+        }
+        
+        if($uploadedFile->isValid()) 
+        {
+            //Se c'è un file uploadato l'url non viene salvata.
+            $_REQUEST['url']="";
+
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                if($criterio->GetProp('file') !="")
+                {
+                    $storage->DelFile($criterio->GetProp('file'));
+                }
+
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $_REQUEST['file']=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+        else
+        {
+            $_REQUEST['file']="";
+
+            if($criterio->GetProp('file') !="")
+            {
+                $storage=AA_Storage::GetInstance($this->oUser);
+                if($storage->IsValid())
+                {
+                    $storage->DelFile($criterio->GetProp('file'));
+                }
+            }
+        }
+
+        $categorie=0;
+        $lista_categorie=AA_Geco_Const::GetCategorieAllegati();
+        foreach($lista_categorie as $key=>$val)
+        {
+            if(isset($_REQUEST['categoria_'.$key]) && $_REQUEST['categoria_'.$key]==1) $categorie+=intVal($key);
+        }
+        $_REQUEST['categorie']=$categorie;
+
+        if(!$criterio->Update($_REQUEST,$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nella modifica del criterio/modalita'.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati con successo.",false);
+
+            return true;
+        }
+    }
+
+    //Template dlg modify geco
     public function Template_GetGecoModifyDlg($object=null)
     {
-        $id=$this->GetId()."_Modify_Dlg";
+        $id=$this->GetId()."_Modify_Dlg_".uniqid();
         if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali del contributo", $this->id);
 
         $form_data=array();
@@ -1646,10 +2127,10 @@ Class AA_GecoModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
 
         //estremi
-        $section->AddTextField("Norma_estremi","Estremi",array("required"=>true, "gravity"=>2,"labelWidth"=>90,"bottomLabel"=>"*Inserisci gli estremi della norma o dell'atto amministrativo generale.", "placeholder"=>"es. art.26 del d.lgs. 33/2013..."));
+        $section->AddTextField("Norma_estremi","Estremi",array("required"=>true, "gravity"=>2,"bottomPadding"=>32,"labelWidth"=>90,"bottomLabel"=>"*Inserisci gli estremi della norma o dell'atto amministrativo generale.", "placeholder"=>"es. art.26 del d.lgs. 33/2013..."));
 
         //link alla norma
-        $section->AddTextField("Norma_link","Link",array("required"=>true,"gravity"=>3,"labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link alla norma o all'atto amministrativo generale.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
+        $section->AddTextField("Norma_link","Link",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link alla norma o all'atto amministrativo generale.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
 
         $wnd->AddGenericObject($section);
 
@@ -2054,7 +2535,7 @@ Class AA_GecoModule extends AA_GenericModule
             $nome=new AA_JSON_Template_Template("",array(
                 "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
                 "height"=>48,
-                "data"=>array("title"=>"Nome:","value"=>$beneficiario['nome'])
+                "data"=>array("title"=>"Nominativo:","value"=>$beneficiario['nome'])
             ));
 
             $cf=new AA_JSON_Template_Template("",array(
@@ -2419,6 +2900,8 @@ Class AA_GecoModule extends AA_GenericModule
         $categorie=AA_Geco_Const::GetCategorieAllegati();
         foreach($criteri as $id_doc=>$curDoc)
         {
+            AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+
             if($curDoc->GetProp("url") == "")
             {
                 $view='AA_MainApp.utils.callHandler("wndOpen", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
@@ -2447,19 +2930,19 @@ Class AA_GecoModule extends AA_GenericModule
             }
             
             
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashCriteriDlg", params: [{id_criteri:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyCriteriDlg", params: [{id_criteri:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoCopyCriteriDlg", params: [{id_criteri:"'.$curDoc->GetProp().'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoCopyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
 
             $docTipo=array();
-            foreach($curDoc->GetCategorie() as $curCategoria)
+            foreach($categorie as $key=>$val)
             {
-                $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$curCategoria."</span>";
+                if(($curDoc->GetProp('categorie')&$key)>0) $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
             }
             
-            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GeProp("anno"),"estremi"=>$curDoc->GeProp("estremi"),"tipoDescr"=>implode("&nbsp;",$docTipo),"ops"=>$ops);
+            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetProp("anno"),"estremi"=>$curDoc->GetProp("estremi"),"tipoDescr"=>implode("&nbsp;",$docTipo),"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) 
@@ -3223,6 +3706,47 @@ Class AA_GecoModule extends AA_GenericModule
         return true;
     }
 
+    //Task aggiungi criteri
+    public function Task_GetGecoAddNewCriteriDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+       if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
+       {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
+            return false;
+       }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoAddNewCriteriDlg(),true);
+        return true;
+    }
+
+    public function Task_GetGecoModifyCriteriDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
+            return false;
+        }
+
+        $criterio=new AA_Geco_Criteri();
+
+        if(!$criterio->Load($_REQUEST['id'],$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Criterio non trovato.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoModifyCriteriDlg($criterio),true);
+        return true;
+    }
     
     //Task aggiorna allegato
     public function Task_UpdateGecoAllegato($task)
@@ -3623,7 +4147,7 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"revocate"=>$params['revocate'],"Responsabile"=>$params['Responsabile'],"Beneficiario"=>$params['Beneficiario']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"revocate"=>$params['revocate'],"Responsabile"=>$params['Responsabile'],"Beneficiario"=>$params['Beneficiario'],"Anno"=>$params['Anno'],"Modalita"=>$params['Modalita']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -3634,9 +4158,11 @@ Class AA_GecoModule extends AA_GenericModule
         if($params['nome']=="") $formData['nome']="";
         if($params['Responsabile']=="") $formData['Responsabile']="";
         if($params['Beneficiario']=="") $formData['Beneficiario']="";
+        if($params['Anno']=="") $formData['Anno']=0;
+        if($params['Modalita']=="") $formData['Modalita']=0;
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","revocate"=>0,"Responsabile"=>"", "Beneficiario"=>"");
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","revocate"=>0,"Responsabile"=>"", "Beneficiario"=>"","Anno"=>0,"Modalita"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -3648,33 +4174,33 @@ Class AA_GecoModule extends AA_GenericModule
         //Cestinate
         $dlg->AddCheckBoxField("revocate","Revocati",array("bottomLabel"=>"*Abilita per mostrare esclusivamente i contributi revocati."));
       
+        //anno
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        for($id=date("Y"); $id>=date("Y")-6;$id--)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
+        }
+        $dlg->AddSelectField("Anno","Anno",array("gravity"=>2,"bottomLabel"=>"*Filtra in base all'anno.","options"=>$options,"value"=>"0"));
+
+        //Tipologia
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        foreach(AA_Geco_Const::GetListaModalita() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $dlg->AddSelectField("Modalita","Modalita'",array("gravity"=>3,"labelAlign"=>"right","labelWidth"=>90,"bottomLabel"=>"*Filtra in base alla modalita' di scelta del beneficiario.","options"=>$options,"value"=>"0"),false);
+
         //titolo
-        $dlg->AddTextField("nome","Titolo",array("bottomLabel"=>"*Filtra in base al titolo dell'elemento.", "placeholder"=>"..."));
+        $dlg->AddTextField("nome","Titolo",array("bottomLabel"=>"*Filtra in base al titolo/descrizione dell'elemento.", "placeholder"=>"..."));
         
         //Struttura
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
         
         //Beneficiario
-        $dlg->AddTextField("Beneficiario","Beneficiario",array("bottomLabel"=>"*Filtra in base al nominativo/cf/piva del beneficiario.", "placeholder"=>"..."));
+        $dlg->AddTextField("Beneficiario","Beneficiario",array("bottomLabel"=>"*Filtra in base al Nominativo/C.f./P.iva del beneficiario.", "placeholder"=>"..."));
 
         //Responsabile
         $dlg->AddTextField("Responsabile","Responsabile",array("bottomLabel"=>"*Filtra in base al nominativo del responsabile del procedimento.", "placeholder"=>"..."));
-        //tipo
-        /*
-        $selectionChangeEvent="try{AA_MainApp.utils.getEventHandler('onTipoProvSelectChange','".$this->id."','".$this->id."_Field_Tipo')}catch(msg){console.error(msg)}";
-        $options=array();
-        $options[0]="Qualunque";
-        foreach(AA_Geco_Const::GetListaTipologia() as $key=>$value)
-        {
-            $options[]=array("id"=>$key,"value"=>$value);
-        }
-        $dlg->AddSelectField("Tipo","Tipo",array("bottomLabel"=>"*filtra in base al tipo di elemento","placeholder"=>"Scegli una voce...","options"=>$options));
-
-        //descrizione
-        $dlg->AddTextField("descrizione","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione del elemento/accordo.", "placeholder"=>"Descrizione..."));
-
-        //Estremi elemento
-        $dlg->AddTextField("Estremi","Estremi",array("bottomLabel"=>"*Filtra in base agli estremi del elemento/accordo.", "placeholder"=>"Estremi..."));*/
         
         $dlg->SetApplyButtonName("Filtra");
 
@@ -3685,7 +4211,7 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Beneficiario"=>$params['Beneficiario'],"Responsabile"=>$params['Responsabile']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Beneficiario"=>$params['Beneficiario'],"Responsabile"=>$params['Responsabile'],"Anno"=>$params['Anno'],"Modalita"=>$params['Modalita']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -3696,9 +4222,11 @@ Class AA_GecoModule extends AA_GenericModule
         if($params['nome']=="") $formData['nome']="";
         if($params['Responsabile']=="") $formData['Responsabile']="";
         if($params['Beneficiario']=="") $formData['Beneficiario']="";
+        if($params['Anno']=="") $formData['Anno']=0;
+        if($params['Modalita']=="") $formData['Modalita']=0;
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"Responsabile"=>"","Beneficiario"=>"");
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"Responsabile"=>"","Beneficiario"=>"","Anno"=>0,"Modalita"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -3710,14 +4238,30 @@ Class AA_GecoModule extends AA_GenericModule
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
       
+        //anno
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        for($id=date("Y"); $id>=date("Y")-6;$id--)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
+        }
+        $dlg->AddSelectField("Anno","Anno",array("gravity"=>2,"bottomLabel"=>"*Filtra in base all'anno.","options"=>$options,"value"=>"0"));
+
+        //Tipologia
+        $options=array(array("id"=>"0","value"=>"Qualunque"));
+        foreach(AA_Geco_Const::GetListaModalita() as $id=>$label)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+        }
+        $dlg->AddSelectField("Modalita","Modalita'",array("gravity"=>3,"labelAlign"=>"right","labelWidth"=>90,"bottomLabel"=>"*Filtra in base alla modalita' di scelta del beneficiario.","options"=>$options,"value"=>"0"),false);
+
         //titolo
-        $dlg->AddTextField("nome","Titolo",array("bottomLabel"=>"*Filtra in base al titolo dell'elemento.", "placeholder"=>"..."));
+        $dlg->AddTextField("nome","Titolo",array("bottomLabel"=>"*Filtra in base al titolo/descrizione dell'elemento.", "placeholder"=>"..."));
         
         //Struttura
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
         
         //Beneficiario
-        $dlg->AddTextField("Beneficiario","Beneficiario",array("bottomLabel"=>"*Filtra in base al nominativo/cf/piva del beneficiario.", "placeholder"=>"..."));
+        $dlg->AddTextField("Beneficiario","Beneficiario",array("bottomLabel"=>"*Filtra in base al Nominativo/C.f./P.iva del beneficiario.", "placeholder"=>"..."));
 
         //Responsabile
         $dlg->AddTextField("Responsabile","Responsabile",array("bottomLabel"=>"*Filtra in base al nominativo del responsabile del procedimento.", "placeholder"=>"..."));
@@ -3932,17 +4476,17 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         $user_struct_level_1=intVal($struct->GetDirezione(true)*1000);
         $user_struct_level_2=intVal($struct->GetServizio(true));
 
+        $this->aProps['id']=0;
         $this->aProps['estremi']="";
         $this->aProps['anno']="";
         $this->aProps['categorie']=0;
         $this->aProps['url']="";
-        $this->aProps['file']=0;
+        $this->aProps['file']="";
         $this->aProps['struttura']=$user_struct_level_0+$user_struct_level_1+$user_struct_level_2;
 
         if(is_array($params))
         {
-            $params['id']=0;
-            parent::__construct($params);
+            $this->Parse($params);
         }
     }
 
@@ -3950,7 +4494,6 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
     {
         if(is_array($params))
         {
-            if(isset($params['id'])) unset($params['id']);
             if(isset($params['categorie'])) $params['categorie']=intVal($params['categorie']);
         }
         
@@ -3962,7 +4505,7 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         $data=$this->LoadDataFromDb($id);
         if(is_array($data))
         {
-            parent::Parse($data);
+            $this->Parse($data);
             return true;
         }
 
@@ -3983,66 +4526,74 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         }
 
         $struct=$user->GetStruct();
-        $user_struct_level_0=intVal($struct->GetAssessorato(true));
-        $user_struct_level_1=intVal($struct->GetDirezione(true));
-        $user_struct_level_2=intVal($struct->GetServizio(true));
-        if($user_struct_level_0 > 0)
-        {
-            if($user_struct_level_0-intVal($this->aProps['struttura']*0.000001) != 0)
-            {
-                AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
-                return false;
-            }            
-        }
 
-        if($user_struct_level_1 > 0)
+        if($this->aProps['id']>0)
         {
-            if($user_struct_level_1-intVal(($this->aProps['struttura']*0.001-$user_struct_level_0*1000) != 0))
+            $user_struct_level_0=intVal($struct->GetAssessorato(true));
+            $user_struct_level_1=intVal($struct->GetDirezione(true));
+            $user_struct_level_2=intVal($struct->GetServizio(true));
+            if($user_struct_level_0 > 0)
             {
-                AA_Log::Log(__METHOD__." - Direzione differente.", 100);
-                return false;
-            }            
-        }
-
-        if($user_struct_level_2 > 0)
-        {
-            if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
-            {
-                AA_Log::Log(__METHOD__." - Servizio differente.", 100);
-                return false;
-            }            
-        }
-
-        if(is_array($params))
-        {
-            if(isset($params['id'])) unset($params['id']);
-
-            if(isset($params['struttura']))
-            {
-                if($user_struct_level_0 > 0)
+                if($user_struct_level_0-intVal($this->aProps['struttura']*0.000001) != 0)
                 {
-                    if(($user_struct_level_0-$params['struttura']*0.000001) != 0)
-                    {
-                       $params['struttura']=$this->aProps['struttura'];
-                    }            
-                }
-
-                if($user_struct_level_1 > 0)
+                    AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
+                    return false;
+                }            
+            }
+    
+            if($user_struct_level_1 > 0)
+            {
+                if($user_struct_level_1-intVal(($this->aProps['struttura']*0.001-$user_struct_level_0*1000) != 0))
                 {
-                    if($user_struct_level_1-intVal(($params['struttura']*0.001-$user_struct_level_0*1000)) != 0)
-                    {
-                        $params['struttura']=$this->aProps['struttura'];
-                    }            
-                }
-
-                if($user_struct_level_2 > 0)
+                    AA_Log::Log(__METHOD__." - Direzione differente.", 100);
+                    return false;
+                }            
+            }
+    
+            if($user_struct_level_2 > 0)
+            {
+                if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
                 {
-                    if($user_struct_level_2-intVal($params['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
+                    AA_Log::Log(__METHOD__." - Servizio differente.", 100);
+                    return false;
+                }            
+            }
+    
+            if(is_array($params))
+            {
+                if(isset($params['id'])) unset($params['id']);
+    
+                if(isset($params['struttura']))
+                {
+                    if($user_struct_level_0 > 0)
                     {
-                        $params['struttura']=$this->aProps['struttura'];
-                    }            
+                        if(($user_struct_level_0-$params['struttura']*0.000001) != 0)
+                        {
+                           $params['struttura']=$this->aProps['struttura'];
+                        }            
+                    }
+    
+                    if($user_struct_level_1 > 0)
+                    {
+                        if($user_struct_level_1-intVal(($params['struttura']*0.001-$user_struct_level_0*1000)) != 0)
+                        {
+                            $params['struttura']=$this->aProps['struttura'];
+                        }            
+                    }
+    
+                    if($user_struct_level_2 > 0)
+                    {
+                        if($user_struct_level_2-intVal($params['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
+                        {
+                            $params['struttura']=$this->aProps['struttura'];
+                        }            
+                    }
                 }
             }
+        }
+        else
+        {
+            $params['struttura']=str_pad($struct->GetAssessorato(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetDirezione(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetServizio(true),3,"0",STR_PAD_LEFT);
         }
 
         return parent::Update($params, $user);
@@ -4093,10 +4644,5 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         }
 
         return parent::Delete();
-    }
-
-    public static function Search($params=null)
-    {
-        return parent::Search($params);
     }
 }
