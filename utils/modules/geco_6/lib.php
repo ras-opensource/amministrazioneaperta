@@ -1976,7 +1976,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "" && $criterio->GetProp('file') == "" && $criterio->GetProp('url')=="")
+        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "" && $criterio->GetProp('file') == "")
         {   
             AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -2022,10 +2022,9 @@ Class AA_GecoModule extends AA_GenericModule
         }
         else
         {
-            $_REQUEST['file']="";
-
-            if($criterio->GetProp('file') !="")
+            if($_REQUEST['url'] !="" && $criterio->GetProp('file') !="")
             {
+                $_REQUEST['file']="";
                 $storage=AA_Storage::GetInstance($this->oUser);
                 if($storage->IsValid())
                 {
@@ -2900,7 +2899,7 @@ Class AA_GecoModule extends AA_GenericModule
         $categorie=AA_Geco_Const::GetCategorieAllegati();
         foreach($criteri as $id_doc=>$curDoc)
         {
-            AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
 
             if($curDoc->GetProp("url") == "")
             {
