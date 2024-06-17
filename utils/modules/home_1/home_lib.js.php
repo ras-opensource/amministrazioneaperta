@@ -29,10 +29,12 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
                 if(item.module==arguments[0])
                 {
                     AA_MainApp.ui.sidebar.select(item.id);
+                    return;
                 }
             }
         }
-        if(AA_MainApp.ui.enableSidemenu)
+
+        if(AA_MainApp.ui.enableSidemenu && AA_MainApp.ui.sidemenu.sType=='module')
         {
             for(let item of AA_MainApp.ui.sidemenu.aMenuData)
             {
@@ -40,8 +42,14 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
                 if(item.module==arguments[0])
                 {
                     AA_MainApp.ui.sidemenu.selectItem(item.id);
+                    return;
                 }
             }
+        }
+
+        if((!AA_MainApp.ui.enableSidemenu && !AA_MainApp.ui.enableSidebar) || (AA_MainApp.ui.sidemenu.sType=='section' && AA_MainApp.ui.enableSidemenu))
+        {
+            AA_MainApp.setCurrentModule(arguments[0])
         }
     } catch (msg) {
         console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.CoalizioneDblClick", msg, this);
