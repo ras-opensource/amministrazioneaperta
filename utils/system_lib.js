@@ -2817,16 +2817,16 @@ var AA_MainApp = {
                 {
                     let result = await AA_VerboseTask("GetCurrentUserProfileDlg", AA_MainApp.taskManager, taskParams);
                     if (result.status.value != 0) {
-                        console.error("AA_MainApp.ui.MainUI.GetCurrentUserProfileDlg.show", params, result.error.value);
+                        console.error("AA_MainApp.ui.MainUI.UserProfileDlg.show", params, result.error.value);
                         AA_MainApp.ui.alert(result.error.value);
                         return false;
                     }
 
-                    console.log("AA_MainApp.ui.MainUI.GetCurrentUserProfileDlg",result.content.value);
+                    //console.log("AA_MainApp.ui.MainUI.UserProfileDlg",result.content.value);
                     webix.ui(result.content.value).show();
                     
                 } catch (msg) {
-                    console.error("AA_MainApp.ui.MainUI.GetCurrentUserProfileDlg", params, msg);
+                    console.error("AA_MainApp.ui.MainUI.UserProfileDlg", params, msg);
                     AA_MainApp.ui.alert(msg);
                     return Promise.reject(msg);
                 }
