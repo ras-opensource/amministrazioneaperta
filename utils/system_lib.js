@@ -2633,6 +2633,9 @@ var AA_MainApp = {
             //titolo dell'App
             appTitle: "<span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>mministrazione</span> <span class='AA_header_title_incipit'>A</span><span class='AA_header_title'>perta</span>",
 
+            //dimensione minima titolo (grazie Andrea)
+            titleMinWidth: 500,
+
             //logo
             appLogo: "<a href='https://www.regione.sardegna.it' target='_blank'><img class='AA_Header_Logo' src='immagini/logo_ras.svg' alt='logo RAS' title='www.regione.sardegna.it'/></a>",
 
@@ -3372,7 +3375,7 @@ async function AA_SetupMainUi() {
                 cols: [
                     { view: "label", width: 200, align: "left", template: AA_MainApp.ui.MainUI.appLogo },
                     {},
-                    { view: "label", label: AA_MainApp.ui.MainUI.appTitle, align: "center", minWidth: 500 },
+                    { view: "label", label: AA_MainApp.ui.MainUI.appTitle, align: "center", minWidth: AA_MainApp.ui.MainUI.titleMinWidth },
                     {},
                     { view: "spacer", width: "36" },
                     { id: "AA_icon_user", view: "icon", type: "icon", width: 60, css: "AA_header_icon_color", icon: "mdi mdi-account-cog", tooltip: "Visualizza il pannello di controllo",click:AA_MainApp.ui.MainUI.UserProfileDlg },
