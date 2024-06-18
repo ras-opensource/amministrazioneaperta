@@ -4607,3 +4607,24 @@ function AA_UserRegister(params = null) {
         return Promise.reject(msg);
     }
 }
+
+function AA_RefreshApp(bDisableCache=false)
+{
+    //console.log("AA_RefreshApp",arguments[0]);
+
+    if(!bDisableCache) window.location.reload();
+    else
+    {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if(urlParams.get("disable_cache") !="true")
+        {
+            if(Array.from(urlParams).length==0) window.location=window.location+"?disable_cache=true";
+            else window.location=window.location+"&disable_cache=true";
+        }
+        else
+        {
+            window.location.reload();
+        }
+    }
+}

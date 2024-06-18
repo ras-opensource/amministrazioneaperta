@@ -1444,11 +1444,11 @@ class AA_User
     }
 
     //Restituisce un array di oggetti AA_User
-    static public function LoadUsersFromEmail($email)
+    static public function LoadUsersFromEmail($email,$bLegacyUsers=true)
     {
         $users = array();
 
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        if(AA_Const::AA_ENABLE_LEGACY_DATA && $bLegacyUsers)
         {
             $users = static::LegacyLoadUsersFromEmail($email);
         }
@@ -1466,6 +1466,14 @@ class AA_User
         }
 
         return $users;
+    }
+
+    //Restituisce la lista dei profili per l'utente corrente
+    public function GetProfiles()
+    {
+        if(!$this->IsValid()) return array();
+
+        return static::LoadUsersFromEmail($this->GetEmail(),false);
     }
 
     //Popola i dati dell'utente a partire dal nome utente
@@ -1971,7 +1979,7 @@ class AA_User
             return false;
         }
 
-        foreach (self::LoadUsersFromEmail($user->GetEmail()) as $curProfile) {
+        foreach (self::LoadUsersFromEmail($user->GetEmail(),false) as $curProfile) {
             if ($curProfile->GetID() == $newProfileID) {
                 $sToken = $_SESSION['token'];
 

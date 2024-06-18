@@ -90,21 +90,21 @@ Class AA_Geco_Const extends AA_Const
         {
             static::$aCategorieAllegati=array(
                 static::AA_GECO_CATEGORIA_ALLEGATO_AGRICOLTURA=>"Agricoltura",
-                static::AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=>"Allevamento",
+                static::AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=>"Allevamento e pesca",
                 static::AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=>"Ambiente",
                 static::AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=>"Artigianato",
                 static::AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=>"Commercio",
                 static::AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=>"Industria",
-                static::AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=>"Cultura e informazione",
-                static::AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=>"Innovazione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=>"Editoria e informazione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=>"Innovazione e ricerca",
                 static::AA_GECO_CATEGORIA_ALLEGATO_INTERNAZIONALIZZAZIONE=>"Internazionalizzazione",
                 static::AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=>"Cultura e istruzione",
                 static::AA_GECO_CATEGORIA_ALLEGATO_LAVORO=>"Lavoro",
-                static::AA_GECO_CATEGORIA_ALLEGATO_PESCA=>"Pesca",
+                //static::AA_GECO_CATEGORIA_ALLEGATO_PESCA=>"Pesca",
                 static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_GIOVANILI=>"Politiche giovanili",
                 static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_SOCIALI=>"Politiche sociali",
                 static::AA_GECO_CATEGORIA_ALLEGATO_SANITA=>"Sanita'",
-                static::AA_GECO_CATEGORIA_ALLEGATO_SERVIZI=>"Servizio",
+                static::AA_GECO_CATEGORIA_ALLEGATO_SERVIZI=>"Servizi",
                 static::AA_GECO_CATEGORIA_ALLEGATO_SPORT=>"Sport",
                 static::AA_GECO_CATEGORIA_ALLEGATO_TRASPORTI=>"Trasporti",
                 static::AA_GECO_CATEGORIA_ALLEGATO_TURISMO=>"Turismo",
@@ -1369,6 +1369,12 @@ Class AA_GecoModule extends AA_GenericModule
             $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>160),$newLine);
             $curRow++;
         }
+
+        for($i=$curRow%4;$i<4;$i++)
+        {
+            $section->AddSpacer(false);
+        }
+
         $wnd->AddGenericObject($section);
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         //----------------------
@@ -1429,6 +1435,11 @@ Class AA_GecoModule extends AA_GenericModule
             $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>160),$newLine);
             if(($categorie&$tipo)>0) $form_data['categoria_'.$tipo]=1;
             $curRow++;
+        }
+
+        for($i=$curRow%4;$i<4;$i++)
+        {
+            $section->AddSpacer(false);
         }
         //----------------------
 
