@@ -15029,20 +15029,39 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($rendiconti['ras']['allegati']) && sizeof($rendiconti['ras']['allegati']) > 0)
         {
             $data=array();
+            $storage=AA_Storage::GetInstance($this->oUser);
             foreach($rendiconti['ras']['allegati'] as $idAllegato=>$curAllegato)
             {
                 $ops="&nbsp;";
-                $view="AA_MainApp.utils.callHandler('pdfPreview', {url: 'storage.php?object=".$curAllegato['file']."'},'".$this->id."')";
+                $view="AA_MainApp.utils.callHandler('wndOpen', {url: 'storage.php?object=".$curAllegato['file']."&attachment=true'},'".$this->id."')";
+                $view_icon="mdi-floppy";
+                $tip="Scarica";
+
+                if($storage->IsValid())
+                {
+                    $file=$storage->GetFileByHash($curAllegato['file']);
+                    if($file->IsValid())
+                    {
+                        AA_Log::Log(__METHOD__." - mime type: ".$file->GetmimeType()." - filename: ".$file->GetName(),100);
+                        if(strpos($file->GetmimeType(),"pdf",0) !==false)
+                        {
+                            $view="AA_MainApp.utils.callHandler('pdfPreview', {url: 'storage.php?object=".$curAllegato['file']."'},'".$this->id."')";
+                            $view_icon="mdi-eye";
+                            $tip="Consulta";
+                        }
+                    }
+                }
+
                 if($canModify)
                 {
                     
                     $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierOCRendicontiAllegatiModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",file:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
                     $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierOCRendicontiConfirmTrashAllegatiDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",file:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
-                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Consulta l\'allegato' onClick=\"".$view."\"><span class='mdi mdi-eye'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica l\'allegato' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina l\'allegato' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='".$tip."' onClick=\"".$view."\"><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica l&apos;allegato' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina l&apos;allegato' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
                 }
                 else
                 {
-                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Consulta l\'allegato' onClick=\"".$view."\"><span class='mdi mdi-eye'></span></a>&nbsp;</div>";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='".$tip."' onClick=\"".$view."\"><span class='mdi ".$view_icon."'></span></a>&nbsp;</div>";
                 }
                 $data[]=array("id"=>$idAllegato,"file"=>$curAllegato['file'],
                 "data_prov"=>substr($curAllegato['aggiornamento'],0,10),
@@ -27798,6 +27817,33 @@ Class AA_SierModule extends AA_GenericModule
 
         if($uploadedFile->isValid()) 
         {
+            $file=$uploadedFile->GetValue();
+            //------------  controlli file  ------------
+            if($file['type'] != "application/pdf")
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("E' possibile caricare esclusivametne file in formato pdf, eventualmente firmati digitalmente in modalita' pades.",false);
+                    return false;      
+                }
+            }
+
+            if($file['size'] > 1024*5)
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("E' possibile caricare esclusivamente file in formato pdf, con dimensione massima di 4 megabyte.",false);
+                    return false;      
+                }
+            }
+            //---------------------------------------------
+
             $storage=AA_Storage::GetInstance($this->oUser);
             if($storage->IsValid())
             {
@@ -27816,7 +27862,6 @@ Class AA_SierModule extends AA_GenericModule
                     }
                 }
 
-                $file=$uploadedFile->GetValue();
                 $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
                 if($storageFile->IsValid())
                 {
@@ -31683,20 +31728,38 @@ Class AA_SierModule extends AA_GenericModule
         if(isset($rendiconti['ras']['allegati']) && sizeof($rendiconti['ras']['allegati']) > 0)
         {
             $data=array();
+            $storage=AA_Storage::GetInstance($this->oUser);
             foreach($rendiconti['ras']['allegati'] as $idAllegato=>$curAllegato)
             {
                 $ops="&nbsp;";
-                $view="AA_MainApp.utils.callHandler('pdfPreview', {url: 'storage.php?object=".$curAllegato['file']."'},'".$this->id."')";
+                $view="AA_MainApp.utils.callHandler('wndOpen', {url: 'storage.php?object=".$curAllegato['file']."&attachment=true'},'".$this->id."')";
+                $view_icon="mdi-floppy";
+                $tip="Scarica";
+
+                if($storage->IsValid())
+                {
+                    $file=$storage->GetFileByHash($curAllegato['file']);
+                    if($file->IsValid())
+                    {
+                        AA_Log::Log(__METHOD__." - mime type: ".$file->GetmimeType()." - filename: ".$file->GetName(),100);
+                        if(strpos($file->GetmimeType(),"pdf",0) !==false)
+                        {
+                            $view="AA_MainApp.utils.callHandler('pdfPreview', {url: 'storage.php?object=".$curAllegato['file']."'},'".$this->id."')";
+                            $view_icon="mdi-eye";
+                            $tip="Consulta";
+                        }
+                    }
+                }
+
                 if($canModify)
                 {
-                    
                     $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSierRendicontiAllegatiModifyDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",file:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
                     $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSierRendicontiConfirmTrashAllegatiDlg', postParams: {id: ".$object->GetId().",id_comune:".$comune->GetProp('id').",file:'".$idAllegato."',refresh: 1,refresh_obj_id:'$id'},module: '" . $this->id . "'},'".$this->id."')";
-                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Consulta l\'allegato' onClick=\"".$view."\"><span class='mdi mdi-eye'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica l\'allegato' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina l\'allegato' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='".$tip."' onClick=\"".$view."\"><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica l&apos;allegato' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina l&apos;allegato' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a>&nbsp;</div>";
                 }
                 else
                 {
-                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='Consulta l\'allegato' onClick=\"".$view."\"><span class='mdi mdi-eye'></span></a>&nbsp;</div>";
+                    $ops="<div class='AA_DataTable_Ops' style='width:100%;height:100%'>&nbsp;<a class='AA_DataTable_Ops_Button' title='".$tip."' onClick=\"".$view."\"><span class='mdi '.$view_icon.''></span></a>&nbsp;</div>";
                 }
                 $data[]=array("id"=>$idAllegato,"file"=>$curAllegato['file'],
                 "data_prov"=>substr($curAllegato['aggiornamento'],0,10),
