@@ -2328,7 +2328,7 @@ class AA_SystemChangeCurrentUserProfileDlg extends AA_GenericWindowTemplate
                 if($struct->GetServizio(true)>0) $struttura.="<br>".$struct->GetServizio();
     
                 $modify='AA_MainApp.utils.callHandler("doTask", {task:"ChangeCurrentUserProfile", params: [{profile: "'.$userProfile->GetId().'"}],taskManager:AA_MainApp.taskManager})';
-                $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Cambia profilo' onClick='".$modify."'><span class='mdi mdi-account-switch'></span></a></div>";
+                $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' style='font-size: 48px' title='Cambia profilo' onClick='".$modify."'><span class='mdi mdi-account-switch'></span></a></div>";
                 $data[] = array("id" => $id, "ruolo" => $userProfile->GetRuolo(), "struttura" => $struttura,"ops"=>$ops);
             }
         }
@@ -2345,7 +2345,7 @@ class AA_SystemChangeCurrentUserProfileDlg extends AA_GenericWindowTemplate
                 "scrollX" => false,
                 "select" => false,
                 "fixedRowHeight" => false,
-                "rowHeight" => 150,
+                "rowHeight" => 90,
                 "rowLineHeight" => 24,
                 "css" => "AA_Header_DataTable",
                 "hover" => "AA_DataTable_Row_Hover",

@@ -6931,7 +6931,7 @@ Class AA_OrganismiNomine extends AA_Object
     //Verifica se l'incaricato compie o supera i 65 anni durante l'incarico
     public function IsOver65()
     {
-        if(intval("19".substr($this->sCodiceFiscale,6,2))+65 <= date("Y") && $this->sCodiceFiscale !="" && $this->sCodiceFiscale!="n.d.") return true;
+        if(intval("19".substr($this->sCodiceFiscale,6,2))+65 <= date("Y") && $this->sCodiceFiscale !="" && strtolower(trim($this->sCodiceFiscale))!="n.d.") return true;
         return false;
     }
 
