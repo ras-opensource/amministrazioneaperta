@@ -62,12 +62,29 @@ Class AA_Geco_Const extends AA_Const
         return static::$aTipoAllegati;
     }
 
+    protected static $aTipoCriteri=null;
+    const AA_GECO_TIPO_CRITERI_ATTO_NORMATIVO=1;
+    const AA_GECO_TIPO_CRITERI_ATTO_GENERALE=2;
+
+    public static function GetTipoCriteri()
+    {
+        if(static::$aTipoCriteri==null)
+        {
+            static::$aTipoCriteri=array(
+                static::AA_GECO_TIPO_CRITERI_ATTO_NORMATIVO=>"Atto normativo (legge e regolamento)",
+                static::AA_GECO_TIPO_CRITERI_ATTO_GENERALE=>"Atto di carattere amministrativo generale"
+            );
+        }
+
+        return static::$aTipoCriteri;
+    }
+
     protected static $aCategorieAllegati=null;
     const AA_GECO_CATEGORIA_ALLEGATO_AGRICOLTURA=1;
     const AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=2;
     const AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=4;
     const AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=8;
-    const AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=16;
+    //const AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=16;
     const AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=32;
     const AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=64;
     const AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=128;
@@ -91,17 +108,17 @@ Class AA_Geco_Const extends AA_Const
             static::$aCategorieAllegati=array(
                 static::AA_GECO_CATEGORIA_ALLEGATO_AGRICOLTURA=>"Agricoltura",
                 static::AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=>"Allevamento e pesca",
-                static::AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=>"Ambiente",
-                static::AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=>"Artigianato",
-                static::AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=>"Commercio",
-                static::AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=>"Industria",
+                static::AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=>"Ambiente e territorio",
+                static::AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=>"Artigianato e commercio",
+                //static::AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=>"Commercio",
+                static::AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=>"Cultura e istruzione",
                 static::AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=>"Editoria e informazione",
+                static::AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=>"Industria",
                 static::AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=>"Innovazione e ricerca",
                 static::AA_GECO_CATEGORIA_ALLEGATO_INTERNAZIONALIZZAZIONE=>"Internazionalizzazione",
-                static::AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=>"Cultura e istruzione",
                 static::AA_GECO_CATEGORIA_ALLEGATO_LAVORO=>"Lavoro",
                 //static::AA_GECO_CATEGORIA_ALLEGATO_PESCA=>"Pesca",
-                static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_GIOVANILI=>"Politiche giovanili",
+                //static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_GIOVANILI=>"Politiche giovanili",
                 static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_SOCIALI=>"Politiche sociali",
                 static::AA_GECO_CATEGORIA_ALLEGATO_SANITA=>"Sanita'",
                 static::AA_GECO_CATEGORIA_ALLEGATO_SERVIZI=>"Servizi",
@@ -742,7 +759,9 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecoAddNewCriteriDlg");
         $taskManager->RegisterTask("AddNewGecoCriteri");
         $taskManager->RegisterTask("GetGecoModifyCriteriDlg");
+        $taskManager->RegisterTask("GetGecoCopyCriteriDlg");
         $taskManager->RegisterTask("UpdateGecoCriteri");
+        $taskManager->RegisterTask("GetGecoTrashCriteriDlg");
 
         //Allegati
         $taskManager->RegisterTask("GetGecoAddNewAllegatoDlg");
@@ -1342,8 +1361,8 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->SetBottomPadding(30);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(840);
-        $wnd->SetHeight(800);
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(820);
 
         //anno
         $options=array();
@@ -1353,10 +1372,22 @@ Class AA_GecoModule extends AA_GenericModule
         }
         $wnd->AddSelectField("anno","Anno",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare l'anno di riferimento.","options"=>$options,"value"=>"0"));
 
-        //Descrizione
-        $wnd->AddTextField("estremi", "Estremi", array("gravity"=>2,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."),false);
+        //tipologia
+        $options=array();
+        $listaTipo=AA_Geco_Const::GetTipoCriteri();
+        foreach($listaTipo as $id=>$val)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$val);
+        }
+        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di atto.","options"=>$options),false);
 
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //Estremi
+        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."));
+
+        //descrizione
+        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve dscrizione (max 1024)","placeholder" => "..."),false);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
         
         //categorie
         $tipi=AA_Geco_Const::GetCategorieAllegati();$curRow=1;
@@ -1366,7 +1397,7 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $newLine=false;
             if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>160),$newLine);
+            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>180),$newLine);
             $curRow++;
         }
 
@@ -1419,6 +1450,8 @@ Class AA_GecoModule extends AA_GenericModule
         $form_data=array(
             "id"=>$criterio->GetProp('id'),
             "estremi"=>$criterio->GetProp('estremi'),
+            "tipo"=>$criterio->GetProp('tipo'),
+            "descrizione"=>$criterio->GetProp('descrizione'),
             "url"=>$criterio->GetProp('url'),
             "anno"=>$criterio->GetProp('anno')
         );
@@ -1432,7 +1465,7 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $newLine=false;
             if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>160),$newLine);
+            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>180),$newLine);
             if(($categorie&$tipo)>0) $form_data['categoria_'.$tipo]=1;
             $curRow++;
         }
@@ -1450,8 +1483,8 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->SetBottomPadding(30);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(840);
-        $wnd->SetHeight(800);
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(820);
 
         //anno
         $options=array();
@@ -1461,14 +1494,25 @@ Class AA_GecoModule extends AA_GenericModule
         }
         $wnd->AddSelectField("anno","Anno",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare l'anno di riferimento.","options"=>$options,"value"=>"0"));
 
-        //Descrizione
-        $wnd->AddTextField("estremi", "Estremi", array("gravity"=>2,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."),false);
+        //tipologia
+        $options=array();
+        $listaTipo=AA_Geco_Const::GetTipoCriteri();
+        foreach($listaTipo as $id=>$val)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$val);
+        }
+        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di atto.","options"=>$options),false);
 
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
-        
-        $wnd->AddGenericObject($section);
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
+        //Estremi
+        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."));
+
+        //descrizione
+        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve dscrizione (max 1024)","placeholder" => "..."),false);
     
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
+
+        $wnd->AddGenericObject($section);
+
         //file upload------------------
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
@@ -1488,6 +1532,108 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("UpdateGecoCriteri");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi criteri
+    public function Template_GetGecoCopyCriteriDlg($criterio=null)
+    {
+        $id=uniqid();
+        
+        if(!($criterio instanceof AA_Geco_Criteri))
+        {
+            $wnd=new AA_GenericWindowTemplate($id, "Copia Criteri e modalita'", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<div>id criterio non valido.</div>")));
+
+            return $wnd;
+        }
+
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        $form_data=array(
+            "estremi"=>$criterio->GetProp('estremi'),
+            "tipo"=>$criterio->GetProp('tipo'),
+            "descrizione"=>$criterio->GetProp('descrizione'),
+            "url"=>$criterio->GetProp('url'),
+            "anno"=>$criterio->GetProp('anno')
+        );
+
+        //categorie
+        $tipi=AA_Geco_Const::GetCategorieAllegati();
+        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
+        $categorie=$criterio->GetProp('categorie');
+        $curRow=0;
+        foreach($tipi as $tipo=>$descr)
+        {
+            $newLine=false;
+            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>180),$newLine);
+            if(($categorie&$tipo)>0) $form_data['categoria_'.$tipo]=1;
+            $curRow++;
+        }
+
+        for($i=$curRow%4;$i<4;$i++)
+        {
+            $section->AddSpacer(false);
+        }
+        //----------------------
+
+        $wnd=new AA_GenericFormDlg($id, "Copia Criteri e modalita'", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(820);
+
+        //anno
+        $options=array();
+        for($id=date("Y"); $id>=date("Y")-20;$id--)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
+        }
+        $wnd->AddSelectField("anno","Anno",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare l'anno di riferimento.","options"=>$options,"value"=>"0"));
+
+        //tipologia
+        $options=array();
+        $listaTipo=AA_Geco_Const::GetTipoCriteri();
+        foreach($listaTipo as $id=>$val)
+        {
+            if($id > 0) $options[]=array("id"=>$id,"value"=>$val);
+        }
+        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di atto.","options"=>$options),false);
+
+        //Estremi
+        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."));
+
+        //descrizione
+        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve dscrizione (max 1024)","placeholder" => "..."),false);
+    
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
+
+        $wnd->AddGenericObject($section);
+
+        //file upload------------------
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 30Mb).","accept"=>"application/pdf,application/zip"));
+        
+        $wnd->AddGenericObject($section);
+        //---------------------------------
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("AddNewGecoCriteri");
         
         return $wnd;
     }
@@ -1548,6 +1694,54 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato['id']));
         $wnd->SetSaveTask("UpdateGecoAllegato");
+        
+        return $wnd;
+    }
+
+    //Template dlg trash allegato
+    public function Template_GetGecoTrashCriteriDlg($object=null)
+    {
+        $id=uniqid();
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina criterio", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(280);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("descrizione"=>$object->GetProp('descrizione'),"estremi"=>$object->GetProp('estremi'));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente criterio verrà eliminato, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"estremi", "header"=>"Estremi", "fillspace"=>true),
+              array("id"=>"descrizione", "header"=>"Descrizione", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteGecoCriteri");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetProp("id")));
         
         return $wnd;
     }
@@ -2897,7 +3091,8 @@ Class AA_GecoModule extends AA_GenericModule
         $options_documenti=array();
 
         $options_documenti[]=array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"center"),"sort"=>"int");
-        $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+        $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
+        $options_documenti[]=array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
         $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"center"));
         $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>120,"css"=>array("text-align"=>"center"));
    
@@ -2911,6 +3106,9 @@ Class AA_GecoModule extends AA_GenericModule
         foreach($criteri as $id_doc=>$curDoc)
         {
             //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+
+            if(($curDoc->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_ALL) > 0) $canModify=true;
+            else $canModify=false;
 
             if($curDoc->GetProp("url") == "")
             {
@@ -2952,7 +3150,7 @@ Class AA_GecoModule extends AA_GenericModule
                 if(($curDoc->GetProp('categorie')&$key)>0) $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
             }
             
-            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetProp("anno"),"estremi"=>$curDoc->GetProp("estremi"),"tipoDescr"=>implode("&nbsp;",$docTipo),"ops"=>$ops);
+            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetProp("anno"),"descrizione"=>$curDoc->GetProp("descrizione"),"estremi"=>$curDoc->GetProp("estremi"),"tipoDescr"=>implode("&nbsp;",$docTipo),"ops"=>$ops);
         }
         $documenti->SetProp("data",$documenti_data);
         if(sizeof($documenti_data) > 0) 
@@ -3758,6 +3956,31 @@ Class AA_GecoModule extends AA_GenericModule
         return true;
     }
     
+    public function Task_GetGecoCopyCriteriDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
+            return false;
+        }
+
+        $criterio=new AA_Geco_Criteri();
+
+        if(!$criterio->Load($_REQUEST['id'],$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Criterio non trovato.",false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoCopyCriteriDlg($criterio),true);
+        return true;
+    }
+    
     //Task aggiorna allegato
     public function Task_UpdateGecoAllegato($task)
     {
@@ -4108,6 +4331,36 @@ Class AA_GecoModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetGecoTrashAllegatoDlg($object,$allegato),true);
+        return true;
+    }
+
+    //Task trash criteri
+    public function Task_GetGecoTrashCriteriDlg($task)
+    {
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+            return false;
+        }
+
+        $object= new AA_Geco_Criteri();
+        if(!$object->Load($_REQUEST['id'],$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
+            return false;
+        }
+        
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetProp("id").").",false);
+            return true;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoTrashCriteriDlg($object),true);
         return true;
     }
 
@@ -4489,7 +4742,9 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         $this->aProps['id']=0;
         $this->aProps['estremi']="";
         $this->aProps['anno']="";
+        $this->aProps['tipo']=0;
         $this->aProps['categorie']=0;
+        $this->aProps['descrizione']="";
         $this->aProps['url']="";
         $this->aProps['file']="";
         $this->aProps['struttura']=$user_struct_level_0+$user_struct_level_1+$user_struct_level_2;
@@ -4520,7 +4775,40 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         }
 
         return false;
-    } 
+    }
+
+    public function GetUSerCaps($user=null)
+    {
+        if(!($user instanceof AA_User) || $user->IsCurrentUser()) $user=AA_User::GetCurrentUser();
+
+        $userStruct=$user->GetStruct();
+        $perms=AA_Const::AA_PERMS_READ;
+
+        if(!$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$user->IsSuperUser()) return $perms;
+
+        if($userStruct->GetAssessorato(true)==0) return AA_Const::AA_PERMS_ALL;
+
+        $assessorato=intVal(substr($this->GetProp("struttura"),0,3));
+        $direzione=intVal(substr($this->GetProp("struttura"),3,3));
+        $servizio=intVal(substr($this->GetProp("struttura"),6,3));
+        
+        if($assessorato==$userStruct->GetAssessorato(true))
+        {
+            if($userStruct->GetDirezione(true)==0) return AA_Const::AA_PERMS_ALL;
+
+            if($userStruct->GetDirezione(true)==$direzione)
+            {
+                if($userStruct->GetServizio(true)==0) return AA_Const::AA_PERMS_ALL;
+
+                if($userStruct->GetServizio(true)==$servizio)
+                {
+                    $perms=AA_Const::AA_PERMS_ALL;
+                }
+            }
+        }
+
+        return $perms;
+    }
 
     public function Update($params=null,$user=null)
     {
