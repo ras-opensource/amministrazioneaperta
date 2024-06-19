@@ -1152,7 +1152,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Inserisci un breve testo esplicativo per il cittadino (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"Breve descrizione ad uso esterno..."));
 
         //Responsabile
-        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile del procedimento amministrativo.", "placeholder"=>"es. Direttore del servizio..."));
+        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo e qualifica del responsabile del procedimento amministrativo.", "placeholder"=>"es. Nome, cognome e qualifica ..."));
 
         //Norma
         $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
@@ -2325,7 +2325,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Inserisci un breve testo esplicativo per il cittadino (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"Breve descrizione ad uso esterno..."));
 
         //Responsabile
-        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile del procedimento amministrativo.", "placeholder"=>"es. Direttore del servizio..."));
+        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile e qualifica del procedimento amministrativo.", "placeholder"=>"es. Nome, cognome e qualifica..."));
 
         //Norma
         $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
