@@ -24269,6 +24269,10 @@ Class AA_SierModule extends AA_GenericModule
            if($_REQUEST['ras|caricamento_allegati']!=0) $rendiconti['ras']['caricamento_allegati']=1;
            else $rendiconti['ras']['caricamento_allegati']=0;
         }
+        else
+        {
+            $rendiconti['ras']['caricamento_allegati']=0;
+        }
 
         if($rendiconti['ras']['importo'] > $totale)
         {
@@ -24875,7 +24879,7 @@ Class AA_SierModule extends AA_GenericModule
         $value_2="n.d.";
         if(isset($rendiconti['seggi']['missioni']['km'])) $value=$rendiconti['seggi']['missioni']['km'];
         if(isset($rendiconti['seggi']['missioni']['componenti'])) $value_2=$rendiconti['seggi']['missioni']['componenti'];
-        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("n. missioni:",$value,"Km totali percorsi:",$value_2),$row_template_2col));
+        $template->SetCellText($curRow,0,str_replace(array("#label#","#value#","#label_2#","#value_2#"),array("n. missioni:",$value_2,"Km totali percorsi:",$value),$row_template_2col));
         $curRow++;
 
         //importo
