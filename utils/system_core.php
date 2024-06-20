@@ -1468,6 +1468,30 @@ class AA_User
         return $users;
     }
 
+    static public function LoadLastLoggedUsers($bLegacyUsers=true)
+    {
+        $users = array();
+
+        if(AA_Const::AA_ENABLE_LEGACY_DATA && $bLegacyUsers)
+        {
+            $users = static::LegacyLoadLastLoggedUsers();
+        }
+
+        $db = new AA_Database();
+        $db->Query("SELECT max(".static::AA_DB_TABLE.".id) from ".static::AA_DB_TABLE." where lastlogin != '' and status > 0 and email != '' GROUP BY email ORDER by lastlogin desc");
+        if($db->GetAffectedRows() > 0)
+        {
+            $rs = $db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $user = static::LoadUser($curRow['id']);    
+                $users[$curRow['id']] = $user;    
+            }
+        }
+
+        return $users;
+    }
+
     //Restituisce la lista dei profili per l'utente corrente
     public function GetProfiles()
     {
@@ -1486,6 +1510,46 @@ class AA_User
 
         $db = new AA_Database();
         $db->Query("SELECT utenti.* from utenti where email = '" . addslashes($email) . "' and eliminato='0' and disable='0'");
+        if($db->GetAffectedRows() > 0)
+        {
+            $rs = $db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                $user = new AA_User();
+
+                $user->nID = $curRow['id'];
+                $user->sNome = $curRow['nome'];
+                $user->sCognome = $curRow['cognome'];
+                $user->sUser = $curRow['user'];
+                $user->sEmail = $curRow['email'];
+                $user->nLivello = $curRow['livello'];
+                $user->sLegacyFlags = $curRow['flags'];
+                $user->sImage = $curRow['image'];
+                $user->sPhone = $curRow['phone'];
+                $user->nDisabled = $curRow['disable'];
+                $user->sLastLogin = $curRow['lastlogin'];
+                $user->nConcurrent = $curRow['concurrent'];
+                $user->bCurrentUser = false;
+                $user->bIsValid = true;
+    
+                //Popola i dati della struttura
+                $user->oStruct = AA_Struct::GetStruct($curRow['id_assessorato'], $curRow['id_direzione'], $curRow['id_servizio']);
+    
+                $users[$curRow['id']] = $user;    
+            }
+        }
+
+        return $users;
+    }
+
+    static public function LegacyLoadLastLoggedUsers()
+    {
+        //AA_Log::Log(get_class() . "->LoadUserFromEmail($email)");
+
+        $users = array();
+
+        $db = new AA_Database();
+        $db->Query("SELECT utenti.* from utenti where lastlogin != '' and email !='' and eliminato='0' and disable='0'");
         if($db->GetAffectedRows() > 0)
         {
             $rs = $db->GetResultSet();
