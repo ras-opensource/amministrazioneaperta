@@ -22,6 +22,24 @@ class AA_Database extends PDO_Database
 }
 #--------------------------------
 
+class AA_AccountsDatabase extends PDO_Database
+{
+    //Parametri di connessione al DB
+    private $AA_DBHOST = AA_Config::AA_ACCOUNTS_DBHOST;
+    private $AA_DBNAME = AA_Config::AA_ACCOUNTS_DBNAME;
+    private $AA_DBUSER = AA_config::AA_ACCOUNTS_DBUSER;
+    private $AA_DBPWD = AA_Config::AA_ACCOUNTS_DBPWD;
+
+    public function __construct($bReset = false)
+    {
+        if (!$this->Initialize($this->AA_DBNAME,$this->AA_DBHOST, $this->AA_DBUSER, $this->AA_DBPWD, $bReset)) {
+            AA_Log::Log(__METHOD__ . " - Errore nella connessione al DB: " . $this->GetErrorMessage(), 100);
+            return;
+        }
+    }
+}
+#--------------------------------
+
 //Costanti
 class AA_Const extends AA_Config
 {
@@ -1228,7 +1246,7 @@ class AA_User
         $user = new AA_User();
         $user->bCurrentUser = false;
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $db->Query("SELECT ".static::AA_DB_TABLE.".* from ".static::AA_DB_TABLE." where id = '" . addslashes($id_user) . "'");
         if ($db->GetAffectedRows() > 0) 
         {
@@ -1308,7 +1326,7 @@ class AA_User
         $user = new AA_User();
         $user->bCurrentUser = false;
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $db->Query("SELECT utenti.* from utenti where id = '" . addslashes($id_user) . "'");
         if ($db->GetAffectedRows() > 0) {
             $row = $db->GetResultSet();
@@ -1392,7 +1410,7 @@ class AA_User
         $user = new AA_User();
         $user->bCurrentUser = false;
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $db->Query("SELECT ".static::AA_DB_TABLE.".id from ".static::AA_DB_TABLE." where user = '" . $userName . "' and status >= 0 LIMIT 1");
         if($db->GetAffectedRows() > 0)
         {
@@ -1416,7 +1434,7 @@ class AA_User
         $user = new AA_User();
         $user->bCurrentUser = false;
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $db->Query("SELECT utenti.* from utenti where user = '" . $userName . "' and eliminato='0'");
         if($db->GetAffectedRows() > 0)
         {
@@ -1453,7 +1471,7 @@ class AA_User
             $users = static::LegacyLoadUsersFromEmail($email);
         }
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $db->Query("SELECT ".static::AA_DB_TABLE.".id from ".static::AA_DB_TABLE." where email = '" . $email . "' and status > 0 ORDER by lastlogin desc");
         if($db->GetAffectedRows() > 0)
         {
@@ -1477,7 +1495,7 @@ class AA_User
             $users = static::LegacyLoadLastLoggedUsers();
         }
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $db->Query("SELECT max(".static::AA_DB_TABLE.".id) from ".static::AA_DB_TABLE." where lastlogin != '' and status > 0 and email != '' GROUP BY email ORDER by lastlogin desc");
         if($db->GetAffectedRows() > 0)
         {
@@ -1508,7 +1526,7 @@ class AA_User
 
         $users = array();
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $db->Query("SELECT utenti.* from utenti where email = '" . addslashes($email) . "' and eliminato='0' and disable='0'");
         if($db->GetAffectedRows() > 0)
         {
@@ -1548,7 +1566,7 @@ class AA_User
 
         $users = array();
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $db->Query("SELECT utenti.* from utenti where lastlogin != '' and email !='' and eliminato='0' and disable='0'");
         if($db->GetAffectedRows() > 0)
         {
@@ -1593,7 +1611,7 @@ class AA_User
     {
         //AA_Log::Log(get_class()."->UserAuth($sToken,$sUserName, $sUserPwd)");
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $user = AA_User::Guest();
 
         if ($sUserName != "" && $sUserPwd != "") 
@@ -1750,7 +1768,7 @@ class AA_User
                 return AA_User::Guest();
             }
 
-            if(AA_Const::AA_ENABLE_LEGACY_DATA)
+            if(AA_Const::AA_ENABLE_LEGACY_DATA && AA_Const::AA_MIGRATE_LEGACY_USERS)
             {
                 AA_Log::Log(__METHOD__." - legacy login", 100);
                 $user=AA_User::legacyUserAuth($sToken,$sUserName,md5($sUserPwd),$remember_me);
@@ -1864,7 +1882,7 @@ class AA_User
     {
         //AA_Log::Log(get_class()."->legacyUserAuth($sToken,$sUserName, $sUserPwd)",100);
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
 
         if ($sUserName != null && $sUserPwd != null) {
             AA_Log::Log(__METHOD__." - autenticazione in base al nome utente.");
@@ -2048,7 +2066,7 @@ class AA_User
                 $sToken = $_SESSION['token'];
 
                 //Aggiorna il token con il nuovo id utente
-                $db = new Database();
+                $db = new AA_AccountsDatabase();
                 $query = "UPDATE tokens set id_utente='" . $newProfileID . "' where token='" . $sToken . "' LIMIT 1";
                 if (!$db->Query($query)) {
                     AA_Log::Log(get_class() . "->ChangeProfile($newProfileID) - errore nella query:" . $query, 100, true, true);
@@ -2227,7 +2245,7 @@ class AA_User
         //------ Procedura smartCV
         if ($register) {
             //Registra il codice nel db
-            $db = new AA_Database();
+            $db = new AA_AccountsDatabase();
             $query = "UPDATE email_login set codice='" . $code . "' WHERE email='" . addslashes($email) . "' LIMIT 1";
             if (!$db->Query($query)) {
                 AA_Log::Log(get_class() . "->MailOTPAuthSend($email) - errore: " . $db->GetErrorMessage() . " - nella query: " . $query, 100, true, true);
@@ -2270,20 +2288,20 @@ class AA_User
         }
 
         //Verifica il paio email-codice
-        $db = new Database();
+        $db = new AA_AccountsDatabase();
         $query = "SELECT * from email_login WHERE email='" . $email . "' AND codice='" . str_replace("'", "", trim($codice)) . "' LIMIT 1";
 
         if (!$db->Query($query)) {
-            AA_Log::Log(get_class() . "->MailOTPAuthVerify($email) - errore: " . $db->lastError . " - nella query: " . $query, 100, true, true);
+            AA_Log::Log(get_class() . "->MailOTPAuthVerify($email) - errore: " . $db->GetErrorMessage() . " - nella query: " . $query, 100, true, true);
             return false;
         }
 
-        $rs = $db->GetRecordSet();
-        if ($rs->GetCount() > 0) {
-            $_SESSION['MailOTP-user'] = $rs->Get("id");
-            $_SESSION['MailOTP-nome'] = $rs->Get("nome");
-            $_SESSION['MailOTP-cognome'] = $rs->Get("cognome");
-            $aggiornamento = $rs->Get("aggiornamento");
+        $rs = $db->GetResultSet();
+        if (sizeof($rs)> 0) {
+            $_SESSION['MailOTP-user'] = $rs[0]["id"];
+            $_SESSION['MailOTP-nome'] = $rs[0]["nome"];
+            $_SESSION['MailOTP-cognome'] = $rs[0]["cognome"];
+            $aggiornamento = $rs[0]["aggiornamento"];
             if ($aggiornamento != "") {
                 $aggiornamento = explode("-", $aggiornamento);
                 $aggiornamento = $aggiornamento[2] . "/" . $aggiornamento[1] . "/" . $aggiornamento[0];
@@ -2308,15 +2326,15 @@ class AA_User
             return false;
         }
 
-        $db = new Database();
+        $db = new AA_AccountsDatabase();
         $query = "SELECT email from email_login where email='" . str_replace("'", "", trim($email)) . "' LIMIT 1";
         if (!$db->Query($query)) {
             AA_Log::Log(get_class() . "->MailOTPAuthIsMailRegistered($email) - errore: " . $db->lastError . " - nella query: " . $query, 100, true, true);
             return false;
         }
 
-        $rs = $db->GetRecordSet();
-        if ($rs->GetCount() > 0) return true;
+        $rs = $db->GetResultSet();
+        if (sizeof($rs) > 0) return true;
         return false;
     }
     //---------------------------------------------
@@ -2333,10 +2351,10 @@ class AA_User
             return false;
         }
 
-        $db = new Database();
+        $db = new AA_AccountsDatabase();
         $query = "INSERT INTO email_login set email='" . str_replace("'", "", trim($email)) . "', aggiornamento=NOW()";
         if (!$db->Query($query)) {
-            AA_Log::Log(get_class() . "->MailOTPAuthRegisterEmail($email) - errore: " . $db->lastError . " - nella query: " . $query, 100, true, true);
+            AA_Log::Log(get_class() . "->MailOTPAuthRegisterEmail($email) - errore: " . $db->GetErrorMessage() . " - nella query: " . $query, 100, true, true);
             return false;
         }
 
@@ -2350,7 +2368,7 @@ class AA_User
         //AA_Log::Log(get_class() . "->LogOut() - " . $this->sUser . "(" . $this->nID . ")");
 
         if ($this->bIsValid && $this->bCurrentUser) {
-            $db = new Database();
+            $db = new AA_AccountsDatabase();
             $query = "DELETE from tokens WHERE token='" . $_SESSION['token'] . "'";
             $db->Query($query);
 
@@ -2413,7 +2431,7 @@ class AA_User
     {
         //AA_Log::Log(get_class() . "->RefreshToken($token)");
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
 
         $query = "UPDATE tokens SET data_rilascio=NOW() where token ='" . addslashes($token) . "'";
 
@@ -2561,7 +2579,7 @@ class AA_User
         //AA_Log::Log(get_class() . "->UserNameExist($userName)");
         if ($userName == "") return false;
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
 
         $sql = "SELECT user FROM ".static::AA_DB_TABLE." where user='" . $userName . "' ";
         if (!$db->Query($sql)) {
@@ -2668,7 +2686,7 @@ class AA_User
         }
 
 
-        $db=new AA_Database();
+        $db=new AA_AccountsDatabase();
 
         if(!$db->Query($query))
         {
@@ -2780,7 +2798,7 @@ class AA_User
             }
         }
 
-        $db=new AA_Database();
+        $db=new AA_AccountsDatabase();
 
         if(!$db->Query($query))
         {
@@ -2892,7 +2910,7 @@ class AA_User
             if($params['status']==1) $query.=" AND utenti.disable='0'";
         }
 
-        $db=new AA_Database();
+        $db=new AA_AccountsDatabase();
 
         if(!$db->Query($query))
         {
@@ -3195,7 +3213,7 @@ class AA_User
         }
         //--------------------------------------
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
 
         //new stuff
         $info=json_encode(array(
@@ -3254,7 +3272,7 @@ class AA_User
             return false;
         }
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         if(!$db->Query("SELECT id from ".AA_User::AA_DB_TABLE." WHERE id='".$legacyUser->GetId()."'"))
         {
             AA_Log::Log(__METHOD__." - errore nel recupero dei dati. ".$db->GetErrorMessage(),100);
@@ -3373,7 +3391,7 @@ class AA_User
             return false;
         }
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
 
         $new_id=0;
 
@@ -3704,7 +3722,7 @@ class AA_User
 
         $sql.=" WHERE id='".$user->GetId()."' LIMIT 1";
 
-        $db=new AA_Database();
+        $db=new AA_AccountsDatabase();
 
         if ($db->Query($sql) === false) {
             AA_Log::Log(__METHOD__."  - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
@@ -3862,7 +3880,7 @@ class AA_User
         }
 
         //Aggiorna l'utente
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         $sql = "UPDATE utenti SET user=user";
         if ($params['passwd'] != "") $sql .= ",passwd=MD5('" . $params['passwd'] . "')";
 
@@ -3944,7 +3962,7 @@ class AA_User
         }
 
         //verifica vecchia password
-        $db=new AA_Database();
+        $db=new AA_AccountsDatabase();
         $query="SELECT passwd FROM ".AA_User::AA_DB_TABLE." WHERE id='".$this->nID."' LIMIT 1";
         if(!$db->Query($query))
         {
@@ -4007,7 +4025,7 @@ class AA_User
             return false;            
         }
 
-        $db=new AA_Database();
+        $db=new AA_AccountsDatabase();
         $pwd=false;
 
         if($params["old_pwd"] !="" && $params['new_pwd'] !="" && $params["new_pwd_retype"] !="")
@@ -4111,7 +4129,7 @@ class AA_User
             return false;            
         }
 
-        $db=new AA_Database();
+        $db=new AA_AccountsDatabase();
         $pwd=false;
 
         if($params["old_pwd"] !="" && $params['new_pwd'] !="" && $params["new_pwd_retype"] !="")
@@ -4201,8 +4219,8 @@ class AA_User
         }
 
         //Elimina l'utente indicato
-        $db = new AA_Database();
-        $sql = "UPDATE utenti SET eliminato=1 where id='" . $user->GetID() . "' LIMIT 1";
+        $db = new AA_AccountsDatabase();
+        $sql = "DELETE FROM utenti where id='" . $user->GetID() . "' LIMIT 1";
 
         if ($db->Query($sql) === false) {
             AA_Log::Log(__METHOD__." - Errore: " . $db->GetErrorMessage() . " - nella query: " . $sql, 100);
@@ -4347,7 +4365,7 @@ class AA_User
         }
 
         //Elimina l'utente indicato
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
         
         $sql = "UPDATE ".static::AA_DB_TABLE." SET status='".static::AA_USER_STATUS_DISABLED."' where id='" . $user->GetID() . "' LIMIT 1";
 
@@ -4368,7 +4386,7 @@ class AA_User
 
         if (is_array($users) && count($users) > 0) {
             $credenziali = "";
-            $db = new AA_Database();
+            $db = new AA_AccountsDatabase();
 
             foreach ($users as $user) {
                 //Verifica che l'utente sia valido
@@ -4460,7 +4478,7 @@ class AA_User
         if ($user->IsValid()) 
         {
             $credenziali = "";
-            $db = new AA_Database();
+            $db = new AA_AccountsDatabase();
 
             //Verifica se l'utente è disattivato
             if ($user->IsDisabled()) {

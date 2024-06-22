@@ -7,6 +7,12 @@ Class AA_Config
     const AA_DBUSER="dbuser";
     const AA_DBPWD="dbpwd";
 
+    //parametri db accounts
+    const AA_ACCOUNTS_DBHOST="localhost";
+    const AA_ACCOUNTS_DBNAME="dbname";
+    const AA_ACCOUNTS_DBUSER="dbuser";
+    const AA_ACCOUNTS_DBPWD="dbpwd";
+
     //Persorso principale delle librerie
     const AA_LIB_PATH="";
     const AA_PUBLIC_LIB_PATH="";
@@ -50,6 +56,9 @@ Class AA_Config
 
     //Abilita disabilita la gestione dei dati legacy (gestione strutture, legame struttura-utente, etc.)
     const AA_ENABLE_LEGACY_DATA=false;
+
+    //migra automaticamente dopo il login gli utenti legacy al nuovo sistema
+    const AA_MIGRATE_LEGACY_USERS=false;
 }
 
 //percorso librerie
