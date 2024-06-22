@@ -762,6 +762,7 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecoCopyCriteriDlg");
         $taskManager->RegisterTask("UpdateGecoCriteri");
         $taskManager->RegisterTask("GetGecoTrashCriteriDlg");
+        $taskManager->RegisterTask("DeleteGecoCriteri");
 
         //Allegati
         $taskManager->RegisterTask("GetGecoAddNewAllegatoDlg");
@@ -1965,7 +1966,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
 
             //Elimina il file temporaneo
@@ -2098,7 +2099,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
         {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
 
             //Elimina il file temporaneo
@@ -2257,6 +2258,41 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
             $task->SetContent("Dati aggiornati con successo.",false);
+
+            return true;
+        }
+    }
+
+    public function Task_DeleteGecoCriteri($task)
+    {        
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
+
+            return false;
+        }
+
+        $criterio=new AA_Geco_Criteri();
+        if(!$criterio->Load($_REQUEST['id'],$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Criterio non trovato.",false);
+
+            return false;
+        }
+
+        if(!$criterio->Delete($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nella rimozione del criterio/modalita'.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Criterio/modalita' eliminato con successo.",false);
 
             return true;
         }
@@ -4940,6 +4976,17 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
                 return false;
             }            
         }
+
+        $storage=AA_Storage::GetInstance($user);
+        if($storage->IsValid())
+        {
+            if($this->GetProp('file') !="")
+            {
+                $storage->DelFile($this->GetProp('file'));
+            }
+        }
+        else AA_Log::Log(__METHOD__." - storage non inizializzato. file non eliminato.",100);
+
 
         return parent::Delete();
     }

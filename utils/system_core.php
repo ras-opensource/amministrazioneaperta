@@ -2351,7 +2351,7 @@ class AA_User
 
         if ($this->bIsValid && $this->bCurrentUser) {
             $db = new Database();
-            $query = "DELETE from tokens WHERE token='" . $_SESSION['token'] . "' and id_utente='".$this->nID."'";
+            $query = "DELETE from tokens WHERE token='" . $_SESSION['token'] . "'";
             $db->Query($query);
 
             $_SESSION['token'] = null;
