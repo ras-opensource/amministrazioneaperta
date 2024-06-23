@@ -1087,13 +1087,26 @@ Class AA_HomeModule extends AA_GenericModule
         
         $layout->AddRow($second_row);
 
+        $minCountModulesToCarousel=5;
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $minCountModulesToCarousel=4;
+        }
+
         //Moduli Row
         $platform=AA_Platform::GetInstance($this->oUser);
         if($platform->IsValid())
         {
             $platform_modules=$platform->GetModules();
-            if(sizeof($platform_modules) <=5 ) $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
-            else $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+            if(sizeof($platform_modules) <=$minCountModulesToCarousel ) 
+            {
+                $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+            }
+            else 
+            {
+                $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+            }
+
             if(is_array($platform_modules) && sizeof($platform_modules) > 0)
             {
                 $minHeightModuliItem=intval(($_REQUEST['vh']-180)/2);
@@ -1112,23 +1125,6 @@ Class AA_HomeModule extends AA_GenericModule
                 //$riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Apri il modulo' onclick=\"#onclick#\" class='AA_Button_Link'><span>Vai</span>&nbsp;<span class='mdi mdi-arrow-right-thick'></span></a></div>";
                 $riepilogo_template.="</div>";
 
-                /*$moduli_view=new AA_JSON_Template_Generic($id."_moduliView",array(
-                    "view"=>"dataview",
-                    "css"=>array("background-color"=>"transparent","border"=>"0px"),
-                    "filtered"=>true,
-                    "yCount"=>1,
-                    "module_id"=>$this->id,
-                    "type"=>array(
-                        "type"=>"tiles",
-                        "height"=>$minHeightModuliItem,
-                        "width"=>$WidthModuliItem,
-                        "css"=>"AA_DataView_Moduli_item",
-                    ),
-                    "template"=>$riepilogo_template,
-                    "data"=>$moduli_data,
-                    "eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId()))
-                ));*/
-
                 $nSlide=0;
                 $nMod=0;
                 $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
@@ -1146,12 +1142,40 @@ Class AA_HomeModule extends AA_GenericModule
                         
                         if($nMod%4==0)
                         {
-                            if(sizeof($platform_modules) <=5) $moduli_box->AddRow($moduli_view);
+                            if(sizeof($platform_modules) <=$minCountModulesToCarousel) $moduli_box->AddRow($moduli_view);
                             else $moduli_box->AddSlide($moduli_view);
                             $nSlide++;
                             $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
                         }
                     }
+                }
+
+                if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                {
+                    if($nMod%4==0)
+                    {
+                        if(sizeof($platform_modules) <= $minCountModulesToCarousel) $moduli_box->AddRow($moduli_view);
+                        else $moduli_box->AddSlide($moduli_view);
+                        $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+                    }
+                    $nMod++;
+
+                    $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 97%; margin:5px;'>";
+                    //icon
+                    $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
+                    //name
+                    $riepilogo_template.="<div style='display: flex; align-items: center;justify-content: center; flex-direction: column; font-size: larger;height: 60px'>#name#</div>";
+                    //descr
+                    $riepilogo_template.="<div style='display: flex; align-items: center; flex-direction: column; justify-content: space-between; padding: 10px;'>#descr#</div>";
+                    //go
+                    //$riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Apri il modulo' onclick=\"#onclick#\" class='AA_Button_Link'><span>Vai</span>&nbsp;<span class='mdi mdi-arrow-right-thick'></span></a></div>";
+                    $riepilogo_template.="</div>";
+
+                    $name="<span style='font-weight:900;'>MODULI APPLICATIVI</span>";
+                    $descr="<span>Registro accessi</span><span>Mappatura processi</span><span>Gestione incarichi</span><span>Contributi e vantaggi economici</span><span>Bandi di gara e contratti</span>";
+                    $onclick="AA_MainApp.utils.callHandler('ModuleLegacyBoxClick','".$this->GetId()."')";
+                    $moduli_data=array("id"=>"Legacy_Modules","name"=>$name,'descr'=>$descr,"icon"=>"mdi mdi-table","onclick"=>$onclick);
+                    $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
                 }
 
                 //AA_Log::Log(__METHOD__." - nMod: ".$nMod. " - %: ".$nMod%4,100);
@@ -1164,13 +1188,39 @@ Class AA_HomeModule extends AA_GenericModule
                     {
                         $moduli_view->addCol(new AA_JSON_Template_Generic());
                     }
-                    if(sizeof($platform_modules) <=5 ) $moduli_box->AddRow($moduli_view);
-                    else $moduli_box->AddSlide($moduli_view);
                 }
+                if(sizeof($platform_modules) <= $minCountModulesToCarousel) $moduli_box->AddRow($moduli_view);
+                else $moduli_box->AddSlide($moduli_view);
             }
             else
             {
-                $moduli_view=new AA_JSON_Template_Template($id."_Riepilogo_Tab",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>Non sono presenti elementi.</div></div>"));
+                if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                {
+
+                    $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+                    
+                    $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 97%; margin:5px;'>";
+                    //icon
+                    $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
+                    //name
+                    $riepilogo_template.="<div style='display: flex; align-items: center;justify-content: center; flex-direction: column; font-size: larger;height: 60px'>#name#</div>";
+                    //descr
+                    $riepilogo_template.="<div style='display: flex; align-items: center; flex-direction: column; justify-content: space-between; padding: 10px;'>#descr#</div>";
+                    //go
+                    //$riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Apri il modulo' onclick=\"#onclick#\" class='AA_Button_Link'><span>Vai</span>&nbsp;<span class='mdi mdi-arrow-right-thick'></span></a></div>";
+                    $riepilogo_template.="</div>";
+
+                    $name="<span style='font-weight:900;'>MODULI APPLICATIVI</span>";
+                    $descr="<span>Registro accessi</span><span>Mappatura processi</span><span>Gestione incarichi</span><span>Contributi e vantaggi economici</span><span>Bandi di gara e contratti</span>";
+                    $onclick="AA_MainApp.utils.callHandler('ModuleLegacyBoxClick','".$this->GetId()."')";
+                    $moduli_data=array("id"=>"Legacy_Modules","name"=>$name,'descr'=>$descr,"icon"=>"mdi mdi-table","onclick"=>$onclick);
+                    $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
+                }
+                else
+                {
+                    $moduli_view=new AA_JSON_Template_Template($id."_Riepilogo_Tab",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>Non sono presenti elementi.</div></div>"));
+                }
+
                 $moduli_box->AddRow($moduli_view);
             }
           

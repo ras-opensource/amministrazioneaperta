@@ -80,5 +80,16 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
     }
 };
 
+//Handler legacy modules
+<?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ModuleLegacyBoxClick = async function() {
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.ModuleLegacyBoxClick", this, arguments);
+        let wnd = window.open("/web/amministrazione_aperta/admin");
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.ModuleLegacyBoxClick", msg, this);
+    }
+};
+
 AA_MainApp.registerModule(<?php echo AA_HomeModule::AA_ID_MODULE?>);
 
