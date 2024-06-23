@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1-1.fc38
+-- version 5.2.1-1.el9
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Ott 24, 2023 alle 09:33
+-- Creato il: Giu 23, 2024 alle 23:14
 -- Versione del server: 10.5.22-MariaDB
--- Versione PHP: 8.2.11
+-- Versione PHP: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `amministrazioneaperta`
+-- Database: `monitspese`
 --
 
 -- --------------------------------------------------------
@@ -32,7 +32,7 @@ CREATE TABLE `aa_sier_comuni` (
   `id_sier` int(11) UNSIGNED NOT NULL DEFAULT 0,
   `denominazione` varchar(255) NOT NULL,
   `indirizzo` varchar(255) NOT NULL DEFAULT '',
-  `contatti` varchar(255) NOT NULL DEFAULT '',
+  `contatti` varchar(2048) NOT NULL,
   `risultati` longtext NOT NULL DEFAULT '',
   `affluenza` longtext NOT NULL DEFAULT '',
   `operatori` longtext NOT NULL DEFAULT '',
@@ -42,7 +42,18 @@ CREATE TABLE `aa_sier_comuni` (
   `id_circoscrizione` int(5) NOT NULL DEFAULT 0,
   `rendiconti` longtext NOT NULL DEFAULT '',
   `pec` varchar(255) NOT NULL DEFAULT '',
-  `lastupdate` varchar(255) NOT NULL DEFAULT ''
+  `lastupdate` varchar(255) NOT NULL DEFAULT '',
+  `comunicazioni` longtext NOT NULL DEFAULT '',
+  `sezioni_ospedaliere` int(10) NOT NULL DEFAULT 0,
+  `sezioni_ordinarie` int(10) NOT NULL DEFAULT 0,
+  `luoghi_cura_sub100` int(10) NOT NULL DEFAULT 0,
+  `luoghi_cura_over100` int(10) NOT NULL DEFAULT 0,
+  `luoghi_detenzione` int(10) NOT NULL DEFAULT 0,
+  `elettori_esteri_m` int(10) NOT NULL DEFAULT 0,
+  `elettori_esteri_f` int(10) NOT NULL DEFAULT 0,
+  `feed_risultati` longtext NOT NULL DEFAULT '',
+  `logs` longtext NOT NULL DEFAULT '',
+  `analisi_risultati` varchar(4096) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 --

@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Ott 09, 2023 alle 10:26
--- Versione del server: 10.5.16-MariaDB
--- Versione PHP: 8.0.27
+-- Creato il: Giu 23, 2024 alle 23:13
+-- Versione del server: 10.5.22-MariaDB
+-- Versione PHP: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -29,13 +29,13 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `aa_sier_allegati` (
   `id` int(11) UNSIGNED NOT NULL,
-  `estremi` varchar(255) COLLATE utf8_bin NOT NULL,
-  `url` varchar(255) COLLATE utf8_bin NOT NULL,
+  `estremi` varchar(255) NOT NULL,
+  `url` varchar(255) NOT NULL,
   `id_sier` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  `file` varchar(255) COLLATE utf8_bin NOT NULL,
-  `tipo` varchar(512) COLLATE utf8_bin NOT NULL DEFAULT '',
-  `aggiornamento` varchar(30) COLLATE utf8_bin NOT NULL,
-  `destinatari` varchar(512) COLLATE utf8_bin NOT NULL DEFAULT '',
+  `file` varchar(255) NOT NULL,
+  `tipo` varchar(512) NOT NULL DEFAULT '',
+  `aggiornamento` varchar(30) NOT NULL,
+  `destinatari` varchar(512) NOT NULL DEFAULT '',
   `ordine` int(2) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 

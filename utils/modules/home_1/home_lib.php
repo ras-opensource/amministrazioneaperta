@@ -2169,12 +2169,17 @@ Class AA_HomeModule extends AA_GenericModule
         
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
-        $filter="";
+         $filter="";
+        if(!isset($_REQUEST['show_suppressed']) || $_REQUEST['show_suppressed']==0) $filter="<span class='AA_Label AA_Label_LightOrange'>Solo strutture attive</span>";
 
         if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
         
-        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","gravity"=>2,"align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","gravity"=>3,"align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
 
+        //$toolbar->AddElement(new AA_JSON_Template_Generic($this->id . "_Switch_Supressed", array("view" => "switch", "width" => 350, "label" => "Strutture soppresse:", "labelWidth" => 150, "onLabel" => "visibili", "offLabel" => "nascoste", "tooltip" => "mostra/nascondi le strutture soppresse")));
+
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("gravity"=>3)));
+        
         $toolbar->AddElement(new AA_JSON_Template_Search("", array("gravity"=>1,"tree_view_id"=>$tree_view_id,"placeholder" => "Digita qui per filtrare le strutture","eventHandlers"=>array("onTimedKeyPress"=>array("handler"=>"onFilterStructChange","module_id"=>$this->GetId())))));
 
         //Pulsante di modifica
@@ -2214,7 +2219,8 @@ Class AA_HomeModule extends AA_GenericModule
             $tree = new AA_JSON_Template_Tree($tree_view_id, array(
                 "data" => json_encode($struct->toArray()),
                 "select" => true,
-                "template" => "{common.icon()}&nbsp;{common.folder()}&nbsp;<span>#value#</span>"
+                "template" => "{common.icon()}&nbsp;{common.folder()}&nbsp;<span>#value#</span>",
+                "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
             ));
         } 
         else 
@@ -2223,7 +2229,7 @@ Class AA_HomeModule extends AA_GenericModule
         }
 
         $layout->AddRow($tree);
-
+        $layout->AddRow(new AA_JSON_Template_Generic($this->id . "_Switch_Supressed", array("view" => "switch", "width" => 350, "label" => "Strutture cessate:", "labelWidth" => 150, "onLabel" => "visibili", "offLabel" => "nascoste", "tooltip" => "mostra/nascondi le strutture cessate")));
         return $layout;
     }
 

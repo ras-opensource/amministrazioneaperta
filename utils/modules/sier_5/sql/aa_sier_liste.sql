@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1-1.fc38
+-- version 5.2.1-1.el9
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Nov 30, 2023 alle 18:55
--- Versione del server: 10.5.23-MariaDB
--- Versione PHP: 8.2.13
+-- Creato il: Giu 23, 2024 alle 23:14
+-- Versione del server: 10.5.22-MariaDB
+-- Versione PHP: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `amministrazioneaperta`
+-- Database: `monitspese`
 --
 
 -- --------------------------------------------------------
