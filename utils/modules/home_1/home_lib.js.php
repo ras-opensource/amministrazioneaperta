@@ -91,5 +91,23 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
     }
 };
 
+//Struct filter
+<?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onFilterStructChange = async function() {
+    try 
+    {
+        console.log("eventHandlers.defaultHandlers.onFilterStructChange", this, arguments);
+
+        let TreeView=$$(this.config.tree_view_id);
+        let search=this;
+        if(TreeView)
+        {
+            TreeView.filter(function(obj){return obj.value.toLowerCase().indexOf(search.getValue().toLowerCase()) !== -1;})
+        }
+
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onFilterStructChange", msg, this);
+    }
+};
+
 AA_MainApp.registerModule(<?php echo AA_HomeModule::AA_ID_MODULE?>);
 

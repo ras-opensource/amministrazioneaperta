@@ -4622,8 +4622,9 @@ function AA_RefreshApp(bDisableCache=false)
         
         if(urlParams.get("disable_cache") !="true")
         {
-            if(Array.from(urlParams).length==0) window.location=window.location+"?disable_cache=true";
-            else window.location=window.location+"&disable_cache=true";
+            let location=String(window.location).replace("#","");
+            if(Array.from(urlParams).length==0) window.location=location+"?disable_cache=true";
+            else window.location=location+"&disable_cache=true";
         }
         else
         {

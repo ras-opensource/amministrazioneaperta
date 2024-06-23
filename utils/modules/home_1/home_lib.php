@@ -1171,7 +1171,7 @@ Class AA_HomeModule extends AA_GenericModule
                     //$riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Apri il modulo' onclick=\"#onclick#\" class='AA_Button_Link'><span>Vai</span>&nbsp;<span class='mdi mdi-arrow-right-thick'></span></a></div>";
                     $riepilogo_template.="</div>";
 
-                    $name="<span style='font-weight:900;'>MODULI APPLICATIVI</span>";
+                    $name="<span style='font-weight:900;'>ALTRI MODULI APPLICATIVI</span>";
                     $descr="<span>Registro accessi</span><span>Mappatura processi</span><span>Gestione incarichi</span><span>Contributi e vantaggi economici</span><span>Bandi di gara e contratti</span>";
                     $onclick="AA_MainApp.utils.callHandler('ModuleLegacyBoxClick','".$this->GetId()."')";
                     $moduli_data=array("id"=>"Legacy_Modules","name"=>$name,'descr'=>$descr,"icon"=>"mdi mdi-table","onclick"=>$onclick);
@@ -1210,7 +1210,7 @@ Class AA_HomeModule extends AA_GenericModule
                     //$riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Apri il modulo' onclick=\"#onclick#\" class='AA_Button_Link'><span>Vai</span>&nbsp;<span class='mdi mdi-arrow-right-thick'></span></a></div>";
                     $riepilogo_template.="</div>";
 
-                    $name="<span style='font-weight:900;'>MODULI APPLICATIVI</span>";
+                    $name="<span style='font-weight:900;'>ALTRI MODULI APPLICATIVI</span>";
                     $descr="<span>Registro accessi</span><span>Mappatura processi</span><span>Gestione incarichi</span><span>Contributi e vantaggi economici</span><span>Bandi di gara e contratti</span>";
                     $onclick="AA_MainApp.utils.callHandler('ModuleLegacyBoxClick','".$this->GetId()."')";
                     $moduli_data=array("id"=>"Legacy_Modules","name"=>$name,'descr'=>$descr,"icon"=>"mdi mdi-table","onclick"=>$onclick);
@@ -2163,8 +2163,67 @@ Class AA_HomeModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__,100);
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTSTRUCT;
-        $layout = new AA_JSON_Template_Template($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTSTRUCT_NAME,"template"=>"In costruzione (gestione strutture)"));
+        $tree_view_id=$id."_tre_".uniqid();
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTSTRUCT_NAME,"filtered"=>true));
         
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        $filter="";
+
+        if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
+        
+        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","gravity"=>2,"align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+
+        $toolbar->AddElement(new AA_JSON_Template_Search("", array("gravity"=>1,"tree_view_id"=>$tree_view_id,"placeholder" => "Digita qui per filtrare le strutture","eventHandlers"=>array("onTimedKeyPress"=>array("handler"=>"onFilterStructChange","module_id"=>$this->GetId())))));
+
+        //Pulsante di modifica
+        $canModify=false;
+        if($this->oUser->IsSuperUser()) $canModify=true;
+        if($canModify)
+        {            
+            $modify_btn=new AA_JSON_Template_Generic("",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-office-building-plus",
+                "label"=>"Aggiungi",
+                "css"=>"webix_primary",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi una nuova struttura di primo livello",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetHomeStructAddNewDlg\"},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+
+        $layout->AddRow($toolbar);
+
+        if($this->oUser->IsValid()) 
+        {
+            $struct = "";
+            $userStruct = $this->oUser->GetStruct();
+            if ($this->oUser->IsSuperUser()) 
+            {
+                $struct = AA_Struct::GetStruct(0, 0, 0, $userStruct->GetTipo()); //RAS
+            }
+            else 
+            {
+                $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), 0, 0, $userStruct->GetTipo()); //Altri
+            }
+
+            $tree = new AA_JSON_Template_Tree($tree_view_id, array(
+                "data" => json_encode($struct->toArray()),
+                "select" => true,
+                "template" => "{common.icon()}&nbsp;{common.folder()}&nbsp;<span>#value#</span>"
+            ));
+        } 
+        else 
+        {
+            $tree=new AA_JSON_Template_Template($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTSTRUCT_NAME,"template"=>"Non sono presenti strutture."));
+        }
+
+        $layout->AddRow($tree);
+
         return $layout;
     }
 
