@@ -553,7 +553,7 @@ class AA_Struct
     //Restituisce la struttura in formato JSON
     public function toArray($params = array())
     {
-        AA_Log::Log(get_class() . "->toArray()");
+        //AA_Log::Log(get_class() . "->toArray()");
 
         $this->aTree = $this->GetStructTree();
 
@@ -588,7 +588,7 @@ class AA_Struct
             $result[0]['data'][] = $curAssessorato;
         }
 
-        //AA_Log::Log(get_class()."->toArray() - ".print_r($result,true),100);
+        //AA_Log::Log(__METHOD__." - ".print_r($result,true),100);
         return $result;
     }
 
