@@ -137,6 +137,12 @@ class AA_JSON_Template_Generic
         }
     }
 
+    public function GetRowsCount()
+    { 
+        if(is_array($this->rows)) return sizeof($this->rows);
+        else return 0;
+    }
+
     //Aggiunta row al body
     protected $bodyRows = null;
     public function addRowToBody($row = null)
@@ -148,6 +154,12 @@ class AA_JSON_Template_Generic
                 $this->bodyRows = array();
             $this->bodyRows[] = $row;
         }
+    }
+
+    public function GetBodyRowsCount()
+    { 
+        if(is_array($this->bodyRows)) return sizeof($this->bodyRows);
+        else return 0;
     }
 
     //Aggiunta col al body
@@ -163,6 +175,12 @@ class AA_JSON_Template_Generic
         }
     }
 
+    public function GetBodyColsCount()
+    { 
+        if(is_array($this->bodyCols)) return sizeof($this->bodyCols);
+        else return 0;
+    }
+
     //Aggiunta colonne
     protected $cols = null;
     public function addCol($col = null)
@@ -172,6 +190,12 @@ class AA_JSON_Template_Generic
                 $this->cols = array();
             $this->cols[] = $col;
         }
+    }
+
+    public function GetColsCount()
+    { 
+        if(is_array($this->cols)) return sizeof($this->cols);
+        else return 0;
     }
 
     //gestori degli eventi
@@ -1038,6 +1062,11 @@ class AA_GenericWindowTemplate
         $this->wnd->setProp("height", $this->height);
         $this->wnd->setProp("width", $this->width);
         $this->wnd->setProp("modal", $this->modal);
+
+        if($this->body->GetRowsCount()==0)
+        {
+            $this->body->AddRow(new AA_JSON_Template_Generic());
+        }
     }
 
     protected $width = "1280";
