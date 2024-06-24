@@ -296,9 +296,9 @@ class AA_Struct
 
     static public function GetStruct($id_assessorato = '', $id_direzione = '', $id_servizio = '', $type = '')
     {
-        AA_Log::Log(get_class() . "GetStruct($id_assessorato,$id_direzione,$id_servizio,$type)");
+        //AA_Log::Log(get_class() . "GetStruct($id_assessorato,$id_direzione,$id_servizio,$type)");
 
-        $db = new Database();
+        $db = new AA_AccountsDatabase();
         $struct = new AA_Struct();
 
         if ($type != '') $struct->nTipo = $type;
@@ -306,31 +306,33 @@ class AA_Struct
         $now = Date("Y-m-d");
 
         //Servizio impostato
-        if ($id_servizio != '' && $id_servizio > 0) {
+        if ($id_servizio != '' && $id_servizio > 0) 
+        {
             $db->Query("SELECT assessorati.id as id_assessorato,assessorati.descrizione as assessorato, assessorati.tipo, direzioni.id as id_direzione, direzioni.descrizione as direzione, direzioni.data_soppressione as data_soppressione_direzione, servizi.id as id_servizio, servizi.descrizione as servizio, servizi.data_soppressione as data_soppressione_servizio from servizi inner join direzioni on servizi.id_direzione = direzioni.id inner join assessorati on direzioni.id_assessorato=assessorati.id where servizi.id='$id_servizio'");
-            $rs = $db->GetRecordSet();
-            if ($rs->GetCount() > 0) {
+            $rs = $db->GetResultSet();
+            if (sizeof($rs) > 0) 
+            {
                 $struct->bIsValid = true;
 
                 //Assessorato
-                $struct->nID_Assessorato = $rs->Get("id_assessorato");
-                $struct->sAssessorato = $rs->Get("assessorato");
-                $struct->nTipo = $rs->Get("tipo");
+                $struct->nID_Assessorato = $rs[0]["id_assessorato"];
+                $struct->sAssessorato = $rs[0]["assessorato"];
+                $struct->nTipo = $rs[0]["tipo"];
 
                 //Direzione
-                $struct->nID_Direzione = $rs->Get("id_direzione");
-                $struct->sDirezione = $rs->Get("direzione");
+                $struct->nID_Direzione = $rs[0]["id_direzione"];
+                $struct->sDirezione = $rs[0]["direzione"];
 
                 //Servizio
-                $struct->nID_Servizio = $rs->Get("id_servizio");
-                $struct->sServizio = $rs->Get("servizio");
+                $struct->nID_Servizio = $rs[0]["id_servizio"];
+                $struct->sServizio = $rs[0]["servizio"];
 
                 $soppresso_servizio = 0;
-                if ($rs->Get("data_soppressione_servizio") < $now) $sopresso_servizio = 1;
+                if ($rs[0]["data_soppressione_servizio"] < $now) $soppresso_servizio = 1;
                 $soppresso = 0;
-                if ($rs->Get("data_soppressione_direzione") < $now) $sopresso = 1;
+                if ($rs[0]["data_soppressione_direzione"] < $now) $soppresso = 1;
 
-                $struct->aTree['assessorati'][$rs->Get("id_assessorato")] = array('descrizione' => $rs->Get("assessorato"), 'tipo' => $rs->Get("tipo"), 'direzioni' => array($rs->Get("id_direzione") => array('descrizione' => $rs->Get("direzione"), 'data_soppressione' => $rs->Get("data_soppressione_direzione"), "soppresso" => $soppresso, 'servizi' => array($rs->Get("id_servizio") => array("descrizione" => $rs->Get("servizio"), "data_soppressione" => $rs->Get("data_soppressione_servizio"), "soppresso" => $soppresso_servizio)))));
+                $struct->aTree['assessorati'][$rs[0]["id_assessorato"]] = array('descrizione' => $rs[0]["assessorato"], 'tipo' => $rs[0]["tipo"], 'direzioni' => array($rs[0]["id_direzione"] => array('descrizione' => $rs[0]["direzione"], 'data_soppressione' => $rs[0]["data_soppressione_direzione"], "soppresso" => $soppresso, 'servizi' => array($rs[0]["id_servizio"] => array("descrizione" => $rs[0]["servizio"], "data_soppressione" => $rs[0]["data_soppressione_servizio"], "soppresso" => $soppresso_servizio)))));
 
                 return $struct;
             }
@@ -340,42 +342,45 @@ class AA_Struct
         if ($id_direzione != '' && $id_direzione > 0) {
             $query = "SELECT assessorati.id as id_assessorato,assessorati.descrizione as assessorato, assessorati.tipo, direzioni.id as id_direzione, direzioni.descrizione as direzione, direzioni.data_soppressione as data_soppressione_direzione from direzioni inner join assessorati on direzioni.id_assessorato=assessorati.id where direzioni.id='$id_direzione'";
             $db->Query($query);
-            $rs = $db->GetRecordSet();
-            if ($rs->GetCount() > 0) {
+            $rs = $db->GetResultSet();
+            if (sizeof($rs) > 0) 
+            {
                 $struct->bIsValid = true;
 
                 //Assessorato
-                $struct->nID_Assessorato = $rs->Get("id_assessorato");
-                $struct->sAssessorato = $rs->Get("assessorato");
-                $struct->nTipo = $rs->Get("tipo");
+                $struct->nID_Assessorato = $rs[0]["id_assessorato"];
+                $struct->sAssessorato = $rs[0]["assessorato"];
+                $struct->nTipo = $rs[0]["tipo"];
 
                 //Direzione
-                $struct->nID_Direzione = $rs->Get("id_direzione");
-                $struct->sDirezione = $rs->Get("direzione");
+                $struct->nID_Direzione = $rs[0]["id_direzione"];
+                $struct->sDirezione = $rs[0]["direzione"];
 
                 $soppresso = 0;
-                if ($rs->Get("data_soppressione_direzione") < $now) $sopresso = 1;
+                if ($rs[0]["data_soppressione_direzione"] < $now) $soppresso = 1;
 
-                $struct->aTree['assessorati'][$rs->Get("id_assessorato")] = array('descrizione' => $rs->Get("assessorato"), 'tipo' => $rs->Get("tipo"), 'direzioni' => array());
-                $struct->aTree['assessorati'][$rs->Get("id_assessorato")]['direzioni'][$rs->Get("id_direzione")] = array('descrizione' => $rs->Get("direzione"), "data_soppressione" => $rs->Get('data_soppressione_direzione'), "soppresso" => $soppresso, 'servizi' => array());
+                $struct->aTree['assessorati'][$rs[0]["id_assessorato"]] = array('descrizione' => $rs[0]["assessorato"], 'tipo' => $rs[0]["tipo"], 'direzioni' => array());
+                $struct->aTree['assessorati'][$rs[0]["id_assessorato"]]['direzioni'][$rs[0]["id_direzione"]] = array('descrizione' => $rs[0]["direzione"], "data_soppressione" => $rs[0]['data_soppressione_direzione'], "soppresso" => $soppresso, 'servizi' => array());
 
                 return $struct;
             }
         }
 
         //Assessorato impostato
-        if ($id_assessorato != '' && $id_assessorato > 0) {
+        if ($id_assessorato != '' && $id_assessorato > 0) 
+        {
             $db->Query("SELECT assessorati.id as id_assessorato,assessorati.descrizione as assessorato, assessorati.tipo from assessorati where assessorati.id='$id_assessorato'");
-            $rs = $db->GetRecordSet();
-            if ($rs->GetCount() > 0) {
+            $rs = $db->GetResultSet();
+            if (sizeof($rs) > 0) 
+            {
                 $struct->bIsValid = true;
 
                 //Assessorato
-                $struct->nID_Assessorato = $rs->Get("id_assessorato");
-                $struct->sAssessorato = $rs->Get("assessorato");
-                $struct->nTipo = $rs->Get("tipo");
+                $struct->nID_Assessorato = $rs[0]["id_assessorato"];
+                $struct->sAssessorato = $rs[0]["assessorato"];
+                $struct->nTipo = $rs[0]["tipo"];
 
-                $struct->aTree['assessorati'][$rs->Get("id_assessorato")] = array('descrizione' => $rs->Get("assessorato"), 'tipo' => $rs->Get("tipo"), 'direzioni' => array());
+                $struct->aTree['assessorati'][$rs[0]["id_assessorato"]] = array('descrizione' => $rs[0]["assessorato"], 'tipo' => $rs[0]["tipo"], 'direzioni' => array());
 
                 return $struct;
             }
@@ -391,30 +396,30 @@ class AA_Struct
 
         $now = Date("Y-m-d");
 
-        $db = new Database();
-
         //Servizio impostato
         if ($this->nID_Servizio != '' && $this->nID_Servizio > 0) {
             return $this->aTree;
         }
 
+        $db = new AA_AccountsDatabase();
+
         //Direzione impostata
         if ($this->nID_Direzione != '' && $this->nID_Direzione > 0) {
             $query = "SELECT assessorati.id as id_assessorato,assessorati.descrizione as assessorato, assessorati.tipo, direzioni.id as id_direzione, direzioni.descrizione as direzione, direzioni.data_soppressione as data_soppressione_direzione, servizi.id as id_servizio, servizi.descrizione as servizio, servizi.data_soppressione as data_soppressione_servizio from assessorati left join direzioni on direzioni.id_assessorato = assessorati.id left join servizi on servizi.id_direzione=direzioni.id where direzioni.id='$this->nID_Direzione' order by assessorati.descrizione, direzioni.descrizione, servizi.descrizione";
             if (!$db->Query($query)) {
-                AA_Log::Log(get_class() . "->GetStructTree() - Errore nella query: " . $query, 100, true, true);
+                AA_Log::Log(get_class() . "->GetStructTree() - Errore: " . $db->GetErrorMessage(), 100);
                 return $this->aTree;
             }
 
-            $rs = $db->GetRecordSet();
-            if ($rs->GetCount() > 0) {
-                if ($rs->Get("id_direzione") != "") {
-                    do {
+            $rs = $db->GetResultSet();
+            foreach($rs as $curRow) 
+            {
+                if ($curRow["id_direzione"] != "") {
+                    
                         //AA_Log::Log(get_class()."->GetStructTree() ".print_r($this->aTree,TRUE),100,true,true);
                         $soppresso = 0;
-                        if ($rs->Get("data_soppressione_servizio") < $now) $sopresso = 1;
-                        if ($rs->Get("id_servizio") != "") $this->aTree['assessorati'][$rs->Get("id_assessorato")]['direzioni'][$rs->Get("id_direzione")]['servizi'][$rs->Get("id_servizio")] = array("descrizione" => $rs->Get("servizio"), "data_soppressione" => $rs->Get("data_soppressione_servizio"), "soppresso" => $soppresso);
-                    } while ($rs->MoveNext());
+                        if ($curRow["data_soppressione_servizio"] < $now) $soppresso = 1;
+                        if ($curRow["id_servizio"] != "") $this->aTree['assessorati'][$curRow["id_assessorato"]]['direzioni'][$curRow["id_direzione"]]['servizi'][$curRow["id_servizio"]] = array("descrizione" => $curRow["servizio"], "data_soppressione" => $curRow["data_soppressione_servizio"], "soppresso" => $soppresso);
                 }
             }
 
@@ -422,7 +427,8 @@ class AA_Struct
         }
 
         //Assessorato impostato
-        if ($this->nID_Assessorato != '' && $this->nID_Assessorato > 0) {
+        if ($this->nID_Assessorato != '' && $this->nID_Assessorato > 0) 
+        {
             $query = "SELECT assessorati.id as id_assessorato,assessorati.descrizione as assessorato, assessorati.tipo, direzioni.id as id_direzione, direzioni.descrizione as direzione, direzioni.data_soppressione as data_soppressione_direzione, servizi.id as id_servizio, servizi.descrizione as servizio, servizi.data_soppressione as data_soppressione_servizio from assessorati left join direzioni on direzioni.id_assessorato = assessorati.id left join servizi on servizi.id_direzione=direzioni.id where assessorati.id='$this->nID_Assessorato' order by assessorati.descrizione, direzioni.descrizione,servizi.descrizione";
             if (!$db->Query($query)) {
                 AA_Log::Log(get_class() . "->GetStructTree() - Errore nella query: " . $query, 100, true, true);
@@ -432,20 +438,20 @@ class AA_Struct
             //AA_Log::Log(get_class()."->GetStructTree() - query: ".$query,100,true,true);
 
             $curDirezione = 0;
-            $rs = $db->GetRecordSet();
-            if ($rs->GetCount() > 0) {
-                do {
-                    if ($rs->Get("id_direzione") != $curDirezione && $rs->Get("id_direzione") != "") {
-                        $soppresso = 0;
-                        if ($rs->Get("data_soppressione_direzione") < $now) $sopresso = 1;
-                        $this->aTree['assessorati'][$rs->Get("id_assessorato")]['direzioni'][$rs->Get("id_direzione")] = array('descrizione' => $rs->Get("direzione"), "data_soppressione" => $rs->Get("data_soppressione_direzione"), "soppresso" => $soppresso, 'servizi' => array());
-                        $curDirezione = $rs->Get("id_direzione");
-                    }
-
+            $rs = $db->GetResultSet();
+            foreach($rs as $curRow) 
+            {
+                if ($curRow["id_direzione"] != $curDirezione && $curRow["id_direzione"] != "") 
+                {
                     $soppresso = 0;
-                    if ($rs->Get("data_soppressione_servizio") < $now) $sopresso = 1;
-                    if ($rs->Get("id_servizio") != "") $this->aTree['assessorati'][$rs->Get("id_assessorato")]['direzioni'][$curDirezione]['servizi'][$rs->Get("id_servizio")] = array("descrizione" => $rs->Get("servizio"), "data_soppressione" => $rs->Get("data_soppressione_servizio"), "soppresso" => $soppresso);
-                } while ($rs->MoveNext());
+                    if ($curRow["data_soppressione_direzione"]< $now) $soppresso = 1;
+                    $this->aTree['assessorati'][$curRow["id_assessorato"]]['direzioni'][$curRow["id_direzione"]] = array('descrizione' => $curRow["direzione"], "data_soppressione" => $curRow["data_soppressione_direzione"], "soppresso" => $soppresso, 'servizi' => array());
+                    $curDirezione = $curRow["id_direzione"];
+                }
+
+                $soppresso = 0;
+                if ($curRow["data_soppressione_servizio"] < $now) $soppresso = 1;
+                if ($curRow["id_servizio"] != "") $this->aTree['assessorati'][$curRow["id_assessorato"]]['direzioni'][$curDirezione]['servizi'][$curRow["id_servizio"]] = array("descrizione" => $curRow["servizio"], "data_soppressione" => $curRow["data_soppressione_servizio"], "soppresso" => $soppresso);
             }
 
             return $this->aTree;
@@ -465,25 +471,25 @@ class AA_Struct
 
             //AA_Log::Log(get_class()."->GetStructTree(nTipo: ".$this->nTipo.") - query: ".$query,100,true,true);
 
-            $rs = $db->GetRecordSet();
-            if ($rs->GetCount() > 0) {
-                do {
-                    if ($curAssessorato != $rs->Get("id_assessorato")) {
-                        $this->aTree['assessorati'][$rs->Get("id_assessorato")] = array('descrizione' => $rs->Get("assessorato"), 'tipo' => $rs->Get("tipo"), 'direzioni' => array());
-                        $curAssessorato = $rs->Get("id_assessorato");
-                    }
+            $rs = $db->GetResultSet();
+            foreach($rs as $curRow) 
+            {
+                
+                if ($curAssessorato != $curRow["id_assessorato"]) {
+                    $this->aTree['assessorati'][$curRow["id_assessorato"]] = array('descrizione' => $curRow["assessorato"], 'tipo' => $curRow["tipo"], 'direzioni' => array());
+                    $curAssessorato = $curRow["id_assessorato"];
+                }
 
-                    if ($rs->Get("id_direzione") != $curDirezione && $rs->Get("id_direzione") != "") {
-                        $soppresso = 0;
-                        if ($rs->Get("data_soppressione_direzione") < $now) $soppresso = 1;
-                        $this->aTree['assessorati'][$curAssessorato]['direzioni'][$rs->Get("id_direzione")] = array('descrizione' => $rs->Get("direzione"), "data_soppressione" => $rs->Get("data_soppressione_direzione"), "soppresso" => $soppresso, 'servizi' => array());
-                        $curDirezione = $rs->Get("id_direzione");
-                    }
-
+                if ($curRow["id_direzione"] != $curDirezione && $curRow["id_direzione"] != "") {
                     $soppresso = 0;
-                    if ($rs->Get("data_soppressione_servizio") < $now) $soppresso = 1;
-                    if ($rs->Get("id_servizio") != "") $this->aTree['assessorati'][$curAssessorato]['direzioni'][$curDirezione]['servizi'][$rs->Get("id_servizio")] = array("descrizione" => $rs->Get("servizio"), "data_soppressione" => $rs->Get("data_soppressione_servizio"), "soppresso" => $soppresso);
-                } while ($rs->MoveNext());
+                    if ($curRow["data_soppressione_direzione"] < $now) $soppresso = 1;
+                    $this->aTree['assessorati'][$curAssessorato]['direzioni'][$curRow["id_direzione"]] = array('descrizione' => $curRow["direzione"], "data_soppressione" => $curRow["data_soppressione_direzione"], "soppresso" => $soppresso, 'servizi' => array());
+                    $curDirezione = $curRow["id_direzione"];
+                }
+
+                $soppresso = 0;
+                if ($curRow["data_soppressione_servizio"] < $now) $soppresso = 1;
+                if ($curRow["id_servizio"] != "") $this->aTree['assessorati'][$curAssessorato]['direzioni'][$curDirezione]['servizi'][$curRow["id_servizio"]] = array("descrizione" => $curRow["servizio"], "data_soppressione" => $curRow["data_soppressione_servizio"], "soppresso" => $soppresso);
             }
         }
 

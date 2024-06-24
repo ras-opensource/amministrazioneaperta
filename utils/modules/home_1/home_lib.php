@@ -1088,7 +1088,7 @@ Class AA_HomeModule extends AA_GenericModule
         $layout->AddRow($second_row);
 
         $minCountModulesToCarousel=5;
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        if(AA_Config::AA_ENABLE_LEGACY_DATA && AA_Config::AA_SHOW_LEGACY_MODULES_BOX)
         {
             $minCountModulesToCarousel=4;
         }
@@ -1138,7 +1138,7 @@ Class AA_HomeModule extends AA_GenericModule
                         //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
 
                         $name="<span style='font-weight:900;'>".implode("</span><span>",explode("-",$curMod['tooltip']))."</span>";
-                        $onclick="AA_MainApp.utils.callHandler('ModuleBoxClick',null,'".$curModId."')";
+                        $onclick="AA_MainApp.utils.callHandler('ModuleBoxClick','".$curModId."','".$this->GetId()."')";
                         $moduli_data=array("id"=>$curModId,"name"=>$name,'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon'],"onclick"=>$onclick);
                         $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
                         
@@ -1152,7 +1152,7 @@ Class AA_HomeModule extends AA_GenericModule
                     }
                 }
 
-                if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                if(AA_Config::AA_ENABLE_LEGACY_DATA && AA_Config::AA_SHOW_LEGACY_MODULES_BOX)
                 {
                     if($nMod%4==0 && $nMod > 0)
                     {
@@ -1202,7 +1202,7 @@ Class AA_HomeModule extends AA_GenericModule
             }
             else
             {
-                if(AA_Const::AA_ENABLE_LEGACY_DATA)
+                if(AA_Config::AA_ENABLE_LEGACY_DATA && AA_Config::AA_SHOW_LEGACY_MODULES_BOX)
                 {
 
                     $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));

@@ -6486,3 +6486,73 @@ class AA_GenericResetPwdDlg extends AA_GenericFormDlg
     }
 }
 
+Class AA_Struttura extends AA_GenericParsableDbObject
+{
+    static protected $dbDataTable="assessorati";
+
+    const AA_TIPO_ASSESSORATO=0;
+    const AA_TIPO_AGENZIA=2;
+    const AA_TIPO_ENTE=1;
+    const AA_TIPO_COMMISSARIO=3;
+
+    static protected $aTipologie=null;
+    static public function GetTipologie()
+    {
+        if(static::$aTipologie==null)
+        {
+            static::$aTipologie=array(
+                static::AA_TIPO_AGENZIA=>"Agenzia",
+                static::AA_TIPO_ASSESSORATO=>"Assessorato",
+                static::AA_TIPO_COMMISSARIO=>"Commissario",
+                static::AA_TIPO_ENTE=>"Ente"
+            );
+        }
+
+        return static::$aTipologie;
+    }
+    static protected $ObjectClass=__CLASS__;
+
+    public function __construct($params = null)
+    {
+        $this->aProps['descrizione']="";
+        $this->aProps['tipo']=-1;
+        $this->aProps['data_istituzione']=date("Y-m-d");
+        $this->aProps['data_sopressione']="9999-31-12";
+
+        parent::__construct($params);
+    }
+}
+
+Class AA_Direzione extends AA_GenericParsableDbObject
+{
+    static protected $dbDataTable="direzioni";
+
+    static protected $ObjectClass=__CLASS__;
+
+    public function __construct($params = null)
+    {
+        $this->aProps['descrizione']="";
+        $this->aProps['id_assessorato']=0;
+        $this->aProps['data_istituzione']=date("Y-m-d");
+        $this->aProps['data_sopressione']="9999-31-12";
+
+        parent::__construct($params);
+    }
+}
+
+Class AA_Servizio extends AA_GenericParsableDbObject
+{
+    static protected $dbDataTable="direzioni";
+
+    static protected $ObjectClass=__CLASS__;
+
+    public function __construct($params = null)
+    {
+        $this->aProps['descrizione']="";
+        $this->aProps['id_direzione']=0;
+        $this->aProps['data_istituzione']=date("Y-m-d");
+        $this->aProps['data_sopressione']="9999-31-12";
+
+        parent::__construct($params);
+    }
+}

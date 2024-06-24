@@ -57,6 +57,12 @@ Class AA_Config
     //Abilita disabilita la gestione dei dati legacy (gestione strutture, legame struttura-utente, etc.)
     const AA_ENABLE_LEGACY_DATA=false;
 
+    //url legacy modules root
+    const AA_LEGACY_ROOT_URL="";
+
+    //show legacy modules
+    const AA_SHOW_LEGACY_MODULES_BOX=false;
+    
     //migra automaticamente dopo il login gli utenti legacy al nuovo sistema
     const AA_MIGRATE_LEGACY_USERS=false;
 }

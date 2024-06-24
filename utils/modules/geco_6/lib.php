@@ -4813,7 +4813,7 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         return false;
     }
 
-    public function GetUSerCaps($user=null)
+    public function GetUserCaps($user=null)
     {
         if(!($user instanceof AA_User) || $user->IsCurrentUser()) $user=AA_User::GetCurrentUser();
 
