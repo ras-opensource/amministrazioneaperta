@@ -84,8 +84,8 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
 <?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ModuleLegacyBoxClick = async function() {
     try 
     {
-        //console.log("eventHandlers.defaultHandlers.ModuleLegacyBoxClick", this, arguments);
-        let wnd = window.open("/web/amministrazione_aperta/admin");
+        console.log("eventHandlers.defaultHandlers.ModuleLegacyBoxClick", this, arguments);
+        let wnd = window.open("/sso_login.php?SSO_AUTH_TOKEN="+arguments[0]['SSO_AUTH_TOKEN']+"&url="+arguments[0]['url']);
     } catch (msg) {
         console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.ModuleLegacyBoxClick", msg, this);
     }

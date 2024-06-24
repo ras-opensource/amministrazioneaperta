@@ -1877,6 +1877,65 @@ class AA_User
         return AA_User::Guest();
     }
 
+    public function GetSSOAuthToken()
+    {
+        if(!$this->IsValid())
+        {
+            return "";
+        }
+
+        if(!$this->isCurrentUser())
+        {
+            return "";
+        }
+
+        if($_SESSION['token'])
+        {
+            return crypt($_SESSION['token'],uniqid());
+        }
+    }
+
+    static public function VerifySSOAuthToken($token='',$bRegisterToken=false)
+    {
+        if($token=='') return false;
+
+        $db=new AA_AccountsDatabase();
+
+        $query="SELECT token FROM tokens ORDER by data_rilascio DESC";
+
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__," - errore: ".$db->GetErrorMessage(),100);
+        }
+
+        $rs=$db->GetResultSet();
+        foreach($rs as $curToken)
+        {
+            if (crypt($curToken['token'], $token)==$token)
+            {
+                $savedToken = $_SESSION['token'];
+                $curUser=AA_User::UserAuth($curToken['token']);
+
+                if($curUser->IsValid()) 
+                {
+                    if(!$bRegisterToken) AA_User::UserAuth($savedToken);
+
+                    return true;
+                }
+                else
+                {
+                    if(!$bRegisterToken) AA_User::UserAuth($savedToken);
+
+                    AA_Log::Log(__METHOD__," - errore: sso token scaduto o non valido.",100);
+                    return false;
+                }
+            }
+        }
+
+        AA_Log::Log(__METHOD__," - errore: sso token non valido.",100);
+        return false;
+    }
+
     //Autenticazione legacy (md5 password)
     static public function legacyUserAuth($sToken = "", $sUserName = "", $sUserPwd = "", $remember_me=false)
     {
