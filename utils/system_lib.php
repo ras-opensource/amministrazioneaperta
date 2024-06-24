@@ -3706,9 +3706,26 @@ class AA_GenericModule
     //Task section object content
     protected function Task_GetGenericObjectContent($task, $params = array(), $param = "object")
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
 
         $sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>";
+
+        //object templates
+        foreach($this->aObjectTemplates as $idObject=>$curTemplate)
+        {
+            if($params['object']==$idObject && is_string($curTemplate) && method_exists($this,$curTemplate))
+            {
+                $content = array("id" => $idObject, "content" => $this->{$curTemplate}()->toArray());
+                
+                //AA_Log::Log(__METHOD__." - content ".print_r($content,true),100);
+
+                //Codifica il contenuto in base64
+                $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
+                $task->SetLog($sTaskLog);
+
+                return true;
+            }
+        }
 
         //Verifica se il contenuto richiesto è una sezione
         foreach($this->sections as $idSection=>$curSection)
@@ -3771,23 +3788,6 @@ class AA_GenericModule
                         }
                     }
                 }
-            }
-        }
-
-        //object templates
-        foreach($this->aObjectTemplates as $idObject=>$curTemplate)
-        {
-            if($params['object']==$idObject && is_string($curTemplate) && method_exists($this,$curTemplate))
-            {
-                $content = array("id" => $idObject, "content" => $this->{$curTemplate}()->toArray());
-                
-                //AA_Log::Log(__METHOD__." - content ".print_r($content,true),100);
-
-                //Codifica il contenuto in base64
-                $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
-                $task->SetLog($sTaskLog);
-
-                return true;
             }
         }
 

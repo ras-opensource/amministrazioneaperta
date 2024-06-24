@@ -1152,7 +1152,7 @@ Class AA_HomeModule extends AA_GenericModule
 
                 if(AA_Const::AA_ENABLE_LEGACY_DATA)
                 {
-                    if($nMod%4==0)
+                    if($nMod%4==0 && $nMod > 0)
                     {
                         if(sizeof($platform_modules) <= $minCountModulesToCarousel) $moduli_box->AddRow($moduli_view);
                         else $moduli_box->AddSlide($moduli_view);
@@ -1189,8 +1189,14 @@ Class AA_HomeModule extends AA_GenericModule
                         $moduli_view->addCol(new AA_JSON_Template_Generic());
                     }
                 }
-                if(sizeof($platform_modules) <= $minCountModulesToCarousel) $moduli_box->AddRow($moduli_view);
-                else $moduli_box->AddSlide($moduli_view);
+                if(sizeof($platform_modules) <= $minCountModulesToCarousel) 
+                {
+                    $moduli_box->AddRow($moduli_view);
+                }
+                else 
+                {
+                    $moduli_box->AddSlide($moduli_view);
+                }
             }
             else
             {
