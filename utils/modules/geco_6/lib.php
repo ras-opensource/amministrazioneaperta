@@ -1181,7 +1181,7 @@ Class AA_GecoModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Beneficiario","Beneficiario");
         
         //Nome e cognome
-        $section->AddTextField("Beneficiario_nome","Nome",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
+        $section->AddTextField("Beneficiario_nome","Nominativo",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
         
         //cf
         $section->AddTextField("Beneficiario_cf","C.F.",array("required"=>true, "gravity"=>1,"bottomPadding"=>32,"labelWidth"=>60,"bottomLabel"=>"*Inserisci il codice fiscale del beneficiario."),false);
@@ -3126,13 +3126,13 @@ Class AA_GecoModule extends AA_GenericModule
 
         $options_documenti=array();
 
-        $options_documenti[]=array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"center"),"sort"=>"int");
-        $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
-        $options_documenti[]=array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text");
-        $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"center"));
-        $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>120,"css"=>array("text-align"=>"center"));
+        $options_documenti[]=array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"textFilter")),"width"=>90, "css"=>"CriteriTable_left","sort"=>"int");
+        $options_documenti[]=array("id"=>"estremi","header"=>array("<div style='text-align: center'>Estremi</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>"CriteriTable_left","sort"=>"text");
+        $options_documenti[]=array("id"=>"descrizione","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>"CriteriTable_left","sort"=>"text");
+        $options_documenti[]=array("id"=>"tipoDescr","header"=>array("<div style='text-align: center'>Categorie</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>"CriteriTable");
+        $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>120,"css"=>"CriteriTable");
    
-        $documenti=new AA_JSON_Template_Generic($curId."_Criteri_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","hover"=>"AA_DataTable_Row_Hover","columns"=>$options_documenti));
+        $documenti=new AA_JSON_Template_Generic($curId."_Criteri_Table",array("view"=>"datatable", "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","fixedRowHeight"=>false,"rowLineHeight"=>24,"hover"=>"AA_DataTable_Row_Hover","columns"=>$options_documenti));
 
         $storage=AA_Storage::GetInstance();
 
@@ -3170,15 +3170,15 @@ Class AA_GecoModule extends AA_GenericModule
             {
                 $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetProp("url").'"},"'.$this->id.'")';
                 $view_icon="mdi-eye";
-                $tip="Naviga (in un'altra finestra)";
+                $tip="Naviga (in un&apos;altra finestra)";
             }
             
             
             $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
             $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
             $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoCopyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center; width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
 
             $docTipo=array();
             foreach($categorie as $key=>$val)
@@ -4799,6 +4799,18 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         }
         
         return parent::Parse($params);
+    }
+
+    static public function Search($params=null)
+    {
+        if(!$params)
+        {
+            $params=array();
+        }
+
+        $params['ORDER']=array("anno DESC","id DESC");
+
+        return parent::Search($params);
     }
 
     public function Load($id=0,$user=null)

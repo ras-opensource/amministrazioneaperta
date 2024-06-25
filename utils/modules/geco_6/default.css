@@ -29,3 +29,17 @@
       transform: translateX(-100%);
     }
 }
+
+.CriteriTable_left .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: start;
+}
+
+.CriteriTable .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+}
