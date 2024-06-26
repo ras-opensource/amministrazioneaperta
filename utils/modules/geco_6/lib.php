@@ -738,6 +738,9 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecoModifyDlg");
         $taskManager->RegisterTask("GetGecoBeneficiarioModifyDlg");
         $taskManager->RegisterTask("GetGecoAddNewDlg");
+        $taskManager->RegisterTask("GetGecoAddNewMultiDlg");
+        $taskManager->RegisterTask("GetGecoAddNewMultiPreviewCalc");
+        $taskManager->RegisterTask("GetGecoAddNewMultiPreviewDlg");
         $taskManager->RegisterTask("GetGecoTrashDlg");
         $taskManager->RegisterTask("TrashGeco");
         $taskManager->RegisterTask("GetGecoDeleteDlg");
@@ -1215,6 +1218,125 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
 
         $wnd->SetSaveTask("AddNewGeco");
+        
+        return $wnd;
+    }
+
+    //Template dlg addnew geco da csv
+    public function Template_GetGecoAddNewMultiDlg()
+    {
+        $id=static::AA_UI_PREFIX."_GetGecoAddNewMultiDlg_".uniqid();
+
+        $form_data=array();
+
+        $platform=AA_Platform::GetInstance($this->oUser);
+
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(600);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+
+        $descr="<ul>Il file csv deve avere le seguenti caratteristiche:";
+        $descr.="<li>la prima riga deve contenere i nomi dei campi;</li>";
+        $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8;</li>";
+        $descr.="<li>usare il carattere \"|\" (pipe) come separatore dei campi;</li>";
+        $descr.="</ul>";
+        $descr.="<p>Tramite il seguente <a href='".$platform->GetModulePathURL($this->GetId())."/docs/geco_addnew_multi.ods' target='_blank'>link</a> è possibile scaricare un foglio elettronico da utilizzarsi come base per la predisposizione del file csv.</p>";
+        $descr.="<p>Per la generazione del file csv si consiglia l'utilizzo del software opensource <a href='https://www.libreoffice.org' target='_blank'>Libreoffice</a> in quanto consente di impostare il carattere di delimitazione dei campi e la codifica dei caratteri in fase di esportazione senza dover apportare modifiche al sistema.</p>";
+        $descr.="<hr/>";
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di caricare più contributi tramite importazione da file csv.".$descr."</div>")));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
+
+        //csv
+        $wnd->AddFileUploadField("GecoAddNewMultiCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 2Mb).","accept"=>"application/csv"));
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        $wnd->enableRefreshOnSuccessfulSave(false);
+
+        $wnd->SetApplyButtonName("Procedi");
+
+        $wnd->SetSaveTask("GetGecoAddNewMultiPreviewCalc");
+        
+        return $wnd;
+    }
+
+    //Template dlg addnew multi preview
+    public function Template_GetGecoAddNewMultiPreviewDlg()
+    {
+        $id=static::AA_UI_PREFIX."_GetGecoAddNewMultiPreviewDlg_".uniqid();
+
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        //$wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(1280);
+        $wnd->SetHeight(720);
+        //$wnd->SetBottomPadding(36);
+        //$wnd->EnableValidation();
+        //anno	titolo	descrizione	responsabile	norma_estremi	norma_link	modalita_tipo	modalita_link	importo_impegnato	importo_erogato	beneficiario_nominativo	beneficiario_cf	beneficiario_piva	beneficiario_persona_fisica	beneficiario_privacy	note
+
+        $columns=array(
+            array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"selectFilter")),"width"=>60, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"titolo","header"=>array("<div style='text-align: center'>Titolo</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"responsabile","header"=>array("<div style='text-align: center'>Responsabile</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"norma","header"=>array("<div style='text-align: center'>Norma</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+            array("id"=>"modalita","header"=>array("<div style='text-align: center'>Modalita'</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"importo_impegnato","header"=>array("<div style='text-align: center'>Impegnato</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right")),
+            array("id"=>"importo_erogato","header"=>array("<div style='text-align: center'>Erogato</div>",array("content"=>"textFilter")),"width"=>90, "css"=>array("text-align"=>"right")),
+            array("id"=>"beneficiario","header"=>array("<div style='text-align: center'>Beneficiario</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"left")),
+            array("id"=>"persona_fisica","header"=>array("<div style='text-align: center'>Persona fisica</div>",array("content"=>"selectFilter")),"width"=>90, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"privacy","header"=>array("<div style='text-align: center'>Privacy</div>",array("content"=>"selectFilter")),"width"=>90, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"note","header"=>array("<div style='text-align: center'>Note</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"right"),"sort"=>"text")
+        );
+
+        $data=AA_SessionVar::Get("GecoAddNewMultiFromCSV_ParsedData")->GetValue();
+        
+        AA_SessionVar::UnsetVar("GecoAddNewMultiFromCSV_ParsedData");
+
+        if(!is_array($data))
+        {
+            AA_Log::Log(__METHOD__." - dati csv non validi: ".print_r($data,TRUE),100);
+            $data=array();
+        }
+
+        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
+
+        $desc="<p>Sono stati riconosciute <b>".sizeof((array)$data)." voci</b> differenti.</p>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+
+        $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
+            "type"=>"clean",
+            "view"=>"scrollview",
+            "scroll"=>"x"
+        ));
+        $table=new AA_JSON_Template_Generic($id."_CsvImportPreviewTable", array(
+            "view"=>"datatable",
+            "css"=>"AA_Header_DataTable",
+            "hover"=>"AA_DataTable_Row_Hover",
+            "columns"=>$columns,
+            "data"=>array_values($data)
+        ));
+        $scrollview->addRowToBody($table);
+
+        $wnd->AddGenericObject($scrollview);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+
+        //$wnd->enableRefreshOnSuccessfulSave();
+
+        $wnd->SetApplyButtonName("Importa");
+
+        $wnd->SetSaveTask("GecoAddNewMulti");
         
         return $wnd;
     }
@@ -3913,6 +4035,156 @@ Class AA_GecoModule extends AA_GenericModule
             $task->SetContent($this->Template_GetGecoAddNewDlg(),true);
             return true;
         }
+    }
+
+    //Task aggiunta multipla
+    public function Task_GetGecoAddNewMultiDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGecoAddNewMultiDlg(),true);
+            return true;
+        }
+    }
+
+    //Task aggiunta multipla preview
+    public function Task_GetGecoAddNewMultiPreviewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGecoAddNewMultiPreviewDlg(),true);
+            return true;
+        }
+    }
+
+    //Task aggiunta geco da csv, passo 2 di 3
+    public function Task_GetGecoAddNewMultiPreviewCalc($task)
+    {
+        $csvFile=AA_SessionFileUpload::Get("GecoAddNewMultiCSV");
+        if(!$csvFile->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non valido",false);        
+            return false;
+        }
+
+        $csv=$csvFile->GetValue();
+        if(!is_file($csv["tmp_name"]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non valido (1)",false);
+            return false;
+        }
+
+        $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        //Elimina il file temporaneo
+        if(is_file($csv["tmp_name"]))
+        {
+            unlink($csv["tmp_name"]);
+        }
+
+        //Parsing della posizione dei campi
+        $fieldPos=array(
+            "anno"=>-1,
+            "titolo"=>-1,
+            "descrizione"=>-1,
+            "responsabile"=>-1,
+            "norma_estremi"=>-1,
+            "norma_link"=>-1,
+            "modalita_tipo"=>-1,
+            "modalita_link"=>-1,
+            "importo_impegnato"=>-1,
+            "importo_erogato"=>-1,
+            "beneficiario_nominativo"=>-1,
+            "beneficiario_cf"=>-1,
+            "beneficiario_piva"=>-1,
+            "beneficiario_persona_fisica"=>-1,
+            "beneficiario_privacy"=>-1,
+            "note"=>-1
+        );
+        
+        $recognizedFields=0;
+        foreach(explode("|",$csvRows[0]) as $pos=>$curFieldName)
+        {
+            if($fieldPos[trim(strtolower($curFieldName))] == -1)
+            {
+                $fieldPos[trim(strtolower($curFieldName))] = $pos;
+                $recognizedFields++;
+            }
+        }
+        //----------------------------------------
+
+        if($fieldPos['titolo']==-1 || $fieldPos['responsabile'] ==-1 || $fieldPos['norma_estremi'] ==-1 || $fieldPos['norma_link'] ==-1 || $fieldPos['modalita_tipo'] ==-1 || $fieldPos['modalita_link'] ==-1 || $fieldPos['importo_impegnato'] ==-1 || $fieldPos['beneficiario_nominativo'] ==-1 || $fieldPos['beneficiario_cf'] ==-1 || $fieldPos['beneficiario_persona_fisica'] ==-1 || $fieldPos['beneficiario_privacy'] ==-1)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non sono stati trovati tutti i campi relativi a: titolo,responsabile,norma_estremi,norma_link,modalita_tipo,modalita_link,importo_impegnato,beneficiario_nominativo,beneficiario_cf,beneficiario_persona_fisica,beneficiario_privacy. Verificare che il file csv sia strutturato correttamente e riprovare",false);
+            return false;
+        }
+
+        //parsing dei dati
+        $data=array();
+        $curRowNum=0;
+        $modalita=AA_Geco_Const::GetListaModalita();
+
+        foreach($csvRows as $curCsvRow)
+        {
+            //salta la prima riga
+            if($curRowNum > 0 && $curCsvRow !="")
+            {
+                $csvValues=explode("|",$curCsvRow);
+                if(sizeof($csvValues) >= $recognizedFields)
+                {
+                    $curDataValues=array();
+                    foreach($fieldPos as $fieldName=>$pos)
+                    {
+                        if($pos>=0)
+                        {
+                            $curDataValues[$fieldName]=trim($csvValues[$pos]);                            
+                        }
+                    }
+
+                    $curDataValues['norma']="<a href='".$curDataValues['norma_link']."'>".$curDataValues['norma_estremi']."</a>";
+                    $curDataValues['modalita']="<a href='".$curDataValues['modalita_link']."'>".$modalita[$curDataValues['modalita_tipo']]."</a>";
+                    $curDataValues['beneficiario']=$curDataValues['beneficiario_nominativo']." - ".$curDataValues['beneficiario_cf'];
+                    $curDataValues['persona_fisica']="no";
+                    if($curDataValues['beneficiario_persona_fisica']==1) $curDataValues['persona_fisica']="si";
+                    $curDataValues['privacy']="no";
+                    if($curDataValues['beneficiario_privacy']==1) $curDataValues['privacy']="si";
+
+                    $curDataValues['importo_impegnato']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curDataValues['importo_impegnato'])),2,",",".");
+                    $curDataValues['importo_erogato']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curDataValues['importo_erogato'])),2,",",".");
+                    
+                    $data[]=$curDataValues;
+                }
+            }
+            $curRowNum++;
+        }
+
+        AA_SessionVar::Set("GecoAddNewMultiFromCSV_ParsedData",$data,false);
+        
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetStatusAction('dlg',array("task"=>"GetGecoAddNewMultiPreviewDlg"),true);
+        $task->SetContent("Csv elaborato.",false);
+                
+        return true;
     }
 
     //Task aggiungi allegato
