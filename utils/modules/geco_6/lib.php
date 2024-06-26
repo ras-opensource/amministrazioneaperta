@@ -1244,13 +1244,13 @@ Class AA_GecoModule extends AA_GenericModule
         $descr="<ul>Il file csv deve avere le seguenti caratteristiche:";
         $descr.="<li>la prima riga deve contenere i nomi dei campi;</li>";
         $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8;</li>";
-        $descr.="<li>usare il carattere \"|\" (pipe) come separatore dei campi;</li>";
+        $descr.="<li>il carattere \"|\" (pipe) deve essere utilizzato come separatore dei campi;</li>";
         $descr.="</ul>";
         $descr.="<p>Tramite il seguente <a href='".$platform->GetModulePathURL($this->GetId())."/docs/geco_addnew_multi.ods' target='_blank'>link</a> è possibile scaricare un foglio elettronico da utilizzarsi come base per la predisposizione del file csv.</p>";
         $descr.="<p>Per la generazione del file csv si consiglia l'utilizzo del software opensource <a href='https://www.libreoffice.org' target='_blank'>Libreoffice</a> in quanto consente di impostare il carattere di delimitazione dei campi e la codifica dei caratteri in fase di esportazione senza dover apportare modifiche al sistema.</p>";
         $descr.="<hr/>";
 
-        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di caricare più contributi tramite importazione da file csv.".$descr."</div>")));
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di generare più bozze tramite importazione da file csv.".$descr."</div>")));
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
 
         //csv
@@ -1334,7 +1334,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //$wnd->enableRefreshOnSuccessfulSave();
 
-        $wnd->SetApplyButtonName("Importa");
+        $wnd->SetApplyButtonName("Procedi");
 
         $wnd->SetSaveTask("GecoAddNewMulti");
         

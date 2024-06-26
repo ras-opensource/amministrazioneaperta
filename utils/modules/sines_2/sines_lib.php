@@ -150,7 +150,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //Scadenzario
         $navbarTemplate=$this->TemplateNavbar_Pubblicate(1,true)->toArray();
-        $section=new AA_GenericModuleSection("Scadenzario","Scadenzario",true,static::AA_UI_PREFIX."_".static::AA_UI_SCADENZARIO_BOX,$this->GetId(),false,true,false,true);
+        $section=new AA_GenericModuleSection("Scadenzario","Agenda nomine",true,static::AA_UI_PREFIX."_".static::AA_UI_SCADENZARIO_BOX,$this->GetId(),false,true,false,true);
         $section->SetNavbarTemplate($navbarTemplate);
         $this->AddSection($section);
         
@@ -360,7 +360,7 @@ Class AA_SinesModule extends AA_GenericModule
             . "</div><div class='AA_DataView_ScadenzarioItemContent'>#nomine#</div></div>";
         $content->SetContentBoxTemplate($contentBoxTemplate);
         
-        $content->SetSectionName("Scadenzario nomine al ".$data->format("Y-m-d"));
+        $content->SetSectionName("Agenda nomine al ".$data->format("Y-m-d"));
         
         $content->ViewDetail();
         
@@ -4801,7 +4801,7 @@ Class AA_SinesModule extends AA_GenericModule
                 "refresh_view"=>$refresh_view,
                 "tooltip"=>"Fai click per visualizzare lo scadenzario delle nomine",
                 "template"=>"<div class='AA_navbar_link_box_left #class#'><a class='AA_Sines_Navbar_Link_Scadenzario_Content_Box' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"Scadenzario\",\"".$this->id."\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
-                "data"=>array("label"=>"Scadenzario","icon"=>"mdi mdi-clipboard-clock","class"=>$class))
+                "data"=>array("label"=>"Agenda nomine","icon"=>"mdi mdi-clipboard-clock","class"=>$class))
             );
         return $navbar;  
     }
@@ -9503,7 +9503,8 @@ Class AA_SinesModule extends AA_GenericModule
 
         //Intestazione
         $intestazione="<div style='width: 100%; text-align: center; font-size: 32; font-weight: bold; margin-bottom: 2em;'>SINES<br><span style='font-size: smaller;font-weight: normal'>Sistema informativo Enti e Societa'</span></div>";
-        $intestazione.="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Estratto scadenzario incarichi</div>";
+        $intestazione.="<div style='width: 100%; text-align: center; font-size: 24; font-weight: bold'>Agenda nomine</div>";
+        $intestazione.="<div style='width: 100%; text-align: center; font-size: 18; font-weight: bold'>Estratto scadenzario incarichi</div>";
         if($tipo_organismo !="") 
         {
             $intestazione.="<div style='width: 100%; text-align: center; font-size: 18; font-weight: bold;'>".$tipo[$tipo_organismo]."</div>";
@@ -9524,7 +9525,7 @@ Class AA_SinesModule extends AA_GenericModule
         #---------------------------------------
 
         //Imposta il titolo per le pagine successive
-        $doc->SetTitle("SINES - Estratto scadenzario incarichi Organismi RAS- report generato il ".date("Y-m-d"));
+        $doc->SetTitle("SINES - Agenda nomine - estratto scadenzario incarichi Organismi RAS- report generato il ".date("Y-m-d"));
   
         $indice=array();
         $lastPage=$count/$rowForPage+$curNumPage;
