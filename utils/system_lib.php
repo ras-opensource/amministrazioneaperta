@@ -799,6 +799,7 @@ Class AA_GenericParsableObject
     //restituisce tutte le propietà
     public function GetProps()
     {
+        //AA_Log::Log(__METHOD__." - ".print_r($this->aProps,true),100);
         return $this->aProps;
     }
 }
@@ -6517,8 +6518,16 @@ Class AA_Struttura extends AA_GenericParsableDbObject
         $this->aProps['descrizione']="";
         $this->aProps['tipo']=-1;
         $this->aProps['data_istituzione']=date("Y-m-d");
-        $this->aProps['data_sopressione']="9999-31-12";
+        $this->aProps['data_soppressione']="9999-12-31";
 
+        parent::__construct($params);
+    }
+}
+
+Class AA_Assessorato extends AA_Struttura
+{
+    public function __construct($params = null)
+    {
         parent::__construct($params);
     }
 }
@@ -6534,7 +6543,7 @@ Class AA_Direzione extends AA_GenericParsableDbObject
         $this->aProps['descrizione']="";
         $this->aProps['id_assessorato']=0;
         $this->aProps['data_istituzione']=date("Y-m-d");
-        $this->aProps['data_sopressione']="9999-31-12";
+        $this->aProps['data_soppressione']="9999-12-31";
 
         parent::__construct($params);
     }
@@ -6542,7 +6551,7 @@ Class AA_Direzione extends AA_GenericParsableDbObject
 
 Class AA_Servizio extends AA_GenericParsableDbObject
 {
-    static protected $dbDataTable="direzioni";
+    static protected $dbDataTable="servizi";
 
     static protected $ObjectClass=__CLASS__;
 
@@ -6551,7 +6560,7 @@ Class AA_Servizio extends AA_GenericParsableDbObject
         $this->aProps['descrizione']="";
         $this->aProps['id_direzione']=0;
         $this->aProps['data_istituzione']=date("Y-m-d");
-        $this->aProps['data_sopressione']="9999-31-12";
+        $this->aProps['data_soppressione']="9999-12-31";
 
         parent::__construct($params);
     }

@@ -91,6 +91,44 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
     }
 };
 
+//Imposta  la data di soppressione se e' quella predefinita
+<?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onStructSuppress = function() {
+    try 
+    {
+        if(arguments[2]=='user')
+        {
+            if(arguments[0]==1)
+            {
+                let form=this.getFormView();
+                if(form)
+                {
+                    let data_soppressione=String(form.getValues()["data_soppressione"]).substr(0,10);
+                    
+                    console.log(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onStructSuppress",data_soppressione);
+
+                    let now=new Date();
+                    if(data_soppressione=="9999-12-31")
+                    {
+                        values={"data_soppressione": now.toISOString().substr(0,10)}
+                        form.setValues(values,true);
+                    }
+                }
+            }
+            else
+            {
+                let form=this.getFormView();
+                if(form)
+                {
+                    let values={"data_soppressione": "9999-12-31"}
+                    form.setValues(values,true);
+                }
+            }
+         }
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onStructSuppress", msg, this);
+    }
+};
+
 //Struct filter
 <?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onFilterStructChange = async function() {
     try 

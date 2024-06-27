@@ -418,7 +418,7 @@ class AA_Struct
                     
                         //AA_Log::Log(get_class()."->GetStructTree() ".print_r($this->aTree,TRUE),100,true,true);
                         $soppresso = 0;
-                        if ($curRow["data_soppressione_servizio"] < $now) $soppresso = 1;
+                        if ($curRow["data_soppressione_servizio"] <= $now) $soppresso = 1;
                         if ($curRow["id_servizio"] != "") $this->aTree['assessorati'][$curRow["id_assessorato"]]['direzioni'][$curRow["id_direzione"]]['servizi'][$curRow["id_servizio"]] = array("descrizione" => $curRow["servizio"], "data_soppressione" => $curRow["data_soppressione_servizio"], "soppresso" => $soppresso);
                 }
             }
@@ -444,13 +444,13 @@ class AA_Struct
                 if ($curRow["id_direzione"] != $curDirezione && $curRow["id_direzione"] != "") 
                 {
                     $soppresso = 0;
-                    if ($curRow["data_soppressione_direzione"]< $now) $soppresso = 1;
+                    if ($curRow["data_soppressione_direzione"]<= $now) $soppresso = 1;
                     $this->aTree['assessorati'][$curRow["id_assessorato"]]['direzioni'][$curRow["id_direzione"]] = array('descrizione' => $curRow["direzione"], "data_soppressione" => $curRow["data_soppressione_direzione"], "soppresso" => $soppresso, 'servizi' => array());
                     $curDirezione = $curRow["id_direzione"];
                 }
 
                 $soppresso = 0;
-                if ($curRow["data_soppressione_servizio"] < $now) $soppresso = 1;
+                if ($curRow["data_soppressione_servizio"] <= $now) $soppresso = 1;
                 if ($curRow["id_servizio"] != "") $this->aTree['assessorati'][$curRow["id_assessorato"]]['direzioni'][$curDirezione]['servizi'][$curRow["id_servizio"]] = array("descrizione" => $curRow["servizio"], "data_soppressione" => $curRow["data_soppressione_servizio"], "soppresso" => $soppresso);
             }
 
@@ -482,13 +482,13 @@ class AA_Struct
 
                 if ($curRow["id_direzione"] != $curDirezione && $curRow["id_direzione"] != "") {
                     $soppresso = 0;
-                    if ($curRow["data_soppressione_direzione"] < $now) $soppresso = 1;
+                    if ($curRow["data_soppressione_direzione"] <= $now) $soppresso = 1;
                     $this->aTree['assessorati'][$curAssessorato]['direzioni'][$curRow["id_direzione"]] = array('descrizione' => $curRow["direzione"], "data_soppressione" => $curRow["data_soppressione_direzione"], "soppresso" => $soppresso, 'servizi' => array());
                     $curDirezione = $curRow["id_direzione"];
                 }
 
                 $soppresso = 0;
-                if ($curRow["data_soppressione_servizio"] < $now) $soppresso = 1;
+                if ($curRow["data_soppressione_servizio"] <= $now) $soppresso = 1;
                 if ($curRow["id_servizio"] != "") $this->aTree['assessorati'][$curAssessorato]['direzioni'][$curDirezione]['servizi'][$curRow["id_servizio"]] = array("descrizione" => $curRow["servizio"], "data_soppressione" => $curRow["data_soppressione_servizio"], "soppresso" => $soppresso);
             }
         }
@@ -567,7 +567,7 @@ class AA_Struct
         $assessorato_num = 1;
         $direzione_num = 1;
         $servizio_num = 1;
-        $result = array(array("id" => $root, "value" => "Strutture", "open" => true, "data" => array()));
+        $result = array(array("id" => $root, "value" => "Strutture", "open" => true,"ops"=>"", "data" => array()));
         foreach ($this->aTree['assessorati'] as $id_ass => $ass) {
             if (sizeof($ass['direzioni']) > 0 && (!isset($params['hideDirs']) || $params['hideDirs'] !=1)) $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0, "data" => array());
             else $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0);

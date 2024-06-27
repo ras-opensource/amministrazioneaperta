@@ -708,6 +708,11 @@ div.AA_Footer_Gradient {
     align-items: center;
 }
 
+.AA_Struct_soppressa
+{
+    color: red;
+}
+
 .AA_MainOverlayContent h1
 {
     font-variant: small-caps;
