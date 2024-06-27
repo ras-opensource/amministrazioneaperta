@@ -4603,7 +4603,7 @@ class AA_User
                     if(isset(static::$aResetPasswordEmailParams['sendToUs']) && static::$aResetPasswordEmailParams['sendToUs'])
                     {
                         //invio notifica a se stesso
-                        if(!SendMail(array("amministrazioneaperta@regione.sardegna.it"),array(),"Notifica reinvio credenziali utente: ". $user->GetUserName()." - email: ".$user->GetEmail(),"Reinvio credenziali all'utente:<br>login: ".$user->GetUsername()."<br>email: ".$user->GetEmail()."<br>Data: ".date("Y-m-d"),$firma,1))
+                        if(!SendMail(array("amministrazioneaperta@regione.sardegna.it"),array(),"Notifica reinvio credenziali utente: ". $user->GetUserName()." - email: ".$user->GetEmail(),"Reinvio credenziali all'utente:<br>login: ".$user->GetUsername()."<br>email: ".$user->GetEmail()."<br>Data: ".date("Y-m-d").$firma))
                         {
                             AA_Log::Log(__METHOD__."- Errore nell'invio notifica", 100);
                         }
