@@ -4042,7 +4042,7 @@ class AA_User
         }
 
         $rs=$db->GetResultSet();
-        if(!password_verify($oldPwd,$rs[0]['passwd']))
+        if(!AA_Utils::password_verify($oldPwd,$rs[0]['passwd']))
         {
             AA_Log::Log(__METHOD__ . " - Password attuale errata.", 100);
             return false;

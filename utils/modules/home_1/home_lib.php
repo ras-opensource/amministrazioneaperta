@@ -709,7 +709,7 @@ Class AA_HomeModule extends AA_GenericModule
                 "type" => "clean",
                 "css" => "AA_NavbarEventListener",
                 "module_id" => $this->GetId(),
-                "tooltip" => "Visualizza il la gestione utenti",
+                "tooltip" => "Visualizza la gestione utenti",
                 "template" => "<div class='AA_navbar_link_box_left #class#'><a class='".$id."' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"".static::AA_ID_SECTION_GESTUTENTI."\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
                 "data" => array("label" => static::AA_UI_SECTION_GESTUTENTI_NAME, "class" => $class,"icon"=>static::AA_UI_SECTION_GESTUTENTI_ICON)
             )
@@ -729,7 +729,7 @@ Class AA_HomeModule extends AA_GenericModule
                 "type" => "clean",
                 "css" => "AA_NavbarEventListener",
                 "module_id" => $this->GetId(),
-                "tooltip" => "Visualizza il la gestione strutture",
+                "tooltip" => "Visualizza la gestione strutture",
                 "template" => "<div class='AA_navbar_link_box_left #class#'><a class='".$id."' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"".static::AA_ID_SECTION_GESTSTRUCT."\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
                 "data" => array("label" => static::AA_UI_SECTION_GESTSTRUCT_NAME, "class" => $class,"icon"=>static::AA_UI_SECTION_GESTSTRUCT_ICON)
             )
