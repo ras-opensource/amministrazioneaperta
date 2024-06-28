@@ -1379,8 +1379,10 @@ class AA_SystemTask_GetChangeCurrentUserPwdDlg extends AA_GenericTask
             return false;
         }
 
+        $user->MailOTPChangePwdChallenge();
+
         //Profilo aggiornato
-        $dlg = new AA_SystemChangeCurrentUserPwdDlg("AA_SystemChangeCurrentUserPwdDlg","Cambio password utente");
+        $dlg = new AA_SystemChangeCurrentUserPwdDlg("AA_SystemChangeCurrentUserPwdDlg","Reimposta password");
         $sTaskLog .= $dlg->toBase64()."</content>";
 
         $this->SetLog($sTaskLog);

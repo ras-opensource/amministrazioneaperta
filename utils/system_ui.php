@@ -2316,7 +2316,7 @@ class AA_SystemChangeCurrentUserPwdDlg extends AA_GenericFormDlg
         $this->SetLabelWidth(150);
         $this->EnableValidation();
 
-        $this->AddTextField("old_user_pwd", "Password attuale", array("required" => true, "type" => "password", "bottomLabel" => "Inserisci la tua password attuale."));
+        $this->AddTextField("otp", "codice OTP", array("required" => true, "bottomPadding"=>32,"bottomLabel" => "Inserisci il codice OTP che ti e' stato inviato via email."));
         $this->AddTextField("new_user_pwd", "Nuova password", array("required" => true, "type" => "password", "bottomLabel" => "Inserisci la nuova password."));
         $this->AddTextField("re_new_user_pwd", "Ridigita la nuova password", array("required" => true, "type" => "password", "bottomLabel" => "Reinserisci la nuova password."));
 
@@ -2520,7 +2520,7 @@ class AA_SystemCurrentUserProfileDlg extends AA_GenericWindowTemplate
             "view" => "button",
             "type" => "icon",
             "icon" => "mdi mdi-key-chain",
-            "label" => "Cambia password",
+            "label" => "Reimposta password",
             "align" => "right",
             "css" => "webix_primary ",
             "width" => 190,

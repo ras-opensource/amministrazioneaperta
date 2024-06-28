@@ -1389,6 +1389,22 @@ class AA_User
         <img src="https://#www#/immagini/logo.jpg" data-mce-src="https://#www#/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
     );
 
+    //send OTP change password email params
+    protected static $aOTPChangePwdEmailParams=array(
+        "oggetto"=>'Amministrazione Aperta - OTP verifica utente.',
+        "incipit"=>"<p>Gentile collega,<br>è pervenuta una richiesta di reimpostazione della password d'accesso alla piattaforma applicativa \"<b><i>A</i></b>mministrazione <b><i>A</i></b>perta\" con il tuo indirizzo email.<br>Di seguito il codice temporaneo di verifica; hai a disposizione 5 minuti per utilizzarlo, trascorsi i quali dovrai ripetere la procedura.",
+        "post"=>'Qualora non dovessi essere tu l\'autore della richiesta ti invitiamo a segnalarci l\'anomalia inviando una mail alla casella:: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p><p>Cordiali Saluti.</p>',
+        "firma"=>'<div>--
+        <div><strong><i>A</i>mministrazione <i>A</i>perta</strong></div>
+        <div>Presidenza</div>
+        <div>Direzione generale della Presidenza</div>
+        <div>Servizio supporti direzionali</div>
+        <div>V.le Trento, 69 - 09123 Cagliari</div>
+        <div>url d\'accesso: https://#www#</div>
+        <div>email: amministrazioneaperta@regione.sardegna.it</div>
+        <img src="https://#www#/immagini/logo.jpg" data-mce-src="https://#www#/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
+    );
+
     public static function SetResetPwdEmailParams($params=array())
     {
         foreach($params as $key=>$val)
@@ -2268,6 +2284,80 @@ class AA_User
         }
         else
         {
+            return false;
+        }
+                
+        return true;
+    }
+    //-------------------------------
+
+    //Verifica utente via mail OTP - passo 1
+    public function MailOTPChangePwdChallenge()
+    {
+        //AA_Log::Log(__METHOD__." - Authenticate mail OTP");
+        if(!$this->IsValid() || !$this->IsCurrentUser())
+        {
+            AA_Log::Log(__METHOD__." - Utente non valido.");
+            return false;
+        }
+        
+        unset($_SESSION['MailOTP-changepwd-code']);
+
+        $email = str_replace("'", "", trim($this->GetEmail()));
+
+        if ($email == "") {
+            AA_Log::Log(__METHOD__." - mail non impostata.", 100, true, true);
+            return false;
+        }
+
+        //genera ed invia il codice di controllo alla email indicata
+        $code = substr(md5(uniqid(mt_rand(), true)), 0, 6);
+        $_SESSION['MailOTP-changepwd-code'] = $code;
+
+        $subject =AA_User::$aOTPChangePwdEmailParams['oggetto'];
+        $body = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT,AA_User::$aOTPChangePwdEmailParams['incipit']);
+        $body .= "<p>codice OTP: <span style='font-weight: bold; font-size: 150%;'>" . $code . "</span></p>";
+        $body .= str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_Const::AA_WWW_ROOT,AA_User::$aOTPChangePwdEmailParams['post'].AA_User::$aOTPChangePwdEmailParams['firma']);
+
+        if(AA_Const::AA_ENABLE_SENDMAIL)
+        {
+            $result = SendMail(array(0 => $email), "", $subject, $body);
+
+            if (!$result) {
+                AA_Log::Log(__METHOD__." - invio mail fallito - errore: " . $result, 100, true, true);
+                return false;
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__ . " - OTP: " . $code, 100);
+            return true;
+        }
+       
+        return true;
+    }
+    //-------------------------------
+
+    //verifica utente per cambio pwd via mail OTP - passo 2
+    public function MailOTPChangePwdChallengeVerify($code="")
+    {
+        //AA_Log::Log(__METHOD__. " - Verifica mail OTP");
+
+        if(!$this->IsValid() || !$this->IsCurrentUser())
+        {
+            AA_Log::Log(__METHOD__. " - Utente non valido.", 100);
+            return false;
+        }
+        
+        if(!isset($_SESSION['MailOTP-changepwd-code']))
+        {
+            AA_Log::Log(__METHOD__. " - Errore nella verifica del codice OTP (0)", 100);
+            return false;
+        }
+
+        if($code =="" || $code != $_SESSION['MailOTP-changepwd-code'])
+        {
+            AA_Log::Log(__METHOD__. " - Errore nella verifica del codice OTP (1)", 100);
             return false;
         }
                 
@@ -4003,7 +4093,14 @@ class AA_User
 
         $newPwd=str_replace(array(",",";","'",'"',"+","-"," "),"",trim($params['new_user_pwd']));
         $reNewPwd=str_replace(array(",",";","'",'"',"+","-"," "),"",trim($params['re_new_user_pwd']));
-        $oldPwd=trim($params['old_user_pwd']);
+        $otp=trim($params['otp']);
+
+        //verifica OTP
+        if(!$this->MailOTPChangePwdChallengeVerify($otp))
+        {
+            AA_Log::Log(__METHOD__." - Codice OTP errato.",100);
+            return false;
+        }
 
         //Verifica che la nuova password abbia almeno 12 caratteri, contenga un numero, una lettera maiuscola e una lettera minuscola e non contenga la vecchia password
         $password_regex = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/"; 
@@ -4020,33 +4117,8 @@ class AA_User
            return false;
         }
 
-        if($newPwd == $oldPwd)
-        {
-           AA_Log::Log(__METHOD__ . " - La nuova password deve essere diversa da quella vecchia.", 100);
-           return false;
-        }
-
         //verifica vecchia password
         $db=new AA_AccountsDatabase();
-        $query="SELECT passwd FROM ".AA_User::AA_DB_TABLE." WHERE id='".$this->nID."' LIMIT 1";
-        if(!$db->Query($query))
-        {
-            AA_Log::Log(__METHOD__ . " - Errore query db. ".$query, 100);
-            return false;
-        }
-
-        if($db->GetAffectedRows()==0)
-        {
-            AA_Log::Log(__METHOD__ . " - Utente non trovato.", 100);
-            return false;
-        }
-
-        $rs=$db->GetResultSet();
-        if(!AA_Utils::password_verify($oldPwd,$rs[0]['passwd']))
-        {
-            AA_Log::Log(__METHOD__ . " - Password attuale errata.", 100);
-            return false;
-        }
 
         //salva la nuova password
         $query = "UPDATE ".static::AA_DB_TABLE." set passwd='" . AA_Utils::password_hash($newPwd) . "' where id='" . $this->GetID() . "' LIMIT 1";
@@ -4066,6 +4138,8 @@ class AA_User
             }
         }
         
+        if(isset($_SESSION['MailOTP-changepwd-code'])) unset($_SESSION['MailOTP-changepwd-code']);
+
         return true;
     }
 
