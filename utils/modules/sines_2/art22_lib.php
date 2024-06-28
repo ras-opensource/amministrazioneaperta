@@ -3527,6 +3527,7 @@ class AA_Organismi extends AA_Object
         $result=array();
         $nomine_index=array();
         $now=date("Y-m-d");
+        $curNominaIndex=0;
         foreach($organigrammi as $curOrganigramma)
         {
             if($curOrganigramma->IsScadenzarioEnabled())
@@ -6603,6 +6604,7 @@ Class AA_OrganismiNomine extends AA_Object
         $this->oDbBind->AddBind("bNominaRas","nomina_ras");
         $this->oDbBind->AddBind("sEstremiProvvedimento","estremi_provvedimento");
         $this->oDbBind->AddBind("nStorico","storico");
+        $this->oDbBind->AddBind("bDataFinePresunta","data_fine_presunta");
         
         if($parent instanceof AA_Organismi && $id==0)
         {
@@ -6767,6 +6769,18 @@ Class AA_OrganismiNomine extends AA_Object
     {
         $this->sDataFine=$val;
         $this->SetChanged();
+    }
+
+    protected $bDataFinePresunta=false;
+    public function IsDataFinePresunta()
+    {
+        return $this->bDataFinePresunta;
+    }
+
+    public function SetDataFinePresunta($val=true)
+    {
+        if($val) $this->bDataFinePresunta=true;
+        else $this->bDataFinePresunta=false;
     }
 
     //Id parent

@@ -2106,11 +2106,14 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddSelectField("nTipologia","Incarico",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di incarico.","tooltip"=>"Seleziona il tipo di incarico.","options"=>$options,"value"=>"0"));
         
         //Data inizio
-        $wnd->AddDateField("sDataInizio","Data inizio",array("required"=>true,"editable"=>true,"bottomLabel"=>"*Inserire la data di inizio dell'incarico", "placeholder"=>"inserisci qui la data di inizio."));
-        
+        $wnd->AddDateField("sDataInizio","Data inizio",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di inizio dell'incarico", "placeholder"=>"inserisci qui la data di inizio."));
+        $wnd->AddSpacer(false);
+
         //Data fine
-        $wnd->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
+        $wnd->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
         
+        //Data fine presunta
+        $wnd->AddCheckBoxField("bDataFinePresunta","Presunta",array("gravity"=>1,"labelWidth"=>90,"bottomLabel"=>"*Abilitare se presunta."),false);
         //Storico
         $wnd->AddSwitchBoxField("nStorico","Storico",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Abilita per archiviare l'incarico come storico."));
 
@@ -2167,11 +2170,15 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddCheckBoxField("nFacenteFunzione","Facente funzione",array("tooltip"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.","bottomLabel"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.", "value"=>"0"));
 
         //Data inizio
-        $wnd->AddDateField("sDataInizio","Data inizio",array("required"=>true,"editable"=>true,"bottomLabel"=>"*Inserire la data di inizio dell'incarico", "placeholder"=>"inserisci qui la data di inizio."));
-        
+        $wnd->AddDateField("sDataInizio","Data inizio",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di inizio dell'incarico", "placeholder"=>"inserisci qui la data di inizio."));
+        $wnd->AddSpacer(false);
+
         //Data fine
-        $wnd->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
+        $wnd->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
         
+        //Data fine presunta
+        $wnd->AddCheckBoxField("bDataFinePresunta","Presunta",array("gravity"=>1,"labelWidth"=>90,"bottomLabel"=>"*Abilitare se presunta."),false);
+
         //Estremi del provvedimento
         $wnd->AddTextField("sEstremiProvvedimento","Estremi provvedimento",array("required"=>true,"bottomLabel"=>"*Riportare gli estremi del provvedimento di nomina.", "placeholder"=>"inserisci qui gli estremi del provvedimento di nomina."));
         
@@ -3714,6 +3721,10 @@ Class AA_SinesModule extends AA_GenericModule
                 if(strpos($val,"9999") !== false)
                 {
                     $val="a tempo indeterminato";
+                }
+                if($incarico->IsDataFinePresunta())
+                {
+                    $val.="&nbsp;<span class='AA_Label AA_Label_LightYellow'>presunta</span>";
                 }
                 $toolbar->AddElement(new AA_JSON_Template_Template($curId."_Data_Fine",array("type"=>"clean","width"=>160, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Data fine incarico: </span><br>".$val."</div>")));
 
