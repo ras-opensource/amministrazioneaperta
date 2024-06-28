@@ -2316,7 +2316,7 @@ class AA_SystemChangeCurrentUserPwdDlg extends AA_GenericFormDlg
         $this->SetLabelWidth(150);
         $this->EnableValidation();
 
-        $this->AddTextField("otp", "codice OTP", array("required" => true, "bottomPadding"=>32,"bottomLabel" => "Inserisci il codice OTP che ti e' stato inviato via email."));
+        $this->AddTextField("otp", "codice OTP", array("required" => true, "bottomPadding"=>32,"bottomLabel" => "Inserisci il codice OTP che hai ricevuto via email."));
         $this->AddTextField("new_user_pwd", "Nuova password", array("required" => true, "type" => "password", "bottomLabel" => "Inserisci la nuova password."));
         $this->AddTextField("re_new_user_pwd", "Ridigita la nuova password", array("required" => true, "type" => "password", "bottomLabel" => "Reinserisci la nuova password."));
 
