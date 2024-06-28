@@ -3289,16 +3289,38 @@ class AA_User
             return false;
         }
 
-        //Verifica se il nome utente sia valido
-        if ($params['user'] == "") {
-            AA_Log::Log(__METHOD__." - nome utente non impostato", 100);
+        //verifica che sia presente l'email
+        if ($params['email'] == "")
+        {
+            AA_Log::Log(__METHOD__." - occore indicare una email di riferimento.", 100);
             return false;
         }
 
-        //Verifica se l'utente esiste già
-        if (AA_user::UserNameExist($params['user'])) {
-            AA_Log::Log(__METHOD__." - nome utente già esistente.", 100);
-            return false;
+        //Verifica se il nome utente sia valido
+        if (!isset($params['user']) || $params['user'] == "") {
+
+            $email=trim(strtolower($params['email']));
+            $account=explode("@",$email);
+            $suff="";
+            $num=0;
+            $univoco=AA_user::UserNameExist($account[0].$suff);
+            while($univoco)
+            {
+                $num++;
+                $suff="_".$num;
+                
+                $univoco=AA_user::UserNameExist($account[0].$suff);
+            }
+
+            $params['user']=$account[0].$suff;
+        }
+        else
+        {
+            //Verifica se l'utente esiste già
+            if (AA_user::UserNameExist($params['user'])) {
+                AA_Log::Log(__METHOD__." - nome utente già esistente.", 100);
+                return false;
+            }
         }
 
         $allUserGroups=$this->GetAllGroups();
@@ -4137,7 +4159,7 @@ class AA_User
                 return false;
             }
         }
-        
+
         if(isset($_SESSION['MailOTP-changepwd-code'])) unset($_SESSION['MailOTP-changepwd-code']);
 
         return true;

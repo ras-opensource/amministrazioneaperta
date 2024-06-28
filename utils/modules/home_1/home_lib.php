@@ -1626,7 +1626,7 @@ Class AA_HomeModule extends AA_GenericModule
         $columns=array(
             array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"selectFilter")),"width"=>100, "sort"=>"text","css"=>array("text-align"=>"left")),
             array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"user","header"=>array("<div style='text-align: center'>User</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>array("text-align"=>"center")),
+            array("id"=>"user","header"=>array("<div style='text-align: center'>Nome profilo</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
             array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Cognome e nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
@@ -2212,7 +2212,7 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->SetHeight(800);
         
         //username
-        $wnd->AddTextField("user","Login",array("required"=>true,"gravity"=>2, "disabled"=>true,"bottomLabel"=>"*Login utente", "placeholder"=>"Deve essere univoco e non deve contenere spazi o caratteri speciali."));
+        $wnd->AddTextField("user","Nome profilo",array("required"=>true,"gravity"=>2, "disabled"=>true,"bottomLabel"=>"*Puo' essere usato in fase di autenticazione."));
 
         //Ruolo
         if($this->oUser->IsSuperUser()) 
@@ -2341,7 +2341,7 @@ Class AA_HomeModule extends AA_GenericModule
             if($struct->GetServizio(true)>0) $form_data['struct_desc']=$struct->GetServizio();
         }
 
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi utente", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi profilo utente", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(160);
@@ -2350,9 +2350,6 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->SetWidth(1080);
         $wnd->SetHeight(800);
         
-        //username
-        $wnd->AddTextField("user","Login",array("required"=>true,"gravity"=>2, "bottomLabel"=>"*Login utente", "placeholder"=>"Deve essere univoco e non deve contenere spazi o caratteri speciali."));
-
         //Ruolo
         if($this->oUser->IsSuperUser()) 
         {
@@ -2378,8 +2375,22 @@ Class AA_HomeModule extends AA_GenericModule
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
             }
         }
-        $wnd->AddSelectField("ruolo","Ruolo",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Ruolo da assegnare all'utente.","options"=>$options),false);
-        
+
+        if($this->oUser->IsSuperUser())
+        {
+             //username
+            $wnd->AddTextField("user","Nome profilo",array("gravity"=>2, "bottomLabel"=>"*Deve essere univoco (lasciare vuoto per impostazione automatica)."));
+
+            $wnd->AddSelectField("ruolo","Ruolo",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Ruolo da assegnare all'utente.","options"=>$options),false);
+        }
+        else
+        {
+            $wnd->AddSelectField("ruolo","Ruolo",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Ruolo da assegnare all'utente.","options"=>$options));
+
+            $wnd->AddSpacer(false);
+            $wnd->AddSpacer(false);
+        }
+       
         //email
         $wnd->AddTextField("email","Email",array("required"=>true,"gravity"=>2, "validateFunction"=>"IsEmail","bottomLabel"=>"*Email", "placeholder"=>"Email associata all'utente."));
 
