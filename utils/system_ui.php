@@ -2559,3 +2559,270 @@ class AA_SystemCurrentUserProfileDlg extends AA_GenericWindowTemplate
         $this->AddView($layout_tab);
     }
 }
+
+Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
+{
+    //titolo
+    protected $sTitle="";
+    public function SetTitle($val="")
+    {
+        $this->sTitle=$val;
+    }
+    //----------------------
+
+    //filter
+    protected $bFiltered=false;
+    protected $sFilterTask='';
+    public function EnableFilter($val=true,$filterTask=null)
+    {
+        if($val) $this->bFiltered=true;
+        else $this->bFiltered=false;
+
+        if($filterTask) $this->sFilterTask=$filterTask;
+    }
+    public function DisableFilter()
+    {
+        $this->EnableFilter(false);
+    }
+    public function IsFiltered()
+    {
+        return $this->bFiltered;
+    }
+
+    public function SetFilterTask($val='')
+    {
+        $this->sFilterTask=$val;
+    }
+    public function GetFilterTask()
+    {
+        return $this->sFilterTask;
+    }
+    //-------------------------
+
+    //addNew
+    protected $bEnableAddNew=false;
+    protected $sAddNewTask='';
+    public function EnableAddNew($val=true,$sAddNewTask=null)
+    {
+        if($val) $this->bEnableAddNew=true;
+        else $this->bEnableAddNew=false;
+
+        if($sAddNewTask) $this->sAddNewTask=$sAddNewTask;
+    }
+    public function DisableAddNew()
+    {
+        $this->EnableAddNew(false);
+    }
+
+    public function SetAddNewTask($val='')
+    {
+        $this->sAddNewTask=$val;
+    }
+    //------------------------------------
+
+    //header
+    protected $bHeader=false;
+    protected $oCustomHeader=null;
+    public function EnableHeader($val=true,$oCustomHeader=null)
+    {
+        if($val) $this->bHeader=true;
+        else $this->bHeader=false;
+
+        if($oCustomHeader instanceof AA_JSON_Template_Generic) $this->oCustomHeader=$oCustomHeader;
+    }
+
+    protected $bSelect=false;
+    public function EnableSelect($val=true)
+    {
+        if($val) $this->bSelect=true;
+        else $this->bSelect=false;
+    }
+    public function DisableSelect()
+    {
+        $this->EnableSelect(false);
+    }
+    protected $bAutoRowHeight=false;
+    public function EnableAutoRowsHeight($val=true)
+    {
+        if($val) $this->bAutoRowHeight=true;
+        else $this->bAutoRowHeight=false;
+    }
+    public function DisableAutoRowsHeight()
+    {
+        $this->EnableAutoRowsHeight(false);
+    }
+
+    public function SetCustomHeader($val=null)
+    {
+        if($val instanceof AA_JSON_Template_Generic) $this->oCustomHeader=$val;
+    }
+    public function GetCustomHeader()
+    {
+        $this->oCustomHeader;
+    }
+    //-----------------------------------
+
+    //data
+    protected $aData=array();
+    public function SetData($val=null)
+    {
+        if(is_array($val)) $this->aData=$val;
+    }
+
+    public function GetData()
+    {
+        return $this->aData;
+    }
+    //--------------------------------------
+
+    //columns
+    protected $aColumns=array();
+    public function SetColumnHeaderInfo($colNum=0,$id='',$headerLabel='',$width="fillspace",$filterType=null,$sortType=null,$css=null)
+    {
+        if(sizeof($this->aColumns)<=($colNum+1))
+        {
+            if($filterType) $header=array($headerLabel,array("content"=>$filterType));
+            else $header=$headerLabel;
+
+            $column=array("id"=>$id,"header"=>$header);
+
+            if($width !="fillspace") $column['width']=$width;
+            else $column['fillspace']=true;
+
+            if($sortType)
+            {
+                $column['sort']=$sortType;
+            }
+
+            if($css )
+            {
+                $column['css']=$css;
+            }
+
+            $this->aColumns[$colNum]=$column;
+            return true;
+        }
+        return false;
+    }
+
+    protected $cssRowHover=null;
+    public function EnableRowOver($val=true,$css='AA_DataTable_Row_Hover')
+    {
+        if($val) $this->cssRowHover=$css;
+        else $this->cssRowHover=null;
+    }
+    public function DisableRowHover()
+    {
+        $this->cssRowHover=null;
+    }
+
+    protected $tableHeaderCss=null;
+    public function SetTableHeaderCss($val='AA_Header_DataTable')
+    {
+        if($val) $this->tableHeaderCss=$val;
+        else $this->tableHeaderCss=null;
+    }
+    protected $aTableProps=array();
+
+    protected $sDatatableID='';
+    public function GetDatatableId()
+    {
+        return $this->GetId()."_".$this->sDatatableID;
+    }
+    public function __construct($id='',$nNumCols=0,$layoutProps=null,$tableProps=null)
+    {
+        parent::__construct($id,$layoutProps);
+
+        if($nNumCols>0)
+        {
+            for($i=0;$i<$nNumCols;$i++)
+            {
+                $this->aColumns[]=array("id"=>"id_".$i,"header"=>"header_".$i,"fillspace"=>true);
+            }
+        }
+
+        if(is_array($tableProps))
+        {
+            $tableProps['view']="datatable";
+        }
+        else 
+        {
+            $tableProps=array(
+                "view"=>"datatable"
+            );
+        }
+
+        $this->aTableProps=$tableProps;
+
+        $this->sDatatableID=$this->GetId()."_".uniqid();
+    }
+
+    //Scroll
+    protected $bEnableScrollX=true;
+    protected $bEnableScrollY=true;
+
+    public function EnableScroll($bScrollX=true,$bScrollY=true)
+    {
+        if($bScrollX) $this->bEnableScrollX=true;
+        else $this->bEnableScrollX=false;
+
+        if($bScrollY) $this->bEnableScrollY=true;
+        else $this->bEnableScrollY=false;
+    }
+    //--------------------------
+
+    //lineHeight
+    protected $nRowLineHeight=24;
+    public function SetRowLineHeight($val=24)
+    {
+        $this->nRowLineHeight=intVal($val);
+    }
+    public function toArray()
+    {
+
+        //header
+
+        //to do
+
+        //-------------
+
+        if(sizeof($this->aData)>0)
+        {
+
+            $this->aTableProps['columns']=$this->aColumns;
+            
+            if($this->cssRowHover) $this->aTableProps['hover']=$this->cssRowHover;
+            else if(isset($this->aTableProps['hover']))unset($this->aTableProps['hover']);
+
+            if($this->tableHeaderCss) $this->aTableProps['css']=$this->tableHeaderCss;
+            else if(isset($this->aTableProps['css']))unset($this->aTableProps['css']);
+
+            if($this->bSelect) $this->aTableProps['select']=true;
+            else $this->aTableProps['select']=false;
+
+            if($this->bAutoRowHeight)
+            {
+                $this->aTableProps['fixedRowHeight']=false;
+            }
+            else
+            {
+                $this->aTableProps['fixedRowHeight']=false;
+            }
+
+            $this->aTableProps['rowLineHeight']=$this->nRowLineHeight;
+            
+            $this->aTableProps['scrollX']=$this->bEnableScrollX;
+            $this->aTableProps['scrollY']=$this->bEnableScrollY;
+
+            $table = new AA_JSON_Template_Generic($this->sDatatableID,$this->aTableProps);
+
+            $this->AddRow($table);
+        }
+        else
+        {
+            $this->AddRow(new AA_JSON_Template_Template('',array("template"=>"<div style='width:100%;height: 100%;display:flex; justify-content:center;align-items:center'>Non sono presenti elementi</div>")));
+        }
+
+        return parent::toArray();
+    }
+}
