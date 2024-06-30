@@ -2887,7 +2887,7 @@ async function AA_DefaultSystemInitialization(params) {
             const urlParams = new URLSearchParams(window.location.search);
             if(urlParams.get("emailLogin")=="true")
             {
-                console.log("AA_DefaultSystemInitialization", urlParams);
+                //console.log("AA_DefaultSystemInitialization", urlParams);
                 AA_MainApp.logIn=AA_MailUserAuth;
                 AA_MainApp.userAuth=AA_MailUserAuth;
             }
@@ -3925,9 +3925,9 @@ async function AA_UserAuth(params = null) {
                             view: "text",
                             icon: "mdi mdi-account",
                             name: "user",
-                            bottomLabel: "Inserisci il tuo nome utente o la tua email.",
+                            bottomLabel: "Inserisci il nome del profilo utente.",
                             required: true,
-                            label: "utente"
+                            label: "Profilo utente"
                         },
                         {
                             view: "text",

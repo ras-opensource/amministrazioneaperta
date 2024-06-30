@@ -2597,6 +2597,16 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
     {
         return $this->sFilterTask;
     }
+
+    protected $oFilterBoxContent=null;
+    public function SetFilterBoxContent($val=null)
+    {
+        $this->oFilterBoxContent=$val;
+    }
+    public function GetFilterBoxContent()
+    {
+        return $this->oFilterBoxContent;
+    }
     //-------------------------
 
     //addNew
@@ -2630,6 +2640,84 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
 
         if($oCustomHeader instanceof AA_JSON_Template_Generic) $this->oCustomHeader=$oCustomHeader;
     }
+    protected $headerCss=null;
+    public function SetHeaderCss($val=null)
+    {
+        $this->headerCss=$val;
+    }
+    public function GetHeaderCss()
+    {
+        return $this->headerCss;
+    }
+
+    protected $nHeaderHeight=32;
+    public function SetHeaderHeight($val=32)
+    {
+        $this->nHeaderHeight=intVal($val);
+    }
+    public function GetHeaderHeight()
+    {
+        return $this->nHeaderHeight;
+    }
+    protected function BuildHeader()
+    {
+        $id=$this->GetId()."_Header_".uniqid();
+
+        if(!$this->headerCss) $this->headerCss=array("border-bottom"=>"1px solid #dadee0 !important");
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>$this->nHeaderHeight,"css"=>$this->headerCss));
+        
+        if($this->bFiltered)
+        {
+            if($this->oFilterBoxContent)
+            {
+                if($this->oFilterBoxContent instanceof AA_JSON_Template_Generic) $toolbar->addElement($this->oFilterBoxContent);
+                else $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterContent",array("view"=>"label","align"=>"left","label"=>$this->oFilterBoxContent)));
+            }
+            else
+            {
+                $toolbar->addElement(new AA_JSON_Template_Generic(""));
+            }
+            
+            //filtro
+            $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-filter-cog",
+                "label"=>"Filtra",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Opzioni di filtraggio",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sFilterTask."\",postParams: AA_MainApp.curModule.getRuntimeValue('" . $this->GetId() . "','filter_data'), module: AA_MainApp.curModule.id},AA_MainApp.curModule.id)"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic(""));
+        }
+
+        if($this->bEnableAddNew)
+        {
+            $modify_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-application-import",
+                 "label"=>"Aggiungi",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Aggiungi un nuovo elemento",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sAddNewTask."\"},AA_MainApp.curModule.id);"
+             ));
+             $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic(""));
+        }
+
+        return $toolbar;
+    }
+    //----------------------------------------------
 
     protected $bSelect=false;
     public function EnableSelect($val=true)
@@ -2779,11 +2867,15 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
     }
     public function toArray()
     {
-
         //header
-
-        //to do
-
+        if($this->bHeader)
+        {
+            if($this->oCustomHeader instanceof AA_JSON_Template_Generic)
+            {
+                $this->AddRow($this->oCustomHeader);
+            }
+            else $this->AddRow($this->BuildHeader());
+        }
         //-------------
 
         if(sizeof($this->aData)>0)
