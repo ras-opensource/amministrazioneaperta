@@ -2573,6 +2573,24 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
     //filter
     protected $bFiltered=false;
     protected $sFilterTask='';
+
+    protected $sFilterId='';
+
+    protected $aFilterParams=null;
+    public function SetFilterParams($val=null)
+    {
+        $this->aFilterParams=$val;
+    } 
+    public function SetFilterId($val='')
+    {
+        $this->sFilterId=$val;
+    }
+    public function GetFilterId()
+    {
+        return $this->sFilterId;
+    }
+
+
     public function EnableFilter($val=true,$filterTask=null)
     {
         if($val) $this->bFiltered=true;
@@ -2678,6 +2696,16 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
                 $toolbar->addElement(new AA_JSON_Template_Generic(""));
             }
             
+            $filterId=$this->sFilterId;
+            if($filterId=='') $filterId=$this->GetId();
+
+            $params='';
+            if($this->aFilterParams)
+            {
+                if(is_array($this->aFilterParams)) $params=json_encode($this->aFilterParams).",";
+                else $params=$this->aFilterParams.",";
+            }
+            
             //filtro
             $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
                 "view"=>"button",
@@ -2687,7 +2715,7 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Opzioni di filtraggio",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sFilterTask."\",postParams: AA_MainApp.curModule.getRuntimeValue('" . $this->GetId() . "','filter_data'), module: AA_MainApp.curModule.id},AA_MainApp.curModule.id)"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sFilterTask."\",".$params."postParams: AA_MainApp.curModule.getRuntimeValue('" . $filterId . "','filter_data'), module: AA_MainApp.curModule.id},AA_MainApp.curModule.id)"
             ));
             $toolbar->AddElement($modify_btn);
         }
