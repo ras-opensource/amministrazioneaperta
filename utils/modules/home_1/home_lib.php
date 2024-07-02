@@ -83,6 +83,7 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("GetHomeUtentiModifyDlg");
         $taskManager->RegisterTask("HomeUtentiUpdate");
         $taskManager->RegisterTask("HomeUtentiSendCredenzials");
+        $taskManager->RegisterTask("HomeUtentiConfirmSendCredenzials");
         $taskManager->RegisterTask("GetHomeUtentiAddNewDlg");
         $taskManager->RegisterTask("HomeUtentiAddNew");
         $taskManager->RegisterTask("GetHomeRngDlg");
@@ -1668,7 +1669,7 @@ Class AA_HomeModule extends AA_GenericModule
                 if($canModify)
                 {
                     $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiModifyDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
-                    $send='AA_MainApp.utils.callHandler("doTask", {task:"HomeUtentiSendCredenzials", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
+                    $send='AA_MainApp.utils.callHandler("dlg", {task:"HomeUtentiConfirmSendCredenzials", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
                     $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeUtentiTrashDlg", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'")';
                     $resume_op='AA_MainApp.utils.callHandler("doTask", {task:"HomeUtentiResume", params: [{id: "'.$curUser->GetId().'"}]},"'.$this->id.'");AA_MainApp.curModule.refreshCurSection();';
                     if($trash)
@@ -2723,6 +2724,72 @@ Class AA_HomeModule extends AA_GenericModule
         if(AA_Const::AA_ENABLE_SENDMAIL) $task->SetContent("Credenziali reimpostate e inviate con successo.");
         else $task->SetContent("Credenziali reimpostate con successo.");
         return true;
+    }
+
+    //Task send credentials
+    public function Task_HomeUtentiConfirmSendCredenzials($task)
+    {
+        if(!$this->oUser->CanGestUtenti())
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente (".$this->oUser->GetUsername().") non è abilitato alla gestione utenti.",100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione utenti.");
+            return false;
+        }
+
+        $user=AA_User::LoadUser($_REQUEST['id']);
+        if(!$user->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - L'utente inidcato non è stato trovato (".$_REQUEST['id'].").",100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente indicato non valido.");
+            return false;
+        }
+
+        if(!$this->oUser->CanModifyUser($user))
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente (".$this->oUser->GetUsername().") non può gestire l'utente indicato.",100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione dell'utente indicato.");
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_HomeUtentiConfirmSendUserCredentials($user),true);
+
+        return true;
+    }
+
+    //Template confirm delete personale detyerminato comuni
+    public function Template_HomeUtentiConfirmSendUserCredentials($user=null)
+    {
+        $id=$this->GetId()."_".uniqid();
+        if(!($user instanceof AA_User)) return new AA_GenericWindowTemplate($id, "Conferma invio credenziali utente", $this->id);
+
+
+        $form_data=array();
+        $form_data['id']=$user->GetID();
+        $wnd=new AA_GenericFormDlg($id, "Conferma invio credenziali utente", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(540);
+        $wnd->SetHeight(480);
+        
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>reimpostera' le credenziali</b> per il profilo utente:<p><b>".$user->GetUsername()." </b></p></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
+
+        $wnd->AddGenericObject($layout);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        $wnd->SetApplyButtonName("Procedi");
+        $wnd->EnableResetButton(false);
+        $wnd->SetSaveTask("HomeUtentiSendCredenzials");
+        
+        return $wnd;
     }
 
     //Task action menù
