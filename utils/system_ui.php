@@ -2787,7 +2787,7 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
                 }
                 else $params=",".$this->sAddNewTaskParams;
 
-                AA_Log::Log(__METHOD__." - params: ".$params,100);
+                //AA_Log::Log(__METHOD__." - params: ".$params,100);
             }
 
             $modify_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
@@ -2880,7 +2880,7 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
                 $column['css']=$css;
             }
 
-            AA_Log::Log(__METHOD__." - column: ".print_r($column,true),100);
+            //AA_Log::Log(__METHOD__." - column: ".print_r($column,true),100);
 
             $this->aColumns[$colNum]=$column;
             return true;
