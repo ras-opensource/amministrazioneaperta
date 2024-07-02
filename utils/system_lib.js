@@ -2735,9 +2735,10 @@ var AA_MainApp = {
                             //Imposto la selezione se l'oggetto è un albero
                             if (result.content.value['body']['rows'][1]['view'] == "tree") {
                                 result.content.value['body']['rows'][1]['ready'] = function() {
-                                    let tree_view = $$("AA_SystemStructDlg_Tree");
-                                    let switch_supressed = $$("AA_SystemStructDlg_Switch_Supressed");
-                                    let search_text = $$("AA_SystemStructDlg_Search_Text");
+                                    //console.log("AA_MainApp.ui.MainUI.StructDlg.show", this);
+                                    let tree_view = this;
+                                    let switch_supressed = $$(this.config.switch_suppressed_id);
+                                    let search_text = $$(this.config.search_text_id);
                                     let filter_function = function(obj) {
                                         let ret = true;
                                         if (switch_supressed) {

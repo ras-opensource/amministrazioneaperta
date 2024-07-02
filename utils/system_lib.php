@@ -476,7 +476,7 @@ class AA_SystemTask_GetStructDlg extends AA_GenericTask
         AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
         $module="";
         if(isset($_REQUEST['module'])) $module = $_REQUEST['module'];
-        $wnd = new AA_GenericStructDlg("AA_SystemStructDlg", "Organigramma", $_REQUEST, "", $module, $this->oUser);
+        $wnd = new AA_GenericStructDlg("AA_SystemStructDlg_".uniqid(), "Organigramma", $_REQUEST, "", $module, $this->oUser);
 
         //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
 
@@ -5321,6 +5321,8 @@ class AA_GenericStructDlg extends AA_GenericWindowTemplate
         $tree = new AA_JSON_Template_Tree($this->id . "_Tree", array(
             "data" => $struct->toArray($options),
             "select" => true,
+            "switch_suppressed_id"=>$this->id . "_Switch_Supressed",
+            "search_text_id"=>$this->id . "_Search_Text",
             //"filterMode" => array("showSubItems" => false, "level" => $filterLevel, "openParents" => false),
             "template" => "{common.icon()}&nbsp;{common.folder()}&nbsp;<span>#value#</span>"
         ));

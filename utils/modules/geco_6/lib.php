@@ -3146,8 +3146,87 @@ Class AA_GecoModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_CRITERI;
         $canModify=false;
 
-        #documenti----------------------------------
-        $curId=$id;
+        #criteri----------------------------------
+        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI)) $canModify=true;
+
+        $storage=AA_Storage::GetInstance();
+
+        $documenti_data=array();
+        $criteri=AA_Geco_Criteri::Search();
+        $categorie=AA_Geco_Const::GetCategorieAllegati();
+        foreach($criteri as $id_doc=>$curDoc)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+
+            if(($curDoc->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_ALL) > 0) $canModify=true;
+            else $canModify=false;
+
+            if($curDoc->GetProp("url") == "")
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
+                $view_icon="mdi-floppy";
+                $tip="Scarica";
+
+                if($storage->IsValid())
+                {
+                    $file=$storage->GetFileByHash($curDoc->GetProp("file"));
+                    if($file->IsValid())
+                    {
+                        if(strpos($file->GetmimeType(),"pdf",0) !==false)
+                        {
+                            $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
+                            $view_icon="mdi-eye";
+                            $tip="Consulta";
+                        }
+                    }
+                }
+            }
+            else 
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetProp("url").'"},"'.$this->id.'")';
+                $view_icon="mdi-eye";
+                $tip="Naviga (in un&apos;altra finestra)";
+            }
+            
+            
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoCopyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center; width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+
+            $docTipo=array();
+            foreach($categorie as $key=>$val)
+            {
+                if(($curDoc->GetProp('categorie')&$key)>0) $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
+            }
+            
+            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetProp("anno"),"descrizione"=>$curDoc->GetProp("descrizione"),"estremi"=>$curDoc->GetProp("estremi"),"tipoDescr"=>implode("&nbsp;",$docTipo),"ops"=>$ops);
+        }
+
+        $template=new AA_GenericDatatableTemplate($id,"Criteri e modalita'",5,null,array("css"=>"AA_Header_DataTable"));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader();
+        $template->SetHeaderHeight(38);
+
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetGecoAddNewCriteriDlg");
+            //$template->SetAddNewTaskParams(array("postParams"=>array("postParam1"=>0)));
+        }
+
+        $template->SetColumnHeaderInfo(0,"anno","<div style='text-align: center'>Anno</div>",90,"textFilter","int","CriteriTable_left");
+        $template->SetColumnHeaderInfo(1,"estremi","<div style='text-align: center'>Estremi</div>","fillspace","textFilter","text","CriteriTable_left");
+        $template->SetColumnHeaderInfo(2,"descrizione","<div style='text-align: center'>Descrizione</div>","fillspace","textFilter","text","CriteriTable_left");
+        $template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"CriteriTable");
+
+        $template->SetData($documenti_data);
+
+        return $template;
+
+        /*
         $layout=new AA_JSON_Template_Layout($curId,array("type"=>"clean","name"=>"Criteri e modalita'","filtered"=>true,"gravity"=>1));
 
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
@@ -3321,7 +3400,7 @@ Class AA_GecoModule extends AA_GenericModule
         }
         #--------------------------------------
 
-        return $layout;
+        return $layout;*/
     }
 
     //Task Update Geco

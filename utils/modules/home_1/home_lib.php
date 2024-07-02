@@ -1695,6 +1695,7 @@ Class AA_HomeModule extends AA_GenericModule
                     if($id_servizio>0)$struttura.="<br>".$struct->GetServizio();
                     
                     $struct_view='<a href="#" onClick=\'let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($struttura).'"));AA_MainApp.ui.modalBox(note,"Struttura")\'><span class="mdi mdi-eye"></span></a>';
+                    if($id_servizio == 0 && $curUser->GetRuolo(true)==AA_User::AA_USER_GROUP_ADMINS) $struct_view='<a href="#" onClick=\'let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($struttura).'"));AA_MainApp.ui.modalBox(note,"Struttura")\'><span class="mdi mdi-account-cowboy-hat"></span></a>';
                     $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"stato"=>$status,"lastLogin"=>$curUser->GetLastLogin(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->Getcognome()." ".$curUser->GetNome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags,
                         "id_assessorato"=>$id_assessorato,
                         "id_direzione"=>$id_direzione,

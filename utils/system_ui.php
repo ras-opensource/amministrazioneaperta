@@ -2630,6 +2630,11 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
     //addNew
     protected $bEnableAddNew=false;
     protected $sAddNewTask='';
+    protected $sAddNewTaskParams=null;
+    public function SetAddNewTaskParams($val)
+    {
+        $this->sAddNewTaskParams=$val;
+    }
     public function EnableAddNew($val=true,$sAddNewTask=null)
     {
         if($val) $this->bEnableAddNew=true;
@@ -2645,6 +2650,34 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
     public function SetAddNewTask($val='')
     {
         $this->sAddNewTask=$val;
+    }
+
+    protected $sAddNewBtnIcon='mdi mdi-pencil-plus';
+    public function SetAddNewBtnIcon($val)
+    {
+        $this->sAddNewBtnIcon=$val;
+    }
+    public function GetAddNewBtnIcon()
+    {
+        return $this->sAddNewBtnIcon;
+    }
+    protected $sAddNewBtnLabel='Aggiungi';
+    public function SetAddNewBtnLabel($val)
+    {
+        $this->sAddNewBtnLabel=$val;
+    }
+    public function GetAddNewBtnLabel()
+    {
+        return $this->sAddNewBtnLabel;
+    }
+    protected $sAddNewBtnTooltip='Aggiungi un nuovo elemento';
+    public function SetAddNewBtnTooltip($val)
+    {
+        $this->sAddNewBtnTooltip=$val;
+    }
+    public function GetAddNewBtnTooltip()
+    {
+        return $this->sAddNewBtnTooltip;
     }
     //------------------------------------
 
@@ -2686,6 +2719,8 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
         
         if($this->bFiltered)
         {
+            $this->SetProp("filtered",true);
+
             if($this->oFilterBoxContent)
             {
                 if($this->oFilterBoxContent instanceof AA_JSON_Template_Generic) $toolbar->addElement($this->oFilterBoxContent);
@@ -2699,13 +2734,26 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
             $filterId=$this->sFilterId;
             if($filterId=='') $filterId=$this->GetId();
 
+            $this->SetProp("filter_id",$filterId);
+
             $params='';
             if($this->aFilterParams)
             {
-                if(is_array($this->aFilterParams)) $params=json_encode($this->aFilterParams).",";
-                else $params=$this->aFilterParams.",";
+                if(is_array($this->aFilterParams)) 
+                {
+                    foreach($this->aFilterParams as $curParam=>$curParamValue)
+                    {
+                        if(is_array($curParamValue)) $params.=",\"".$curParam."\":".json_encode($curParamValue);
+                        else $params.=",\"".$curParam."\":".$curParamValue;
+                    }
+                }
+                else $params=",".$this->aFilterParams;
             }
-            
+            else
+            {
+                $params=",postParams: AA_MainApp.curModule.getRuntimeValue('" . $filterId . "','filter_data'), module: AA_MainApp.curModule.id";
+            }
+
             //filtro
             $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
                 "view"=>"button",
@@ -2715,7 +2763,7 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Opzioni di filtraggio",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sFilterTask."\",".$params."postParams: AA_MainApp.curModule.getRuntimeValue('" . $filterId . "','filter_data'), module: AA_MainApp.curModule.id},AA_MainApp.curModule.id)"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sFilterTask."\"".$params."},AA_MainApp.curModule.id)"
             ));
             $toolbar->AddElement($modify_btn);
         }
@@ -2726,15 +2774,32 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
 
         if($this->bEnableAddNew)
         {
+            $params='';
+            if($this->sAddNewTaskParams)
+            {
+                if(is_array($this->sAddNewTaskParams)) 
+                {
+                    foreach($this->sAddNewTaskParams as $curParam=>$curParamValue)
+                    {
+                        if(is_array($curParamValue)) $params.=",\"".$curParam."\":".json_encode($curParamValue);
+                        else $params.=",\"".$curParam."\":".$curParamValue;
+                    }
+                }
+                else $params=",".$this->sAddNewTaskParams;
+
+                AA_Log::Log(__METHOD__." - params: ".$params,100);
+            }
+
             $modify_btn=new AA_JSON_Template_Generic($id."_AddNew_btn",array(
                 "view"=>"button",
                  "type"=>"icon",
-                 "icon"=>"mdi mdi-application-import",
-                 "label"=>"Aggiungi",
+                 "icon"=>$this->sAddNewBtnIcon,
+                 "label"=>$this->sAddNewBtnLabel,
+                 "css"=>"webix_primary",
                  "align"=>"right",
                  "width"=>120,
-                 "tooltip"=>"Aggiungi un nuovo elemento",
-                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sAddNewTask."\"},AA_MainApp.curModule.id);"
+                 "tooltip"=>$this->sAddNewBtnTooltip,
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sAddNewTask."\"".$params."},AA_MainApp.curModule.id);"
              ));
              $toolbar->AddElement($modify_btn);
         }
@@ -2795,7 +2860,7 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
     protected $aColumns=array();
     public function SetColumnHeaderInfo($colNum=0,$id='',$headerLabel='',$width="fillspace",$filterType=null,$sortType=null,$css=null)
     {
-        if(sizeof($this->aColumns)<=($colNum+1))
+        if(sizeof($this->aColumns)>=($colNum+1))
         {
             if($filterType) $header=array($headerLabel,array("content"=>$filterType));
             else $header=$headerLabel;
@@ -2814,6 +2879,8 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
             {
                 $column['css']=$css;
             }
+
+            AA_Log::Log(__METHOD__." - column: ".print_r($column,true),100);
 
             $this->aColumns[$colNum]=$column;
             return true;
@@ -2845,7 +2912,7 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
     {
         return $this->GetId()."_".$this->sDatatableID;
     }
-    public function __construct($id='',$nNumCols=0,$layoutProps=null,$tableProps=null)
+    public function __construct($id='',$sTitle="",$nNumCols=0,$layoutProps=null,$tableProps=null)
     {
         parent::__construct($id,$layoutProps);
 
@@ -2856,6 +2923,8 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
                 $this->aColumns[]=array("id"=>"id_".$i,"header"=>"header_".$i,"fillspace"=>true);
             }
         }
+
+        if($sTitle !="") $this->sTitle=$sTitle;
 
         if(is_array($tableProps))
         {
@@ -2906,11 +2975,15 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
         }
         //-------------
 
+        if($this->sTitle !="") $this->SetProp('name',$this->sTitle);
+
         if(sizeof($this->aData)>0)
         {
 
             $this->aTableProps['columns']=$this->aColumns;
             
+            $this->aTableProps['data']=$this->aData;
+
             if($this->cssRowHover) $this->aTableProps['hover']=$this->cssRowHover;
             else if(isset($this->aTableProps['hover']))unset($this->aTableProps['hover']);
 
