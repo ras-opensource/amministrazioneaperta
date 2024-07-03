@@ -1757,14 +1757,14 @@ Class AA_HomeModule extends AA_GenericModule
         $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","status"=>-2,"ruolo"=>0,"email"=>"","user"=>"");
         
         //Azioni da eseguire dopo l'applicazione del filtro
-        $applyActions="module.refreshCurSection()";
+        $applyActions="AA_MainApp.curModule.refreshCurSection()";
         
         $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Utenti_Filter", "Parametri di filtraggio",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(480);
         
         //nome utente
-        $dlg->AddTextField("user","Login utente",array("bottomLabel"=>"*Filtra in base al login utente.", "placeholder"=>"..."));
+        $dlg->AddTextField("user","Profilo utente",array("bottomLabel"=>"*Filtra in base al profilo utente.", "placeholder"=>"..."));
 
         //email
         $dlg->AddTextField("email","Email",array("bottomLabel"=>"*Filtra in base alla email.", "placeholder"=>"..."));
@@ -1784,16 +1784,16 @@ Class AA_HomeModule extends AA_GenericModule
         }
         else
         {
-            if($this->oUser->GetRuolo() == AA_User::AA_USER_GROUP_SERVEROPERATORS) 
+            if($this->oUser->GetRuolo(true) == AA_User::AA_USER_GROUP_SERVEROPERATORS) 
             {
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
-                $options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
+                //$options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
             }
             else
             {
-                $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+                //$options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
             }
@@ -2227,16 +2227,16 @@ Class AA_HomeModule extends AA_GenericModule
         }
         else
         {
-            if($this->oUser->GetRuolo() == AA_User::AA_USER_GROUP_SERVEROPERATORS) 
+            if($this->oUser->GetRuolo(true) == AA_User::AA_USER_GROUP_SERVEROPERATORS) 
             {
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
-                $options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
+                //$options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
             }
             else
             {
-                $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+                //$options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
             }
@@ -2259,13 +2259,14 @@ Class AA_HomeModule extends AA_GenericModule
         
         //----------- Ordinary Flags ---------------
         $section=new AA_FieldSet($id."_Section_Flags","Abilitazioni");
-        $moduli=AA_Platform::GetAllModulesFlags();
+        $platform=AA_Platform::GetInstance($this->oUser);
+        $moduli=$platform->GetModulesFlags();
         $curRow=0;
         foreach($moduli as $curFlag=>$descr)
         {
             $newLine=false;
             if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("flag_".$curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $section->AddCheckBoxField("flag_".$curFlag, $descr, array("bottomPadding"=>8),$newLine);
             $curRow++;
         }
         for($i=$curRow;$i<4;$i++)
@@ -2273,23 +2274,23 @@ Class AA_HomeModule extends AA_GenericModule
             $section->AddSpacer(false);
         }
 
-        $section->AddCheckBoxField("concurrent", "Login concorrente", array("value"=>1,"bottomLabel"=>"Abilita l'accesso concorrente."));
+        $section->AddCheckBoxField("concurrent", "Login concorrente", array("bottomLabel"=>"Abilita l'accesso concorrente."));
         $wnd->AddGenericObject($section);
         //-------------------------------------------
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
+            $section=new AA_FieldSet($id."_Section_LegacyFlags","Abilitazioni legacy",$wnd->GetFormId());
             if($this->oUser->IsSuperUser())
             {
                 //--------------- Legacy flags --------------
-                $section=new AA_FieldSet($id."_Section_LegacyFlags","Abilitazioni legacy",$wnd->GetFormId());
                 $legacyFlags=AA_Platform::GetLegacyFlags();
                 $curRow=0;
                 foreach($legacyFlags as $curFlag=>$descr)
                 {
                     $newLine=false;
                     if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-                    $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+                    $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>0,"bottomPadding"=>8),$newLine);
                     $curRow++;
                 }
                 //-------------------------------------------
@@ -2315,7 +2316,7 @@ Class AA_HomeModule extends AA_GenericModule
     //Template dlg add new user
     public function Template_GetHomeUtentiAddNewDlg()
     {
-        $id=static::AA_UI_PREFIX."_GetHomeUtentiAddNewDlg";
+        $id=static::AA_UI_PREFIX."_GetHomeUtentiAddNewDlg_".uniqid();
 
         $form_data['ruolo']=AA_User::AA_USER_GROUP_OPERATORS;
         $form_data['status']=AA_User::AA_USER_STATUS_ENABLED;
@@ -2324,7 +2325,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             foreach(AA_Platform::GetLegacyFlags() as $curFlag)
             {
-                $form_data['legacyFlag_'.$curFlag]=1;
+                $form_data['legacyFlag_'.$curFlag]=0;
             }
             
             $struct=$this->oUser->GetStruct();
@@ -2363,16 +2364,16 @@ Class AA_HomeModule extends AA_GenericModule
         }
         else
         {
-            if($this->oUser->GetRuolo() == AA_User::AA_USER_GROUP_SERVEROPERATORS) 
+            if($this->oUser->GetRuolo(true) == AA_User::AA_USER_GROUP_SERVEROPERATORS) 
             {
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
-                $options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
+                //$options[]=array("id"=>AA_User::AA_USER_GROUP_SERVEROPERATORS,"value"=>"Operatori server");
             }
             else
             {
-                $options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
+                //$options[]=array("id"=>AA_User::AA_USER_GROUP_ADMINS,"value"=>"Amministratore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_OPERATORS,"value"=>"Operatore");
                 $options[]=array("id"=>AA_User::AA_USER_GROUP_USERS,"value"=>"Utente");
             }
@@ -2409,13 +2410,14 @@ Class AA_HomeModule extends AA_GenericModule
         
         //----------- Ordinary Flags ---------------
         $section=new AA_FieldSet($id."_Section_Flags","Abilitazioni");
-        $moduli=AA_Platform::GetAllModulesFlags();
+        $platform=AA_Platform::GetInstance($this->oUser);
+        $moduli=$platform->GetModulesFlags();
         $curRow=0;
         foreach($moduli as $curFlag=>$descr)
         {
             $newLine=false;
             if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("flag_".$curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+            $section->AddCheckBoxField("flag_".$curFlag, $descr, array("value"=>0,"bottomPadding"=>8),$newLine);
             $curRow++;
         }
         for($i=$curRow;$i<4;$i++)
@@ -2423,23 +2425,24 @@ Class AA_HomeModule extends AA_GenericModule
             $section->AddSpacer(false);
         }
 
-        $section->AddCheckBoxField("concurrent", "Login concorrente", array("value"=>1,"bottomLabel"=>"Abilita l'accesso concorrente."));
+        $section->AddCheckBoxField("concurrent", "Login concorrente", array("value"=>0,"bottomLabel"=>"Abilita l'accesso concorrente."));
         $wnd->AddGenericObject($section);
         //-------------------------------------------
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
+            $section=new AA_FieldSet($id."_Section_LegacyFlags","Abilitazioni legacy",$wnd->GetFormId());
+
             if($this->oUser->IsSuperUser())
             {
                 //--------------- Legacy flags --------------
-                $section=new AA_FieldSet($id."_Section_LegacyFlags","Abilitazioni legacy",$wnd->GetFormId());
                 $legacyFlags=AA_Platform::GetLegacyFlags();
                 $curRow=0;
                 foreach($legacyFlags as $curFlag=>$descr)
                 {
                     $newLine=false;
                     if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-                    $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>1,"bottomPadding"=>8),$newLine);
+                    $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>0,"bottomPadding"=>8),$newLine);
                     $curRow++;
                 }
                 //-------------------------------------------

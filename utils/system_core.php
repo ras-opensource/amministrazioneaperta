@@ -1015,8 +1015,8 @@ class AA_User
             if($this->nLivello==1) $ruolo=static::AA_USER_GROUP_OPERATORS;
         }
 
-        if(array_search(static::AA_USER_GROUP_USERS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_USERS;
-        if(array_search(static::AA_USER_GROUP_OPERATORS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_OPERATORS;
+        if(array_search(static::AA_USER_GROUP_USERS,$this->aGroups) !== false) $ruolo=static::AA_USER_GROUP_USERS;
+        if(array_search(static::AA_USER_GROUP_OPERATORS,$this->aGroups) !== false) $ruolo=static::AA_USER_GROUP_OPERATORS;
         if(array_search(static::AA_USER_GROUP_ADMINS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_ADMINS;
         if(array_search(static::AA_USER_GROUP_SERVEROPERATORS,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_SERVEROPERATORS;
         if(array_search(static::AA_USER_GROUP_SUPERUSER,$this->aGroups) !==false) $ruolo=static::AA_USER_GROUP_SUPERUSER;
@@ -2774,6 +2774,17 @@ class AA_User
         $query="SELECT id from ".static::AA_DB_TABLE." WHERE id <> '".$user->GetId()."'";
         if($user->GetId() !=1 ) $query.=" AND id <> 1 ";
         if(!$user->IsSuperUser()) $query.=" AND (FIND_IN_SET('1',groups) = 0 OR groups like '')";
+        else
+        {
+            if(!$user->GetRuolo(true)==AA_User::AA_USER_GROUP_SERVEROPERATORS)
+            {
+                $query.=" AND (FIND_IN_SET('2,3,4',groups) = 1 OR groups like '')";
+            }
+            else
+            {
+                $query.=" AND (FIND_IN_SET('3,4',groups) = 1 OR groups like '')";
+            }
+        }
 
         //username
         if(isset($params['user']) && $params['user']!="")
@@ -2839,7 +2850,6 @@ class AA_User
         {
             $query.=" AND FIND_IN_SET('".addslashes($params['ruolo'])."',groups) > 0 ";
         }
-
 
         $db=new AA_AccountsDatabase();
 
@@ -3112,7 +3122,12 @@ class AA_User
 
         if (!$this->bIsValid) return false;
 
+        if(!$this->isCurrentUser()) return false;
+
         if ($this->IsSuperUser()) return true;
+
+        //AA_Log::Log(__METHOD__." - Verifica gestione utenti - ruolo: ".print_r($this->GetRuolo(true),true),100);
+        if($this->GetRuolo(true) == AA_User::AA_USER_GROUP_SERVEROPERATORS) return true;
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -3122,9 +3137,7 @@ class AA_User
             if (!$this->HasFlag("U0")) return true;
         }
 
-        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetAllGroups()) === false) return false;
-
-        return true;
+        return false;
     }
 
     //Verifica se l'utente corrente può gestire le strutture
@@ -3134,7 +3147,11 @@ class AA_User
 
         if (!$this->bIsValid) return false;
 
+        if(!$this->isCurrentUser()) return false;
+
         if ($this->IsSuperUser()) return true;
+
+        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetAllGroups()) !== false) return true;
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -3143,15 +3160,13 @@ class AA_User
             if (!$this->HasFlag("S0")) return true;  
         }
 
-        if(array_search(AA_User::AA_USER_GROUP_SERVEROPERATORS,$this->GetAllGroups()) === false) return false;
-
-        return true;
+        return false;
     }
 
     //Verifica se l'utente corrente può modificare il livello dell'utente indicato (legacy)
     public function CanPromoteUserAsAdmin($idUser = null)
     {
-        AA_Log::Log(get_class() . "->CanModifyUserLevel($idUser)");
+        //AA_Log::Log(get_class() . "->CanModifyUserLevel($idUser)");
 
         if (!$this->IsValid()) {
             AA_Log::Log(get_class() . "->CanModifyUserLevel($idUser) - utente corrente non valido: " . $this->GetUsername(), 100);
@@ -3254,6 +3269,8 @@ class AA_User
                 AA_Log::Log(__METHOD__." - L'utente corrente non può modificare utenti di altre strutture.", 100);
                 return false;
             }
+
+            if($this->GetRuolo(true)== AA_User::AA_USER_GROUP_SERVEROPERATORS) return true;
     
             //Non può modificare utenti amministratori dello stesso livello gerarchico
             if ($this->GetStruct()->GetServizio(true) == $user->GetStruct()->GetServizio(true) && $user->GetLevel() == AA_Const::AA_USER_LEVEL_ADMIN && $this->GetStruct()->GetServizio(true) != 0) {
