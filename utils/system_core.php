@@ -2773,17 +2773,19 @@ class AA_User
 
         $query="SELECT id from ".static::AA_DB_TABLE." WHERE id <> '".$user->GetId()."'";
         if($user->GetId() !=1 ) $query.=" AND id <> 1 ";
-        if(!$user->IsSuperUser()) $query.=" AND (FIND_IN_SET('1',groups) = 0 OR groups like '')";
-        else
+        
+        switch($user->GetRuolo(true))
         {
-            if(!$user->GetRuolo(true)==AA_User::AA_USER_GROUP_SERVEROPERATORS)
-            {
-                $query.=" AND (FIND_IN_SET('2,3,4',groups) = 1 OR groups like '')";
-            }
-            else
-            {
-                $query.=" AND (FIND_IN_SET('3,4',groups) = 1 OR groups like '')";
-            }
+            case AA_User::AA_USER_GROUP_SUPERUSER:
+                break;
+            case AA_User::AA_USER_GROUP_SERVEROPERATORS:
+                $query.=" AND (FIND_IN_SET('1',groups) = 0 OR groups like '')";
+                break;
+            case AA_User::AA_USER_GROUP_ADMINS:
+                $query.=" AND (FIND_IN_SET(groups,'3,4') > 0 OR groups like '')";
+                break;
+            default:
+            $query.=" AND id=".$user->GetId();
         }
 
         //username
