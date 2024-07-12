@@ -924,7 +924,18 @@ class AA_JSON_Template_Select extends AA_JSON_Template_Generic
     }
 }
 
+//Classe per la gestione dei campi di testo
+class AA_JSON_Template_Combo extends AA_JSON_Template_Generic
+{
+    public function __construct($id = "", $props = null)
+    {
+        $this->props["view"] = "combo";
+        if ($id == "")
+            $id = "AA_JSON_TEMPLATE_COMBO" . uniqid(time());
 
+        parent::__construct($id, $props);
+    }
+}
 
 //Classe per la gestione dei campi radio
 class AA_JSON_Template_Radio extends AA_JSON_Template_Generic
@@ -1734,6 +1745,8 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
                 $this->curRow->AddCol(new AA_JSON_Template_Checkbox($this->id . "_Field_" . $name, $props));
             if ($type == "select")
                 $this->curRow->AddCol(new AA_JSON_Template_Select($this->id . "_Field_" . $name, $props));
+            if ($type == "combo")
+                $this->curRow->AddCol(new AA_JSON_Template_Combo($this->id . "_Field_" . $name, $props));
             if ($type == "switch")
                 $this->curRow->AddCol(new AA_JSON_Template_Switch($this->id . "_Field_" . $name, $props));
             if ($type == "datepicker")
@@ -1812,6 +1825,13 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         return $this->AddField($name, $label, "select", $props, $newRow);
     }
+
+    //Aggiungi una combo
+    public function AddComboField($name = "", $label = "", $props = array(), $newRow = true)
+    {
+        return $this->AddField($name, $label, "combo", $props, $newRow);
+    }
+
 
     //Aggiungi un radio control
     public function AddRadioField($name = "", $label = "", $props = array(), $newRow = true)
@@ -2120,6 +2140,8 @@ class AA_FieldSet extends AA_JSON_Template_Generic
                 $this->curRow->AddCol(new AA_JSON_Template_Checkbox($this->GetId() . "_Field_" . $name, $props));
             if ($type == "select")
                 $this->curRow->AddCol(new AA_JSON_Template_Select($this->GetId() . "_Field_" . $name, $props));
+            if ($type == "combo")
+                $this->curRow->AddCol(new AA_JSON_Template_Combo($this->GetId() . "_Field_" . $name, $props));
             if ($type == "switch")
                 $this->curRow->AddCol(new AA_JSON_Template_Switch($this->GetId() . "_Field_" . $name, $props));
             if ($type == "datepicker")
@@ -2194,6 +2216,12 @@ class AA_FieldSet extends AA_JSON_Template_Generic
     public function AddSelectField($name = "", $label = "", $props = array(), $newRow = true)
     {
         return $this->AddField($name, $label, "select", $props, $newRow);
+    }
+
+    //Aggiungi una combo
+    public function AddComboField($name = "", $label = "", $props = array(), $newRow = true)
+    {
+        return $this->AddField($name, $label, "combo", $props, $newRow);
     }
 
     //Aggiungi un radio control
