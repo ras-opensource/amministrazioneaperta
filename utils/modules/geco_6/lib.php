@@ -2492,7 +2492,7 @@ Class AA_GecoModule extends AA_GenericModule
         $form_data['Importo_impegnato']=AA_utils::number_format(floatVal($object->GetProp('Importo_impegnato')),2,",",".");
         $form_data['Importo_erogato']=AA_utils::number_format(floatVal($object->GetProp('Importo_erogato')),2,",",".");
 
-        $form_data['note']=$object->GetProp('Note');
+        $form_data['Note']=$object->GetProp('Note');
 
         $modalita=AA_Geco_Const::GetListaModalita();
         $modalita_options=array();
@@ -3490,7 +3490,8 @@ Class AA_GecoModule extends AA_GenericModule
         $modalita=array();
         $norma=array();
         $responsabile=array();
-        
+        $log="Aggiornamento dati generali";
+
         if(isset($_REQUEST['Modalita_tipo'])) $modalita['tipo']=intVal($_REQUEST['Modalita_tipo']);
         if(isset($_REQUEST['Modalita_link'])) $modalita['link']=trim($_REQUEST['Modalita_link']);
         if(strpos($_REQUEST['Modalita_link'],"https") === false)
@@ -3515,13 +3516,24 @@ Class AA_GecoModule extends AA_GenericModule
         if(strpos($_REQUEST['Norma_link'],"https") === false)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il link alla norma deve essere una URL pubblica accessbile tramite protocollo https.",false);
+            $task->SetError("Il link alla norma deve essere una URL pubblica accessibile tramite protocollo https.",false);
 
             return false;
         }
 
-        if(isset($_REQUEST['Importo_impegnato'])) $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
-        if(isset($_REQUEST['Importo_erogato'])) $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
+        $check_notes=false;
+        if(isset($_REQUEST['Importo_impegnato'])) 
+        {
+            $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
+
+            if(strcmp($importo['impegnato'],$object->GetProp('Importo_impegnato')) !=0) $check_notes=true;
+        }
+        if(isset($_REQUEST['Importo_erogato'])) 
+        {
+            $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
+            if(strcmp($importo['erogato'],$object->GetProp('Importo_erogato')) !=0) $check_notes=true;
+        }
+
         if($importo['impegnato'] <= 0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3536,6 +3548,21 @@ Class AA_GecoModule extends AA_GenericModule
 
             return false;
         }
+
+        if($check_notes)
+        {
+            $notes=trim(str_replace(" ","",$object->GetProp('Note')));
+            if(!isset($_REQUEST['Note']) || strcmp(trim(str_replace(" ","",$_REQUEST['Note'])),$notes)==0)
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Occorre indicare nelle note il motivo della variazione degli importi.",false);
+
+                return false;
+            }
+
+            $log.=" - revisione importi.";
+        }
+
         $_REQUEST['Importo_impegnato']=$importo['impegnato'];
         $_REQUEST['Importo_erogato']=$importo['erogato'];
 
