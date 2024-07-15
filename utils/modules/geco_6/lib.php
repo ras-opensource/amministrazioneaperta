@@ -84,7 +84,7 @@ Class AA_Geco_Const extends AA_Const
     const AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=2;
     const AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=4;
     const AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=8;
-    //const AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=16;
+    const AA_GECO_CATEGORIA_ALLEGATO_ALTRO=16;
     const AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=32;
     const AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=64;
     const AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=128;
@@ -125,7 +125,8 @@ Class AA_Geco_Const extends AA_Const
                 static::AA_GECO_CATEGORIA_ALLEGATO_SPORT=>"Sport",
                 static::AA_GECO_CATEGORIA_ALLEGATO_TRASPORTI=>"Trasporti",
                 static::AA_GECO_CATEGORIA_ALLEGATO_TURISMO=>"Turismo",
-                static::AA_GECO_CATEGORIA_ALLEGATO_VOLONTARIATO=>"Volontariato"
+                static::AA_GECO_CATEGORIA_ALLEGATO_VOLONTARIATO=>"Volontariato",
+                static::AA_GECO_CATEGORIA_ALLEGATO_ALTRO=>"Altro",
             );
         }
 
@@ -1193,11 +1194,11 @@ Class AA_GecoModule extends AA_GenericModule
         $section->AddTextField("Beneficiario_piva","P.IVA",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la partita iva del beneficiario (se applicabile)."),false);
 
         //Tipo
-        $section->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica.", "eventHandlers"=>array("onChange"=>array("handler"=>"onPersonaFisicaChange","module_id"=>$this->GetId()))));
+        $section->AddCheckBoxField("Beneficiario_tipo"," ",array("bottomPadding"=>32,"labelWidth"=>60, "labelRight"=>"<b>Persona fisica/Ditta individuale/Libero professionista</b>", "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica, una ditta individuale o un libero professionista.","eventHandlers"=>array("onChange"=>array("handler"=>"onPersonaFisicaChange","module_id"=>$this->GetId()))));
 
         //Privacy
-        $section->AddCheckBoxField("Beneficiario_privacy","Oscuramento dati personali",array("bottomPadding"=>32,"gravity"=>2, "labelWidth"=>200, "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
-
+        $section->AddCheckBoxField("Beneficiario_privacy"," ",array("bottomPadding"=>32,"gravity"=>1,"labelWidth"=>60,"labelRight"=>"<b>Oscuramento dati personali</b>", "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
+ 
         $wnd->AddGenericObject($section);
 
         //Importi
@@ -1505,10 +1506,10 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddSelectField("tipo","Tipo",array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di atto.","options"=>$options),false);
 
         //Estremi
-        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."));
+        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci il numero e la data del documento.","placeholder" => "es. DGR..."));
 
         //descrizione
-        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve dscrizione (max 1024)","placeholder" => "..."),false);
+        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve descrizione (max 1024).","placeholder" => "..."),false);
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
         
@@ -1627,10 +1628,10 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddSelectField("tipo","Tipo",array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di atto.","options"=>$options),false);
 
         //Estremi
-        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."));
+        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci numero e data del documento.","placeholder" => "es. DGR..."));
 
         //descrizione
-        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve dscrizione (max 1024)","placeholder" => "..."),false);
+        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve dscrizione (max 1024).","placeholder" => "..."),false);
     
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
 
@@ -2157,6 +2158,34 @@ Class AA_GecoModule extends AA_GenericModule
 
             return false;
         }
+
+        $categorie=0;
+        $lista_categorie=AA_Geco_Const::GetCategorieAllegati();
+        foreach($lista_categorie as $key=>$val)
+        {
+            if(isset($_REQUEST['categoria_'.$key]) && $_REQUEST['categoria_'.$key]==1) $categorie+=intVal($key);
+        }
+        
+        if($categorie==0)
+        {
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre selezionare almeno una categoria.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }   
+            return false;
+        }
         
         if($uploadedFile->isValid()) 
         {
@@ -2189,12 +2218,6 @@ Class AA_GecoModule extends AA_GenericModule
             }
         }
 
-        $categorie=0;
-        $lista_categorie=AA_Geco_Const::GetCategorieAllegati();
-        foreach($lista_categorie as $key=>$val)
-        {
-            if(isset($_REQUEST['categoria_'.$key]) && $_REQUEST['categoria_'.$key]==1) $categorie+=intVal($key);
-        }
         $_REQUEST['categorie']=$categorie;
 
         $criterio=new AA_Geco_Criteri();
@@ -2304,6 +2327,34 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
+        $categorie=0;
+        $lista_categorie=AA_Geco_Const::GetCategorieAllegati();
+        foreach($lista_categorie as $key=>$val)
+        {
+            if(isset($_REQUEST['categoria_'.$key]) && $_REQUEST['categoria_'.$key]==1) $categorie+=intVal($key);
+        }
+        
+        if($categorie==0)
+        {
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre selezionare almeno una categoria.",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }   
+            return false;
+        }
+
         if(!$uploadedFile->isValid() && $_REQUEST['url'] == "" && $criterio->GetProp('file') == "")
         {   
             AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
@@ -2361,12 +2412,6 @@ Class AA_GecoModule extends AA_GenericModule
             }
         }
 
-        $categorie=0;
-        $lista_categorie=AA_Geco_Const::GetCategorieAllegati();
-        foreach($lista_categorie as $key=>$val)
-        {
-            if(isset($_REQUEST['categoria_'.$key]) && $_REQUEST['categoria_'.$key]==1) $categorie+=intVal($key);
-        }
         $_REQUEST['categorie']=$categorie;
 
         if(!$criterio->Update($_REQUEST,$this->oUser))
@@ -2563,7 +2608,7 @@ Class AA_GecoModule extends AA_GenericModule
         //$section=new AA_FieldSet($id."_Beneficario","Beneficiario");
         
         //Nome e cognome
-        $wnd->AddTextField("Beneficiario_nome","Nome",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
+        $wnd->AddTextField("Beneficiario_nome","Nominativo",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
         
         //cf
         $wnd->AddTextField("Beneficiario_cf","C.F.",array("required"=>true, "gravity"=>1,"bottomPadding"=>32,"labelWidth"=>60,"bottomLabel"=>"*Inserisci il codice fiscale del beneficiario."),false);
@@ -2572,10 +2617,10 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddTextField("Beneficiario_piva","P.IVA",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la partita iva del beneficiario (se applicabile)."),false);
 
         //Tipo
-        $wnd->AddCheckBoxField("Beneficiario_tipo","Persona fisica",array("bottomPadding"=>32,"labelWidth"=>120, "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica.","eventHandlers"=>array("onChange"=>array("handler"=>"onPersonaFisicaChange","module_id"=>$this->GetId()))));
+        $wnd->AddCheckBoxField("Beneficiario_tipo"," ",array("bottomPadding"=>32,"labelWidth"=>60, "labelRight"=>"<b>Persona fisica/Ditta individuale/Libero professionista</b>", "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica, una ditta individuale o un libero professionista.","eventHandlers"=>array("onChange"=>array("handler"=>"onPersonaFisicaChange","module_id"=>$this->GetId()))));
 
         //Privacy
-        $wnd->AddCheckBoxField("Beneficiario_privacy","Oscuramento dati personali",array("bottomPadding"=>32,"gravity"=>2, "labelWidth"=>200, "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
+        $wnd->AddCheckBoxField("Beneficiario_privacy"," ",array("bottomPadding"=>32,"gravity"=>1,"labelWidth"=>60,"labelRight"=>"<b>Oscuramento dati personali</b>", "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
 
         //$wnd->AddGenericObject($section);
         $wnd->EnableCloseWndOnSuccessfulSave();
