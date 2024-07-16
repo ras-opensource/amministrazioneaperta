@@ -1518,6 +1518,12 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         $this->applyActions = $actions;
     }
 
+    protected $applyCallbackFunction = "";
+    public function SetApplyCallbackFunction($actions = "")
+    {
+        $this->applyCallbackFunction = $actions;
+    }
+
     protected $saveFormDataId = "";
     public function SetSaveformDataId($id = "")
     {
@@ -1686,9 +1692,18 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
                     $validate = "if($$('" . $this->id . "_Form').validate())";
                 else
                     $validate = "";
+                $callback="";
+                if($this->applyCallbackFunction !="")
+                {
+                    $callback="AA_MainApp.utils.callHandler('".$this->applyCallbackFunction."',$params,'$this->module');";
+                }
+                else
+                {
+                    $callback="AA_MainApp.utils.callHandler('saveData',$params,'$this->module');";
+                }
                 $buttonApply = $this->id . "_Button_Bar_Apply";
                 $setTimeout = "setTimeout('if($$(\"" . $buttonApply . "\")) { $$(\"" . $buttonApply . "\").enable()};',800)";
-                $this->applyActions = $validate . '{$$(\'' . $buttonApply . "').disable();AA_MainApp.utils.callHandler('saveData',$params,'$this->module');" . $setTimeout . "}";
+                $this->applyActions = $validate . "{ $$('" . $buttonApply . "').disable();" .$callback.$setTimeout . "}";
             }
         }
 

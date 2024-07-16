@@ -61,6 +61,26 @@ var <?php echo AA_GecoModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Geco
     }
 };
 
+//Chiede all'utente i motivi della modifica
+<?php echo AA_GecoModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onSave = async function(params) {
+    try 
+    {
+        console.log("onSave",params);
+
+        params.task="GetGecoRevisionDlg";
+        params.postParams=params.data;
+        
+        if (AA_MainApp.utils.isDefined(params.wnd_id) && $$(params.wnd_id)) $$(params.wnd_id).close();
+
+        AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_GecoModule::AA_ID_MODULE?>.');
+
+        //AA_MainApp.utils.callHandler('saveData',params,'<?php echo AA_GecoModule::AA_ID_MODULE?>.');
+
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onSave", msg, this);
+    }
+};
+
 //imposta o rimuove il flag di oscuramento dei dati eprsonali
 <?php echo AA_GecoModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].flagPrivacy = function() {
     try 

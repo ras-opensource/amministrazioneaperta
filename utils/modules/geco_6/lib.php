@@ -227,6 +227,25 @@ Class AA_Geco extends AA_Object_V2
         return $this->beneficiario;
     }
 
+    //Revisione
+    protected $revisione=null;
+    public function GetRevisione()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->revisione))
+        {
+            $this->revisione=json_decode($this->GetProp('Revisione'),true);
+            if(!is_array($this->revisione))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing della revisione'",100);
+                return array();
+            }
+        }
+
+        return $this->revisione;
+    }
+
     //Responsabile
     protected $responsabile=null;
     public function GetResponsabile()
@@ -292,6 +311,7 @@ Class AA_Geco extends AA_Object_V2
         $this->AddProp("Importo_impegnato",0,"importo_impegnato");
         $this->AddProp("Importo_erogato",0,"importo_erogato");
         $this->AddProp("Allegati","","allegati");
+        $this->AddProp("Revisione","","revisione");
 
         //disabilita la revisione
         $this->EnableRevision(false);
@@ -757,6 +777,8 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("PublishGeco");
         $taskManager->RegisterTask("GetGecoConfirmPrivacyDlg");
         $taskManager->RegisterTask("GetGecoRevocaModifyDlg");
+        $taskManager->RegisterTask("GetGecoRevisionDlg");
+        $taskManager->RegisterTask("GetGecoRevisionViewDlg");
         $taskManager->RegisterTask("UpdateGecoDatiRevoca");
         
         //criteri
@@ -1399,6 +1421,47 @@ Class AA_GecoModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template view revision 
+    public function Template_GetGecoRevisionViewDlg($object=null)
+    {
+        $id=$this->GetId()."_".uniqid();
+
+        $wnd=new AA_GenericWindowTemplate($id, "Revisioni pubblicazione", $this->id);
+        
+        $wnd->SetWidth(1280);
+        $wnd->SetHeight(720);
+
+        if($object instanceof AA_Geco)
+        {
+            $revisioni=$object->GetRevisione();
+            $data=array();
+            foreach($revisioni as $key=>$val)
+            {
+                $tipo="redazionale";
+                if($val['tipo']==1)$tipo="sostanziale";
+                $data[]=array("id"=>$key,"date"=>$val['data'],"tipo"=>$tipo,"estremi"=>$val['estremi'],"causale"=>$val['causale']);
+            }
+
+            $table=new AA_GenericDatatableTemplate($id."_Table","",4);
+            $table->EnableScroll(false,true);
+            $table->EnableRowOver();
+            $table->EnableAutoRowsHeight();
+            $table->SetColumnHeaderInfo(0,"date","Data",120,"textFilter","text","CriteriTable");
+            $table->SetColumnHeaderInfo(1,"tipo","Tipo",120,"selectFilter","text","CriteriTable");
+            $table->SetColumnHeaderInfo(2,"estremi","Estremi",300,"textFilter","text","CriteriTable_left");
+            $table->SetColumnHeaderInfo(3,"causale","Causale","fillspace","textFilter","text","CriteriTable_left");
+            $table->SetData($data);
+
+            $wnd->AddView($table);
+        }
+        else
+        {
+            $wnd->AddView(new AA_JSON_Template_Generic());
+        }
+        
+        return $wnd;
+    }
+
     //Template dlg aggiungi allegato/link
     public function Template_GetGecoAddNewAllegatoDlg($object=null)
     {
@@ -1506,7 +1569,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddSelectField("tipo","Tipo",array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di atto.","options"=>$options),false);
 
         //Estremi
-        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci il numero e la data del documento.","placeholder" => "es. DGR..."));
+        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci il numero e la data del documento.","placeholder" => "es. DGR n.xx del xxxx/xx/xx..."));
 
         //descrizione
         $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve descrizione (max 1024).","placeholder" => "..."),false);
@@ -2496,9 +2559,9 @@ Class AA_GecoModule extends AA_GenericModule
 
         $modalita=AA_Geco_Const::GetListaModalita();
         $modalita_options=array();
-        foreach($modalita as $id=>$val)
+        foreach($modalita as $key=>$val)
         {
-            $modalita_options[]=array("id"=>$id,"value"=>$val);
+            $modalita_options[]=array("id"=>$key,"value"=>$val);
         }
 
         $wnd=new AA_GenericFormDlg($id, "Modifica i dati generali del contributo", $this->id,$form_data,$form_data);
@@ -2509,6 +2572,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->SetWidth(1080);
         $wnd->SetHeight(820);
         $wnd->EnableValidation();
+        $wnd->SetApplyCallbackFunction("onSave");
               
         $anno_fine=date("Y");
         $anno_start=($anno_fine-5);
@@ -2689,6 +2753,53 @@ Class AA_GecoModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg modify beneficiario
+    public function Template_GetGecoRevisionDlg($params=null)
+    {
+        $id=$this->GetId()."_Revisione_Dlg_".uniqid();
+        if(!is_array($params)) return new AA_GenericWindowTemplate($id, "Dati di revisione", $this->id);
+
+        foreach($params as $key=>$val)   
+        {
+            $form_data[$key]=$val;
+        }
+
+        $form_data['Revisione_data']=date("Y-m-d");
+        $form_data['Revisione_estremi']="";
+        $form_data['Revisione_causale']="";
+       
+        $wnd=new AA_GenericFormDlg($id, "Dati di revisione", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(400);
+        $wnd->EnableValidation();
+              
+        //Revocata
+        $wnd->AddCheckBoxField("Revisione_tipo"," ", array("bottomPadding"=>32,"labelWidth"=>80, "gravity"=>1, "labelRight"=>"<b>Modifica sostanziale</b>","bottomLabel"=>"*Abilita se la modifica e' di tipo sostanziale.","relatedView"=>$id."_Field_Revisione_estremi", "relatedAction"=>"show"));
+
+        //$section=new AA_FieldSet($id."_Dati_revisione","Dettagli revisione",$wnd->GetFormId(),1,array("type"=>"clean","hidden"=>true));
+        
+        //$section->AddDateField("Revoca_data","Data",array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>80));
+
+        //$section->AddSpacer(false);
+
+        $wnd->AddTextField("Revisione_estremi","Estremi",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il numero e la data del documento di modifica (max 250 caratteri).", "placeholder"=>"es. prot.n. 123 del 2024-06-01..."));
+       
+        //$wnd->AddGenericObject($section);
+
+        $wnd->AddTextareaField("Revisione_causale","Causale",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci una breve descrizione dei motivi della modifica (max 1000 caratteri).", "placeholder"=>"..."));
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateGecoDatiGenerali");
+        
+        return $wnd;
+    }
+
     public function Template_GetGecoHelpDlg()
     {
         $id=$this->GetId()."_Help_Dlg";
@@ -2785,9 +2896,21 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>32,"type"=>"clean","borderless"=>true));
             $revocato="<span class='AA_Label AA_Label_LightOrange mdi mdi-cash-off' style='font-size:larger;line-height: 28px;'>&nbsp;Contributo revocato</span>";
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
             $toolbar->AddElement(new AA_JSON_Template_Generic());
             $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$revocato,"width"=>240,"align"=>"center")));
             $toolbar->AddElement(new AA_JSON_Template_Generic());
+            $revision_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-table-eye",
+                 "label"=>"Revisioni",
+                 "align"=>"right",
+                 "autowidth"=>true,
+                 "tooltip"=>"Visualizza i dati di revisione",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoRevisionViewDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+             ));
+             $toolbar->AddElement($revision_btn);
            
             $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
         }
@@ -3549,19 +3672,14 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        if($check_notes)
+        $revisione=$object->GetRevisione();
+        $sostanziale=0;
+        if($_REQUEST['Revisione_tipo']==1)
         {
-            $notes=trim(str_replace(" ","",$object->GetProp('Note')));
-            if(!isset($_REQUEST['Note']) || strcmp(trim(str_replace(" ","",$_REQUEST['Note'])),$notes)==0)
-            {
-                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                $task->SetError("Occorre indicare nelle note il motivo della variazione degli importi.",false);
-
-                return false;
-            }
-
-            $log.=" - revisione importi.";
+            $sostanziale=1;
         }
+        $revisione[uniqid()]=array("data"=>date("Y-m-d"),"sostanziale"=>$sostanziale,"estremi"=>$_REQUEST['Revisione_estremi'],"causale"=>$_REQUEST['Revisione_causale']);
+        $_REQUEST['Revisione']=json_encode($revisione);
 
         $_REQUEST['Importo_impegnato']=$importo['impegnato'];
         $_REQUEST['Importo_erogato']=$importo['erogato'];
@@ -3947,6 +4065,76 @@ Class AA_GecoModule extends AA_GenericModule
             
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetGecoModifyDlg($object),true);
+        return true;
+    }
+
+    //Task modifica dati generali elemento
+    public function Task_GetGecoRevisionViewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_READ)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di visualizzazione dell'elemento",false);
+
+            return false;
+        }
+            
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoRevisionViewDlg($object),true);
+        return true;
+    }
+
+    //Task modifica dati generali elemento
+    public function Task_GetGecoRevisionDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+            
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecoRevisionDlg($_POST),true);
         return true;
     }
 
