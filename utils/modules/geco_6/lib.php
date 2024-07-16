@@ -1438,7 +1438,7 @@ Class AA_GecoModule extends AA_GenericModule
             foreach($revisioni as $key=>$val)
             {
                 $tipo="redazionale";
-                if($val['tipo']==1)$tipo="sostanziale";
+                if($val['tipo']==1) $tipo="sostanziale";
                 $data[]=array("id"=>$key,"date"=>$val['data'],"tipo"=>$tipo,"estremi"=>$val['estremi'],"causale"=>$val['causale']);
             }
 
@@ -2572,7 +2572,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->SetWidth(1080);
         $wnd->SetHeight(820);
         $wnd->EnableValidation();
-        $wnd->SetApplyCallbackFunction("onSave");
+        if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA) > 0) $wnd->SetApplyCallbackFunction("onSave");
               
         $anno_fine=date("Y");
         $anno_start=($anno_fine-5);
@@ -2900,18 +2900,26 @@ Class AA_GecoModule extends AA_GenericModule
             $toolbar->AddElement(new AA_JSON_Template_Generic());
             $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$revocato,"width"=>240,"align"=>"center")));
             $toolbar->AddElement(new AA_JSON_Template_Generic());
-            $revision_btn=new AA_JSON_Template_Generic("",array(
-                "view"=>"button",
-                 "type"=>"icon",
-                 "icon"=>"mdi mdi-table-eye",
-                 "label"=>"Revisioni",
-                 "align"=>"right",
-                 "autowidth"=>true,
-                 "tooltip"=>"Visualizza i dati di revisione",
-                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoRevisionViewDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
-             ));
-             $toolbar->AddElement($revision_btn);
-           
+            
+            if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
+            {   
+                $revision_btn=new AA_JSON_Template_Generic("",array(
+                    "view"=>"button",
+                     "type"=>"icon",
+                     "icon"=>"mdi mdi-table-eye",
+                     "label"=>"Revisioni",
+                     "align"=>"right",
+                     "autowidth"=>true,
+                     "tooltip"=>"Visualizza i dati di revisione",
+                     "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoRevisionViewDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                 ));
+                 $toolbar->AddElement($revision_btn);
+            }
+            else
+            {
+                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+            }
+          
             $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
         }
         else $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,null,$canModify);
@@ -3672,14 +3680,17 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $revisione=$object->GetRevisione();
-        $sostanziale=0;
-        if($_REQUEST['Revisione_tipo']==1)
+        if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
         {
-            $sostanziale=1;
+            $revisione=$object->GetRevisione();
+            $sostanziale=0;
+            if($_REQUEST['Revisione_tipo']==1)
+            {
+                $sostanziale=1;
+            }
+            $revisione[uniqid()]=array("data"=>date("Y-m-d"),"tipo"=>$sostanziale,"estremi"=>$_REQUEST['Revisione_estremi'],"causale"=>$_REQUEST['Revisione_causale']);
+            $_REQUEST['Revisione']=json_encode($revisione);
         }
-        $revisione[uniqid()]=array("data"=>date("Y-m-d"),"sostanziale"=>$sostanziale,"estremi"=>$_REQUEST['Revisione_estremi'],"causale"=>$_REQUEST['Revisione_causale']);
-        $_REQUEST['Revisione']=json_encode($revisione);
 
         $_REQUEST['Importo_impegnato']=$importo['impegnato'];
         $_REQUEST['Importo_erogato']=$importo['erogato'];
