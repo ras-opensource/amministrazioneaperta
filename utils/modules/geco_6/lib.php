@@ -2891,40 +2891,38 @@ Class AA_GecoModule extends AA_GenericModule
         $canModify=false;
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $canModify=true;
 
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>32,"type"=>"clean","borderless"=>true));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic());
         $revoca=$object->GetRevoca();
         if(isset($revoca['data']) && AA_Utils::validateDate($revoca['data']))
         {
-            $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>32,"type"=>"clean","borderless"=>true));
             $revocato="<span class='AA_Label AA_Label_LightOrange mdi mdi-cash-off' style='font-size:larger;line-height: 28px;'>&nbsp;Contributo revocato</span>";
-            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
-            $toolbar->AddElement(new AA_JSON_Template_Generic());
             $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$revocato,"width"=>240,"align"=>"center")));
-            $toolbar->AddElement(new AA_JSON_Template_Generic());
-            
-            if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
-            {   
-                $revision_btn=new AA_JSON_Template_Generic("",array(
-                    "view"=>"button",
-                     "type"=>"icon",
-                     "icon"=>"mdi mdi-table-eye",
-                     "label"=>"Revisioni",
-                     "align"=>"right",
-                     "autowidth"=>true,
-                     "tooltip"=>"Visualizza i dati di revisione",
-                     "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoRevisionViewDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
-                 ));
-                 $toolbar->AddElement($revision_btn);
-            }
-            else
-            {
-                $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
-            }
-          
-            $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
         }
-        else $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,null,$canModify);
-        
 
+        $toolbar->AddElement(new AA_JSON_Template_Generic());
+        if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
+        {   
+            $revision_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-table-eye",
+                 "label"=>"Revisioni",
+                 "align"=>"right",
+                 "autowidth"=>true,
+                 "tooltip"=>"Visualizza i dati di revisione",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoRevisionViewDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+             ));
+             $toolbar->AddElement($revision_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+
+        $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
+        
         //Descrizione
         $value=$object->GetDescr();
         $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
