@@ -30108,7 +30108,7 @@ Class AA_SierModule extends AA_GenericModule
         {
             $value+=$rendiconti['buoni']['importo'];
             $totale+=$rendiconti['buoni']['importo'];
-            if(isset($rendiconti['ras']['importi_ammessi']['buoni_importo']) && $bAmmesso)
+            if(isset($rendiconti['ras']['importi_ammessi']['buoni|importo']) && $bAmmesso)
             {
                 $ammesso+=floatVal($rendiconti['ras']['importi_ammessi']['buoni|importo']);
             }
@@ -30317,7 +30317,7 @@ Class AA_SierModule extends AA_GenericModule
         }
         else
         {
-            $totale_ammesso+=floatVal($software_ammesso);
+            $totale_ammesso+=floatVal($collegamenti_ammesso);
             $collegamenti_ammesso=AA_Utils::number_format(floatVal($collegamenti_ammesso),2,",",".");
         }
         $val=new AA_JSON_Template_Template("",array(
@@ -32001,7 +32001,7 @@ Class AA_SierModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_GetSierComuneRendicontiImportoAmmessoModifyDlg_".uniqid();
         if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
         if(!($comune instanceof AA_SierComune)) return new AA_GenericWindowTemplate($id, "Modifica importo ammesso", $this->id);
-        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) || $this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $form_data['id']=$object->GetId();
             $form_data['id_comune']=$comune->GetProp("id");
