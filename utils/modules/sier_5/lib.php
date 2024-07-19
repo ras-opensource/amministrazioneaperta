@@ -25767,7 +25767,7 @@ Class AA_SierModule extends AA_GenericModule
             return false;
         }
 
-        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
+        if(!$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER) && !$this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER_OC))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Permessi insufficienti.",false);
