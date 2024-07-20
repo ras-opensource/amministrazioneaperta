@@ -2634,8 +2634,6 @@ Class AA_GecoModule extends AA_GenericModule
         //Note
         //$label="Note";
         //$wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
-        
-        $wnd->EnableCloseWndOnSuccessfulSave();
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();

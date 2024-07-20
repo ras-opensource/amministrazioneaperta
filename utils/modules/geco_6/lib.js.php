@@ -65,14 +65,14 @@ var <?php echo AA_GecoModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Geco
 <?php echo AA_GecoModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onSave = async function(params) {
     try 
     {
-        console.log("onSave",params);
+        //console.log("onSave",params);
 
         params.task="GetGecoRevisionDlg";
         params.postParams=params.data;
         
         if (AA_MainApp.utils.isDefined(params.wnd_id) && $$(params.wnd_id)) $$(params.wnd_id).close();
 
-        AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_GecoModule::AA_ID_MODULE?>.');
+        AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_GecoModule::AA_ID_MODULE?>');
 
         //AA_MainApp.utils.callHandler('saveData',params,'<?php echo AA_GecoModule::AA_ID_MODULE?>.');
 
