@@ -9,138 +9,95 @@ include_once "config.php";
 include_once "system_lib.php";
 
 #Costanti
-Class AA_Geco_Const extends AA_Const
+Class AA_Geser_Const extends AA_Const
 {
-    const AA_USER_FLAG_GECO="geco";
+    const AA_USER_FLAG_GESER="geser";
 
-    const AA_USER_FLAG_GECO_RO="geco_ro";
+    const AA_USER_FLAG_GESER_RO="geser_ro";
 
-    const AA_USER_FLAG_GECO_CRITERI="geco_criteri";
+    const AA_DBTABLE_CODICI_ISTAT="aa_patrimonio_codici_istat";
 
-    //tabella criteri e modaliota'
-    const AA_GECO_DBTABLE_CRITERI="aa_geco_criteri";
-
-    //modalita' scelta del beneficiario
-    protected static $aModalita=null;
-    const AA_GECO_MODALITA_AVVISO_PUBBLICO=1;
-    const AA_GECO_MODALITA_ASSEGNAZIONE_DIRETTA=2;
-    const AA_GECO_MODALITA_ATTO_NORMATIVO=4;
-    const AA_GECO_MODALITA_CONCORSO_PUBBLICO=8;
-    const AA_GECO_MODALITA_PROCEDURA_EVIDENZA_PUBBLICA=16;
-    public static function GetListaModalita()
+    //Stato impianto;
+    static protected $nStatoImpianto=null;
+    const AA_GESER_STATO_AUTORIZZAZIONE=1;
+    const AA_GESER_STATO_AUTORIZZATO=2;
+    const AA_GESER_STATO_INCOSTRUZIONE=64;
+    const AA_GESER_STATO_ESERCIZIO=4;
+    const AA_GESER_STATO_DISMISSIONE=8;
+    const AA_GESER_STATO_DISMESSO=16;
+    const AA_GESER_STATO_AMPLIAMENTO=32;
+    public static function GetListaStatiImpianto()
     {
-        if(static::$aModalita==null)
+        if(static::$nStatoImpianto==null)
         {
-            static::$aModalita=array(
-                static::AA_GECO_MODALITA_AVVISO_PUBBLICO=>"Avviso pubblico",
-                static::AA_GECO_MODALITA_ASSEGNAZIONE_DIRETTA=>"Assegnazione diretta su istanza individuale",
-                static::AA_GECO_MODALITA_ATTO_NORMATIVO=>"Beneficiario individuato da atto normativo",
-                static::AA_GECO_MODALITA_CONCORSO_PUBBLICO=>"Concorso pubblico",
-                static::AA_GECO_MODALITA_PROCEDURA_EVIDENZA_PUBBLICA=>"Procedura di evidenza pubblica"
+            static::$nStatoImpianto=array(
+                static::AA_GESER_STATO_AUTORIZZAZIONE=>"Richiesta autorizzazione",
+                static::AA_GESER_STATO_AUTORIZZATO=>"Autorizzato",
+                static::AA_GESER_STATO_INCOSTRUZIONE=>"In costruzione",
+                static::AA_GESER_STATO_ESERCIZIO=>"In esercizio",
+                static::AA_GESER_STATO_AMPLIAMENTO=>"In fase di modifica",
+                static::AA_GESER_STATO_DISMISSIONE=>"In dismissione",
+                static::AA_GESER_STATO_DISMESSO=>"Dismesso"
             );
         }
 
-        return static::$aModalita;
+        return static::$nStatoImpianto;
     }
 
-    protected static $aTipoAllegati=null;
-    const AA_GECO_TIPO_ALLEGATO_CURRICULUM=1;
+    protected static $aTipoVia=null;
+    const AA_GESER_TIPO_VIA_NESSUNO=1;
 
-    const AA_GECO_TIPO_ALLEGATO_PROGETTO=2;
-    const AA_GECO_TIPO_ALLEGATO_LINK_NORMA=4;
-    public static function GetListaTipoAllegati()
+    const AA_GESER_TIPO_VIA_REGIONALE=2;
+    const AA_GESER_TIPO_VIA_MINISTERIALE=4;
+    public static function GetListaTipoVia()
     {
-        if(static::$aTipoAllegati==null)
+        if(static::$aTipoVia==null)
         {
-            static::$aTipoAllegati=array(
-                static::AA_GECO_TIPO_ALLEGATO_CURRICULUM=>"Curriculum",
-                static::AA_GECO_TIPO_ALLEGATO_PROGETTO=>"Progetto",
-                static::AA_GECO_TIPO_ALLEGATO_LINK_NORMA=>"Normativa"
+            static::$aTipoVia=array(
+                static::AA_GESER_TIPO_VIA_NESSUNO=>"Nessuno",
+                static::AA_GESER_TIPO_VIA_REGIONALE=>"Regionale",
+                static::AA_GESER_TIPO_VIA_MINISTERIALE=>"Ministeriale"
             );
         }
 
-        return static::$aTipoAllegati;
+        return static::$aTipoVia;
     }
 
-    protected static $aTipoCriteri=null;
-    const AA_GECO_TIPO_CRITERI_ATTO_NORMATIVO=1;
-    const AA_GECO_TIPO_CRITERI_ATTO_GENERALE=2;
-
-    public static function GetTipoCriteri()
+    protected static $aTipoImpianti=null;
+    const AA_GESER_TIPOIMPIANTO_FOTOVOLTAICO=1;
+    const AA_GESER_TIPOIMPIANTO_EOLICO=2;
+    const AA_GESER_TIPOIMPIANTO_AGRIVOLTAICO=4;
+    const AA_GESER_TIPOIMPIANTO_BIOGAS=8;
+    const AA_GESER_TIPOIMPIANTO_BIOMASSA=16;
+    const AA_GESER_TIPOIMPIANTO_IDROELETTRICO=32;
+    const AA_GESER_TIPOIMPIANTO_ELETTRODOTTO=64;
+    const AA_GESER_TIPOIMPIANTO_TERMODINAMICO=128;
+    public static function GetListaTipoImpianti()
     {
-        if(static::$aTipoCriteri==null)
+        if(static::$aTipoImpianti==null)
         {
-            static::$aTipoCriteri=array(
-                static::AA_GECO_TIPO_CRITERI_ATTO_NORMATIVO=>"Atto normativo (legge e regolamento)",
-                static::AA_GECO_TIPO_CRITERI_ATTO_GENERALE=>"Atto di carattere amministrativo generale"
+            static::$aTipoImpianti=array(
+                static::AA_GESER_TIPOIMPIANTO_AGRIVOLTAICO=>"Agrivoltaico",
+                static::AA_GESER_TIPOIMPIANTO_BIOGAS=>"Biogas",
+                static::AA_GESER_TIPOIMPIANTO_BIOMASSA=>"Biomassa",
+                static::AA_GESER_TIPOIMPIANTO_ELETTRODOTTO=>"Elettrodotto",
+                static::AA_GESER_TIPOIMPIANTO_EOLICO=>"Eolico",
+                static::AA_GESER_TIPOIMPIANTO_FOTOVOLTAICO=>"Fotovoltaico",
+                static::AA_GESER_TIPOIMPIANTO_IDROELETTRICO=>"Idroelettrico",
+                static::AA_GESER_TIPOIMPIANTO_TERMODINAMICO=>"Solare termodinamico",
             );
         }
 
-        return static::$aTipoCriteri;
+        return static::$aTipoImpianti;
     }
-
-    protected static $aCategorieAllegati=null;
-    const AA_GECO_CATEGORIA_ALLEGATO_AGRICOLTURA=1;
-    const AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=2;
-    const AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=4;
-    const AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=8;
-    const AA_GECO_CATEGORIA_ALLEGATO_ALTRO=16;
-    const AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=32;
-    const AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=64;
-    const AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=128;
-    const AA_GECO_CATEGORIA_ALLEGATO_INTERNAZIONALIZZAZIONE=256;
-    const AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=512;
-    const AA_GECO_CATEGORIA_ALLEGATO_LAVORO=1024;
-    const AA_GECO_CATEGORIA_ALLEGATO_PESCA=2048;
-    const AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_GIOVANILI=4096;
-    const AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_SOCIALI=8192;
-    const AA_GECO_CATEGORIA_ALLEGATO_SANITA=16384;
-    const AA_GECO_CATEGORIA_ALLEGATO_SERVIZI=32768;
-    const AA_GECO_CATEGORIA_ALLEGATO_SPORT=65536;
-    const AA_GECO_CATEGORIA_ALLEGATO_TRASPORTI=131072;
-    const AA_GECO_CATEGORIA_ALLEGATO_TURISMO=262144;
-    const AA_GECO_CATEGORIA_ALLEGATO_VOLONTARIATO=524288;
-
-    public static function GetCategorieAllegati()
-    {
-        if(static::$aCategorieAllegati==null)
-        {
-            static::$aCategorieAllegati=array(
-                static::AA_GECO_CATEGORIA_ALLEGATO_AGRICOLTURA=>"Agricoltura",
-                static::AA_GECO_CATEGORIA_ALLEGATO_ALLEVAMENTO=>"Allevamento e pesca",
-                static::AA_GECO_CATEGORIA_ALLEGATO_AMBIENTE=>"Ambiente e territorio",
-                static::AA_GECO_CATEGORIA_ALLEGATO_ARTIGIANATO=>"Artigianato e commercio",
-                //static::AA_GECO_CATEGORIA_ALLEGATO_COMMERCIO=>"Commercio",
-                static::AA_GECO_CATEGORIA_ALLEGATO_ISTRUZIONE=>"Cultura e istruzione",
-                static::AA_GECO_CATEGORIA_ALLEGATO_INFORMAZIONE=>"Editoria e informazione",
-                static::AA_GECO_CATEGORIA_ALLEGATO_INDUSTRIA=>"Industria",
-                static::AA_GECO_CATEGORIA_ALLEGATO_INNOVAZIONE=>"Innovazione e ricerca",
-                static::AA_GECO_CATEGORIA_ALLEGATO_INTERNAZIONALIZZAZIONE=>"Internazionalizzazione",
-                static::AA_GECO_CATEGORIA_ALLEGATO_LAVORO=>"Lavoro",
-                //static::AA_GECO_CATEGORIA_ALLEGATO_PESCA=>"Pesca",
-                //static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_GIOVANILI=>"Politiche giovanili",
-                static::AA_GECO_CATEGORIA_ALLEGATO_POLITICHE_SOCIALI=>"Politiche sociali",
-                static::AA_GECO_CATEGORIA_ALLEGATO_SANITA=>"Sanita'",
-                static::AA_GECO_CATEGORIA_ALLEGATO_SERVIZI=>"Servizi",
-                static::AA_GECO_CATEGORIA_ALLEGATO_SPORT=>"Sport",
-                static::AA_GECO_CATEGORIA_ALLEGATO_TRASPORTI=>"Trasporti",
-                static::AA_GECO_CATEGORIA_ALLEGATO_TURISMO=>"Turismo",
-                static::AA_GECO_CATEGORIA_ALLEGATO_VOLONTARIATO=>"Volontariato",
-                static::AA_GECO_CATEGORIA_ALLEGATO_ALTRO=>"Altro",
-            );
-        }
-
-        return static::$aCategorieAllegati;
-    }
-
 }
 
-#Classe oggetto geco
-Class AA_Geco extends AA_Object_V2
+#Classe oggetto geser
+Class AA_Geser extends AA_Object_V2
 {
     //tabella dati db
-    const AA_DBTABLE_DATA="aa_geco_data";
-    static protected $AA_DBTABLE_OBJECTS="aa_geco_objects";
+    const AA_DBTABLE_DATA="aa_geser_data";
+    static protected $AA_DBTABLE_OBJECTS="aa_geser_objects";
 
     //Funzione di cancellazione
     protected function DeleteData($idData = 0, $user = null)
@@ -168,120 +125,57 @@ Class AA_Geco extends AA_Object_V2
         return json_encode($result);
     }
 
-    //Modalita'
-    protected $modalita=null;
-    public function GetModalita()
+
+    //geolocalizzazione
+    protected $geolocalizzazione=null;
+    public function GetGeolocalizzazione()
     {
         if(!$this->IsValid()) return array();
 
-        if(!is_array($this->modalita))
+        if(!is_array($this->geolocalizzazione))
         {
-            $this->modalita=json_decode($this->GetProp('Modalita'),true);
-            if(!is_array($this->modalita))
+            $this->geolocalizzazione=json_decode($this->GetProp('Geolocalizzazione'),true);
+            if(!is_array($this->geolocalizzazione))
             {
-                AA_Log::Log(__METHOD__." - errore nel parsing della modalita'",100);
+                //AA_Log::Log(__METHOD__." - errore nel parsing",100);
                 return array();
             }
-
-            $this->modalita['descrizione']=AA_Geco_Const::GetListaModalita()[$this->modalita['tipo']];
         }
 
-        return $this->modalita;
+        return $this->geolocalizzazione;
     }
 
-    //Norma
-    protected $norma=null;
-    public function GetNorma()
+    public function GetTipo()
     {
-        if(!$this->IsValid()) return array();
-
-        if(!is_array($this->norma))
-        {
-            $this->norma=json_decode($this->GetProp('Norma'),true);
-            if(!is_array($this->norma))
-            {
-                AA_Log::Log(__METHOD__." - errore nel parsing della norma'",100);
-                return array();
-            }
-        }
-
-        return $this->norma;
+        if($this->GetProp("Tipologia")<=0) return "Non definito";
+        $tipologia=AA_Geser_Const::GetListaTipoImpianti();
+        return $tipologia[$this->GetProp("Tipologia")];
     }
 
-    //Beneficiario
-    protected $beneficiario=null;
-    public function GetBeneficiario()
+    public function GetStato()
     {
-        if(!$this->IsValid()) return array();
-
-        if(!is_array($this->beneficiario))
-        {
-            $this->beneficiario=json_decode($this->GetProp('Beneficiario'),true);
-            if(!is_array($this->beneficiario))
-            {
-                AA_Log::Log(__METHOD__." - errore nel parsing del beneficiario'",100);
-                return array();
-            }
-        }
-
-        return $this->beneficiario;
+        if($this->GetProp("Stato")<=0) return "Non definito";
+        $tipologia=AA_Geser_Const::GetListaStatiImpianto();
+        return $tipologia[$this->GetProp("Stato")];
     }
 
-    //Revisione
-    protected $revisione=null;
-    public function GetRevisione()
+    //pratiche
+    protected $pratiche=null;
+    public function GetPratiche()
     {
         if(!$this->IsValid()) return array();
 
-        if(!is_array($this->revisione))
+        if(!is_array($this->pratiche))
         {
-            $this->revisione=json_decode($this->GetProp('Revisione'),true);
-            if(!is_array($this->revisione))
+            $this->pratiche=json_decode($this->GetProp('Pratiche'),true);
+            if(!is_array($this->pratiche))
             {
-                AA_Log::Log(__METHOD__." - errore nel parsing della revisione'",100);
+                AA_Log::Log(__METHOD__." - errore nel parsing",100);
                 return array();
             }
         }
 
-        return $this->revisione;
-    }
-
-    //Responsabile
-    protected $responsabile=null;
-    public function GetResponsabile()
-    {
-        if(!$this->IsValid()) return array();
-
-        if(!is_array($this->responsabile))
-        {
-            $this->responsabile=json_decode($this->GetProp('Responsabile'),true);
-            if(!is_array($this->responsabile))
-            {
-                AA_Log::Log(__METHOD__." - errore nel parsing del responsabile'",100);
-                return array();
-            }
-        }
-
-        return $this->responsabile;
-    }
-
-    //Revoca
-    protected $revoca=null;
-    public function GetRevoca()
-    {
-        if(!$this->IsValid()) return array();
-
-        if(!is_array($this->revoca))
-        {
-            $this->revoca=json_decode($this->GetProp('Revoca'),true);
-            if(!is_array($this->revoca))
-            {
-                AA_Log::Log(__METHOD__." - errore nel parsing dei dati di revoca'",100);
-                return array();
-            }
-        }
-
-        return $this->revoca;
+        return $this->pratiche;
     }
 
     //Funzione di clonazione dei dati
@@ -302,16 +196,16 @@ Class AA_Geco extends AA_Object_V2
 
         //Db data binding
         $this->AddProp("Note","","note");
-        $this->AddProp("Norma","","norma");
-        $this->AddProp("Anno","","anno");
-        $this->AddProp("Modalita",0,"modalita");
-        $this->AddProp("Revoca","","revoca");
-        $this->AddProp("Responsabile","","responsabile");
-        $this->AddProp("Beneficiario","","beneficiario");
-        $this->AddProp("Importo_impegnato",0,"importo_impegnato");
-        $this->AddProp("Importo_erogato",0,"importo_erogato");
-        $this->AddProp("Allegati","","allegati");
-        $this->AddProp("Revisione","","revisione");
+        $this->AddProp("Tipologia",0,"tipologia");
+        $this->AddProp("Stato",0,"stato");
+        $this->AddProp("AnnoAutorizzazione","","anno_autorizzazione");
+        $this->AddProp("AnnoCostruzione","","anno_costruzione");
+        $this->AddProp("AnnoEsercizio","","anno_entrata_esercizio");
+        $this->AddProp("AnnoDismissione","","anno_dismissione");
+        $this->AddProp("Potenza",0,"potenza");
+        $this->AddProp("Geolocalizzazione","","geolocalizzazione");
+        $this->AddProp("Pratiche","","pratiche");
+        //$this->AddProp("Allegati","","allegati");
 
         //disabilita la revisione
         $this->EnableRevision(false);
@@ -334,7 +228,7 @@ Class AA_Geco extends AA_Object_V2
         else $user=AA_User::GetCurrentUser();
 
         //---------local checks-------------
-        $params['class']="AA_Geco";
+        $params['class']="AA_Geser";
         //----------------------------------
 
         return parent::Search($params,$user);
@@ -358,14 +252,14 @@ Class AA_Geco extends AA_Object_V2
         //------------local checks---------------
 
         //Se l'utente non ha il flag può al massimo visualizzare la scheda
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && !$user->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $perms = AA_Const::AA_PERMS_READ;
         }
         //---------------------------------------
 
         //Se l'utente ha il flag e può modificare la scheda allora può fare tutto
-        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && $user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0 && $user->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $perms = AA_Const::AA_PERMS_ALL;
         }
@@ -391,14 +285,14 @@ Class AA_Geco extends AA_Object_V2
         $bSaveData=true; //enable save data
 
         //Chi non ha il flag non può inserire nuovi elementi
-        if(!$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$user->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             AA_Log::Log(__METHOD__." - L'utente corrente: ".$user->GetUserName()." non ha i permessi per inserire nuovi elementi.",100);
             return false;
         }
 
         //Verifica validità oggetto
-        if(!($object instanceof AA_Geco))
+        if(!($object instanceof AA_Geser))
         {
             AA_Log::Log(__METHOD__." - Errore: oggetto non valido (".print_r($object,true).").",100);
             return false;
@@ -417,175 +311,45 @@ Class AA_Geco extends AA_Object_V2
         return parent::Update($user,true,$logMsg);
     }
 
-    //Aggiunge un nuovo allegato
-    public function AddNewAllegato($allegato=null, $user=null)
+    protected $allegati=null;
+
+    //Restituisce gli allegati
+    public function GetAllegati()
     {
-        AA_Log::Log(__METHOD__."()");
+         if(!$this->IsValid()) return array();
 
-        if(!$this->isValid())
+        if(!is_array($this->allegati))
         {
-                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
-                return false;            
-        }
-        
-        //Verifica utente
-        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
-        {
-            $user=AA_User::GetCurrentUser();
-        
-            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            $this->allegati=json_decode($this->GetProp('Allegati'),true);
+            if(!is_array($this->allegati))
             {
-                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
-                return false;
+                AA_Log::Log(__METHOD__." - errore nel parsing  degli allegati'",100);
+                return array();
             }
         }
 
-        //Verifica Flags
-        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
-        {
-            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'oggetto (".$this->GetId().").", 100,false,true);
-            return false;
-        }
-
-        if(!($allegato instanceof AA_GecoAllegati))
-        {
-            AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
-            return false;
-        }
-
-        $this->IsChanged();
-
-        //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true, "Aggiunta nuovo allegato: ".$allegato->GetEstremi()))
-        {
-            return false;
-        }
-
-        $allegato->SetIdGeco($this->nId_Data);
-        if($this->nId_Data_Rev > 0)
-        {
-            $allegato->SetIdGeco($this->nId_Data_Rev);
-        }
-
-        $db= new AA_Database();
-
-        $ordine=$allegato->GetOrdine();
-        if($allegato->GetOrdine()==0)
-        {
-            $query="SELECT count(id) as num FROM ".static::AA_ALLEGATI_DB_TABLE;
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__." - Errore nella query: ".$query." - errore: ".$db->GetErrorMessage(), 100,true);
-            }
-
-            $rs=$db->GetResultSet();
-            $ordine=$rs[0]['num']+1;
-        }
-
-        $query="INSERT INTO ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdGeco()."'";
-        $query.=", url='".addslashes($allegato->GetUrl())."'";
-        $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
-        $query.=", file='".addslashes($allegato->GetFileHash())."'";
-        $query.=", tipo='".addslashes($allegato->GetTipo())."'";
-        $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
-        $query.=",destinatari='".$allegato->GetDestinatari()."'";
-        $query.=",ordine='".$ordine."'";
-        
-        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
-        
-        if(!$db->Query($query))
-        {
-            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
-            return false;            
-        }
-        
-        return true;
+        return $this->allegati;
     }
 
-    //Aggiorna un allegato esistente
-    public function UpdateAllegato($allegato=null, $user=null)
+    public function GetAllegato($id_allegato="")
     {
-        AA_Log::Log(__METHOD__."()");
+         if(!$this->IsValid() || $id_allegato <=0 || $id_allegato=="") return null;
 
-        if(!$this->isValid())
+        if(!is_array($this->allegati))
         {
-                AA_Log::Log(__METHOD__." - elemento non valido.", 100,false,true);
-                return false;            
-        }
-        
-        //Verifica utente
-        if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
-        {
-            $user=AA_User::GetCurrentUser();
-        
-            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            $this->allegati=json_decode($this->GetProp('Allegati'),true);
+            if(!is_array($this->allegati))
             {
-                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
-                return false;
+                AA_Log::Log(__METHOD__." - errore nel parsing  degli allegati'",100);
+                return null;
             }
         }
 
-        //Verifica Flags
-        if(($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE)==0)
-        {
-            AA_Log::Log(__METHOD__." - l'utente corrente non può modificare l'elemento.", 100,false,true);
-            return false;
-        }
+        if(!isset($this->allegati[$id_allegato])) return null;
+        $allegato=$this->allegati[$id_allegato];
+        $allegato['id']=$id_allegato;
 
-        if(!($allegato instanceof AA_GecoAllegati))
-        {
-            AA_Log::Log(__METHOD__." - Allegato non valido.", 100,false,true);
-            return false;
-        }
-
-        $this->IsChanged();
-
-        //Aggiorna l'elemento e lo versiona se necessario
-        if(!$this->Update($user,true, "Aggiornamento allegato: ".$allegato->GetEstremi()))
-        {
-            return false;
-        }
-
-        $allegato->SetIdGeco($this->nId_Data);
-        if($this->nId_Data_Rev > 0)
-        {
-            $allegato->SetIdGeco($this->nId_Data_Rev);
-        }
-
-        $db= new AA_Database();
-
-        $ordine=$allegato->GetOrdine();
-        if($allegato->GetOrdine()==0)
-        {
-            $query="SELECT count(id) as num FROM ".static::AA_ALLEGATI_DB_TABLE;
-            if(!$db->Query($query))
-            {
-                AA_Log::Log(__METHOD__." - Errore nella query: ".$query." - errore: ".$db->GetErrorMessage(), 100,true);
-            }
-
-            $rs=$db->GetResultSet();
-            $ordine=$rs[0]['num']+1;
-        }
-        
-        $query="UPDATE ".static::AA_ALLEGATI_DB_TABLE." SET id_sier='".$allegato->GetIdGeco()."'";
-        $query.=", url='".addslashes($allegato->GetUrl())."'";
-        $query.=", estremi='".addslashes($allegato->GetEstremi())."'";
-        $query.=", file='".addslashes($allegato->GetFileHash())."'";
-        $query.=", tipo='".addslashes($allegato->GetTipo())."'";
-        $query.=", aggiornamento='".addslashes($allegato->GetAggiornamento())."'";
-        $query.=",destinatari='".$allegato->GetDestinatari()."'";
-        $query.=",ordine='".$ordine."'";
-        $query.=" WHERE id='".addslashes($allegato->GetId())."' LIMIT 1";
-        
-        //AA_Log::Log(__METHOD__." - query: ".$query, 100);
-        
-        if(!$db->Query($query))
-        {
-            AA_Log::Log(__METHOD__." - Errore nella query: ".$query, 100,false,true);
-            return false;            
-        }
-        
-        return true;
+        return $allegato;
     }
 
     //Elimina un allegato esistente
@@ -652,47 +416,6 @@ Class AA_Geco extends AA_Object_V2
         return true;
     }
 
-    protected $allegati=null;
-
-    //Restituisce gli allegati
-    public function GetAllegati()
-    {
-         if(!$this->IsValid()) return array();
-
-        if(!is_array($this->allegati))
-        {
-            $this->allegati=json_decode($this->GetProp('Allegati'),true);
-            if(!is_array($this->allegati))
-            {
-                AA_Log::Log(__METHOD__." - errore nel parsing  degli allegati'",100);
-                return array();
-            }
-        }
-
-        return $this->allegati;
-    }
-
-    public function GetAllegato($id_allegato="")
-    {
-         if(!$this->IsValid() || $id_allegato <=0 || $id_allegato=="") return null;
-
-        if(!is_array($this->allegati))
-        {
-            $this->allegati=json_decode($this->GetProp('Allegati'),true);
-            if(!is_array($this->allegati))
-            {
-                AA_Log::Log(__METHOD__." - errore nel parsing  degli allegati'",100);
-                return null;
-            }
-        }
-
-        if(!isset($this->allegati[$id_allegato])) return null;
-        $allegato=$this->allegati[$id_allegato];
-        $allegato['id']=$id_allegato;
-
-        return $allegato;
-    }
-
     public function SetAllegati($val="")
     {
         if(is_array($val)) $this->aProps['Allegati']=json_encode($val);
@@ -702,29 +425,29 @@ Class AA_Geco extends AA_Object_V2
 
 
 #Classe per il modulo art26 - contributi
-Class AA_GecoModule extends AA_GenericModule
+Class AA_GeserModule extends AA_GenericModule
 {
-    const AA_UI_PREFIX="AA_Geco";
+    const AA_UI_PREFIX="AA_Geser";
 
     //Id modulo
-    const AA_ID_MODULE="AA_MODULE_GECO";
+    const AA_ID_MODULE="AA_MODULE_GESER";
 
     //main ui layout box
-    const AA_UI_MODULE_MAIN_BOX="AA_Geco_module_layout";
+    const AA_UI_MODULE_MAIN_BOX="AA_Geser_module_layout";
 
-    const AA_MODULE_OBJECTS_CLASS="AA_Geco";
+    const AA_MODULE_OBJECTS_CLASS="AA_Geser";
 
     //Task per la gestione dei dialoghi standard
-    const AA_UI_TASK_PUBBLICATE_FILTER_DLG="GetGecoPubblicateFilterDlg";
-    const AA_UI_TASK_BOZZE_FILTER_DLG="GetGecoBozzeFilterDlg";
-    const AA_UI_TASK_REASSIGN_DLG="GetGecoReassignDlg";
-    const AA_UI_TASK_PUBLISH_DLG="GetGecoPublishDlg";
-    const AA_UI_TASK_TRASH_DLG="GetGecoTrashDlg";
-    const AA_UI_TASK_RESUME_DLG="GetGecoResumeDlg";
-    const AA_UI_TASK_DELETE_DLG="GetGecoDeleteDlg";
-    const AA_UI_TASK_ADDNEW_DLG="GetGecoAddNewDlg";
-    const AA_UI_TASK_MODIFY_DLG="GetGecoModifyDlg";
-    const AA_UI_TASK_ADDNEWMULTI_DLG="GetGecoAddNewMultiDlg";
+    const AA_UI_TASK_PUBBLICATE_FILTER_DLG="GetGeserPubblicateFilterDlg";
+    const AA_UI_TASK_BOZZE_FILTER_DLG="GetGeserBozzeFilterDlg";
+    const AA_UI_TASK_REASSIGN_DLG="GetGeserReassignDlg";
+    const AA_UI_TASK_PUBLISH_DLG="GetGeserPublishDlg";
+    const AA_UI_TASK_TRASH_DLG="GetGeserTrashDlg";
+    const AA_UI_TASK_RESUME_DLG="GetGeserResumeDlg";
+    const AA_UI_TASK_DELETE_DLG="GetGeserDeleteDlg";
+    const AA_UI_TASK_ADDNEW_DLG="GetGeserAddNewDlg";
+    const AA_UI_TASK_MODIFY_DLG="GetGeserModifyDlg";
+    const AA_UI_TASK_ADDNEWMULTI_DLG="GetGeserAddNewMultiDlg";
     //------------------------------------
 
     //Dialoghi
@@ -736,7 +459,7 @@ Class AA_GecoModule extends AA_GenericModule
     //section ui ids
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
 
-    const AA_UI_SECTION_CRITERI="Criteri";
+    const AA_UI_TEMPLATE_PRATICHE="Pratiche";
 
     public function __construct($user=null,$bDefaultSections=true)
     {
@@ -751,68 +474,60 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager=$this->GetTaskManager();
         
         //Dialoghi di filtraggio
-        $taskManager->RegisterTask("GetGecoPubblicateFilterDlg");
-        $taskManager->RegisterTask("GetGecoBozzeFilterDlg");
+        $taskManager->RegisterTask("GetGeserPubblicateFilterDlg");
+        $taskManager->RegisterTask("GetGeserBozzeFilterDlg");
 
 
         //dati
-        $taskManager->RegisterTask("GetGecoModifyDlg");
-        $taskManager->RegisterTask("GetGecoBeneficiarioModifyDlg");
-        $taskManager->RegisterTask("GetGecoAddNewDlg");
-        $taskManager->RegisterTask("GetGecoAddNewMultiDlg");
-        $taskManager->RegisterTask("GetGecoAddNewMultiPreviewCalc");
-        $taskManager->RegisterTask("GetGecoAddNewMultiPreviewDlg");
-        $taskManager->RegisterTask("GetGecoTrashDlg");
-        $taskManager->RegisterTask("TrashGeco");
-        $taskManager->RegisterTask("GetGecoDeleteDlg");
-        $taskManager->RegisterTask("DeleteGeco");
-        $taskManager->RegisterTask("GetGecoResumeDlg");
-        $taskManager->RegisterTask("ResumeGeco");
-        $taskManager->RegisterTask("GetGecoReassignDlg");
-        $taskManager->RegisterTask("GetGecoPublishDlg");
-        $taskManager->RegisterTask("ReassignGeco");
-        $taskManager->RegisterTask("AddNewGeco");
-        $taskManager->RegisterTask("UpdateGecoDatiGenerali");
-        $taskManager->RegisterTask("UpdateGecoDatiBeneficiario");
-        $taskManager->RegisterTask("PublishGeco");
-        $taskManager->RegisterTask("GetGecoConfirmPrivacyDlg");
-        $taskManager->RegisterTask("GetGecoRevocaModifyDlg");
-        $taskManager->RegisterTask("GetGecoRevisionDlg");
-        $taskManager->RegisterTask("GetGecoRevisionViewDlg");
-        $taskManager->RegisterTask("UpdateGecoDatiRevoca");
+        $taskManager->RegisterTask("GetGeserModifyDlg");
+        $taskManager->RegisterTask("GetGeserBeneficiarioModifyDlg");
+        $taskManager->RegisterTask("GetGeserAddNewDlg");
+        $taskManager->RegisterTask("GetGeserAddNewMultiDlg");
+        $taskManager->RegisterTask("GetGeserAddNewMultiPreviewCalc");
+        $taskManager->RegisterTask("GetGeserAddNewMultiPreviewDlg");
+        $taskManager->RegisterTask("GetGeserTrashDlg");
+        $taskManager->RegisterTask("TrashGeser");
+        $taskManager->RegisterTask("GetGeserDeleteDlg");
+        $taskManager->RegisterTask("DeleteGeser");
+        $taskManager->RegisterTask("GetGeserResumeDlg");
+        $taskManager->RegisterTask("ResumeGeser");
+        $taskManager->RegisterTask("GetGeserReassignDlg");
+        $taskManager->RegisterTask("GetGeserPublishDlg");
+        $taskManager->RegisterTask("ReassignGeser");
+        $taskManager->RegisterTask("AddNewGeser");
+        $taskManager->RegisterTask("UpdateGeserDatiGenerali");
+        $taskManager->RegisterTask("UpdateGeserDatiBeneficiario");
+        $taskManager->RegisterTask("PublishGeser");
+        $taskManager->RegisterTask("GetGeserConfirmPrivacyDlg");
+        $taskManager->RegisterTask("GetGeserRevocaModifyDlg");
+        $taskManager->RegisterTask("GetGeserRevisionDlg");
+        $taskManager->RegisterTask("GetGeserRevisionViewDlg");
+        $taskManager->RegisterTask("UpdateGeserDatiRevoca");
+        $taskManager->RegisterTask("GetGeserListaCodiciIstat");
         
-        //criteri
-        $taskManager->RegisterTask("GetGecoAddNewCriteriDlg");
-        $taskManager->RegisterTask("AddNewGecoCriteri");
-        $taskManager->RegisterTask("GetGecoModifyCriteriDlg");
-        $taskManager->RegisterTask("GetGecoCopyCriteriDlg");
-        $taskManager->RegisterTask("UpdateGecoCriteri");
-        $taskManager->RegisterTask("GetGecoTrashCriteriDlg");
-        $taskManager->RegisterTask("DeleteGecoCriteri");
-
         //Allegati
-        $taskManager->RegisterTask("GetGecoAddNewAllegatoDlg");
-        $taskManager->RegisterTask("AddNewGecoAllegato");
-        $taskManager->RegisterTask("GetGecoModifyAllegatoDlg");
-        $taskManager->RegisterTask("UpdateGecoAllegato");
-        $taskManager->RegisterTask("GetGecoTrashAllegatoDlg");
-        $taskManager->RegisterTask("DeleteGecoAllegato");
+        $taskManager->RegisterTask("GetGeserAddNewAllegatoDlg");
+        $taskManager->RegisterTask("AddNewGeserAllegato");
+        $taskManager->RegisterTask("GetGeserModifyAllegatoDlg");
+        $taskManager->RegisterTask("UpdateGeserAllegato");
+        $taskManager->RegisterTask("GetGeserTrashAllegatoDlg");
+        $taskManager->RegisterTask("DeleteGeserAllegato");
         
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGecoDettaglio_Generale_Tab")
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGeserDettaglio_Generale_Tab")
         ));
 
-        $criteri=new AA_GenericModuleSection(static::AA_ID_SECTION_CRITERI,"Criteri e modalita'",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_CRITERI,$this->GetId(),false,true,false,false,'mdi-text-box-multiple',"TemplateSection_Criteri");
-        $this->AddSection($criteri);
+        //$criteri=new AA_GenericModuleSection(static::AA_ID_SECTION_CRITERI,"Criteri e modalita'",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_CRITERI,$this->GetId(),false,true,false,false,'mdi-text-box-multiple',"TemplateSection_Criteri");
+        //$this->AddSection($criteri);
 
-        $pubblicate=$this->GetSection(static::AA_ID_SECTION_PUBBLICATE);
-        $pubblicate->SetNavbarTemplate(array($this->TemplateGenericNavbar_Bozze(1)->toArray(),$this->TemplateGenericNavbar_Section($criteri,2,true)->toArray()));
+        //$pubblicate=$this->GetSection(static::AA_ID_SECTION_PUBBLICATE);
+        //$pubblicate->SetNavbarTemplate(array($this->TemplateGenericNavbar_Bozze(1)->toArray(),$this->TemplateGenericNavbar_Section($criteri,2,true)->toArray()));
 
-        $criteri->SetNavbarTemplate(array($this->TemplateGenericNavbar_Atti(1,true,true)->toArray()));
+        //$criteri->SetNavbarTemplate(array($this->TemplateGenericNavbar_Atti(1,true,true)->toArray()));
 
         //Custom object template
-        //$this->AddObjectTemplate(static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI,"Template_GetGecoComuneRendicontiViewLayout");
+        //$this->AddObjectTemplate(static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI,"Template_GetGeserComuneRendicontiViewLayout");
     }
     
     protected function TemplateGenericNavbar_Atti($level = 1, $last = false, $refresh_view = true)
@@ -841,7 +556,7 @@ Class AA_GecoModule extends AA_GenericModule
     {
         if(self::$oInstance==null)
         {
-            self::$oInstance=new AA_GecoModule($user);
+            self::$oInstance=new AA_GeserModule($user);
         }
         
         return self::$oInstance;
@@ -863,7 +578,7 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplateSection_Pubblicate($params=array())
     {
         $bCanModify=false;
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if($this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $bCanModify=true;
         }
@@ -879,7 +594,7 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplateSection_Bozze($params=array())
     {
         $bCanModify=false;
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if($this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $bCanModify=true;
         }
@@ -899,39 +614,16 @@ Class AA_GecoModule extends AA_GenericModule
     //Personalizza il filtro delle schede pubblicate per il modulo corrente
     protected function GetDataSectionPubblicate_CustomFilter($params = array())
     {
-        //anno rif
-        if(isset($params['Anno']) && $params['Anno']> 0)
+        //tipo
+        if(isset($params['tipo']) && $params['tipo'] > 0)
         {
-            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['Anno'])."'";
-        }
-        
-        //revocate
-        if(isset($params['revocate']) &&  $params['revocate']>0)
-        {
-            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".revoca like '{\"data\":\"%\",%'";
+            $params['where'][]=" AND ".AA_Geser::AA_DBTABLE_DATA.".tipologia = '".addslashes($params['tipo'])."'";
         }
 
-        //beneficiario
-        if(isset($params['Beneficiario']) &&  $params['Beneficiario']!="")
+        //stato
+        if(isset($params['stato']) && $params['stato'] > 0)
         {
-            $query=AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{\"nome\":\"%". addslashes($params['Beneficiario'])."%\",%'";
-            $query.=" OR ".AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{%,\"cf\":\"%". addslashes($params['Beneficiario'])."%\",%'";
-            $query.=" OR ".AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{%,\"piva\":\"%". addslashes($params['Beneficiario'])."%\",%'";
-            $params['where'][]=" AND (".$query.")";
-        }
-
-        //responsabile
-        if(isset($params['Responsabile']) &&  $params['Responsabile']!="")
-        {
-            $query=AA_Geco::AA_DBTABLE_DATA.".responsabile like '{\"nome\":\"%". addslashes($params['Responsabile'])."%\"%'";
-            $params['where'][]=" AND ".$query;
-        }
-
-        //modalita'
-        if(isset($params['Modalita']) &&  $params['Modalita']>0)
-        {
-            $query=AA_Geco::AA_DBTABLE_DATA.".modalita like '{\"tipo\":". addslashes($params['Modalita']).",%'";
-            $params['where'][]=" AND ".$query;
+            $params['where'][]=" AND ".AA_Geser::AA_DBTABLE_DATA.".stato = '".addslashes($params['stato'])."'";
         }
 
         return $params;
@@ -940,40 +632,24 @@ Class AA_GecoModule extends AA_GenericModule
      //Personalizza il template dei dati delle schede pubblicate per il modulo corrente
      protected function GetDataSectionPubblicate_CustomDataTemplate($data = array(),$object=null)
      {
-        $tag="";
-        if($object instanceof AA_Geco)
+        $data['pretitolo']=$object->GetTipo();
+        $tags="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStato()."</span>";
+        $potenza=$object->GetProp("Potenza");
+        if(intVal($potenza)>0)
         {
-            $data['pretitolo']=$object->GetProp("Anno");
-            
-            $tag="";
-            $modalita=$object->GetModalita();
-            $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$modalita['descrizione']."</span>";
-
-            $beneficiario=$object->GetBeneficiario();
-            if(($object->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0 || $beneficiario['privacy']==0)
-            {
-                $class="AA_DataView_Tag AA_Label AA_Label_LightYellow";
-                if($beneficiario['tipo']==1) $class.=' mdi mdi-account-eye';
-                if($beneficiario['privacy']==1) $class.=' mdi mdi-account-off';
-
-                $tag.="<span class='".$class."'>".$beneficiario['nome']."</span>";
-            }
-           
-            $revoca=$object->GetRevoca();
-            if(isset($revoca['data']) && $revoca['data'] !="")
-            {
-                 $tag.="&nbsp;<span class='AA_Label AA_Label_LightOrange'>Revocato</span>";
-            }
+            $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".$potenza." MWatt</span>";
         }
+        $data['tags']=$tags;
+        $geolocalizzazione=$object->GetGeolocalizzazione();
+        $data['sottotitolo']="<span>".$geolocalizzazione['localita'].", ".$geolocalizzazione['comune']."</span>";
 
-        $data['tags']=$tag;
         return $data;
      }
 
     //Restituisce i dati delle bozze
     public function GetDataSectionBozze_List($params=array())
     {
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO) && !$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_RO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER) && !$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER_RO))
         {
             AA_Log::Log(__METHOD__." - ERRORE: l'utente corrente: ".$this->oUser->GetUserName()." non è abilitato alla visualizzazione delle bozze.",100);
             return array();
@@ -985,33 +661,16 @@ Class AA_GecoModule extends AA_GenericModule
     //Personalizza il filtro delle bozze per il modulo corrente
     protected function GetDataSectionBozze_CustomFilter($params = array())
     {
-        //anno rif
-        if(isset($params['Anno']) && $params['Anno'] > 0)
+        //tipo
+        if(isset($params['tipo']) && $params['tipo'] > 0)
         {
-            $params['where'][]=" AND ".AA_Geco::AA_DBTABLE_DATA.".anno = '".addslashes($params['Anno'])."'";
+            $params['where'][]=" AND ".AA_Geser::AA_DBTABLE_DATA.".tipologia = '".addslashes($params['tipo'])."'";
         }
 
-        //beneficiario
-        if(isset($params['Beneficiario']) &&  $params['Beneficiario']!="")
+        //stato
+        if(isset($params['stato']) && $params['stato'] > 0)
         {
-            $query=AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{\"nome\":\"%". addslashes($params['Beneficiario'])."%\",%'";
-            $query.=" OR ".AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{%,\"cf\":\"%". addslashes($params['Beneficiario'])."%\",%'";
-            $query.=" OR ".AA_Geco::AA_DBTABLE_DATA.".beneficiario like '{%,\"piva\":\"%". addslashes($params['Beneficiario'])."%\",%'";
-            $params['where'][]=" AND (".$query.")";
-        }
-
-        //responsabile
-        if(isset($params['Responsabile']) &&  $params['Responsabile']!="")
-        {
-            $query=AA_Geco::AA_DBTABLE_DATA.".responsabile like '{\"nome\":\"%". addslashes($params['Responsabile'])."%\"%'";
-            $params['where'][]=" AND ".$query;
-        }
-
-        //modalita'
-        if(isset($params['Modalita']) &&  $params['Modalita']>0)
-        {
-            $query=AA_Geco::AA_DBTABLE_DATA.".modalita like '{\"tipo\":". addslashes($params['Modalita']).",%'";
-            $params['where'][]=" AND ".$query;
+            $params['where'][]=" AND ".AA_Geser::AA_DBTABLE_DATA.".stato = '".addslashes($params['stato'])."'";
         }
 
         return $params;
@@ -1021,28 +680,26 @@ Class AA_GecoModule extends AA_GenericModule
     protected function GetDataSectionBozze_CustomDataTemplate($data = array(),$object=null)
     {
         
-        if($object instanceof AA_Geco)
+        if($object instanceof AA_Geser)
         {
 
-            $data['pretitolo']=$object->GetProp("Anno");
-            
-            $tag="";
-            $modalita=$object->GetModalita();
-            $tag.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$modalita['descrizione']."</span>";
-
-            $beneficiario=$object->GetBeneficiario();
-            $class="AA_DataView_Tag AA_Label AA_Label_LightYellow";
-            if($beneficiario['tipo']==1) $class.=' mdi mdi-account-eye';
-            if($beneficiario['privacy']==1) $class.=' mdi mdi-account-off';
-            $tag.="<span class='".$class."'>".$beneficiario['nome']."</span>";
+            $data['pretitolo']=$object->GetTipo();
+            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStato()."</span>";
+            $potenza=$object->GetProp("Potenza");
+            if(intVal($potenza)>0)
+            {
+                $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".$potenza." MWatt</span>";
+            }
+            $data['tags']=$tags;
+            $geolocalizzazione=$object->GetGeolocalizzazione();
+            $data['sottotitolo']="<span>".$geolocalizzazione['localita'].", ".$geolocalizzazione['comune']."</span>";
         }
 
-        $data['tags']=$tag;
         return $data;
     }
     
     //Template publish dlg
-    public function Template_GetGecoPublishDlg($params)
+    public function Template_GetGeserPublishDlg($params)
     {
         //lista organismi da pubblicare
         if($params['ids'])
@@ -1051,7 +708,7 @@ Class AA_GecoModule extends AA_GenericModule
             
             foreach($ids as $curId)
             {
-                $organismo=new AA_Geco($curId,$this->oUser);
+                $organismo=new AA_Geser($curId,$this->oUser);
                 if($organismo->isValid() && ($organismo->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_PUBLISH)>0)
                 {
                     $ids_final[$curId]=$organismo->GetDescr();
@@ -1095,7 +752,7 @@ Class AA_GecoModule extends AA_GenericModule
 
                 $wnd->EnableCloseWndOnSuccessfulSave();
                 $wnd->enableRefreshOnSuccessfulSave();
-                $wnd->SetSaveTask('PublishGeco');
+                $wnd->SetSaveTask('PublishGeser');
             }
             else
             {
@@ -1110,145 +767,111 @@ Class AA_GecoModule extends AA_GenericModule
     }
     
     //Template organismo delete dlg
-    public function Template_GetGecoDeleteDlg($params)
+    public function Template_GetGeserDeleteDlg($params)
     {
-        return $this->Template_GetGenericObjectDeleteDlg($params,"DeleteGeco");
+        return $this->Template_GetGenericObjectDeleteDlg($params,"DeleteGeser");
     }
         
     //Template dlg addnew
-    public function Template_GetGecoAddNewDlg()
+    public function Template_GetGeserAddNewDlg()
     {
         $id=$this->GetId()."_AddNew_Dlg_".uniqid();
         
         $form_data=array();
         
         $form_data['Note']="";
-        $form_data['Anno']=date("Y");
+        $form_data['AnnoAutorizzazione']="";
+        $form_data['AnnoCostruzione']="";
+        $form_data['AnnoEsercizio']="";
+        $form_data['AnnoDismissione']="";
+        $form_data['Stato']=0;
+        $form_data['Tipologia']=0;
         $form_data['nome']="";
-        $form_data['descrizione']="";
-        $form_data['Modalita_tipo']=0;
-        $form_data['Modalita_link']='';
+        $form_data['Potenza']="";
+        $form_data['Geo_comune']="";
+        $form_data['Geo_localita']="";
+        $form_data['Geo_coordinate']="";
 
-        $form_data['Norma_estremi']='';
-        $form_data['Norma_link']='';
-        
-        $form_data['Beneficiario_nome']="";
-        $form_data['Beneficiario_cf']="";
-        $form_data['Beneficiario_piva']="";
-        $form_data['Beneficiario_tipo']=0;
-        $form_data['Beneficiario_privacy']=0;
-
-        $form_data['Responsabile_nome']="";
-
-        $form_data['Importo_impegnato']="";
-        $form_data['Importo_erogato']=0;
-
-        $form_data['Note']="";
-
-        $modalita=AA_Geco_Const::GetListaModalita();
-        $modalita_options=array();
-        foreach($modalita as $num=>$val)
+        $stato=AA_Geser_Const::GetListaStatiImpianto();
+        $stato_options=array();
+        foreach($stato as $num=>$val)
         {
-            $modalita_options[]=array("id"=>$num,"value"=>$val);
+            $stato_options[]=array("id"=>$num,"value"=>$val);
         }
 
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo contributo", $this->id,$form_data,$form_data);
+        $tipologia=AA_Geser_Const::GetListaTipoImpianti();
+        $tipo_options=array();
+        foreach($tipologia as $num=>$val)
+        {
+            $tipo_options[]=array("id"=>$num,"value"=>$val);
+        }
+
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo impianto", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(1080);
-        $wnd->SetHeight(820);
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(720);
         $wnd->EnableValidation();
-              
-        $anno_fine=date("Y");
-        $anno_start=($anno_fine-5);
-        //anno riferimento
-        $options=array();
-        for($i=$anno_fine; $i>=$anno_start; $i--)
-        {
-            $options[]=array("id"=>$i, "value"=>$i);
-        }
-        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"...","options"=>$options,"value"=>Date('Y')));
 
+        //Tipologia
+        $wnd->AddSelectField("Tipologia","Tipologia",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare la tipologia di impianto.", "placeholder"=>"...","options"=>$tipo_options));
+        
+        //Stato
+        $wnd->AddSelectField("Stato","Stato attuale",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare lo stato attuale dell'impianto.", "placeholder"=>"...","options"=>$stato_options),false);
+        
         //Nome
-        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci un testo breve al fine di facilitare la ricerca della pubblicazione (max 255 caratteri, visibilita' solo interna).", "placeholder"=>"Titolo a uso interno..."),false);
+        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci una denominazione per l'impianto.", "placeholder"=>"..."));
 
-        //Descrizione
-        $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Inserisci un breve testo esplicativo per il cittadino (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"Breve descrizione ad uso esterno..."));
+        //potenza
+        $wnd->AddTextField("Potenza","Potenza",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la potenza in megawatt dell'impianto.", "placeholder"=>"es. 150"),false);
 
-        //Responsabile
-        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo e qualifica del responsabile del procedimento amministrativo.", "placeholder"=>"es. Nome, cognome e qualifica ..."));
+        $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
+
+        //anno autorizzazione
+        $section->AddTextField("AnnoAutorizzazione","Anno autorizzazione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"));
+        
+        //anno costruzione
+        $section->AddTextField("AnnoCostruzione","Anno costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
+
+        //anno esercizio
+        $section->AddTextField("AnnoEsercizio","Anno esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
+
+        //anno dismissione
+        $section->AddTextField("AnnoDismissione","Anno dismissione",array("bottomPadding"=>32,"labelWidth"=>150, "bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024"),false);
+
+        $wnd->AddGenericObject($section);
 
         //Norma
-        $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
+        $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
 
-        //estremi
-        $section->AddTextField("Norma_estremi","Estremi",array("required"=>true, "gravity"=>2,"labelWidth"=>90,"bottomLabel"=>"*Inserisci gli estremi della norma o dell'atto amministrativo generale.", "placeholder"=>"es. art.26 del d.lgs. 33/2013..."));
+        //localita'
+        $section->AddTextField("Geo_localita","Localita",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo in cui e' sito l'impianto.", "placeholder"=>"..."));
 
-        //link alla norma
-        $section->AddTextField("Norma_link","Link",array("required"=>true,"gravity"=>3,"labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link alla norma o all'atto amministrativo generale.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
+        //comune
+        $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>32,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
 
-        $wnd->AddGenericObject($section);
+        //coordinate
+        $section->AddTextField("Geo_coordinate","Coordinate",array("gravity"=>1,"bottomPadding"=>32,"labelWidth"=>90, "bottomLabel"=>"*Inserisci (se disponibili) le coordinate geografiche dell'impianto (formato: latitudine,longitudine).", "placeholder"=>"es. 39.217199,9.113311"),false);
 
-        //Modalita' di scelta del beneficiario
-        $section=new AA_FieldSet($id."_Modalita","Modalita' di scelta del beneficiario");
-
-        //Modalita'
-        $section->AddSelectField("Modalita_tipo","Modalita'",array("required"=>true, "gravity"=>2, "labelWidth"=>90, "validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare la modalita' di scelta del beneficiario.", "placeholder"=>"...","options"=>$modalita_options),false);
-
-        //link alla modalita'
-        $section->AddTextField("Modalita_link","Link",array("required"=>true,"gravity"=>3, "labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link al documento indicante le modalita' di scelta del beneficiario.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
-
-        $wnd->AddGenericObject($section);
-        
-        //Beneficiario
-        $section=new AA_FieldSet($id."_Beneficiario","Beneficiario");
-        
-        //Nome e cognome
-        $section->AddTextField("Beneficiario_nome","Nominativo",array("required"=>true,"gravity"=>2,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo/ragione sociale (max 255 caratteri).", "placeholder"=>"es. Mario Rossi..."));
-        
-        //cf
-        $section->AddTextField("Beneficiario_cf","C.F.",array("required"=>true, "gravity"=>1,"bottomPadding"=>32,"labelWidth"=>60,"bottomLabel"=>"*Inserisci il codice fiscale del beneficiario."),false);
-
-        //piva
-        $section->AddTextField("Beneficiario_piva","P.IVA",array("gravity"=>1,"labelWidth"=>60,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la partita iva del beneficiario (se applicabile)."),false);
-
-        //Tipo
-        $section->AddCheckBoxField("Beneficiario_tipo"," ",array("bottomPadding"=>32,"labelWidth"=>60, "labelRight"=>"<b>Persona fisica/Ditta individuale/Libero professionista</b>", "gravity"=>1, "bottomLabel"=>"*Abilita se il beneficiario e' una persona fisica, una ditta individuale o un libero professionista.","eventHandlers"=>array("onChange"=>array("handler"=>"onPersonaFisicaChange","module_id"=>$this->GetId()))));
-
-        //Privacy
-        $section->AddCheckBoxField("Beneficiario_privacy"," ",array("bottomPadding"=>32,"gravity"=>1,"labelWidth"=>60,"labelRight"=>"<b>Oscuramento dati personali</b>", "bottomLabel"=>"*Abilita se dalla pubblicazione sia possibile ricavare informazioni relative allo stato di salute e alla situazione di disagio economico-sociale degli interessati."),false);
- 
-        $wnd->AddGenericObject($section);
-
-        //Importi
-        $section=new AA_FieldSet($id."_Importi","Importi");
-        
-        //Impegnato
-        $section->AddTextField("Importo_impegnato","Impegnato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'importo impegnato.", "placeholder"=>"es. 12345,67"));
-        
-        //Erogato
-        $section->AddTextField("Importo_erogato","Erogato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32, "bottomLabel"=>"*Inserisci l'importo erogato (se presente, diversamente inserisci il valore 0).", "placeholder"=>"es. 12345,67"),false);
-        
         $wnd->AddGenericObject($section);
 
         //Note
-        //$label="Note";
-        //$wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
+        $label="Note";
+        $wnd->AddTextareaField("Note",$label,array("labelWidth"=>90,"bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
         
         $wnd->EnableCloseWndOnSuccessfulSave();
 
-        $wnd->SetSaveTask("AddNewGeco");
+        $wnd->SetSaveTask("AddNewGeser");
         
         return $wnd;
     }
 
     //Template dlg addnew geco da csv
-    public function Template_GetGecoAddNewMultiDlg()
+    public function Template_GetGeserAddNewMultiDlg()
     {
-        $id=static::AA_UI_PREFIX."_GetGecoAddNewMultiDlg_".uniqid();
+        $id=static::AA_UI_PREFIX."_GetGeserAddNewMultiDlg_".uniqid();
 
         $form_data=array();
 
@@ -1277,7 +900,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
 
         //csv
-        $wnd->AddFileUploadField("GecoAddNewMultiCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 2Mb).","accept"=>"application/csv"));
+        $wnd->AddFileUploadField("GeserAddNewMultiCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 2Mb).","accept"=>"application/csv"));
 
         $wnd->EnableCloseWndOnSuccessfulSave();
 
@@ -1285,15 +908,15 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->SetApplyButtonName("Procedi");
 
-        $wnd->SetSaveTask("GetGecoAddNewMultiPreviewCalc");
+        $wnd->SetSaveTask("GetGeserAddNewMultiPreviewCalc");
         
         return $wnd;
     }
 
     //Template dlg addnew multi preview
-    public function Template_GetGecoAddNewMultiPreviewDlg()
+    public function Template_GetGeserAddNewMultiPreviewDlg()
     {
-        $id=static::AA_UI_PREFIX."_GetGecoAddNewMultiPreviewDlg_".uniqid();
+        $id=static::AA_UI_PREFIX."_GetGeserAddNewMultiPreviewDlg_".uniqid();
 
         $form_data=array();
         
@@ -1322,9 +945,9 @@ Class AA_GecoModule extends AA_GenericModule
             array("id"=>"note","header"=>array("<div style='text-align: center'>Note</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"right"),"sort"=>"text")
         );
 
-        $data=AA_SessionVar::Get("GecoAddNewMultiFromCSV_ParsedData")->GetValue();
+        $data=AA_SessionVar::Get("GeserAddNewMultiFromCSV_ParsedData")->GetValue();
         
-        AA_SessionVar::UnsetVar("GecoAddNewMultiFromCSV_ParsedData");
+        AA_SessionVar::UnsetVar("GeserAddNewMultiFromCSV_ParsedData");
 
         if(!is_array($data))
         {
@@ -1359,13 +982,13 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->SetApplyButtonName("Procedi");
 
-        $wnd->SetSaveTask("GecoAddNewMulti");
+        $wnd->SetSaveTask("GeserAddNewMulti");
         
         return $wnd;
     }
 
     //Template confirm 
-    public function Template_GetGecoConfirmPrivacyDlg($form_id='')
+    public function Template_GetGeserConfirmPrivacyDlg($form_id='')
     {
         $id=$this->GetId()."_".uniqid();
 
@@ -1422,7 +1045,7 @@ Class AA_GecoModule extends AA_GenericModule
     }
 
     //Template view revision 
-    public function Template_GetGecoRevisionViewDlg($object=null)
+    public function Template_GetGeserRevisionViewDlg($object=null)
     {
         $id=$this->GetId()."_".uniqid();
 
@@ -1431,7 +1054,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->SetWidth(1280);
         $wnd->SetHeight(720);
 
-        if($object instanceof AA_Geco)
+        if($object instanceof AA_Geser)
         {
             $revisioni=$object->GetRevisione();
             $data=array();
@@ -1463,7 +1086,7 @@ Class AA_GecoModule extends AA_GenericModule
     }
 
     //Template dlg aggiungi allegato/link
-    public function Template_GetGecoAddNewAllegatoDlg($object=null)
+    public function Template_GetGeserAddNewAllegatoDlg($object=null)
     {
         $id=uniqid();
         
@@ -1482,7 +1105,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //Tipo
         $options=array();
-        $tipo_allegati=AA_Geco_Const::GetListaTipoAllegati();
+        $tipo_allegati=AA_Geser_Const::GetListaTipoAllegati();
         foreach($tipo_allegati as $key=>$val)
         {
             $options[]=array("id"=>$key,"value"=>$val);
@@ -1495,7 +1118,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
         
         //categorie
-        /*$tipi=AA_Geco_Const::GetCategorieAllegati();$curRow=1;
+        /*$tipi=AA_Geser_Const::GetCategorieAllegati();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
         $curRow=0;
         foreach($tipi as $tipo=>$descr)
@@ -1528,13 +1151,13 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
-        $wnd->SetSaveTask("AddNewGecoAllegato");
+        $wnd->SetSaveTask("AddNewGeserAllegato");
         
         return $wnd;
     }
 
     //Template dlg aggiungi criteri
-    public function Template_GetGecoAddNewCriteriDlg()
+    public function Template_GetGeserAddNewCriteriDlg()
     {
         $id=uniqid();
         
@@ -1561,7 +1184,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //tipologia
         $options=array();
-        $listaTipo=AA_Geco_Const::GetTipoCriteri();
+        $listaTipo=AA_Geser_Const::GetTipoCriteri();
         foreach($listaTipo as $id=>$val)
         {
             if($id > 0) $options[]=array("id"=>$id,"value"=>$val);
@@ -1577,7 +1200,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
         
         //categorie
-        $tipi=AA_Geco_Const::GetCategorieAllegati();$curRow=1;
+        $tipi=AA_Geser_Const::GetCategorieAllegati();$curRow=1;
         $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
         $curRow=0;
         foreach($tipi as $tipo=>$descr)
@@ -1615,17 +1238,17 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("AddNewGecoCriteri");
+        $wnd->SetSaveTask("AddNewGeserCriteri");
         
         return $wnd;
     }
 
     //Template dlg aggiungi criteri
-    public function Template_GetGecoModifyCriteriDlg($criterio=null)
+    public function Template_GetGeserModifyCriteriDlg($criterio=null)
     {
         $id=uniqid();
         
-        if(!($criterio instanceof AA_Geco_Criteri))
+        if(!($criterio instanceof AA_Geser_Criteri))
         {
             $wnd=new AA_GenericWindowTemplate($id, "Modifica Criteri e modalita'", $this->id);
             $wnd->AddView(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<div>id criterio non valido.</div>")));
@@ -1644,7 +1267,7 @@ Class AA_GecoModule extends AA_GenericModule
         );
 
         //categorie
-        $tipi=AA_Geco_Const::GetCategorieAllegati();
+        $tipi=AA_Geser_Const::GetCategorieAllegati();
         $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
         $categorie=$criterio->GetProp('categorie');
         $curRow=0;
@@ -1683,7 +1306,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //tipologia
         $options=array();
-        $listaTipo=AA_Geco_Const::GetTipoCriteri();
+        $listaTipo=AA_Geser_Const::GetTipoCriteri();
         foreach($listaTipo as $id=>$val)
         {
             if($id > 0) $options[]=array("id"=>$id,"value"=>$val);
@@ -1718,17 +1341,17 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("UpdateGecoCriteri");
+        $wnd->SetSaveTask("UpdateGeserCriteri");
         
         return $wnd;
     }
 
     //Template dlg aggiungi criteri
-    public function Template_GetGecoCopyCriteriDlg($criterio=null)
+    public function Template_GetGeserCopyCriteriDlg($criterio=null)
     {
         $id=uniqid();
         
-        if(!($criterio instanceof AA_Geco_Criteri))
+        if(!($criterio instanceof AA_Geser_Criteri))
         {
             $wnd=new AA_GenericWindowTemplate($id, "Copia Criteri e modalita'", $this->id);
             $wnd->AddView(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<div>id criterio non valido.</div>")));
@@ -1746,7 +1369,7 @@ Class AA_GecoModule extends AA_GenericModule
         );
 
         //categorie
-        $tipi=AA_Geco_Const::GetCategorieAllegati();
+        $tipi=AA_Geser_Const::GetCategorieAllegati();
         $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
         $categorie=$criterio->GetProp('categorie');
         $curRow=0;
@@ -1785,7 +1408,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //tipologia
         $options=array();
-        $listaTipo=AA_Geco_Const::GetTipoCriteri();
+        $listaTipo=AA_Geser_Const::GetTipoCriteri();
         foreach($listaTipo as $id=>$val)
         {
             if($id > 0) $options[]=array("id"=>$id,"value"=>$val);
@@ -1820,15 +1443,15 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("AddNewGecoCriteri");
+        $wnd->SetSaveTask("AddNewGeserCriteri");
         
         return $wnd;
     }
 
     //Template dlg modifca allegato/link
-    public function Template_GetGecoModifyAllegatoDlg($object=null,$allegato=null)
+    public function Template_GetGeserModifyAllegatoDlg($object=null,$allegato=null)
     {
-        $id=static::AA_UI_PREFIX."_GetGecoModifyAllegatoDlg";
+        $id=static::AA_UI_PREFIX."_GetGeserModifyAllegatoDlg";
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
@@ -1849,7 +1472,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //Tipo
         $options=array();
-        $tipo_allegati=AA_Geco_Const::GetListaTipoAllegati();
+        $tipo_allegati=AA_Geser_Const::GetListaTipoAllegati();
         foreach($tipo_allegati as $key=>$val)
         {
             $options[]=array("id"=>$key,"value"=>$val);
@@ -1880,13 +1503,13 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato['id']));
-        $wnd->SetSaveTask("UpdateGecoAllegato");
+        $wnd->SetSaveTask("UpdateGeserAllegato");
         
         return $wnd;
     }
 
     //Template dlg trash allegato
-    public function Template_GetGecoTrashCriteriDlg($object=null)
+    public function Template_GetGeserTrashCriteriDlg($object=null)
     {
         $id=uniqid();
         
@@ -1927,14 +1550,14 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("DeleteGecoCriteri");
+        $wnd->SetSaveTask("DeleteGeserCriteri");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetProp("id")));
         
         return $wnd;
     }
 
     //Template dlg trash allegato
-    public function Template_GetGecoTrashAllegatoDlg($object=null,$allegato=null)
+    public function Template_GetGeserTrashAllegatoDlg($object=null,$allegato=null)
     {
         $id=uniqid();
         
@@ -1977,14 +1600,14 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("DeleteGecoAllegato");
+        $wnd->SetSaveTask("DeleteGeserAllegato");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_allegato"=>$allegato['id']));
         
         return $wnd;
     }
 
     //Task Aggiungi allegato
-    public function Task_AddNewGecoAllegato($task)
+    public function Task_AddNewGeserAllegato($task)
     {        
         $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
 
@@ -2009,7 +1632,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'], $this->oUser);
+        $object=new AA_Geser($_REQUEST['id'], $this->oUser);
         
         if(!$object->isValid())
         {
@@ -2145,508 +1768,120 @@ Class AA_GecoModule extends AA_GenericModule
         return true;
     }
 
-    //Task Aggiungi criterio
-    public function Task_AddNewGecoCriteri($task)
-    {        
-        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
-
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }     
-
-            return false;
-        }
-
-        if(!isset($_REQUEST['estremi']) || $_REQUEST['estremi'] == "")
-        {   
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Parametri non validi occorre specificare gli estremi del documento.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }   
-            return false;
-        }
-
-        if(!isset($_REQUEST['anno']) || $_REQUEST['anno'] == "")
-        {   
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Parametri non validi occorre specificare l'anno di riferimento.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }   
-            return false;
-        }
-
-        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "")
-        {   
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Parametri non validi occorre indicare un url o un file.",false);
-
-            return false;
-        }
-
-        $categorie=0;
-        $lista_categorie=AA_Geco_Const::GetCategorieAllegati();
-        foreach($lista_categorie as $key=>$val)
-        {
-            if(isset($_REQUEST['categoria_'.$key]) && $_REQUEST['categoria_'.$key]==1) $categorie+=intVal($key);
-        }
-        
-        if($categorie==0)
-        {
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Occorre selezionare almeno una categoria.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }   
-            return false;
-        }
-        
-        if($uploadedFile->isValid()) 
-        {
-            //Se c'è un file uploadato l'url non viene salvata.
-            $_REQUEST['url']="";
-
-            $storage=AA_Storage::GetInstance($this->oUser);
-            if($storage->IsValid())
-            {
-                $file=$uploadedFile->GetValue();
-                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
-                if($storageFile->IsValid())
-                {
-                    $_REQUEST['file']=$storageFile->GetFileHash();
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
-                }
-            }
-            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
-
-            //Elimina il file temporaneo
-            if(file_exists($file['tmp_name']))
-            {
-                if(!unlink($file['tmp_name']))
-                {
-                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
-                }
-            }
-        }
-
-        $_REQUEST['categorie']=$categorie;
-
-        $criterio=new AA_Geco_Criteri();
-
-        if(!$criterio->Update($_REQUEST,$this->oUser))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiunta del nuovo criterio/modalita'.",false);
-
-            return false;
-        }
-        else
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent("Criterio/modalita' aggiunta con successo.",false);
-
-            return true;
-        }
-    }
-
-    public function Task_UpdateGecoCriteri($task)
-    {        
-        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
-
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }     
-
-            return false;
-        }
-
-        $criterio=new AA_Geco_Criteri();
-        if(!$criterio->Load($_REQUEST['id'],$this->oUser))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Criterio non trovato.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }     
-
-            return false;
-        }
-
-        if(!isset($_REQUEST['estremi']) || $_REQUEST['estremi'] == "")
-        {   
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Parametri non validi occorre specificare gli estremi del documento.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }   
-            return false;
-        }
-
-        if(!isset($_REQUEST['anno']) || $_REQUEST['anno'] == "")
-        {   
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Parametri non validi occorre specificare l'anno di riferimento.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }   
-            return false;
-        }
-
-        $categorie=0;
-        $lista_categorie=AA_Geco_Const::GetCategorieAllegati();
-        foreach($lista_categorie as $key=>$val)
-        {
-            if(isset($_REQUEST['categoria_'.$key]) && $_REQUEST['categoria_'.$key]==1) $categorie+=intVal($key);
-        }
-        
-        if($categorie==0)
-        {
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Occorre selezionare almeno una categoria.",false);
-
-            //Elimina il file temporaneo
-            if($uploadedFile->isValid())
-            {   
-                $file=$uploadedFile->GetValue();
-                if(file_exists($file['tmp_name']))
-                {
-                    if(!unlink($file['tmp_name']))
-                    {
-                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
-                    }
-                }
-            }   
-            return false;
-        }
-
-        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "" && $criterio->GetProp('file') == "")
-        {   
-            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Parametri non validi occorre indicare un url o un file.",false);
-
-            return false;
-        }
-        
-        if($uploadedFile->isValid()) 
-        {
-            //Se c'è un file uploadato l'url non viene salvata.
-            $_REQUEST['url']="";
-
-            $storage=AA_Storage::GetInstance($this->oUser);
-            if($storage->IsValid())
-            {
-                if($criterio->GetProp('file') !="")
-                {
-                    $storage->DelFile($criterio->GetProp('file'));
-                }
-
-                $file=$uploadedFile->GetValue();
-                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
-                if($storageFile->IsValid())
-                {
-                    $_REQUEST['file']=$storageFile->GetFileHash();
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
-                }
-            }
-            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
-
-            //Elimina il file temporaneo
-            if(file_exists($file['tmp_name']))
-            {
-                if(!unlink($file['tmp_name']))
-                {
-                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
-                }
-            }
-        }
-        else
-        {
-            if($_REQUEST['url'] !="" && $criterio->GetProp('file') !="")
-            {
-                $_REQUEST['file']="";
-                $storage=AA_Storage::GetInstance($this->oUser);
-                if($storage->IsValid())
-                {
-                    $storage->DelFile($criterio->GetProp('file'));
-                }
-            }
-        }
-
-        $_REQUEST['categorie']=$categorie;
-
-        if(!$criterio->Update($_REQUEST,$this->oUser))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nella modifica del criterio/modalita'.",false);
-
-            return false;
-        }
-        else
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent("Dati aggiornati con successo.",false);
-
-            return true;
-        }
-    }
-
-    public function Task_DeleteGecoCriteri($task)
-    {        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
-
-            return false;
-        }
-
-        $criterio=new AA_Geco_Criteri();
-        if(!$criterio->Load($_REQUEST['id'],$this->oUser))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Criterio non trovato.",false);
-
-            return false;
-        }
-
-        if(!$criterio->Delete($this->oUser))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nella rimozione del criterio/modalita'.",false);
-
-            return false;
-        }
-        else
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent("Criterio/modalita' eliminato con successo.",false);
-
-            return true;
-        }
-    }
-
-    //Template dlg modify geco
-    public function Template_GetGecoModifyDlg($object=null)
+    //Template dlg modify geser
+    public function Template_GetGeserModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg_".uniqid();
-        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali del contributo", $this->id);
+        if(!($object instanceof AA_Geser)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali dell'impianto", $this->id);
 
         $form_data=array();
-
+        
         $form_data['id']=$object->GetId();
-        $form_data['Anno']=$object->GetProp('Anno');
+        $form_data['Note']=$object->GetProp("Note");
+        $form_data['AnnoAutorizzazione']=$object->GetProp("AnnoAutorizzazione");
+        $form_data['AnnoCostruzione']=$object->GetProp("AnnoCostruzione");
+        $form_data['AnnoEsercizio']=$object->GetProp("AnnoEsercizio");
+        $form_data['AnnoDismissione']=$object->GetProp("AnnoDismissione");
+        $form_data['Stato']=$object->GetProp("Stato");;
+        $form_data['Tipologia']=$object->GetProp("Tipologia");
         $form_data['nome']=$object->GetName();
-        $form_data['descrizione']=$object->GetDescr();
-
-        $modalita=$object->GetModalita();
-        $form_data['Modalita_tipo']=$modalita['tipo'];
-        $form_data['Modalita_link']=$modalita['link'];
-
-        $norma=$object->GetNorma();
-        $form_data['Norma_estremi']=$norma['estremi'];
-        $form_data['Norma_link']=$norma['link'];
-
-        $responsabile=$object->GetResponsabile();
-        $form_data['Responsabile_nome']=$responsabile['nome'];
-
-        $form_data['Importo_impegnato']=AA_utils::number_format(floatVal($object->GetProp('Importo_impegnato')),2,",",".");
-        $form_data['Importo_erogato']=AA_utils::number_format(floatVal($object->GetProp('Importo_erogato')),2,",",".");
-
-        $form_data['Note']=$object->GetProp('Note');
-
-        $modalita=AA_Geco_Const::GetListaModalita();
-        $modalita_options=array();
-        foreach($modalita as $key=>$val)
+        $form_data['Potenza']=$object->GetProp("Potenza");
+       
+        $geolocalizzazione=$object->GetGeolocalizzazione();
+        if(sizeof($geolocalizzazione)==0)
         {
-            $modalita_options[]=array("id"=>$key,"value"=>$val);
+            $form_data['Geo_comune']="";
+            $form_data['Geo_localita']="";
+            $form_data['Geo_coordinate']="";
+        }
+        else
+        {
+            $form_data['Geo_comune']=$geolocalizzazione['comune'];
+            $form_data['Geo_localita']=$geolocalizzazione['localita'];
+            $form_data['Geo_coordinate']=$geolocalizzazione['coordinate'];
         }
 
-        $wnd=new AA_GenericFormDlg($id, "Modifica i dati generali del contributo", $this->id,$form_data,$form_data);
+        $stato=AA_Geser_Const::GetListaStatiImpianto();
+        $stato_options=array();
+        foreach($stato as $num=>$val)
+        {
+            $stato_options[]=array("id"=>$num,"value"=>$val);
+        }
+
+        $tipologia=AA_Geser_Const::GetListaTipoImpianti();
+        $tipo_options=array();
+        foreach($tipologia as $num=>$val)
+        {
+            $tipo_options[]=array("id"=>$num,"value"=>$val);
+        }
+
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo impianto", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(1080);
-        $wnd->SetHeight(820);
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(720);
         $wnd->EnableValidation();
-        if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA) > 0) $wnd->SetApplyCallbackFunction("onSave");
-              
-        $anno_fine=date("Y");
-        $anno_start=($anno_fine-5);
-        //anno riferimento
-        $options=array();
-        for($i=$anno_fine; $i>=$anno_start; $i--)
-        {
-            $options[]=array("id"=>$i, "value"=>$i);
-        }
-        $wnd->AddSelectField("Anno","Anno",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Indicare l'anno di riferimento.", "placeholder"=>"...","options"=>$options,"value"=>Date('Y')));
 
+        //Tipologia
+        $wnd->AddSelectField("Tipologia","Tipologia",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare la tipologia di impianto.", "placeholder"=>"...","options"=>$tipo_options));
+        
+        //Stato
+        $wnd->AddSelectField("Stato","Stato attuale",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare lo stato attuale dell'impianto.", "placeholder"=>"...","options"=>$stato_options),false);
+        
         //Nome
-        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci un testo breve al fine di facilitare la ricerca della pubblicazione (max 255 caratteri, visibilita' solo interna).", "placeholder"=>"Titolo a uso interno..."),false);
+        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci una denominazione per l'impianto.", "placeholder"=>"..."));
 
-        //Descrizione
-        $label="Descrizione";
-        $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Inserisci un breve testo esplicativo per il cittadino (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"Breve descrizione ad uso esterno..."));
+        //potenza
+        $wnd->AddTextField("Potenza","Potenza",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la potenza in megawatt dell'impianto.", "placeholder"=>"es. 150"),false);
 
-        //Responsabile
-        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile e qualifica del procedimento amministrativo.", "placeholder"=>"es. Nome, cognome e qualifica..."));
+        $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
+
+        //anno autorizzazione
+        $section->AddTextField("AnnoAutorizzazione","Anno autorizzazione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"));
+        
+        //anno costruzione
+        $section->AddTextField("AnnoCostruzione","Anno costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
+
+        //anno esercizio
+        $section->AddTextField("AnnoEsercizio","Anno esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
+
+        //anno dismissione
+        $section->AddTextField("AnnoDismissione","Anno dismissione",array("bottomPadding"=>32,"labelWidth"=>150, "bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024"),false);
+
+        $wnd->AddGenericObject($section);
 
         //Norma
-        $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
+        $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
 
-        //estremi
-        $section->AddTextField("Norma_estremi","Estremi",array("required"=>true, "gravity"=>2,"bottomPadding"=>32,"labelWidth"=>90,"bottomLabel"=>"*Inserisci gli estremi della norma o dell'atto amministrativo generale.", "placeholder"=>"es. art.26 del d.lgs. 33/2013..."));
+        //localita'
+        $section->AddTextField("Geo_localita","Localita",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo in cui e' sito l'impianto.", "placeholder"=>"..."));
 
-        //link alla norma
-        $section->AddTextField("Norma_link","Link",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link alla norma o all'atto amministrativo generale.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
+        //comune
+        $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>32,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
 
-        $wnd->AddGenericObject($section);
-
-        //Modalita' di scelta del beneficiario
-        $section=new AA_FieldSet($id."_Modalita","Modalita' di scelta del beneficiario");
-
-        //Modalita'
-        $section->AddSelectField("Modalita_tipo","Modalita'",array("required"=>true, "gravity"=>2, "labelWidth"=>90, "validateFunction"=>"IsSelected","bottomLabel"=>"*Indicare la modalita' di scelta del beneficiario.", "placeholder"=>"...","options"=>$modalita_options),false);
-
-        //link alla modalita'
-        $section->AddTextField("Modalita_link","Link",array("required"=>true,"gravity"=>3, "labelWidth"=>90, "validateFunction"=>"IsUrl","bottomLabel"=>"*Inserisci il link al documento indicante le modalita' di scelta del beneficiario.", "placeholder"=>"es. https://www.regione.sardegna.it..."),false);
+        //coordinate
+        $section->AddTextField("Geo_coordinate","Coordinate",array("gravity"=>1,"bottomPadding"=>32,"labelWidth"=>90, "bottomLabel"=>"*Inserisci (se disponibili) le coordinate geografiche dell'impianto (formato: latitudine,longitudine).", "placeholder"=>"es. 39.217199,9.113311"),false);
 
         $wnd->AddGenericObject($section);
-
-        //Importi
-        $section=new AA_FieldSet($id."_Importi","Importi");
-        
-        //Impegnato
-        $section->AddTextField("Importo_impegnato","Impegnato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'importo impegnato.", "placeholder"=>"es. 12345,67"));
-        
-        //Erogato
-        $section->AddTextField("Importo_erogato","Erogato",array("required"=>true, "validateFunction"=>"IsNumber","bottomPadding"=>32, "bottomLabel"=>"*Inserisci l'importo erogato (se presente, diversamente inserisci il valore 0).", "placeholder"=>"es. 12345,67"),false);
-        
-        $wnd->AddGenericObject($section);
-
-        //Nota
-        $label="Note";
-        $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Inserisci qui le note (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"..."));
 
         //Note
-        //$label="Note";
-        //$wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
+        $label="Note";
+        $wnd->AddTextareaField("Note",$label,array("labelWidth"=>90,"bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("UpdateGecoDatiGenerali");
+        $wnd->SetSaveTask("UpdateGeserDatiGenerali");
         
         return $wnd;
     }
 
     //Template dlg modify beneficiario
-    public function Template_GetGecoBeneficiarioModifyDlg($object=null)
+    public function Template_GetGeserBeneficiarioModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg";
-        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati beneficiario", $this->id);
+        if(!($object instanceof AA_Geser)) return new AA_GenericWindowTemplate($id, "Modifica i dati beneficiario", $this->id);
 
         $beneficiario=$object->GetBeneficiario();
         $form_data=array();
@@ -2689,16 +1924,16 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("UpdateGecoDatiBeneficiario");
+        $wnd->SetSaveTask("UpdateGeserDatiBeneficiario");
         
         return $wnd;
     }
 
     //Template dlg modify beneficiario
-    public function Template_GetGecoRevocaDlg($object=null)
+    public function Template_GetGeserRevocaDlg($object=null)
     {
         $id=$this->GetId()."_Revoca_Dlg_".uniqid();
-        if(!($object instanceof AA_Geco)) return new AA_GenericWindowTemplate($id, "Modifica i dati di revoca", $this->id);
+        if(!($object instanceof AA_Geser)) return new AA_GenericWindowTemplate($id, "Modifica i dati di revoca", $this->id);
 
         $revoca=$object->GetRevoca();
         $form_data=array();
@@ -2746,13 +1981,13 @@ Class AA_GecoModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("UpdateGecoDatiRevoca");
+        $wnd->SetSaveTask("UpdateGeserDatiRevoca");
         
         return $wnd;
     }
 
     //Template dlg modify beneficiario
-    public function Template_GetGecoRevisionDlg($params=null)
+    public function Template_GetGeserRevisionDlg($params=null)
     {
         $id=$this->GetId()."_Revisione_Dlg_".uniqid();
         if(!is_array($params)) return new AA_GenericWindowTemplate($id, "Dati di revisione", $this->id);
@@ -2793,12 +2028,12 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("UpdateGecoDatiGenerali");
+        $wnd->SetSaveTask("UpdateGeserDatiGenerali");
         
         return $wnd;
     }
 
-    public function Template_GetGecoHelpDlg()
+    public function Template_GetGeserHelpDlg()
     {
         $id=$this->GetId()."_Help_Dlg";
         
@@ -2861,46 +2096,91 @@ Class AA_GecoModule extends AA_GenericModule
     {
         //Gestione dei tab
         //$id=static::AA_UI_PREFIX."_Detail_Generale_Tab_".$params['id'];
-        //$params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGecoDettaglio_Generale_Tab"));
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $params['readonly']=true;
+        //$params['DetailOptionTab']=array(array("id"=>$id, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGeserDettaglio_Generale_Tab"));
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER)) $params['readonly']=true;
         
         $params['MultiviewEventHandlers']=array("onViewChange"=>array("handler"=>"onDetailViewChange"));
 
         $params['disable_SaveAsPdf']=true;
         $params['disable_SaveAsCsv']=true;
         //$params['disable_trash']=true;
-        $params['disable_public_trash']=true;
+        //$params['disable_public_trash']=true;
 
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $params['disable_MenuAzioni']=true;
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER)) $params['disable_MenuAzioni']=true;
         
         $detail = $this->TemplateGenericSection_Detail($params);
 
         return $detail;
     }
+
+    //lista pratiche
+    public function TemplateDettaglio_Pratiche($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PRATICHE;
+        $canModify=false;
+
+        #criteri----------------------------------
+        if($this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER)) $canModify=true;
+
+        $storage=AA_Storage::GetInstance();
+
+        $documenti_data=array();
+        $pratiche=$object->GetPratiche();
+        foreach($pratiche as $id_pratica=>$curPratica)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserTrashPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$curPratica['id'].'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserModifyCriteriDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$curPratica['id'].'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserCopyCriteriDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$curPratica['id'].'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="&nbsp;";
+
+            $pratiche_data[]=array("id"=>$id_pratica,"stato"=>$curPratica['stato'],"tipo"=>$curPratica['tipo'],"estremi"=>$curPratica['estremi'],"descrizione"=>$curPratica['descrizione'],"via"=>$curPratica['via'],"societa"=>$curPratica['societa'],"note"=>$curPratica['note'],"ops"=>$ops);
+        }
+
+        $template=new AA_GenericDatatableTemplate($id,"Gestione pratiche",5,null,array("css"=>"AA_Header_DataTable"));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader();
+        $template->SetHeaderHeight(38);
+
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetGeserAddNewPraticaDlg");
+            $template->SetAddNewTaskParams(array("postParams"=>array("id"=>$object->GetId())));
+        }
+
+        $template->SetColumnHeaderInfo(0,"stato","<div style='text-align: center'>Stato</div>",120,"selectFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(1,"tipo","<div style='text-align: center'>Tipologia</div>",120,"selectFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(2,"descrizione","<div style='text-align: center'>Descrizione</div>","fillspace","textFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(3,"estremi","<div style='text-align: center'>Estremi</div>","fillspace","textFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(4,"via","<div style='text-align: center'>Tipo VIA</div>",120,"selectFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(5,"societa","<div style='text-align: center'>Societa</div>",120,"selectFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(6,"note","<div style='text-align: center'>Note</div>",120,"textFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(7,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"PraticheTable");
+
+        $template->SetData($documenti_data);
+
+        return $template;
+    }
     
     //Template section detail, tab generale
-    public function TemplateGecoDettaglio_Generale_Tab($object=null)
+    public function TemplateGeserDettaglio_Generale_Tab($object=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX;
 
-        if(!($object instanceof AA_Geco)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Geser)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
 
         $rows_fixed_height=50;
         $canModify=false;
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO)) $canModify=true;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER)) $canModify=true;
 
         $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>32,"type"=>"clean","borderless"=>true));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
         $toolbar->AddElement(new AA_JSON_Template_Generic());
-        $revoca=$object->GetRevoca();
-        if(isset($revoca['data']) && AA_Utils::validateDate($revoca['data']))
-        {
-            $revocato="<span class='AA_Label AA_Label_LightOrange mdi mdi-cash-off' style='font-size:larger;line-height: 28px;'>&nbsp;Contributo revocato</span>";
-            $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_OC_Certified_Title",array("view"=>"label","label"=>$revocato,"width"=>240,"align"=>"center")));
-        }
 
         $toolbar->AddElement(new AA_JSON_Template_Generic());
-        if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
+        /*if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
         {   
             $revision_btn=new AA_JSON_Template_Generic("",array(
                 "view"=>"button",
@@ -2910,62 +2190,94 @@ Class AA_GecoModule extends AA_GenericModule
                  "align"=>"right",
                  "autowidth"=>true,
                  "tooltip"=>"Visualizza i dati di revisione",
-                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoRevisionViewDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGeserRevisionViewDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
              ));
              $toolbar->AddElement($revision_btn);
         }
-        else
+        else*/
         {
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
         }
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
         
-        //Descrizione
-        $value=$object->GetDescr();
-        $descr=new AA_JSON_Template_Template($id."_Descrizione",array(
+        //stato
+        $value="<span class='AA_Label AA_Label_Green'>".$object->GetStato()."</span>";
+        $stato=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Descrizione:","value"=>$value),
+            "data"=>array("title"=>"Stato:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
-        //anno riferimento
-        $value=$object->GetProp("Anno");
+        //tipologia
+        $value="<span class='AA_Label AA_Label_Blue_Simo'>".$object->GetTipo()."</span>";
+        $tipo=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Tipologia impianto:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //potenza
+        $value=$object->GetProp("Potenza");
+        if(intVal($value)>0) $value="<span class='AA_Label AA_Label_Orange'>".$value." MWatt</span>";
+        $potenza=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Potenza:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //denominazione
+        $value=$object->GetDescr();
+        $nome=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Denominazione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //anno autorizzazione
+        $value=$object->GetProp("AnnoAutorizzazione");
         if($value=="")$value="n.d.";
-        $anno_rif=new AA_JSON_Template_Template($id."_AnnoRif",array(
+        $anno_autorizzazione=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "gravity"=>1,
-            "width"=>90,
-            "data"=>array("title"=>"Anno:","value"=>$value)
+            "width"=>180,
+            "data"=>array("title"=>"Anno autorizzazione:","value"=>$value)
+        ));
+
+        //anno costruzione
+        $value=$object->GetProp("AnnoCostruzione");
+        if($value=="")$value="n.d.";
+        $anno_costruzione=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "gravity"=>1,
+            "width"=>180,
+            "data"=>array("title"=>"Anno costruzione:","value"=>$value)
+        ));
+
+        //anno esercizio
+        $value=$object->GetProp("AnnoEsercizio");
+        if($value=="")$value="n.d.";
+        $anno_esercizio=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "gravity"=>1,
+            "width"=>200,
+            "data"=>array("title"=>"Anno entrata in esercizio:","value"=>$value)
+        ));
+
+        //anno dismissione
+        $value=$object->GetProp("AnnoDismissione");
+        if($value=="")$value="n.d.";
+        $anno_dismissione=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "gravity"=>1,
+            "width"=>150,
+            "data"=>array("title"=>"Anno dismissione:","value"=>$value)
         ));
         
-        //modalita'
-        $modalita=$object->GetModalita();
-        if(sizeof($modalita)==0)$value="n.d.";
-        else
-        {
-            $value="<a href='".$modalita['link']."' target='_blank'>".$modalita['descrizione']."</a>";
-        }
-        $modalita_text=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "gravity"=>1,
-            "data"=>array("title"=>"Modalita' di scelta del beneficiario:","value"=>$value)
-        ));
-
-        //norma
-        $norma=$object->GetNorma();
-        if(sizeof($norma)==0)$value="n.d.";
-        else
-        {
-            $value="<a href='".$norma['link']."' target='_blank'>".$norma['estremi']."</a>";
-        }
-        $norma_text=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "gravity"=>1,
-            "data"=>array("title"=>"Norma:","value"=>$value)
-        ));
-
         //note
         $value = $object->GetProp("Note");
         $note=new AA_JSON_Template_Template($id."_Note",array(
@@ -2973,225 +2285,72 @@ Class AA_GecoModule extends AA_GenericModule
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
 
-        //responsabile
-        $value = $object->GetResponsabile();
-        $responsabile=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "width"=>250,
-            "data"=>array("title"=>"Responsabile:","value"=>$value['nome'])
-        ));
+        //geolocalizzazione
+        $geolocalizzazione=$object->GetGeolocalizzazione();
 
-        //importo impegnato
-        $value = AA_Utils::number_format(floatVal($object->GetProp("Importo_impegnato")),2,",",".");
-        $importo_impegnato=new AA_JSON_Template_Template("",array(
+        $value = $geolocalizzazione['localita'];
+        $localita=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "width"=>200,
-            "data"=>array("title"=>"Importo impegnato:","value"=>$value)
+            "data"=>array("title"=>"Localita':","value"=>$value)
         ));
-
-        //importo erogato
-        $value = AA_Utils::number_format(floatVal($object->GetProp("Importo_erogato")),2,",",".");
-        $importo_liquidato=new AA_JSON_Template_Template("",array(
+        $value = $geolocalizzazione['comune'];
+        $comune=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "width"=>200,
-            "data"=>array("title"=>"Importo erogato:","value"=>$value)
+            "data"=>array("title"=>"Comune:","value"=>$value)
+        ));
+        $value = $geolocalizzazione['coordinate'];
+        $coordinate=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Coordinate:","value"=>$value)
         ));
         
         //prima riga
         $riga=new AA_JSON_Template_Layout("",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($anno_rif);
-        $riga->AddCol($modalita_text);
-        $riga->AddCol($norma_text);
-        $riga->AddCol($responsabile);
-        $riga->AddCol($importo_impegnato);
-        $riga->AddCol($importo_liquidato);
+        $riga->AddCol($tipo);
+        $riga->AddCol($stato);
+        $riga->AddCol($potenza);
+        $riga->AddCol($anno_autorizzazione);
+        $riga->AddCol($anno_costruzione);
+        $riga->AddCol($anno_esercizio);
+        $riga->AddCol($anno_dismissione);
         $layout->AddRow($riga);
 
         //seconda riga
-        $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $layout_gen=new AA_JSON_Template_Layout("",array("gravity"=>3,"type"=>"clean"));
-        $layout_gen->addRow($descr);
+        $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"height"=>180,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $layout_gen=new AA_JSON_Template_Layout("",array("gravity"=>2,"type"=>"clean"));
+        $layout_geo=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
+        //$layout_gen->addRow($nome);
         $layout_gen->addRow($note);
+        $layout_geo->AddRow($localita);
+        $layout_geo->AddRow($comune);
+        $layout_geo->AddRow($coordinate);
+        $riga->addCol($layout_geo);
         $riga->addCol($layout_gen);
         $layout->AddRow($riga);
 
-        //terza riga
-        $riga=new AA_JSON_Template_Layout("",array("gravity"=>1));
-        $beneficiario_box=new AA_JSON_Template_Layout("",array("type"=>"clean","gravity"=>1,"minWidth"=>400,"css"=>array("border-right"=>"1px solid #dadee0 !important")));
-        $revoca_box=new AA_JSON_Template_Layout("",array("type"=>"clean","gravity"=>1,"minWidth"=>400,"css"=>array("border-right"=>"1px solid #dadee0 !important")));
-        $allegati_box=new AA_JSON_Template_Layout("",array("type"=>"clean","gravity"=>2,"minWidth"=>400));
-        $riga->AddCol($beneficiario_box);
-
-        //-------------------- Beneficiario --------------------------------------
+        //-------------------- Allegati --------------------------------------
+        //$allegati_box->AddRow($this->TemplateDettaglio_Allegati($object,$id,$canModify));
+        //$riga->AddCol($allegati_box);
+        //------------------------------------------------------------------------
+      
+        //-------------------- Pratiche --------------------------------------
         $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
         $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Beneficiario</span>", "align"=>"center")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Gestione Pratiche</span>", "align"=>"center")));
         $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        if($canModify)
-        {
-            $modify_btn=new AA_JSON_Template_Generic("",array(
-                "view"=>"button",
-                 "type"=>"icon",
-                 "icon"=>"mdi mdi-pencil",
-                 "label"=>"Modifica",
-                 "css"=>"webix_primary",
-                 "align"=>"right",
-                 "autowidth"=>true,
-                 "tooltip"=>"Modifica i dati del beneficiario",
-                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoBeneficiarioModifyDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
-             ));
-             $toolbar->AddElement($modify_btn);
-        }
-
-        $beneficiario_box->AddRow($toolbar);
-        if($canModify)
-        {
-            $beneficiario=$object->GetBeneficiario();
-            if(sizeof($beneficiario)==0)
-            {
-                $beneficiario['nome']="n.d.";
-                $beneficiario['cf']="n.d.";
-                $beneficiario['piva']="n.d.";
-                $beneficiario['tipo_descr']="n.d.";
-                $beneficiario['privacy_descr']="n.d.";
-            }
-
-            if($beneficiario['privacy']==0) $beneficiario['privacy_descr']="Visibili";
-            else $beneficiario['privacy_descr']="Oscurati";
-
-            if($beneficiario['tipo']==1) $beneficiario['tipo_descr']="Persona fisica";
-            else 
-            {
-                $beneficiario['tipo_descr']="Persona giuridica";
-                $beneficiario['privacy_descr']="Non applicabile";
-            }
-
-            $nome=new AA_JSON_Template_Template("",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "height"=>48,
-                "data"=>array("title"=>"Nominativo:","value"=>$beneficiario['nome'])
-            ));
-
-            $cf=new AA_JSON_Template_Template("",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "height"=>48,
-                "data"=>array("title"=>"C.f.:","value"=>$beneficiario['cf'])
-            ));
-
-            $piva=new AA_JSON_Template_Template("",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "height"=>48,
-                "data"=>array("title"=>"P.Iva:","value"=>$beneficiario['piva'])
-            ));
-
-            $tipo=new AA_JSON_Template_Template("",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "height"=>48,
-                "data"=>array("title"=>"Tipologia:","value"=>$beneficiario['tipo_descr'])
-            ));
-
-            $privacy=new AA_JSON_Template_Template("",array(
-                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "data"=>array("title"=>"Dati personali:","value"=>$beneficiario['privacy_descr'])
-            ));
-
-            $beneficiario_box->AddRow($nome);
-            $beneficiario_box->AddRow($cf);
-            $beneficiario_box->AddRow($piva);
-            $beneficiario_box->AddRow($tipo);
-            $beneficiario_box->AddRow($privacy);
-        }
-        else
-        {
-            $beneficiario_box->AddRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display: flex; width:100%; height:100%; justify-content:center; align-items: center'>Dati non visualizzati a tutela della privacy del beneficiario</div>")));
-        }
+        $layout->AddRow($toolbar);
+        $layout->AddRow($this->TemplateDettaglio_Pratiche($object));
         //------------------------------------------------------------------------
-
-        if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
-        {
-            //-------------------- Revoca --------------------------------------
-            $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-            $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Revoca</span>", "align"=>"center")));
-            $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-            if($canModify)
-            {
-                $modify_btn=new AA_JSON_Template_Generic("",array(
-                    "view"=>"button",
-                    "type"=>"icon",
-                    "icon"=>"mdi mdi-pencil",
-                    "label"=>"Modifica",
-                    "css"=>"webix_primary",
-                    "align"=>"right",
-                    "autowidth"=>true,
-                    "tooltip"=>"Modifica i dati di revoca",
-                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoRevocaModifyDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
-                ));
-                $toolbar->AddElement($modify_btn);
-            }
-            $revoca_box->AddRow($toolbar);
-            if(isset($revoca['data']) && $revoca['data'] !="")
-            {
-                $revoca['data']=date("d-m-Y",strtotime($revoca['data']));
-
-                $data=new AA_JSON_Template_Template("",array(
-                    "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                    "height"=>48,
-                    "data"=>array("title"=>"Data provvedimento:","value"=>$revoca['data'])
-                ));
-    
-                $estremi=new AA_JSON_Template_Template("",array(
-                    "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                    "height"=>48,
-                    "data"=>array("title"=>"Estremi provvedimento:","value"=>$revoca['estremi'])
-                ));
-    
-                $causale=new AA_JSON_Template_Template("",array(
-                    "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                    "data"=>array("title"=>"Causale:","value"=>$revoca['causale'])
-                ));
-    
-                $revoca_box->AddRow($data);
-                $revoca_box->AddRow($estremi);
-                $revoca_box->AddRow($causale);
-            }
-            else
-            {
-                $revoca_box->AddRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display: flex; justify-content:center; align-items:center;widht:100%;height:100%'><span>Contributo non revocato</span></div>")));
-            }
-            //------------------------------------------------------------------------
-            $riga->AddCol($revoca_box);
-        }
-        
-        //-------------------- Allegati --------------------------------------
-        //$toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-        //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Allegati</span>", "align"=>"center")));
-        //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        //$allegati_box->AddRow($toolbar);
-        $allegati_box->AddRow($this->TemplateDettaglio_Allegati($object,$id,$canModify));
-        $riga->AddCol($allegati_box);
-        //------------------------------------------------------------------------
-
-        //$riga->addCol($this->TemplateDettaglio_Allegati($object,$id,$canModify));
-        //$riga->addCol($this->TemplateDettaglio_Giornate($object,$id,$canModify));
-
-        //$layout->AddRow($riga);
-
-        //terza riga
-        //$riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("gravity"=>1));
-      
-        $layout->AddRow($riga);
 
         return $layout;
     }
 
     //Template section detail, tab generale
-    public function TemplateGecoDettaglio_Allegati_Tab($object=null)
+    public function TemplateGeserDettaglio_Allegati_Tab($object=null)
     {
         $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_ALLEGATI_BOX;
 
-        if(!($object instanceof AA_Geco)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+        if(!($object instanceof AA_Geser)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
         
         $rows_fixed_height=50;
         $canModify=false;
@@ -3218,7 +2377,7 @@ Class AA_GecoModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi allegato o link",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoAddNewAllegatoDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGeserAddNewAllegatoDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
             ));
 
             $toolbar->AddElement($add_documento_btn);
@@ -3286,9 +2445,9 @@ Class AA_GecoModule extends AA_GenericModule
             }
             
             
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
-            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoCopyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserCopyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$curDoc->GetId().'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
             $docDestinatari=array();
@@ -3312,95 +2471,8 @@ Class AA_GecoModule extends AA_GenericModule
         return $layout;
     }
 
-    //Template section criteri
-    public function TemplateSection_Criteri($params=array())
-    {
-        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_CRITERI;
-        $canModify=false;
-
-        #criteri----------------------------------
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI)) $canModify=true;
-
-        $storage=AA_Storage::GetInstance();
-
-        $documenti_data=array();
-        $criteri=AA_Geco_Criteri::Search();
-        $categorie=AA_Geco_Const::GetCategorieAllegati();
-        foreach($criteri as $id_doc=>$curDoc)
-        {
-            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
-
-            if(($curDoc->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_ALL) > 0) $canModify=true;
-            else $canModify=false;
-
-            if($curDoc->GetProp("url") == "")
-            {
-                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
-                $view_icon="mdi-floppy";
-                $tip="Scarica";
-
-                if($storage->IsValid())
-                {
-                    $file=$storage->GetFileByHash($curDoc->GetProp("file"));
-                    if($file->IsValid())
-                    {
-                        if(strpos($file->GetmimeType(),"pdf",0) !==false)
-                        {
-                            $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
-                            $view_icon="mdi-eye";
-                            $tip="Consulta";
-                        }
-                    }
-                }
-            }
-            else 
-            {
-                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetProp("url").'"},"'.$this->id.'")';
-                $view_icon="mdi-eye";
-                $tip="Naviga (in un&apos;altra finestra)";
-            }
-            
-            
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoCopyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center; width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-
-            $docTipo=array();
-            foreach($categorie as $key=>$val)
-            {
-                if(($curDoc->GetProp('categorie')&$key)>0) $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
-            }
-            
-            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetProp("anno"),"descrizione"=>$curDoc->GetProp("descrizione"),"estremi"=>$curDoc->GetProp("estremi"),"tipoDescr"=>implode("&nbsp;",$docTipo),"ops"=>$ops);
-        }
-
-        $template=new AA_GenericDatatableTemplate($id,"Criteri e modalita'",5,null,array("css"=>"AA_Header_DataTable"));
-        $template->EnableScroll(false,true);
-        $template->EnableRowOver();
-        $template->EnableHeader();
-        $template->SetHeaderHeight(38);
-
-        if($canModify) 
-        {
-            $template->EnableAddNew(true,"GetGecoAddNewCriteriDlg");
-            //$template->SetAddNewTaskParams(array("postParams"=>array("postParam1"=>0)));
-        }
-
-        $template->SetColumnHeaderInfo(0,"anno","<div style='text-align: center'>Anno</div>",90,"textFilter","int","CriteriTable_left");
-        $template->SetColumnHeaderInfo(1,"estremi","<div style='text-align: center'>Estremi</div>","fillspace","textFilter","text","CriteriTable_left");
-        $template->SetColumnHeaderInfo(2,"descrizione","<div style='text-align: center'>Descrizione</div>","fillspace","textFilter","text","CriteriTable_left");
-        $template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"CriteriTable");
-
-        $template->SetData($documenti_data);
-
-        return $template;
-    }
-
-    //Task Update Geco
-    public function Task_UpdateGecoDatiGenerali($task)
+    //Task Update Geser
+    public function Task_UpdateGeserDatiGenerali($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
@@ -3412,7 +2484,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3430,94 +2502,21 @@ Class AA_GecoModule extends AA_GenericModule
         }
 
         //----------- verify values ---------------------
-        if(trim($_REQUEST['nome']) == "" || trim($_REQUEST['descrizione']) =="")
+        if(trim($_REQUEST['nome']) == "")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il titolo e la descrizione non possono essere vuoti o composti da soli spazi.",false);
+            $task->SetError("Il titolo non puo' essere vuoto o composto da soli spazi.",false);
 
             return false;
         }
 
-        $modalita=array();
-        $norma=array();
-        $responsabile=array();
-        $log="Aggiornamento dati generali";
-
-        if(isset($_REQUEST['Modalita_tipo'])) $modalita['tipo']=intVal($_REQUEST['Modalita_tipo']);
-        if(isset($_REQUEST['Modalita_link'])) $modalita['link']=trim($_REQUEST['Modalita_link']);
-        if(strpos($_REQUEST['Modalita_link'],"https") === false)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il link al documento indicante le modalita' di scelta deve essere una URL pubblica accessbile tramite protocollo https.",false);
-
-            return false;
-        }
-        if(intVal($_REQUEST['Modalita_tipo']) == 0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Tipo di modalita' errato.",false);
-
-            return false;
-        }
+        $geolocalizzazione=array();
         
-        if(isset($_REQUEST['Responsabile_nome'])) $responsabile['nome']=trim($_REQUEST['Responsabile_nome']);
-        
-        if(isset($_REQUEST['Norma_estremi'])) $norma['estremi']=trim($_REQUEST['Norma_estremi']);
-        if(isset($_REQUEST['Norma_link'])) $norma['link']=trim($_REQUEST['Norma_link']);
-        if(strpos($_REQUEST['Norma_link'],"https") === false)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il link alla norma deve essere una URL pubblica accessibile tramite protocollo https.",false);
+        if(isset($_REQUEST['Geo_comune'])) $geolocalizzazione['comune']=trim($_REQUEST['Geo_comune']);
+        if(isset($_REQUEST['Geo_localita'])) $geolocalizzazione['localita']=trim($_REQUEST['Geo_localita']);
+        if(isset($_REQUEST['Geo_coordinate'])) $geolocalizzazione['coordinate']=trim($_REQUEST['Geo_coordinate']);
 
-            return false;
-        }
-
-        $check_notes=false;
-        if(isset($_REQUEST['Importo_impegnato'])) 
-        {
-            $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
-
-            if(strcmp($importo['impegnato'],$object->GetProp('Importo_impegnato')) !=0) $check_notes=true;
-        }
-        if(isset($_REQUEST['Importo_erogato'])) 
-        {
-            $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
-            if(strcmp($importo['erogato'],$object->GetProp('Importo_erogato')) !=0) $check_notes=true;
-        }
-
-        if($importo['impegnato'] <= 0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'importo impegnato non puo' essere nullo o negativo.",false);
-
-            return false;
-        }
-        if($importo['erogato'] < 0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'importo erogato non puo' essere negativo.",false);
-
-            return false;
-        }
-
-        if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
-        {
-            $revisione=$object->GetRevisione();
-            $sostanziale=0;
-            if($_REQUEST['Revisione_tipo']==1)
-            {
-                $sostanziale=1;
-            }
-            $revisione[uniqid()]=array("data"=>date("Y-m-d"),"tipo"=>$sostanziale,"estremi"=>$_REQUEST['Revisione_estremi'],"causale"=>$_REQUEST['Revisione_causale']);
-            $_REQUEST['Revisione']=json_encode($revisione);
-        }
-
-        $_REQUEST['Importo_impegnato']=$importo['impegnato'];
-        $_REQUEST['Importo_erogato']=$importo['erogato'];
-
-        $_REQUEST['Modalita']=json_encode($modalita);
-        $_REQUEST['Norma']=json_encode($norma);
-        $_REQUEST['Responsabile']=json_encode($responsabile);
+        if(sizeof($geolocalizzazione)>0) $_REQUEST['Geolocalizzazione']=json_encode($geolocalizzazione);
         //-----------------------------------------------
         
         $object->Parse($_REQUEST);
@@ -3538,8 +2537,8 @@ Class AA_GecoModule extends AA_GenericModule
         }
     }
 
-    //Task Update Geco
-    public function Task_UpdateGecoDatiBeneficiario($task)
+    //Task Update Geser
+    public function Task_UpdateGeserDatiBeneficiario($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -3551,7 +2550,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3611,8 +2610,8 @@ Class AA_GecoModule extends AA_GenericModule
         }
     }
 
-    //Task Update Geco Revoca
-    public function Task_UpdateGecoDatiRevoca($task)
+    //Task Update Geser Revoca
+    public function Task_UpdateGeserDatiRevoca($task)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -3624,7 +2623,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3703,12 +2702,12 @@ Class AA_GecoModule extends AA_GenericModule
         }
     }
     
-    //Task trash Geco
-    public function Task_TrashGeco($task)
+    //Task trash Geser
+    public function Task_TrashGeser($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetError("L'utente corrente non ha i permessi per cestinare l'elemento");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per cestinare l'elemento</error>";
@@ -3720,35 +2719,35 @@ Class AA_GecoModule extends AA_GenericModule
         return $this->Task_GenericTrashObject($task,$_REQUEST);
     }
     
-    //Task resume Geco
-    public function Task_ResumeGeco($task)
+    //Task resume Geser
+    public function Task_ResumeGeser($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         return $this->Task_GenericResumeObject($task,$_REQUEST);
     }
     
-    //Task publish Geco
-    public function Task_PublishGeco($task)
+    //Task publish Geser
+    public function Task_PublishGeser($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         return $this->Task_GenericPublishObject($task,$_REQUEST);
     }
     
-    //Task reassign Geco
-    public function Task_ReassignGeco($task)
+    //Task reassign Geser
+    public function Task_ReassignGeser($task)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         return $this->Task_GenericReassignObject($task,$_REQUEST);
     }
     
-    //Task delete Geco
-    public function Task_DeleteGeco($task)
+    //Task delete Geser
+    public function Task_DeleteGeser($task)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
          
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetError("L'utente corrente non ha i permessi per eliminare l'elemento");
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente non ha i permessi per eliminare l'elemento</error>";
@@ -3761,11 +2760,11 @@ Class AA_GecoModule extends AA_GenericModule
     }
     
     //Task Aggiungi provvedimenti
-    public function Task_AddNewGeco($task)
+    public function Task_AddNewGeser($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi",false);
@@ -3774,98 +2773,28 @@ Class AA_GecoModule extends AA_GenericModule
         }
         
         //----------- verify values ---------------------
-        if(trim($_REQUEST['nome']) == "" || trim($_REQUEST['descrizione']) =="")
+        if(trim($_REQUEST['nome']) == "")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il titolo e la descrizione non possono essere vuoti o composti da soli spazi.",false);
+            $task->SetError("Il titolo non puo' essere vuoto o composto da soli spazi.",false);
 
             return false;
         }
 
-        $modalita=array();
-        $norma=array();
-        $beneficiario=array();
-        $responsabile=array();
+        $geolocalizzazione=array();
         
-        if(isset($_REQUEST['Modalita_tipo'])) $modalita['tipo']=intVal($_REQUEST['Modalita_tipo']);
-        if(isset($_REQUEST['Modalita_link'])) $modalita['link']=trim($_REQUEST['Modalita_link']);
-        if(strpos($_REQUEST['Modalita_link'],"https") === false)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il link al documento indicante le modalita' di scelta deve essere una URL pubblica accessbile tramite protocollo https.",false);
+        if(isset($_REQUEST['Geo_comune'])) $geolocalizzazione['comune']=trim($_REQUEST['Geo_comune']);
+        if(isset($_REQUEST['Geo_localita'])) $geolocalizzazione['localita']=trim($_REQUEST['Geo_localita']);
+        if(isset($_REQUEST['Geo_coordinate'])) $geolocalizzazione['coordinate']=trim($_REQUEST['Geo_coordinate']);
 
-            return false;
-        }
-        if(intVal($_REQUEST['Modalita_tipo']) == 0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Tipo di modalita' errato.",false);
-
-            return false;
-        }
-        
-        if(isset($_REQUEST['Responsabile_nome'])) $responsabile['nome']=trim($_REQUEST['Responsabile_nome']);
-        
-        if(isset($_REQUEST['Norma_estremi'])) $norma['estremi']=trim($_REQUEST['Norma_estremi']);
-        if(isset($_REQUEST['Norma_link'])) $norma['link']=trim($_REQUEST['Norma_link']);
-        if(strpos($_REQUEST['Norma_link'],"https") === false)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il link alla norma deve essere una URL pubblica accessbile tramite protocollo https.",false);
-
-            return false;
-        }
-
-        if(isset($_REQUEST['Beneficiario_nome'])) $beneficiario['nome']=trim($_REQUEST['Beneficiario_nome']);
-        if(isset($_REQUEST['Beneficiario_cf'])) $beneficiario['cf']=trim($_REQUEST['Beneficiario_cf']);
-
-        if(trim($_REQUEST['Beneficiario_nome']) == "" || trim($_REQUEST['Beneficiario_cf']) =="")
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il nome e il codice fiscale del beneficiario non possono essere vuoti o composti da soli spazi.",false);
-
-            return false;
-        }
-        if(isset($_REQUEST['Beneficiario_piva'])) $beneficiario['piva']=trim($_REQUEST['Beneficiario_piva']);
-        if(isset($_REQUEST['Beneficiario_tipo'])) $beneficiario['tipo']=intVal($_REQUEST['Beneficiario_tipo']);
-        if(isset($_REQUEST['Beneficiario_privacy'])) $beneficiario['privacy']=intVal($_REQUEST['Beneficiario_privacy']);
-
-        //Se il beneficiario non e' una persona fisica disabilita l'oscuramento dei dati personali.
-        if($beneficiario['tipo'] == 0) 
-        {
-            $beneficiario['privacy'] = 0;
-        }
-
-        if(isset($_REQUEST['Importo_impegnato'])) $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
-        if(isset($_REQUEST['Importo_erogato'])) $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
-        if($importo['impegnato'] <= 0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'importo impegnato non puo' essere nullo o negativo.",false);
-
-            return false;
-        }
-        if($importo['erogato'] < 0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'importo erogato non puo' essere negativo.",false);
-
-            return false;
-        }
-        $_REQUEST['Importo_impegnato']=$importo['impegnato'];
-        $_REQUEST['Importo_erogato']=$importo['erogato'];
-
-        $_REQUEST['Modalita']=json_encode($modalita);
-        $_REQUEST['Norma']=json_encode($norma);
-        $_REQUEST['Beneficiario']=json_encode($beneficiario);
-        $_REQUEST['Responsabile']=json_encode($responsabile);
+        $_REQUEST['Geolocalizzazione']=json_encode($geolocalizzazione);
         //-----------------------------------------------
 
         return $this->Task_GenericAddNew($task,$_REQUEST);
     }
 
     //Task modifica dati generali elemento
-    public function Task_GetGecoModifyDlg($task)
+    public function Task_GetGeserModifyDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -3877,7 +2806,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3895,12 +2824,12 @@ Class AA_GecoModule extends AA_GenericModule
         }
             
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoModifyDlg($object),true);
+        $task->SetContent($this->Template_GetGeserModifyDlg($object),true);
         return true;
     }
 
     //Task modifica dati generali elemento
-    public function Task_GetGecoRevisionViewDlg($task)
+    public function Task_GetGeserRevisionViewDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -3912,7 +2841,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3930,12 +2859,12 @@ Class AA_GecoModule extends AA_GenericModule
         }
             
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoRevisionViewDlg($object),true);
+        $task->SetContent($this->Template_GetGeserRevisionViewDlg($object),true);
         return true;
     }
 
     //Task modifica dati generali elemento
-    public function Task_GetGecoRevisionDlg($task)
+    public function Task_GetGeserRevisionDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -3947,7 +2876,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3965,12 +2894,12 @@ Class AA_GecoModule extends AA_GenericModule
         }
             
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoRevisionDlg($_POST),true);
+        $task->SetContent($this->Template_GetGeserRevisionDlg($_POST),true);
         return true;
     }
 
     //Task modifica dati generali elemento
-    public function Task_GetGecoRevocaModifyDlg($task)
+    public function Task_GetGeserRevocaModifyDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -3982,7 +2911,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4000,12 +2929,12 @@ Class AA_GecoModule extends AA_GenericModule
         }
             
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoRevocaDlg($object),true);
+        $task->SetContent($this->Template_GetGeserRevocaDlg($object),true);
         return true;
     }
 
     //Task richiesta oscurtamento dati personali
-    public function Task_GetGecoConfirmPrivacyDlg($task)
+    public function Task_GetGeserConfirmPrivacyDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
@@ -4019,13 +2948,13 @@ Class AA_GecoModule extends AA_GenericModule
         }
         
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoConfirmPrivacyDlg($form_id),true);
+        $task->SetContent($this->Template_GetGeserConfirmPrivacyDlg($form_id),true);
         
         return true;
     }
 
     //Task modifica dati beneficiario
-    public function Task_GetGecoBeneficiarioModifyDlg($task)
+    public function Task_GetGeserBeneficiarioModifyDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -4037,7 +2966,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4055,17 +2984,17 @@ Class AA_GecoModule extends AA_GenericModule
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoBeneficiarioModifyDlg($object),true);
+        $task->SetContent($this->Template_GetGeserBeneficiarioModifyDlg($object),true);
 
         return true;
     }
 
     //Task resume
-    public function Task_GetGecoResumeDlg($task)
+    public function Task_GetGeserResumeDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
@@ -4075,7 +3004,7 @@ Class AA_GecoModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGenericResumeObjectDlg($_REQUEST,"ResumeGeco"),true);
+            $task->SetContent($this->Template_GetGenericResumeObjectDlg($_REQUEST,"ResumeGeser"),true);
             return true;
         }    
         else
@@ -4087,11 +3016,11 @@ Class AA_GecoModule extends AA_GenericModule
     }
     
     //Task publish organismo
-    public function Task_GetGecoPublishDlg($task)
+    public function Task_GetGeserPublishDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
@@ -4101,7 +3030,7 @@ Class AA_GecoModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGenericPublishObjectDlg($_REQUEST,"PublishGeco"),true);
+            $task->SetContent($this->Template_GetGenericPublishObjectDlg($_REQUEST,"PublishGeser"),true);
             return true;
         }    
         else
@@ -4113,11 +3042,11 @@ Class AA_GecoModule extends AA_GenericModule
     }
     
     //Task Riassegna
-    public function Task_GetGecoReassignDlg($task)
+    public function Task_GetGeserReassignDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
@@ -4127,7 +3056,7 @@ Class AA_GecoModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGenericReassignObjectDlg($_REQUEST,"ReassignGeco"),true);
+            $task->SetContent($this->Template_GetGenericReassignObjectDlg($_REQUEST,"ReassignGeser"),true);
             return true;
         }    
         else
@@ -4139,11 +3068,11 @@ Class AA_GecoModule extends AA_GenericModule
     }
     
     //Task elimina
-    public function Task_GetGecoTrashDlg($task)
+    public function Task_GetGeserTrashDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
@@ -4152,7 +3081,7 @@ Class AA_GecoModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGenericObjectTrashDlg($_REQUEST,"TrashGeco"),true);
+            $task->SetContent($this->Template_GetGenericObjectTrashDlg($_REQUEST,"TrashGeser"),true);
             return true;
         }    
         else
@@ -4164,11 +3093,11 @@ Class AA_GecoModule extends AA_GenericModule
     }
        
     //Task dialogo elimina
-    public function Task_GetGecoDeleteDlg($task)
+    public function Task_GetGeserDeleteDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
@@ -4177,7 +3106,7 @@ Class AA_GecoModule extends AA_GenericModule
         if($_REQUEST['ids']!="")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGecoDeleteDlg($_REQUEST),true);
+            $task->SetContent($this->Template_GetGeserDeleteDlg($_REQUEST),true);
             return true;
         }    
         else
@@ -4188,12 +3117,50 @@ Class AA_GecoModule extends AA_GenericModule
         }
     }
     
-    //Task aggiunta 
-    public function Task_GetGecoAddNewDlg($task)
+    //Task lista
+    public function Task_GetGeserListaCodiciIstat($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        $filter=$_REQUEST["filter"];
+
+        $db=new AA_Database();
+        $query="SELECT codice,comune FROM ".AA_Geser_Const::AA_DBTABLE_CODICI_ISTAT;
+        if($filter !="") $query.=" WHERE codice like '".addslashes($filter['value'])."%' OR comune like '".addslashes($filter['value'])."%'";
+        //$query.=" LIMIT 10";
+
+        //AA_Log::Log(__METHOD__." - query ".$query.print_r($_REQUEST,true),100);
+        
+        //errore nella query
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - ERRORE ".$db->GetErrorMessage(),100);
+            die("[]");
+        }
+
+        //Query vuota
+        if($db->GetAffectedRows() == 0)
+        {
+            die("[]");
+        }
+        
+        $result=array();
+        $count=1;
+        foreach($db->GetResultSet() as $curRow)
+        {
+            $result[]=array("id"=>$count,"codice"=>$curRow['codice'],"value"=>$curRow['comune']);
+            $count++;
+        }
+
+        die(json_encode($result));
+    }
+
+    //Task aggiunta 
+    public function Task_GetGeserAddNewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
@@ -4202,17 +3169,17 @@ Class AA_GecoModule extends AA_GenericModule
         else
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGecoAddNewDlg(),true);
+            $task->SetContent($this->Template_GetGeserAddNewDlg(),true);
             return true;
         }
     }
 
     //Task aggiunta multipla
-    public function Task_GetGecoAddNewMultiDlg($task)
+    public function Task_GetGeserAddNewMultiDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
@@ -4221,17 +3188,17 @@ Class AA_GecoModule extends AA_GenericModule
         else
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGecoAddNewMultiDlg(),true);
+            $task->SetContent($this->Template_GetGeserAddNewMultiDlg(),true);
             return true;
         }
     }
 
     //Task aggiunta multipla preview
-    public function Task_GetGecoAddNewMultiPreviewDlg($task)
+    public function Task_GetGeserAddNewMultiPreviewDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
@@ -4240,15 +3207,15 @@ Class AA_GecoModule extends AA_GenericModule
         else
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetGecoAddNewMultiPreviewDlg(),true);
+            $task->SetContent($this->Template_GetGeserAddNewMultiPreviewDlg(),true);
             return true;
         }
     }
 
     //Task aggiunta geco da csv, passo 2 di 3
-    public function Task_GetGecoAddNewMultiPreviewCalc($task)
+    public function Task_GetGeserAddNewMultiPreviewCalc($task)
     {
-        $csvFile=AA_SessionFileUpload::Get("GecoAddNewMultiCSV");
+        $csvFile=AA_SessionFileUpload::Get("GeserAddNewMultiCSV");
         if(!$csvFile->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4312,7 +3279,7 @@ Class AA_GecoModule extends AA_GenericModule
         //parsing dei dati
         $data=array();
         $curRowNum=0;
-        $modalita=AA_Geco_Const::GetListaModalita();
+        $modalita=AA_Geser_Const::GetListaModalita();
 
         foreach($csvRows as $curCsvRow)
         {
@@ -4348,17 +3315,17 @@ Class AA_GecoModule extends AA_GenericModule
             $curRowNum++;
         }
 
-        AA_SessionVar::Set("GecoAddNewMultiFromCSV_ParsedData",$data,false);
+        AA_SessionVar::Set("GeserAddNewMultiFromCSV_ParsedData",$data,false);
         
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetStatusAction('dlg',array("task"=>"GetGecoAddNewMultiPreviewDlg"),true);
+        $task->SetStatusAction('dlg',array("task"=>"GetGeserAddNewMultiPreviewDlg"),true);
         $task->SetContent("Csv elaborato.",false);
                 
         return true;
     }
 
     //Task aggiungi allegato
-    public function Task_GetGecoAddNewAllegatoDlg($task)
+    public function Task_GetGeserAddNewAllegatoDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -4370,7 +3337,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4388,79 +3355,12 @@ Class AA_GecoModule extends AA_GenericModule
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoAddNewAllegatoDlg($object),true);
-        return true;
-    }
-
-    //Task aggiungi criteri
-    public function Task_GetGecoAddNewCriteriDlg($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-       if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
-       {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
-            return false;
-       }
-
-        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoAddNewCriteriDlg(),true);
-        return true;
-    }
-
-    public function Task_GetGecoModifyCriteriDlg($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
-            return false;
-        }
-
-        $criterio=new AA_Geco_Criteri();
-
-        if(!$criterio->Load($_REQUEST['id'],$this->oUser))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Criterio non trovato.",false);
-            return false;
-        }
-
-        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoModifyCriteriDlg($criterio),true);
-        return true;
-    }
-    
-    public function Task_GetGecoCopyCriteriDlg($task)
-    {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
-            return false;
-        }
-
-        $criterio=new AA_Geco_Criteri();
-
-        if(!$criterio->Load($_REQUEST['id'],$this->oUser))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Criterio non trovato.",false);
-            return false;
-        }
-
-        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoCopyCriteriDlg($criterio),true);
+        $task->SetContent($this->Template_GetGeserAddNewAllegatoDlg($object),true);
         return true;
     }
     
     //Task aggiorna allegato
-    public function Task_UpdateGecoAllegato($task)
+    public function Task_UpdateGeserAllegato($task)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
@@ -4507,7 +3407,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geser($_REQUEST['id'],$this->oUser);
 
         if(!$object->isValid())
         {
@@ -4664,7 +3564,7 @@ Class AA_GecoModule extends AA_GenericModule
     }
 
     //Task elimina allegato
-    public function Task_DeleteGecoAllegato($task)
+    public function Task_DeleteGeserAllegato($task)
     {
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4680,7 +3580,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->isValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4711,7 +3611,7 @@ Class AA_GecoModule extends AA_GenericModule
 
     
     //Task modifica allegato
-    public function Task_GetGecoModifyAllegatoDlg($task)
+    public function Task_GetGeserModifyAllegatoDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -4731,7 +3631,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object=new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4761,13 +3661,13 @@ Class AA_GecoModule extends AA_GenericModule
         $allegato['id']=$_REQUEST['id_allegato'];
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoModifyAllegatoDlg($object,$allegato),true);
+        $task->SetContent($this->Template_GetGeserModifyAllegatoDlg($object,$allegato),true);
 
         return true;
     }
 
     //Task trash allegato
-    public function Task_GetGecoTrashAllegatoDlg($task)
+    public function Task_GetGeserTrashAllegatoDlg($task)
     {
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4783,7 +3683,7 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $object= new AA_Geco($_REQUEST['id'],$this->oUser);
+        $object= new AA_Geser($_REQUEST['id'],$this->oUser);
         if(!$object->isValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4808,43 +3708,12 @@ Class AA_GecoModule extends AA_GenericModule
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoTrashAllegatoDlg($object,$allegato),true);
+        $task->SetContent($this->Template_GetGeserTrashAllegatoDlg($object,$allegato),true);
         return true;
     }
-
-    //Task trash criteri
-    public function Task_GetGecoTrashCriteriDlg($task)
-    {
-        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo oggetto non valido.",false);
-            return false;
-        }
-
-        $object= new AA_Geco_Criteri();
-        if(!$object->Load($_REQUEST['id'],$this->oUser))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
-            return false;
-        }
-        
-        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetProp("id").").",false);
-            return true;
-        }
-
-        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecoTrashCriteriDlg($object),true);
-        return true;
-    }
-
     
     //Task filter dlg
-    public function Task_GetGecoPubblicateFilterDlg($task)
+    public function Task_GetGeserPubblicateFilterDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -4859,7 +3728,7 @@ Class AA_GecoModule extends AA_GenericModule
     }
     
     //Task filter dlg
-    public function Task_GetGecoBozzeFilterDlg($task)
+    public function Task_GetGeserBozzeFilterDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -4876,7 +3745,7 @@ Class AA_GecoModule extends AA_GenericModule
     //Task NavBarContent
     public function Task_GetNavbarContent($task)
     {
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        if(!$this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER))
         {
             $_REQUEST['section']=static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX;
         }
@@ -4888,61 +3757,50 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"revocate"=>$params['revocate'],"Responsabile"=>$params['Responsabile'],"Beneficiario"=>$params['Beneficiario'],"Anno"=>$params['Anno'],"Modalita"=>$params['Modalita']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"tipo"=>$params['tipo'],"stato"=>$params['stato']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
         if($params['id_assessorato']=="") $formData['id_assessorato']=0;
         if($params['id_direzione']=="") $formData['id_direzione']=0;
         if($params['id_servizio']=="") $formData['id_servizio']=0;
-        if($params['revocate']=="") $formData['revocate']=0;
+        if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['nome']=="") $formData['nome']="";
-        if($params['Responsabile']=="") $formData['Responsabile']="";
-        if($params['Beneficiario']=="") $formData['Beneficiario']="";
-        if($params['Anno']=="") $formData['Anno']=0;
-        if($params['Modalita']=="") $formData['Modalita']=0;
+        if($params['tipo']=="") $formData['tipo']=0;
+        if($params['stato']=="") $formData['stato']=0;
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","revocate"=>0,"Responsabile"=>"", "Beneficiario"=>"","Anno"=>0,"Modalita"=>0);
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter_".uniqid(), "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter".uniqid(), "Parametri di ricerca per le schede in bozza",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 
         //Cestinate
-        $dlg->AddCheckBoxField("revocate","Revocati",array("bottomLabel"=>"*Abilita per mostrare esclusivamente i contributi revocati."));
+        $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
       
-        //anno
+        //tipo
         $options=array(array("id"=>"0","value"=>"Qualunque"));
-        for($id=date("Y"); $id>=date("Y")-6;$id--)
+        foreach(AA_Geser_Const::GetListaTipoImpianti() as $key=>$val)
         {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
+            $options[]=array("id"=>$key,"value"=>$val);
         }
-        $dlg->AddSelectField("Anno","Anno",array("gravity"=>2,"bottomLabel"=>"*Filtra in base all'anno.","options"=>$options,"value"=>"0"));
+        $dlg->AddSelectField("tipo","Tipo impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base al tipo di impianto.","options"=>$options,"value"=>"0"));
 
-        //Tipologia
+        //stato
         $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Geco_Const::GetListaModalita() as $id=>$label)
+        foreach(AA_Geser_Const::GetListaStatiImpianto() as $key=>$val)
         {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+            $options[]=array("id"=>$key,"value"=>$val);
         }
-        $dlg->AddSelectField("Modalita","Modalita'",array("gravity"=>3,"labelAlign"=>"right","labelWidth"=>90,"bottomLabel"=>"*Filtra in base alla modalita' di scelta del beneficiario.","options"=>$options,"value"=>"0"),false);
+        $dlg->AddSelectField("stato","Stato impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base allo stato dell'impianto.","options"=>$options,"value"=>"0"));
 
         //titolo
-        $dlg->AddTextField("nome","Titolo",array("bottomLabel"=>"*Filtra in base al titolo/descrizione dell'elemento.", "placeholder"=>"..."));
-        
-        //Struttura
-        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
-        
-        //Beneficiario
-        $dlg->AddTextField("Beneficiario","Beneficiario",array("bottomLabel"=>"*Filtra in base al Nominativo/C.f./P.iva del beneficiario.", "placeholder"=>"..."));
+        $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'impianto.", "placeholder"=>"..."));
 
-        //Responsabile
-        $dlg->AddTextField("Responsabile","Responsabile",array("bottomLabel"=>"*Filtra in base al nominativo del responsabile del procedimento.", "placeholder"=>"..."));
-        
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();
@@ -4952,7 +3810,7 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Beneficiario"=>$params['Beneficiario'],"Responsabile"=>$params['Responsabile'],"Anno"=>$params['Anno'],"Modalita"=>$params['Modalita']);
+        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"tipo"=>$params['tipo'],"stato"=>$params['stato']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4961,13 +3819,11 @@ Class AA_GecoModule extends AA_GenericModule
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['nome']=="") $formData['nome']="";
-        if($params['Responsabile']=="") $formData['Responsabile']="";
-        if($params['Beneficiario']=="") $formData['Beneficiario']="";
-        if($params['Anno']=="") $formData['Anno']=0;
-        if($params['Modalita']=="") $formData['Modalita']=0;
+        if($params['tipo']=="") $formData['tipo']=0;
+        if($params['stato']=="") $formData['stato']=0;
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"Responsabile"=>"","Beneficiario"=>"","Anno"=>0,"Modalita"=>0);
+        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -4979,34 +3835,25 @@ Class AA_GecoModule extends AA_GenericModule
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
       
-        //anno
+        //tipo
         $options=array(array("id"=>"0","value"=>"Qualunque"));
-        for($id=date("Y"); $id>=date("Y")-6;$id--)
+        foreach(AA_Geser_Const::GetListaTipoImpianti() as $key=>$val)
         {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
+            $options[]=array("id"=>$key,"value"=>$val);
         }
-        $dlg->AddSelectField("Anno","Anno",array("gravity"=>2,"bottomLabel"=>"*Filtra in base all'anno.","options"=>$options,"value"=>"0"));
+        $dlg->AddSelectField("tipo","Tipo impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base al tipo di impianto.","options"=>$options,"value"=>"0"));
 
-        //Tipologia
+        //stato
         $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Geco_Const::GetListaModalita() as $id=>$label)
+        foreach(AA_Geser_Const::GetListaStatiImpianto() as $key=>$val)
         {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+            $options[]=array("id"=>$key,"value"=>$val);
         }
-        $dlg->AddSelectField("Modalita","Modalita'",array("gravity"=>3,"labelAlign"=>"right","labelWidth"=>90,"bottomLabel"=>"*Filtra in base alla modalita' di scelta del beneficiario.","options"=>$options,"value"=>"0"),false);
+        $dlg->AddSelectField("stato","Stato impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base allo stato dell'impianto.","options"=>$options,"value"=>"0"));
 
         //titolo
-        $dlg->AddTextField("nome","Titolo",array("bottomLabel"=>"*Filtra in base al titolo/descrizione dell'elemento.", "placeholder"=>"..."));
+        $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'impianto.", "placeholder"=>"..."));
         
-        //Struttura
-        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
-        
-        //Beneficiario
-        $dlg->AddTextField("Beneficiario","Beneficiario",array("bottomLabel"=>"*Filtra in base al Nominativo/C.f./P.iva del beneficiario.", "placeholder"=>"..."));
-
-        //Responsabile
-        $dlg->AddTextField("Responsabile","Responsabile",array("bottomLabel"=>"*Filtra in base al nominativo del responsabile del procedimento.", "placeholder"=>"..."));
-
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();
@@ -5015,7 +3862,7 @@ Class AA_GecoModule extends AA_GenericModule
     //Funzione di esportazione in pdf (da specializzare)
     public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.26-27 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="")
     {
-        return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_GecoPdfExport", $rowsForPage, $index,$subTitle);
+        return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_GeserPdfExport", $rowsForPage, $index,$subTitle);
     }
 
     //funzione di aiuto
@@ -5023,7 +3870,7 @@ Class AA_GecoModule extends AA_GenericModule
     {
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         
-        $task->SetContent($this->Template_GetGecoHelpDlg(),true);
+        $task->SetContent($this->Template_GetGeserHelpDlg(),true);
         
         $help_url="";
         $action='AA_MainApp.utils.callHandler("pdfPreview", { url: this.taskManager + "?task=PdfExport&section=" + this.curSection.id }, this.id);';
@@ -5033,16 +3880,16 @@ Class AA_GecoModule extends AA_GenericModule
     }
 
     //Template pdf export single
-    public function Template_GecoPdfExport($id="", $parent=null,$object=null,$user=null)
+    public function Template_GeserPdfExport($id="", $parent=null,$object=null,$user=null)
     {
-        if(!($object instanceof AA_Geco))
+        if(!($object instanceof AA_Geser))
         {
             return "";
         }
         
-        if($id=="") $id="Template_GecoPdfExport_".$object->GetId();
+        if($id=="") $id="Template_GeserPdfExport_".$object->GetId();
 
-        return new AA_GecoPublicReportTemplateView($id,$parent,$object);
+        return new AA_GeserPublicReportTemplateView($id,$parent,$object);
     }
 
     //Template dettaglio allegati
@@ -5068,7 +3915,7 @@ Class AA_GecoModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi allegato o link",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecoAddNewAllegatoDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGeserAddNewAllegatoDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
             ));
 
             $toolbar->AddElement($add_documento_btn);
@@ -5091,7 +3938,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         $documenti_data=array();
         $allegati=$object->GetAllegati();
-        $listaTipo=AA_Geco_Const::GetListaTipoAllegati();
+        $listaTipo=AA_Geser_Const::GetListaTipoAllegati();
         foreach($allegati as $id_doc=>$curDoc)
         {
             if($curDoc['filehash'] != "")
@@ -5105,8 +3952,8 @@ Class AA_GecoModule extends AA_GenericModule
                 $view_icon="mdi-eye";
             }
             
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$id_doc.'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$id_doc.'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserTrashAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$id_doc.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserModifyAllegatoDlg", params: [{id: "'.$object->GetId().'"},{id_allegato:"'.$id_doc.'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
             $documenti_data[]=array("id"=>$id_doc,"descrizione"=>$curDoc['descrizione'],"tipo"=>$listaTipo[$curDoc['tipo']],"ops"=>$ops);
@@ -5142,11 +3989,11 @@ Class AA_GecoModule extends AA_GenericModule
 }
 
 #Classe template per la gestione del report pdf dell'oggetto
-Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
+Class AA_GeserPublicReportTemplateView extends AA_GenericObjectTemplateView
 {
-    public function __construct($id="AA_GecoPublicReportTemplateView",$parent=null,$object=null)
+    public function __construct($id="AA_GeserPublicReportTemplateView",$parent=null,$object=null)
     {
-        if(!($object instanceof AA_Geco))
+        if(!($object instanceof AA_Geser))
         {
             AA_Log::Log(__METHOD__." - oggetto non valido.", 100,false,true);
             return;
@@ -5174,7 +4021,7 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
         $oggetto->SetText(substr($object->GetName(),0,320));
         #-----------------------------------------------
 
-        /*if($object->GetTipo(true) == AA_Geco_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE)
+        /*if($object->GetTipo(true) == AA_Geser_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE)
         {
             #modalità----------------------------------
             $oggetto=new AA_XML_Div_Element($id."_modalita",$this);
@@ -5201,9 +4048,9 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
 
 
 //Oggetto criteri e modalita
-Class AA_Geco_Criteri extends AA_GenericParsableDbObject
+Class AA_Geser_Criteri extends AA_GenericParsableDbObject
 {
-    protected static $dbDataTable=AA_Geco_Const::AA_GECO_DBTABLE_CRITERI;
+    protected static $dbDataTable=AA_Geser_Const::AA_GESER_DBTABLE_CRITERI;
     protected static $ObjectClass=__CLASS__;
     public function __construct($params=null,$user=null)
     {
@@ -5265,39 +4112,6 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         }
 
         return false;
-    }
-
-    public function GetUserCaps($user=null)
-    {
-        if(!($user instanceof AA_User) || $user->IsCurrentUser()) $user=AA_User::GetCurrentUser();
-
-        $userStruct=$user->GetStruct();
-        $perms=AA_Const::AA_PERMS_READ;
-
-        if(!$user->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$user->IsSuperUser()) return $perms;
-
-        if($userStruct->GetAssessorato(true)==0) return AA_Const::AA_PERMS_ALL;
-
-        $assessorato=intVal(substr($this->GetProp("struttura"),0,3));
-        $direzione=intVal(substr($this->GetProp("struttura"),3,3));
-        $servizio=intVal(substr($this->GetProp("struttura"),6,3));
-        
-        if($assessorato==$userStruct->GetAssessorato(true))
-        {
-            if($userStruct->GetDirezione(true)==0) return AA_Const::AA_PERMS_ALL;
-
-            if($userStruct->GetDirezione(true)==$direzione)
-            {
-                if($userStruct->GetServizio(true)==0) return AA_Const::AA_PERMS_ALL;
-
-                if($userStruct->GetServizio(true)==$servizio)
-                {
-                    $perms=AA_Const::AA_PERMS_ALL;
-                }
-            }
-        }
-
-        return $perms;
     }
 
     public function Update($params=null,$user=null)
