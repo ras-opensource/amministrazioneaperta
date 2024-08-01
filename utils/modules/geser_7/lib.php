@@ -26,6 +26,7 @@ Class AA_Geser_Const extends AA_Const
     const AA_GESER_STATO_DISMISSIONE=8;
     const AA_GESER_STATO_DISMESSO=16;
     const AA_GESER_STATO_AMPLIAMENTO=32;
+    const AA_GESER_STATO_FUORI_ESERCIZIO=64;
     public static function GetListaStatiImpianto()
     {
         if(static::$nStatoImpianto==null)
@@ -35,6 +36,7 @@ Class AA_Geser_Const extends AA_Const
                 static::AA_GESER_STATO_AUTORIZZATO=>"Autorizzato",
                 static::AA_GESER_STATO_INCOSTRUZIONE=>"In costruzione",
                 static::AA_GESER_STATO_ESERCIZIO=>"In esercizio",
+                static::AA_GESER_STATO_FUORI_ESERCIZIO=>"Inattivo",
                 static::AA_GESER_STATO_AMPLIAMENTO=>"In fase di modifica",
                 static::AA_GESER_STATO_DISMISSIONE=>"In dismissione",
                 static::AA_GESER_STATO_DISMESSO=>"Dismesso"
@@ -46,7 +48,6 @@ Class AA_Geser_Const extends AA_Const
 
     protected static $aTipoVia=null;
     const AA_GESER_TIPO_VIA_NESSUNO=1;
-
     const AA_GESER_TIPO_VIA_REGIONALE=2;
     const AA_GESER_TIPO_VIA_MINISTERIALE=4;
     public static function GetListaTipoVia()
@@ -54,13 +55,53 @@ Class AA_Geser_Const extends AA_Const
         if(static::$aTipoVia==null)
         {
             static::$aTipoVia=array(
-                static::AA_GESER_TIPO_VIA_NESSUNO=>"Nessuno",
+                static::AA_GESER_TIPO_VIA_NESSUNO=>"Non soggetta",
                 static::AA_GESER_TIPO_VIA_REGIONALE=>"Regionale",
                 static::AA_GESER_TIPO_VIA_MINISTERIALE=>"Ministeriale"
             );
         }
 
         return static::$aTipoVia;
+    }
+
+    protected static $aStatoPratica=null;
+    const AA_GESER_STATO_PRATICA_DAISTRUIRE=1;
+    const AA_GESER_STATO_PRATICA_INLAVORAZIONE=2;
+    const AA_GESER_STATO_PRATICA_AUTORIZZATA=4;
+    const AA_GESER_STATO_PRATICA_SOSPESA_VIA=8;
+    const AA_GESER_STATO_PRATICA_NEGATA=16;
+    public static function GetListaStatiPratica()
+    {
+        if(static::$aStatoPratica==null)
+        {
+            static::$aStatoPratica=array(
+                static::AA_GESER_STATO_PRATICA_DAISTRUIRE=>"Da istruire",
+                static::AA_GESER_STATO_PRATICA_INLAVORAZIONE=>"In lavorazione",
+                static::AA_GESER_STATO_PRATICA_AUTORIZZATA=>"Approvata",
+                static::AA_GESER_STATO_PRATICA_SOSPESA_VIA=>"Sospesa per VIA",
+                static::AA_GESER_STATO_PRATICA_NEGATA=>"Rigettata"
+            );
+        }
+
+        return static::$aStatoPratica;
+    }
+
+    protected static $aTipoPratica=null;
+    const AA_GESER_TIPO_PRATICA_AU=1;
+    const AA_GESER_TIPO_PRATICA_VARIANTE=2;
+    const AA_GESER_TIPO_PRATICA_VOLTURA=4;
+    public static function GetListaTipoPratica()
+    {
+        if(static::$aTipoPratica==null)
+        {
+            static::$aTipoPratica=array(
+                static::AA_GESER_TIPO_PRATICA_AU=>"Autorizzazione Unica",
+                static::AA_GESER_TIPO_PRATICA_VARIANTE=>"Variante",
+                static::AA_GESER_TIPO_PRATICA_VOLTURA=>"Voltura"
+            );
+        }
+
+        return static::$aTipoPratica;
     }
 
     protected static $aTipoImpianti=null;
@@ -72,6 +113,7 @@ Class AA_Geser_Const extends AA_Const
     const AA_GESER_TIPOIMPIANTO_IDROELETTRICO=32;
     const AA_GESER_TIPOIMPIANTO_ELETTRODOTTO=64;
     const AA_GESER_TIPOIMPIANTO_TERMODINAMICO=128;
+    const AA_GESER_TIPOIMPIANTO_OFFSHORE=256;
     public static function GetListaTipoImpianti()
     {
         if(static::$aTipoImpianti==null)
@@ -84,6 +126,7 @@ Class AA_Geser_Const extends AA_Const
                 static::AA_GESER_TIPOIMPIANTO_EOLICO=>"Eolico",
                 static::AA_GESER_TIPOIMPIANTO_FOTOVOLTAICO=>"Fotovoltaico",
                 static::AA_GESER_TIPOIMPIANTO_IDROELETTRICO=>"Idroelettrico",
+                static::AA_GESER_TIPOIMPIANTO_OFFSHORE=>"Off-shore",
                 static::AA_GESER_TIPOIMPIANTO_TERMODINAMICO=>"Solare termodinamico",
             );
         }
@@ -197,6 +240,7 @@ Class AA_Geser extends AA_Object_V2
         //Db data binding
         $this->AddProp("Note","","note");
         $this->AddProp("Tipologia",0,"tipologia");
+        $this->AddProp("Superficie",0,"superficie");
         $this->AddProp("Stato",0,"stato");
         $this->AddProp("AnnoAutorizzazione","","anno_autorizzazione");
         $this->AddProp("AnnoCostruzione","","anno_costruzione");
@@ -505,6 +549,15 @@ Class AA_GeserModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateGeserDatiRevoca");
         $taskManager->RegisterTask("GetGeserListaCodiciIstat");
         
+        //pratiche
+        $taskManager->RegisterTask("GetGeserAddNewPraticaDlg");
+        $taskManager->RegisterTask("AddNewGeserPratica");
+        $taskManager->RegisterTask("GetGeserModifyPraticaDlg");
+        $taskManager->RegisterTask("UpdateGeserPratica");
+        $taskManager->RegisterTask("GetGeserTrashPraticaDlg");
+        $taskManager->RegisterTask("DeleteGeserPratica");
+        $taskManager->RegisterTask("GetGeserCopyPraticaDlg");
+
         //Allegati
         $taskManager->RegisterTask("GetGeserAddNewAllegatoDlg");
         $taskManager->RegisterTask("AddNewGeserAllegato");
@@ -585,7 +638,7 @@ Class AA_GeserModule extends AA_GenericModule
 
         $content=$this->TemplateGenericSection_Pubblicate($params,$bCanModify);
         $content->EnableExportFunctions(false);
-        $content->EnableTrash(false);
+        //$content->EnableTrash(false);
 
         return $content->toObject();
     }
@@ -788,6 +841,7 @@ Class AA_GeserModule extends AA_GenericModule
         $form_data['Tipologia']=0;
         $form_data['nome']="";
         $form_data['Potenza']="";
+        $form_data['Superficie']="";
         $form_data['Geo_comune']="";
         $form_data['Geo_localita']="";
         $form_data['Geo_coordinate']="";
@@ -811,16 +865,19 @@ Class AA_GeserModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(980);
+        $wnd->SetWidth(1080);
         $wnd->SetHeight(720);
         $wnd->EnableValidation();
 
         //Tipologia
-        $wnd->AddSelectField("Tipologia","Tipologia",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare la tipologia di impianto.", "placeholder"=>"...","options"=>$tipo_options));
+        $wnd->AddSelectField("Tipologia","Tipologia",array("required"=>true,"gravity"=>1.5,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare la tipologia di impianto.", "placeholder"=>"...","options"=>$tipo_options));
         
         //Stato
-        $wnd->AddSelectField("Stato","Stato attuale",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare lo stato attuale dell'impianto.", "placeholder"=>"...","options"=>$stato_options),false);
+        $wnd->AddSelectField("Stato","Stato attuale",array("required"=>true,"gravity"=>1.5,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare lo stato attuale dell'impianto.", "placeholder"=>"...","options"=>$stato_options),false);
         
+        //superficie
+        $wnd->AddTextField("Superficie","Superficie",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la superficie (mq) dell'impianto.", "placeholder"=>"es. 150"),false);
+
         //Nome
         $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci una denominazione per l'impianto.", "placeholder"=>"..."));
 
@@ -833,10 +890,10 @@ Class AA_GeserModule extends AA_GenericModule
         $section->AddTextField("AnnoAutorizzazione","Anno autorizzazione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"));
         
         //anno costruzione
-        $section->AddTextField("AnnoCostruzione","Anno costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
+        $section->AddTextField("AnnoCostruzione","Anno costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata terminata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
 
         //anno esercizio
-        $section->AddTextField("AnnoEsercizio","Anno esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
+        $section->AddTextField("AnnoEsercizio","Anno esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
 
         //anno dismissione
         $section->AddTextField("AnnoDismissione","Anno dismissione",array("bottomPadding"=>32,"labelWidth"=>150, "bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024"),false);
@@ -847,13 +904,13 @@ Class AA_GeserModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
 
         //localita'
-        $section->AddTextField("Geo_localita","Localita",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo in cui e' sito l'impianto.", "placeholder"=>"..."));
+        $section->AddTextField("Geo_localita","Localita",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
 
         //comune
-        $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>32,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
+        $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>38,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
 
         //coordinate
-        $section->AddTextField("Geo_coordinate","Coordinate",array("gravity"=>1,"bottomPadding"=>32,"labelWidth"=>90, "bottomLabel"=>"*Inserisci (se disponibili) le coordinate geografiche dell'impianto (formato: latitudine,longitudine).", "placeholder"=>"es. 39.217199,9.113311"),false);
+        $section->AddTextField("Geo_coordinate","Coordinate",array("gravity"=>1,"bottomPadding"=>38,"labelWidth"=>90, "bottomLabel"=>"*Coordinate geografiche dell'impianto (formato: latitudine,longitudine).", "placeholder"=>"es. 39.217199,9.113311"),false);
 
         $wnd->AddGenericObject($section);
 
@@ -1156,15 +1213,20 @@ Class AA_GeserModule extends AA_GenericModule
         return $wnd;
     }
 
-    //Template dlg aggiungi criteri
-    public function Template_GetGeserAddNewCriteriDlg()
+    //Template dlg aggiungi pratica
+    public function Template_GetGeserAddNewPraticaDlg($object=null)
     {
         $id=uniqid();
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
-        
+        if(!($object instanceof AA_Geser))
+        {
+            return new AA_GenericWindowTemplate(uniqid(),"Aggiungi nuova pratica",$this->GetId());
+        }
+
         $form_data=array();
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi Criteri e modalita'", $this->id,$form_data,$form_data);
+        $form_data['id']=$object->GetId();
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi nuova pratica", $this->id,$form_data,$form_data);
         
         //$wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(100);
@@ -1172,73 +1234,242 @@ Class AA_GeserModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(980);
-        $wnd->SetHeight(820);
+        $wnd->SetHeight(680);
 
-        //anno
+        //tipo
         $options=array();
-        for($id=date("Y"); $id>=date("Y")-20;$id--)
+        $listaTipo=AA_Geser_Const::GetListaTipoPratica();
+        foreach($listaTipo as $key=>$val)
         {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
         }
-        $wnd->AddSelectField("anno","Anno",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare l'anno di riferimento.","options"=>$options,"value"=>"0"));
+        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di pratica.","options"=>$options));
 
-        //tipologia
+        //stato
         $options=array();
-        $listaTipo=AA_Geser_Const::GetTipoCriteri();
-        foreach($listaTipo as $id=>$val)
+        $listaTipo=AA_Geser_Const::GetListaStatiPratica();
+        foreach($listaTipo as $key=>$val)
         {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$val);
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
         }
-        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di atto.","options"=>$options),false);
+        $wnd->AddSelectField("stato","Stato",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare lo stato della pratica.","options"=>$options),false);
 
         //Estremi
-        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci il numero e la data del documento.","placeholder" => "es. DGR n.xx del xxxx/xx/xx..."));
+        $wnd->AddTextField("estremi", "Estremi", array("gravity"=>2,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci il numero e la data della pratica.","placeholder" => "es. prot. n.xx del xxxx/xx/xx..."));
+
+        //via
+        $options=array();
+        $listaTipo=AA_Geser_Const::GetListaTipoVia();
+        foreach($listaTipo as $key=>$val)
+        {
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("via","Tipo VIA",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di VIA.","options"=>$options),false);
 
         //descrizione
-        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve descrizione (max 1024).","placeholder" => "..."),false);
+        $wnd->AddTextField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve descrizione (max 200 caratteri).","placeholder" => "..."));
+        
+        //societa'
+        $wnd->AddTextField("societa", "Ragione sociale'", array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci la denominazione della societa' richiedente.","placeholder" => "..."));
+
+        //riferimenti temporali
+        $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
+
+        //data inizio
+        $section->AddDateField("data_inizio","Data inizio",array("bottomPadding"=>32, "labelAlign"=>"right","labelWidth"=>150,"bottomLabel"=>"*Indica la data di inizio del procedimento."));
+        //data fine
+        $section->AddDateField("data_fine","Data fine",array("bottomPadding"=>32, "labelAlign"=>"right","labelWidth"=>150,"bottomLabel"=>"*Indica la data di conclusione del procedimento."),false);
+        $wnd->AddGenericObject($section);
+
+        //note
+        $wnd->AddTextareaField("note", "Note", array("gravity"=>1,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*eventuali note (max 1024 caratteri).","placeholder" => "..."));
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
         
-        //categorie
-        $tipi=AA_Geser_Const::GetCategorieAllegati();$curRow=1;
-        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
-        $curRow=0;
-        foreach($tipi as $tipo=>$descr)
-        {
-            $newLine=false;
-            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>180),$newLine);
-            $curRow++;
-        }
-
-        for($i=$curRow%4;$i<4;$i++)
-        {
-            $section->AddSpacer(false);
-        }
-
-        $wnd->AddGenericObject($section);
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>30)));
-        //----------------------
-    
-        //file upload------------------
-        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
-
-        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
-
-        //url
-        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
-        
-        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
-
-        //file
-        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 30Mb).","accept"=>"application/pdf,application/zip"));
-        
-        $wnd->AddGenericObject($section);
-        //---------------------------------
-
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("AddNewGeserCriteri");
+        $wnd->SetSaveTask("AddNewGeserPratica");
+        
+        return $wnd;
+    }
+
+    //Template dlg modifica pratica
+    public function Template_GetGeserModifyPraticaDlg($object=null,$pratica=null)
+    {
+        $id=uniqid();
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        if(!($object instanceof AA_Geser) || !is_array($pratica))
+        {
+            return new AA_GenericWindowTemplate(uniqid(),"Modifica pratica esistente",$this->GetId());
+        }
+
+        $form_data=array();
+        $form_data['id']=$object->GetId();
+        $form_data['id_pratica']=$pratica['id'];
+        $form_data['stato']=$pratica['stato'];
+        $form_data['tipo']=$pratica['tipo'];
+        $form_data['estremi']=$pratica['estremi'];
+        $form_data['descrizione']=$pratica['descrizione'];
+        $form_data['via']=$pratica['via'];
+        $form_data['societa']=$pratica['societa'];
+        $form_data['data_inizio']=$pratica['data_inizio'];
+        $form_data['data_fine']=$pratica['data_fine'];
+        $form_data['note']=$pratica['note'];
+
+        $wnd=new AA_GenericFormDlg($id, "Modifica pratica n. ".$pratica['id'], $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(680);
+
+        //tipo
+        $options=array();
+        $listaTipo=AA_Geser_Const::GetListaTipoPratica();
+        foreach($listaTipo as $key=>$val)
+        {
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di pratica.","options"=>$options));
+
+        //stato
+        $options=array();
+        $listaTipo=AA_Geser_Const::GetListaStatiPratica();
+        foreach($listaTipo as $key=>$val)
+        {
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("stato","Stato",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare lo stato della pratica.","options"=>$options),false);
+
+        //Estremi
+        $wnd->AddTextField("estremi", "Estremi", array("gravity"=>2,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci il numero e la data della pratica.","placeholder" => "es. prot. n.xx del xxxx/xx/xx..."));
+
+        //via
+        $options=array();
+        $listaTipo=AA_Geser_Const::GetListaTipoVia();
+        foreach($listaTipo as $key=>$val)
+        {
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("via","Tipo VIA",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di VIA.","options"=>$options),false);
+
+        //descrizione
+        $wnd->AddTextField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve descrizione (max 200 caratteri).","placeholder" => "..."));
+        
+        //societa'
+        $wnd->AddTextField("societa", "Ragione sociale'", array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci la denominazione della societa' richiedente.","placeholder" => "..."));
+
+        //riferimenti temporali
+        $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
+
+        //data inizio
+        $section->AddDateField("data_inizio","Data inizio",array("bottomPadding"=>32, "labelAlign"=>"right","labelWidth"=>150,"bottomLabel"=>"*Indica la data di inizio del procedimento."));
+        //data fine
+        $section->AddDateField("data_fine","Data fine",array("bottomPadding"=>32, "labelAlign"=>"right","labelWidth"=>150,"bottomLabel"=>"*Indica la data di conclusione del procedimento."),false);
+        $wnd->AddGenericObject($section);
+
+        //note
+        $wnd->AddTextareaField("note", "Note", array("gravity"=>1,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*eventuali note (max 1024 caratteri).","placeholder" => "..."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateGeserPratica");
+        
+        return $wnd;
+    }
+
+    //Template dlg copia pratica
+    public function Template_GetGeserCopyPraticaDlg($object=null,$pratica=null)
+    {
+        $id=uniqid();
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        if(!($object instanceof AA_Geser) || !is_array($pratica))
+        {
+            return new AA_GenericWindowTemplate(uniqid(),"Copia pratica esistente",$this->GetId());
+        }
+
+        $form_data=array();
+        $form_data['id']=$object->GetId();
+        $form_data['stato']=$pratica['stato'];
+        $form_data['tipo']=$pratica['tipo'];
+        $form_data['estremi']=$pratica['estremi'];
+        $form_data['descrizione']=$pratica['descrizione'];
+        $form_data['via']=$pratica['via'];
+        $form_data['societa']=$pratica['societa'];
+        $form_data['data_inizio']=$pratica['data_inizio'];
+        $form_data['data_fine']=$pratica['data_fine'];
+        $form_data['note']=$pratica['note'];
+
+        $wnd=new AA_GenericFormDlg($id, "Copia pratica n. ".$pratica['id'], $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(680);
+
+        //tipo
+        $options=array();
+        $listaTipo=AA_Geser_Const::GetListaTipoPratica();
+        foreach($listaTipo as $key=>$val)
+        {
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di pratica.","options"=>$options));
+
+        //stato
+        $options=array();
+        $listaTipo=AA_Geser_Const::GetListaStatiPratica();
+        foreach($listaTipo as $key=>$val)
+        {
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("stato","Stato",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare lo stato della pratica.","options"=>$options),false);
+
+        //Estremi
+        $wnd->AddTextField("estremi", "Estremi", array("gravity"=>2,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci il numero e la data della pratica.","placeholder" => "es. prot. n.xx del xxxx/xx/xx..."));
+
+        //via
+        $options=array();
+        $listaTipo=AA_Geser_Const::GetListaTipoVia();
+        foreach($listaTipo as $key=>$val)
+        {
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("via","Tipo VIA",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di VIA.","options"=>$options),false);
+
+        //descrizione
+        $wnd->AddTextField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve descrizione (max 200 caratteri).","placeholder" => "..."));
+        
+        //societa'
+        $wnd->AddTextField("societa", "Ragione sociale'", array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci la denominazione della societa' richiedente.","placeholder" => "..."));
+
+        //riferimenti temporali
+        $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
+
+        //data inizio
+        $section->AddDateField("data_inizio","Data inizio",array("bottomPadding"=>32, "labelAlign"=>"right","labelWidth"=>150,"bottomLabel"=>"*Indica la data di inizio del procedimento."));
+        //data fine
+        $section->AddDateField("data_fine","Data fine",array("bottomPadding"=>32, "labelAlign"=>"right","labelWidth"=>150,"bottomLabel"=>"*Indica la data di conclusione del procedimento."),false);
+        $wnd->AddGenericObject($section);
+
+        //note
+        $wnd->AddTextareaField("note", "Note", array("gravity"=>1,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*eventuali note (max 1024 caratteri).","placeholder" => "..."));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("AddNewGeserPratica");
         
         return $wnd;
     }
@@ -1342,108 +1573,6 @@ Class AA_GeserModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("UpdateGeserCriteri");
-        
-        return $wnd;
-    }
-
-    //Template dlg aggiungi criteri
-    public function Template_GetGeserCopyCriteriDlg($criterio=null)
-    {
-        $id=uniqid();
-        
-        if(!($criterio instanceof AA_Geser_Criteri))
-        {
-            $wnd=new AA_GenericWindowTemplate($id, "Copia Criteri e modalita'", $this->id);
-            $wnd->AddView(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<div>id criterio non valido.</div>")));
-
-            return $wnd;
-        }
-
-        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
-        $form_data=array(
-            "estremi"=>$criterio->GetProp('estremi'),
-            "tipo"=>$criterio->GetProp('tipo'),
-            "descrizione"=>$criterio->GetProp('descrizione'),
-            "url"=>$criterio->GetProp('url'),
-            "anno"=>$criterio->GetProp('anno')
-        );
-
-        //categorie
-        $tipi=AA_Geser_Const::GetCategorieAllegati();
-        $section=new AA_FieldSet($id."_Section_Tipo","Categorie");
-        $categorie=$criterio->GetProp('categorie');
-        $curRow=0;
-        foreach($tipi as $tipo=>$descr)
-        {
-            $newLine=false;
-            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("categoria_".$tipo, $descr, array("value"=>1,"bottomPadding"=>8,"labelAlign"=>"right","labelWidth"=>180),$newLine);
-            if(($categorie&$tipo)>0) $form_data['categoria_'.$tipo]=1;
-            $curRow++;
-        }
-
-        for($i=$curRow%4;$i<4;$i++)
-        {
-            $section->AddSpacer(false);
-        }
-        //----------------------
-
-        $wnd=new AA_GenericFormDlg($id, "Copia Criteri e modalita'", $this->id,$form_data,$form_data);
-        
-        //$wnd->SetLabelAlign("right");
-        $wnd->SetLabelWidth(100);
-        $wnd->SetBottomPadding(30);
-        $wnd->EnableValidation();
-        
-        $wnd->SetWidth(980);
-        $wnd->SetHeight(820);
-
-        //anno
-        $options=array();
-        for($id=date("Y"); $id>=date("Y")-20;$id--)
-        {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$id);
-        }
-        $wnd->AddSelectField("anno","Anno",array("gravity"=>1,"required"=>true,"labelWidth"=>80,"validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare l'anno di riferimento.","options"=>$options,"value"=>"0"));
-
-        //tipologia
-        $options=array();
-        $listaTipo=AA_Geser_Const::GetTipoCriteri();
-        foreach($listaTipo as $id=>$val)
-        {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$val);
-        }
-        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di atto.","options"=>$options),false);
-
-        //Estremi
-        $wnd->AddTextareaField("estremi", "Estremi", array("gravity"=>1,"required"=>true,"labelWidth"=>80,"labelAlign"=>"right","bottomLabel" => "*Inserisci gli estremi del documento","placeholder" => "es. DGR..."));
-
-        //descrizione
-        $wnd->AddTextareaField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>120,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve dscrizione (max 1024)","placeholder" => "..."),false);
-    
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
-
-        $wnd->AddGenericObject($section);
-
-        //file upload------------------
-        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
-
-        $section=new AA_FieldSet($id."_Section_Url","Inserire un'url oppure scegliere un file");
-
-        //url
-        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
-        
-        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
-
-        //file
-        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 30Mb).","accept"=>"application/pdf,application/zip"));
-        
-        $wnd->AddGenericObject($section);
-        //---------------------------------
-
-        $wnd->EnableCloseWndOnSuccessfulSave();
-        $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("AddNewGeserCriteri");
         
         return $wnd;
     }
@@ -1552,6 +1681,57 @@ Class AA_GeserModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("DeleteGeserCriteri");
         $wnd->SetSaveTaskParams(array("id"=>$object->GetProp("id")));
+        
+        return $wnd;
+    }
+
+    //Template dlg trash pratica
+    public function Template_GetGeserTrashPraticaDlg($object=null,$pratica=null)
+    {
+        $id=uniqid();
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina pratica", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(400);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("descrizione"=>$pratica['descrizione'],"estremi"=>$pratica['estremi']);
+      
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"La seguente pratica verrà eliminata, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"descrizione", "header"=>"Descrizione", "fillspace"=>true),
+              array("id"=>"estremi", "header"=>"Estremi", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteGeserPratica");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_pratica"=>$pratica['id']));
         
         return $wnd;
     }
@@ -1786,6 +1966,7 @@ Class AA_GeserModule extends AA_GenericModule
         $form_data['Tipologia']=$object->GetProp("Tipologia");
         $form_data['nome']=$object->GetName();
         $form_data['Potenza']=$object->GetProp("Potenza");
+        $form_data['Superficie']=$object->GetProp("Superficie");
        
         $geolocalizzazione=$object->GetGeolocalizzazione();
         if(sizeof($geolocalizzazione)==0)
@@ -1820,16 +2001,19 @@ Class AA_GeserModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(980);
+        $wnd->SetWidth(1080);
         $wnd->SetHeight(720);
         $wnd->EnableValidation();
 
         //Tipologia
-        $wnd->AddSelectField("Tipologia","Tipologia",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare la tipologia di impianto.", "placeholder"=>"...","options"=>$tipo_options));
+        $wnd->AddSelectField("Tipologia","Tipologia",array("required"=>true,"gravity"=>1.5,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare la tipologia di impianto.", "placeholder"=>"...","options"=>$tipo_options));
         
         //Stato
-        $wnd->AddSelectField("Stato","Stato attuale",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare lo stato attuale dell'impianto.", "placeholder"=>"...","options"=>$stato_options),false);
+        $wnd->AddSelectField("Stato","Stato attuale",array("required"=>true,"gravity"=>1.5,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare lo stato attuale dell'impianto.", "placeholder"=>"...","options"=>$stato_options),false);
         
+        //superficie
+        $wnd->AddTextField("Superficie","Superficie",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la superficie (mq) dell'impianto.", "placeholder"=>"es. 150"),false);
+
         //Nome
         $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci una denominazione per l'impianto.", "placeholder"=>"..."));
 
@@ -1842,10 +2026,10 @@ Class AA_GeserModule extends AA_GenericModule
         $section->AddTextField("AnnoAutorizzazione","Anno autorizzazione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"));
         
         //anno costruzione
-        $section->AddTextField("AnnoCostruzione","Anno costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
+        $section->AddTextField("AnnoCostruzione","Anno costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata terminata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
 
         //anno esercizio
-        $section->AddTextField("AnnoEsercizio","Anno esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
+        $section->AddTextField("AnnoEsercizio","Anno esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
 
         //anno dismissione
         $section->AddTextField("AnnoDismissione","Anno dismissione",array("bottomPadding"=>32,"labelWidth"=>150, "bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024"),false);
@@ -1856,13 +2040,13 @@ Class AA_GeserModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
 
         //localita'
-        $section->AddTextField("Geo_localita","Localita",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo in cui e' sito l'impianto.", "placeholder"=>"..."));
+        $section->AddTextField("Geo_localita","Localita",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
 
         //comune
-        $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>32,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
+        $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>38,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
 
         //coordinate
-        $section->AddTextField("Geo_coordinate","Coordinate",array("gravity"=>1,"bottomPadding"=>32,"labelWidth"=>90, "bottomLabel"=>"*Inserisci (se disponibili) le coordinate geografiche dell'impianto (formato: latitudine,longitudine).", "placeholder"=>"es. 39.217199,9.113311"),false);
+        $section->AddTextField("Geo_coordinate","Coordinate",array("gravity"=>1,"bottomPadding"=>38,"labelWidth"=>90, "bottomLabel"=>"*Coordinate geografiche dell'impianto (formato: latitudine,longitudine).", "placeholder"=>"es. 39.217199,9.113311"),false);
 
         $wnd->AddGenericObject($section);
 
@@ -2119,26 +2303,26 @@ Class AA_GeserModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PRATICHE;
         $canModify=false;
 
-        #criteri----------------------------------
+        #pratiche----------------------------------
         if($this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER)) $canModify=true;
 
-        $storage=AA_Storage::GetInstance();
-
-        $documenti_data=array();
+        $stati_pratica=AA_Geser_Const::GetListaStatiPratica();
+        $tipo_pratica=AA_Geser_Const::GetListaTipoPratica();
+        $tipo_via=AA_Geser_Const::GetListaTipoVia();
         $pratiche=$object->GetPratiche();
         foreach($pratiche as $id_pratica=>$curPratica)
         {
             //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserTrashPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$curPratica['id'].'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserModifyCriteriDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$curPratica['id'].'"}]},"'.$this->id.'")';
-            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserCopyCriteriDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$curPratica['id'].'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserTrashPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserModifyPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserCopyPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="&nbsp;";
 
-            $pratiche_data[]=array("id"=>$id_pratica,"stato"=>$curPratica['stato'],"tipo"=>$curPratica['tipo'],"estremi"=>$curPratica['estremi'],"descrizione"=>$curPratica['descrizione'],"via"=>$curPratica['via'],"societa"=>$curPratica['societa'],"note"=>$curPratica['note'],"ops"=>$ops);
+            $pratiche_data[]=array("id"=>$id_pratica,"rif_temporali"=>"<div style='display:flex; flex-direction:column; justify-content:center'><span><b>Data inizio</b>: ".$curPratica['data_inizio']."</span><span><b>Data fine</b>: ".$curPratica['data_fine']."</span></div>","stato"=>$stati_pratica[$curPratica['stato']],"tipo"=>$tipo_pratica[$curPratica['tipo']],"estremi"=>$curPratica['estremi'],"descrizione"=>$curPratica['descrizione'],"via"=>$tipo_via[$curPratica['via']],"societa"=>$curPratica['societa'],"note"=>$curPratica['note'],"ops"=>$ops);
         }
 
-        $template=new AA_GenericDatatableTemplate($id,"Gestione pratiche",5,null,array("css"=>"AA_Header_DataTable"));
+        $template=new AA_GenericDatatableTemplate($id,"Gestione pratiche",9,null,array("css"=>"AA_Header_DataTable"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader();
@@ -2151,15 +2335,16 @@ Class AA_GeserModule extends AA_GenericModule
         }
 
         $template->SetColumnHeaderInfo(0,"stato","<div style='text-align: center'>Stato</div>",120,"selectFilter","text","PraticheTable_left");
-        $template->SetColumnHeaderInfo(1,"tipo","<div style='text-align: center'>Tipologia</div>",120,"selectFilter","text","PraticheTable_left");
-        $template->SetColumnHeaderInfo(2,"descrizione","<div style='text-align: center'>Descrizione</div>","fillspace","textFilter","text","PraticheTable_left");
-        $template->SetColumnHeaderInfo(3,"estremi","<div style='text-align: center'>Estremi</div>","fillspace","textFilter","text","PraticheTable");
-        $template->SetColumnHeaderInfo(4,"via","<div style='text-align: center'>Tipo VIA</div>",120,"selectFilter","text","PraticheTable");
-        $template->SetColumnHeaderInfo(5,"societa","<div style='text-align: center'>Societa</div>",120,"selectFilter","text","PraticheTable");
-        $template->SetColumnHeaderInfo(6,"note","<div style='text-align: center'>Note</div>",120,"textFilter","text","PraticheTable");
-        $template->SetColumnHeaderInfo(7,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"PraticheTable");
+        $template->SetColumnHeaderInfo(1,"tipo","<div style='text-align: center'>Tipologia</div>",160,"selectFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(2,"rif_temporali","<div style='text-align: center'>Rif. temporali</div>",200,"textFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(3,"descrizione","<div style='text-align: center'>Descrizione</div>","fillspace","textFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(4,"estremi","<div style='text-align: center'>Estremi</div>","fillspace","textFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(5,"via","<div style='text-align: center'>Tipo VIA</div>",120,"selectFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(6,"societa","<div style='text-align: center'>Ragione sociale</div>",200,"selectFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(7,"note","<div style='text-align: center'>Note</div>","fillspace","textFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(8,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"PraticheTable");
 
-        $template->SetData($documenti_data);
+        $template->SetData($pratiche_data);
 
         return $template;
     }
@@ -2226,6 +2411,16 @@ Class AA_GeserModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
             "data"=>array("title"=>"Potenza:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        //superficie
+        $value=$object->GetProp("Superficie");
+        if(intVal($value)>0) $value.=" mq";
+        $superficie=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Superficie:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
@@ -2309,6 +2504,7 @@ Class AA_GeserModule extends AA_GenericModule
         $riga->AddCol($tipo);
         $riga->AddCol($stato);
         $riga->AddCol($potenza);
+        $riga->AddCol($superficie);
         $riga->AddCol($anno_autorizzazione);
         $riga->AddCol($anno_costruzione);
         $riga->AddCol($anno_esercizio);
@@ -3174,6 +3370,273 @@ Class AA_GeserModule extends AA_GenericModule
         }
     }
 
+    //Task Add new pratica
+    public function Task_AddNewGeserPratica($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        //----------- verify values --------------------
+
+        if($_REQUEST['stato'] != AA_Geser_Const::AA_GESER_STATO_PRATICA_DAISTRUIRE && $_REQUEST['data_inizio']=="")
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la data di inizio",false);
+
+            return false;
+        }
+
+        if($_REQUEST['stato'] == AA_Geser_Const::AA_GESER_STATO_PRATICA_AUTORIZZATA && $_REQUEST['data_fine']=="")
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la data di fine procedimento",false);
+
+            return false;
+        }
+
+        if($_REQUEST['data_fine'] < $_REQUEST['data_inizio'])
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("La data di fine non puo' essere precedente a quella di inizio",false);
+
+            return false;
+        }
+
+        if($_REQUEST['stato'] == AA_Geser_Const::AA_GESER_STATO_PRATICA_NEGATA && $_REQUEST['data_fine']=="")
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la data di fine procedimento",false);
+
+            return false;
+        }
+
+        $pratiche=$object->GetPratiche();
+        $pratica=array(
+            "tipo"=>$_REQUEST['tipo'],
+            "stato"=>$_REQUEST['stato'],
+            "estremi"=>$_REQUEST['estremi'],
+            "descrizione"=>$_REQUEST['descrizione'],
+            "via"=>$_REQUEST['via'],
+            "societa"=>$_REQUEST['societa'],
+            "data_inizio"=>substr($_REQUEST['data_inizio'],0,10),
+            "data_fine"=>substr($_REQUEST['data_fine'],0,10),
+            "note"=>$_REQUEST['note'],
+        );
+        $newId=uniqid();
+        $pratiche[$newId]=$pratica;
+        $_REQUEST["Pratiche"]=json_encode($pratiche);
+        //-----------------------------------------------
+        
+        $object->Parse($_REQUEST);
+
+        if(!$object->Update($this->oUser,true,"Aggiunta pratica - id: ".$newId))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiunta della nuova pratica.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
+    //Task update pratica
+    public function Task_UpdateGeserPratica($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $pratiche=$object->GetPratiche();
+        if(!isset($pratiche[$_REQUEST['id_pratica']]))
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo pratica mancante o non corretto",false);
+
+            return false;
+        }
+        $id_pratica=$_REQUEST['id_pratica'];
+
+        //----------- verify values ---------------------
+        if($_REQUEST['stato'] != AA_Geser_Const::AA_GESER_STATO_PRATICA_DAISTRUIRE && $_REQUEST['data_inizio']=="")
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la data di inizio",false);
+
+            return false;
+        }
+
+        if($_REQUEST['stato'] == AA_Geser_Const::AA_GESER_STATO_PRATICA_AUTORIZZATA && $_REQUEST['data_fine']=="")
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la data di fine procedimento",false);
+
+            return false;
+        }
+
+        if($_REQUEST['stato'] == AA_Geser_Const::AA_GESER_STATO_PRATICA_NEGATA && $_REQUEST['data_fine']=="")
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare la data di fine procedimento",false);
+
+            return false;
+        }
+
+        if($_REQUEST['data_fine'] < $_REQUEST['data_inizio'])
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("La data di fine non puo' essere precedente a quella di inizio",false);
+
+            return false;
+        }
+
+        $pratica=array(
+            "tipo"=>$_REQUEST['tipo'],
+            "stato"=>$_REQUEST['stato'],
+            "estremi"=>$_REQUEST['estremi'],
+            "descrizione"=>$_REQUEST['descrizione'],
+            "via"=>$_REQUEST['via'],
+            "societa"=>$_REQUEST['societa'],
+            "data_inizio"=>substr($_REQUEST['data_inizio'],0,10),
+            "data_fine"=>substr($_REQUEST['data_fine'],0,10),
+            "note"=>$_REQUEST['note'],
+        );
+
+        $pratiche[$id_pratica]=$pratica;
+        $_REQUEST["Pratiche"]=json_encode($pratiche);
+        //-----------------------------------------------
+        
+        $object->Parse($_REQUEST);
+
+        if(!$object->Update($this->oUser,true,"Modifica pratica - id: ".$id_pratica))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento della pratica id: ".$id_pratica,false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
+    //Task delete pratica
+    public function Task_DeleteGeserPratica($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $pratiche=$object->GetPratiche();
+        if(!isset($pratiche[$_REQUEST['id_pratica']]))
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo pratica mancante o non corretto",false);
+
+            return false;
+        }
+        $id_pratica=$_REQUEST['id_pratica'];
+        unset($pratiche[$id_pratica]);
+        $_REQUEST["Pratiche"]=json_encode($pratiche);
+        //-----------------------------------------------
+        
+        $object->Parse($_REQUEST);
+
+        if(!$object->Update($this->oUser,true,"Elimina pratica - id: ".$id_pratica))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'eliminazione della pratica id: ".$id_pratica,false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
     //Task aggiunta multipla
     public function Task_GetGeserAddNewMultiDlg($task)
     {
@@ -3358,6 +3821,183 @@ Class AA_GeserModule extends AA_GenericModule
         $task->SetContent($this->Template_GetGeserAddNewAllegatoDlg($object),true);
         return true;
     }
+
+    //Task aggiungi allegato
+    public function Task_GetGeserAddNewPraticaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGeserAddNewPraticaDlg($object),true);
+        return true;
+    }
+
+    //Task modifica pratica esistente
+    public function Task_GetGeserModifyPraticaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $pratiche=$object->GetPratiche();
+        if(!isset($pratiche[$_REQUEST['id_pratica']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo pratica non presente",false);
+
+            return false;
+        }
+
+        $pratica=$pratiche[$_REQUEST['id_pratica']];
+        $pratica['id']=$_REQUEST['id_pratica'];
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGeserModifyPraticaDlg($object,$pratica),true);
+        return true;
+    }
+
+    //Task modifica pratica esistente
+    public function Task_GetGeserCopyPraticaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $pratiche=$object->GetPratiche();
+        if(!isset($pratiche[$_REQUEST['id_pratica']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo pratica non presente",false);
+
+            return false;
+        }
+
+        $pratica=$pratiche[$_REQUEST['id_pratica']];
+        $pratica['id']=$_REQUEST['id_pratica'];
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGeserCopyPraticaDlg($object,$pratica),true);
+        return true;
+    }
+
+    //Task elimina pratica esistente
+    public function Task_GetGeserTrashPraticaDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Geser($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $pratiche=$object->GetPratiche();
+        if(!isset($pratiche[$_REQUEST['id_pratica']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo pratica non presente",false);
+
+            return false;
+        }
+
+        $pratica=$pratiche[$_REQUEST['id_pratica']];
+        $pratica['id']=$_REQUEST['id_pratica'];
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGeserTrashPraticaDlg($object,$pratica),true);
+        return true;
+    }
+    
     
     //Task aggiorna allegato
     public function Task_UpdateGeserAllegato($task)
@@ -4043,219 +4683,5 @@ Class AA_GeserPublicReportTemplateView extends AA_GenericObjectTemplateView
         $oggetto->SetStyle('width:19%; font-size: .6em; padding: .1em');
         $oggetto->SetText($object->GetProp("Estremi"));
         #-----------------------------------------------        
-    }
-}
-
-
-//Oggetto criteri e modalita
-Class AA_Geser_Criteri extends AA_GenericParsableDbObject
-{
-    protected static $dbDataTable=AA_Geser_Const::AA_GESER_DBTABLE_CRITERI;
-    protected static $ObjectClass=__CLASS__;
-    public function __construct($params=null,$user=null)
-    {
-        if(!($user instanceof AA_User))
-        {
-            $user=AA_User::GetCurrentUser();
-        }
-
-        $struct=$user->GetStruct();
-        $user_struct_level_0=intVal($struct->GetAssessorato(true)*1000000);
-        $user_struct_level_1=intVal($struct->GetDirezione(true)*1000);
-        $user_struct_level_2=intVal($struct->GetServizio(true));
-
-        $this->aProps['id']=0;
-        $this->aProps['estremi']="";
-        $this->aProps['anno']="";
-        $this->aProps['tipo']=0;
-        $this->aProps['categorie']=0;
-        $this->aProps['descrizione']="";
-        $this->aProps['url']="";
-        $this->aProps['file']="";
-        $this->aProps['struttura']=$user_struct_level_0+$user_struct_level_1+$user_struct_level_2;
-
-        if(is_array($params))
-        {
-            $this->Parse($params);
-        }
-    }
-
-    public function Parse($params=null, $user=null)
-    {
-        if(is_array($params))
-        {
-            if(isset($params['categorie'])) $params['categorie']=intVal($params['categorie']);
-        }
-        
-        return parent::Parse($params);
-    }
-
-    static public function Search($params=null)
-    {
-        if(!$params)
-        {
-            $params=array();
-        }
-
-        $params['ORDER']=array("anno DESC","id DESC");
-
-        return parent::Search($params);
-    }
-
-    public function Load($id=0,$user=null)
-    {
-        $data=$this->LoadDataFromDb($id);
-        if(is_array($data))
-        {
-            $this->Parse($data);
-            return true;
-        }
-
-        return false;
-    }
-
-    public function Update($params=null,$user=null)
-    {
-        if(!($user instanceof AA_User))
-        {
-            $user=AA_User::GetCurrentUser();
-        }
-
-        if(!$user->IsValid())
-        {
-            AA_Log::Log(__METHOD__." - Utente non valido.", 100);
-            return false;
-        }
-
-        $struct=$user->GetStruct();
-
-        if($this->aProps['id']>0)
-        {
-            $user_struct_level_0=intVal($struct->GetAssessorato(true));
-            $user_struct_level_1=intVal($struct->GetDirezione(true));
-            $user_struct_level_2=intVal($struct->GetServizio(true));
-            if($user_struct_level_0 > 0)
-            {
-                if($user_struct_level_0-intVal($this->aProps['struttura']*0.000001) != 0)
-                {
-                    AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
-                    return false;
-                }            
-            }
-    
-            if($user_struct_level_1 > 0)
-            {
-                if($user_struct_level_1-intVal(($this->aProps['struttura']*0.001-$user_struct_level_0*1000) != 0))
-                {
-                    AA_Log::Log(__METHOD__." - Direzione differente.", 100);
-                    return false;
-                }            
-            }
-    
-            if($user_struct_level_2 > 0)
-            {
-                if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
-                {
-                    AA_Log::Log(__METHOD__." - Servizio differente.", 100);
-                    return false;
-                }            
-            }
-    
-            if(is_array($params))
-            {
-                if(isset($params['id'])) unset($params['id']);
-    
-                if(isset($params['struttura']))
-                {
-                    if($user_struct_level_0 > 0)
-                    {
-                        if(($user_struct_level_0-$params['struttura']*0.000001) != 0)
-                        {
-                           $params['struttura']=$this->aProps['struttura'];
-                        }            
-                    }
-    
-                    if($user_struct_level_1 > 0)
-                    {
-                        if($user_struct_level_1-intVal(($params['struttura']*0.001-$user_struct_level_0*1000)) != 0)
-                        {
-                            $params['struttura']=$this->aProps['struttura'];
-                        }            
-                    }
-    
-                    if($user_struct_level_2 > 0)
-                    {
-                        if($user_struct_level_2-intVal($params['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
-                        {
-                            $params['struttura']=$this->aProps['struttura'];
-                        }            
-                    }
-                }
-            }
-        }
-        else
-        {
-            $params['struttura']=str_pad($struct->GetAssessorato(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetDirezione(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetServizio(true),3,"0",STR_PAD_LEFT);
-        }
-
-        return parent::Update($params, $user);
-    }
-
-    public function Delete($user=null)
-    {
-        if(!($user instanceof AA_User))
-        {
-            $user=AA_User::GetCurrentUser();
-        }
-
-        if(!$user->IsValid())
-        {
-            AA_Log::Log(__METHOD__." - Utente non valido.", 100);
-            return false;
-        }
-
-        $struct=$user->GetStruct();
-        $user_struct_level_0=intVal($struct->GetAssessorato(true));
-        $user_struct_level_1=intVal($struct->GetDirezione(true));
-        $user_struct_level_2=intVal($struct->GetServizio(true));
-        if($user_struct_level_0 > 0)
-        {
-            if($user_struct_level_0-intVal($this->aProps['struttura']*0.000001) != 0)
-            {
-                AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
-                return false;
-            }            
-        }
-
-        if($user_struct_level_1 > 0)
-        {
-            if($user_struct_level_1-intVal(($this->aProps['struttura']*0.001-$user_struct_level_0*1000) != 0))
-            {
-                AA_Log::Log(__METHOD__." - Direzione differente.", 100);
-                return false;
-            }            
-        }
-
-        if($user_struct_level_2 > 0)
-        {
-            if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
-            {
-                AA_Log::Log(__METHOD__." - Servizio differente.", 100);
-                return false;
-            }            
-        }
-
-        $storage=AA_Storage::GetInstance($user);
-        if($storage->IsValid())
-        {
-            if($this->GetProp('file') !="")
-            {
-                $storage->DelFile($this->GetProp('file'));
-            }
-        }
-        else AA_Log::Log(__METHOD__." - storage non inizializzato. file non eliminato.",100);
-
-
-        return parent::Delete();
     }
 }
