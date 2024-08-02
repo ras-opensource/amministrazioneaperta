@@ -904,7 +904,7 @@ Class AA_GeserModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
 
         //localita'
-        $section->AddTextField("Geo_localita","Localita",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
+        $section->AddTextField("Geo_localita","Ubicazione",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
 
         //comune
         $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>38,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
@@ -2040,7 +2040,7 @@ Class AA_GeserModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
 
         //localita'
-        $section->AddTextField("Geo_localita","Localita",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
+        $section->AddTextField("Geo_localita","Ubicazione",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
 
         //comune
         $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>38,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
@@ -2486,7 +2486,7 @@ Class AA_GeserModule extends AA_GenericModule
         $value = $geolocalizzazione['localita'];
         $localita=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Localita':","value"=>$value)
+            "data"=>array("title"=>"Ubicazione:","value"=>$value)
         ));
         $value = $geolocalizzazione['comune'];
         $comune=new AA_JSON_Template_Template("",array(
