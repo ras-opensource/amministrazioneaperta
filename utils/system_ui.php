@@ -2722,6 +2722,15 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
     {
         return $this->sAddNewBtnTooltip;
     }
+    protected $sAddNewBtnCss='';
+    public function SetAddNewBtnCss($val)
+    {
+        $this->sAddNewBtnCss=$val;
+    }
+    public function GetAddNewBtnCss()
+    {
+        return $this->sAddNewBtnCss;
+    }
     //------------------------------------
 
     //header
@@ -2813,6 +2822,11 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
         else
         {
             $toolbar->addElement(new AA_JSON_Template_Generic(""));
+            if($this->sTitle !="")
+            {
+                $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"label","gravity"=>5,"label"=>$this->sTitle,"align"=>"center")));
+                $toolbar->addElement(new AA_JSON_Template_Generic(""));
+            }
         }
 
         if($this->bEnableAddNew)
@@ -2838,17 +2852,13 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
                  "type"=>"icon",
                  "icon"=>$this->sAddNewBtnIcon,
                  "label"=>$this->sAddNewBtnLabel,
-                 "css"=>"webix_primary",
+                 "css"=>$this->sAddNewBtnCss,
                  "align"=>"right",
                  "width"=>120,
                  "tooltip"=>$this->sAddNewBtnTooltip,
                  "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sAddNewTask."\"".$params."},AA_MainApp.curModule.id);"
              ));
              $toolbar->AddElement($modify_btn);
-        }
-        else
-        {
-            $toolbar->addElement(new AA_JSON_Template_Generic(""));
         }
 
         return $toolbar;

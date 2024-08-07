@@ -835,9 +835,31 @@ class AA_Organismi extends AA_Object
      * Summary of GetPartecipazione
      * @return array|string
      */
-    public function GetPartecipazione()
+    public function GetPartecipazione($bAsObject=false)
     {
-        return $this->sPartecipazione;
+        if(!$bAsObject) return $this->sPartecipazione;
+        else
+        {
+            $partecipazione=json_decode($this->sPartecipazione,true);
+            if($partecipazione) return $partecipazione;
+            else 
+            {
+                if($this->sPartecipazione!="")
+                {
+                    $data=explode("/",$this->sPartecipazione);
+                    $partecipazione=array(
+                        "percentuale"=>str_replace(",",".",str_replace(".","",$data[1])),
+                        "euro"=>str_replace(",",".",str_replace(".","",$data[0]))
+                    );
+
+                    return $partecipazione;
+                }
+                else
+                {
+                    return array("percentuale"=>0,"euro"=>0);
+                }
+            }
+        }
     }
     
     //Forma societaria
@@ -1976,10 +1998,10 @@ class AA_Organismi extends AA_Object
         }
 
         //Verifica la sintassi della partecipazione
-        if(isset($data["sPartecipazione"]))
-        {
-            $data["sPartecipazione"]=preg_replace("/[€|\ |A-Za-z_]/", "",$data["sPartecipazione"]);
-        }        
+        //if(isset($data["sPartecipazione"]))
+        //{
+        //    $data["sPartecipazione"]=preg_replace("/[€|\ |A-Za-z_]/", "",$data["sPartecipazione"]);
+        //}        
 
         if(!parent::ParseData($data,$user))
         {

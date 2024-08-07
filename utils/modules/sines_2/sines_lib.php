@@ -13,6 +13,7 @@ Class AA_SinesModule extends AA_GenericModule
 {
     const AA_UI_PREFIX="AA_Sines";
     const AA_UI_SCADENZARIO_BOX="Scadenzario_Content_Box";
+    const AA_UI_TEMPLATE_PARTECIPAZIONI="Partecipazioni";
     
     //Id modulo
     const AA_ID_MODULE="AA_MODULE_SINES";
@@ -1885,6 +1886,11 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $form_data[$id_obj]=$object->GetProp($id_obj);
         }
+
+        $partecipazione=$object->GetPartecipazione(true);
+        
+        $form_data["Partecipazione_percentuale"]=AA_Utils::number_format($partecipazione['percentuale'],2,",",".");
+        $form_data["Partecipazione_euro"]=AA_Utils::number_format($partecipazione['euro'],2,",",".");
         
         $wnd=new AA_GenericFormDlg($id, "Modifica i dati generali", $this->id,$form_data,$form_data);
         
@@ -1893,7 +1899,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(1080);
-        $wnd->SetHeight(720);
+        $wnd->SetHeight(800);
         
         //Descrizione
         $wnd->AddTextField("sDescrizione","Denominazione",array("required"=>true, "bottomLabel"=>"*Denominazione dell'organismo", "placeholder"=>"inserisci qui la denominazione dell'organismo"));
@@ -1958,13 +1964,17 @@ Class AA_SinesModule extends AA_GenericModule
         //Partecipazione
         if(($object->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0)
         {
-            //partecipazione
-            $field_notes=htmlentities("*Indicare solo valori numerici nel formato: <valore in euro delle quote possedute>/<dato percentuale delle quote possedute>");
-            $field_notes.="<br>es: 1.000.000/15,25 (1 milione di euro pari al 15,25 percento delle quote totali)";
-            $label="Partecipazione";
-            $wnd->AddTextField("sPartecipazione",$label,array("bottomLabel"=>"$field_notes","bottomPadding"=>40, "placeholder"=>"Riporta qui la partecipazione"));
+            $section=new AA_FieldSet("","Partecipazione diretta RAS");
             
-            //$wnd->AddSpacer(false);
+            //partecipazione
+            $field_notes="*Quota di partecipazione diretta RAS in percentuale.<br>Indicare 0 se la RAS non detiene direttamente delle quote di partecipazione.";
+            $label="Quota %";
+            $section->AddTextField("Partecipazione_percentuale",$label,array("bottomLabel"=>$field_notes, "required"=>true,"validateFunction"=>"IsNumber", "bottomPadding"=>48, "placeholder"=>"es. 10,05"));
+            $label="Quota &euro;";
+            $field_notes="*Quota di partecipazione diretta RAS in euro.<br>Indicare 0 se la RAS non detiene direttamente delle quote di partecipazione.";
+            $section->AddTextField("Partecipazione_euro",$label,array("bottomLabel"=>$field_notes, "required"=>true,"validateFunction"=>"IsNumber", "bottomPadding"=>48, "placeholder"=>"es. 123456,78"),false);
+            
+            $wnd->AddGenericObject($section);
         }
         
         //Funzioni
@@ -2776,12 +2786,14 @@ Class AA_SinesModule extends AA_GenericModule
             $detail_options[]=array("id"=>$id."Organigramma_Tab"."_$id_org","value"=>"Organigrammi");
         }
 
+        $detail_options[]=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PARTECIPAZIONI."_".$organismo->GetId(),"value"=>"Partecipazioni");
+
         $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
             "view"=>"tabbar",
             "borderless"=>true,
             "value"=>$id."Generale_Tab"."_$id_org",
             "css"=>"AA_Header_TabBar",
-            "width"=>500,
+            "width"=>600,
             "multiview"=>true,
             "view_id"=>$id."Multiview"."_$id_org",
             "options"=>$detail_options
@@ -2799,7 +2811,7 @@ Class AA_SinesModule extends AA_GenericModule
         $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar"."_$id_org",array(
             "type"=>"clean",
             "css"=>array("background"=>"#ebf0fa","border-color"=>"transparent"),
-            "width"=>500
+            "width"=>600
         ));
         
         //Inserisce il pulsante di pubblicazione
@@ -2955,6 +2967,10 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $multiview->addCell($this->TemplateDettaglio_Organigramma_Tab($organismo));
         }
+
+        $canModify=false;
+        if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
+        $multiview->addCell($this->TemplateDettaglio_Partecipazioni_Tab($organismo,$canModify));
         
         $content->AddRow($multiview);
         
@@ -3081,16 +3097,15 @@ Class AA_SinesModule extends AA_GenericModule
         ));
         
         //partecipazione
-        $value=$object->GetPartecipazione();
-        if($value=="" || $value=="0") $value="indiretta";
+        $value=$object->GetPartecipazione(true);
+        if($value['percentuale']==0 && $value['euro']=="0") $value="indiretta";
         else
         {
-            $part=explode("/",$value);
-            $value="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
+            $value="€ ".AA_Utils::number_format($value['euro'],2,",",".")." pari al ".AA_Utils::number_format($value['percentuale'],2,",",".")."% delle quote totali";
         }
         $partecipazione=new AA_JSON_Template_Template($id."_Partecipazione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Partecipazione:","value"=>$value)
+            "data"=>array("title"=>"Partecipazione diretta RAS:","value"=>$value)
         ));
         
         //Stato
@@ -3151,6 +3166,9 @@ Class AA_SinesModule extends AA_GenericModule
         
         $last_row->AddCol($riga);
         
+        //partecipazioni
+        //if(($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $last_row->AddCol($this->TemplateDettaglio_Partecipazioni($object, $canModify));
+
         //documenti
         $last_row->AddCol($this->TemplateDettaglio_Provvedimenti($object, $id, $canModify));
         
@@ -4337,6 +4355,116 @@ Class AA_SinesModule extends AA_GenericModule
         return $layout;
     }
 
+    //Template dettaglio partecipazioni
+    public function TemplateDettaglio_Partecipazioni($object=null,$canModify=false)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PARTECIPAZIONI;
+    
+        #partecipazioni----------------------------------
+        $partecipazione=$object->GetPartecipazione(true);
+        $pratiche_data=array();
+        foreach($partecipazione['partecipate'] as $id_org=>$curPartecipazione)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSinesTrashPartecipazioneDlg", params: [{id:"'.$object->GetId().'"},{id_org:"'.$id_org.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSinesModifyPertecipazioneDlg", params: [{id:"'.$object->GetId().'"},{id_org:"'.$id_org.'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="&nbsp;";
+
+            $pratiche_data[]=array("id"=>$id_org,"organismo"=>$curPartecipazione['organismo'],"percentuale"=>AA_Utils::number_format($curPartecipazione['percentuale'],2,",","."),"euro"=>AA_Utils::number_format($curPartecipazione['euro'],2,",","."),"ops"=>$ops);
+        }
+
+        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Partecipazioni</span>",4,array("css"=>"AA_PartecipazioniHeader_DataTable"));
+        $template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader();
+        $template->SetHeaderHeight(38);
+
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetSinesAddNewPartecipazioneDlg");
+            $template->SetAddNewTaskParams(array("postParams"=>array("id"=>$object->GetId())));
+        }
+
+        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: left'>Denominazione</div>","fillSpace",null,"text","SinesTable_left");
+        $template->SetColumnHeaderInfo(1,"percentuale","<div style='text-align: center'>%</div>",120,null,"int","SinesTable");
+        $template->SetColumnHeaderInfo(2,"euro","<div style='text-align: center'>&euro;</div>",120,null,"int","SinesTable_right");
+        $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"SinesTable");
+
+        $template->SetData($pratiche_data);
+
+        return $template;
+    }
+
+    //Template dettaglio partecipazioni
+    public function TemplateDettaglio_Partecipazioni_Tab($object=null,$canModify=false)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PARTECIPAZIONI."_".$object->GetId();
+    
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+
+        #partecipazioni passive----------------------------------
+        $partecipazione=$object->GetPartecipazione(true);
+        $pratiche_data=array();
+        foreach($partecipazione['partecipazioni'] as $id_org=>$curPartecipazione)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSinesTrashPartecipazioneDlg", params: [{id:"'.$object->GetId().'"},{id_org:"'.$id_org.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSinesModifyPertecipazioneDlg", params: [{id:"'.$object->GetId().'"},{id_org:"'.$id_org.'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="&nbsp;";
+
+            $pratiche_data[]=array("id"=>$id_org,"organismo"=>$curPartecipazione['organismo'],"percentuale"=>AA_Utils::number_format($curPartecipazione['percentuale'],2,",","."),"euro"=>AA_Utils::number_format($curPartecipazione['euro'],2,",","."),"ops"=>$ops);
+        }
+
+        $template=new AA_GenericDatatableTemplate($id."_passive","<span style='color:#003380'>Organismi che detengono quote di partecipazione (partecipazioni passive)</span>",4,array("css"=>"AA_PartecipazioniHeader_DataTable"));
+        //$template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader();
+        $template->SetHeaderHeight(38);
+
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetSinesAddNewPartecipazioneDlg");
+            $template->SetAddNewTaskParams(array("postParams"=>array("id"=>$object->GetId())));
+        }
+
+        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: left'>Denominazione</div>","fillSpace",null,"text","SinesTable_left");
+        $template->SetColumnHeaderInfo(1,"percentuale","<div style='text-align: center'>%</div>",120,null,"int","SinesTable");
+        $template->SetColumnHeaderInfo(2,"euro","<div style='text-align: center'>&euro;</div>",120,null,"int","SinesTable_right");
+        $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"SinesTable");
+
+        $template->SetData($pratiche_data);
+
+        $layout->AddCol($template);
+
+        //Attive
+        $template=new AA_GenericDatatableTemplate($id."_attive","<span style='color:#003380'>Organismi di cui detiene quote di partecipazione (partecipazioni attive)</span>",4,array("css"=>"AA_PartecipazioniHeader_DataTable AA_PartecipazioniBoxBorderLeft"));
+        //$template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader();
+        $template->SetHeaderHeight(38);
+
+        if($canModify) 
+        {
+            $template->DisableAddNew();
+        }
+
+        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: left'>Denominazione</div>","fillSpace",null,"text","SinesTable_left");
+        $template->SetColumnHeaderInfo(1,"percentuale","<div style='text-align: center'>%</div>",120,null,"int","SinesTable");
+        $template->SetColumnHeaderInfo(2,"euro","<div style='text-align: center'>&euro;</div>",120,null,"int","SinesTable_right");
+        $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"SinesTable");
+
+        $template->SetData(array());
+
+        $layout->AddCol($template);
+
+        return $layout;
+    }
+
     //Template dettaglio provvedimenti
     public function TemplateDettaglio_Provvedimenti($object=null,$id="", $canModify=false)
     {
@@ -4976,6 +5104,41 @@ Class AA_SinesModule extends AA_GenericModule
             return false;            
         }
         
+        $partecipazione=array();
+
+        if(isset($_REQUEST['Partecipazione_percentuale']) && $_REQUEST['Partecipazione_percentuale'] == 0 && (!isset($_REQUEST['Partecipazione_euro']) || $_REQUEST['Partecipazione_euro'] !=0))
+        {
+            $task->SetError("Incongruenza tra le quote di partecipazione espresse in percentuale e quelle espresse in euro.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Incongruenza tra le quote di partecipazione espresse in percentuale e quelle espresse in euro.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        if(isset($_REQUEST['Partecipazione_euro']) && $_REQUEST['Partecipazione_euro'] == 0 && (!isset($_REQUEST['Partecipazione_percentuale']) || $_REQUEST['Partecipazione_percentuale'] !=0))
+        {
+            $task->SetError("Incongruenza tra le quote di partecipazione espresse in percentuale e quelle espresse in euro.");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Incongruenza tra le quote di partecipazione espresse in percentuale e quelle espresse in euro.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if(isset($_REQUEST['Partecipazione_percentuale']) && $_REQUEST['Partecipazione_percentuale'] !="")
+        {
+            $partecipazione['percentuale']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Partecipazione_percentuale'])),2,".");
+        }
+        if(isset($_REQUEST['Partecipazione_euro']) && $_REQUEST['Partecipazione_euro'] !="")
+        {
+            $partecipazione['euro']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Partecipazione_euro'])),2,".");
+        }
+
+        if(sizeof($partecipazione)>0)
+        {
+            //AA_Log::Log(__METHOD__." partecipazione: ".print_r($partecipazione,true),100);
+            $_REQUEST['sPartecipazione']=json_encode($partecipazione);
+        }
+
         //Aggiorna i dati
         if(!$organismo->ParseData($_REQUEST))
         {

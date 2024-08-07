@@ -2322,7 +2322,9 @@ Class AA_GeserModule extends AA_GenericModule
             $pratiche_data[]=array("id"=>$id_pratica,"rif_temporali"=>"<div style='display:flex; flex-direction:column; justify-content:center'><span><b>Data inizio</b>: ".$curPratica['data_inizio']."</span><span><b>Data fine</b>: ".$curPratica['data_fine']."</span></div>","stato"=>$stati_pratica[$curPratica['stato']],"tipo"=>$tipo_pratica[$curPratica['tipo']],"estremi"=>$curPratica['estremi'],"descrizione"=>$curPratica['descrizione'],"via"=>$tipo_via[$curPratica['via']],"societa"=>$curPratica['societa'],"note"=>$curPratica['note'],"ops"=>$ops);
         }
 
-        $template=new AA_GenericDatatableTemplate($id,"Gestione pratiche",9,null,array("css"=>"AA_Header_DataTable"));
+        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Gestione pratiche</span>",9,null,array("css"=>"AA_Header_DataTable"));
+        $template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
+        $template->SetAddNewBtnCss("webix_primary");
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader();
@@ -2530,11 +2532,11 @@ Class AA_GeserModule extends AA_GenericModule
         //------------------------------------------------------------------------
       
         //-------------------- Pratiche --------------------------------------
-        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Gestione Pratiche</span>", "align"=>"center")));
-        $toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        $layout->AddRow($toolbar);
+        //$toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Gestione Pratiche</span>", "align"=>"center")));
+        //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
+        //$layout->AddRow($toolbar);
         $layout->AddRow($this->TemplateDettaglio_Pratiche($object));
         //------------------------------------------------------------------------
 
