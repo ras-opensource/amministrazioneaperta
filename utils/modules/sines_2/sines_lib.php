@@ -65,6 +65,14 @@ Class AA_SinesModule extends AA_GenericModule
         $taskManager->RegisterTask("GetOrganismoTrashProvvedimentoDlg");
         $taskManager->RegisterTask("TrashOrganismoProvvedimento");
         
+        //partecipazioni
+        $taskManager->RegisterTask("GetSinesAddNewPartecipazioneDlg");
+        $taskManager->RegisterTask("AddNewSinesPartecipazione");
+        $taskManager->RegisterTask("GetSinesModifyPartecipazioneDlg");
+        $taskManager->RegisterTask("UpdateSinesPartecipazione");
+        $taskManager->RegisterTask("GetSinesTrashPartecipazioneDlg");
+        $taskManager->RegisterTask("TrashSinesPartecipazione");
+
         //Generico
         $taskManager->RegisterTask("GetTipoBilanci");
         
@@ -1780,6 +1788,50 @@ Class AA_SinesModule extends AA_GenericModule
         
         return $wnd;
     }
+
+    //Template dlg trash bilancio
+    public function Template_GetSinesTrashPartecipazioneDlg($object=null,$idOrgPart=null)
+    {
+        $id=$this->id."_TrashPartecipazione_Dlg".uniqid();
+        $tabledata=array();
+        $form_data['id_org']=$idOrgPart;
+        $partecipazione=$object->GetPartecipazione(true);
+        $tabledata[]=array("Denominazione"=>$partecipazione['partecipazioni'][$idOrgPart]['denominazione']);
+
+        $wnd=new AA_GenericFormDlg($id, "Rimuovi partecipazione", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(320);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("autoheight"=>true,"template"=>"<p>Il seguente organismo partecipante verra' rimosso dalle partecipazioni,<br><b>vuoi procedere?</b></p>")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "autoConfig"=>true,
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("TrashSinesPartecipazione");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        
+        return $wnd;
+    }
     
     //Template dlg trash dato contabile
     public function Template_GetOrganismoTrashDatoContabileDlg($object=null,$dato_contabile=null)
@@ -2200,6 +2252,117 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
         $wnd->SetSaveTask("AddNewOrganismoIncarico");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi partecipazione
+    public function Template_GetSinesAddNewPartecipazioneDlg($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_GetSinesAddNewPartecipazioneDlg_".uniqid();
+        
+        if(!($object instanceof AA_Organismi)) return new AA_GenericWindowTemplate($id, "Aggiungi partecipazione", $this->id);
+
+        $form_data=array();
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi una nuova partecipazione", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(160);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(640);
+        
+        //Lista organismi partecipabili
+        $organismi=$object->GetListaOrganismiPartecipabili();
+
+        //organismo
+        $options=array();
+        foreach($organismi as $key=>$val)
+        {
+            $options[]=array("id"=>$key,"value"=>$val);
+        }
+        $wnd->AddSelectField("organismo","Organismo",array("required"=>true,"validateFunction"=>"IsSelected","tooltip"=>"Seleziona l'organismo.","options"=>$options));
+
+        $section=new AA_FieldSet("","Quote di partecipazione");
+            
+        //partecipazione
+        $field_notes="*Quota di partecipazione espressa in percentuale.";
+        $label="Quota %";
+        $section->AddTextField("Partecipazione_percentuale",$label,array("bottomLabel"=>$field_notes, "required"=>true,"validateFunction"=>"IsNumber", "bottomPadding"=>48, "placeholder"=>"es. 10,05"));
+        $label="Quota &euro;";
+        $field_notes="*Quota di partecipazione espressa in euro.";
+        $section->AddTextField("Partecipazione_euro",$label,array("bottomLabel"=>$field_notes, "required"=>true,"validateFunction"=>"IsNumber", "bottomPadding"=>48, "placeholder"=>"es. 123456,78"),false);
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("AddNewSinesPartecipazione");
+        
+        return $wnd;
+    }
+
+    //Template dlg modifica partecipazione
+    public function Template_GetSinesModifyPartecipazioneDlg($object=null,$idOrgPart=0)
+    {
+        $id=static::AA_UI_PREFIX."_GetSinesModifyPartecipazioneDlg_".uniqid();
+        
+        if(!($object instanceof AA_Organismi)) return new AA_GenericWindowTemplate($id, "Modifica partecipazione", $this->id);
+
+        $form_data=array();
+        $form_data['organismo']=$idOrgPart;
+
+        $partecipazione=$object->GetPartecipazione(true);
+        $form_data['Partecipazione_percentuale']=AA_Utils::number_format($partecipazione['partecipazioni'][$idOrgPart]['percentuale'],2,",",".");
+        $form_data['Partecipazione_euro']=AA_Utils::number_format($partecipazione['partecipazioni'][$idOrgPart]['euro'],2,",",".");
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        
+        $wnd=new AA_GenericFormDlg($id, "Modifica una partecipazione esistente", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(160);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(320);
+        
+        //Lista organismi partecipabili
+        $organismoPartecipante=new AA_Organismi($idOrgPart,$this->oUser);
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<div>Modifica le quote di partecipazione per l'organismo partecipante: <p><b>".$organismoPartecipante->GetDenominazione()."</b></p></div>")));
+        
+        //organismo
+        //$options=array("id"=>);
+        //foreach($organismi as $key=>$val)
+        //{
+        //    if($id > 0) $options[]=array("id"=>$key,"value"=>$val);
+        //}
+        //$wnd->AddSelectField("organismo","Organismo",array("required"=>true,"validateFunction"=>"IsSelected","tooltip"=>"Seleziona l'organismo.","options"=>$options));
+
+        $section=new AA_FieldSet("","Quote di partecipazione");
+            
+        //partecipazione
+        $field_notes="*Quota di partecipazione espressa in percentuale.";
+        $label="Quota %";
+        $section->AddTextField("Partecipazione_percentuale",$label,array("bottomLabel"=>$field_notes, "required"=>true,"validateFunction"=>"IsNumber", "bottomPadding"=>48, "placeholder"=>"es. 10,05"));
+        $label="Quota &euro;";
+        $field_notes="*Quota di partecipazione espressa in euro.";
+        $section->AddTextField("Partecipazione_euro",$label,array("bottomLabel"=>$field_notes, "required"=>true,"validateFunction"=>"IsNumber", "bottomPadding"=>48, "placeholder"=>"es. 123456,78"),false);
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId()));
+        $wnd->SetSaveTask("UpdateSinesPartecipazione");
         
         return $wnd;
     }
@@ -4411,11 +4574,11 @@ Class AA_SinesModule extends AA_GenericModule
         {
             //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
             $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSinesTrashPartecipazioneDlg", params: [{id:"'.$object->GetId().'"},{id_org:"'.$id_org.'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSinesModifyPertecipazioneDlg", params: [{id:"'.$object->GetId().'"},{id_org:"'.$id_org.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSinesModifyPartecipazioneDlg", params: [{id:"'.$object->GetId().'"},{id_org:"'.$id_org.'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="&nbsp;";
 
-            $pratiche_data[]=array("id"=>$id_org,"organismo"=>$curPartecipazione['organismo'],"percentuale"=>AA_Utils::number_format($curPartecipazione['percentuale'],2,",","."),"euro"=>AA_Utils::number_format($curPartecipazione['euro'],2,",","."),"ops"=>$ops);
+            $pratiche_data[]=array("id"=>$id_org,"denominazione"=>$curPartecipazione['denominazione'],"percentuale"=>AA_Utils::number_format($curPartecipazione['percentuale'],2,",","."),"euro"=>AA_Utils::number_format($curPartecipazione['euro'],2,",","."),"ops"=>$ops);
         }
 
         $template=new AA_GenericDatatableTemplate($id."_passive","<span style='color:#003380'>Organismi che detengono quote di partecipazione (partecipazioni passive)</span>",4,array("css"=>"AA_PartecipazioniHeader_DataTable"));
@@ -4431,17 +4594,22 @@ Class AA_SinesModule extends AA_GenericModule
             $template->SetAddNewTaskParams(array("postParams"=>array("id"=>$object->GetId())));
         }
 
-        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: left'>Denominazione</div>","fillSpace",null,"text","SinesTable_left");
-        $template->SetColumnHeaderInfo(1,"percentuale","<div style='text-align: center'>%</div>",120,null,"int","SinesTable");
-        $template->SetColumnHeaderInfo(2,"euro","<div style='text-align: center'>&euro;</div>",120,null,"int","SinesTable_right");
-        $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"SinesTable");
+        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: left'>Denominazione</div>","fillspace",null,"text","PartecipazioniTable_left");
+        $template->SetColumnHeaderInfo(1,"percentuale","<div style='text-align: center'>%</div>",120,null,"int","PartecipazioniTable_right");
+        $template->SetColumnHeaderInfo(2,"euro","<div style='text-align: center'>&euro;</div>",120,null,"int","PartecipazioniTable_right");
+        $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"PartecipazioniTable");
 
         $template->SetData($pratiche_data);
-
         $layout->AddCol($template);
 
         //Attive
-        $template=new AA_GenericDatatableTemplate($id."_attive","<span style='color:#003380'>Organismi di cui detiene quote di partecipazione (partecipazioni attive)</span>",4,array("css"=>"AA_PartecipazioniHeader_DataTable AA_PartecipazioniBoxBorderLeft"));
+        $orgPartecipati=$object->GetListaOrganismiPartecipati();
+        $pratiche_data=array();
+        foreach($orgPartecipati as $id_org=>$curPartecipazione)
+        {
+            $pratiche_data[]=array("id"=>$id_org,"denominazione"=>$curPartecipazione['denominazione'],"percentuale"=>AA_Utils::number_format($curPartecipazione['partecipazione']['partecipazioni'][$object->GetId()]['percentuale'],2,",","."),"euro"=>AA_Utils::number_format($curPartecipazione['partecipazione']['partecipazioni'][$object->GetId()]['euro'],2,",","."),"ops"=>$ops);
+        }
+        $template=new AA_GenericDatatableTemplate($id."_attive","<span style='color:#003380'>Organismi di cui detiene quote di partecipazione (partecipazioni attive)</span>",3,array("css"=>"AA_PartecipazioniHeader_DataTable AA_PartecipazioniBoxBorderLeft"));
         //$template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
@@ -4453,12 +4621,11 @@ Class AA_SinesModule extends AA_GenericModule
             $template->DisableAddNew();
         }
 
-        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: left'>Denominazione</div>","fillSpace",null,"text","SinesTable_left");
-        $template->SetColumnHeaderInfo(1,"percentuale","<div style='text-align: center'>%</div>",120,null,"int","SinesTable");
-        $template->SetColumnHeaderInfo(2,"euro","<div style='text-align: center'>&euro;</div>",120,null,"int","SinesTable_right");
-        $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"SinesTable");
+        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: left'>Denominazione</div>","fillspace",null,"text","PartecipazioniTable_left");
+        $template->SetColumnHeaderInfo(1,"percentuale","<div style='text-align: center'>%</div>",120,null,"int","PartecipazioniTable");
+        $template->SetColumnHeaderInfo(2,"euro","<div style='text-align: center'>&euro;</div>",120,null,"int","PartecipazioniTable_right");
 
-        $template->SetData(array());
+        $template->SetData($pratiche_data);
 
         $layout->AddCol($template);
 
@@ -5840,6 +6007,203 @@ Class AA_SinesModule extends AA_GenericModule
         
         return true;
     }
+
+    //Task Aggiungi parftecipazione
+    public function Task_AddNewSinesPartecipazione($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organismo non valido: ".$_REQUEST['id']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $organismoPartecipante=new AA_Organismi($_REQUEST['organismo'],$this->oUser);
+
+        if(!$organismoPartecipante->isValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Organismo partecipante non valido.",false);
+            return false;            
+        }
+
+        $partecipazione=$organismo->GetPartecipazione(true);
+        if(!isset($partecipazione['partecipazioni'])) $partecipazione['partecipazioni']=array();
+
+        //verifica percentuali partecipazione
+        $partecipazione_tot=$partecipazione['percentuale'];
+        foreach($partecipazione['partecipazioni'] as $curPart)
+        {
+            $partecipazione_tot+=$curPart['percentuale'];
+        }
+        if($partecipazione_tot+AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Partecipazione_percentuale'])),2,".") > 100)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("La somma delle partecipazioni dirette ed indirette non puo' superare il 100%.",false);
+            return false;
+        }
+       
+        $partecipazione['partecipazioni'][$_REQUEST['organismo']]=array(
+            "denominazione"=>$organismoPartecipante->GetDenominazione(),
+            "percentuale"=>AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Partecipazione_percentuale'])),2,"."),
+            "euro"=>AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Partecipazione_euro'])),2,".")
+        );
+        $organismo->SetPartecipazione(json_encode($partecipazione));
+       
+        //Salva i dati
+        if(!$organismo->UpdateDb($this->oUser))
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+
+            return false;       
+        }
+
+        $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        
+        return true;
+    }
+
+    //Task aggiorna partecipazione
+    public function Task_UpdateSinesPartecipazione($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organismo non valido: ".$_REQUEST['id']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $organismoPartecipante=new AA_Organismi($_REQUEST['organismo'],$this->oUser);
+
+        if(!$organismoPartecipante->isValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Organismo partecipante non valido.",false);
+            return false;            
+        }
+
+        $partecipazione=$organismo->GetPartecipazione(true);
+        if(!isset($partecipazione['partecipazioni'])) $partecipazione['partecipazioni']=array();
+        
+        //verifica percentuali partecipazione
+        $partecipazione_tot=$partecipazione['percentuale'];
+        foreach($partecipazione['partecipazioni'] as $idOrg=>$curPart)
+        {
+            if($idOrg!=$_REQUEST['organismo']) $partecipazione_tot+=$curPart['percentuale'];
+        }
+        if($partecipazione_tot+AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Partecipazione_percentuale'])),2,".") > 100)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("La somma delle partecipazioni dirette ed indirette non puo' superare il 100%.",false);
+            return false;
+        }
+
+        $partecipazione['partecipazioni'][$_REQUEST['organismo']]=array(
+            "denominazione"=>$organismoPartecipante->GetDenominazione(),
+            "percentuale"=>AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Partecipazione_percentuale'])),2,"."),
+            "euro"=>AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Partecipazione_euro'])),2,".")
+        );
+        $organismo->SetPartecipazione(json_encode($partecipazione));
+       
+        //Salva i dati
+        if(!$organismo->UpdateDb($this->oUser))
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+
+            return false;       
+        }
+
+        $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        
+        return true;
+    }
+
+    //Task aggiorna partecipazione
+    public function Task_TrashSinesPartecipazione($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id']);
+            $sTaskLog="<status id='status'>-1</status><error id='error'>Identificativo organismo non valido: ".$_REQUEST['id']."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione());
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;            
+        }
+        
+        $organismoPartecipante=new AA_Organismi($_REQUEST['id_org'],$this->oUser);
+
+        if(!$organismoPartecipante->isValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Organismo partecipante non valido.",false);
+            return false;            
+        }
+
+        $partecipazione=$organismo->GetPartecipazione(true);
+        if(!isset($partecipazione['partecipazioni'])) $partecipazione['partecipazioni']=array();
+        
+        if(isset($partecipazione['partecipazioni'][$_REQUEST['id_org']]))
+        unset($partecipazione['partecipazioni'][$_REQUEST['id_org']]);
+        $organismo->SetPartecipazione(json_encode($partecipazione));
+       
+        //Salva i dati
+        if(!$organismo->UpdateDb($this->oUser))
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError(AA_Log::$lastErrorLog,false);
+
+            return false;       
+        }
+
+        $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati aggiornati con successo.",false);
+        
+        return true;
+    }
     
     //Task Aggiungi dato contabile
     public function Task_AddNewOrganismoIncarico($task)
@@ -6959,6 +7323,108 @@ Class AA_SinesModule extends AA_GenericModule
         $sTaskLog.="</content>";
         
         $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task aggiungi bilancio
+    public function Task_GetSinesAddNewPartecipazioneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id'],false);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione(),false);
+           
+            return false;            
+        }
+        
+        $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSinesAddNewPartecipazioneDlg($organismo),true);
+        
+        return true;
+    }
+
+    //Task modify partecipazione dlg
+    public function Task_GetSinesModifyPartecipazioneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id'],false);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione(),false);
+           
+            return false;            
+        }
+
+        $organismoPartecipante=new AA_Organismi($_REQUEST['id_org'],$this->oUSer);
+        if(!$organismoPartecipante->IsValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Organismo partecipante non valido",false);
+           
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSinesModifyPartecipazioneDlg($organismo,$_REQUEST['id_org']),true);
+        
+        return true;
+    }
+
+    //Task modify partecipazione dlg
+    public function Task_GetSinesTrashPartecipazioneDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo organismo non valido: ".$_REQUEST['id'],false);
+
+            return false;
+        }
+        
+        if(($organismo->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione(),false);
+           
+            return false;            
+        }
+
+        $organismoPartecipante=new AA_Organismi($_REQUEST['id_org'],$this->oUSer);
+        if(!$organismoPartecipante->IsValid())
+        {
+            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
+            $task->SetError("Organismo partecipante non valido",false);
+           
+            return false;            
+        }
+
+        $task->SetStatus(AA_GenericModuleTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSinesTrashPartecipazioneDlg($organismo,$_REQUEST['id_org']),true);
         
         return true;
     }

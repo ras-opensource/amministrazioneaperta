@@ -828,7 +828,7 @@ class AA_Organismi extends AA_Object
         if($this->sPartecipazione != $var)
         {
             $this->SetChanged();
-            $this->sPartecipazione=preg_replace("/[€|\ |A-Za-z_]/", "",$var);
+            $this->sPartecipazione=$var;
         } 
     }
     /**
@@ -862,6 +862,94 @@ class AA_Organismi extends AA_Object
         }
     }
     
+    public function GetListaOrganismiPartecipabili($bFull=false)
+    {
+        if(!$this->isValid()) return array();
+
+        $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id,".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".denominazione  FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
+        $join="";
+        $where="";
+        $group="";
+        $having="";
+        $order=" ORDER BY denominazione, aggiornamento DESC";
+        //$join.=" LEFT JOIN incarichi on incarichi_titolari.id=incarichi.id_incarico ";
+        $group=" GROUP BY ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id ";
+
+        //Filtra in base allo stato della scheda
+        $where.=" WHERE id <> ".$this->nID." AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".status ='".AA_Const::AA_STATUS_PUBBLICATA."' ";
+
+        //solo societa'
+        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
+
+        //partecipazioni attuali
+        $partecipazione=$this->GetPartecipazione(true);
+        $partecipazioni=array();
+        if(isset($partecipazione['partecipazioni'])) $partecipazioni=array_keys($partecipazione['partecipazioni']);
+        
+        $db=new AA_Database();
+        if(!$db->Query($select.$where.$group.$having.$order))
+        {
+            AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage()." - query: ".$select.$where.$group.$having.$order,100);
+            return array();
+        }
+
+        //AA_Log::Log(__METHOD__." - query: ".$select.$where.$group.$having.$order,100);
+
+        $rs=$db->GetResultSet();
+        $result=array();
+        foreach($rs as $curRow)
+        {
+            if(!in_array($curRow['id'],$partecipazioni,true) || sizeof($partecipazioni)==0)
+            {
+                if($bFull) $result[$curRow['id']]=new AA_Organismi($curRow['id']);
+                else $result[$curRow['id']]=$curRow['denominazione'];
+            }
+        }
+
+        //AA_Log::Log(__METHOD__." - result: ".print_r($result,true),100);
+        return $result;
+    }
+
+    public function GetListaOrganismiPartecipati($bFull=false)
+    {
+        if(!$this->isValid()) return array();
+
+        $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id,".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".denominazione,".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione  FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
+        $join="";
+        $where="";
+        $group="";
+        $having="";
+        $order=" ORDER BY denominazione, aggiornamento DESC";
+        //$join.=" LEFT JOIN incarichi on incarichi_titolari.id=incarichi.id_incarico ";
+        $group=" GROUP BY ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id ";
+
+        //Filtra in base allo stato della scheda
+        $where.=" WHERE id <> ".$this->nID." AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".status ='".AA_Const::AA_STATUS_PUBBLICATA."' ";
+
+        //solo societa'
+        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
+
+        //solo organismi che partecipano di questo organismo
+        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"".$this->nID."\":%' ";
+        
+        $db=new AA_Database();
+        if(!$db->Query($select.$where.$group.$having.$order))
+        {
+            AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage()." - query: ".$select.$where.$group.$having.$order,100);
+            return array();
+        }
+
+        $rs=$db->GetResultSet();
+        $result=array();
+        foreach($rs as $curRow)
+        {
+            if($bFull) $result[$curRow['id']]=new AA_Organismi($curRow['id']);
+            else $result[$curRow['id']]=array("denominazione"=>$curRow['denominazione'],"partecipazione"=>json_decode($curRow['partecipazione'],true));
+        }
+
+        return $result;
+    }
+
     //Forma societaria
     /**
      * Summary of nFormaSocietaria
@@ -9111,16 +9199,15 @@ Class AA_OrganismiPublicReportTemplateView extends AA_GenericObjectTemplateView
             $data_fine->SetText('<span style="font-weight:bold">Data fine impegno:</span><br/>'.$val);
 
             //partecipazione
-            $val=$organismo->GetPartecipazione();
-            if($val=="" || $val=="0") $val="indiretta";
+            $val=$organismo->GetPartecipazione(true);
+            if($val['percentuale']==0 && $val['euro']=="0") $val="nessuna";
             else
             {
-                $part=explode("/",$val);
-                $val="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
+                $val="€ ".AA_Utils::number_format($val['euro'],2,",",".")." pari al ".AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
             }
             $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
             $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
-            $partecipazione->SetText('<span style="font-weight:bold">Partecipazione:</span><br/>'.$val);
+            $partecipazione->SetText('<span style="font-weight:bold">Partecipazione diretta RAS:</span><br/>'.$val);
         }
         else
         {
@@ -9261,12 +9348,11 @@ Class AA_OrganismiPublicReportTemplateGeneralPageView extends AA_GenericObjectTe
             $data_fine->SetText('<span style="font-weight:bold">Data fine impegno:</span><br/>'.$val);
 
             //partecipazione
-            $val=$organismo->GetPartecipazione();
-            if($val=="" || $val=="0") $val="indiretta";
+            $val=$organismo->GetPartecipazione(true);
+            if($val['percentuale']==0 && $val['euro']=="0") $val="indiretta";
             else
             {
-                $part=explode("/",$val);
-                $val="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
+                $val="€ ".AA_Utils::number_format($val['euro'],2,",",".")." pari al ".AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
             }
             $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
             $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
@@ -9449,16 +9535,15 @@ Class AA_OrganismiReportScadenzarioTemplateGeneralPageView extends AA_GenericObj
             $data_fine->SetText('<span style="font-weight:bold">Data fine impegno:</span><br/>'.$val);
 
             //partecipazione
-            $val=$organismo->GetPartecipazione();
-            if($val=="" || $val=="0") $val="indiretta";
+            $val=$organismo->GetPartecipazione(true);
+            if($val['percentuale']==0 && $val['euro']==0) $val="nessuna";
             else
             {
-                $part=explode("/",$val);
-                $val="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
+                $val="€ ".AA_Utils::number_format($val['euro'],2,",",".")." pari al ".AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
             }
             $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
             $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
-            $partecipazione->SetText('<span style="font-weight:bold">Partecipazione:</span><br/>'.$val);
+            $partecipazione->SetText('<span style="font-weight:bold">Partecipazione diretta RAS:</span><br/>'.$val);
         }
         else
         {
@@ -9590,16 +9675,15 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
             $data_fine->SetText('<span style="font-weight:bold">Data fine impegno:</span><br/>'.$val);
 
             //partecipazione
-            $val=$organismo->GetPartecipazione();
-            if($val=="" || $val=="0") $val="indiretta";
+            $val=$organismo->GetPartecipazione(true);
+            if($val['percentuale']==0 && $val['euro']=="0") $val="nessuna";
             else
             {
-                $part=explode("/",$val);
-                $val="€ ".$part[0]." pari al ".$part[1]."% delle quote totali";
+                $val="€ ".AA_Utils::number_format($val['euro'],2,",",".")." pari al ".AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
             }
             $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
             $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
-            $partecipazione->SetText('<span style="font-weight:bold">Partecipazione:</span><br/>'.$val);
+            $partecipazione->SetText('<span style="font-weight:bold">Partecipazione diretta RAS:</span><br/>'.$val);
         }
         else
         {
