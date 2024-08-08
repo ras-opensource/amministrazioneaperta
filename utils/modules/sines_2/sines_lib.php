@@ -423,7 +423,8 @@ Class AA_SinesModule extends AA_GenericModule
                 if($object->IsInHouse() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>in house</span>";
                 if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>TUSP</span>";
                 $partecipazione=$object->GetPartecipazione(true);
-                if($partecipazione['percentuale'] == 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
+                if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
+                if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
                 
                 //stato società
                 $stato=$object->GetStatoOrganismo(true);
@@ -557,8 +558,9 @@ Class AA_SinesModule extends AA_GenericModule
                 if($object->IsInHouse() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>in house</span>";
                 if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>TUSP</span>";
                 $partecipazione=$object->GetPartecipazione(true);
-                if($partecipazione['percentuale'] == 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
-                
+                if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
+                if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
+               
                 //stato società
                 $stato=$object->GetStatoOrganismo(true);
                 if($stato > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO && $stato !=4) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_LightOrange'>".$object->GetStatoOrganismo()."</span>";
@@ -766,8 +768,9 @@ Class AA_SinesModule extends AA_GenericModule
                 if($object->IsInHouse() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>in house</span>";
                 if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>TUSP</span>";
                 $partecipazione=$object->GetPartecipazione(true);
-                if($partecipazione['percentuale'] == 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
-                
+                if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
+                if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
+               
                 //stato società
                 $stato=$object->GetStatoOrganismo(true);
                 if($stato > AA_Organismi_Const::AA_ORGANISMI_STATO_SOCIETA_ATTIVO && $stato !=4) $stato_org.="&nbsp;<span style='font-weight: 100;font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightBlue'>".$object->GetStatoOrganismo()."</span>";
@@ -1993,7 +1996,7 @@ Class AA_SinesModule extends AA_GenericModule
         }
         
         //partita iva
-        $wnd->AddTextField("sPivaCf","Partita iva/cf",array("bottomLabel"=>"*Riportare la partita iva dell'organismo.", "placeholder"=>"inserisci qui la partita iva o il cf dell'organismo"));
+        $wnd->AddTextField("sPivaCf","Codice fiscale",array("bottomLabel"=>"*Riportare il codice fiscale dell'organismo.", "placeholder"=>"inserisci qui il codice fiscale dell'organismo"));
         
         //data inizio
         $label="Data costituzione";
@@ -2952,7 +2955,7 @@ Class AA_SinesModule extends AA_GenericModule
             $detail_options[]=array("id"=>$id."Organigramma_Tab"."_$id_org","value"=>"Organigrammi");
         }
 
-        $detail_options[]=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PARTECIPAZIONI."_".$organismo->GetId(),"value"=>"Partecipazioni");
+        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $detail_options[]=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PARTECIPAZIONI."_".$organismo->GetId(),"value"=>"Partecipazioni");
 
         $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
             "view"=>"tabbar",
@@ -3136,7 +3139,7 @@ Class AA_SinesModule extends AA_GenericModule
 
         $canModify=false;
         if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
-        $multiview->addCell($this->TemplateDettaglio_Partecipazioni_Tab($organismo,$canModify));
+        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $multiview->addCell($this->TemplateDettaglio_Partecipazioni_Tab($organismo,$canModify));
         
         $content->AddRow($multiview);
         
@@ -3192,7 +3195,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($value=="")$value="n.d.";
         $piva=new AA_JSON_Template_Template($id."_Piva",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "data"=>array("title"=>"Partita iva/codice fiscale:","value"=>$value)
+            "data"=>array("title"=>"Codice fiscale:","value"=>$value)
         ));
         
         //Sede legale
@@ -3207,6 +3210,7 @@ Class AA_SinesModule extends AA_GenericModule
         $value=$object->GetPec();
         if($value=="") $value="n.d.";
         $pec=new AA_JSON_Template_Template($id."_Pec",array(
+            "gravity"=>2,
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "data"=>array("title"=>"PEC:","value"=>$value)
         ));
@@ -3264,7 +3268,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //partecipazione
         $value=$object->GetPartecipazione(true);
-        if($value['percentuale']==0 && $value['euro']=="0") $value="indiretta";
+        if($value['percentuale']==0) $value="nessuna";
         else
         {
             $value="€ ".AA_Utils::number_format($value['euro'],2,",",".")." pari al ".AA_Utils::number_format($value['percentuale'],2,",",".")."% delle quote totali";
@@ -3272,6 +3276,18 @@ Class AA_SinesModule extends AA_GenericModule
         $partecipazione=new AA_JSON_Template_Template($id."_Partecipazione",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "data"=>array("title"=>"Partecipazione diretta RAS:","value"=>$value)
+        ));
+
+        //partecipazione indiretta
+        $value=$object->GetPartecipazioneIndiretta($this->oUser);
+        if($value['percentuale']==0) $value="nessuna";
+        else
+        {
+            $value=AA_Utils::number_format($value['percentuale'],2,",",".")."% per un totale di € ".AA_Utils::number_format($value['euro'],2,",",".");
+        }
+        $partecipazione_indiretta=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Partecipazione indiretta RAS:","value"=>$value)
         ));
         
         //Stato
@@ -3307,7 +3323,11 @@ Class AA_SinesModule extends AA_GenericModule
         //terza riga
         $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>$rows_fixed_height));
         $riga->AddCol($pec);
-        if(($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $riga->AddCol($partecipazione);
+        if(($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) 
+        {
+            $riga->AddCol($partecipazione);
+            $riga->AddCol($partecipazione_indiretta);
+        }
         else $riga->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         $layout->AddRow($riga);
         
@@ -4584,7 +4604,7 @@ Class AA_SinesModule extends AA_GenericModule
             $pratiche_data[]=array("id"=>$id_org,"denominazione"=>$curPartecipazione['denominazione'],"percentuale"=>AA_Utils::number_format($curPartecipazione['percentuale'],2,",","."),"euro"=>AA_Utils::number_format($curPartecipazione['euro'],2,",","."),"ops"=>$ops);
         }
 
-        $template=new AA_GenericDatatableTemplate($id."_passive","<span style='color:#003380'>Organismi che detengono quote di partecipazione (partecipazioni passive)</span>",4,array("css"=>"AA_PartecipazioniHeader_DataTable"));
+        $template=new AA_GenericDatatableTemplate($id."_passive","<span style='color:#003380'>Organismi che detengono quote di partecipazione</span>",4,array("css"=>"AA_PartecipazioniHeader_DataTable"));
         //$template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
@@ -4612,7 +4632,7 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $pratiche_data[]=array("id"=>$id_org,"denominazione"=>$curPartecipazione['denominazione'],"percentuale"=>AA_Utils::number_format($curPartecipazione['partecipazione']['partecipazioni'][$object->GetId()]['percentuale'],2,",","."),"euro"=>AA_Utils::number_format($curPartecipazione['partecipazione']['partecipazioni'][$object->GetId()]['euro'],2,",","."),"ops"=>$ops);
         }
-        $template=new AA_GenericDatatableTemplate($id."_attive","<span style='color:#003380'>Organismi di cui detiene quote di partecipazione (partecipazioni attive)</span>",3,array("css"=>"AA_PartecipazioniHeader_DataTable AA_PartecipazioniBoxBorderLeft"));
+        $template=new AA_GenericDatatableTemplate($id."_attive","<span style='color:#003380'>Societa' di cui detiene quote di partecipazione</span>",3,array("css"=>"AA_PartecipazioniHeader_DataTable AA_PartecipazioniBoxBorderLeft"));
         //$template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();

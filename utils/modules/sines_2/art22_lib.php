@@ -862,7 +862,7 @@ class AA_Organismi extends AA_Object
         }
     }
     
-    public function GetListaOrganismiPartecipabili($bFull=false)
+    public function GetListaOrganismiPartecipabili($bFull=false,$user=null)
     {
         if(!$this->isValid()) return array();
 
@@ -871,12 +871,18 @@ class AA_Organismi extends AA_Object
         $where="";
         $group="";
         $having="";
-        $order=" ORDER BY denominazione, aggiornamento DESC";
+        $order=" ORDER BY denominazione ASC";
         //$join.=" LEFT JOIN incarichi on incarichi_titolari.id=incarichi.id_incarico ";
-        $group=" GROUP BY ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id ";
+        $group="";
 
         //Filtra in base allo stato della scheda
         $where.=" WHERE id <> ".$this->nID." AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".status ='".AA_Const::AA_STATUS_PUBBLICATA."' ";
+
+        $discendenti=$this->GetOrganismiDiscendenti(false,$user);
+        if(sizeof($discendenti)>0)
+        {
+            $where.=" AND id NOT IN (".implode(",",$discendenti).")";
+        }
 
         //solo societa'
         $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
@@ -908,6 +914,112 @@ class AA_Organismi extends AA_Object
 
         //AA_Log::Log(__METHOD__." - result: ".print_r($result,true),100);
         return $result;
+    }
+
+    static protected function GetOrganismiAscendenti($idOrg=0)
+    {
+        return array();
+    }
+
+    //Restituisce la partecipazione indiretta totale
+    protected function RecursiveParentPartecipazioneIndirettaCalc($user=null)
+    {
+        $percent=0;
+
+        if(!$this->IsValid()) return $percent;
+
+        //partecipazione
+        $partecipazione=$this->GetPartecipazione(true);
+        $percent=$partecipazione['percentuale'];
+        foreach($partecipazione['partecipazioni'] as $idParent=>$parentPartecipazione)
+        {
+            $parent=new AA_Organismi($idParent,$user);
+            $percent+=($parentPartecipazione['percentuale'])*(0.01*$parent->RecursiveParentPartecipazioneIndirettaCalc($user));
+        }
+
+        //AA_Log::Log(__METHOD__." - percent: ".print_r($percent,true),100);
+        return $percent;
+    }
+
+    public function GetPartecipazioneIndiretta($user=null)
+    {
+        $result=array("percentuale"=>0.00,"euro"=>0.00);
+        if(!$this->IsValid()) return $result;
+        
+        $partecipazione=$this->GetPartecipazione(true);
+        foreach($partecipazione['partecipazioni'] as $idParent=>$parentPartecipazione)
+        {
+            $parent=new AA_Organismi($idParent,$user);
+            $parentPercent=(0.01*$parent->RecursiveParentPartecipazioneIndirettaCalc($user));
+            
+            $result['percentuale']+=$parentPartecipazione['percentuale']*$parentPercent;
+            $result['euro']+=$parentPartecipazione['euro']*$parentPercent;
+        }
+       
+        //AA_Log::Log(__METHOD__." - indiretta: ".print_r($result,true),100);
+        return $result;
+    }
+
+    protected static function GetListaOrganismiDiscendenti($idOrg=0)
+    {
+        if($idOrg<=0) return array();
+
+        $select="SELECT DISTINCT ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".id,".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione  FROM ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE." ";
+        $join="";
+        $where="";
+        $group="";
+        $having="";
+        $order="";
+        //$join.=" LEFT JOIN incarichi on incarichi_titolari.id=incarichi.id_incarico ";
+        $group="";
+
+        //Filtra in base allo stato della scheda
+        $where.=" WHERE id <> ".$idOrg." AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".status ='".AA_Const::AA_STATUS_PUBBLICATA."' ";
+
+        //solo societa'
+        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
+
+        //solo organismi che partecipano di questo organismo
+        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"".$idOrg."\":%' ";
+        
+        $db=new AA_Database();
+        if(!$db->Query($select.$where.$group.$having.$order))
+        {
+            AA_Log::Log(__METHOD__." - errore: ".$db->GetErrorMessage()." - query: ".$select.$where.$group.$having.$order,100);
+            return array();
+        }
+
+        $rs=$db->GetResultSet();
+        $result=array();
+        foreach($rs as $curRow)
+        {
+            $result[]=$curRow['id'];
+            $result=array_merge($result,static::GetListaOrganismiDiscendenti($curRow['id']));
+        }
+
+        //AA_Log::Log(__METHOD__." - discendenti ($idOrg): ".print_r($result,true),100);
+
+        return $result;
+    }
+
+    public function GetOrganismiDiscendenti($bFull=false,$user=null)
+    {
+        if(!$this->IsValid()) return array();
+
+        $result=static::GetListaOrganismiDiscendenti($this->GetID());
+
+        //AA_Log::Log(__METHOD__." - discendenti: ".print_r($result,true),100);
+
+        if(!$bFull) return $result;
+
+        $orgs=array();
+        foreach($result as $idOrg)
+        {
+            $newOrg=new AA_Organismi($idOrg,$user);
+            if($newOrg->IsValid()) $orgs[$newOrg->GetId()]=$newOrg;
+        }
+
+        return $orgs;
     }
 
     public function GetListaOrganismiPartecipati($bFull=false)
