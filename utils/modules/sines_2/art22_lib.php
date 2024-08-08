@@ -1459,10 +1459,25 @@ class AA_Organismi extends AA_Object
     {
         $xml='<organismo id="'.$this->GetID().'" aggiornamento="'.$this->GetAggiornamento().'" stato="'.$this->GetStatus().'">';
 
+        $partecipazione=$this->GetPartecipazione(true);
+        //Aggiunte per interoperabilita' partecipo
+        if($partecipazione['percentuale']==100)
+        {
+            $xml.="<soggetto_controllato>1</soggetto_controllato>";
+        }
+        else $xml.="<soggetto_controllato>0</soggetto_controllato>";
+
+        if($partecipazione['percentuale']==0)
+        {
+            $xml.="<indiretta>1</indiretta>";
+        }
+        else  $xml.="<indiretta>0</indiretta>";
+        //----------------------------------------
+
         //parte generale
         $xml.="<denominazione>".mb_encode_numericentity($this->GetDenominazione(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</denominazione>";
         $xml.="<tipologia id_tipo='".$this->GetTipologia(true)."'>".$this->GetTipologia()."</tipologia>";
-        $xml.="<piva>".$this->GetPivaCf()."</piva>";
+        $xml.="<cf>".$this->GetPivaCf()."</cf>";
         $xml.="<sede>".mb_encode_numericentity($this->GetSedeLegale(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</sede>";
         $xml.="<pec>".$this->GetPec()."</pec>";
         $xml.="<web>".mb_encode_numericentity($this->GetSitoWeb(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</web>";
@@ -1470,7 +1485,8 @@ class AA_Organismi extends AA_Object
         $xml.="<data_fine>".$this->GetDataFineImpegno()."</data_fine>";
         $xml.="<partecipazione>".$this->GetPartecipazione()."</partecipazione>";
         $xml.="<stato_organismo id_tipo='".$this->GetStatoOrganismo(true)."'>".$this->GetStatoOrganismo()."</stato_organismo>";
-        $xml.="<partecipazione>".$this->GetPartecipazione()."</partecipazione>";
+        $xml.="<partecipazione>".json_encode($partecipazione)."</partecipazione>";
+        $xml.="<partecipazione_indiretta>".json_encode($this->GetPartecipazioneIndiretta())."</partecipazione_indiretta>";
         $xml.="<funzioni>".mb_encode_numericentity($this->GetFunzioni(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</funzioni>";
         $xml.="<note>".mb_encode_numericentity($this->GetNote(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</note>";
         //--------------
@@ -2944,6 +2960,32 @@ class AA_Organismi extends AA_Object
                 $where.=" AND (SUBSTR(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale,7,2) <= '".$cur_anno."' AND SUBSTR(".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".codice_fiscale,7,2) <> '') AND ".AA_Organismi_Const::AA_ORGANISMI_NOMINE_DB_TABLE.".data_fine > NOW() ";
             }
         }
+
+        //partecipazione
+        if(($params['tipo']&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0)
+        {
+            if($params['partecipazione']>0)
+            {
+                switch($params['partecipazione'])
+                {
+                    case 1:
+                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%\"partecipazioni\":{%') ";
+                        break;
+                    case 2:
+                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
+                        break;
+                    case 3:
+                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
+                        break;
+                    case 4:
+                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
+                        break;
+                    case 5:
+                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
+                        break;
+                }
+            }
+        }
         
         //Filtra in base alla denominazione o alla partita iva/cf
         if(isset($params['denominazione']) && $params['denominazione'] !="") $where.=" AND (denominazione like '%".addslashes(trim($params['denominazione']))."%' OR piva_cf like '%".addslashes(trim($params['denominazione']))."%') ";
@@ -3105,7 +3147,7 @@ class AA_Organismi extends AA_Object
             return array(0=>-1,array());
         }
 
-        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         $rs=$db->GetResultSet();
         

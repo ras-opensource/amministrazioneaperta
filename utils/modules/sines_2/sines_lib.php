@@ -402,6 +402,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
         if($params['stato_organismo']) $parametri['stato_organismo']=$params['stato_organismo'];
         if($params['over65']) $parametri['over65']=$params['over65'];
+        if($params['partecipazione']) $parametri['partecipazione']=$params['partecipazione'];
         
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         $now=date("Y-m-d");
@@ -747,6 +748,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($params['tipo_nomina']) $parametri['tipo_nomina']=$params['tipo_nomina'];
         if($params['stato_organismo']) $parametri['stato_organismo']=$params['stato_organismo'];
         if($params['over65']) $parametri['over65']=$params['over65'];
+        if($params['partecipazione']) $parametri['partecipazione']=$params['partecipazione'];
 
         $organismi=AA_Organismi::Search($parametri,false,$this->oUser);
         $now=date("Y-m-d");
@@ -5294,7 +5296,7 @@ Class AA_SinesModule extends AA_GenericModule
             return false;            
         }
         
-        $partecipazione=array();
+        $partecipazione=$organismo->GetPartecipazione(true);
 
         if(isset($_REQUEST['Partecipazione_percentuale']) && $_REQUEST['Partecipazione_percentuale'] == 0 && (!isset($_REQUEST['Partecipazione_euro']) || $_REQUEST['Partecipazione_euro'] !=0))
         {
@@ -9298,7 +9300,7 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg()
     {
         //Valori runtime
-        $formData=array("over65"=>$_REQUEST['over65'],"stato_organismo"=>$_REQUEST['stato_organismo'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("partecipazione"=>$_REQUEST['partecipazione'],"over65"=>$_REQUEST['over65'],"stato_organismo"=>$_REQUEST['stato_organismo'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
         
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
@@ -9310,9 +9312,10 @@ Class AA_SinesModule extends AA_GenericModule
         if($_REQUEST['cestinate']=="") $formData['cestinate']=0;
         if($_REQUEST['stato_organismo']=="") $formData['stato_organismo']=0;
         if($_REQUEST['over65']=="") $formData['over65']=0;
+        if($_REQUEST['partecipazione']=="") $formData['partecipazione']=0;
         
         //Valori reset
-        $resetData=array("stato_organismo"=>0,"tipo_nomina"=>0,"id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0,"incaricato"=>"");
+        $resetData=array("partecipazione"=>0,"stato_organismo"=>0,"tipo_nomina"=>0,"id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0,"incaricato"=>"");
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -9337,6 +9340,17 @@ Class AA_SinesModule extends AA_GenericModule
             if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
         }
         $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
+        
+        //partecipazione
+        $options=array(
+            array("id"=>"0","value"=>"Qualunque"),
+            array("id"=>"1","value"=>"Solo dirette"),
+            array("id"=>"2","value"=>"Solo indirette"),
+            array("id"=>"3","value"=>"Almeno dirette"),
+            array("id"=>"4","value"=>"Almeno indirette"),
+            array("id"=>"5","value"=>"Dirette e indirette")
+        );
+        $dlg->AddSelectField("partecipazione","Partecipazione",array("bottomLabel"=>"*Filtra in base al tipo di partecipazione RAS (solo societa').","options"=>$options,"value"=>"0"));
         
         //stato organismo
         $options=array(array("id"=>"0","value"=>"Qualunque"));
@@ -9369,7 +9383,7 @@ Class AA_SinesModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg()
     {
         //Valori runtime
-        $formData=array("over65"=>$_REQUEST['over65'],"stato_organismo"=>$_REQUEST['stato_organismo'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
+        $formData=array("partecipazione"=>$_REQUEST['partecipazione'],"over65"=>$_REQUEST['over65'],"stato_organismo"=>$_REQUEST['stato_organismo'],"id_assessorato"=>$_REQUEST['id_assessorato'],"id_direzione"=>$_REQUEST['id_direzione'],"struct_desc"=>$_REQUEST['struct_desc'],"id_struct_tree_select"=>$_REQUEST['id_struct_tree_select'],"tipo"=>$_REQUEST['tipo'],"tipo_nomina"=>$_REQUEST['tipo_nomina'],"denominazione"=>$_REQUEST['denominazione'],"cestinate"=>$_REQUEST['cestinate'], "incaricato"=>$_REQUEST['incaricato']);
 
         //Valori default
         if($_REQUEST['tipo']=="") $formData['tipo']="0";
@@ -9381,9 +9395,10 @@ Class AA_SinesModule extends AA_GenericModule
         if($_REQUEST['cestinate']=="") $formData['cestinate']=0;
         if($_REQUEST['stato_organismo']=="") $formData['stato_organismo']=0;
         if($_REQUEST['over65']=="") $formData['over65']=0;
+        if($_REQUEST['partecipazione']=="") $formData['partecipazione']=0;
                 
         //Valori reset
-        $resetData=array("stato_organismo"=>0,"tipo_nomina"=>0,"id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0,"incaricato"=>"");
+        $resetData=array("partecipazione"=>0,"stato_organismo"=>0,"tipo_nomina"=>0,"id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","tipo"=>0,"denominazione"=>"","cestinate"=>0,"incaricato"=>"");
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -9408,6 +9423,17 @@ Class AA_SinesModule extends AA_GenericModule
             if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
         }
         $dlg->AddSelectField("tipo","Tipologia",array("bottomLabel"=>"*Filtra in base alla tipologia dell'organismo.","options"=>$options,"value"=>"0"));
+        
+        //partecipazione
+        $options=array(
+            array("id"=>"0","value"=>"Qualunque"),
+            array("id"=>"1","value"=>"Solo dirette"),
+            array("id"=>"2","value"=>"Solo indirette"),
+            array("id"=>"3","value"=>"Almeno dirette"),
+            array("id"=>"4","value"=>"Almeno indirette"),
+            array("id"=>"5","value"=>"Dirette e indirette")
+        );
+        $dlg->AddSelectField("partecipazione","Partecipazione",array("bottomLabel"=>"*Filtra in base al tipo di partecipazione RAS (solo societa').","options"=>$options,"value"=>"0"));
         
         //stato organismo
         $options=array(array("id"=>"0","value"=>"Qualunque"));
