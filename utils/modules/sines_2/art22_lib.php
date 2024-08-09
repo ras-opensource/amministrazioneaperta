@@ -725,6 +725,7 @@ class AA_Organismi extends AA_Object
         $this->oDbBind->AddBind("sPec","pec");
         $this->oDbBind->AddBind("bInHouse","inhouse");
         $this->oDbBind->AddBind("bInTUSP","tusp");
+        $this->oDbBind->AddBind("bMercatiReg","mercati_reg");
         $this->oDbBind->AddBind("nFormaSocietaria","forma_societaria");
         $this->oDbBind->AddBind("nStatoOrganismo","stato_organismo");
         
@@ -1375,13 +1376,33 @@ class AA_Organismi extends AA_Object
     {
         return $this->bInTUSP;
     }
-    /**
-     * Summary of IsInTUSP
-     * @return bool
-     */
     public function IsInTUSP()
     {
         if($this->bInTUSP!= 0) return true;
+        else return false;
+    }
+
+    protected $bMercatiReg=0;
+    /**
+     * Summary of GetInMercatiReg
+     * @return int
+     */
+    public function GetInMercatiReg()
+    {
+        return $this->bMercatiReg;
+    }
+    public function SetInMercatiReg($val=true)
+    {
+        $this->SetChanged();
+        $this->bMercatiReg=$val;
+    }
+    /**
+     * Summary of IsInMercatiReg
+     * @return bool
+     */
+    public function IsinMercatiReg()
+    {
+        if($this->bMercatiReg!= 0) return true;
         else return false;
     }
     
@@ -1459,9 +1480,12 @@ class AA_Organismi extends AA_Object
     {
         $xml='<organismo id="'.$this->GetID().'" aggiornamento="'.$this->GetAggiornamento().'" stato="'.$this->GetStatus().'">';
 
+        $codice_partecipo=array(AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"EPV",AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"SP",AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"EDP");
         $partecipazione=$this->GetPartecipazione(true);
+        $partecipazione_indiretta=$this->GetPartecipazioneIndiretta();
+        
         //Aggiunte per interoperabilita' partecipo
-        if($partecipazione['percentuale']==100)
+        if($partecipazione['percentuale']+$partecipazione_indiretta['percentuale']>=100)
         {
             $xml.="<soggetto_controllato>1</soggetto_controllato>";
         }
@@ -1472,11 +1496,14 @@ class AA_Organismi extends AA_Object
             $xml.="<indiretta>1</indiretta>";
         }
         else  $xml.="<indiretta>0</indiretta>";
+        $xml.="<mercati_regolamentati>".$this->GetInMercatiReg()."</mercati_reg>";
+        $xml.="<partecipazione tot_percent='".($partecipazione['percentuale']+$partecipazione_indiretta['percentuale'])."'><diretta>".json_encode($partecipazione)."</diretta>";
+        $xml.="<indiretta>".json_encode($partecipazione_indiretta)."</indiretta></partecipazione>";
         //----------------------------------------
 
         //parte generale
         $xml.="<denominazione>".mb_encode_numericentity($this->GetDenominazione(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</denominazione>";
-        $xml.="<tipologia id_tipo='".$this->GetTipologia(true)."'>".$this->GetTipologia()."</tipologia>";
+        $xml.="<tipologia id_tipo_partecipo='".$codice_partecipo[$this->GetTipologia(true)]."' id_tipo='".$this->GetTipologia(true)."'>".$this->GetTipologia()."</tipologia>";
         $xml.="<cf>".$this->GetPivaCf()."</cf>";
         $xml.="<sede>".mb_encode_numericentity($this->GetSedeLegale(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</sede>";
         $xml.="<pec>".$this->GetPec()."</pec>";
@@ -1485,8 +1512,6 @@ class AA_Organismi extends AA_Object
         $xml.="<data_fine>".$this->GetDataFineImpegno()."</data_fine>";
         $xml.="<partecipazione>".$this->GetPartecipazione()."</partecipazione>";
         $xml.="<stato_organismo id_tipo='".$this->GetStatoOrganismo(true)."'>".$this->GetStatoOrganismo()."</stato_organismo>";
-        $xml.="<partecipazione>".json_encode($partecipazione)."</partecipazione>";
-        $xml.="<partecipazione_indiretta>".json_encode($this->GetPartecipazioneIndiretta())."</partecipazione_indiretta>";
         $xml.="<funzioni>".mb_encode_numericentity($this->GetFunzioni(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</funzioni>";
         $xml.="<note>".mb_encode_numericentity($this->GetNote(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</note>";
         //--------------
@@ -3147,7 +3172,7 @@ class AA_Organismi extends AA_Object
             return array(0=>-1,array());
         }
 
-        AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
+        //AA_Log::Log(get_class()."->Search(".print_r($params,TRUE).") - query: $query",100);
 
         $rs=$db->GetResultSet();
         

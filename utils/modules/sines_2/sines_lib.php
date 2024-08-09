@@ -423,6 +423,7 @@ Class AA_SinesModule extends AA_GenericModule
                 
                 if($object->IsInHouse() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>in house</span>";
                 if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>TUSP</span>";
+                if($object->IsInMercatiReg() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>Mercati reg.</span>";
                 $partecipazione=$object->GetPartecipazione(true);
                 if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
                 if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
@@ -769,6 +770,7 @@ Class AA_SinesModule extends AA_GenericModule
                 
                 if($object->IsInHouse() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>in house</span>";
                 if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>TUSP</span>";
+                if($object->IsInMercatiReg() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>Mercati reg.</span>";
                 $partecipazione=$object->GetPartecipazione(true);
                 if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
                 if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
@@ -1961,16 +1963,22 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->SetWidth(1080);
         $wnd->SetHeight(800);
         
-        //Descrizione
+        //Denominazione
         $wnd->AddTextField("sDescrizione","Denominazione",array("required"=>true, "bottomLabel"=>"*Denominazione dell'organismo", "placeholder"=>"inserisci qui la denominazione dell'organismo"));
         
+        if(($object->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0)
+        {
+             //in Tusp
+             $wnd->AddCheckBoxField("bMercatiReg","Mercati reg.",array("bottomLabel"=>"*Abilitare se la società e' quotata nei mercati regolamentati."), false);
+        }
+
         //Tipologia
         $options=array(array("id"=>"0","value"=>"Qualunque"));
         foreach(AA_Organismi_Const::GetTipoOrganismi() as $id=>$label)
         {
             if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
         }
-        $wnd->AddSelectField("nTipologia","Tipologia",array("required"=>true, "validateFunction"=>"IsPositive", "customInvalidMessage"=>"*Occorre selezionare la tipologia","options"=>$options,"value"=>"0", "hidden"=>true), false);
+        //$wnd->AddSelectField("nTipologia","Tipologia",array("required"=>true, "validateFunction"=>"IsPositive", "customInvalidMessage"=>"*Occorre selezionare la tipologia","options"=>$options,"value"=>"0", "hidden"=>true), false);
         
         if(($object->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0)
         {
@@ -3162,7 +3170,8 @@ Class AA_SinesModule extends AA_GenericModule
         $soc_tags="";
         $soc_tags="<span class='AA_Label AA_Label_Green' title='Forma giuridica'>".$object->GetFormaSocietaria()."</span>&nbsp;";
         if($object->IsInHouse() == true) $soc_tags.="<span class='AA_Label AA_Label_Green'>in house</span>&nbsp;";
-        if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_Label AA_Label_Green'>TUSP</span>";
+        if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_Label AA_Label_Green'>TUSP</span>&nbsp;";
+        if($object->IsInMercatiReg() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>Mercati reg.</span>";
         if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
         
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
@@ -5293,7 +5302,7 @@ Class AA_SinesModule extends AA_GenericModule
             $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per modificare l'organismo: ".$organismo->GetDenominazione()."</error>";
             $task->SetLog($sTaskLog);
 
-            return false;            
+            return false;
         }
         
         $partecipazione=$organismo->GetPartecipazione(true);
