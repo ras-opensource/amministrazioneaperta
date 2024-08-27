@@ -2569,7 +2569,7 @@ Class AA_HomeModule extends AA_GenericModule
     {
         //AA_Log::Log(__METHOD__,100);
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTSTRUCT;
-        $tree_view_id=$id."_tre_".uniqid();
+        $tree_view_id=$id."_tree_".uniqid();
 
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTSTRUCT_NAME,"filtered"=>true));
         
@@ -2674,6 +2674,7 @@ Class AA_HomeModule extends AA_GenericModule
 
             $tree = new AA_JSON_Template_Tree($tree_view_id, array(
                 "data" => json_encode($tree),
+                "status_id"=>$id."_tree",
                 "select" => false,
                 "template" => "{common.icon()}&nbsp;{common.folder()}&nbsp;<span class='#class#'>#value#</span>&nbsp;#ops#",
                 "css"=>array("border-bottom"=>"1px solid #dadee0 !important")

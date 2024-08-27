@@ -139,7 +139,7 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
         let search=this;
         if(TreeView)
         {
-            TreeView.filter(function(obj){return obj.value.toLowerCase().indexOf(search.getValue().toLowerCase()) !== -1;})
+            TreeView.filter(function(obj){return obj.value.toLowerCase().indexOf(search.getValue().toLowerCase()) !== -1;});
         }
 
     } catch (msg) {

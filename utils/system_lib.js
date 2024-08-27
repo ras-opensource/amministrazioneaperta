@@ -370,7 +370,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let status = item.getValue();
                             if (AA_MainApp.utils.isDefined(status)) {
                                 //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                                module.setRuntimeValue("multiviewStatus", item.config.id, status);
+                                if(item.config.status_id) module.setRuntimeValue("multiviewStatus", item.config.status_id, status);
+                                else module.setRuntimeValue("multiviewStatus", item.config.id, status);
                             }
                         }
                     }
@@ -381,7 +382,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             let status = item.getValue();
                             if (AA_MainApp.utils.isDefined(status)) {
                                 //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                                module.setRuntimeValue("tabBarStatus", item.config.id, status);
+                                if(item.config.status_id) module.setRuntimeValue("tabBarStatus", item.config.status_id, status);
+                                else module.setRuntimeValue("tabBarStatus", item.config.id, status);
                             }
                         }
                     }
@@ -391,7 +393,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         for (item of accordionObjs) {
                             let status = 1;
                             //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                            module.setRuntimeValue("accordionItemStatus", item.config.id, status);
+                            if(item.config.status_id) module.setRuntimeValue("accordionItemStatus", item.config.status_id, status);
+                            else module.setRuntimeValue("accordionItemStatus", item.config.id, status);
                         }
                     }
 
@@ -401,7 +404,8 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         for (item of tableObjs) {
                             let status = item.getState();
                             //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
-                            module.setRuntimeValue("datatableItemStatus", item.config.id, status);
+                            if(item.config.status_id) module.setRuntimeValue("datatableItemStatus", item.config.status_id, status);
+                            else module.setRuntimeValue("datatableItemStatus", item.config.id, status);
                         }
                     }
                     else
@@ -410,7 +414,30 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         {
                             let status = obj.getState();
                             //console.log(module.name + "::refreshUiObjectDefault - saved status (" + obj.config.id + "): ", status);
-                            module.setRuntimeValue("datatableItemStatus", obj.config.id, status);                        
+                            if(item.config.status_id) module.setRuntimeValue("datatableItemStatus", item.config.status_id, status);
+                            else module.setRuntimeValue("datatableItemStatus", item.config.id, status);                     
+                        }    
+                    }
+
+                    //Salva lo stato delle treeview
+                    let treeObjs = obj.queryView({ view: "tree" }, "all");
+                    if (Array.isArray(treeObjs) && treeObjs.length > 0) {
+                        for (item of treeObjs) {
+                            let status = item.getState();
+                            //console.log(module.name + "::refreshUiObjectDefault -saved status (" + item.config.id + "): ", status);
+                            if(item.config.status_id) module.setRuntimeValue("treeItemStatus", item.config.status_id, status);
+                            else module.setRuntimeValue("treeItemStatus", item.config.id, status);
+                            
+                        }
+                    }
+                    else
+                    {
+                        if (obj.config.view=="tree") 
+                        {
+                            let status = obj.getState();
+                            //console.log(module.name + "::refreshUiObjectDefault - saved status (" + obj.config.id + "): ", status);
+                            if(item.config.status_id) module.setRuntimeValue("treeItemStatus", item.config.status_id, status);
+                            else module.setRuntimeValue("treeItemStatus", item.config.id, status);                    
                         }    
                     }
                 }
@@ -550,6 +577,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (Array.isArray(tabbarObjs) && tabbarObjs.length > 0) {
                             for (item of tabbarObjs) {
                                 let status = module.getRuntimeValue("tabBarStatus", item.config.id);
+                                if(item.config.status_id) status=module.getRuntimeValue("tabBarStatus", item.config.status_id);
                                 if (AA_MainApp.utils.isDefined(status) && $$(status)) {
                                     let view = $$(item.config.view_id);
                                     if (view) {
@@ -569,6 +597,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (Array.isArray(accordionObjs) && accordionObjs.length > 0) {
                             for (item of accordionObjs) {
                                 let status = module.getRuntimeValue("accordionItemStatus", item.config.id);
+                                if(item.config.status_id) status=module.getRuntimeValue("accordionItemStatus", item.config.status_id);
                                 if (AA_MainApp.utils.isDefined(status)) {
                                     let view = $$(item.config.id);
                                     if (view) {
@@ -585,6 +614,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (Array.isArray(multiObjs) && multiObjs.length > 0) {
                             for (item of multiObjs) {
                                 let status = module.getRuntimeValue("multiviewStatus", item.config.id);
+                                if(item.config.status_id) status=module.getRuntimeValue("multiviewStatus", item.config.status_id);
                                 if (AA_MainApp.utils.isDefined(status) && $$(status)) {
                                     let view = $$(item.config.id);
                                     if (view) {
@@ -604,6 +634,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (Array.isArray(tableObjs) && tableObjs.length > 0) {
                             for (item of tableObjs) {
                                 let status = module.getRuntimeValue("datatableItemStatus", item.config.id);
+                                if(item.config.status_id) status=module.getRuntimeValue("datatableItemStatus", item.config.status_id);
                                 if (AA_MainApp.utils.isDefined(status)) {
                                     //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status della tabella (" + item.config.id + ")", status);
                                     item.setState(status);
@@ -615,6 +646,32 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (obj.config.view=="datatable") 
                             {
                                 let status = module.getRuntimeValue("datatableItemStatus", obj.config.id);
+                                if(item.config.status_id) status=module.getRuntimeValue("datatableItemStatus", item.config.status_id);
+                                if (AA_MainApp.utils.isDefined(status)) {
+                                    //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status della tabella (" + obj.config.id + ")", status);
+                                    obj.setState(status);
+                                }                      
+                            }    
+                        }
+
+                        //Ripristina lo status dei tree
+                        let treeObjs = obj.queryView({ view: "tree" }, "all");
+                        if (Array.isArray(treeObjs) && treeObjs.length > 0) {
+                            for (item of treeObjs) {
+                                let status=module.getRuntimeValue("treeItemStatus", item.config.id);
+                                if(item.config.status_id) status=module.getRuntimeValue("treeItemStatus", item.config.status_id);
+                                if (AA_MainApp.utils.isDefined(status)) {
+                                    //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status della tabella (" + item.config.id + ")", status);
+                                    item.setState(status);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (obj.config.view=="tree") 
+                            {
+                                let status = module.getRuntimeValue("treeItemStatus", item.config.id);
+                                if(item.config.status_id) status=module.getRuntimeValue("treeItemStatus", item.config.status_id);
                                 if (AA_MainApp.utils.isDefined(status)) {
                                     //console.log(this.name + "::refreshUiObjectDefault - ripristino lo status della tabella (" + obj.config.id + ")", status);
                                     obj.setState(status);
