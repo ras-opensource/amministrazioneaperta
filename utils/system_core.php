@@ -6,6 +6,15 @@ include_once "lib_mail.php";
 //Database --------------------
 class AA_Database extends PDO_Database
 {
+    static protected $oPdo=null;
+    static protected $dbName="dbname";
+	static protected $dbHost="localhost";
+	static protected $dbUser="dbuser";
+	static protected $dbPwd="dbpwd";
+    static protected $nLastInsertId = 0;
+    static protected $sLastQuery = "";
+    static protected $sLastErrorMessage="";
+
     //Parametri di connessione al DB
     private $AA_DBHOST = AA_Config::AA_DBHOST;
     private $AA_DBNAME = AA_Config::AA_DBNAME;
@@ -25,6 +34,15 @@ class AA_Database extends PDO_Database
 class AA_AccountsDatabase extends PDO_Database
 {
     //Parametri di connessione al DB
+    static protected $oPdo=null;
+    static protected $dbName="dbname";
+	static protected $dbHost="localhost";
+	static protected $dbUser="dbuser";
+	static protected $dbPwd="dbpwd";
+    static protected $nLastInsertId = 0;
+    static protected $sLastQuery = "";
+    static protected $sLastErrorMessage="";
+
     private $AA_DBHOST = AA_Config::AA_ACCOUNTS_DBHOST;
     private $AA_DBNAME = AA_Config::AA_ACCOUNTS_DBNAME;
     private $AA_DBUSER = AA_config::AA_ACCOUNTS_DBUSER;
@@ -2544,7 +2562,7 @@ class AA_User
 
         //AA_Log::Log(get_class() . "->GenerateToken($id_user) - new token: " . $token);
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
 
         if(!$concurrent_access && !$remember_me)
         {
@@ -7691,6 +7709,25 @@ class AA_Platform
             <div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
         </div>
     </div>';
+
+    static protected $sManutention='<div id="AA_MainOverlay" class="AA_MainOverlay" style="display: block;">
+        <div class="AA_MainOverlayContent">
+            <img class="AA_Header_Logo" src="immagini/logo_ras.svg" alt="logo RAS" title="www.regione.sardegna.it">
+            <h1><span>A</span>mministrazione <span>A</span>perta</h1>
+            <div>
+            <p style="color:#fff; font-size:32px; font-weight: bold;text-align:center">
+            Sito in manutenzione.
+            </p>
+            <p style="color:#fff; font-size:24px;text-align:center">
+            Il servizio verra ripristinato nel piu breve tempo possibile.
+            </p>
+            </div>
+        </div>
+    </div>';
+    public static function GetManutention()
+    {
+        return static::$sManutention;
+    }
 
     public static function GetOverlay()
     {

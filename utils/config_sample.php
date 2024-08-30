@@ -65,6 +65,9 @@ Class AA_Config
     
     //migra automaticamente dopo il login gli utenti legacy al nuovo sistema
     const AA_MIGRATE_LEGACY_USERS=false;
+
+    //abilita la manutenzione
+    const AA_MANUTENTION=false;
 }
 
 //percorso librerie

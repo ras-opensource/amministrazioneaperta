@@ -808,7 +808,20 @@ Class AA_GenericParsableObject
 Class AA_GenericParsableDbObject extends AA_GenericParsableObject
 {
     static protected $dbDataTable="";
+    public static function GetDatatable()
+    {
+        return static::$dbDataTable;
+    }
     static protected $ObjectClass=__CLASS__;
+    public static function GetObjectClass()
+    {
+        return static::$ObjectClass;
+    }
+    static protected $dbClass="AA_Database";
+    public static function GetDbClass()
+    {
+        return static::$dbClass;
+    }
 
     public function __construct($params=null)
     {
@@ -823,7 +836,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
             return false;
         }
  
-        $db=new AA_Database();
+        $db=new static::$dbClass();
         
         if($this->aProps['id']<=0)
         {
@@ -878,7 +891,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
     {
         if(static::$dbDataTable == "") return array();
  
-        $db=new AA_Database();
+        $db=new static::$dbClass();
         $query="SELECT * FROM ".static::$dbDataTable;
         $where="";
         $order="";
@@ -983,7 +996,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
 
         if(static::$dbDataTable == "") return null;
  
-        $db=new AA_Database();
+        $db=new static::$dbClass();
         $query="SELECT * FROM ".static::$dbDataTable." WHERE id = '".addslashes($id)."'";
 
         if(!$db->Query($query))
@@ -1024,7 +1037,10 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
             AA_Log::Log(__METHOD__." - Identificativo non valido o tabella non definita.",100);
             return false;
         } 
-        $db=new AA_Database();
+
+        //AA_Log::Log(__METHOD__." - db class: ".static::$dbClass,100);
+        
+        $db=new static::$dbClass();
 
         $id=intVal($this->aProps['id']);
         if(!$db->Query("DELETE FROM ".static::$dbDataTable." WHERE id='".addslashes($id)."' LIMIT 1"))
@@ -6494,7 +6510,58 @@ class AA_GenericResetPwdDlg extends AA_GenericFormDlg
 Class AA_Struttura extends AA_GenericParsableDbObject
 {
     static protected $dbDataTable="assessorati";
+    static protected $dbClass="AA_AccountsDatabase";
+    static protected $ObjectClass=__CLASS__;
 
+    public function __construct($params = null)
+    {
+        $this->aProps['descrizione']="";
+        $this->aProps['data_istituzione']=date("Y-m-d");
+        $this->aProps['data_soppressione']="9999-12-31";
+
+        parent::__construct($params);
+    }
+
+    public function Delete($user=null)
+    {
+        #verifica utente
+        if(!($user instanceof AA_User) || !$user->isCurrentUser())
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if(!$user->CanGestStruct())
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente non è abilitato alla gestione strutture.",100);
+            return false; 
+        }
+
+        $struct=$user->GetStruct();
+        if(($this instanceof AA_Assessorato) && $struct->GetAssessorato(true) !=0)
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente non puo' modificare la struttura (0).",100);
+            return false; 
+        }
+
+        if(($this instanceof AA_Direzione) && ($struct->GetDirezione(true) !=0 || ($struct->GetAssessorato(true) !=0 && $struct->GetAssessorato(true) != intVal($this->GetProp('id_assessorato')))))
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente non puo' modificare la struttura (1).",100);
+            return false; 
+        }
+
+        if($struct->GetServizio(true) !=0)
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente non puo' modificare la struttura (2).",100);
+            return false; 
+        }
+        #---------------------
+
+        return $this->DeleteFromDb();
+    }
+}
+
+Class AA_Assessorato extends AA_Struttura
+{
     const AA_TIPO_ASSESSORATO=0;
     const AA_TIPO_AGENZIA=2;
     const AA_TIPO_ENTE=1;
@@ -6515,28 +6582,72 @@ Class AA_Struttura extends AA_GenericParsableDbObject
 
         return static::$aTipologie;
     }
-    static protected $ObjectClass=__CLASS__;
-
     public function __construct($params = null)
     {
-        $this->aProps['descrizione']="";
         $this->aProps['tipo']=-1;
-        $this->aProps['data_istituzione']=date("Y-m-d");
-        $this->aProps['data_soppressione']="9999-12-31";
 
         parent::__construct($params);
     }
-}
 
-Class AA_Assessorato extends AA_Struttura
-{
-    public function __construct($params = null)
+    public function GetDirezioni($bAsObjects=false)
     {
-        parent::__construct($params);
+        $return = array();
+
+        if($this->GetProp('id') !=0)
+        {
+            $db = new static::$dbClass();
+
+            $query="SELECT distinct id from ".AA_Direzione::GetDatatable()." WHERE id_assessorato='".$this->GetProp('id')."' ORDER by descrizione";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log("Errore nel recupero delle direzioni. - ".$db->GetLastErrorMessage(),100);
+                return $return;
+            }
+
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                if($bAsObjects)
+                {
+                    $struct=new AA_Direzione();
+                    if($struct->Load($curRow['id'])) $return[$curRow['id']]=$struct;
+                }
+                else $return[]=$curRow['id'];
+            }
+        }
+
+        return $return;
+    }
+
+    public function Delete($user=null)
+    {
+        if(!($user instanceof AA_User) || !$user->isCurrentUser())
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if(!$user->CanGestStruct())
+        {
+            AA_Log::Log("L'utente corrente non è abilitato alla gestione strutture.",100);
+            return false; 
+        }
+
+        $servizi=$this->GetDirezioni(true);
+
+        foreach($servizi as $curDirezione)
+        {
+            if(!$curDirezione->Delete($user))
+            {
+                return false;
+            }
+        }
+
+        return parent::Delete($user);
     }
 }
 
-Class AA_Direzione extends AA_GenericParsableDbObject
+Class AA_Direzione extends AA_Struttura
 {
     static protected $dbDataTable="direzioni";
 
@@ -6551,9 +6662,66 @@ Class AA_Direzione extends AA_GenericParsableDbObject
 
         parent::__construct($params);
     }
+
+    public function Delete($user=null)
+    {
+        if(!($user instanceof AA_User) || !$user->isCurrentUser())
+        {
+            $user=AA_User::GetCurrentUser();
+        }
+
+        if(!$user->CanGestStruct())
+        {
+            AA_Log::Log("L'utente corrente non è abilitato alla gestione strutture.",100);
+            return false; 
+        }
+
+        $servizi=$this->GetServizi(true);
+
+        foreach($servizi as $curServizio)
+        {
+            if(!$curServizio->Delete($user))
+            {
+                return false;
+            }
+        }
+
+        return parent::Delete($user);
+    }
+
+    public function GetServizi($bAsObjects=false)
+    {
+        $return = array();
+
+        if($this->GetProp('id') !=0)
+        {
+            $db = new static::$dbClass();
+
+            $query="SELECT distinct id from ".AA_Servizio::GetDatatable()." WHERE id_direzione='".$this->GetProp('id')."' ORDER by descrizione";
+
+            if(!$db->Query($query))
+            {
+                AA_Log::Log("Errore nel recupero dei servizi. - ".$db->GetLastErrorMessage(),100);
+                return $return;
+            }
+
+            $rs=$db->GetResultSet();
+            foreach($rs as $curRow)
+            {
+                if($bAsObjects)
+                {
+                    $struct=new AA_Servizio();
+                    if($struct->Load($curRow['id'])) $return[$curRow['id']]=$struct;
+                }
+                else $return[]=$curRow['id'];
+            }
+        }
+
+        return $return;
+    }
 }
 
-Class AA_Servizio extends AA_GenericParsableDbObject
+Class AA_Servizio extends AA_Struttura
 {
     static protected $dbDataTable="servizi";
 

@@ -29,10 +29,12 @@ header("Pragma: no-cache");
 <link href="stili/system_custom.css" rel="stylesheet" type="text/css" />
 <script defer src="<?php echo $lib_path;?>/cryptojs/aes.js"></script>
 <script defer src="<?php echo $lib_path;?>/jquery/jquery-3.6.0.min.js"></script>
-<script defer src="<?php echo $lib_path;?>/jointjs/lodash.js"></script>
-<script defer src="<?php echo $lib_path;?>/jointjs/backbone.js"></script>
-<script defer src="<?php echo $lib_path;?>/jointjs/joint.min.js"></script>
-<script defer src="<?php echo $lib_path;?>/jointjs/joint.shapes.org.min.js"></script>
+<?php
+if(AA_Config::AA_MANUTENTION)
+{
+  die("</head><body>".AA_Platform::GetManutention()."<!--<div style='height:0px;'><a href='#' id='open_preferences_center'></a></div>--></body></html>");
+}
+?>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/webix/codebase/webix.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/pdfobject.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/pulltorefresh.js/dist/index.umd.min.js"></script>

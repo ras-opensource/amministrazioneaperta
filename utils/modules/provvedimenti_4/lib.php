@@ -89,7 +89,7 @@ Class AA_Provvedimenti extends AA_Object_V2
     //tabella dati db
     const AA_DBTABLE_DATA="aa_provvedimenti_data";
     const AA_ALLEGATI_DB_TABLE="aa_provvedimenti_allegati";
-
+    static protected $AA_DBTABLE_OBJECTS="aa_gespa_objects";
     //Funzione di cancellazione
     protected function DeleteData($idData = 0, $user = null)
     {

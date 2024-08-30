@@ -337,26 +337,26 @@ class RecordSet
 class PDO_Database
 {
 	//PDO object
-	static private $oPdo=null;
+	static protected $oPdo=null;
 
 	//Ultimo id inserito
 	static protected $nLastInsertId = 0;
 	public static function GetLastInsertId()
 	{
-		return self::$nLastInsertId;
+		return static::$nLastInsertId;
 	}
 
 	//ultima query eseguita con successo
 	static protected $sLastQuery = "";
 	static public function GetLastQuery()
 	{
-		return self::$sLastQuery;
+		return static::$sLastQuery;
 	}
 
 	static protected $sLastErrorMessage="";
 	static public function GetLastErrorMessage()
 	{
-		return self::$sLastErrorMessage;
+		return static::$sLastErrorMessage;
 	}
 
 	//PDO statment
@@ -383,10 +383,10 @@ class PDO_Database
 	}
 
 	//db params
-	static private $dbName="dbname";
-	static private $dbHost="localhost";
-	static private $dbUser="dbuser";
-	static private $dbPwd="dbpwd";
+	static protected $dbName="dbname";
+	static protected $dbHost="localhost";
+	static protected $dbUser="dbuser";
+	static protected $dbPwd="dbpwd";
 
 	//error messages
 	protected $sError="";
@@ -418,10 +418,10 @@ class PDO_Database
 	}
 
 	//Inizializza la connessione al DB
-	protected function Initialize($dbname="dbname",$host="localhost",$user="dbuser",$pwd="dbpwd", $bReset=false)
+	protected function Initialize($dbname="dbname",$host="localhost",$user="dbuser",$pwd="dbpwd", $bReset=false,$bPersistent=true)
 	{
 		//Connessione già inizializzata
-		if(PDO_Database::$oPdo instanceof PDO)
+		if(static::$oPdo instanceof PDO)
 		{
 			if(!$bReset)
 			{
@@ -434,7 +434,7 @@ class PDO_Database
 			else
 			{
 				$this->oStat=null;
-				PDO_Database::$oPdo=null;
+				static::$oPdo=null;
 				$this->bValid=false;
 				$this->nStatus=-2;
 				$this->sError="";	
@@ -443,21 +443,21 @@ class PDO_Database
 		
 		try
 		{
-			PDO_Database::$oPdo = new PDO('mysql:host='.$host.';dbname='.$dbname,$user,$pwd,
+			static::$oPdo = new PDO('mysql:host='.$host.';dbname='.$dbname,$user,$pwd,
 			array(
 				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 				PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
-				PDO::ATTR_PERSISTENT => true
+				PDO::ATTR_PERSISTENT => $bPersistent
 			));
 
 			$this->bValid=true;
 			$this->nStatus=0;
 			$this->sError="";
 
-			PDO_Database::$dbName=$dbname;
-			PDO_Database::$dbHost=$host;
-			PDO_Database::$dbUser=$user;
-			PDO_Database::$dbPwd=$pwd;
+			static::$dbName=$dbname;
+			static::$dbHost=$host;
+			static::$dbUser=$user;
+			static::$dbPwd=$pwd;
 
 			return true;
 		}
@@ -487,9 +487,9 @@ class PDO_Database
 	//Chiudi l'istanza precedentemente aperta (utile per cambiare db)
 	static public function CloseInstance()
 	{
-		if(PDO_Database::$oPdo instanceof PDO)
+		if(static::$oPdo instanceof PDO)
 		{
-			PDO_Database::$oPdo= null;
+			static::$oPdo= null;
 		}
 	}
 
@@ -518,13 +518,13 @@ class PDO_Database
 			return false;
 		}
 
-		if(PDO_Database::$oPdo instanceof PDO)
+		if(static::$oPdo instanceof PDO)
 		{
 			try
 			{
 				//prepara la query
 				$this->oStat=null;
-				$this->oStat=PDO_Database::$oPdo->prepare($sql,$sql_params);
+				$this->oStat=static::$oPdo->prepare($sql,$sql_params);
 				
 				//Esegue la query
 				if($this->oStat->execute($params))
@@ -536,7 +536,7 @@ class PDO_Database
 				if(stripos($sql,"INSERT") !==false)
 				{
 					//Ultimo id inserito
-					self::$nLastInsertId=PDO_Database::$oPdo->lastInsertId();
+					self::$nLastInsertId=static::$oPdo->lastInsertId();
 				}
 
 				$this->nStatus=0;
@@ -580,13 +580,13 @@ class PDO_Database
 			return false;
 		}
 
-		if(PDO_Database::$oPdo instanceof PDO)
+		if(static::$oPdo instanceof PDO)
 		{
 			try
 			{
 				//prepara la query
 				$this->oStat=null;
-				$this->oStat=PDO_Database::$oPdo->Query($sql,PDO::FETCH_ASSOC);
+				$this->oStat=static::$oPdo->Query($sql,PDO::FETCH_ASSOC);
 
 				//Numero di righe interessate
 				$this->nAffectedRows=$this->oStat->rowCount();
@@ -595,7 +595,7 @@ class PDO_Database
 				if(stripos($sql,"INSERT") !==false)
 				{
 					//Ultimo id inserito
-					self::$nLastInsertId=PDO_Database::$oPdo->lastInsertId();
+					self::$nLastInsertId=static::$oPdo->lastInsertId();
 				}
 
 				$this->nStatus=0;

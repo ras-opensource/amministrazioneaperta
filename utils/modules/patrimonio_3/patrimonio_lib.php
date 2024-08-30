@@ -86,6 +86,8 @@ Class AA_Patrimonio extends AA_Object_V2
     //tabella canoni db
     const AA_DBTABLE_CANONI="aa_patrimonio_canoni";
 
+    static protected $AA_DBTABLE_OBJECTS = "aa_gespi_objects";
+
     //file codici istat
     const AA_DBTABLE_CODICI_ISTAT="aa_patrimonio_codici_istat";
     static public function GetComuneFromCodice($codice="")

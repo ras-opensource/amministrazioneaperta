@@ -98,6 +98,8 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("HomeStructAddNew");
         $taskManager->RegisterTask("GetHomeStructModifyDlg");
         $taskManager->RegisterTask("HomeStructUpdate");
+        $taskManager->RegisterTask("GetHomeStructTrashDlg");
+        $taskManager->RegisterTask("HomeStructDelete");
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -506,6 +508,89 @@ Class AA_HomeModule extends AA_GenericModule
             return false; 
         }
 
+        if($struct->GetDirezione(true) !=0 &&(!isset($_REQUEST['id_direzione']) || $_REQUEST['id_direzione'] != $struct->GetDirezione(true)) && $struct->GetDirezione(true) !=0) 
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' modificare la struttura indicata.");
+            return false; 
+        }
+
+        if($struct->GetServizio(true) !=0 &&(!isset($_REQUEST['id_servizio']) || $_REQUEST['id_servizio'] != $struct->GetServizio(true)) && $struct->GetServizio(true) !=0) 
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' modificare la struttura indicata.");
+            return false; 
+        }
+
+        $oStruct=null;
+        if(isset($_REQUEST['id_assessorato']) && $_REQUEST['id_assessorato']>0) 
+        {
+            $oStruct=new AA_Assessorato();
+            if(!$oStruct->Load($_REQUEST['id_assessorato']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Struttura non trovata (0).");
+                return false; 
+            }
+        }
+        if(isset($_REQUEST['id_direzione']) && $_REQUEST['id_direzione']>0) 
+        {
+            $oStruct=new AA_Direzione();
+            if(!$oStruct->Load($_REQUEST['id_direzione']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Struttura non trovata (1).");
+                return false; 
+            }
+        }
+        if(isset($_REQUEST['id_servizio']) && $_REQUEST['id_servizio']>0) 
+        {
+            $oStruct=new AA_Servizio();
+            if(!$oStruct->Load($_REQUEST['id_servizio']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Struttura non trovata (0).");
+                return false; 
+            }
+        }
+
+        if($oStruct)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetHomeStructModifyDlg($oStruct),true);
+            return true;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+        $task->SetError("Struttura non trovata.",false);
+        return false;     
+    }
+
+    //Task modify trash dlg
+    public function Task_GetHomeStructTrashDlg($task)
+    {
+        if(!$this->oUser->CanGestStruct())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione strutture.");
+            return false; 
+        }
+
+        $struct=$this->oUser->GetStruct();
+        if(!isset($_REQUEST['id_assessorato']) || $_REQUEST['id_assessorato']==0) 
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Struttura non indicata.");
+            return false; 
+        }
+
+        if(isset($_REQUEST['id_assessorato']) && $_REQUEST['id_assessorato']!=$struct->GetAssessorato(true) && $struct->GetAssessorato(true) !=0) 
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' modificare la struttura indicata.");
+            return false; 
+        }
+
         if($struct->GetDirezione(true) !=0 &&(!isset($_REQUEST['id_direzione']) || $_REQUEST['id_direzione'] != $struct->GetServizio(true))) 
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -555,7 +640,7 @@ Class AA_HomeModule extends AA_GenericModule
         if($oStruct)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent($this->Template_GetHomeStructModifyDlg($oStruct),true);
+            $task->SetContent($this->Template_GetHomeStructTrashDlg($oStruct),true);
             return true;
         }
 
@@ -961,6 +1046,77 @@ Class AA_HomeModule extends AA_GenericModule
         return true;
     }
 
+    //Task delete struct
+    public function Task_HomeStructDelete($task)
+    {
+        if(!$this->oUser->CanGestStruct())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione strutture.");
+            return false; 
+        }
+
+        $struct=$this->oUser->GetStruct();
+        if($_REQUEST['id_assessorato'] != $struct->GetAssessorato(true) && $struct->GetAssessorato(true) !=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' modificare la struttura (0).");
+            return false; 
+        }
+
+        if($_REQUEST['id_direzione'] != $struct->GetDirezione(true) && $struct->GetDirezione(true) !=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' modificare la struttura (1).");
+            return false; 
+        }
+
+        if($struct->GetServizio(true) !=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' modificare la struttura (3).");
+            return false; 
+        }
+
+        $struct=null;
+
+        if($_REQUEST['id_direzione'] !=0)
+        {
+            $struct=new AA_Servizio();
+        }
+        else
+        {
+            if($_REQUEST['id_assessorato'] !=0)
+            {
+                $struct=new AA_Direzione();
+            }
+            else
+            {
+                $struct=new AA_Assessorato();
+            }
+        }
+
+        if(!$struct->Load($_REQUEST['id']))
+        {
+            AA_Log::Log(__METHOD__." - Errore nel caricamento della struttura: ".print_r($struct,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'eliminazione della struttura - struttura non trovata.");
+            return false; 
+        }
+     
+        if(!$struct->Delete($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'eliminazione della struttura.");
+            return false; 
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Struttura eliminata con successo.",false);
+        
+        return true;
+    }
+
     //Template navbar cruscotto
     protected function TemplateNavbar_Cruscotto($level=1,$last=true)
     {
@@ -1191,6 +1347,81 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("HomeUtentiTrash");
+        
+        return $wnd;
+    }
+
+    //Template dlg trash utente
+    public function Template_GetHomeStructTrashDlg($object=null)
+    {
+        $id=$this->id."_HomeStructTrash_Dlg";
+        
+        $form_data=array("id"=>$object->GetProp('id'));
+        $form_data["id_assessorato"]=$object->GetProp('id_assessorato');
+        if($form_data["id_assessorato"]=="") $form_data["id_assessorato"]=0;
+        $form_data["id_direzione"]=$object->GetProp('id_direzione');
+        if($form_data["id_direzione"]=="") $form_data["id_direzione"]=0;
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina struttura", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(800);
+        $wnd->SetHeight(480);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+        
+        $space="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+        $tabledata=array();
+        $tabledata[]=array("struttura"=>$object->getProp('descrizione'));
+        if($object instanceof AA_Direzione)
+        {
+            $servizi=$object->GetServizi(true);
+            foreach($servizi as $curServizio)
+            {
+                $tabledata[]=array("struttura"=>$space.$curServizio->getProp('descrizione'));
+            }
+        }
+
+        if($object instanceof AA_Assessorato)
+        {
+            $direzioni=$object->GetDirezioni(true);
+            foreach($direzioni as $curDirezione)
+            {
+                $tabledata[]=array("struttura"=>$space.$curDirezione->getProp('descrizione'));
+
+                $servizi=$curDirezione->GetServizi(true);
+                foreach($servizi as $curServizio)
+                {
+                    $tabledata[]=array("struttura"=>$space.$space.$curServizio->getProp('descrizione'));
+                }
+            }
+        }
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("borderless"=>true,"autoheight"=>true,"template"=>"Le seguenti strutture <b>verranno eliminate definitivamente</b>, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"struttura", "header"=>"Strutture che verranno eliminate", "fillspace"=>true),
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("HomeStructDelete");
         
         return $wnd;
     }
