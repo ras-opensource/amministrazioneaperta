@@ -7818,7 +7818,7 @@ class AA_Platform
         //Carica i moduli
         if (!isset($_SESSION['platform_modules_cache']) || isset($_REQUEST['disable_cache']) || $bDisableCache) {
             $db = new AA_Database();
-            $query = "SELECT * from aa_platform_modules";
+            $query = "SELECT * from aa_platform_modules ORDER by ordine";
             if (!$db->Query($query)) {
                 AA_Log::Log(__METHOD__ . " - errore: " . $db->GetErrorMessage(), 100);
                 return;
