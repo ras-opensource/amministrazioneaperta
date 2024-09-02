@@ -3153,7 +3153,7 @@ async function AA_SetCurrentModule(id) {
 }
 
 //Default system initialization
-if (webix) {
+if (typeof webix === 'object') {
     webix.ready(async function() {
         try {
             setTimeout(async function() { await AA_MainApp.bootUpFunction() }, 1000);
@@ -3161,6 +3161,10 @@ if (webix) {
             console.error(msg);
         }
     });
+}
+else
+{
+    console.log("oggetto webix non definito",webix);
 }
 
 
@@ -3194,6 +3198,10 @@ async function AA_RefreshMainUi(params) {
                         module.ui.name = modules[curMod].name;
                     }
                 }
+            }
+            else
+            {
+                console.log("System::AA_RefreshMainUi - lista moduli non definita");
             }
             //--------------------------------------------------------
 

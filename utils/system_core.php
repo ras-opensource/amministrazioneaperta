@@ -6010,14 +6010,14 @@ class AA_Object
             return false;
         }
 
-        if (!$this->VerifyDbLoad($user)) {
+        if (!$this->VerifyDbLoad()) {
             return false;
         }
 
         $db = new Database();
         $query = "SELECT * from " . $this->oDbBind->GetTable() . " WHERE id='" . $id . "' LIMIT 1";
         if (!$db->Query($query)) {
-            AA_Log::Log(__METHOD__ . " - Errore nella query: " . $query, 100, false, true);
+            AA_Log::Log(__METHOD__ . " - Errore - ".$db->GetErrorMessage()."nella query: " . $query, 100, false, true);
             return false;
         }
 
