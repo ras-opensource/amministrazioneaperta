@@ -2667,7 +2667,7 @@ class AA_Organismi extends AA_Object
         if(!$db->Query($query))
         {
             //Errore query
-            AA_Log::Log(__METHOD__."() - Errore nella query: $query",100);
+            AA_Log::Log(__METHOD__."() - Errore - ".$db->GetErrorMessage()." - nella query: $query",100);
             return 0;
         }
 

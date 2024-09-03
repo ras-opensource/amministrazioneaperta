@@ -1551,7 +1551,7 @@ Class AA_SinesModule extends AA_GenericModule
     {
         $id=$this->id."_AddNewOrganigrammaIncarico_Dlg";
 
-        $form_data=array("tipo"=>0,"compenso_spettante"=>0);
+        $form_data=array("tipo"=>0,"compenso_spettante"=>0,"ordine"=>0);
         
         $wnd=new AA_GenericFormDlg($id, "Aggiungi incarico per l'organigramma ".$organigramma->GetTipologia(), $this->id,$form_data,$form_data);
         
