@@ -133,12 +133,13 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
 <?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onFilterStructChange = async function() {
     try 
     {
-        console.log("eventHandlers.defaultHandlers.onFilterStructChange", this, arguments);
+        //console.log("eventHandlers.defaultHandlers.onFilterStructChange", this.getValue(), arguments);
 
         let TreeView=$$(this.config.tree_view_id);
         let search=this;
         if(TreeView)
         {
+            //console.log("eventHandlers.defaultHandlers.onFilterStructChange", this.getValue());
             TreeView.filter(function(obj){return obj.value.toLowerCase().indexOf(search.getValue().toLowerCase()) !== -1;});
         }
 

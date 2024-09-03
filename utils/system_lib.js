@@ -419,6 +419,28 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         }    
                     }
 
+                    //Salva lo stato dei campi di ricerca
+                    let searchObjs = obj.queryView({ view: "search" }, "all");
+                    if (Array.isArray(searchObjs) && searchObjs.length > 0) 
+                    {
+                        for (item of searchObjs) {
+                            let status = item.getValue();
+                            //console.log(module.name + "::refreshUiObjectDefault -saved value (" + item.config.id + "): ", status);
+                            if(item.config.filter_id) module.setRuntimeValue("searchItemValue", item.config.filter_id, status);
+                            else module.setRuntimeValue("searchItemValue", item.config.id, status);
+                        }
+                    }
+                    else
+                    {
+                        if (obj.config.view=="search") 
+                        {
+                            let status = obj.getValue();
+                            //console.log(module.name + "::refreshUiObjectDefault - saved value (" + obj.config.id + "): ", status);
+                            if(item.config.filter_id) module.setRuntimeValue("searchItemValue", item.config.filter_id, status);
+                            else module.setRuntimeValue("searchItemValue", item.config.id, status);                     
+                        }    
+                    }
+
                     //Salva lo stato delle treeview
                     let treeObjs = obj.queryView({ view: "tree" }, "all");
                     if (Array.isArray(treeObjs) && treeObjs.length > 0) {
@@ -486,25 +508,6 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                     table.adjust();
                                 }
                             }*/
-                        }
-
-                        //verifica se ci sono campi di ricerca
-                        let searchObjs = obj.queryView({ view: "search" }, "all");
-                        if (Array.isArray(searchObjs) && searchObjs.length > 0) {
-                            for (item of searchObjs) {
-                                let funct = item.config.filterFunction;
-                                if (AA_MainApp.utils.isDefined(funct)) {
-                                    if (!item.hasEvent("onTimedKeyPress")) {
-                                        console.log(module.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
-                                        item.attachEvent("onTimedKeyPress", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", AA_MainApp.curModule.id));
-                                    }
-
-                                    if (!item.hasEvent("onChange") && item.config.clear == true) {
-                                        console.log(module.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
-                                        item.attachEvent("onChange", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", AA_MainApp.curModule.id));
-                                    }
-                                }
-                            }
                         }
 
                         //Aggiorna il titolo della sezione.
@@ -677,6 +680,33 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                     obj.setState(status);
                                 }                      
                             }    
+                        }
+
+                        //ripristina il valore dei campi di ricerca
+                        let searchObjs = obj.queryView({ view: "search" }, "all");
+                        if (Array.isArray(searchObjs) && searchObjs.length > 0) {
+                            for (item of searchObjs) {
+                                
+                                let lastValue=module.getRuntimeValue("searchItemValue", item.config.id);
+                                if(item.config.filter_id) lastValue=module.getRuntimeValue("searchItemValue", item.config.filter_id);
+                                if (AA_MainApp.utils.isDefined(lastValue)) {
+                                    //console.log(this.name + "::refreshUiObjectDefault - ripristino il valore della ricerca (" + item.config.id + ")", lastValue);
+                                    item.setValue(lastValue);
+                                }
+
+                                let funct = item.config.filterFunction;
+                                if (AA_MainApp.utils.isDefined(funct)) {
+                                    if (!item.hasEvent("onTimedKeyPress")) {
+                                        //console.log(module.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                        item.attachEvent("onTimedKeyPress", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", AA_MainApp.curModule.id));
+                                    }
+
+                                    if (!item.hasEvent("onChange") && item.config.clear == true) {
+                                        //console.log(module.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                        item.attachEvent("onChange", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", AA_MainApp.curModule.id));
+                                    }
+                                }
+                            }
                         }
 
                         obj.define("initialized", true);

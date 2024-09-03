@@ -2719,7 +2719,7 @@ Class AA_HomeModule extends AA_GenericModule
         //tipologia
         if($id_assessorato==0)
         {
-            $tipo=AA_Struttura::GetTipologie();
+            $tipo=AA_Assessorato::GetTipologie();
             $options=array();
             foreach($tipo as $key=>$val)
             {
@@ -2769,7 +2769,7 @@ Class AA_HomeModule extends AA_GenericModule
         //tipologia
         if($struct instanceof AA_Assessorato)
         {
-            $tipo=AA_Struttura::GetTipologie();
+            $tipo=AA_Assessorato::GetTipologie();
             $options=array();
             foreach($tipo as $key=>$val)
             {
@@ -2817,7 +2817,7 @@ Class AA_HomeModule extends AA_GenericModule
 
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("gravity"=>3)));
         
-        $toolbar->AddElement(new AA_JSON_Template_Search("", array("gravity"=>1,"tree_view_id"=>$tree_view_id,"placeholder" => "Digita qui per filtrare le strutture","eventHandlers"=>array("onTimedKeyPress"=>array("handler"=>"onFilterStructChange","module_id"=>$this->GetId())))));
+        $toolbar->AddElement(new AA_JSON_Template_Search("", array("gravity"=>1,"tree_view_id"=>$tree_view_id,"filter_id"=>static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTSTRUCT."_search","placeholder" => "Digita qui per filtrare le strutture","eventHandlers"=>array("onTimedKeyPress"=>array("handler"=>"onFilterStructChange","module_id"=>$this->GetId()),"onChange"=>array("handler"=>"onFilterStructChange","module_id"=>$this->GetId())))));
 
         //Pulsante di modifica
         $canModify=false;
