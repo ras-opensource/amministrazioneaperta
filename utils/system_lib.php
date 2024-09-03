@@ -871,7 +871,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
 
         if($this->aProps['id']==0)
         {
-            $this->aProps['id']=AA_Database::GetLastInsertId();
+            $this->aProps['id']=$db->GetLastInsertId();
         }
 
         return true;

@@ -11,7 +11,7 @@ class AA_Database extends PDO_Database
 	static protected $dbHost="localhost";
 	static protected $dbUser="dbuser";
 	static protected $dbPwd="dbpwd";
-    static protected $nLastInsertId = 0;
+    protected $nLastInsertId = 0;
     static protected $sLastQuery = "";
     static protected $sLastErrorMessage="";
 
@@ -39,7 +39,7 @@ class AA_AccountsDatabase extends PDO_Database
 	static protected $dbHost="localhost";
 	static protected $dbUser="dbuser";
 	static protected $dbPwd="dbpwd";
-    static protected $nLastInsertId = 0;
+    protected $nLastInsertId = 0;
     static protected $sLastQuery = "";
     static protected $sLastErrorMessage="";
 

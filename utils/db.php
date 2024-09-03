@@ -69,13 +69,13 @@ class Database
 	//Restituisce l'ultimo id inserito al livello globale
 	static public function LastInsertId()
 	{
-		return self::$LAST_INSERT_DB;
+		return static::$LAST_INSERT_DB;
 	}
 
 	//Restituisce l'ultimo id inserito al livello globale
 	static public function GetLastInsertId()
 	{
-		return self::$LAST_INSERT_DB;
+		return static::$LAST_INSERT_DB;
 	}
 
 	//Effettua una query sul database
@@ -340,10 +340,10 @@ class PDO_Database
 	static protected $oPdo=null;
 
 	//Ultimo id inserito
-	static protected $nLastInsertId = 0;
-	public static function GetLastInsertId()
+	protected $nLastInsertId = 0;
+	public function GetLastInsertId()
 	{
-		return static::$nLastInsertId;
+		return $this->nLastInsertId;
 	}
 
 	//ultima query eseguita con successo
@@ -505,7 +505,7 @@ class PDO_Database
 		if($this->nStatus==-2)
 		{
 			$this->sError=__METHOD__." - Connessione al DB non inizializzata.";
-			self::$sLastErrorMessage=$this->sError;
+			static::$sLastErrorMessage=$this->sError;
 
 			return false;
 		}
@@ -514,7 +514,7 @@ class PDO_Database
 		if(!$this->bValid)
 		{
 			$this->sError=__METHOD__." - Connessione al DB non valida.";
-			self::$sLastErrorMessage=$this->sError;
+			static::$sLastErrorMessage=$this->sError;
 			return false;
 		}
 
@@ -531,12 +531,13 @@ class PDO_Database
 				
 				//Numero di righe interessate
 				$this->nAffectedRows=$this->oStat->rowCount();
-				self::$sLastQuery=$sql;
+				static::$sLastQuery=$sql;
 
 				if(stripos($sql,"INSERT") !==false)
 				{
 					//Ultimo id inserito
-					self::$nLastInsertId=static::$oPdo->lastInsertId();
+					AA_Log::Log(__METHOD__." id inserito: ".static::$oPdo->lastInsertId(),100);
+					$this->nLastInsertId=static::$oPdo->lastInsertId();
 				}
 
 				$this->nStatus=0;
@@ -547,7 +548,7 @@ class PDO_Database
 			{
 				$this->nStatus=-1;
 				$this->sError=$pe->getMessage()." (code: ".$pe->getCode().")";
-				self::$sLastErrorMessage=$this->sError;
+				static::$sLastErrorMessage=$this->sError;
 				$this->oStat=null;
 				return false;
 			}
@@ -595,7 +596,7 @@ class PDO_Database
 				if(stripos($sql,"INSERT") !==false)
 				{
 					//Ultimo id inserito
-					self::$nLastInsertId=static::$oPdo->lastInsertId();
+					$this->nLastInsertId=static::$oPdo->lastInsertId();
 				}
 
 				$this->nStatus=0;

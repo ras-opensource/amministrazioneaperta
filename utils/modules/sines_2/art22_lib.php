@@ -2604,6 +2604,7 @@ class AA_Organismi extends AA_Object
         }
 
         $newID=$db->GetLastInsertId();
+        //AA_Log::Log(__METHOD__." - id inserito ".$newID,100);
 
         $this->IsChanged();
         
