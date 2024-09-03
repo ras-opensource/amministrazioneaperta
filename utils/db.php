@@ -536,7 +536,6 @@ class PDO_Database
 				if(stripos($sql,"INSERT") !==false)
 				{
 					//Ultimo id inserito
-					AA_Log::Log(__METHOD__." id inserito: ".static::$oPdo->lastInsertId(),100);
 					$this->nLastInsertId=static::$oPdo->lastInsertId();
 				}
 
