@@ -169,7 +169,7 @@ Class AA_HomeModule extends AA_GenericModule
     public function Task_GetHomeUtentiFilterDlg($task)
     {
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        $content=$this->TemplateHomeUtentiFilterDlg($_REQUEST);
+        $content=$this->TemplateHomeUtentiFilterDlg();
         $sTaskLog.= base64_encode($content);
         $sTaskLog.="</content>";
         
@@ -182,7 +182,7 @@ Class AA_HomeModule extends AA_GenericModule
      public function Task_GetHomeUtentiLegacyFilterDlg($task)
      {
          $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-         $content=$this->TemplateHomeUtentiLegacyFilterDlg($_REQUEST);
+         $content=$this->TemplateHomeUtentiLegacyFilterDlg();
          $sTaskLog.= base64_encode($content);
          $sTaskLog.="</content>";
          
