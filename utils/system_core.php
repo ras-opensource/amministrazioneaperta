@@ -3154,7 +3154,7 @@ class AA_User
             //AA_Log::Log(__METHOD__." - Verifica gestione utenti - legacy",100);
             if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
 
-            if (!$this->HasFlag("U0")) return true;
+            //if (!$this->HasFlag("U0")) return true;
         }
 
         return false;
@@ -3175,9 +3175,12 @@ class AA_User
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
-            if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
 
-            if (!$this->HasFlag("S0")) return true;  
+            return false;
+            //if ($this->nLivello != AA_Const::AA_USER_LEVEL_ADMIN) return false;
+
+            //old
+            //if (!$this->HasFlag("S0")) return true;  
         }
 
         return false;
@@ -7829,19 +7832,22 @@ class AA_Platform
 
                 foreach ($db->GetResultSet() as $curMod) 
                 {
-                    $admins = explode(",", $curMod['admins']);
-                    $mod_flags = json_decode($curMod['flags'], true);
-                    if (!is_array($mod_flags)) 
+                    $flags = array();
+                    if($curMod['flags'] !="")
                     {
-                        if (json_last_error() > 0) AA_Log::Log(__METHOD__ . " - module flags:" . print_r($mod_flags, true) . " - error: " . json_last_error(), 100);
-                        $flags = array();
-                    } 
-                    else 
-                    {
-                        $flags = array_keys($mod_flags);
-                        //AA_Log::Log(__METHOD__." - module flags:".print_r($mod_flags,true),100);
+                        $mod_flags = json_decode($curMod['flags'], true);
+                        if (!is_array($mod_flags)) 
+                        {
+                            if (json_last_error() > 0) AA_Log::Log(__METHOD__ . " - id module: ".$curMod['id_modulo']." - module flags:" . print_r($mod_flags, true) . " - error: " . json_last_error(), 100);
+                        } 
+                        else 
+                        {
+                            $flags = array_keys($mod_flags);
+                            //AA_Log::Log(__METHOD__." - module flags:".print_r($mod_flags,true),100);
+                        }
                     }
 
+                    $admins = explode(",", $curMod['admins']);
                     if (in_array($this->oUser->GetId(), $admins) || $this->oUser->IsSuperUser()) 
                     {
                         //Amministratori del modulo
