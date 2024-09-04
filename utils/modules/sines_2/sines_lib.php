@@ -2192,6 +2192,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //Data fine presunta
         $wnd->AddCheckBoxField("bDataFinePresunta","Presunta",array("gravity"=>1,"labelWidth"=>90,"bottomLabel"=>"*Abilitare se presunta."),false);
+        
         //Storico
         $wnd->AddSwitchBoxField("nStorico","Storico",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Abilita per archiviare l'incarico come storico."));
 
@@ -2690,6 +2691,7 @@ Class AA_SinesModule extends AA_GenericModule
         $form_data['sNome']="";
         $form_data['sCognome']="";
         $form_data['sCodiceFiscale']="";
+        $form_data['bDataFinePresunta']=0;
         
         AA_Log::Log(__METHOD__." form data: ".print_r($form_data,true),100);
         
@@ -2706,17 +2708,17 @@ Class AA_SinesModule extends AA_GenericModule
         //Nome
         $wnd->AddTextField("sNome","nome",array("required"=>true,"bottomLabel"=>"*Indicare il nome del nominato.", "placeholder"=>"inserisci qui il nome."));
 
+        //cognome
+        $wnd->AddTextField("sCognome","cognome",array("required"=>true,"bottomLabel"=>"*Indicare il cognome del nominato.", "placeholder"=>"inserisci qui il cognome."),false);
+
         //Tipologia
         $options=array();
         foreach(AA_Organismi_Const::GetTipoNomine() as $id=>$label)
         {
             if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
         }
-        $wnd->AddSelectField("nTipologia","Incarico",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di incarico.","bottomLabel"=>"*Seleziona il tipo di incarico.","options"=>$options,"value"=>"0"),false);
+        $wnd->AddSelectField("nTipologia","Incarico",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di incarico.","bottomLabel"=>"*Seleziona il tipo di incarico.","options"=>$options,"value"=>"0"));
         
-        //cognome
-        $wnd->AddTextField("sCognome","cognome",array("required"=>true,"bottomLabel"=>"*Indicare il cognome del nominato.", "placeholder"=>"inserisci qui il cognome."));
-
         //Data inizio
         $wnd->AddDateField("sDataInizio","Data inizio",array("required"=>true,"editable"=>true,"bottomLabel"=>"*Inserire la data di inizio dell'incarico", "placeholder"=>"inserisci qui la data di inizio."),false);
         
@@ -2729,12 +2731,15 @@ Class AA_SinesModule extends AA_GenericModule
         //nomina Ras
         $wnd->AddSwitchBoxField("bNominaRas","Tipo nomina",array("onLabel"=>"RAS","offLabel"=>"non RAS","bottomLabel"=>"*Indica se la nomina è effettuata dalla RAS."));                
         
-        //Estremi del provvedimento
-        $wnd->AddTextField("sEstremiProvvedimento","Estremi provvedimento",array("bottomLabel"=>"*Riportare gli estremi del provvedimento.", "placeholder"=>"inserisci qui gli estremi del provvedimento."),false);
-        
+        //Data fine presunta
+        $wnd->AddCheckBoxField("bDataFinePresunta"," ",array("gravity"=>1,"labelWidth"=>90,"labelRight"=>"<b>Data fine presunta</b>","bottomLabel"=>"*Abilitare se la data di fine e' presunta."),false);
+
         //facente funzione
         $wnd->AddSwitchBoxField("nFacenteFunzione","Facente funzione",array("onLabel"=>"si","offLabel"=>"no","tooltip"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.","bottomLabel"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.", "value"=>"0"));
 
+        //Estremi del provvedimento
+        $wnd->AddTextField("sEstremiProvvedimento","Estremi provvedimento",array("bottomLabel"=>"*Riportare gli estremi del provvedimento.", "placeholder"=>"inserisci qui gli estremi del provvedimento."),false);
+        
         //note
         $label="Note";
         $wnd->AddTextareaField("sNote",$label);

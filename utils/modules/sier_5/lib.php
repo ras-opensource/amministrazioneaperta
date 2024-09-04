@@ -16675,8 +16675,8 @@ Class AA_SierModule extends AA_GenericModule
                 if(current($affluenza)['ore_12'] > 0) $completamento_a=33;
                 if(current($affluenza)['ore_19'] > 0) $completamento_a=66;
                 if(current($affluenza)['ore_22'] > 0) $completamento_a=100;
-
             }
+            
             $data[$index]['completamento_a']=$completamento_a;
             $id_layout_op=static::AA_UI_PREFIX."_".static::AA_UI_WND_AFFLUENZA_COMUNALE."_".static::AA_UI_LAYOUT_AFFLUENZA_COMUNALE;
             $view='AA_MainApp.curModule.setRuntimeValue("'.$id_layout_op.'","filter_data",{id:'.$object->GetId().',id_comune: '.$curComune->GetProp('id').'});AA_MainApp.utils.callHandler("dlg", {task:"GetSierComuneAffluenzaViewDlg", params: [{id: "'.$object->GetId().'"},{id_comune:"'.$curComune->GetProp("id").'"}]},"'.$this->id.'")';

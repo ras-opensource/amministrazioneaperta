@@ -6960,6 +6960,7 @@ Class AA_OrganismiNomine extends AA_Object
         $return.="<incarico id_tipo='".$this->GetTipologia(true)."'>".AA_Utils::xmlentities($this->GetTipologia())."</incarico>";
         $return.="<data_inizio>".AA_Utils::xmlentities($this->GetDataInizio())."</data_inizio>";
         $return.="<data_fine>".AA_Utils::xmlentities($this->GetDataFine())."</data_fine>";
+        $return.="<data_fine_presunta>".AA_Utils::xmlentities($this->IsDataFinePresunta())."</data_fine_presunta>";
         $return.="<emolumenti_totali>".AA_Utils::xmlentities($this->GetCompensoSpettante())."</emolumenti_totali>";
         $return.="<note>".AA_Utils::xmlentities($this->GetNote())."</note>";
         $return.="<compensi>";
