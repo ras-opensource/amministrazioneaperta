@@ -1216,10 +1216,10 @@ class AA_User
 
     public function IsAdmin()
     {
-        if(AA_Const::AA_ENABLE_LEGACY_DATA)
-        {
-            return $this->IsSuperUser();
-        }
+        //if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        //{
+        //    return $this->IsSuperUser();
+        //}
         
         if(array_search(AA_USER::AA_USER_GROUP_ADMINS,$this->GetGroups())) return true;
 
@@ -1231,7 +1231,7 @@ class AA_User
     {
         if ($this->nID == 1) return true;
         
-        if(AA_Const::AA_ENABLE_LEGACY_DATA && $this->HasFlag("SU")) return true;
+        //if(AA_Const::AA_ENABLE_LEGACY_DATA && $this->HasFlag("SU")) return true;
 
         //gruppo super user
         if(array_search(AA_USER::AA_USER_GROUP_SUPERUSER,$this->GetGroups()) !==false) return true;
