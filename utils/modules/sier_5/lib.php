@@ -30182,7 +30182,7 @@ Class AA_SierModule extends AA_GenericModule
                     $altro+=floatVal($val['importo']);
                     if(isset($rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo']) && $bAltroAmmesso)
                     {
-                        $altro_ammesso+=$rendiconti['ras']['servizi'][$key]['importo'];
+                        $altro_ammesso+=$rendiconti['ras']['importi_ammessi']['servizi'][$key]['importo'];
                     }
                     else $bAltroAmmesso=false;
                 }
