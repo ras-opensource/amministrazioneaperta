@@ -7,15 +7,15 @@ class AA_Organismi_Const extends AA_Const
 {
     //percorso pubblicazione documenti
     const AA_ORGANISMI_NOMINE_DOCS_PATH="/amministrazione_trasparente/art22/nomine/docs";
-    const AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH="/web/amministrazione_trasparente/pubblicazioni/art22/nomine/docs.php";
+    const AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH="/pubblicazioni/art22/nomine/docs.php";
 
     //percorso pubblicazione provvedimenti
     const AA_ORGANISMI_PROVVEDIMENTI_PATH="/amministrazione_trasparente/art22/provvedimenti";
-    const AA_ORGANISMI_PROVVEDIMENTI_PUBLIC_PATH="/web/amministrazione_trasparente/pubblicazioni/art22/provvedimenti/docs.php";
+    const AA_ORGANISMI_PROVVEDIMENTI_PUBLIC_PATH="/pubblicazioni/art22/provvedimenti/docs.php";
 
     //percorso pubblicazione bilanci
     const AA_ORGANISMI_BILANCI_PATH="/amministrazione_trasparente/art22/bilanci";
-    const AA_ORGANISMI_BILANCI_PUBLIC_PATH="/web/amministrazione_trasparente/pubblicazioni/art22/bilanci/docs.php";
+    const AA_ORGANISMI_BILANCI_PUBLIC_PATH="/pubblicazioni/art22/bilanci/docs.php";
     
     //Tabella db
     const AA_ORGANISMI_DB_TABLE="art22_pubblicazioni";
@@ -1496,7 +1496,7 @@ class AA_Organismi extends AA_Object
             $xml.="<indiretta>1</indiretta>";
         }
         else  $xml.="<indiretta>0</indiretta>";
-        $xml.="<mercati_regolamentati>".$this->GetInMercatiReg()."</mercati_reg>";
+        $xml.="<mercati_regolamentati>".$this->GetInMercatiReg()."</mercati_regolamentati>";
         $xml.="<partecipazione tot_percent='".($partecipazione['percentuale']+$partecipazione_indiretta['percentuale'])."'><diretta>".json_encode($partecipazione)."</diretta>";
         $xml.="<indiretta>".json_encode($partecipazione_indiretta)."</indiretta></partecipazione>";
         //----------------------------------------
@@ -10963,7 +10963,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
                     if(sizeof($curNomina->GetDocs()) > 0)
                     {
                         //vedi i documenti
-                        $vedi=new AA_XML_A_Element("",$box); $vedi->SetClass("AA_Button_Nomina_View_Docs ui-icon ui-icon-disk"); $vedi->SetAttribs(array("href"=>"https:///sitod.regione.sardegna.it/".AA_Organismi_const::AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH."/docs.php?all=1&nomina=".$curNomina->GetId(), "id-object"=>$organismo->GetId(),"id-nomina"=>$curNomina->GetId(),"title"=>"download"));
+                        $vedi=new AA_XML_A_Element("",$box); $vedi->SetClass("AA_Button_Nomina_View_Docs ui-icon ui-icon-disk"); $vedi->SetAttribs(array("href"=>"https://amministrazioneaperta.regione.sardegna.it".AA_Organismi_const::AA_ORGANISMI_NOMINE_DOCS_PUBLIC_PATH."/docs.php?all=1&nomina=".$curNomina->GetId(), "id-object"=>$organismo->GetId(),"id-nomina"=>$curNomina->GetId(),"title"=>"download"));
                         $vedi->SetStyle("display: inline-block; margin-right: 1em; cursor: pointer");
                         $vedi->SetText("download");
                         //---------------------------
