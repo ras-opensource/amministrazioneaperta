@@ -16717,7 +16717,7 @@ Class AA_SierModule extends AA_GenericModule
 
             //AA_Log::Log(__METHOD__." - analisi: ".print_r($analisi,true),100);
             $completamento=0;
-            if($analisi[3]['risultati_scrutinio_parziale_check'] == 0 && isset($analisi[1][0]) && strpos($analisi[1][0],"Risultati non presenti") !== false) 
+            if($analisi[3]['risultati_scrutinio_parziale_check'] == 0 && ((isset($analisi[1][0]) && strpos($analisi[1][0],"Risultati non presenti") !== false) || (isset($analisi[1]) && sizeof($analisi[1])==0)))
             {
                 $completamento=100;
             }
