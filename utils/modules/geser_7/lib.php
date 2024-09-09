@@ -467,8 +467,43 @@ Class AA_Geser extends AA_Object_V2
     }
 }
 
-
-#Classe per il modulo art26 - contributi
+/**
+ * Classe AA_GeserModule
+ * 
+ * Questa classe rappresenta un modulo per la gestione di impianti e pratiche correlate.
+ * Estende la classe AA_GenericModule e implementa funzionalità specifiche per il sistema GESER.
+ * 
+ * Caratteristiche principali:
+ * - Gestione di impianti di varie tipologie (fotovoltaico, eolico, ecc.)
+ * - Gestione delle pratiche associate agli impianti
+ * - Implementazione di interfacce utente per l'inserimento, modifica e visualizzazione dei dati
+ * - Gestione di allegati e link associati agli impianti e alle pratiche
+ * - Implementazione di funzionalità di ricerca e filtraggio
+ * 
+ * La classe include numerosi metodi per la creazione di finestre di dialogo e form
+ * per l'interazione con l'utente, come ad esempio:
+ * - Aggiunta di nuovi impianti
+ * - Modifica di impianti esistenti
+ * - Gestione delle pratiche
+ * - Gestione degli allegati
+ * 
+ * Inoltre, la classe implementa metodi per la gestione dei dati, inclusi:
+ * - Ricerca di impianti
+ * - Aggiornamento dei dati degli impianti
+ * - Eliminazione di impianti
+ * 
+ * La classe fa uso estensivo di costanti per definire identificatori e nomi di sezioni,
+ * e utilizza un sistema di gestione dei task per l'esecuzione di operazioni specifiche.
+ * 
+ * Note:
+ * - La classe fa uso di diverse classi di supporto come AA_GenericFormDlg, AA_FieldSet, ecc.
+ * - Implementa un sistema di controllo degli accessi basato su flag utente
+ * - Utilizza un sistema di logging per tracciare le operazioni e gli errori
+ * 
+ * Attenzione:
+ * - La classe contiene molti metodi lunghi e complessi che potrebbero beneficiare di una refactoring
+ * - Alcuni commenti e nomi di variabili sono in italiano, sarebbe preferibile uniformare la lingua utilizzata
+ */
 Class AA_GeserModule extends AA_GenericModule
 {
     const AA_UI_PREFIX="AA_Geser";
