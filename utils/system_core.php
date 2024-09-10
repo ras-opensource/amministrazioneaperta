@@ -274,7 +274,7 @@ class AA_Log
         $update_sql = sprintf("INSERT INTO log VALUES('','%s',NOW(),'%s','%s')", $id_utente, $op, addslashes(htmlentities($sql)));
         $db->Query($update_sql);
 
-        self::Log("AA_Log::LogAction($id_utente,$op,$sql)", 100, true, true);
+        self::Log("AA_Log::LogAction($id_utente,$op,$sql)", 100);
     }
     #----------------------------
 }
@@ -1089,11 +1089,18 @@ class AA_User
         {
             $this->LoadAllGroups();
         }
-        return $this->aAllGroups;
+        return $this->aAllGroups ?? [];
     }
     protected function LoadAllGroups()
     {
         if(sizeof($this->aGroups)==0) return array();
+
+        if($this->IsServerOperator())
+        {
+            $this->aSecondaryGroups[]=AA_User::AA_USER_GROUP_ADMINS;
+            $this->aSecondaryGroups[]=AA_User::AA_USER_GROUP_OPERATORS;
+            $this->aSecondaryGroups[]=AA_User::AA_USER_GROUP_USERS;
+        }
 
         foreach($this->aGroups as $curGroup)
         {
@@ -2820,42 +2827,42 @@ class AA_User
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
-            if(!$user->IsSuperUser()) $query.=" AND status >=0 ";
+            //if(!$user->IsSuperUser()) $query.=" AND status >=-1 ";
 
             $struct=$user->GetStruct();
             if($struct->GetAssessorato(true)>0)
             {
-                $query.=" AND legacy_data like '%\"id_assessorato\":\"".$struct->GetAssessorato(true)."\"%'";
+                $query.=" AND (legacy_data like '%\"id_assessorato\":\"".$struct->GetAssessorato(true)."\"%' OR legacy_data like '%\"id_assessorato\":".$struct->GetAssessorato(true).",%')";
             }
             else
             {
                 if($params['id_assessorato']>0)
                 {
-                    $query.=" AND legacy_data like '%\"id_assessorato\":\"".$params['id_assessorato']."\"%'";
+                    $query.=" AND (legacy_data like '%\"id_assessorato\":\"".$params['id_assessorato']."\"%' OR legacy_data like '%\"id_assessorato\":".$params['id_assessorato'].",%')";
                 }
             }
 
             if($struct->GetDirezione(true)>0)
             {
-                $query.=" AND legacy_data like '%\"id_direzione\":\"".$struct->GetDirezione(true)."\"%'";
+                $query.=" AND (legacy_data like '%\"id_direzione\":\"".$struct->GetDirezione(true)."\"%' OR legacy_data like '%\"id_direzione\":".$struct->GetDirezione(true).",%')";
             }
             else
             {
                 if($params['id_direzione']>0)
                 {
-                    $query.=" AND legacy_data like '%\"id_direzione\":\"".$params['id_direzione']."\"%'";
+                    $query.=" AND (legacy_data like '%\"id_direzione\":\"".$params['id_direzione']."\"%' OR legacy_data like '%\"id_direzione\":".$params['id_direzione'].",%')";
                 }
             }
 
             if($struct->GetServizio(true)>0)
             {
-                $query.=" AND legacy_data like '%\"id_servizio\":\"".$struct->GetServizio(true)."\"%'";
+                $query.=" AND (legacy_data like '%\"id_servizio\":\"".$struct->GetServizio(true)."\"%' OR legacy_data like '%\"id_servizio\":".$struct->GetServizio(true).",%')";
             }
             else
             {
                 if($params['id_servizio']>0)
                 {
-                    $query.=" AND legacy_data like '%\"id_servizio\":\"".$params['id_servizio']."\"%'";
+                    $query.=" AND (legacy_data like '%\"id_servizio\":\"".$params['id_servizio']."\"%' OR legacy_data like '%\"id_servizio\":".$params['id_servizio'].",%')";
                 }
             }
         }
@@ -3249,7 +3256,7 @@ class AA_User
         //Il super utente può modificare tutto
         if ($this->IsSuperUser()) return true;
 
-        AA_Log::Log(__METHOD__." - utente: " . $idUser. " - ".$this, 100);
+        //AA_Log::Log(__METHOD__." - utente: " . $idUser. " - ".$this, 100);
 
         if (!($idUser instanceof AA_User)) {
             $user = AA_User::LoadUser($idUser);

@@ -5652,6 +5652,7 @@ Class AA_SinesModule extends AA_GenericModule
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $ids_final=array();
+        $result_error=array();
         //lista organismi da pubblicare
         if($_REQUEST['ids'])
         {
