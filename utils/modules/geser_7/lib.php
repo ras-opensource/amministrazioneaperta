@@ -986,6 +986,12 @@ Class AA_GeserModule extends AA_GenericModule
         $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di generare più bozze tramite importazione da file csv.".$descr."</div>")));
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
 
+        $options=array(
+            array("id"=>1,"value"=>"Terna"),
+            array("id"=>2,"value"=>"Ass. Industria"),
+            array("id"=>3,"value"=>"Suape")
+        );
+
         //csv
         $wnd->AddFileUploadField("GeserAddNewMultiCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 2Mb).","accept"=>"application/csv"));
 
