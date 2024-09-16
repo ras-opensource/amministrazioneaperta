@@ -2184,11 +2184,8 @@ Class AA_HomeModule extends AA_GenericModule
                 $curPage_row = "";
             }
 
-            if($i<3) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
-            if($i==4) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
-            if($i==(4+$numPagineRendicontiAssunzioni)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
-            if($i==(4+$numPagineRendicontiAssunzioni+1)) $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
-
+            $indice[$i] = $curNumPage . "|" . $vociIndice[$i];
+           
             $curPage_row .= "<div id='".$i."' style='display:flex;  flex-direction: column; width: 99.8%; height:100%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
 
             //---------------------------------------- Estrazione ----------------------------------------------
