@@ -4477,7 +4477,7 @@ class AA_User
             return false;
         }
 
-        $db = new AA_Database();
+        $db = new AA_AccountsDatabase();
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {

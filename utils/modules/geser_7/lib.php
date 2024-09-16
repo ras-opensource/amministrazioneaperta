@@ -724,7 +724,8 @@ Class AA_GeserModule extends AA_GenericModule
         }
         $data['tags']=$tags;
         $geolocalizzazione=$object->GetGeolocalizzazione();
-        $data['sottotitolo']="<span>".$geolocalizzazione['localita'].", ".$geolocalizzazione['comune']."</span>";
+        if($geolocalizzazione['localita'] != "") $data['sottotitolo']="<span>".$geolocalizzazione['localita'].", ".$geolocalizzazione['comune']."</span>";
+        else $data['sottotitolo']="<span>".$geolocalizzazione['comune']."</span>";
 
         return $data;
      }
@@ -771,11 +772,12 @@ Class AA_GeserModule extends AA_GenericModule
             $potenza=$object->GetProp("Potenza");
             if(intVal($potenza)>0)
             {
-                $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".$potenza." MWatt</span>";
+                $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".AA_Utils::number_format($object->GetProp("Potenza"),2,",",".")." MWatt</span>";
             }
             $data['tags']=$tags;
             $geolocalizzazione=$object->GetGeolocalizzazione();
-            $data['sottotitolo']="<span>".$geolocalizzazione['localita'].", ".$geolocalizzazione['comune']."</span>";
+            if($geolocalizzazione['localita'] != "" && $geolocalizzazione['localita'] !="n.d.") $data['sottotitolo']="<span>".$geolocalizzazione['localita'].", ".$geolocalizzazione['comune']."</span>";
+            else $data['sottotitolo']="<span>".$geolocalizzazione['comune']."</span>";
         }
 
         return $data;
@@ -917,16 +919,16 @@ Class AA_GeserModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
 
         //anno autorizzazione
-        $section->AddTextField("AnnoAutorizzazione","Anno autorizzazione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"));
+        $section->AddDateField("AnnoAutorizzazione","Data autorizzazione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"));
         
         //anno costruzione
-        $section->AddTextField("AnnoCostruzione","Anno costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata terminata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
+        $section->AddDateField("AnnoCostruzione","Data costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata terminata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
 
         //anno esercizio
-        $section->AddTextField("AnnoEsercizio","Anno esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
+        $section->AddDateField("AnnoEsercizio","Data esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
 
         //anno dismissione
-        $section->AddTextField("AnnoDismissione","Anno dismissione",array("bottomPadding"=>32,"labelWidth"=>150, "bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024"),false);
+        $section->AddDateField("AnnoDismissione","Data dismissione",array("bottomPadding"=>32,"labelWidth"=>150, "bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024"),false);
 
         $wnd->AddGenericObject($section);
 
@@ -934,7 +936,7 @@ Class AA_GeserModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
 
         //localita'
-        $section->AddTextField("Geo_localita","Ubicazione",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
+        $section->AddTextField("Geo_localita","Localita'",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
 
         //comune
         $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>38,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGeserListaCodiciIstat")));
@@ -1871,8 +1873,8 @@ Class AA_GeserModule extends AA_GenericModule
         $form_data['Stato']=$object->GetProp("Stato");;
         $form_data['Tipologia']=$object->GetProp("Tipologia");
         $form_data['nome']=$object->GetName();
-        $form_data['Potenza']=$object->GetProp("Potenza");
-        $form_data['Superficie']=$object->GetProp("Superficie");
+        $form_data['Potenza']=AA_Utils::number_format($object->GetProp("Potenza"),2,",",".");
+        $form_data['Superficie']=AA_Utils::number_format($object->GetProp("Superficie"),2,",",".");
        
         $geolocalizzazione=$object->GetGeolocalizzazione();
         if(sizeof($geolocalizzazione)==0)
@@ -1907,7 +1909,7 @@ Class AA_GeserModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(1080);
+        $wnd->SetWidth(1280);
         $wnd->SetHeight(720);
         $wnd->EnableValidation();
 
@@ -1929,16 +1931,16 @@ Class AA_GeserModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
 
         //anno autorizzazione
-        $section->AddTextField("AnnoAutorizzazione","Anno autorizzazione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"));
+        $section->AddDateField("AnnoAutorizzazione","Data autorizzazione",array("bottomPadding"=>32, "labelWidth"=>145,"bottomLabel"=>"*Data in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024-01-01"));
         
         //anno costruzione
-        $section->AddTextField("AnnoCostruzione","Anno costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata terminata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
+        $section->AddDateField("AnnoCostruzione","Data costruzione",array("bottomPadding"=>32, "labelWidth"=>145,"bottomLabel"=>"*Data in cui e' stata terminata la costruzione dell'impianto.", "placeholder"=>"es. 2024-01-01"),false);
 
         //anno esercizio
-        $section->AddTextField("AnnoEsercizio","Anno esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
+        $section->AddDateField("AnnoEsercizio","Data esercizio",array("bottomPadding"=>32, "labelWidth"=>145,"bottomLabel"=>"*Data in cui l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024-01-01"),false);
 
         //anno dismissione
-        $section->AddTextField("AnnoDismissione","Anno dismissione",array("bottomPadding"=>32,"labelWidth"=>150, "bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024"),false);
+        $section->AddDateField("AnnoDismissione","Data dismissione",array("bottomPadding"=>32,"labelWidth"=>145, "bottomLabel"=>"*Data in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024-01-01"),false);
 
         $wnd->AddGenericObject($section);
 
@@ -2210,7 +2212,8 @@ Class AA_GeserModule extends AA_GenericModule
 
         //potenza
         $value=$object->GetProp("Potenza");
-        if(intVal($value)>0) $value="<span class='AA_Label AA_Label_Orange'>".$value." MWatt</span>";
+        if(floatVal($value) > 0) $value="<span class='AA_Label AA_Label_Orange'>".AA_Utils::number_format($value,2,",",".")." MWatt</span>";
+        else $value="n.d.";
         $potenza=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2220,7 +2223,8 @@ Class AA_GeserModule extends AA_GenericModule
 
         //superficie
         $value=$object->GetProp("Superficie");
-        if(intVal($value)>0) $value.=" mq";
+        if(floatVal($value)>0) $value=AA_Utils::number_format($value,2,",",".")." mq";
+        else $value="n.d.";
         $superficie=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2244,7 +2248,7 @@ Class AA_GeserModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "gravity"=>1,
             "width"=>180,
-            "data"=>array("title"=>"Anno autorizzazione:","value"=>$value)
+            "data"=>array("title"=>"Data autorizzazione:","value"=>$value)
         ));
 
         //anno costruzione
@@ -2254,7 +2258,7 @@ Class AA_GeserModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "gravity"=>1,
             "width"=>180,
-            "data"=>array("title"=>"Anno costruzione:","value"=>$value)
+            "data"=>array("title"=>"Data costruzione:","value"=>$value)
         ));
 
         //anno esercizio
@@ -2264,7 +2268,7 @@ Class AA_GeserModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "gravity"=>1,
             "width"=>200,
-            "data"=>array("title"=>"Anno entrata in esercizio:","value"=>$value)
+            "data"=>array("title"=>"Data entrata in esercizio:","value"=>$value)
         ));
 
         //anno dismissione
@@ -2274,7 +2278,7 @@ Class AA_GeserModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
             "gravity"=>1,
             "width"=>150,
-            "data"=>array("title"=>"Anno dismissione:","value"=>$value)
+            "data"=>array("title"=>"Data dismissione:","value"=>$value)
         ));
         
         //note
@@ -2290,7 +2294,7 @@ Class AA_GeserModule extends AA_GenericModule
         $value = $geolocalizzazione['localita'];
         $localita=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Ubicazione:","value"=>$value)
+            "data"=>array("title"=>"Localita':","value"=>$value)
         ));
         $value = $geolocalizzazione['comune'];
         $comune=new AA_JSON_Template_Template("",array(
@@ -2510,6 +2514,17 @@ Class AA_GeserModule extends AA_GenericModule
             return false;
         }
 
+        //date
+        if(isset($_REQUEST['AnnoAutorizzazione'])) $_REQUEST['AnnoAutorizzazione']=substr($_REQUEST['AnnoAutorizzazione'],0,10);
+        if(isset($_REQUEST['AnnoCostruzione'])) $_REQUEST['AnnoCostruzione']=substr($_REQUEST['AnnoCostruzione'],0,10);
+        if(isset($_REQUEST['AnnoEsercizio'])) $_REQUEST['AnnoEsercizio']=substr($_REQUEST['AnnoEsercizio'],0,10);
+        if(isset($_REQUEST['AnnoDismissione'])) $_REQUEST['AnnoDismissione']=substr($_REQUEST['AnnoDismissione'],0,10);
+
+        //potenza
+        if(isset($_REQUEST['Potenza'])) $_REQUEST['Potenza']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Potenza'])),2,".","");
+        //superficie
+        if(isset($_REQUEST['Superficie'])) $_REQUEST['Superficie']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Superficie'])),2,".","");
+
         $geolocalizzazione=array();
         
         if(isset($_REQUEST['Geo_comune'])) $geolocalizzazione['comune']=trim($_REQUEST['Geo_comune']);
@@ -2689,6 +2704,17 @@ Class AA_GeserModule extends AA_GenericModule
             return false;
         }
 
+        //date
+        if(isset($_REQUEST['AnnoAutorizzazione'])) $_REQUEST['AnnoAutorizzazione']=substr($_REQUEST['AnnoAutorizzazione'],0,10);
+        if(isset($_REQUEST['AnnoCostruzione'])) $_REQUEST['AnnoCostruzione']=substr($_REQUEST['AnnoCostruzione'],0,10);
+        if(isset($_REQUEST['AnnoEsercizio'])) $_REQUEST['AnnoEsercizio']=substr($_REQUEST['AnnoEsercizio'],0,10);
+        if(isset($_REQUEST['AnnoDismissione'])) $_REQUEST['AnnoDismissione']=substr($_REQUEST['AnnoDismissione'],0,10);
+
+        //potenza
+        if(isset($_REQUEST['Potenza'])) $_REQUEST['Potenza']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Potenza'])),2,".","");
+        //superficie
+        if(isset($_REQUEST['Superficie'])) $_REQUEST['Superficie']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Superficie'])),2,".","");
+
         $geolocalizzazione=array();
         
         if(isset($_REQUEST['Geo_comune'])) $geolocalizzazione['comune']=trim($_REQUEST['Geo_comune']);
@@ -2781,7 +2807,7 @@ Class AA_GeserModule extends AA_GenericModule
                 $geolocalizzazione['comune']=$curData['Geo_comune'];
                 $geolocalizzazione['localita']=$curData['Geo_localita'];
                 $geolocalizzazione['coordinate']=$curData['Geo_coordinate'];
-                $newImpianto->SetProp('geolocalizzazione',json_encode($geolocalizzazione));
+                $newImpianto->SetProp('Geolocalizzazione',json_encode($geolocalizzazione));
 
                 $newImpianto->Parse($curData);
 
@@ -2819,9 +2845,9 @@ Class AA_GeserModule extends AA_GenericModule
                     $newId=uniqid();
                     $pratiche[$newId]=$pratica;
 
-                    $impianto->SetProp('pratiche',json_encode($pratiche));
+                    $newImpianto->SetProp('Pratiche',json_encode($pratiche));
                     
-                    if(!$impianto->Update($this->oUser,true,"Aggiunta pratica - id: ".$newId))
+                    if(!$newImpianto->Update($this->oUser,true,"Aggiunta pratica - id: ".$newId))
                     {
                         $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
                         $task->SetError("Errore nell'aggiunta della nuova pratica all'impianto: ".$impianto->GetName(),false);
@@ -3638,8 +3664,8 @@ Class AA_GeserModule extends AA_GenericModule
                         $curDataValues['Note']="Impianto importato da csv Terna - ".date("d/m/Y H:i:s");
                     }
 
-                    $curDataValues['pratiche_societa']=trim($csvValues[$fieldPos['ragione sociale']]);
-                    $curDataValues['pratiche_note']="Pratica importata da csv Terna - ".date("d/m/Y H:i:s");
+                    $curDataValues['pratica_societa']=trim($csvValues[$fieldPos['ragione sociale']]);
+                    $curDataValues['pratica_note']="Pratica importata da csv Terna - ".date("d/m/Y H:i:s");
 
                     $data[]=$curDataValues;
                 }
