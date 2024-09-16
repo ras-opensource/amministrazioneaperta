@@ -1089,7 +1089,8 @@ class AA_User
         {
             $this->LoadAllGroups();
         }
-        return $this->aAllGroups ?? [];
+
+        return $this->aAllGroups;
     }
     protected function LoadAllGroups()
     {

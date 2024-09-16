@@ -42,6 +42,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_FORMA_GIURIDICA_SPA=2;
     const AA_ORGANISMI_FORMA_GIURIDICA_SRL=4;
     const AA_ORGANISMI_FORMA_GIURIDICA_SCARL=8;
+    const AA_ORGANISMI_FORMA_GIURIDICA_SCPA=16;
 
     //Stato società
     static private $STATO_SOCIETA=null;
@@ -183,7 +184,8 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_FORMA_GIURIDICA_NONE=>"n.d.",
             self::AA_ORGANISMI_FORMA_GIURIDICA_SPA=>"SPA",
             self::AA_ORGANISMI_FORMA_GIURIDICA_SRL=>"SRL",
-            self::AA_ORGANISMI_FORMA_GIURIDICA_SCARL=>"SCARL"
+            self::AA_ORGANISMI_FORMA_GIURIDICA_SCARL=>"SCARL",
+            self::AA_ORGANISMI_FORMA_GIURIDICA_SCPA=>"SCPA"
             );
         }
 

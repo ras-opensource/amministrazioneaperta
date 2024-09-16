@@ -133,6 +133,38 @@ Class AA_Geser_Const extends AA_Const
 
         return static::$aTipoImpianti;
     }
+
+    public static function GetListaComuni()
+    {
+        $db=new AA_Database();
+        $query="SELECT id,comune FROM ".AA_Geser_Const::AA_DBTABLE_CODICI_ISTAT." ORDER BY comune ASC";
+        //$query.=" LIMIT 10";
+
+        //AA_Log::Log(__METHOD__." - query ".$query.print_r($_REQUEST,true),100);
+        
+        //errore nella query
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - ERRORE ".$db->GetErrorMessage(),100);
+            die("[]");
+        }
+
+        //Query vuota
+        if($db->GetAffectedRows() == 0)
+        {
+            die("[]");
+        }
+        
+        $result=array();
+        $count=1;
+        foreach($db->GetResultSet() as $curRow)
+        {
+            $result[$curRow['id']]=$curRow['comune'];
+            $count++;
+        }
+
+        return $result;
+    }
 }
 
 #Classe oggetto geser
@@ -709,6 +741,12 @@ Class AA_GeserModule extends AA_GenericModule
             $params['where'][]=" AND ".AA_Geser::AA_DBTABLE_DATA.".stato = '".addslashes($params['stato'])."'";
         }
 
+        //comune
+        if(isset($params['comune']) && $params['comune'] !="Qualunque")
+        {
+            $params['where'][]=" AND ".AA_Geser::AA_DBTABLE_DATA.".geolocalizzazione like '{\"comune\":\"".addslashes($params['comune'])."\"%'";
+        }
+
         return $params;
     }
 
@@ -755,6 +793,12 @@ Class AA_GeserModule extends AA_GenericModule
         if(isset($params['stato']) && $params['stato'] > 0)
         {
             $params['where'][]=" AND ".AA_Geser::AA_DBTABLE_DATA.".stato = '".addslashes($params['stato'])."'";
+        }
+
+        //comune
+        if(isset($params['comune']) && $params['comune'] !="Qualunque")
+        {
+            $params['where'][]=" AND ".AA_Geser::AA_DBTABLE_DATA.".geolocalizzazione like '{\"comune\":\"".addslashes($params['comune'])."\"%'";
         }
 
         return $params;
@@ -4296,7 +4340,7 @@ Class AA_GeserModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"tipo"=>$params['tipo'],"stato"=>$params['stato']);
+        $formData=array("comune"=>$params['comune'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"tipo"=>$params['tipo'],"stato"=>$params['stato']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4307,9 +4351,10 @@ Class AA_GeserModule extends AA_GenericModule
         if($params['nome']=="") $formData['nome']="";
         if($params['tipo']=="") $formData['tipo']=0;
         if($params['stato']=="") $formData['stato']=0;
+        if($params['comune']=="") $formData['comune']="Qualunque";
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
+        $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -4337,6 +4382,14 @@ Class AA_GeserModule extends AA_GenericModule
         }
         $dlg->AddSelectField("stato","Stato impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base allo stato dell'impianto.","options"=>$options,"value"=>"0"));
 
+         //comune
+         $options=array(array("id"=>"Qualunque","value"=>"Qualunque"));
+         foreach(AA_Geser_Const::GetListaComuni() as $key=>$val)
+         {
+             $options[]=array("id"=>$val,"value"=>$val);
+         }
+         $dlg->AddComboField("comune","Comune",array("gravity"=>2,"bottomLabel"=>"*Filtra in base al comune dove e' situato l'impianto.","options"=>$options,"value"=>"0"));
+ 
         //titolo
         $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'impianto.", "placeholder"=>"..."));
 
@@ -4349,7 +4402,7 @@ Class AA_GeserModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"tipo"=>$params['tipo'],"stato"=>$params['stato']);
+        $formData=array("comune"=>$params['comune'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"tipo"=>$params['tipo'],"stato"=>$params['stato']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4360,9 +4413,10 @@ Class AA_GeserModule extends AA_GenericModule
         if($params['nome']=="") $formData['nome']="";
         if($params['tipo']=="") $formData['tipo']=0;
         if($params['stato']=="") $formData['stato']=0;
+        if($params['comune']=="") $formData['comune']="Qualunque";
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
+        $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -4389,6 +4443,14 @@ Class AA_GeserModule extends AA_GenericModule
             $options[]=array("id"=>$key,"value"=>$val);
         }
         $dlg->AddSelectField("stato","Stato impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base allo stato dell'impianto.","options"=>$options,"value"=>"0"));
+
+        //comune
+        $options=array(array("id"=>"Qualunque","value"=>"Qualunque"));
+        foreach(AA_Geser_Const::GetListaComuni() as $key=>$val)
+        {
+            $options[]=array("id"=>$val,"value"=>$val);
+        }
+        $dlg->AddComboField("comune","Comune",array("gravity"=>2,"bottomLabel"=>"*Filtra in base al comune dove e' situato l'impianto.","options"=>$options,"value"=>"0"));
 
         //titolo
         $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'impianto.", "placeholder"=>"..."));

@@ -2303,7 +2303,7 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $options[]=array("id"=>$key,"value"=>$val);
         }
-        $wnd->AddSelectField("organismo","Organismo",array("required"=>true,"validateFunction"=>"IsSelected","tooltip"=>"Seleziona l'organismo.","options"=>$options));
+        $wnd->AddComboField("organismo","Organismo",array("required"=>true,"validateFunction"=>"IsSelected","tooltip"=>"Seleziona l'organismo.","options"=>$options));
 
         $section=new AA_FieldSet("","Quote di partecipazione");
             
