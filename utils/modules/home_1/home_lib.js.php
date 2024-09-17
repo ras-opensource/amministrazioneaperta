@@ -140,9 +140,30 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
         if(TreeView)
         {
             //console.log("eventHandlers.defaultHandlers.onFilterStructChange", this.getValue());
-            TreeView.filter(function(obj){return obj.value.toLowerCase().indexOf(search.getValue().toLowerCase()) !== -1;});
+            TreeView.filter(function(obj)
+            {
+                //search result;
+                let retVal=obj.value.toLowerCase().indexOf(search.getValue().toLowerCase()) !== -1;
+                return retVal;
+            });
         }
 
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onFilterStructChange", msg, this);
+    }
+};
+
+//Struct suppressed
+<?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onShowSupressedChange = async function() {
+    try 
+    {
+        if(arguments[2] != 'user') return;
+        //console.log("eventHandlers.defaultHandlers.onShowSupressedChange", this, arguments);
+
+        <?php echo AA_HomeModule::AA_ID_MODULE?>.setRuntimeValue(this.config.filter_id,"filter_data", {"show_suppressed":this.getValue()});
+        <?php echo AA_HomeModule::AA_ID_MODULE?>.refreshCurSection();
+
+        return;
     } catch (msg) {
         console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onFilterStructChange", msg, this);
     }

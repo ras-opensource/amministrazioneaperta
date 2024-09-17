@@ -191,13 +191,13 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 let menus = wnd.queryView("sidemenu", "all");
                 for (menu of menus) {
                     if (AA_MainApp.utils.isDefined(menu.config.stateFunction)) {
-                        console.log("dlg - sidemenu");
+                        //console.log("dlg - sidemenu");
                         menu.config.state = AA_MainApp.utils.getEventHandler(menu.config.stateFunction, this.id);
                     }
                 }
 
                 if (AA_MainApp.utils.isDefined(wnd.config.stateFunction)) {
-                    console.log("dlg - sidemenu");
+                    //console.log("dlg - sidemenu");
                     wnd.config.state = AA_MainApp.utils.getEventHandler(wnd.config.stateFunction, this.id);
                 }
 
@@ -209,12 +209,12 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         if (AA_MainApp.utils.isDefined(funct)) {
 
                             if (!item.hasEvent("onTimedKeyPress")) {
-                                console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                //console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
                                 item.attachEvent("onTimedKeyPress", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
                             }
 
                             if (!item.hasEvent("onChange") && item.config.clear == true) {
-                                console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
+                                //console.log(this.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
                                 item.attachEvent("onChange", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", this.id));
                             }
                         }
@@ -438,6 +438,28 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             //console.log(module.name + "::refreshUiObjectDefault - saved value (" + obj.config.id + "): ", status);
                             if(item.config.filter_id) module.setRuntimeValue("searchItemValue", item.config.filter_id, status);
                             else module.setRuntimeValue("searchItemValue", item.config.id, status);                     
+                        }    
+                    }
+
+                    //Salva lo stato degli switch
+                    let switchObjs = obj.queryView({ view: "switch" }, "all");
+                    if (Array.isArray(switchObjs) && switchObjs.length > 0) 
+                    {
+                        for (item of switchObjs) {
+                            let status = item.getValue();
+                            //console.log(module.name + "::refreshUiObjectDefault -saved value (" + item.config.id + "): ", status);
+                            if(item.config.status_id) module.setRuntimeValue("switchItemValue", item.config.status_id, status);
+                            else module.setRuntimeValue("switchItemValue", item.config.id, status);
+                        }
+                    }
+                    else
+                    {
+                        if (obj.config.view=="switch") 
+                        {
+                            let status = obj.getValue();
+                            //console.log(module.name + "::refreshUiObjectDefault - saved value (" + obj.config.id + "): ", status);
+                            if(item.config.status_id) module.setRuntimeValue("switchItemValue", item.config.status_id, status);
+                            else module.setRuntimeValue("switchItemValue", item.config.id, status);                     
                         }    
                     }
 
@@ -705,6 +727,20 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                                         //console.log(module.name + "::refreshUiObjectDefault - imposto l'handler (" + item.config.id + "): ", funct);
                                         item.attachEvent("onChange", AA_MainApp.utils.getEventHandler("onTimedKeyPressEventHandler", AA_MainApp.curModule.id));
                                     }
+                                }
+                            }
+                        }
+
+                        //ripristina il valore degli switch
+                        let switchObjs = obj.queryView({ view: "switch" }, "all");
+                        if (Array.isArray(switchObjs) && switchObjs.length > 0) {
+                            for (item of switchObjs) {
+                                
+                                let lastValue=module.getRuntimeValue("switchItemValue", item.config.id);
+                                if(item.config.status_id) lastValue=module.getRuntimeValue("switchItemValue", item.config.status_id);
+                                if (AA_MainApp.utils.isDefined(lastValue)) {
+                                    //console.log(this.name + "::refreshUiObjectDefault - ripristino il valore dello switch (" + item.config.id + ")", lastValue);
+                                    item.setValue(lastValue);
                                 }
                             }
                         }
