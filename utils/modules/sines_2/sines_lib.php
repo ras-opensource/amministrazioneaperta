@@ -5686,8 +5686,12 @@ Class AA_SinesModule extends AA_GenericModule
                     $wnd=new AA_GenericWindowTemplate("PublishOrganismo", "Avviso", $this->id);
                     $wnd->SetWidth("640");
                     $wnd->SetHeight("400");
-                    $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Sono stati pubblicati ".(sizeof($ids)-sizeof($result_error))." organismi.<br>I seguenti non sono stati pubblicati:")));
+                    $wnd->AddView(new AA_JSON_Template_Template("",array("autoheight"=>true,"template"=>"Sono stati pubblicati ".(sizeof($ids)-sizeof($result_error))." organismi.<br>I seguenti non sono stati pubblicati:")));
                 
+                    $columns=array(
+                        array("id"=>"Denominazione","header"=>array("<div style='text-align: center'>Denominazione</div>",array("content"=>"textFilter")),"fillspace"=>true,"sort"=>"text","css"=>"PraticheTable_left"),
+                        array("id"=>"Errore","header"=>array("<div style='text-align: center'>Errore</div>",array("content"=>"textFilter")),"fillspace"=>true,"sort"=>"text","css"=>"PraticheTable_left"),
+                    );
                     $tabledata=array();
                     foreach($result_error as $org=>$desc)
                     {
@@ -5696,7 +5700,7 @@ Class AA_SinesModule extends AA_GenericModule
                     $table=new AA_JSON_Template_Generic($id."_Table", array(
                         "view"=>"datatable",
                         "scrollX"=>false,
-                        "autoConfig"=>true,
+                        "columns"=>$columns,
                         "select"=>false,
                         "data"=>$tabledata
                     ));

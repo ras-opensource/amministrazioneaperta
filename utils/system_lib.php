@@ -3378,16 +3378,20 @@ class AA_GenericModule
                     $wnd = new AA_GenericWindowTemplate(static::AA_UI_PREFIX . "_Publish", "Avviso", $this->id);
                     $wnd->SetWidth("640");
                     $wnd->SetHeight("400");
-                    $wnd->AddView(new AA_JSON_Template_Template("", array("template" => "Sono stati pubblicati " . (sizeof($ids) - sizeof($result_error)) . " elementi.<br>I seguenti non sono stati pubblicati:")));
+                    $wnd->AddView(new AA_JSON_Template_Template("", array("autoheight"=>true,"template" => "Sono stati pubblicati " . (sizeof($ids) - sizeof($result_error)) . " elementi.<br>I seguenti non sono stati pubblicati:")));
 
+                    $columns=array(
+                        array("id"=>"Denominazione","header"=>array("<div style='text-align: center'>Denominazione</div>",array("content"=>"textFilter")),"fillspace"=>true,"sort"=>"text","css"=>"PraticheTable_left"),
+                        array("id"=>"Errore","header"=>array("<div style='text-align: center'>Errore</div>",array("content"=>"textFilter")),"fillspace"=>true,"sort"=>"text","css"=>"PraticheTable_left"),
+                    );
                     $tabledata = array();
                     foreach ($result_error as $org => $desc) {
                         $tabledata[] = array("Denominazione" => $org, "Errore" => $desc);
                     }
-                    $table = new AA_JSON_Template_Generic($id . "_Table", array(
+                    $table = new AA_JSON_Template_Generic("", array(
                         "view" => "datatable",
                         "scrollX" => false,
-                        "autoConfig" => true,
+                        "columns" => $columns,
                         "select" => false,
                         "data" => $tabledata
                     ));
@@ -3401,7 +3405,7 @@ class AA_GenericModule
                     return false;
                 } else {
                     $sTaskLog = "<status id='status'>0</status><content id='content'>";
-                    $sTaskLog .= "SOno stati pubblicati " . sizeof($ids_final) . " elementi.";
+                    $sTaskLog .= "Sono stati pubblicati " . sizeof($ids_final) . " elementi.";
                     $sTaskLog .= "</content>";
 
                     $task->SetLog($sTaskLog);
