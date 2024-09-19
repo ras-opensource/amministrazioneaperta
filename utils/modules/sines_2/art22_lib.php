@@ -55,6 +55,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_STATO_SOCIETA_IN_LIQUIDAZIONE_COATTA=64;
     const AA_ORGANISMI_STATO_SOCIETA_IN_FALLIMENTO=128;
     const AA_ORGANISMI_STATO_SOCIETA_INATTIVA=256;
+    const AA_ORGANISMI_STATO_SOCIETA_SCIOGLIMENTO_LIQUIDAZIONE=512;
     
     //Tipo di bilancio
     static private $TIPO_BILANCIO=null;
@@ -200,7 +201,8 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_STATO_SOCIETA_IN_LIQUIDAZIONE_COATTA=>"in liquidazione coatta amministrativa",
             self::AA_ORGANISMI_STATO_SOCIETA_IN_CONCORDATO=>"in concordato",
             self::AA_ORGANISMI_STATO_SOCIETA_IN_CONCORDATO_LIQUIDAZIONE=>"in concordato preventivo e in liquidazione",
-            self::AA_ORGANISMI_STATO_SOCIETA_IN_FALLIMENTO=>"in fallimento"
+            self::AA_ORGANISMI_STATO_SOCIETA_IN_FALLIMENTO=>"in fallimento",
+            self::AA_ORGANISMI_STATO_SOCIETA_SCIOGLIMENTO_LIQUIDAZIONE=>"in scioglimento e liquidazione"
             );
         }
 
