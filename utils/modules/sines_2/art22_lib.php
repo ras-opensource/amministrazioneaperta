@@ -890,7 +890,7 @@ class AA_Organismi extends AA_Object
         }
 
         //solo societa'
-        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
+        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".(AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO)." > 0 ";
 
         //partecipazioni attuali
         $partecipazione=$this->GetPartecipazione(true);
