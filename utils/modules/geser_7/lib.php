@@ -2703,6 +2703,9 @@ Class AA_GeserModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
+        //torna alla lista
+        //$_REQUEST['goBack']=1;
+
         return $this->Task_GenericPublishObject($task,$_REQUEST);
     }
     

@@ -3405,11 +3405,9 @@ class AA_GenericModule
 
                     return false;
                 } else {
-                    $sTaskLog = "<status id='status'>0</status><content id='content'>";
-                    $sTaskLog .= "Sono stati pubblicati " . sizeof($ids_final) . " elementi.";
-                    $sTaskLog .= "</content>";
-
-                    $task->SetLog($sTaskLog);
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+                    $task->SetContent("Sono stati pubblicati " . sizeof($ids_final) . " elementi.",false);
+                    if(isset($_REQUEST['goBack']) && $_REQUEST['goBack'] == 1) $task->SetStatusAction("goBack");
 
                     return true;
                 }
