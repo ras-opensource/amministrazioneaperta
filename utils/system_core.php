@@ -949,6 +949,10 @@ class AA_User
     //email
     protected $sEmail = "";
 
+     //cf
+     protected $sCf = "";
+
+
     //Nome utente
     protected $sUser = "Nessuno";
 
@@ -1215,6 +1219,13 @@ class AA_User
         return $this->sLastLogin;
     }
 
+    //ultima volta in cui è stato notificato il reset della password
+    protected $sLastNotify="";
+    public function GetLastNotify()
+    {
+        return $this->sLastNotify;
+    }
+
     //immagine del profilo
     protected $sImage="";
     public function GetImage()
@@ -1295,6 +1306,7 @@ class AA_User
                 $user->sNome = $info['nome'];
                 $user->sCognome = $info['cognome'];    
                 $user->sImage = $info['image'];
+                $user->sCf = $info['cf'];
                 $user->sPhone = $info['phone'];    
             }
 
@@ -1309,6 +1321,7 @@ class AA_User
             $user->LoadAllGroups();
             
             $user->sLastLogin = $row[0]['lastlogin'];
+            $user->sLastNotify = $row[0]['lastnotify'];
             $user->sFlags = $row[0]['flags'];
             $user->bIsValid = true;
 
@@ -2713,6 +2726,12 @@ class AA_User
         return $this->sUser;
     }
 
+     //Restituisce il codice fiscale
+     public function GetCf()
+     {
+         return $this->sCf;
+     }
+
     //Restituisce l'email
     public function GetEmail()
     {
@@ -3445,7 +3464,8 @@ class AA_User
             "nome"=>addslashes(trim($params['nome'])),
             "cognome"=>addslashes(trim($params['cognome'])),
             "phone"=>addslashes(trim($params['phone'])),
-            "image"=>addslashes(trim($params['image']))
+            "image"=>addslashes(trim($params['image'])),
+            "cf"=>addslashes(trim($params['cf'])),
         ));
 
         $sql="INSERT INTO ".static::AA_DB_TABLE." SET ";
@@ -3931,7 +3951,8 @@ class AA_User
             "nome"=>trim($params['nome']),
             "cognome"=>trim($params['cognome']),
             "phone"=>trim($params['phone']),
-            "image"=>trim($params['image'])
+            "image"=>trim($params['image']),
+            "cf"=>trim($params['cf']),
         ));
 
         $sql="UPDATE ".static::AA_DB_TABLE." SET ";
@@ -4721,7 +4742,7 @@ class AA_User
             }
             
             //Reimposta le credenziali dell'utente
-            $query = "UPDATE ".static::AA_DB_TABLE." set passwd='" . AA_Utils::password_hash($newPwd) . "' where id='" . $user->GetID() . "' LIMIT 1";
+            $query = "UPDATE ".static::AA_DB_TABLE." set passwd='" . AA_Utils::password_hash($newPwd) . "', lastnotify='".date("Y-m-d H:i:s")."' where id='" . $user->GetID() . "' LIMIT 1";
             if (!$db->Query($query)) {
                 AA_Log::Log(__METHOD__."- Errore durante l'aggiornamento della password per l'utente: " . $user->GetUserName() . " - " . $db->GetErrorMessage(), 100);
             } else {
@@ -4747,7 +4768,7 @@ class AA_User
                     if(isset(static::$aResetPasswordEmailParams['sendToUs']) && static::$aResetPasswordEmailParams['sendToUs'])
                     {
                         //invio notifica a se stesso
-                        if(!SendMail(array("amministrazioneaperta@regione.sardegna.it"),array(),"Notifica reinvio credenziali utente: ". $user->GetUserName()." - email: ".$user->GetEmail(),"Reinvio credenziali all'utente:<br>login: ".$user->GetUsername()."<br>email: ".$user->GetEmail()."<br>Data: ".date("Y-m-d").$firma))
+                        if(!SendMail(array(AA_Const::AA_EMAIL_FROM),array(),"Notifica reinvio credenziali utente: ". $user->GetUserName()." - email: ".$user->GetEmail(),"Reinvio credenziali all'utente:<br>login: ".$user->GetUsername()."<br>email: ".$user->GetEmail()."<br>Data: ".date("Y-m-d").$firma))
                         {
                             AA_Log::Log(__METHOD__."- Errore nell'invio notifica", 100);
                         }

@@ -693,6 +693,7 @@ Class AA_HomeModule extends AA_GenericModule
         if(isset($_REQUEST['user']) && $_REQUEST['user'] !="") $params['user']=$_REQUEST['user'];
         if(isset($_REQUEST['email']) && $_REQUEST['email'] !="") $params['email']=$_REQUEST['email'];
         $params['phone']=trim($_REQUEST['phone']);
+        $params['cf']=trim($_REQUEST['cf']);
         $params['nome']=trim($_REQUEST['nome']);
         $params['cognome']=trim($_REQUEST['cognome']);
         
@@ -793,6 +794,7 @@ Class AA_HomeModule extends AA_GenericModule
         if(isset($_REQUEST['user']) && $_REQUEST['user'] !="") $params['user']=$_REQUEST['user'];
         if(isset($_REQUEST['email']) && $_REQUEST['email'] !="") $params['email']=$_REQUEST['email'];
         $params['phone']=$_REQUEST['phone'];
+        $params['cf']=$_REQUEST['cf'];
         $params['nome']=$_REQUEST['nome'];
         $params['cognome']=$_REQUEST['cognome'];
         
@@ -1855,17 +1857,32 @@ Class AA_HomeModule extends AA_GenericModule
         }
         
         $layout->addRow($toolbar);        
-        $columns=array(
-            array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"selectFilter")),"width"=>100, "sort"=>"text","css"=>array("text-align"=>"left")),
-            array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"user","header"=>array("<div style='text-align: center'>Nome profilo</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
-            array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Cognome e nome</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"flags","header"=>array("<div style='text-align: center'>Abilitazioni</div>",array("content"=>"textFilter")), "fillspace"=>true,"css"=>array("text-align"=>"center"),"sort"=>"text"),
-            array("id"=>"struttura","header"=>array("<div style='text-align: center'>Struttura</div>"), "width"=>90,"css"=>array("text-align"=>"center"))
-        );
-
+        if(AA_Const::AA_ENABLE_LEGACY_DATA)
+        {
+            $columns=array(
+                array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"selectFilter")),"width"=>100, "sort"=>"text","css"=>array("text-align"=>"left")),
+                array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
+                array("id"=>"user","header"=>array("<div style='text-align: center'>Nome profilo</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>array("text-align"=>"center")),
+                array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
+                array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Cognome e nome (Codice fiscale)</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+                array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+                array("id"=>"flags","header"=>array("<div style='text-align: center'>Abilitazioni</div>",array("content"=>"textFilter")), "fillspace"=>true,"css"=>array("text-align"=>"center"),"sort"=>"text"),
+                array("id"=>"struttura","header"=>array("<div style='text-align: center'>Struttura</div>"), "width"=>90,"css"=>array("text-align"=>"center"))
+            );
+        }
+        else
+        {
+            $columns=array(
+                array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"selectFilter")),"width"=>100, "sort"=>"text","css"=>array("text-align"=>"left")),
+                array("id"=>"lastLogin","header"=>array("<div style='text-align: center'>Data Login</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>array("text-align"=>"center")),
+                array("id"=>"user","header"=>array("<div style='text-align: center'>Nome profilo</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>array("text-align"=>"center")),
+                array("id"=>"email","header"=>array("<div style='text-align: center'>Email</div>",array("content"=>"textFilter")),"width"=>300, "css"=>array("text-align"=>"center"),"sort"=>"text"),            
+                array("id"=>"denominazione","header"=>array("<div style='text-align: center'>Cognome e nome (Codice fiscale)</div>",array("content"=>"textFilter")),"fillspace"=>true, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+                array("id"=>"ruolo","header"=>array("<div style='text-align: center'>Ruolo</div>",array("content"=>"selectFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text"),
+                array("id"=>"flags","header"=>array("<div style='text-align: center'>Abilitazioni</div>",array("content"=>"textFilter")), "fillspace"=>true,"css"=>array("text-align"=>"center"),"sort"=>"text")
+            );   
+        }
+       
         if($canModify)
         {
             $columns[]=array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>120, "css"=>array("text-align"=>"center"));
@@ -1914,6 +1931,9 @@ Class AA_HomeModule extends AA_GenericModule
                 }
                 else $ops="&nbsp;";
 
+                $nome=$curUser->Getcognome()." ".$curUser->GetNome();
+                if($curUser->GetCf()!="") $nome.=" (".$curUser->GetCf().")";
+
                 if(AA_Const::AA_ENABLE_LEGACY_DATA)
                 {
                     $struct=$curUser->GetStruct();
@@ -1927,14 +1947,14 @@ Class AA_HomeModule extends AA_GenericModule
                     
                     $struct_view='<a href="#" onClick=\'let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($struttura).'"));AA_MainApp.ui.modalBox(note,"Struttura")\'><span class="mdi mdi-eye"></span></a>';
                     if($id_servizio == 0 && $curUser->GetRuolo(true)==AA_User::AA_USER_GROUP_ADMINS) $struct_view='<a href="#" onClick=\'let note=CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse("'.base64_encode($struttura).'"));AA_MainApp.ui.modalBox(note,"Struttura")\'><span class="mdi mdi-account-cowboy-hat"></span></a>';
-                    $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"stato"=>$status,"lastLogin"=>$curUser->GetLastLogin(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->Getcognome()." ".$curUser->GetNome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags,
+                    $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"stato"=>$status,"lastLogin"=>$curUser->GetLastLogin(),"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$nome,"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags,
                         "id_assessorato"=>$id_assessorato,
                         "id_direzione"=>$id_direzione,
                         "id_servizio"=>$id_servizio,
                         "struttura"=>$struct_view
                     );
                 }
-                else $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"lastLogin"=>$curUser->GetLastLogin(),"stato"=>$status,"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$curUser->GetCognome()." ".$curUser->GetNome(),"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags);
+                else $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"lastLogin"=>$curUser->GetLastLogin(),"stato"=>$status,"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$nome,"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags);
             }
             $table=new AA_JSON_Template_Generic($id."_UtentiTable", array(
                 "view"=>"datatable",
@@ -2400,6 +2420,7 @@ Class AA_HomeModule extends AA_GenericModule
         $form_data['cognome']=$object->GetCognome();
         $form_data['phone']=$object->GetPhone();
         $form_data['image']=$object->GetImage();
+        $form_data['cf']=$object->GetCf();
         $form_data['ruolo']=$object->GetRuolo(true);
         $form_data['status']=$object->GetStatus();
         if($object->IsConcurrentEnabled()) $form_data['concurrent']=1;
@@ -2481,8 +2502,9 @@ Class AA_HomeModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Section_DatiPersonali","Dati personali");
         $section->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel"=>"*Nome dell'utente", "placeholder"=>"Caio"));
         $section->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel"=>"*Cognome dell'utente", "placeholder"=>"Sempronio"),false);
-        $section->AddTextField("phone", "Telefono", array("bottomLabel"=>"*Recapito telefonico", "placeholder"=>"..."));
-        $section->AddSpacer(false);
+        $section->AddTextField("cf", "Codice fiscale", array("bottomLabel"=>"*Codice fiscale", "placeholder"=>"..."));
+        $section->AddTextField("phone", "Recapiti", array("bottomLabel"=>"*Recapito telefonico", "placeholder"=>"..."),false);
+        
         $wnd->AddGenericObject($section);
         
         //----------- Ordinary Flags ---------------
@@ -2497,9 +2519,13 @@ Class AA_HomeModule extends AA_GenericModule
             $section->AddCheckBoxField("flag_".$curFlag, $descr, array("bottomPadding"=>8),$newLine);
             $curRow++;
         }
-        for($i=$curRow;$i<4;$i++)
+
+        if($curRow < 4 || $curRow%4 != 0)
         {
-            $section->AddSpacer(false);
+            for($i=$curRow%4;$i<4;$i++)
+            {
+                $section->AddSpacer(false);
+            }  
         }
 
         $section->AddCheckBoxField("concurrent", "Login concorrente", array("bottomLabel"=>"Abilita l'accesso concorrente."));
@@ -2632,8 +2658,8 @@ Class AA_HomeModule extends AA_GenericModule
         $section=new AA_FieldSet($id."_Section_DatiPersonali","Dati personali");
         $section->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel"=>"*Nome dell'utente", "placeholder"=>"nome"));
         $section->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel"=>"*Cognome dell'utente", "placeholder"=>"cognome"),false);
-        $section->AddTextField("phone", "Telefono", array("bottomLabel"=>"*Recapito telefonico", "placeholder"=>"..."));
-        $section->AddSpacer(false);
+        $section->AddTextField("cf", "Codice fiscale", array("bottomLabel"=>"*Codice fiscale", "placeholder"=>"..."));
+        $section->AddTextField("phone", "Recapiti", array("bottomLabel"=>"*Recapiti", "placeholder"=>"..."),false);
         $wnd->AddGenericObject($section);
         
         //----------- Ordinary Flags ---------------
@@ -2648,9 +2674,13 @@ Class AA_HomeModule extends AA_GenericModule
             $section->AddCheckBoxField("flag_".$curFlag, $descr, array("value"=>0,"bottomPadding"=>8),$newLine);
             $curRow++;
         }
-        for($i=$curRow;$i<4;$i++)
+
+        if($curRow < 4 || $curRow%4 != 0)
         {
-            $section->AddSpacer(false);
+            for($i=$curRow%4;$i<4;$i++)
+            {
+                $section->AddSpacer(false);
+            }  
         }
 
         $section->AddCheckBoxField("concurrent", "Login concorrente", array("value"=>0,"bottomLabel"=>"Abilita l'accesso concorrente."));
@@ -3055,7 +3085,12 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->SetWidth(540);
         $wnd->SetHeight(480);
         
-        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>reimpostera' le credenziali</b> per il profilo utente:<p><b>".$user->GetUsername()." </b></p></p><p style='font-size: larger;'>Vuoi procedere?</p></div>";
+        $lastnotify=$user->GetLastNotify();
+        if($lastnotify !="")
+        {
+            $lastnotify="<p>Precedente invio delle credenziali: ".date("d/m/Y H:i:s",strtotime($lastnotify))."</p>";
+        }
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p><p>Questa operazione <b>reimpostera' le credenziali</b> per il profilo utente:<p><b>".$user->GetUsername()." </b></p></p>".$lastnotify."<p style='font-size: larger;'>Vuoi procedere?</p></div>";
         $layout=new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template));
 
         $wnd->AddGenericObject($layout);

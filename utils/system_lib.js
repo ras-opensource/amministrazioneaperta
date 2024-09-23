@@ -1751,7 +1751,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         try {
             let backSection = this.getRuntimeValue("goBack", "section");
             if (AA_MainApp.utils.isDefined(backSection)) {
-                //console.log(module.name+".eventHandlers.defaultHandlers.onMenuItemClick",this,item);
+                console.log(module.name+".eventHandlers.defaultHandlers.onMenuItemClick",this,item);
                 await this.setCurrentSection(backSection);
 
                 //Seleziona gli elementi selezionati in precedenza
@@ -1759,14 +1759,17 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 if (view) {
                     let list = $$(view.config.list_view_id);
                     if (list) {
-                        let sel = this.getRuntimeValue(list.config.id, "itemSelected");
-                        if (Array.isArray(sel) && sel.length > 0) {
-                            //Seleziono l'oggetto selezionato in precedenza
-                            let scroll = this.getRuntimeValue("goBack", "scroll");
-                            if (scroll.y > 0) {
-                                list.scrollTo(0, scroll.y);
+                        let scroll = this.getRuntimeValue("goBack", "scroll");
+                        if (scroll.y > 0) {
+                            list.scrollTo(0, scroll.y);
+                        }
+                        if(list.config.view=="dataview") 
+                        {
+                            let sel = this.getRuntimeValue(list.config.id, "itemSelected");
+                            if (Array.isArray(sel) && sel.length > 0) {
+                                //Seleziono l'oggetto selezionato in precedenza
+                                list.select(sel);
                             }
-                            list.select(sel);
                         }
                     }
 

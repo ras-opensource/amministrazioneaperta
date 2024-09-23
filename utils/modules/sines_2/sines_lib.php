@@ -5379,6 +5379,9 @@ Class AA_SinesModule extends AA_GenericModule
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
+        $result_error=array();
+        $ids_final=array();
+
         //lista organismi da cestinare
         if($_REQUEST['ids'])
         {
@@ -5560,6 +5563,9 @@ Class AA_SinesModule extends AA_GenericModule
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         //lista organismi da ripristinare
+        $ids_final=array();
+        $result_error=array();
+
         if($_REQUEST['ids'])
         {
             $ids= json_decode($_REQUEST['ids']);
@@ -5843,6 +5849,9 @@ Class AA_SinesModule extends AA_GenericModule
     public function Task_DeleteOrganismi($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $ids_final=array();
+        $result_error=array();
         
         //lista organismi da eliminare
         if($_REQUEST['ids'])
@@ -9166,6 +9175,12 @@ Class AA_SinesModule extends AA_GenericModule
             case static::AA_UI_PREFIX."_Pubblicate_List_Box":
                 $_REQUEST['count']=10;
                 $data=$this->GetDataSectionPubblicate_List($_REQUEST);
+                if($data[0]>0) $objectData = $data[1];
+                break;
+
+            case static::AA_UI_PREFIX."_Bozze_List_Box":
+                $_REQUEST['count']=10;
+                $data=$this->GetDataSectionBozze_List($_REQUEST);
                 if($data[0]>0) $objectData = $data[1];
                 break;
                 
