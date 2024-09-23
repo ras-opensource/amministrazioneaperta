@@ -3,6 +3,7 @@ include_once "system_core.php";
 include_once "system_storage.php";
 include_once "system_ui.php";
 include_once "system_ui.legacy.php";
+include_once "system_custom.php";
 
 //Classi per la gestione dei task
 class AA_GenericTaskManager

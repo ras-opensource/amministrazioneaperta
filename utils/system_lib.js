@@ -1751,7 +1751,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         try {
             let backSection = this.getRuntimeValue("goBack", "section");
             if (AA_MainApp.utils.isDefined(backSection)) {
-                console.log(module.name+".eventHandlers.defaultHandlers.onMenuItemClick",this,item);
+                //console.log(module.name+".eventHandlers.defaultHandlers.onMenuItemClick",this,item);
                 await this.setCurrentSection(backSection);
 
                 //Seleziona gli elementi selezionati in precedenza
