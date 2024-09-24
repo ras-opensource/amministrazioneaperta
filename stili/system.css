@@ -949,3 +949,24 @@ div.AA_Footer_Gradient {
       transform: translateX(-100%);
     }
 }
+
+.GenericAutosizedRowTable_left .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: start;
+}
+
+.GenericAutosizedRowTable_right .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: end;
+}
+
+.GenericAutosizedRowTable .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+}
