@@ -2606,7 +2606,7 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(1080);
-        $wnd->SetHeight(800);
+        $wnd->SetHeight(900);
         
         //Ruolo
         if($this->oUser->IsSuperUser()) 
