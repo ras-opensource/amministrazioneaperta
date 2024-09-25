@@ -646,16 +646,21 @@ class AA_SystemTask_GetAppStatus extends AA_GenericTask
             $mods = $platform->GetModules();
 
             $itemSelected="";
-            foreach ($mods as $curMod) {
-                //Modulo da selezionare
-                if ($_REQUEST['module'] == $curMod['id_modulo']) {
-                    //AA_Log::Log(__METHOD__." - Seleziono il modulo: ".$_REQUEST['module'],100);
-                    $itemSelected = $curMod['id_sidebar'];
-                }
+            foreach ($mods as $curMod) 
+            {
+                $admins = explode(",", $curMod['admins']);
+                if($curMod['visible']==1 || in_array($this->oUser->GetId(), $admins) || $this->oUser->IsSuperUser())
+                {
+                    //Modulo da selezionare
+                    if ($_REQUEST['module'] == $curMod['id_modulo']) {
+                        //AA_Log::Log(__METHOD__." - Seleziono il modulo: ".$_REQUEST['module'],100);
+                        $itemSelected = $curMod['id_sidebar'];
+                    }
 
-                $modules[] = array("id" => $curMod['id_modulo'], "remote_folder" => AA_Const::AA_PUBLIC_MODULES_PATH . DIRECTORY_SEPARATOR . $curMod['id_sidebar'] . "_" . $curMod['id'], "icon" => $curMod['icon'], "name" => $curMod['tooltip']);
+                    $modules[] = array("id" => $curMod['id_modulo'], "remote_folder" => AA_Const::AA_PUBLIC_MODULES_PATH . DIRECTORY_SEPARATOR . $curMod['id_sidebar'] . "_" . $curMod['id'], "icon" => $curMod['icon'], "name" => $curMod['tooltip']);
 
-                $sideBarContent[] = array("id" => $curMod['id_sidebar'], "icon" => $curMod['icon'], "value" => $curMod['name'], "tooltip" => $curMod['tooltip'], "module" => $curMod['id_modulo']);
+                    $sideBarContent[] = array("id" => $curMod['id_sidebar'], "icon" => $curMod['icon'], "value" => $curMod['name'], "tooltip" => $curMod['tooltip'], "module" => $curMod['id_modulo']);
+                }  
             }
 
             $this->sTaskLog .= "<sidebar id='sidebar' itemSelected='$itemSelected'>";

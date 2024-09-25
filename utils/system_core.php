@@ -7811,6 +7811,7 @@ class AA_Platform
         if ($module == null) {
             return AA_Const::AA_WWW_ROOT;
         } else {
+            if(isset($module["path"]) && $module["path"] != "") return AA_Const::AA_PUBLIC_MODULES_PATH . "/" . $module['path'];
             return AA_Const::AA_PUBLIC_MODULES_PATH . "/" . $module['id_sidebar'] . "_" . $module['id'];
         }
     }

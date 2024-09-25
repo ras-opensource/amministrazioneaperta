@@ -1649,7 +1649,8 @@ Class AA_HomeModule extends AA_GenericModule
                 $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
                 foreach($platform_modules as $curModId => $curMod)
                 {
-                    if($curModId != $this->GetId())
+                    $admins = explode(",", $curMod['admins']); 
+                    if($curModId != $this->GetId() && ($curMod['visible']==1 || in_array($this->oUser->GetId(), $admins) || $this->oUser->IsSuperUser()))
                     {
                         $nMod++;
                         //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
@@ -2460,7 +2461,7 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(1080);
-        $wnd->SetHeight(800);
+        $wnd->SetHeight(900);
         
         //username
         $wnd->AddTextField("user","Nome profilo",array("required"=>true,"gravity"=>2, "disabled"=>true,"bottomLabel"=>"*Puo' essere usato in fase di autenticazione."));
