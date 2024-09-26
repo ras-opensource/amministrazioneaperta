@@ -1822,6 +1822,19 @@ Class AA_HomeModule extends AA_GenericModule
          ));
          $toolbar->AddElement($modify_btn);
 
+        //export
+        $modify_btn=new AA_JSON_Template_Generic($id."_ExportUtenti_btn",array(
+            "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-application-export",
+                "label"=>"Esporta",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Esporta in csv",
+                "click"=>"AA_MainApp.utils.callHandler('ExportToCsv', {table:\"".$id."_UtentiTable\",postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+            ));
+        $toolbar->AddElement($modify_btn);
+
         //pulsante di importazione utenti legacy (solo super user)
         if($this->oUser->IsSuperUser() && AA_Const::AA_ENABLE_LEGACY_DATA)
         {            
@@ -1952,7 +1965,8 @@ Class AA_HomeModule extends AA_GenericModule
                         "id_assessorato"=>$id_assessorato,
                         "id_direzione"=>$id_direzione,
                         "id_servizio"=>$id_servizio,
-                        "struttura"=>$struct_view
+                        "struttura"=>$struct_view,
+                        "struttura_detail"=>$struttura
                     );
                 }
                 else $data[]=array("id"=>$curUser->GetId(),"ops"=>$ops,"lastLogin"=>$curUser->GetLastLogin(),"stato"=>$status,"user"=>$curUser->GetUsername(),"email"=>$curUser->GetEmail(),"denominazione"=>$nome,"ruolo"=>$curUser->GetRuolo(),"flags"=>$flags);

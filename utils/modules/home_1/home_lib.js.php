@@ -169,5 +169,41 @@ var <?php echo AA_HomeModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Home
     }
 };
 
+//Export to csv
+<?php echo AA_HomeModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ExportToCsv = async function() {
+    try 
+    {
+        //if(arguments[2] != 'user') return;
+        console.log("eventHandlers.defaultHandlers.ExportToCsv", arguments[0].table);
+        let table=$$(arguments[0].table);
+        if(table)
+        {
+            webix.toCSV((table),
+            {
+                filename: "esportazione_utenti",
+                columns:
+                {
+                    "stato":true,
+                    "lastlogin":true,
+                    "user":true,
+                    "email":true,
+                    "denominazione":true,
+                    "ruolo":true,
+                    "flags":true,
+                    "struttura_detail":true
+                }
+            });
+        }
+        return;
+
+        <?php echo AA_HomeModule::AA_ID_MODULE?>.setRuntimeValue(this.config.filter_id,"filter_data", {"show_suppressed":this.getValue()});
+        <?php echo AA_HomeModule::AA_ID_MODULE?>.refreshCurSection();
+
+        return;
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onFilterStructChange", msg, this);
+    }
+};
+
 AA_MainApp.registerModule(<?php echo AA_HomeModule::AA_ID_MODULE?>);
 
