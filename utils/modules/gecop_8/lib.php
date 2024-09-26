@@ -167,12 +167,12 @@ Class AA_Gecop_Const extends AA_Const
     }
 }
 
-#Classe oggetto geser
+#Classe oggetto Gecop
 Class AA_Gecop extends AA_Object_V2
 {
     //tabella dati db
-    const AA_DBTABLE_DATA="aa_geser_data";
-    static protected $AA_DBTABLE_OBJECTS="aa_geser_objects";
+    const AA_DBTABLE_DATA="aa_gecop_data";
+    static protected $AA_DBTABLE_OBJECTS="aa_gecop_objects";
 
     //Funzione di cancellazione
     protected function DeleteData($idData = 0, $user = null)
@@ -201,56 +201,80 @@ Class AA_Gecop extends AA_Object_V2
     }
 
 
-    //geolocalizzazione
-    protected $geolocalizzazione=null;
-    public function GetGeolocalizzazione()
+    //aggiudicatario
+    protected $aggiudicatario=null;
+    public function GetAggiudicatario()
     {
         if(!$this->IsValid()) return array();
 
-        if(!is_array($this->geolocalizzazione))
+        if(!is_array($this->aggiudicatario))
         {
-            $this->geolocalizzazione=json_decode($this->GetProp('Geolocalizzazione'),true);
-            if(!is_array($this->geolocalizzazione))
+            $this->aggiudicatario=json_decode($this->GetProp('Aggiudicatario'),true);
+            if(!is_array($this->aggiudicatario))
             {
                 //AA_Log::Log(__METHOD__." - errore nel parsing",100);
                 return array();
             }
         }
 
-        return $this->geolocalizzazione;
+        return $this->aggiudicatario;
     }
 
-    public function GetTipo()
-    {
-        if($this->GetProp("Tipologia")<=0) return "Non definito";
-        $tipologia=AA_Gecop_Const::GetListaTipoImpianti();
-        return $tipologia[$this->GetProp("Tipologia")];
-    }
-
-    public function GetStato()
-    {
-        if($this->GetProp("Stato")<=0) return "Non definito";
-        $tipologia=AA_Gecop_Const::GetListaStatiImpianto();
-        return $tipologia[$this->GetProp("Stato")];
-    }
-
-    //pratiche
-    protected $pratiche=null;
-    public function GetPratiche()
+    //links
+    protected $links=null;
+    public function GetLinks()
     {
         if(!$this->IsValid()) return array();
 
-        if(!is_array($this->pratiche))
+        if(!is_array($this->links))
         {
-            $this->pratiche=json_decode($this->GetProp('Pratiche'),true);
-            if(!is_array($this->pratiche))
+            $this->links=json_decode($this->GetProp('Links'),true);
+            if(!is_array($this->links))
             {
-                AA_Log::Log(__METHOD__." - errore nel parsing",100);
+                //AA_Log::Log(__METHOD__." - errore nel parsing",100);
                 return array();
             }
         }
 
-        return $this->pratiche;
+        return $this->links;
+    }
+
+    //links
+    protected $commissione=null;
+    public function GetCommissione()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->commissione))
+        {
+            $this->commissione=json_decode($this->GetProp('Commissione'),true);
+            if(!is_array($this->commissione))
+            {
+                //AA_Log::Log(__METHOD__." - errore nel parsing",100);
+                return array();
+            }
+        }
+
+        return $this->commissione;
+    }
+
+    //links
+    protected $gestione_finanziaria=null;
+    public function GetGestioneFinanziaria()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->commissione))
+        {
+            $this->gestione_finanziaria=json_decode($this->GetProp('gestione_finanziaria'),true);
+            if(!is_array($this->gestione_finanziaria))
+            {
+                //AA_Log::Log(__METHOD__." - errore nel parsing",100);
+                return array();
+            }
+        }
+
+        return $this->gestione_finanziaria;
     }
 
     //Funzione di clonazione dei dati
@@ -271,17 +295,12 @@ Class AA_Gecop extends AA_Object_V2
 
         //Db data binding
         $this->AddProp("Note","","note");
-        $this->AddProp("Tipologia",0,"tipologia");
-        $this->AddProp("Superficie",0,"superficie");
-        $this->AddProp("Stato",0,"stato");
-        $this->AddProp("AnnoAutorizzazione","","anno_autorizzazione");
-        $this->AddProp("AnnoCostruzione","","anno_costruzione");
-        $this->AddProp("AnnoEsercizio","","anno_entrata_esercizio");
-        $this->AddProp("AnnoDismissione","","anno_dismissione");
-        $this->AddProp("Potenza",0,"potenza");
-        $this->AddProp("Geolocalizzazione","","geolocalizzazione");
-        $this->AddProp("Pratiche","","pratiche");
-        //$this->AddProp("Allegati","","allegati");
+        $this->AddProp("Cig",0,"cig");
+        $this->AddProp("Anno",0,"anno");
+        $this->AddProp("Aggiudicatario",0,"aggiudicatario");
+        $this->AddProp("Links","","links");
+        $this->AddProp("Commissione","","commissione");
+        $this->AddProp("GestioneFinanziaria","","gestione_finanziaria");
 
         //disabilita la revisione
         $this->EnableRevision(false);
@@ -385,6 +404,26 @@ Class AA_Gecop extends AA_Object_V2
     {
         //AA_Log::Log(__METHOD__." - Aggiornamento: ".print_r($this,true),100);
         return parent::Update($user,true,$logMsg);
+    }
+
+    public static function CigIsValid($cig='')
+    {
+        if(empty($cig)) return false;
+
+        $db=new AA_Database();
+
+        $query="SELECT id from ".AA_Gecop::AA_DBTABLE_DATA." where cig='".trim($cig)."'";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore db: ".print_r($db->GetErrorMessage(),true),100);
+            return false;
+        }
+
+        AA_Log::Log(__METHOD__." - query: ".print_r($query,true),100);
+
+        if($db->GetAffectedRows()> 0) return false;
+
+        return true;
     }
 
     protected $allegati=null;
@@ -773,17 +812,9 @@ Class AA_GecopModule extends AA_GenericModule
         if($object instanceof AA_Gecop)
         {
 
-            $data['pretitolo']=$object->GetTipo();
-            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStato()."</span>";
-            $potenza=$object->GetProp("Potenza");
-            if(intVal($potenza)>0)
-            {
-                $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".AA_Utils::number_format($object->GetProp("Potenza"),2,",",".")." MWatt</span>";
-            }
+            $data['pretitolo']=$object->GetProp("Anno");
+            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow'>".$object->GetProp("Cig")."</span>";
             $data['tags']=$tags;
-            $geolocalizzazione=$object->GetGeolocalizzazione();
-            if($geolocalizzazione['localita'] != "" && $geolocalizzazione['localita'] !="n.d.") $data['sottotitolo']="<span>".$geolocalizzazione['localita'].", ".$geolocalizzazione['comune']."</span>";
-            else $data['sottotitolo']="<span>".$geolocalizzazione['comune']."</span>";
         }
 
         return $data;
@@ -869,92 +900,50 @@ Class AA_GecopModule extends AA_GenericModule
         $id=$this->GetId()."_AddNew_Dlg_".uniqid();
         
         $form_data=array();
-        
+
         $form_data['Note']="";
-        $form_data['AnnoAutorizzazione']="";
-        $form_data['AnnoCostruzione']="";
-        $form_data['AnnoEsercizio']="";
-        $form_data['AnnoDismissione']="";
-        $form_data['Stato']=0;
-        $form_data['Tipologia']=0;
         $form_data['nome']="";
-        $form_data['Potenza']="";
-        $form_data['Superficie']="";
-        $form_data['Geo_comune']="";
-        $form_data['Geo_localita']="";
-        $form_data['Geo_coordinate']="";
-
-        $stato=AA_Gecop_Const::GetListaStatiImpianto();
-        $stato_options=array();
-        foreach($stato as $num=>$val)
-        {
-            $stato_options[]=array("id"=>$num,"value"=>$val);
-        }
-
-        $tipologia=AA_Gecop_Const::GetListaTipoImpianti();
-        $tipo_options=array();
-        foreach($tipologia as $num=>$val)
-        {
-            $tipo_options[]=array("id"=>$num,"value"=>$val);
-        }
-
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo impianto", $this->id,$form_data,$form_data);
+        $form_data['Cig']="";
+        $form_data['Anno']=Date("Y");
+        $form_data['links_atti']="";
+        $form_data['aggiudicatario_nominativo']="";
+        $form_data['aggiudicatario_cf']="";
+        $form_data['gestione_finanziaria_data_inizio']="";
+        $form_data['gestione_finanziaria_data_fine']="";
+        $form_data['gestione_finanziaria_importo_aggiudicazione']="";
+        $form_data['gestione_finanziaria_importo_liquidato']="";
+        
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo contratto", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(1080);
-        $wnd->SetHeight(720);
+        $wnd->SetWidth(800);
+        $wnd->SetHeight(480);
         $wnd->EnableValidation();
 
-        //Tipologia
-        $wnd->AddSelectField("Tipologia","Tipologia",array("required"=>true,"gravity"=>1.5,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare la tipologia di impianto.", "placeholder"=>"...","options"=>$tipo_options));
+        //Cig
+        $wnd->AddTextField("Cig","Cig",array("required"=>true,"gravity"=>2.5,"bottomPadding"=>32, "bottomLabel"=>"*Inseririe il cig relativo al contratto.", "placeholder"=>"..."));
         
-        //Stato
-        $wnd->AddSelectField("Stato","Stato attuale",array("required"=>true,"gravity"=>1.5,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare lo stato attuale dell'impianto.", "placeholder"=>"...","options"=>$stato_options),false);
+        //Anno
+        $wnd->AddTextField("Anno","Anno",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'anno di riferimento.", "placeholder"=>"es. 2024"),false);
+
+        //Note
+        $label="Oggetto";
+        $wnd->AddTextareaField("nome",$label,array("required"=>true,"bottomLabel"=>"*Oggetto del contratto.", "placeholder"=>"Inserisci qui l'oggetto..."));
         
-        //superficie
-        $wnd->AddTextField("Superficie","Superficie",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la superficie (mq) dell'impianto.", "placeholder"=>"es. 150"),false);
+        //link atti
+        $wnd->AddTextField("links_atti","Url documenti",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsUrl","bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'url in cui e' pubblicata la documentazione prevista dalla normativa vigente in materia di contratti pubblici.", "placeholder"=>"..."));
 
-        //Nome
-        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci una denominazione per l'impianto.", "placeholder"=>"..."));
+        //$section=new AA_FieldSet($id."_Aggiudicatario","Aggiudicatario");
+        //$section->AddTextField("aggiudicatario_nominativo","Nominativo",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire la ragione sociale o il nome e cognome dell'aggiudicatario.", "placeholder"=>"..."));
+       // $section->AddTextField("aggiudicatario_cf","Cf/Piva",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire il codice fiscale o la partita iva dell'aggiudicatario.", "placeholder"=>"..."),false);
 
-        //potenza
-        $wnd->AddTextField("Potenza","Potenza",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la potenza in megawatt dell'impianto.", "placeholder"=>"es. 150"),false);
-
-        $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
-
-        //anno autorizzazione
-        $section->AddDateField("AnnoAutorizzazione","Data autorizzazione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024"));
-        
-        //anno costruzione
-        $section->AddDateField("AnnoCostruzione","Data costruzione",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui e' stata terminata la costruzione dell'impianto.", "placeholder"=>"es. 2024"),false);
-
-        //anno esercizio
-        $section->AddDateField("AnnoEsercizio","Data esercizio",array("bottomPadding"=>32, "labelWidth"=>150,"bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024"));
-
-        //anno dismissione
-        $section->AddDateField("AnnoDismissione","Data dismissione",array("bottomPadding"=>32,"labelWidth"=>150, "bottomLabel"=>"*Inserisci l'anno in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024"),false);
-
-        $wnd->AddGenericObject($section);
-
-        //Norma
-        $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
-
-        //localita'
-        $section->AddTextField("Geo_localita","Localita'",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
-
-        //comune
-        $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>38,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGecopListaCodiciIstat")));
-
-        //coordinate
-        $section->AddTextField("Geo_coordinate","Coordinate",array("gravity"=>1,"bottomPadding"=>38,"labelWidth"=>90, "bottomLabel"=>"*Coordinate geografiche dell'impianto (formato: latitudine,longitudine).", "placeholder"=>"es. 39.217199,9.113311"),false);
-
-        $wnd->AddGenericObject($section);
+        //$wnd->AddGenericObject($section);
 
         //Note
         $label="Note";
-        $wnd->AddTextareaField("Note",$label,array("labelWidth"=>90,"bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
+        $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
         
         $wnd->EnableCloseWndOnSuccessfulSave();
 
@@ -1866,7 +1855,7 @@ Class AA_GecopModule extends AA_GenericModule
         return true;
     }
 
-    //Template dlg modify geser
+    //Template dlg modify Gecop
     public function Template_GetGecopModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg_".uniqid();
@@ -2712,31 +2701,28 @@ Class AA_GecopModule extends AA_GenericModule
         if(trim($_REQUEST['nome']) == "")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il titolo non puo' essere vuoto o composto da soli spazi.",false);
+            $task->SetError("L'oggetto non puo' essere vuoto o composto da soli spazi.",false);
 
             return false;
         }
 
         //date
-        if(isset($_REQUEST['AnnoAutorizzazione'])) $_REQUEST['AnnoAutorizzazione']=substr($_REQUEST['AnnoAutorizzazione'],0,10);
-        if(isset($_REQUEST['AnnoCostruzione'])) $_REQUEST['AnnoCostruzione']=substr($_REQUEST['AnnoCostruzione'],0,10);
-        if(isset($_REQUEST['AnnoEsercizio'])) $_REQUEST['AnnoEsercizio']=substr($_REQUEST['AnnoEsercizio'],0,10);
-        if(isset($_REQUEST['AnnoDismissione'])) $_REQUEST['AnnoDismissione']=substr($_REQUEST['AnnoDismissione'],0,10);
+        if(!isset($_REQUEST['Anno']) || intval($_REQUEST['Anno']) < 2024 || intval($_REQUEST['Anno']) > 2099)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Anno di riferimento non valido.",false);
 
-        //potenza
-        if(isset($_REQUEST['Potenza'])) $_REQUEST['Potenza']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Potenza'])),2,".","");
-        //superficie
-        if(isset($_REQUEST['Superficie'])) $_REQUEST['Superficie']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Superficie'])),2,".","");
+            return false;
+        }
 
-        $geolocalizzazione=array();
+        if(!isset($_REQUEST['Cig']) || !AA_Gecop::CigIsValid(trim($_REQUEST['Cig'])))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Cig non valido o gia' presente.",false);
+
+            return false;
+        }
         
-        if(isset($_REQUEST['Geo_comune'])) $geolocalizzazione['comune']=trim($_REQUEST['Geo_comune']);
-        if(isset($_REQUEST['Geo_localita'])) $geolocalizzazione['localita']=trim($_REQUEST['Geo_localita']);
-        if(isset($_REQUEST['Geo_coordinate'])) $geolocalizzazione['coordinate']=trim($_REQUEST['Geo_coordinate']);
-
-        $_REQUEST['Geolocalizzazione']=json_encode($geolocalizzazione);
-        //-----------------------------------------------
-
         return $this->Task_GenericAddNew($task,$_REQUEST);
     }
 
