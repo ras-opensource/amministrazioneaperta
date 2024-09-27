@@ -571,7 +571,7 @@ Class AA_GecopModule extends AA_GenericModule
     //section ui ids
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
 
-    const AA_UI_TEMPLATE_PRATICHE="Pratiche";
+    const AA_UI_TEMPLATE_COMMISSIONE="Commissione";
 
     public function __construct($user=null,$bDefaultSections=true)
     {
@@ -2088,8 +2088,8 @@ Class AA_GecopModule extends AA_GenericModule
         
         $params['MultiviewEventHandlers']=array("onViewChange"=>array("handler"=>"onDetailViewChange"));
 
-        $params['disable_SaveAsPdf']=true;
-        $params['disable_SaveAsCsv']=true;
+        //$params['disable_SaveAsPdf']=true;
+        //$params['disable_SaveAsCsv']=true;
         //$params['disable_trash']=true;
         //$params['disable_public_trash']=true;
 
@@ -2101,31 +2101,26 @@ Class AA_GecopModule extends AA_GenericModule
     }
 
     //lista pratiche
-    public function TemplateDettaglio_Pratiche($object=null)
+    public function TemplateDettaglio_Commissione($object=null,$canModify=false)
     {
-        $id=static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PRATICHE;
-        $canModify=false;
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_COMMISSIONE;
 
-        #pratiche----------------------------------
-        if($this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP)) $canModify=true;
-
-        $stati_pratica=AA_Gecop_Const::GetListaStatiPratica();
-        $tipo_pratica=AA_Gecop_Const::GetListaTipoPratica();
-        $tipo_via=AA_Gecop_Const::GetListaTipoVia();
-        $pratiche=$object->GetPratiche();
-        foreach($pratiche as $id_pratica=>$curPratica)
+        #commissione----------------------------------
+        $commissione=$object->GetCommissione();
+        $commissione_data=array();
+        foreach($commissione as $id_componente=>$curComponente)
         {
             //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
-            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopCopyPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteCommissioneDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteCommissioneDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopCopyComponenteCommissioneDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="&nbsp;";
 
-            $pratiche_data[]=array("id"=>$id_pratica,"rif_temporali"=>"<div style='display:flex; flex-direction:column; justify-content:center'><span><b>Data inizio</b>: ".$curPratica['data_inizio']."</span><span><b>Data fine</b>: ".$curPratica['data_fine']."</span></div>","stato"=>$stati_pratica[$curPratica['stato']],"tipo"=>$tipo_pratica[$curPratica['tipo']],"estremi"=>$curPratica['estremi'],"descrizione"=>$curPratica['descrizione'],"via"=>$tipo_via[$curPratica['via']],"societa"=>$curPratica['societa'],"note"=>$curPratica['note'],"ops"=>$ops);
+            $commissione_data[]=array("id"=>$id_componente,"nominativo"=>$curComponente['nominativo'],"ruolo"=>$curComponente['ruolo'],"cf"=>$curComponente['cf'],"professione"=>$curComponente['professione'],"ops"=>$ops);
         }
 
-        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Gestione pratiche</span>",9,null,array("css"=>"AA_Header_DataTable"));
+        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Composizione commissione aggiudicatrice</span>",6,null,array("css"=>"AA_Header_DataTable"));
         $template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
         $template->SetAddNewBtnCss("webix_primary");
         $template->EnableScroll(false,true);
@@ -2135,21 +2130,19 @@ Class AA_GecopModule extends AA_GenericModule
 
         if($canModify) 
         {
-            $template->EnableAddNew(true,"GetGecopAddNewPraticaDlg");
+            $template->EnableAddNew(true,"GetGecopAddNewComponenteCommissioneDlg");
+            $template->SetAddNewBtnTooltip("Aggiungi un nuovo componente");
             $template->SetAddNewTaskParams(array("postParams"=>array("id"=>$object->GetId())));
         }
 
-        $template->SetColumnHeaderInfo(0,"stato","<div style='text-align: center'>Stato</div>",120,"selectFilter","text","PraticheTable_left");
-        $template->SetColumnHeaderInfo(1,"tipo","<div style='text-align: center'>Tipologia</div>",160,"selectFilter","text","PraticheTable_left");
-        $template->SetColumnHeaderInfo(2,"rif_temporali","<div style='text-align: center'>Rif. temporali</div>",200,"textFilter","text","PraticheTable_left");
-        $template->SetColumnHeaderInfo(3,"descrizione","<div style='text-align: center'>Descrizione</div>","fillspace","textFilter","text","PraticheTable_left");
-        $template->SetColumnHeaderInfo(4,"estremi","<div style='text-align: center'>Estremi</div>","fillspace","textFilter","text","PraticheTable");
-        $template->SetColumnHeaderInfo(5,"via","<div style='text-align: center'>Tipo VIA</div>",120,"selectFilter","text","PraticheTable");
-        $template->SetColumnHeaderInfo(6,"societa","<div style='text-align: center'>Ragione sociale</div>",200,"selectFilter","text","PraticheTable");
-        $template->SetColumnHeaderInfo(7,"note","<div style='text-align: center'>Note</div>","fillspace","textFilter","text","PraticheTable_left");
-        $template->SetColumnHeaderInfo(8,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"PraticheTable");
+        $template->SetColumnHeaderInfo(0,"nominativo","<div style='text-align: center'>Nominativo</div>","fillspace","textFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"ruolo","<div style='text-align: center'>Ruolo</div>",160,"selectFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(2,"cf","<div style='text-align: center'>cf</div>",200,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(3,"cv","<div style='text-align: center'>cv</div>",200,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(4,"professione","<div style='text-align: center'>Professione</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(5,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
 
-        $template->SetData($pratiche_data);
+        $template->SetData($commissione_data);
 
         return $template;
     }
@@ -2167,11 +2160,11 @@ Class AA_GecopModule extends AA_GenericModule
 
         $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>32,"type"=>"clean","borderless"=>true));
         $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
-        $toolbar->AddElement(new AA_JSON_Template_Generic());
+        //$toolbar->AddElement(new AA_JSON_Template_Generic());
 
         $toolbar->AddElement(new AA_JSON_Template_Generic());
         /*if(($object->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0)
-        {   
+        {
             $revision_btn=new AA_JSON_Template_Generic("",array(
                 "view"=>"button",
                  "type"=>"icon",
@@ -2191,94 +2184,44 @@ Class AA_GecopModule extends AA_GenericModule
 
         $layout=$this->TemplateGenericDettaglio_Header_Generale_Tab($object,$id,$toolbar,$canModify);
         
-        //stato
-        $value="<span class='AA_Label AA_Label_Green'>".$object->GetStato()."</span>";
-        $stato=new AA_JSON_Template_Template("",array(
+        //anno
+        $value="<span class='AA_Label AA_Label_Blue_Simo'>".$object->GetProp("Anno")."</span>";
+        $anno=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Stato:","value"=>$value),
+            "data"=>array("title"=>"Anno:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
-        //tipologia
-        $value="<span class='AA_Label AA_Label_Blue_Simo'>".$object->GetTipo()."</span>";
-        $tipo=new AA_JSON_Template_Template("",array(
+        //cig
+        $value="<span class='AA_Label AA_Label_LightYellow'>".$object->GetProp("Cig")."</span>";
+        $cig=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Tipologia impianto:","value"=>$value),
+            "data"=>array("title"=>"Cig:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
-        //potenza
-        $value=$object->GetProp("Potenza");
-        if(floatVal($value) > 0) $value="<span class='AA_Label AA_Label_Orange'>".AA_Utils::number_format($value,2,",",".")." MWatt</span>";
-        else $value="n.d.";
-        $potenza=new AA_JSON_Template_Template("",array(
+        //url documenti
+        $links=$object->GetLinks();
+        $value="<a href='".$links['documenti']."' target='_blank'>consulta...</a>";
+        $docs=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Potenza:","value"=>$value),
+            "data"=>array("title"=>"Documentazione:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
-        //superficie
-        $value=$object->GetProp("Superficie");
-        if(floatVal($value)>0) $value=AA_Utils::number_format($value,2,",",".")." mq";
-        else $value="n.d.";
-        $superficie=new AA_JSON_Template_Template("",array(
+        //url bdncp
+        $value="<a href='".$links['bdncp']."' target='_blank'>consulta...</a>";
+        $bdncp=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Superficie:","value"=>$value),
+            "data"=>array("title"=>"Link BDNCP:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
-        //denominazione
-        $value=$object->GetDescr();
-        $nome=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "gravity"=>1,
-            "data"=>array("title"=>"Denominazione:","value"=>$value),
-            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
-        ));
-
-        //anno autorizzazione
-        $value=$object->GetProp("AnnoAutorizzazione");
-        if($value=="")$value="n.d.";
-        $anno_autorizzazione=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "gravity"=>1,
-            "width"=>180,
-            "data"=>array("title"=>"Data autorizzazione:","value"=>$value)
-        ));
-
-        //anno costruzione
-        $value=$object->GetProp("AnnoCostruzione");
-        if($value=="")$value="n.d.";
-        $anno_costruzione=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "gravity"=>1,
-            "width"=>180,
-            "data"=>array("title"=>"Data costruzione:","value"=>$value)
-        ));
-
-        //anno esercizio
-        $value=$object->GetProp("AnnoEsercizio");
-        if($value=="")$value="n.d.";
-        $anno_esercizio=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "gravity"=>1,
-            "width"=>200,
-            "data"=>array("title"=>"Data entrata in esercizio:","value"=>$value)
-        ));
-
-        //anno dismissione
-        $value=$object->GetProp("AnnoDismissione");
-        if($value=="")$value="n.d.";
-        $anno_dismissione=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-            "gravity"=>1,
-            "width"=>150,
-            "data"=>array("title"=>"Data dismissione:","value"=>$value)
-        ));
+        
         
         //note
         $value = $object->GetProp("Note");
@@ -2286,48 +2229,22 @@ Class AA_GecopModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
-
-        //geolocalizzazione
-        $geolocalizzazione=$object->GetGeolocalizzazione();
-
-        $value = $geolocalizzazione['localita'];
-        $localita=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Localita':","value"=>$value)
-        ));
-        $value = $geolocalizzazione['comune'];
-        $comune=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Comune:","value"=>$value)
-        ));
-        $value = $geolocalizzazione['coordinate'];
-        $coordinate=new AA_JSON_Template_Template("",array(
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Coordinate:","value"=>$value)
-        ));
         
         //prima riga
         $riga=new AA_JSON_Template_Layout("",array("height"=>$rows_fixed_height,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $riga->AddCol($tipo);
-        $riga->AddCol($stato);
-        $riga->AddCol($potenza);
-        $riga->AddCol($superficie);
-        $riga->AddCol($anno_autorizzazione);
-        $riga->AddCol($anno_costruzione);
-        $riga->AddCol($anno_esercizio);
-        $riga->AddCol($anno_dismissione);
+        $riga->AddCol($anno);
+        $riga->AddCol($cig);
+        $riga->AddCol($docs);
+        $riga->AddCol($bdncp);
         $layout->AddRow($riga);
 
         //seconda riga
-        $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"height"=>180,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $layout_gen=new AA_JSON_Template_Layout("",array("gravity"=>2,"type"=>"clean"));
-        $layout_geo=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
+        $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $layout_gen=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
+        //$layout_geo=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
         //$layout_gen->addRow($nome);
+        $riga->addCol($this->TemplateDettaglio_Commissione($object,$canModify));
         $layout_gen->addRow($note);
-        $layout_geo->AddRow($localita);
-        $layout_geo->AddRow($comune);
-        $layout_geo->AddRow($coordinate);
-        $riga->addCol($layout_geo);
         $riga->addCol($layout_gen);
         $layout->AddRow($riga);
 
@@ -2342,7 +2259,7 @@ Class AA_GecopModule extends AA_GenericModule
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Gestione Pratiche</span>", "align"=>"center")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
         //$layout->AddRow($toolbar);
-        $layout->AddRow($this->TemplateDettaglio_Pratiche($object));
+        //$layout->AddRow($this->TemplateDettaglio_Pratiche($object));
         //------------------------------------------------------------------------
 
         return $layout;
