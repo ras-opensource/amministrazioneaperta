@@ -572,6 +572,7 @@ Class AA_GecopModule extends AA_GenericModule
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
 
     const AA_UI_TEMPLATE_COMMISSIONE="Commissione";
+    const AA_UI_TEMPLATE_RENDICONTO="Rendiconto";
 
     public function __construct($user=null,$bDefaultSections=true)
     {
@@ -2146,6 +2147,93 @@ Class AA_GecopModule extends AA_GenericModule
 
         return $template;
     }
+
+    //lista pratiche
+    public function TemplateDettaglio_RendicontoFinanziario($object=null,$canModify=false)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_RENDICONTO;
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        //-------------------- Rendiconto finanziario --------------------------------------
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Rendicontazione gestione finanziaria</span>", "align"=>"center")));
+        
+        if($canModify)
+        {
+            $revision_btn=new AA_JSON_Template_Generic("",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-pencil",
+                 "label"=>"Modifica",
+                 "align"=>"right",
+                 "autowidth"=>true,
+                 "tooltip"=>"Visualizza i dati della rendicontazione finanziaria",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecopModifyRendicontoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
+             ));
+             $toolbar->AddElement($revision_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("width"=>120)));
+        }
+        $layout->AddRow($toolbar);
+
+        $riga=new AA_JSON_Template_Layout("",array("height"=>48,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        $gestione_finanziaria=$object->GetGestioneFinanziaria();
+        
+        //data inizio
+        $value="n.d.";
+        if(!empty($gestione_finanziaria['data_inizio'])) $value=$gestione_finanziaria['data_inizio'];
+        $data_inizio=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Data inizio:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        $riga->addCol($data_inizio);
+
+        //data fine
+        $value="n.d.";
+        if(!empty($gestione_finanziaria['data_fine'])) $value=$gestione_finanziaria['data_fine'];
+        $data_fine=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Data ultimazione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $riga->AddCol($data_fine);
+        $layout->addRow($riga);
+
+        //seconda riga
+        $riga=new AA_JSON_Template_Layout("",array("height"=>48,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        //importo aggiudicazione
+        $value="n.d.";
+        if(!empty($gestione_finanziaria['importo_aggiudicazione'])) $value=AA_Utils::number_format($gestione_finanziaria['importo_aggiudicazione'],2,",",".");
+        $importo_aggiudicazione=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Importo di aggiudicazione:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $riga->addCol($importo_aggiudicazione);
+
+        //importo liquidato
+        $value="n.d.";
+        if(!empty($gestione_finanziaria['importo_liquidato'])) $value=AA_Utils::number_format($gestione_finanziaria['importo_liquidato'],2,",",".");
+        $importo_liquidato=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Importo liquidato:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $riga->addCol($importo_liquidato);
+        $layout->addRow($riga);
+
+        return $layout;
+    }
     
     //Template section detail, tab generale
     public function TemplateGecopDettaglio_Generale_Tab($object=null)
@@ -2240,12 +2328,16 @@ Class AA_GecopModule extends AA_GenericModule
 
         //seconda riga
         $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $layout_gen=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
-        //$layout_geo=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
+        //$layout_left=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
+        $layout_right=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
         //$layout_gen->addRow($nome);
         $riga->addCol($this->TemplateDettaglio_Commissione($object,$canModify));
-        $layout_gen->addRow($note);
-        $riga->addCol($layout_gen);
+        //$riga->addCol($layout_left);
+
+        $layout_right->addRow($this->TemplateDettaglio_RendicontoFinanziario($object,$canModify));
+        $layout_right->addRow($note);
+        $riga->addCol($layout_right);
+
         $layout->AddRow($riga);
 
         //-------------------- Allegati --------------------------------------
@@ -2253,15 +2345,6 @@ Class AA_GecopModule extends AA_GenericModule
         //$riga->AddCol($allegati_box);
         //------------------------------------------------------------------------
       
-        //-------------------- Pratiche --------------------------------------
-        //$toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
-        //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Gestione Pratiche</span>", "align"=>"center")));
-        //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
-        //$layout->AddRow($toolbar);
-        //$layout->AddRow($this->TemplateDettaglio_Pratiche($object));
-        //------------------------------------------------------------------------
-
         return $layout;
     }
 
