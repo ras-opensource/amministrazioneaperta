@@ -17,121 +17,24 @@ Class AA_Gecop_Const extends AA_Const
 
     const AA_DBTABLE_CODICI_ISTAT="aa_patrimonio_codici_istat";
 
-    //Stato impianto;
-    static protected $nStatoImpianto=null;
-    const AA_GECOP_STATO_AUTORIZZAZIONE=1;
-    const AA_GECOP_STATO_AUTORIZZATO=2;
-    const AA_GECOP_STATO_INCOSTRUZIONE=64;
-    const AA_GECOP_STATO_ESERCIZIO=4;
-    const AA_GECOP_STATO_DISMISSIONE=8;
-    const AA_GECOP_STATO_DISMESSO=16;
-    const AA_GECOP_STATO_AMPLIAMENTO=32;
-    const AA_GECOP_STATO_FUORI_ESERCIZIO=64;
-    public static function GetListaStatiImpianto()
+    protected static $aRuoloComponente=null;
+    const AA_GECOP_RUOLO_PRESIDENTE=1;
+    const AA_GECOP_RUOLO_SEGRETARIO=2;
+    const AA_GECOP_RUOLO_COMPONENTE=4;
+    const AA_GECOP_RUOLO_SUPPLENTE=8;
+    public static function GetListaRuoloComponente()
     {
-        if(static::$nStatoImpianto==null)
+        if(static::$aRuoloComponente==null)
         {
-            static::$nStatoImpianto=array(
-                static::AA_GECOP_STATO_AUTORIZZAZIONE=>"Richiesta autorizzazione",
-                static::AA_GECOP_STATO_AUTORIZZATO=>"Autorizzato",
-                static::AA_GECOP_STATO_INCOSTRUZIONE=>"In costruzione",
-                static::AA_GECOP_STATO_ESERCIZIO=>"In esercizio",
-                static::AA_GECOP_STATO_FUORI_ESERCIZIO=>"Inattivo",
-                static::AA_GECOP_STATO_AMPLIAMENTO=>"In fase di modifica",
-                static::AA_GECOP_STATO_DISMISSIONE=>"In dismissione",
-                static::AA_GECOP_STATO_DISMESSO=>"Dismesso"
+            static::$aRuoloComponente=array(
+                static::AA_GECOP_RUOLO_PRESIDENTE=>"Presidente",
+                static::AA_GECOP_RUOLO_SEGRETARIO=>"Segretario",
+                static::AA_GECOP_RUOLO_COMPONENTE=>"Componente",
+                static::AA_GECOP_RUOLO_SUPPLENTE=>"Supplente"
             );
         }
 
-        return static::$nStatoImpianto;
-    }
-
-    protected static $aTipoVia=null;
-    const AA_GECOP_TIPO_VIA_NESSUNO=1;
-    const AA_GECOP_TIPO_VIA_REGIONALE=2;
-    const AA_GECOP_TIPO_VIA_MINISTERIALE=4;
-    public static function GetListaTipoVia()
-    {
-        if(static::$aTipoVia==null)
-        {
-            static::$aTipoVia=array(
-                static::AA_GECOP_TIPO_VIA_NESSUNO=>"Non soggetta",
-                static::AA_GECOP_TIPO_VIA_REGIONALE=>"Regionale",
-                static::AA_GECOP_TIPO_VIA_MINISTERIALE=>"Ministeriale"
-            );
-        }
-
-        return static::$aTipoVia;
-    }
-
-    protected static $aStatoPratica=null;
-    const AA_GECOP_STATO_PRATICA_DAISTRUIRE=1;
-    const AA_GECOP_STATO_PRATICA_INLAVORAZIONE=2;
-    const AA_GECOP_STATO_PRATICA_AUTORIZZATA=4;
-    const AA_GECOP_STATO_PRATICA_SOSPESA_VIA=8;
-    const AA_GECOP_STATO_PRATICA_NEGATA=16;
-    public static function GetListaStatiPratica()
-    {
-        if(static::$aStatoPratica==null)
-        {
-            static::$aStatoPratica=array(
-                static::AA_GECOP_STATO_PRATICA_DAISTRUIRE=>"Da istruire",
-                static::AA_GECOP_STATO_PRATICA_INLAVORAZIONE=>"In lavorazione",
-                static::AA_GECOP_STATO_PRATICA_AUTORIZZATA=>"Approvata",
-                static::AA_GECOP_STATO_PRATICA_SOSPESA_VIA=>"Sospesa per VIA",
-                static::AA_GECOP_STATO_PRATICA_NEGATA=>"Rigettata"
-            );
-        }
-
-        return static::$aStatoPratica;
-    }
-
-    protected static $aTipoPratica=null;
-    const AA_GECOP_TIPO_PRATICA_AU=1;
-    const AA_GECOP_TIPO_PRATICA_VARIANTE=2;
-    const AA_GECOP_TIPO_PRATICA_VOLTURA=4;
-    public static function GetListaTipoPratica()
-    {
-        if(static::$aTipoPratica==null)
-        {
-            static::$aTipoPratica=array(
-                static::AA_GECOP_TIPO_PRATICA_AU=>"Autorizzazione Unica",
-                static::AA_GECOP_TIPO_PRATICA_VARIANTE=>"Variante",
-                static::AA_GECOP_TIPO_PRATICA_VOLTURA=>"Voltura"
-            );
-        }
-
-        return static::$aTipoPratica;
-    }
-
-    protected static $aTipoImpianti=null;
-    const AA_GECOP_TIPOIMPIANTO_FOTOVOLTAICO=1;
-    const AA_GECOP_TIPOIMPIANTO_EOLICO=2;
-    const AA_GECOP_TIPOIMPIANTO_AGRIVOLTAICO=4;
-    const AA_GECOP_TIPOIMPIANTO_BIOGAS=8;
-    const AA_GECOP_TIPOIMPIANTO_BIOMASSA=16;
-    const AA_GECOP_TIPOIMPIANTO_IDROELETTRICO=32;
-    const AA_GECOP_TIPOIMPIANTO_ELETTRODOTTO=64;
-    const AA_GECOP_TIPOIMPIANTO_TERMODINAMICO=128;
-    const AA_GECOP_TIPOIMPIANTO_OFFSHORE=256;
-    public static function GetListaTipoImpianti()
-    {
-        if(static::$aTipoImpianti==null)
-        {
-            static::$aTipoImpianti=array(
-                static::AA_GECOP_TIPOIMPIANTO_AGRIVOLTAICO=>"Agrivoltaico",
-                static::AA_GECOP_TIPOIMPIANTO_BIOGAS=>"Biogas",
-                static::AA_GECOP_TIPOIMPIANTO_BIOMASSA=>"Biomassa",
-                static::AA_GECOP_TIPOIMPIANTO_ELETTRODOTTO=>"Elettrodotto",
-                static::AA_GECOP_TIPOIMPIANTO_EOLICO=>"Eolico",
-                static::AA_GECOP_TIPOIMPIANTO_FOTOVOLTAICO=>"Fotovoltaico",
-                static::AA_GECOP_TIPOIMPIANTO_IDROELETTRICO=>"Idroelettrico",
-                static::AA_GECOP_TIPOIMPIANTO_OFFSHORE=>"Off-shore",
-                static::AA_GECOP_TIPOIMPIANTO_TERMODINAMICO=>"Solare termodinamico",
-            );
-        }
-
-        return static::$aTipoImpianti;
+        return static::$aRuoloComponente;
     }
 
     public static function GetListaComuni()
@@ -188,6 +91,23 @@ Class AA_Gecop extends AA_Object_V2
             if(!$this->DeleteAllegato($key,$user))
             {
                 return false;
+            }
+        }
+
+        //cancella i cv della commissione
+        $commissione=$this->GetCommissione();
+        foreach($commissione as $curComponente)
+        {
+            if(!empty($curComponente['filehash']))
+            {
+                $storage=AA_Storage::GetInstance($user);
+                if($storage->IsValid())
+                {
+                    if(!$storage->DelFile($curComponente['filehash']))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nell'eliminazione del cv per il componente: ".$curComponente['nominativo'],100);
+                    }
+                }
             }
         }
 
@@ -264,9 +184,9 @@ Class AA_Gecop extends AA_Object_V2
     {
         if(!$this->IsValid()) return array();
 
-        if(!is_array($this->commissione))
+        if(!is_array($this->gestione_finanziaria))
         {
-            $this->gestione_finanziaria=json_decode($this->GetProp('gestione_finanziaria'),true);
+            $this->gestione_finanziaria=json_decode($this->GetProp('GestioneFinanziaria'),true);
             if(!is_array($this->gestione_finanziaria))
             {
                 //AA_Log::Log(__METHOD__." - errore nel parsing",100);
@@ -406,20 +326,23 @@ Class AA_Gecop extends AA_Object_V2
         return parent::Update($user,true,$logMsg);
     }
 
-    public static function CigIsValid($cig='')
+    public static function CigIsValid($cig='',$escludeId=0)
     {
         if(empty($cig)) return false;
 
         $db=new AA_Database();
 
-        $query="SELECT id from ".AA_Gecop::AA_DBTABLE_DATA." where cig='".trim($cig)."'";
+        $query="SELECT id from ".AA_Gecop::AA_DBTABLE_DATA." where cig='".trim($cig)."' ";
+        if($escludeId > 0) $query.=" AND id <> ".$escludeId;
+        $query.=" LIMIT 1";
+
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__." - errore db: ".print_r($db->GetErrorMessage(),true),100);
             return false;
         }
 
-        AA_Log::Log(__METHOD__." - query: ".print_r($query,true),100);
+        //AA_Log::Log(__METHOD__." - query: ".print_r($query,true),100);
 
         if($db->GetAffectedRows()> 0) return false;
 
@@ -612,23 +535,16 @@ Class AA_GecopModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateGecopDatiGenerali");
         $taskManager->RegisterTask("PublishGecop");
         $taskManager->RegisterTask("GetGecopListaCodiciIstat");
-        
-        //pratiche
-        $taskManager->RegisterTask("GetGecopAddNewPraticaDlg");
-        $taskManager->RegisterTask("AddNewGecopPratica");
-        $taskManager->RegisterTask("GetGecopModifyPraticaDlg");
-        $taskManager->RegisterTask("UpdateGecopPratica");
-        $taskManager->RegisterTask("GetGecopTrashPraticaDlg");
-        $taskManager->RegisterTask("DeleteGecopPratica");
-        $taskManager->RegisterTask("GetGecopCopyPraticaDlg");
+        $taskManager->RegisterTask("GetGecopModifyRendicontoDlg");
+        $taskManager->RegisterTask("UpdateGecopRendiconto");
 
-        //Allegati
-        $taskManager->RegisterTask("GetGecopAddNewAllegatoDlg");
-        $taskManager->RegisterTask("AddNewGecopAllegato");
-        $taskManager->RegisterTask("GetGecopModifyAllegatoDlg");
-        $taskManager->RegisterTask("UpdateGecopAllegato");
-        $taskManager->RegisterTask("GetGecopTrashAllegatoDlg");
-        $taskManager->RegisterTask("DeleteGecopAllegato");
+        //commissione
+        $taskManager->RegisterTask("GetGecopAddNewComponenteDlg");
+        $taskManager->RegisterTask("AddNewGecopComponente");
+        $taskManager->RegisterTask("GetGecopModifyComponenteDlg");
+        $taskManager->RegisterTask("UpdateGecopComponente");
+        $taskManager->RegisterTask("GetGecopTrashComponenteDlg");
+        $taskManager->RegisterTask("DeleteGecopComponente");
         
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -755,17 +671,13 @@ Class AA_GecopModule extends AA_GenericModule
      //Personalizza il template dei dati delle schede pubblicate per il modulo corrente
      protected function GetDataSectionPubblicate_CustomDataTemplate($data = array(),$object=null)
      {
-        $data['pretitolo']=$object->GetTipo();
-        $tags="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>".$object->GetStato()."</span>";
-        $potenza=$object->GetProp("Potenza");
-        if(intVal($potenza)>0)
+        if($object instanceof AA_Gecop)
         {
-            $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".$potenza." MWatt</span>";
+
+            $data['pretitolo']=$object->GetProp("Anno");
+            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow'>".$object->GetProp("Cig")."</span>";
+            $data['tags']=$tags;
         }
-        $data['tags']=$tags;
-        $geolocalizzazione=$object->GetGeolocalizzazione();
-        if($geolocalizzazione['localita'] != "") $data['sottotitolo']="<span>".$geolocalizzazione['localita'].", ".$geolocalizzazione['comune']."</span>";
-        else $data['sottotitolo']="<span>".$geolocalizzazione['comune']."</span>";
 
         return $data;
      }
@@ -1272,82 +1184,141 @@ Class AA_GecopModule extends AA_GenericModule
         return $wnd;
     }
 
-    //Template dlg aggiungi pratica
-    public function Template_GetGecopAddNewPraticaDlg($object=null)
+    //Template dlg aggiungi componente
+    public function Template_GetGecopAddNewComponenteDlg($object=null)
     {
         $id=uniqid();
         
         //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
         if(!($object instanceof AA_Gecop))
         {
-            return new AA_GenericWindowTemplate(uniqid(),"Aggiungi nuova pratica",$this->GetId());
+            return new AA_GenericWindowTemplate(uniqid(),"Aggiungi nuovo componente di commissione",$this->GetId());
         }
 
         $form_data=array();
         $form_data['id']=$object->GetId();
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi nuova pratica", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi nuovo componente commissione", $this->id,$form_data,$form_data);
         
         //$wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(100);
         $wnd->SetBottomPadding(30);
         $wnd->EnableValidation();
         
-        $wnd->SetWidth(980);
+        $wnd->SetWidth(800);
         $wnd->SetHeight(680);
 
-        //tipo
-        $options=array();
-        $listaTipo=AA_Gecop_Const::GetListaTipoPratica();
-        foreach($listaTipo as $key=>$val)
-        {
-            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
-        }
-        $wnd->AddSelectField("tipo","Tipo",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di pratica.","options"=>$options));
-
-        //stato
-        $options=array();
-        $listaTipo=AA_Gecop_Const::GetListaStatiPratica();
-        foreach($listaTipo as $key=>$val)
-        {
-            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
-        }
-        $wnd->AddSelectField("stato","Stato",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare lo stato della pratica.","options"=>$options),false);
-
         //Estremi
-        $wnd->AddTextField("estremi", "Estremi", array("gravity"=>2,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci il numero e la data della pratica.","placeholder" => "es. prot. n.xx del xxxx/xx/xx..."));
+        $wnd->AddTextField("nominativo", "Nominativo", array("gravity"=>2,"required"=>true,"labelAlign"=>"right","bottomLabel" => "*Inserisci il nome e cognome del componente.","placeholder" => "es. Giulio Cesare..."));
 
-        //via
+        //cf
+        $wnd->AddTextField("cf", "Cf", array("gravity"=>1,"labelWidth"=>60,"labelAlign"=>"right","bottomLabel" => "*Inserisci il cf del componente."),false);
+
+        //ruolo
+        $lista=AA_Gecop_Const::GetListaRuoloComponente();
         $options=array();
-        $listaTipo=AA_Gecop_Const::GetListaTipoVia();
-        foreach($listaTipo as $key=>$val)
+        foreach($lista as $idRuolo=>$ruolo)
         {
-            if($key > 0) $options[]=array("id"=>$key,"value"=>$val);
+            $options[]=array("id"=>$idRuolo,"value"=>$ruolo);
         }
-        $wnd->AddSelectField("via","Tipo VIA",array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il tipo di VIA.","options"=>$options),false);
+        $wnd->AddSelectField("ruolo","Ruolo",array("gravity"=>1,"required"=>true,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il ruolo del componente.","options"=>$options));
 
-        //descrizione
-        $wnd->AddTextField("descrizione", "Descrizione", array("gravity"=>2,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci una breve descrizione (max 200 caratteri).","placeholder" => "..."));
+        //professione
+        $wnd->AddTextField("professione", "Professione", array("gravity"=>1,"labelAlign"=>"right","bottomLabel" => "*Inserisci la professione o l'amministrazione di provenienza del componente."));
+
+        //file upload------------------
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        $section=new AA_FieldSet($id."_Section_Url","Curriculum - Inserire un'url oppure scegliere un file");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
         
-        //societa'
-        $wnd->AddTextField("societa", "Ragione sociale'", array("gravity"=>1,"required"=>true,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*Inserisci la denominazione della societa' richiedente.","placeholder" => "..."));
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
 
-        //riferimenti temporali
-        $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
-
-        //data inizio
-        $section->AddDateField("data_inizio","Data inizio",array("bottomPadding"=>32, "labelAlign"=>"right","labelWidth"=>150,"bottomLabel"=>"*Indica la data di inizio del procedimento."));
-        //data fine
-        $section->AddDateField("data_fine","Data fine",array("bottomPadding"=>32, "labelAlign"=>"right","labelWidth"=>150,"bottomLabel"=>"*Indica la data di conclusione del procedimento."),false);
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 2Mb).","accept"=>"application/pdf,application/zip"));
+        
         $wnd->AddGenericObject($section);
-
-        //note
-        $wnd->AddTextareaField("note", "Note", array("gravity"=>1,"labelWidth"=>150,"labelAlign"=>"right","bottomLabel" => "*eventuali note (max 1024 caratteri).","placeholder" => "..."));
+        //---------------------------------
 
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
         
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("AddNewGecopPratica");
+        $wnd->SetSaveTask("AddNewGecopComponente");
+        
+        return $wnd;
+    }
+
+    //Template dlg aggiungi componente
+    public function Template_GetGecopModifyComponenteDlg($object=null,$componente=null)
+    {
+        $id=uniqid();
+        
+        //AA_Log:Log(__METHOD__." form data: ".print_r($form_data,true),100);
+        if(!($object instanceof AA_Gecop) || !is_array($componente))
+        {
+            return new AA_GenericWindowTemplate(uniqid(),"Aggiungi nuovo componente di commissione",$this->GetId());
+        }
+
+        $form_data=array();
+        $form_data['id']=$object->GetId();
+        $form_data['id_componente']=$componente['id'];
+        $form_data['nominativo']=$componente['nominativo'];
+        $form_data['ruolo']=$componente['ruolo'];
+        $form_data['cf']=$componente['cf'];
+        $form_data['professione']=$componente['professione'];
+        $form_data['url']=$componente['url'];
+
+        $wnd=new AA_GenericFormDlg($id, "Modifica componente commissione", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(800);
+        $wnd->SetHeight(680);
+
+        //Estremi
+        $wnd->AddTextField("nominativo", "Nominativo", array("gravity"=>2,"required"=>true,"labelAlign"=>"right","bottomLabel" => "*Inserisci il nome e cognome del componente.","placeholder" => "es. Giulio Cesare..."));
+
+        //cf
+        $wnd->AddTextField("cf", "Cf", array("gravity"=>1,"labelWidth"=>60,"labelAlign"=>"right","bottomLabel" => "*Inserisci il cf del componente."),false);
+
+        //ruolo
+        $lista=AA_Gecop_Const::GetListaRuoloComponente();
+        $options=array();
+        foreach($lista as $idRuolo=>$ruolo)
+        {
+            $options[]=array("id"=>$idRuolo,"value"=>$ruolo);
+        }
+        $wnd->AddSelectField("ruolo","Ruolo",array("gravity"=>1,"required"=>true,"labelAlign"=>"right","validateFunction"=>"IsSelected","bottomLabel"=>"*Selezionare il ruolo del componente.","options"=>$options));
+
+        //professione
+        $wnd->AddTextField("professione", "Professione", array("gravity"=>1,"labelAlign"=>"right","bottomLabel" => "*Inserisci la professione o l'amministrazione di provenienza del componente."));
+
+        //file upload------------------
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        $section=new AA_FieldSet($id."_Section_Url","Curriculum - Inserire un'url oppure scegliere un file");
+
+        //url
+        $section->AddTextField("url", "Url", array("validateFunction"=>"IsUrl","bottomLabel"=>"*Indicare un'URL sicura, es. https://www.regione.sardegna.it", "placeholder"=>"https://..."));
+        
+        $section->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","template"=>"<hr/>","height"=>18)));
+
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 2Mb).","accept"=>"application/pdf,application/zip"));
+        
+        $wnd->AddGenericObject($section);
+        //---------------------------------
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateGecopComponente");
         
         return $wnd;
     }
@@ -1593,14 +1564,14 @@ Class AA_GecopModule extends AA_GenericModule
         return $wnd;
     }
 
-    //Template dlg trash pratica
-    public function Template_GetGecopTrashPraticaDlg($object=null,$pratica=null)
+    //Template dlg trash componente
+    public function Template_GetGecopTrashComponenteDlg($object=null,$componente=null)
     {
         $id=uniqid();
         
         $form_data=array();
         
-        $wnd=new AA_GenericFormDlg($id, "Elimina pratica", $this->id,$form_data,$form_data);
+        $wnd=new AA_GenericFormDlg($id, "Elimina componente", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(80);
@@ -1614,13 +1585,14 @@ Class AA_GecopModule extends AA_GenericModule
         //Imposta il nome del pulsante di conferma
         $wnd->SetApplyButtonName("Procedi");
                 
+        $ruoli=AA_Gecop_Const::GetListaRuoloComponente();
         $tabledata=array();
-        $tabledata[]=array("descrizione"=>$pratica['descrizione'],"estremi"=>$pratica['estremi']);
+        $tabledata[]=array("descrizione"=>$componente['nominativo'],"ruolo"=>$ruoli[$componente['ruolo']]);
       
         $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
         $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
 
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"La seguente pratica verrà eliminata, vuoi procedere?")));
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente componente verra' rimosso, vuoi procedere?")));
 
         $table=new AA_JSON_Template_Generic($id."_Table", array(
             "view"=>"datatable",
@@ -1628,7 +1600,7 @@ Class AA_GecopModule extends AA_GenericModule
             "scrollX"=>false,
             "columns"=>array(
               array("id"=>"descrizione", "header"=>"Descrizione", "fillspace"=>true),
-              array("id"=>"estremi", "header"=>"Estremi", "fillspace"=>true)
+              array("id"=>"ruolo", "header"=>"ruolo", "fillspace"=>true)
             ),
             "select"=>false,
             "data"=>$tabledata
@@ -1638,8 +1610,8 @@ Class AA_GecopModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
-        $wnd->SetSaveTask("DeleteGecopPratica");
-        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_pratica"=>$pratica['id']));
+        $wnd->SetSaveTask("DeleteGecopComponente");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_componente"=>$componente['id']));
         
         return $wnd;
     }
@@ -1856,6 +1828,367 @@ Class AA_GecopModule extends AA_GenericModule
         return true;
     }
 
+    //Task Aggiungi componente
+    public function Task_AddNewGecopComponente($task)
+    {        
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+            
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        $object=new AA_Gecop($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetName(),false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;            
+        }
+
+        if(empty(trim($_REQUEST['nominativo'])))
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre specificare il nominativo del componente.",false);
+            
+            return false;
+        }
+
+        if(empty($_REQUEST['ruolo']))
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre specificare il ruolo del componente",false);
+            
+            return false;
+        }
+
+        if(!$uploadedFile->isValid() && $_REQUEST['url'] == "")
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare un url o un file.",false);
+            
+            return false;
+        }
+        
+        $fileHash="";
+        if($uploadedFile->isValid()) 
+        {
+            //Se c'è un file uploadato l'url non viene salvata.
+            $_REQUEST['url']="";
+
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $fileHash=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        $commissione=$object->GetCommissione();
+        $commissione[uniqid()]=array(
+            "nominativo"=>trim($_REQUEST['nominativo']),
+            "ruolo"=>$_REQUEST['ruolo'],
+            "cf"=>trim($_REQUEST['cf']),
+            "professione"=>trim($_REQUEST['professione']),
+            "url"=>$_REQUEST['url'],
+            "filehash"=>$fileHash
+        );
+
+        if(sizeof($commissione) > 0)
+        {
+            $object->SetProp("Commissione",json_encode($commissione));
+
+            if(!$object->Update($this->oUser,true,"Aggiunta componente commissione: ".$_REQUEST['nominativo']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Errore nell'aggiunta del componente.",false);
+
+                return false;
+            }
+            else
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+                $task->SetContent("Componente aggiunto con successo.",false);
+
+                return true;
+            }
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Nessun componente da aggiungere.",false);
+        return true;
+    }
+
+    //Task Aggiungi componente
+    public function Task_UpdateGecopComponente($task)
+    {        
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+            
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+
+        $object=new AA_Gecop($_REQUEST['id'], $this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo elemento non valido o permessi insufficienti. (".$_REQUEST['id'].")",false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;
+        }
+        
+        if($object->IsReadOnly())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente (".$this->oUser->GetNome().") non ha i privileggi per modificare l'elemento: ".$object->GetName(),false);
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }     
+
+            return false;            
+        }
+
+        if(empty(trim($_REQUEST['nominativo'])))
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre specificare il nominativo del componente.",false);
+            
+            return false;
+        }
+
+        if(empty($_REQUEST['ruolo']))
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre specificare il ruolo del componente",false);
+            
+            return false;
+        }
+
+        $commissione=$object->GetCommissione();
+        if(empty($_REQUEST['id_componente']) || !isset($commissione[$_REQUEST['id_componente']]))
+        {
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo componente non valido.",false);
+            
+            return false;
+        }
+
+        $componente=$commissione[$_REQUEST['id_componente']];
+
+        if(!$uploadedFile->isValid() && empty($_REQUEST['url']) && empty($componente['filehash']))
+        {   
+            AA_Log::Log(__METHOD__." - "."Parametri non validi: ".print_r($uploadedFile,true)." - ".print_r($_REQUEST,true),100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre indicare un url o un file.",false);
+            
+            return false;
+        }
+
+        $fileHash=$componente['filehash'];
+        $storage=AA_Storage::GetInstance($this->oUser);
+        if(!empty($componente['filehash']) && !empty($_REQUEST['url']))
+        {
+            if($storage->IsValid())
+            {
+                if(!$storage->DelFile($componente['filehash']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'eliminazione del file: ".$componente['filehash'],100);
+                }
+
+                $componente['filehash']=$fileHash="";
+            }
+        }
+
+        if($uploadedFile->isValid()) 
+        {
+            //Se c'è un file uploadato l'url non viene salvata.
+            $_REQUEST['url']="";
+
+            if($storage->IsValid())
+            {
+                if(!empty($componente['filehash']))
+                {
+                    if(!$storage->DelFile($componente['filehash']))
+                    {
+                        AA_Log::Log(__METHOD__." - errore nell'eliminazione del file: ".$componente['filehash'],100);
+                    }
+                }
+
+                $file=$uploadedFile->GetValue();
+                $storageFile=$storage->Addfile($file['tmp_name'],$file['name'],$file['type'],1);
+                if($storageFile->IsValid())
+                {
+                    $fileHash=$storageFile->GetFileHash();
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - errore nell'aggiunta allo storage. file non salvato.",100);
+                }
+            }
+            else AA_Log::Log(__METHOD__." - storage non inizializzato. file non salvato.",100);
+
+            //Elimina il file temporaneo
+            if(file_exists($file['tmp_name']))
+            {
+                if(!unlink($file['tmp_name']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$file['tmp_name'],100);
+                }
+            }
+        }
+
+        $commissione=$object->GetCommissione();
+        $commissione[$_REQUEST['id_componente']]=array(
+            "nominativo"=>trim($_REQUEST['nominativo']),
+            "ruolo"=>$_REQUEST['ruolo'],
+            "cf"=>trim($_REQUEST['cf']),
+            "professione"=>trim($_REQUEST['professione']),
+            "url"=>trim($_REQUEST['url']),
+            "filehash"=>$fileHash
+        );
+
+        if(sizeof($commissione) > 0)
+        {
+            $object->SetProp("Commissione",json_encode($commissione));
+
+            if(!$object->Update($this->oUser,true,"Modifica componente commissione: ".$commissione[$_REQUEST['id_componente']]['nominativo']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Errore nell'aggiornamento del componente.",false);
+
+                return false;
+            }
+            else
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+                $task->SetContent("Dati aggiornati con successo.",false);
+
+                return true;
+            }
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Nessun componente da aggiornare.",false);
+        return true;
+    }
+
     //Template dlg modify Gecop
     public function Template_GetGecopModifyDlg($object=null)
     {
@@ -1863,108 +2196,107 @@ Class AA_GecopModule extends AA_GenericModule
         if(!($object instanceof AA_Gecop)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali dell'impianto", $this->id);
 
         $form_data=array();
-        
         $form_data['id']=$object->GetId();
         $form_data['Note']=$object->GetProp("Note");
-        $form_data['AnnoAutorizzazione']=$object->GetProp("AnnoAutorizzazione");
-        $form_data['AnnoCostruzione']=$object->GetProp("AnnoCostruzione");
-        $form_data['AnnoEsercizio']=$object->GetProp("AnnoEsercizio");
-        $form_data['AnnoDismissione']=$object->GetProp("AnnoDismissione");
-        $form_data['Stato']=$object->GetProp("Stato");;
-        $form_data['Tipologia']=$object->GetProp("Tipologia");
         $form_data['nome']=$object->GetName();
-        $form_data['Potenza']=AA_Utils::number_format($object->GetProp("Potenza"),2,",",".");
-        $form_data['Superficie']=AA_Utils::number_format($object->GetProp("Superficie"),2,",",".");
-       
-        $geolocalizzazione=$object->GetGeolocalizzazione();
-        if(sizeof($geolocalizzazione)==0)
-        {
-            $form_data['Geo_comune']="";
-            $form_data['Geo_localita']="";
-            $form_data['Geo_coordinate']="";
-        }
-        else
-        {
-            $form_data['Geo_comune']=$geolocalizzazione['comune'];
-            $form_data['Geo_localita']=$geolocalizzazione['localita'];
-            $form_data['Geo_coordinate']=$geolocalizzazione['coordinate'];
-        }
+        $form_data['Cig']=$object->GetProp("Cig");
+        $form_data['Anno']=$object->GetProp("Anno");
 
-        $stato=AA_Gecop_Const::GetListaStatiImpianto();
-        $stato_options=array();
-        foreach($stato as $num=>$val)
-        {
-            $stato_options[]=array("id"=>$num,"value"=>$val);
-        }
-
-        $tipologia=AA_Gecop_Const::GetListaTipoImpianti();
-        $tipo_options=array();
-        foreach($tipologia as $num=>$val)
-        {
-            $tipo_options[]=array("id"=>$num,"value"=>$val);
-        }
-
-        $wnd=new AA_GenericFormDlg($id, "Aggiungi un nuovo impianto", $this->id,$form_data,$form_data);
+        $links=$object->GetLinks();
+        $form_data['links_atti']="";
+        if(!empty($links['atti'])) $form_data['links_atti']=$links['atti'];
+        
+        $wnd=new AA_GenericFormDlg($id, "Modifica contratto", $this->id,$form_data,$form_data);
         
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         
-        $wnd->SetWidth(1280);
-        $wnd->SetHeight(720);
+        $wnd->SetWidth(800);
+        $wnd->SetHeight(480);
         $wnd->EnableValidation();
 
-        //Tipologia
-        $wnd->AddSelectField("Tipologia","Tipologia",array("required"=>true,"gravity"=>1.5,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare la tipologia di impianto.", "placeholder"=>"...","options"=>$tipo_options));
+        //Cig
+        $wnd->AddTextField("Cig","Cig",array("required"=>true,"gravity"=>2.5,"bottomPadding"=>32, "bottomLabel"=>"*Inseririe il cig relativo al contratto.", "placeholder"=>"..."));
         
-        //Stato
-        $wnd->AddSelectField("Stato","Stato attuale",array("required"=>true,"gravity"=>1.5,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare lo stato attuale dell'impianto.", "placeholder"=>"...","options"=>$stato_options),false);
+        //Anno
+        $wnd->AddTextField("Anno","Anno",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'anno di riferimento.", "placeholder"=>"es. 2024"),false);
+
+        //Note
+        $label="Oggetto";
+        $wnd->AddTextareaField("nome",$label,array("required"=>true,"bottomLabel"=>"*Oggetto del contratto.", "placeholder"=>"Inserisci qui l'oggetto..."));
         
-        //superficie
-        $wnd->AddTextField("Superficie","Superficie",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la superficie (mq) dell'impianto.", "placeholder"=>"es. 150"),false);
+        //link atti
+        $wnd->AddTextField("links_atti","Url documenti",array("required"=>true,"gravity"=>1,"validateFunction"=>"IsUrl","bottomPadding"=>32,"bottomLabel"=>"*Inserisci l'url in cui e' pubblicata la documentazione prevista dalla normativa vigente in materia di contratti pubblici.", "placeholder"=>"..."));
 
-        //Nome
-        $wnd->AddTextField("nome","Titolo",array("required"=>true,"gravity"=>3,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci una denominazione per l'impianto.", "placeholder"=>"..."));
+        //$section=new AA_FieldSet($id."_Aggiudicatario","Aggiudicatario");
+        //$section->AddTextField("aggiudicatario_nominativo","Nominativo",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire la ragione sociale o il nome e cognome dell'aggiudicatario.", "placeholder"=>"..."));
+       // $section->AddTextField("aggiudicatario_cf","Cf/Piva",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire il codice fiscale o la partita iva dell'aggiudicatario.", "placeholder"=>"..."),false);
 
-        //potenza
-        $wnd->AddTextField("Potenza","Potenza",array("required"=>true,"gravity"=>1,"bottomPadding"=>32,"bottomLabel"=>"*Inserisci la potenza in megawatt dell'impianto.", "placeholder"=>"es. 150"),false);
-
-        $section=new AA_FieldSet($id."_Riferimenti","Riferimenti temporali");
-
-        //anno autorizzazione
-        $section->AddDateField("AnnoAutorizzazione","Data autorizzazione",array("bottomPadding"=>32, "labelWidth"=>145,"bottomLabel"=>"*Data in cui e' stata autorizzata la costruzione dell'impianto.", "placeholder"=>"es. 2024-01-01"));
-        
-        //anno costruzione
-        $section->AddDateField("AnnoCostruzione","Data costruzione",array("bottomPadding"=>32, "labelWidth"=>145,"bottomLabel"=>"*Data in cui e' stata terminata la costruzione dell'impianto.", "placeholder"=>"es. 2024-01-01"),false);
-
-        //anno esercizio
-        $section->AddDateField("AnnoEsercizio","Data esercizio",array("bottomPadding"=>32, "labelWidth"=>145,"bottomLabel"=>"*Data in cui l'impianto e' entrato in esercizio.", "placeholder"=>"es. 2024-01-01"),false);
-
-        //anno dismissione
-        $section->AddDateField("AnnoDismissione","Data dismissione",array("bottomPadding"=>32,"labelWidth"=>145, "bottomLabel"=>"*Data in cui l'impianto e' stato dismesso.", "placeholder"=>"es. 2024-01-01"),false);
-
-        $wnd->AddGenericObject($section);
-
-        //Norma
-        $section=new AA_FieldSet($id."_Geolocalizzazione","Geolocalizzazione");
-
-        //localita'
-        $section->AddTextField("Geo_localita","Ubicazione",array("required"=>true, "gravity"=>3,"labelWidth"=>90,"bottomLabel"=>"*Inserisci la localita'/indirizzo dell'impianto.", "placeholder"=>"..."));
-
-        //comune
-        $section->AddTextField("Geo_comune","Comune",array("required"=>true, "gravity"=>2,"bottomPadding"=>38,"labelWidth"=>90,"bottomLabel"=>"*Inserisci il Comune in cui e' sito l'impianto.", "placeholder"=>"es. Cagliari","suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetGecopListaCodiciIstat")));
-
-        //coordinate
-        $section->AddTextField("Geo_coordinate","Coordinate",array("gravity"=>1,"bottomPadding"=>38,"labelWidth"=>90, "bottomLabel"=>"*Coordinate geografiche dell'impianto (formato: latitudine,longitudine).", "placeholder"=>"es. 39.217199,9.113311"),false);
-
-        $wnd->AddGenericObject($section);
+        //$wnd->AddGenericObject($section);
 
         //Note
         $label="Note";
-        $wnd->AddTextareaField("Note",$label,array("labelWidth"=>90,"bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
-
+        $wnd->AddTextareaField("Note",$label,array("bottomLabel"=>"*Eventuali annotazioni (max 4096 caratteri).", "placeholder"=>"Inserisci qui le note..."));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("UpdateGecopDatiGenerali");
+        
+        return $wnd;
+    }
+
+    //Template dlg modify Gecop
+    public function Template_GetGecopModifyRendicontoDlg($object=null)
+    {
+        $id=$this->GetId()."_Modify_Dlg_".uniqid();
+        if(!($object instanceof AA_Gecop)) return new AA_GenericWindowTemplate($id, "Modifica rendicontazione finanziaria", $this->id);
+
+        $form_data=array();
+        $form_data['id']=$object->GetId();
+
+        $aggiudicatario=$object->GetAggiudicatario();
+        $rendiconto=$object->GetGestioneFinanziaria();
+
+        $form_data['aggiudicatario_nominativo']=$aggiudicatario['nominativo'];
+        $form_data['aggiudicatario_cf']=$aggiudicatario['cf'];
+        $form_data['data_inizio']=$rendiconto['data_inizio'];
+        $form_data['data_fine']=$rendiconto['data_fine'];
+        $form_data['data_fine_effettiva']=$rendiconto['data_fine_effettiva'];
+        $form_data['importo_aggiudicazione']=AA_Utils::number_format($rendiconto['importo_aggiudicazione'],2,",",".");
+        $form_data['importo_liquidato']=AA_Utils::number_format($rendiconto['importo_liquidato'],2,",",".");
+        
+        $wnd=new AA_GenericFormDlg($id, "Modifica rendicontazione finanziaria", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(480);
+        $wnd->EnableValidation();
+
+        //aggiudicatario
+        $section=new AA_FieldSet($id."_Aggiudicatario","Aggiudicatario");
+        $section->AddTextField("aggiudicatario_nominativo","Nominativo",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire la ragione sociale o il nome e cognome dell'aggiudicatario.", "placeholder"=>"..."));
+        $section->AddTextField("aggiudicatario_cf","Cf/Piva",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire il codice fiscale o la partita iva dell'aggiudicatario.", "placeholder"=>"..."),false);
+        $wnd->AddGenericObject($section);
+
+        //gestione finanziario
+        $section=new AA_FieldSet($id."_Dati_temporali","Riferimenti temporali");
+        $section->AddDateField("data_inizio","Inizio esecuzione",array("gravity"=>1,"width"=>300,"labelWidth"=>130,"bottomPadding"=>32, "bottomLabel"=>"*Indicare la data di inizio esecuzione del contratto.", "placeholder"=>"..."));
+        $section->AddDateField("data_fine","Conclusione (prevista)",array("gravity"=>1,"labelWidth"=>190,"bottomPadding"=>32, "bottomLabel"=>"*Indicare la data di conclusione prevista.", "placeholder"=>"..."),false);
+        $section->AddDateField("data_fine_effettiva","Conclusione (effettiva)",array("gravity"=>1,"labelWidth"=>190,"bottomPadding"=>32, "bottomLabel"=>"*Indicare la data di conclusione effettiva.", "placeholder"=>"..."),false);
+        $wnd->AddGenericObject($section);
+
+        //importi
+        $section=new AA_FieldSet($id."_Importi","Importi");
+        $section->AddTextField("importo_aggiudicazione","Contrattuale",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire l'importo totale del contratto al netto dell'IVA.", "placeholder"=>"..."));
+        $section->AddTextField("importo_liquidato","Liquidato",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire l'importo totale liquidato al netto dell'IVA.", "placeholder"=>"..."),false);
+        $wnd->AddGenericObject($section);
+       
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("UpdateGecopRendiconto");
         
         return $wnd;
     }
@@ -2108,20 +2440,34 @@ Class AA_GecopModule extends AA_GenericModule
 
         #commissione----------------------------------
         $commissione=$object->GetCommissione();
+        $listaRuolo=AA_Gecop_Const::GetListaRuoloComponente();
         $commissione_data=array();
         foreach($commissione as $id_componente=>$curComponente)
         {
             //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteCommissioneDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteCommissioneDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
-            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopCopyComponenteCommissioneDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
-            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $ops="&nbsp;";
+            if($curComponente['filehash'] != "")
+            {
+                $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curComponente['filehash'].'"},"'.$this->id.'")';
+                $view_icon="mdi-floppy";
+            }
+            else 
+            {
+                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curComponente['url'].'"},"'.$this->id.'")';
+                $view_icon="mdi-eye";
+            }
 
-            $commissione_data[]=array("id"=>$id_componente,"nominativo"=>$curComponente['nominativo'],"ruolo"=>$curComponente['ruolo'],"cf"=>$curComponente['cf'],"professione"=>$curComponente['professione'],"ops"=>$ops);
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopCopyComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Vedi' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+
+            $commissione_data[]=array("id"=>$id_componente,"nominativo"=>$curComponente['nominativo'],"ruolo"=>$listaRuolo[$curComponente['ruolo']],"cf"=>$curComponente['cf'],"professione"=>$curComponente['professione'],"ops"=>$ops);
         }
 
-        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Composizione commissione aggiudicatrice</span>",6,null,array("css"=>"AA_Header_DataTable"));
+        $numCols=4;
+        if($canModify) $numCols=5;
+        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Composizione commissione aggiudicatrice</span>",$numCols,null,array("css"=>"AA_Header_DataTable"));
         $template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
         $template->SetAddNewBtnCss("webix_primary");
         $template->EnableScroll(false,true);
@@ -2131,17 +2477,16 @@ Class AA_GecopModule extends AA_GenericModule
 
         if($canModify) 
         {
-            $template->EnableAddNew(true,"GetGecopAddNewComponenteCommissioneDlg");
+            $template->EnableAddNew(true,"GetGecopAddNewComponenteDlg");
             $template->SetAddNewBtnTooltip("Aggiungi un nuovo componente");
             $template->SetAddNewTaskParams(array("postParams"=>array("id"=>$object->GetId())));
         }
 
         $template->SetColumnHeaderInfo(0,"nominativo","<div style='text-align: center'>Nominativo</div>","fillspace","textFilter","text","GenericAutosizedRowTable_left");
-        $template->SetColumnHeaderInfo(1,"ruolo","<div style='text-align: center'>Ruolo</div>",160,"selectFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(2,"cf","<div style='text-align: center'>cf</div>",200,"textFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(3,"cv","<div style='text-align: center'>cv</div>",200,"textFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(4,"professione","<div style='text-align: center'>Professione</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(5,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(1,"ruolo","<div style='text-align: center'>Ruolo</div>",120,"selectFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(2,"cf","<div style='text-align: center'>Cf</div>",120,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(3,"professione","<div style='text-align: center'>Professione</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
+        if($canModify) $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
 
         $template->SetData($commissione_data);
 
@@ -2168,7 +2513,7 @@ Class AA_GecopModule extends AA_GenericModule
                  "label"=>"Modifica",
                  "align"=>"right",
                  "autowidth"=>true,
-                 "tooltip"=>"Visualizza i dati della rendicontazione finanziaria",
+                 "tooltip"=>"Modifica i dati della rendicontazione finanziaria",
                  "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetGecopModifyRendicontoDlg\", params: [{id: ".$object->GetId()."}]},'".$this->id."')"
              ));
              $toolbar->AddElement($revision_btn);
@@ -2182,14 +2527,30 @@ Class AA_GecopModule extends AA_GenericModule
         $riga=new AA_JSON_Template_Layout("",array("height"=>48,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
         $gestione_finanziaria=$object->GetGestioneFinanziaria();
-        
+        $aggiudicatario=$object->GetAggiudicatario();
+
+        //aggiudicatario
+        $value="n.d.";
+        if(!empty($aggiudicatario['nominativo'])) $value=$aggiudicatario['nominativo'];
+        if(!empty($aggiudicatario['cf'])) $value.=" - ".$aggiudicatario['cf'];
+        $aggiudicatario_text=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Aggiudicatario:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $riga->addCol($aggiudicatario_text);
+        $layout->addRow($riga);
+
+        $riga=new AA_JSON_Template_Layout("",array("height"=>48,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
         //data inizio
         $value="n.d.";
         if(!empty($gestione_finanziaria['data_inizio'])) $value=$gestione_finanziaria['data_inizio'];
         $data_inizio=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Data inizio:","value"=>$value),
+            "data"=>array("title"=>"Data inizio esecuzione:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
@@ -2201,11 +2562,23 @@ Class AA_GecopModule extends AA_GenericModule
         $data_fine=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Data ultimazione:","value"=>$value),
+            "data"=>array("title"=>"Data conclusione prevista:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $riga->AddCol($data_fine);
+
+        //data fine effettiva
+        $value="n.d.";
+        if(!empty($gestione_finanziaria['data_fine_effettiva'])) $value=$gestione_finanziaria['data_fine_effettiva'];
+        $data_fine_effettiva=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Data conclusione effettiva:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+        $riga->AddCol($data_fine_effettiva);
         $layout->addRow($riga);
+
 
         //seconda riga
         $riga=new AA_JSON_Template_Layout("",array("height"=>48,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
@@ -2215,14 +2588,14 @@ Class AA_GecopModule extends AA_GenericModule
         $importo_aggiudicazione=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
-            "data"=>array("title"=>"Importo di aggiudicazione:","value"=>$value),
+            "data"=>array("title"=>"Importo del contratto:","value"=>$value),
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $riga->addCol($importo_aggiudicazione);
 
         //importo liquidato
-        $value="n.d.";
-        if(!empty($gestione_finanziaria['importo_liquidato'])) $value=AA_Utils::number_format($gestione_finanziaria['importo_liquidato'],2,",",".");
+        $value="0,00";
+        $value=AA_Utils::number_format($gestione_finanziaria['importo_liquidato'],2,",",".");
         $importo_liquidato=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2230,7 +2603,33 @@ Class AA_GecopModule extends AA_GenericModule
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
         $riga->addCol($importo_liquidato);
+
+        //scostamento
+        $value="n.d.";
+        if(!empty($gestione_finanziaria['data_fine_effettiva']))
+        {
+            $data_inizio=new DateTime($gestione_finanziaria['data_inizio']);
+            $data_fine=new DateTime($gestione_finanziaria['data_fine']);
+            if(!empty($gestione_finanziaria['data_fine_effettiva'])) $data_fine=new DateTime($gestione_finanziaria['data_fine_effettiva']);
+
+            $value="gg: ".date_diff($data_inizio, $data_fine)->days;
+
+            if(!empty($gestione_finanziaria['importo_liquidato']))
+            {
+                $value.=" - &euro;: ".AA_Utils::number_format(floatVal($gestione_finanziaria['importo_liquidato']-$gestione_finanziaria['importo_aggiudicazione']),2,",",".");
+            }
+        }
+
+        $scostamento=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity"=>1,
+            "data"=>array("title"=>"Scostamento temporale e finanziario:","value"=>$value),
+            "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
+        ));
+
+        $riga->addCol($scostamento);
         $layout->addRow($riga);
+        $layout->addRow(new AA_JSON_Template_Generic());
 
         return $layout;
     }
@@ -2292,7 +2691,7 @@ Class AA_GecopModule extends AA_GenericModule
 
         //url documenti
         $links=$object->GetLinks();
-        $value="<a href='".$links['documenti']."' target='_blank'>consulta...</a>";
+        $value="<a href='".$links['atti']."' target='_blank'>consulta...</a>";
         $docs=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2301,7 +2700,7 @@ Class AA_GecopModule extends AA_GenericModule
         ));
 
         //url bdncp
-        $value="<a href='".$links['bdncp']."' target='_blank'>consulta...</a>";
+        $value="<a href='https://dati.anticorruzione.it/superset/dashboard/dettaglio_cig/?cig=".$object->GetProp("Cig")."&standalone=2' target='_blank'>consulta...</a>";
         $bdncp=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -2309,11 +2708,10 @@ Class AA_GecopModule extends AA_GenericModule
             "css"=>array("border-bottom"=>"1px solid #dadee0 !important")
         ));
 
-        
-        
         //note
         $value = $object->GetProp("Note");
         $note=new AA_JSON_Template_Template($id."_Note",array(
+            "maxHeight"=>100,
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
@@ -2325,6 +2723,7 @@ Class AA_GecopModule extends AA_GenericModule
         $riga->AddCol($docs);
         $riga->AddCol($bdncp);
         $layout->AddRow($riga);
+        $layout->AddRow($note);
 
         //seconda riga
         $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
@@ -2335,7 +2734,6 @@ Class AA_GecopModule extends AA_GenericModule
         //$riga->addCol($layout_left);
 
         $layout_right->addRow($this->TemplateDettaglio_RendicontoFinanziario($object,$canModify));
-        $layout_right->addRow($note);
         $riga->addCol($layout_right);
 
         $layout->AddRow($riga);
@@ -2508,31 +2906,33 @@ Class AA_GecopModule extends AA_GenericModule
         if(trim($_REQUEST['nome']) == "")
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Il titolo non puo' essere vuoto o composto da soli spazi.",false);
+            $task->SetError("L'oggetto non puo' essere vuoto o composto da soli spazi.",false);
 
             return false;
         }
 
         //date
-        if(isset($_REQUEST['AnnoAutorizzazione'])) $_REQUEST['AnnoAutorizzazione']=substr($_REQUEST['AnnoAutorizzazione'],0,10);
-        if(isset($_REQUEST['AnnoCostruzione'])) $_REQUEST['AnnoCostruzione']=substr($_REQUEST['AnnoCostruzione'],0,10);
-        if(isset($_REQUEST['AnnoEsercizio'])) $_REQUEST['AnnoEsercizio']=substr($_REQUEST['AnnoEsercizio'],0,10);
-        if(isset($_REQUEST['AnnoDismissione'])) $_REQUEST['AnnoDismissione']=substr($_REQUEST['AnnoDismissione'],0,10);
+        if(!isset($_REQUEST['Anno']) || intval($_REQUEST['Anno']) < 2024 || intval($_REQUEST['Anno']) > 2099)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Anno di riferimento non valido.",false);
 
-        //potenza
-        if(isset($_REQUEST['Potenza'])) $_REQUEST['Potenza']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Potenza'])),2,".","");
-        //superficie
-        if(isset($_REQUEST['Superficie'])) $_REQUEST['Superficie']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['Superficie'])),2,".","");
+            return false;
+        }
 
-        $geolocalizzazione=array();
+        if(!isset($_REQUEST['Cig']) || !AA_Gecop::CigIsValid(trim($_REQUEST['Cig']),$_REQUEST['id']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Cig non valido o gia' presente.",false);
+
+            return false;
+        }
         
-        if(isset($_REQUEST['Geo_comune'])) $geolocalizzazione['comune']=trim($_REQUEST['Geo_comune']);
-        if(isset($_REQUEST['Geo_localita'])) $geolocalizzazione['localita']=trim($_REQUEST['Geo_localita']);
-        if(isset($_REQUEST['Geo_coordinate'])) $geolocalizzazione['coordinate']=trim($_REQUEST['Geo_coordinate']);
+        $links=array();
+        if(!empty($_REQUEST['links_atti'])) $links['atti']=trim($_REQUEST['links_atti']); 
+        $_REQUEST['Links']=json_encode($links);
+        //----------------------------------------------------------
 
-        if(sizeof($geolocalizzazione)>0) $_REQUEST['Geolocalizzazione']=json_encode($geolocalizzazione);
-        //-----------------------------------------------
-        
         $object->Parse($_REQUEST);
 
         if(!$object->Update($this->oUser,true,"Aggiornamento dati generali"))
@@ -2723,6 +3123,10 @@ Class AA_GecopModule extends AA_GenericModule
             return false;
         }
         
+        $links=array();
+        if(!empty($_REQUEST['links_atti'])) $links['atti']=trim($_REQUEST['links_atti']); 
+        $_REQUEST['Links']=json_encode($links);
+
         return $this->Task_GenericAddNew($task,$_REQUEST);
     }
 
@@ -2923,7 +3327,7 @@ Class AA_GecopModule extends AA_GenericModule
     }
 
     //Task modifica dati beneficiario
-    public function Task_GetGecopBeneficiarioModifyDlg($task)
+    public function Task_GetGecopModifyRendicontoDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -2953,7 +3357,7 @@ Class AA_GecopModule extends AA_GenericModule
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecopBeneficiarioModifyDlg($object),true);
+        $task->SetContent($this->Template_GetGecopModifyRendicontoDlg($object),true);
 
         return true;
     }
@@ -3242,8 +3646,8 @@ Class AA_GecopModule extends AA_GenericModule
         }
     }
 
-    //Task update pratica
-    public function Task_UpdateGecopPratica($task)
+    //Task update gestione finanziaria
+    public function Task_UpdateGecopRendiconto($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
@@ -3272,71 +3676,91 @@ Class AA_GecopModule extends AA_GenericModule
             return false;
         }
 
-        $pratiche=$object->GetPratiche();
-        if(!isset($pratiche[$_REQUEST['id_pratica']]))
-        {
-            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo pratica mancante o non corretto",false);
-
-            return false;
-        }
-        $id_pratica=$_REQUEST['id_pratica'];
+        $aggiudicatario=$object->GetAggiudicatario();
+        $gestionefinanziaria=$object->GetGestioneFinanziaria();
 
         //----------- verify values ---------------------
-        if($_REQUEST['stato'] != AA_Gecop_Const::AA_GECOP_STATO_PRATICA_DAISTRUIRE && $_REQUEST['data_inizio']=="")
+        if(!empty($_REQUEST['aggiudicatario_nominativo']))
         {
-            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
-            $task->SetError("Occorre indicare la data di inizio",false);
+            $aggiudicatario['nominativo']=trim($_REQUEST['aggiudicatario_nominativo']);
+        }
+        if(!empty($_REQUEST['aggiudicatario_cf']))
+        {
+            $aggiudicatario['cf']=trim($_REQUEST['aggiudicatario_cf']);
+        }
+
+        if(!empty($_REQUEST['data_inizio']))
+        {
+            $gestionefinanziaria['data_inizio']=substr(trim($_REQUEST['data_inizio']),0,10);
+        }
+        else $gestionefinanziaria['data_inizio']="";
+
+        if(!empty($_REQUEST['data_fine']))
+        {
+            $gestionefinanziaria['data_fine']=substr(trim($_REQUEST['data_fine']),0,10);
+        }
+        else $gestionefinanziaria['data_fine']="";
+    
+        if(!empty($_REQUEST['data_fine_effettiva']))
+        {
+            $gestionefinanziaria['data_fine_effettiva']=substr(trim($_REQUEST['data_fine_effettiva']),0,10);
+        }
+        else $gestionefinanziaria['data_fine_effettiva']="";
+
+        if(!empty($_REQUEST['importo_aggiudicazione']))
+        {
+            $gestionefinanziaria['importo_aggiudicazione']=floatVal(AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['importo_aggiudicazione'])),2,"."));
+        }
+        else $gestionefinanziaria['importo_aggiudicazione']=0.00;
+
+        if(!empty($_REQUEST['importo_liquidato']))
+        {
+            $gestionefinanziaria['importo_liquidato']=floatVal(AA_Utils::number_format(str_replace(",",".",str_replace(".","",$_REQUEST['importo_liquidato'])),2,"."));
+        }
+        else  $gestionefinanziaria['importo_liquidato']=0.00;
+
+        if(empty($aggiudicatario['nominativo']) && $gestionefinanziaria['importo_aggiudicazione'] > 0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre specificare l'aggiudicatario se e' presente un importo contrattuale.",false);
 
             return false;
         }
 
-        if($_REQUEST['stato'] == AA_Gecop_Const::AA_GECOP_STATO_PRATICA_AUTORIZZATA && $_REQUEST['data_fine']=="")
+        if(!empty($aggiudicatario['nominativo']) && empty($gestionefinanziaria['importo_aggiudicazione']))
         {
-            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
-            $task->SetError("Occorre indicare la data di fine procedimento",false);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre specificare almeno l'importo del contratto se e' presente l'aggiudicatario.",false);
 
             return false;
         }
 
-        if($_REQUEST['stato'] == AA_Gecop_Const::AA_GECOP_STATO_PRATICA_NEGATA && $_REQUEST['data_fine']=="")
+        if(!empty($gestionefinanziaria['data_fine']) && $gestionefinanziaria['data_fine'] < $gestionefinanziaria['data_inizio'])
         {
-            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
-            $task->SetError("Occorre indicare la data di fine procedimento",false);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("La data di conclusione prevista non puo' essere precedente a quella di inizio.",false);
 
             return false;
         }
 
-        if($_REQUEST['data_fine'] < $_REQUEST['data_inizio'])
+        if(!empty($gestionefinanziaria['data_fine_effettiva']) && $gestionefinanziaria['data_fine_effettiva'] < $gestionefinanziaria['data_inizio'])
         {
-            $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
-            $task->SetError("La data di fine non puo' essere precedente a quella di inizio",false);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("La data di conclusione effettiva non puo' essere precedente a quella di inizio.",false);
 
             return false;
         }
-
-        $pratica=array(
-            "tipo"=>$_REQUEST['tipo'],
-            "stato"=>$_REQUEST['stato'],
-            "estremi"=>$_REQUEST['estremi'],
-            "descrizione"=>$_REQUEST['descrizione'],
-            "via"=>$_REQUEST['via'],
-            "societa"=>$_REQUEST['societa'],
-            "data_inizio"=>substr($_REQUEST['data_inizio'],0,10),
-            "data_fine"=>substr($_REQUEST['data_fine'],0,10),
-            "note"=>$_REQUEST['note'],
-        );
-
-        $pratiche[$id_pratica]=$pratica;
-        $_REQUEST["Pratiche"]=json_encode($pratiche);
         //-----------------------------------------------
+
+        $_REQUEST['GestioneFinanziaria']=json_encode($gestionefinanziaria);
+        $_REQUEST['Aggiudicatario']=json_encode($aggiudicatario);
         
         $object->Parse($_REQUEST);
 
-        if(!$object->Update($this->oUser,true,"Modifica pratica - id: ".$id_pratica))
+        if(!$object->Update($this->oUser,true,"Modifica rendicontazione gestione finanziaria - id: ".$object->GetId()))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiornamento della pratica id: ".$id_pratica,false);
+            $task->SetError("Errore nell'aggiornamento della rendicontazione finanaziaria id: ".$object->GetId(),false);
 
             return false;
         }
@@ -3350,7 +3774,7 @@ Class AA_GecopModule extends AA_GenericModule
     }
 
     //Task delete pratica
-    public function Task_DeleteGecopPratica($task)
+    public function Task_DeleteGecopComponente($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
@@ -3379,25 +3803,39 @@ Class AA_GecopModule extends AA_GenericModule
             return false;
         }
 
-        $pratiche=$object->GetPratiche();
-        if(!isset($pratiche[$_REQUEST['id_pratica']]))
+        $commissione=$object->GetCommissione();
+        if(!isset($commissione[$_REQUEST['id_componente']]))
         {
             $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo pratica mancante o non corretto",false);
+            $task->SetError("Identificativo componente mancante o non corretto",false);
 
             return false;
         }
-        $id_pratica=$_REQUEST['id_pratica'];
-        unset($pratiche[$id_pratica]);
-        $_REQUEST["Pratiche"]=json_encode($pratiche);
+        $id_componente=$_REQUEST['id_componente'];
+        $componente=$commissione[$id_componente]['nominativo'];
+        if(!empty($commissione[$id_componente]['filehash']))
+        {
+            //rimuove il cv
+            $storage=AA_Storage::GetInstance($this->oUser);
+            if($storage->IsValid())
+            {
+                if(!$storage->DelFile($commissione[$id_componente]['filehash']))
+                {
+                    AA_Log::Log(__METHOD__." - errore nella rimozione del file: ".$commissione[$id_componente]['filehash'],100);
+                }
+            }
+        }
+
+        unset($commissione[$id_componente]);
+        $_REQUEST["Commissione"]=json_encode($commissione);
         //-----------------------------------------------
         
         $object->Parse($_REQUEST);
 
-        if(!$object->Update($this->oUser,true,"Elimina pratica - id: ".$id_pratica))
+        if(!$object->Update($this->oUser,true,"Rimozione componente: ".$componente))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'eliminazione della pratica id: ".$id_pratica,false);
+            $task->SetError("Errore nell'eliminazione del componente: ".$componente,false);
 
             return false;
         }
@@ -3529,312 +3967,6 @@ Class AA_GecopModule extends AA_GenericModule
         return true;
     }
 
-    protected function ElaborateCsvImportTerna($csvRows=null)
-    {
-        if($csvRows==null)
-        {
-            return false;
-        }
-
-        //Parsing della posizione dei campi
-        $fieldPos=array(
-            "ragione sociale"=>-1,
-            "classificazione"=>-1,
-            "comune"=>-1,
-            "data esercizio"=>-1,
-            "potenza"=>-1
-        );
-        
-        $recognizedFields=0;
-        foreach(explode("|",$csvRows[0]) as $pos=>$curFieldName)
-        {
-            if($fieldPos[trim(strtolower($curFieldName))] == -1)
-            {
-                $fieldPos[trim(strtolower($curFieldName))] = $pos;
-                $recognizedFields++;
-            }
-        }
-        //----------------------------------------
-
-        if($fieldPos['ragione sociale']==-1 || $fieldPos['classificazione'] ==-1 || $fieldPos['comune'] ==-1 || $fieldPos['data esercizio'] ==-1 || $fieldPos['potenza'] ==-1)
-        {
-            AA_Log::Log(__METHOD__." - Non sono stati trovati tutti i campi relativi a: ragione sociale,classificazione,comune,data esercizio,potenza. - ".print_r($fieldPos,true),100);
-           return false;
-        }
-
-        //parsing dei dati
-        $data=array();
-        $curRowNum=0;
-        $tipo_impianti_match=array(
-            "biomasse"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_BIOMASSA|AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_BIOGAS,
-            "solare"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_FOTOVOLTAICO|AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_AGRIVOLTAICO|AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_TERMODINAMICO,
-            "eolico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_EOLICO|AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_OFFSHORE,
-            "eolico on-shore"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_EOLICO,
-            "idroelettrico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_IDROELETTRICO,
-        );
-
-        $tipo_impianti_match_new=array(
-            "biomasse"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_BIOMASSA,
-            "solare"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_FOTOVOLTAICO,
-            "eolico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_EOLICO,
-            "eolico on-shore"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_EOLICO,
-            "idroelettrico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_IDROELETTRICO,
-        );
-
-        $tipo_impianti=AA_Gecop_Const::GetListaTipoImpianti();
-        $impianti_esistenti=AA_Gecop::Search(array("stato"=>AA_Const::AA_STATUS_PUBBLICATA),$this->oUser);
-        
-        foreach($csvRows as $curCsvRow)
-        {
-            //salta la prima riga
-            if($curRowNum > 0 && $curCsvRow !="")
-            {
-                $csvValues=explode("|",$curCsvRow);
-                if(sizeof($csvValues) >= $recognizedFields)
-                {
-                    //cerca un match tra gli impianti esistenti
-                    $impianto_matched=null;
-                    $max_matching=0;
-                    foreach($impianti_esistenti[1] as $curImpianto)
-                    {
-                        $matching=0;
-                        //comune
-                        $geolocalizzazione=$curImpianto->GetGeolocalizzazione();
-                        if(isset($geolocalizzazione['comune']) && strpos(strtolower($geolocalizzazione['comune']),strtolower($csvValues[$fieldPos['comune']])) !== false)
-                        {
-                            $matching++;
-                        }
-
-                        //potenza (+- 10%)
-                        if(floatVal($curImpianto->GetProp('potenza'))-floatVal(str_replace(",",".",str_replace(".","",$csvValues[$fieldPos['potenza']]))) <=.1)
-                        {
-                            $matching++;
-                        }
-
-                        //Tipo impianto
-                        $tipo_impianto=$curImpianto->GetProp('tipologia');
-                        if(isset($tipo_impianti_match[strtolower($csvValues[$fieldPos['classificazione']])]) && ($tipo_impianto & $tipo_impianti_match[strtolower($csvValues[$fieldPos['classificazione']])]) > 0)
-                        {
-                            $matching++;
-                        }
-
-                        if($matching > 0 && $matching > $max_matching)
-                        {
-                            $impianto_matched=$curImpianto;
-                            $max_matching=$matching;
-                        }
-                    }
-
-                    $curDataValues=array();
-                    
-                    if($impianto_matched) 
-                    {
-                        $curDataValues['id_impianto']=$impianto_matched->GetId();
-                    }
-                    else 
-                    {
-                        $curDataValues['id_impianto']=0;
-                        $curDataValues['nome']="Impianto ad energia rinnovabile sito in  ".$csvValues[$fieldPos['comune']];
-                        if(isset($tipo_impianti_match_new[strtolower($csvValues[$fieldPos['classificazione']])])) 
-                        {
-                            $curDataValues['Tipologia']=$tipo_impianti_match_new[strtolower($csvValues[$fieldPos['classificazione']])];
-                            $curDataValues['nome']="Impianto ".$tipo_impianti[$curDataValues['Tipologia']]." sito in  ".$csvValues[$fieldPos['comune']];
-                        }
-                        $curDataValues['Stato']=0;
-                        $curDataValues['AnnoAutorizzazione']="";
-                        $curDataValues['AnnoCostruzione']="";
-                        $curDataValues['AnnoEsercizio']="";
-                        $curDataValues['AnnoDismissione']="";
-                        $curDataValues['Potenza']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$csvValues[$fieldPos['potenza']]))),2,".","");
-
-                        $curDataValues['Superficie']="";
-                        $curDataValues['Geo_comune']=trim($csvValues[$fieldPos['comune']]);
-                        $curDataValues['Geo_localita']="";
-                        $curDataValues['Geo_coordinate']="";
-
-                        if(strtolower($csvValues[$fieldPos['data esercizio']]) !="")
-                        {
-                            $curDataValues['AnnoEsercizio']=date("Y-m-d",strtotime(str_replace(array("gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"),array("15-01","15-02","15-03","15-04","15-05","15-06","15-07","15-08","15-09","15-10","15-11","15-12"),$csvValues[$fieldPos['data esercizio']])));
-                            $curDataValues['AnnoAutorizzazione']=$curDataValues['AnnoEsercizio'];
-                            $curDataValues['AnnoCostruzione']=$curDataValues['AnnoEsercizio'];
-                            $curDataValues['Stato']=AA_Gecop_Const::AA_GECOP_STATO_ESERCIZIO;
-                        }
-
-                        $curDataValues['Note']="Impianto importato da csv Terna - ".date("d/m/Y H:i:s");
-                    }
-
-                    $curDataValues['pratica_societa']=trim($csvValues[$fieldPos['ragione sociale']]);
-                    $curDataValues['pratica_note']="Pratica importata da csv Terna - ".date("d/m/Y H:i:s");
-
-                    $data[]=$curDataValues;
-                }
-            }
-            $curRowNum++;
-        }
-
-        return $data;
-    }
-
-    protected function ElaborateCsvImportAssIndustria($rows=null)
-    {
-        return false;
-    }
-
-    protected function ElaborateCsvImportSuape($csvRows=null)
-    {
-        if($csvRows==null)
-        {
-            return false;
-        }
-
-        //Parsing della posizione dei campi
-        $fieldPos=array(
-            "soggetto richiesta"=>-1,
-            "impianto"=>-1,
-            "comune"=>-1,
-            "oggetto"=>-1,
-            "potenza"=>-1,
-            "stato"=>-1,
-            "interventi"=>-1,
-            "data_presentazione"=>-1,
-            "protocollo_suape"=>-1
-        );
-        
-        $recognizedFields=0;
-        foreach(explode("|",$csvRows[0]) as $pos=>$curFieldName)
-        {
-            if($fieldPos[trim(strtolower($curFieldName))] == -1)
-            {
-                $fieldPos[trim(strtolower($curFieldName))] = $pos;
-                $recognizedFields++;
-            }
-        }
-        //----------------------------------------
-
-        if($fieldPos['soggetto richiesta']==-1 || $fieldPos['impianto'] ==-1 || $fieldPos['comune'] ==-1 || $fieldPos['data_presentazione'] ==-1 || $fieldPos['potenza'] ==-1 || $fieldPos['stato'] ==-1 || $fieldPos['interventi'] ==-1)
-        {
-            AA_Log::Log(__METHOD__." - Non sono stati trovati tutti i campi relativi a: Soggetto Richiesta,impianto,comune,data_presentazione,potenza,stato,interventi. - ".print_r($fieldPos,true),100);
-           return false;
-        }
-
-        //parsing dei dati
-        $data=array();
-        $curRowNum=0;
-        $tipo_impianti_match=array(
-            "biomasse"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_BIOMASSA|AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_BIOGAS,
-            "fotovoltaico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_FOTOVOLTAICO|AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_TERMODINAMICO,
-            "agrivoltaico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_AGRIVOLTAICO,
-            "eolico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_EOLICO|AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_OFFSHORE,
-            "eolico on-shore"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_EOLICO,
-            "idroelettrico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_IDROELETTRICO,
-        );
-
-        $tipo_impianti_match_new=array(
-            "biomasse"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_BIOMASSA,
-            "fotovoltaico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_FOTOVOLTAICO,
-            "agrivoltaico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_AGRIVOLTAICO,
-            "eolico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_EOLICO,
-            "eolico on-shore"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_EOLICO,
-            "idroelettrico"=>AA_Gecop_Const::AA_GECOP_TIPOIMPIANTO_IDROELETTRICO,
-        );
-
-        $tipo_impianti=AA_Gecop_Const::GetListaTipoImpianti();
-        $impianti_esistenti=AA_Gecop::Search(array("stato"=>AA_Const::AA_STATUS_PUBBLICATA),$this->oUser);
-        
-        foreach($csvRows as $curCsvRow)
-        {
-            //salta la prima riga
-            if($curRowNum > 0 && $curCsvRow !="")
-            {
-                $csvValues=explode("|",$curCsvRow);
-                if(sizeof($csvValues) >= $recognizedFields)
-                {
-                    //cerca un match tra gli impianti esistenti
-                    $impianto_matched=null;
-                    $max_matching=0;
-                    foreach($impianti_esistenti[1] as $curImpianto)
-                    {
-                        $matching=0;
-                        //comune
-                        $geolocalizzazione=$curImpianto->GetGeolocalizzazione();
-                        if(isset($geolocalizzazione['comune']) && strpos(strtolower($geolocalizzazione['comune']),strtolower($csvValues[$fieldPos['comune']])) !== false)
-                        {
-                            $matching++;
-                        }
-
-                        //potenza (+- 10%)
-                        if(floatVal($curImpianto->GetProp('potenza'))-floatVal(str_replace(",",".",str_replace(".","",$csvValues[$fieldPos['potenza']]))) <=.1)
-                        {
-                            $matching++;
-                        }
-
-                        //Tipo impianto
-                        $tipo_impianto=$curImpianto->GetProp('tipologia');
-                        if(isset($tipo_impianti_match[strtolower($csvValues[$fieldPos['impianto']])]) && ($tipo_impianto & $tipo_impianti_match[strtolower($csvValues[$fieldPos['impianto']])]) > 0)
-                        {
-                            $matching++;
-                        }
-
-                        if($matching > 0 && $matching > $max_matching)
-                        {
-                            $impianto_matched=$curImpianto;
-                            $max_matching=$matching;
-                        }
-                    }
-
-                    $curDataValues=array();
-                    $data_inizio=date("Y-m-d",strtotime(substr($csvValues[$fieldPos['data_presentazione']],6,4)."-".substr($csvValues[$fieldPos['data_presentazione']],3,2)."-".substr($csvValues[$fieldPos['data_presentazione']],0,2)));
-
-                    if($impianto_matched) 
-                    {
-                        $curDataValues['id_impianto']=$impianto_matched->GetId();
-                    }
-                    else 
-                    {
-                        $curDataValues['id_impianto']=0;
-                        $curDataValues['nome']="Impianto ad energia rinnovabile sito in  ".$csvValues[$fieldPos['comune']];
-                        if(isset($tipo_impianti_match_new[strtolower($csvValues[$fieldPos['impianto']])])) 
-                        {
-                            $curDataValues['Tipologia']=$tipo_impianti_match_new[strtolower($csvValues[$fieldPos['impianto']])];
-                            $curDataValues['nome']="Impianto ".$tipo_impianti[$curDataValues['Tipologia']]." sito in  ".$csvValues[$fieldPos['comune']];
-                        }
-                        $curDataValues['Stato']=AA_Gecop_Const::AA_GECOP_STATO_AUTORIZZAZIONE;
-                        $curDataValues['AnnoAutorizzazione']="";
-                        $curDataValues['AnnoCostruzione']="";
-                        $curDataValues['AnnoEsercizio']="";
-                        $curDataValues['AnnoDismissione']="";
-                        $curDataValues['Potenza']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$csvValues[$fieldPos['potenza']]))),2,".","");
-
-                        $curDataValues['Superficie']="";
-                        $curDataValues['Geo_comune']=trim($csvValues[$fieldPos['comune']]);
-                        $curDataValues['Geo_localita']="";
-                        $curDataValues['Geo_coordinate']="";
-
-                        if(strtolower($csvValues[$fieldPos['data_presentazione']]) !="")
-                        {
-                            $curDataValues['AnnoAutorizzazione']=$data_inizio;
-                            //$curDataValues['AnnoEsercizio']=$curDataValues['AnnoAutorizzazione'];
-                            //$curDataValues['AnnoCostruzione']=$curDataValues['AnnoEsercizio'];
-                            $curDataValues['Stato']=AA_Gecop_Const::AA_GECOP_STATO_AUTORIZZAZIONE;
-                        }
-
-                        $curDataValues['Note']="Impianto importato da csv Suape - ".date("d/m/Y H:i:s");
-                    }
-
-                    $curDataValues['pratica_societa']=trim($csvValues[$fieldPos['soggetto richiesta']]);
-                    $curDataValues['pratica_stato']=AA_Gecop_Const::AA_GECOP_STATO_PRATICA_INLAVORAZIONE;
-                    $curDataValues['pratica_data_inizio']=$data_inizio;
-                    $curDataValues['pratica_note']=trim($csvValues[$fieldPos['oggetto']]);
-
-                    $data[]=$curDataValues;
-                }
-            }
-            $curRowNum++;
-        }
-
-        return $data;
-    }
-
     //Task aggiungi allegato
     public function Task_GetGecopAddNewAllegatoDlg($task)
     {
@@ -3870,8 +4002,8 @@ Class AA_GecopModule extends AA_GenericModule
         return true;
     }
 
-    //Task aggiungi allegato
-    public function Task_GetGecopAddNewPraticaDlg($task)
+    //Task aggiungi componente commissione
+    public function Task_GetGecopAddNewComponenteDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -3901,7 +4033,7 @@ Class AA_GecopModule extends AA_GenericModule
         }
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecopAddNewPraticaDlg($object),true);
+        $task->SetContent($this->Template_GetGecopAddNewComponenteDlg($object),true);
         return true;
     }
 
@@ -4000,7 +4132,7 @@ Class AA_GecopModule extends AA_GenericModule
     }
 
     //Task elimina pratica esistente
-    public function Task_GetGecopTrashPraticaDlg($task)
+    public function Task_GetGecopTrashComponenteDlg($task)
     {
         AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
@@ -4029,20 +4161,20 @@ Class AA_GecopModule extends AA_GenericModule
             return false;
         }
 
-        $pratiche=$object->GetPratiche();
-        if(!isset($pratiche[$_REQUEST['id_pratica']]))
+        $commissione=$object->GetCommissione();
+        if(!isset($commissione[$_REQUEST['id_componente']]))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo pratica non presente",false);
+            $task->SetError("Identificativo componente non presente",false);
 
             return false;
         }
 
-        $pratica=$pratiche[$_REQUEST['id_pratica']];
-        $pratica['id']=$_REQUEST['id_pratica'];
+        $componente=$commissione[$_REQUEST['id_componente']];
+        $componente['id']=$_REQUEST['id_componente'];
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetGecopTrashPraticaDlg($object,$pratica),true);
+        $task->SetContent($this->Template_GetGecopTrashComponenteDlg($object,$componente),true);
         return true;
     }
     
@@ -4354,6 +4486,62 @@ Class AA_GecopModule extends AA_GenericModule
         return true;
     }
 
+    //Task modifica allegato
+    public function Task_GetGecopModifyComponenteDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if($_REQUEST['id_componente']=="" || $_REQUEST['id_componente']<=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo componente non valido.",false);
+
+            return false;
+        }
+
+        $object=new AA_Gecop($_REQUEST['id'],$this->oUser);
+        if(!$object->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.",false);
+
+            return false;
+        }
+
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE)==0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento",false);
+
+            return false;
+        }
+
+        $commissione=$object->GetCommissione();
+        if(!isset($commissione[$_REQUEST['id_componente']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo componente non valido.",false);
+
+            return false;
+        }
+
+        $componente=$commissione[$_REQUEST['id_componente']];
+        $componente['id']=$_REQUEST['id_componente'];
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecopModifyComponenteDlg($object,$componente),true);
+
+        return true;
+    }
+
     //Task trash allegato
     public function Task_GetGecopTrashAllegatoDlg($task)
     {
@@ -4454,10 +4642,7 @@ Class AA_GecopModule extends AA_GenericModule
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['nome']=="") $formData['nome']="";
-        if($params['tipo']=="") $formData['tipo']=0;
-        if($params['stato']=="") $formData['stato']=0;
-        if($params['comune']=="") $formData['comune']="Qualunque";
-
+    
         //Valori reset
         $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
         
@@ -4471,32 +4656,11 @@ Class AA_GecopModule extends AA_GenericModule
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
       
-        //tipo
-        $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Gecop_Const::GetListaTipoImpianti() as $key=>$val)
-        {
-            $options[]=array("id"=>$key,"value"=>$val);
-        }
-        $dlg->AddSelectField("tipo","Tipo impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base al tipo di impianto.","options"=>$options,"value"=>"0"));
+        //Struttura
+        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
 
-        //stato
-        $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Gecop_Const::GetListaStatiImpianto() as $key=>$val)
-        {
-            $options[]=array("id"=>$key,"value"=>$val);
-        }
-        $dlg->AddSelectField("stato","Stato impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base allo stato dell'impianto.","options"=>$options,"value"=>"0"));
-
-         //comune
-         $options=array(array("id"=>"Qualunque","value"=>"Qualunque"));
-         foreach(AA_Gecop_Const::GetListaComuni() as $key=>$val)
-         {
-             $options[]=array("id"=>$val,"value"=>$val);
-         }
-         $dlg->AddComboField("comune","Comune",array("gravity"=>2,"bottomLabel"=>"*Filtra in base al comune dove e' situato l'impianto.","options"=>$options,"value"=>"0"));
- 
         //titolo
-        $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'impianto.", "placeholder"=>"..."));
+        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base alla denominazione dell'impianto.", "placeholder"=>"..."));
 
         $dlg->SetApplyButtonName("Filtra");
 
@@ -4516,9 +4680,6 @@ Class AA_GecopModule extends AA_GenericModule
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['nome']=="") $formData['nome']="";
-        if($params['tipo']=="") $formData['tipo']=0;
-        if($params['stato']=="") $formData['stato']=0;
-        if($params['comune']=="") $formData['comune']="Qualunque";
 
         //Valori reset
         $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
@@ -4533,32 +4694,11 @@ Class AA_GecopModule extends AA_GenericModule
         //Cestinate
         $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
       
-        //tipo
-        $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Gecop_Const::GetListaTipoImpianti() as $key=>$val)
-        {
-            $options[]=array("id"=>$key,"value"=>$val);
-        }
-        $dlg->AddSelectField("tipo","Tipo impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base al tipo di impianto.","options"=>$options,"value"=>"0"));
-
-        //stato
-        $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Gecop_Const::GetListaStatiImpianto() as $key=>$val)
-        {
-            $options[]=array("id"=>$key,"value"=>$val);
-        }
-        $dlg->AddSelectField("stato","Stato impianto",array("gravity"=>2,"bottomLabel"=>"*Filtra in base allo stato dell'impianto.","options"=>$options,"value"=>"0"));
-
-        //comune
-        $options=array(array("id"=>"Qualunque","value"=>"Qualunque"));
-        foreach(AA_Gecop_Const::GetListaComuni() as $key=>$val)
-        {
-            $options[]=array("id"=>$val,"value"=>$val);
-        }
-        $dlg->AddComboField("comune","Comune",array("gravity"=>2,"bottomLabel"=>"*Filtra in base al comune dove e' situato l'impianto.","options"=>$options,"value"=>"0"));
-
+        //Struttura
+        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
+    
         //titolo
-        $dlg->AddTextField("nome","Denominazione",array("bottomLabel"=>"*Filtra in base alla denominazione dell'impianto.", "placeholder"=>"..."));
+        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del contratto.", "placeholder"=>"..."));
         
         $dlg->SetApplyButtonName("Filtra");
 

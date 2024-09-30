@@ -4553,11 +4553,14 @@ class AA_GenericModule
         $header->addCol($layout_toolbar);
 
         //Content box
+        $name=$object->GetName();
+        if(strlen($name>225)) $name=substr($name,0,217)."...";
+
         $content = new AA_JSON_Template_Layout(
             static::AA_UI_PREFIX . "_" . static::AA_UI_DETAIL_BOX,
             array(
                 "type" => "clean",
-                "name" => $object->GetName(),
+                "name" => $name,
                 "filtered" => true
             )
         );

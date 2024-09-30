@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 31, 2024 at 09:01 PM
--- Server version: 10.11.8-MariaDB
--- PHP Version: 8.3.9
+-- Creato il: Set 30, 2024 alle 10:40
+-- Versione del server: 10.11.9-MariaDB
+-- Versione PHP: 8.3.11
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,41 +24,39 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `aa_geser_data`
+-- Struttura della tabella `aa_gecop_data`
 --
 
-CREATE TABLE `aa_geser_data` (
+DROP TABLE IF EXISTS `aa_gecop_data`;
+CREATE TABLE `aa_gecop_data` (
   `id` int(11) UNSIGNED NOT NULL,
-  `tipologia` int(10) NOT NULL DEFAULT 0,
-  `stato` int(11) NOT NULL DEFAULT 0,
-  `anno_autorizzazione` varchar(4) NOT NULL,
-  `anno_entrata_esercizio` varchar(4) NOT NULL,
-  `anno_dismissione` varchar(4) NOT NULL,
-  `note` varchar(4096) NOT NULL DEFAULT '',
-  `potenza` varchar(20) NOT NULL DEFAULT '0',
-  `geolocalizzazione` varchar(1024) NOT NULL,
-  `pratiche` longtext NOT NULL,
-  `anno_costruzione` varchar(4) NOT NULL
+  `cig` varchar(20) NOT NULL,
+  `anno` varchar(4) NOT NULL,
+  `note` varchar(4096) NOT NULL,
+  `aggiudicatario` varchar(200) NOT NULL DEFAULT '',
+  `links` varchar(2048) NOT NULL DEFAULT '',
+  `gestione_finanziaria` varchar(4096) NOT NULL DEFAULT '',
+  `commissione` text NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 --
--- Indexes for dumped tables
+-- Indici per le tabelle scaricate
 --
 
 --
--- Indexes for table `aa_geser_data`
+-- Indici per le tabelle `aa_gecop_data`
 --
-ALTER TABLE `aa_geser_data`
+ALTER TABLE `aa_gecop_data`
   ADD PRIMARY KEY (`id`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT per le tabelle scaricate
 --
 
 --
--- AUTO_INCREMENT for table `aa_geser_data`
+-- AUTO_INCREMENT per la tabella `aa_gecop_data`
 --
-ALTER TABLE `aa_geser_data`
+ALTER TABLE `aa_gecop_data`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 COMMIT;
 
