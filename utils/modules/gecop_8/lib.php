@@ -2608,16 +2608,12 @@ Class AA_GecopModule extends AA_GenericModule
         $value="n.d.";
         if(!empty($gestione_finanziaria['data_fine_effettiva']))
         {
-            $data_inizio=new DateTime($gestione_finanziaria['data_inizio']);
-            $data_fine=new DateTime($gestione_finanziaria['data_fine']);
+            $data_inizio=new DateTime($gestione_finanziaria['data_fine']);
+            $data_fine=new DateTime($gestione_finanziaria['data_fine_effettiva']);
             if(!empty($gestione_finanziaria['data_fine_effettiva'])) $data_fine=new DateTime($gestione_finanziaria['data_fine_effettiva']);
 
             $value="gg: ".date_diff($data_inizio, $data_fine)->days;
-
-            if(!empty($gestione_finanziaria['importo_liquidato']))
-            {
-                $value.=" - &euro;: ".AA_Utils::number_format(floatVal($gestione_finanziaria['importo_liquidato']-$gestione_finanziaria['importo_aggiudicazione']),2,",",".");
-            }
+            $value.=" - &euro;: ".AA_Utils::number_format(floatVal($gestione_finanziaria['importo_liquidato']-$gestione_finanziaria['importo_aggiudicazione']),2,",",".");
         }
 
         $scostamento=new AA_JSON_Template_Template("",array(
