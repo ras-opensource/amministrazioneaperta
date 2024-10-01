@@ -647,22 +647,10 @@ Class AA_GecopModule extends AA_GenericModule
     //Personalizza il filtro delle schede pubblicate per il modulo corrente
     protected function GetDataSectionPubblicate_CustomFilter($params = array())
     {
-        //tipo
-        if(isset($params['tipo']) && $params['tipo'] > 0)
+        //Cig
+        if(isset($params['Cig']) && $params['Cig'] > 0)
         {
-            $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".tipologia = '".addslashes($params['tipo'])."'";
-        }
-
-        //stato
-        if(isset($params['stato']) && $params['stato'] > 0)
-        {
-            $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".stato = '".addslashes($params['stato'])."'";
-        }
-
-        //comune
-        if(isset($params['comune']) && $params['comune'] !="Qualunque")
-        {
-            $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".geolocalizzazione like '{\"comune\":\"".addslashes($params['comune'])."\"%'";
+            $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".cig like '%".addslashes($params['Cig'])."%'";
         }
 
         return $params;
@@ -697,22 +685,10 @@ Class AA_GecopModule extends AA_GenericModule
     //Personalizza il filtro delle bozze per il modulo corrente
     protected function GetDataSectionBozze_CustomFilter($params = array())
     {
-        //tipo
-        if(isset($params['tipo']) && $params['tipo'] > 0)
+        //Cig
+        if(isset($params['Cig']) && $params['Cig'] > 0)
         {
-            $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".tipologia = '".addslashes($params['tipo'])."'";
-        }
-
-        //stato
-        if(isset($params['stato']) && $params['stato'] > 0)
-        {
-            $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".stato = '".addslashes($params['stato'])."'";
-        }
-
-        //comune
-        if(isset($params['comune']) && $params['comune'] !="Qualunque")
-        {
-            $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".geolocalizzazione like '{\"comune\":\"".addslashes($params['comune'])."\"%'";
+            $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".cig like '%".addslashes($params['Cig'])."%'";
         }
 
         return $params;
@@ -1849,7 +1825,7 @@ Class AA_GecopModule extends AA_GenericModule
                         AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
                     }
                 }
-            }     
+            }
 
             return false;
         }
@@ -2871,7 +2847,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task Update Gecop
     public function Task_UpdateGecopDatiGenerali($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -2950,7 +2926,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task Update Gecop
     public function Task_UpdateGecopDatiBeneficiario($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -3023,7 +2999,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task trash Gecop
     public function Task_TrashGecop($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3040,7 +3016,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task resume Gecop
     public function Task_ResumeGecop($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         return $this->Task_GenericResumeObject($task,$_REQUEST);
     }
@@ -3048,7 +3024,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task publish Gecop
     public function Task_PublishGecop($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         //torna alla lista
         //$_REQUEST['goBack']=1;
@@ -3083,8 +3059,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task Aggiungi provvedimenti
     public function Task_AddNewGecop($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3129,8 +3104,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task Aggiungi nuovi impianti da csv
     public function Task_AddNewMultiGecop($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
-        
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3270,7 +3244,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task modifica dati generali elemento
     public function Task_GetGecopModifyDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -3305,7 +3279,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task richiesta oscurtamento dati personali
     public function Task_GetGecopConfirmPrivacyDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
         $form_id=$_REQUEST['form'];
         if($form_id=="")
@@ -3325,7 +3299,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task modifica dati beneficiario
     public function Task_GetGecopModifyRendicontoDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -3361,7 +3335,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task resume
     public function Task_GetGecopResumeDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3387,7 +3361,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task publish organismo
     public function Task_GetGecopPublishDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3413,7 +3387,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task Riassegna
     public function Task_GetGecopReassignDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3439,7 +3413,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task elimina
     public function Task_GetGecopTrashDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3464,7 +3438,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task dialogo elimina
     public function Task_GetGecopDeleteDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3489,7 +3463,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task lista
     public function Task_GetGecopListaCodiciIstat($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
         $filter=$_REQUEST["filter"];
 
@@ -3527,7 +3501,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task aggiunta 
     public function Task_GetGecopAddNewDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3546,7 +3520,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task Add new pratica
     public function Task_AddNewGecopPratica($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -3645,7 +3619,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task update gestione finanziaria
     public function Task_UpdateGecopRendiconto($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -3772,7 +3746,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task delete pratica
     public function Task_DeleteGecopComponente($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -3847,7 +3821,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task aggiunta multipla
     public function Task_GetGecopAddNewMultiDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3866,7 +3840,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task aggiunta multipla preview
     public function Task_GetGecopAddNewMultiPreviewDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3885,7 +3859,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task aggiunta multipla result
     public function Task_GetGecopAddNewMultiResultDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
        
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
@@ -3966,7 +3940,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task aggiungi allegato
     public function Task_GetGecopAddNewAllegatoDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4001,7 +3975,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task aggiungi componente commissione
     public function Task_GetGecopAddNewComponenteDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4036,7 +4010,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task modifica pratica esistente
     public function Task_GetGecopModifyPraticaDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4083,7 +4057,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task modifica pratica esistente
     public function Task_GetGecopCopyPraticaDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4130,7 +4104,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task elimina pratica esistente
     public function Task_GetGecopTrashComponenteDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4429,7 +4403,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task modifica allegato
     public function Task_GetGecopModifyAllegatoDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4485,7 +4459,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task modifica allegato
     public function Task_GetGecopModifyComponenteDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         if($_REQUEST['id']=="" || $_REQUEST['id']<=0)
         {
@@ -4587,7 +4561,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task filter dlg
     public function Task_GetGecopPubblicateFilterDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         $content=$this->TemplatePubblicateFilterDlg($_REQUEST);
@@ -4602,7 +4576,7 @@ Class AA_GecopModule extends AA_GenericModule
     //Task filter dlg
     public function Task_GetGecopBozzeFilterDlg($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
         $content=$this->TemplateBozzeFilterDlg($_REQUEST);
@@ -4629,7 +4603,7 @@ Class AA_GecopModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("comune"=>$params['comune'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"tipo"=>$params['tipo'],"stato"=>$params['stato']);
+        $formData=array("cig"=>$params['cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4638,6 +4612,7 @@ Class AA_GecopModule extends AA_GenericModule
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['nome']=="") $formData['nome']="";
+        if($params['cig']=="") $formData['cig']="";
     
         //Valori reset
         $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
@@ -4656,7 +4631,10 @@ Class AA_GecopModule extends AA_GenericModule
         $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura controllante."));
 
         //titolo
-        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base alla denominazione dell'impianto.", "placeholder"=>"..."));
+        $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto.", "placeholder"=>"..."));
+
+        //cig
+        $dlg->AddTextField("Cig","Cig",array("bottomLabel"=>"*Filtra in base al cig.", "placeholder"=>"..."));
 
         $dlg->SetApplyButtonName("Filtra");
 
@@ -4667,7 +4645,7 @@ Class AA_GecopModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("comune"=>$params['comune'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"tipo"=>$params['tipo'],"stato"=>$params['stato']);
+        $formData=array("Cig"=>$params['Cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4676,6 +4654,8 @@ Class AA_GecopModule extends AA_GenericModule
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['nome']=="") $formData['nome']="";
+        if($params['Cig']=="") $formData['Cig']="";
+
 
         //Valori reset
         $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
@@ -4696,13 +4676,16 @@ Class AA_GecopModule extends AA_GenericModule
         //titolo
         $dlg->AddTextField("nome","Oggetto",array("bottomLabel"=>"*Filtra in base all'oggetto del contratto.", "placeholder"=>"..."));
         
+        //cig
+        $dlg->AddTextField("Cig","Cig",array("bottomLabel"=>"*Filtra in base al cig.", "placeholder"=>"..."));
+
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();
     }
     
     //Funzione di esportazione in pdf (da specializzare)
-    public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.26-27 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="")
+    public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.37 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="")
     {
         return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_GecopPdfExport", $rowsForPage, $index,$subTitle);
     }

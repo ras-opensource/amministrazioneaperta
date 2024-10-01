@@ -406,6 +406,7 @@ Class AA_Organismi_Organigramma_Incarico
     //Costruttore di default
     public function __construct($data="")
     {
+        $this->props['ordine']=0;
         if(is_array($data)) $this->ParseData($data);
     }
 
@@ -461,6 +462,7 @@ Class AA_Organismi_Organigramma_Incarico
                 if($key=="opzionale") $this->props['opzionale']=$val;
                 if($key=="forza_scadenzario") $this->props['forza_scadenzario']=$val;
                 if($key=="compenso_spettante") $this->props['compenso_spettante']=$val;
+                if($key=="ordine") $this->props['ordine']=$val;
             }
 
             return true;
@@ -2992,6 +2994,8 @@ class AA_Organismi extends AA_Object
         }
 
         //partecipazione
+        if(!empty($params['partecipazione'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+        
         if(($params['tipo']&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0)
         {
             if($params['partecipazione']>0)
