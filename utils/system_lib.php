@@ -3511,7 +3511,7 @@ class AA_GenericModule
     }
 
     //Template pdf export generic
-    protected function Template_GenericPdfExport($objects = array(), $bToBrowser = true, $title = "Esportazione in pdf", $pageTemplateFunc = "Template_GenericObjectPdfExport",$rowsForPage=1, $index=true, $subTitle="")
+    protected function Template_GenericPdfExport($objects = array(), $bToBrowser = true, $title = "Esportazione in pdf", $pageTemplateFunc = "Template_GenericObjectPdfExport",$rowsForPage=1, $index=true, $subTitle="",$layout_class="AA_PDF_RAS_TEMPLATE_A4_PORTRAIT",$maxRowHeight=0,$headerTemplateFunct=null)
     {
         include_once "pdf_lib.php";
 
@@ -3535,7 +3535,7 @@ class AA_GenericModule
         //nome file
         $filename = "pdf_export";
         $filename .= "-" . date("YmdHis");
-        $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
+        $doc = new $layout_class($filename);
 
         $doc->SetDocumentStyle("font-family: sans-serif; font-size: 3mm;");
         $doc->SetPageCorpoStyle("display: flex; flex-direction: column; justify-content: space-between; padding:0;");
@@ -3545,7 +3545,8 @@ class AA_GenericModule
         $curPage = null;
         $curPage_row = "";
         $curNumPage = 0;
-        $maxItemHeight=intval(100/$rowsForPage);
+        if($rowsForPage > 0) $maxItemHeight="max-height: ".intval(100/$rowsForPage)."%";
+        if($maxRowHeight > 0) $maxItemHeight="max-height: ".$maxRowHeight."%";
         //$columns_width=array("titolare"=>"10%","incarico"=>"8%","atto"=>"10%","struttura"=>"28%","curriculum"=>"10%","art20"=>"12%","altri_incarichi"=>"10%","1-ter"=>"10%","emolumenti"=>"10%");
         //$columns_width=array("dal"=>"10%","al"=>"10%","inconf"=>"10%","incomp"=>"10%","anno"=>"25%","titolare"=>"50%","tipo_incarico"=>"10%","atto_nomina"=>"10%","struttura"=>"40%","curriculum"=>"25%","altri_incarichi"=>"25%","1-ter"=>"25%","emolumenti"=>"10%");
         $rowContentWidth = "width: 99.8%;";
@@ -3591,8 +3592,16 @@ class AA_GenericModule
 
         //Rendering pagine
         foreach ($objects as $id => $curObject) {
+
+            if (method_exists($this, $pageTemplateFunc)) $template = $this->$pageTemplateFunc("report_object_pdf_" . $curObject->GetId(), null, $curObject, $this->oUser);
+            else $template = "";
+
+            if(is_object($template) && method_exists($template,"GetRowCount"))
+            {
+                if($curRow+$template->GetRowCount() > $rowForPage) $curRow=$rowForPage;
+            }
             //inizia una nuova pagina (intestazione)
-            if ($curRow == $rowForPage) $curRow = 0;
+            if ($curRow >= $rowForPage) $curRow = 0;
             if ($curRow == 0) {
                 $border = "";
                 if ($curPage != null) 
@@ -3612,19 +3621,18 @@ class AA_GenericModule
                 
                 $curPage->SetCorpoStyle("display: flex; flex-direction: column;  justify-content: flex-start; padding:0;");
                 $curPage_row = "";
+                if(method_exists($this, $headerTemplateFunct)) $curPage_row = $this->$headerTemplateFunct($curObject);
             }
 
             $indice[$curObject->GetID()] = $curNumPage . "|" . substr($curObject->GetName(),0,90);
-            $curPage_row .= "<div id='" . $curObject->GetID() . "' style='display:flex;  flex-direction: column; width: 99.8%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; max-height:".$maxItemHeight."%; overflow: hidden;'>";
-
-            if (method_exists($this, $pageTemplateFunc)) $template = $this->$pageTemplateFunc("report_object_pdf_" . $curObject->GetId(), null, $curObject, $this->oUser);
-            else $template = "";
+            $curPage_row .= "<div id='" . $curObject->GetID() . "' style='display:flex;  flex-direction: column; width: 99.8%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; ".$maxItemHeight."; overflow: hidden;'>";
 
             //AA_Log::Log($template,100,false,true);
 
             $curPage_row .= $template;
             $curPage_row .= "</div>";
-            $curRow++;
+            if(is_object($template) && method_exists($template,"GetRowCount")) $curRow+=$template->GetRowCount();
+            else $curRow++;
         }
         if ($curPage != null) $curPage->SetContent($curPage_row);
         #-----------------------------------------

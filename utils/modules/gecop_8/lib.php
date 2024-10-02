@@ -632,7 +632,7 @@ Class AA_GecopModule extends AA_GenericModule
             $bCanModify=true;
         }
 
-        $params['enableAddNewMultiFromCsv']=true;
+        $params['enableAddNewMultiFromCsv']=false;
         $content=$this->TemplateGenericSection_Bozze($params,null);
 
         return $content->toObject();
@@ -4685,9 +4685,56 @@ Class AA_GecopModule extends AA_GenericModule
     }
     
     //Funzione di esportazione in pdf (da specializzare)
-    public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.37 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="")
+    public function Template_PdfExport($ids=array())
     {
-        return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_GecopPdfExport", $rowsForPage, $index,$subTitle);
+        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.37 del d.lgs. 33/2013","Template_GecopPdfExport", 12, false,"","AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE",99,"Template_PublicReportPageHeaderPdf");
+    }
+
+    //header public report pdf export
+    public function Template_PublicReportPageHeaderPdf($object=null)
+    {
+        $id=uniqid();
+        $header=new AA_XML_Div_Element();
+        $header->SetStyle("width: 100%; display:flex; flex-direction: row; align-items: center; justify-content: space-between; background-color: #dedede; height: 5%");
+
+        //Cig
+        $cig=new AA_XML_Div_Element($id."_cig",$header);
+        $cig->SetStyle('width:5%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $cig->SetText("<span><b>Anno</b></span><span><b>CIG</b></span>");
+
+        #oggetto----------------------------------
+        $oggetto=new AA_XML_Div_Element($id."_oggetto",$header);
+        $oggetto->SetStyle('width:25%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $oggetto->SetText("<span><b>Oggetto</b></span>");
+        #-----------------------------------------------
+
+        #Ufficio----------------------------------
+        $ufficio=new AA_XML_Div_Element($id."_ufficio",$header);
+        $ufficio->SetStyle('width:17%; font-size: .6em; padding: .1em; height:91%;display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $ufficio->SetText("<span><b>Struttura proponente</b></span>");
+        #-----------------------------------------------
+        
+        //aggiudicatario
+        $val=new AA_XML_Div_Element($id."_aggiudicatario",$header);
+        $val->SetStyle('width:8%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $val->SetText("<span><b>Aggiudicatario</b></span>");
+
+        //links
+        $val=new AA_XML_Div_Element($id."_links",$header);
+        $val->SetStyle('width:7%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $val->SetText("<span><b>Links</b></span>");
+
+        //commissione
+        $val=new AA_XML_Div_Element($id."_commissione",$header);
+        $val->SetStyle('width:13%; font-size: .6em; padding: .1em; height:100%; display: flex; flex-direction:column;justify-content:center; align-items: center');
+        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Commissione aggiudicatrice</div><div style='display: flex; justify-content:space-evenly; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'><div style='width:50%; font-weight:500; text-align:left;'>Nominativo</div><div style='width:30%;font-weight:500; text-align:left'>Ruolo</div><div style='width:15%; font-weight:500; text-align:center'>CV</div></div>");
+
+        //rendiconto gestione finanziaria
+        $val=new AA_XML_Div_Element($id."_rendiconto",$header);
+        $val->SetStyle('width:18.5%; font-size: .6em; height:100%; display: flex;flex-direction: column; justify-content:space-between;align-items:center');
+        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Rendiconto gestione finanziaria</div><div style='display: flex; justify-content:center; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'><div style='width:50%; font-weight:500; text-align:center;'>Tempi di esecuzione</div><div style='width:50%;font-weight:500; text-align:center'>Importi</div></div>");
+
+        return $header->__toString();
     }
 
     //funzione di aiuto
@@ -4820,7 +4867,7 @@ Class AA_GecopPublicReportTemplateView extends AA_GenericObjectTemplateView
     {
         if(!($object instanceof AA_Gecop))
         {
-            AA_Log::Log(__METHOD__." - oggetto non valido.", 100,false,true);
+            AA_Log::Log(__METHOD__." - oggetto non valido.", 100);
             return;
         }
 
@@ -4829,6 +4876,22 @@ Class AA_GecopPublicReportTemplateView extends AA_GenericObjectTemplateView
         
         $this->SetStyle("width: 100%; display:flex; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 1px solid  gray; height: 100%");
 
+        //Cig
+        $cig=new AA_XML_Div_Element($id."_cig",$this);
+        $cig->SetStyle('width:5%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $cig->SetText("<span>".$object->GetProp("Anno")."</span><span>".$object->GetProp("Cig")."</span>");
+
+        //anno
+        //$val=new AA_XML_Div_Element($id."_".uniqid(),$this);
+        //$val->SetStyle('width:3%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        //$val->SetText($object->GetProp("Anno"));
+
+        #oggetto----------------------------------
+        $oggetto=new AA_XML_Div_Element($id."_descrizione",$this);
+        $oggetto->SetStyle('width:25%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $oggetto->SetText(substr($object->GetName(),0,320));
+        #-----------------------------------------------
+
         #Ufficio----------------------------------
         $struct=$object->GetStruct();
         $struct_desc=$struct->GetAssessorato();
@@ -4836,37 +4899,88 @@ Class AA_GecopPublicReportTemplateView extends AA_GenericObjectTemplateView
         if($struct->GetServizio(true) >0) $struct_desc.="<br>".$struct->GetServizio();
 
         $ufficio=new AA_XML_Div_Element($id."_ufficio",$this);
-        $ufficio->SetStyle('width:30%; font-size: .6em; padding: .1em');
+        $ufficio->SetStyle('width:17%; font-size: .6em; padding: .1em; height:91%;display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
         $ufficio->SetText($struct_desc);
         #-----------------------------------------------
         
-        #descrizione----------------------------------
-        $oggetto=new AA_XML_Div_Element($id."_descrizione",$this);
-        $oggetto->SetStyle('width:30%; font-size: .6em; padding: .1em; text-align: justify');
-        $oggetto->SetText(substr($object->GetName(),0,320));
-        #-----------------------------------------------
+        //aggiudicatario
+        $aggiudicatario=$object->GetAggiudicatario();
+        $val=new AA_XML_Div_Element($id."_".uniqid(),$this);
+        $val->SetStyle('width:8%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:center; align-items:center');
+        $val->SetText("<span>".$aggiudicatario['nominativo']."</span><span style='font-size:smaller'>".$aggiudicatario['cf']."</span>");
 
-        /*if($object->GetTipo(true) == AA_Gecop_Const::AA_TIPO_PROVVEDIMENTO_SCELTA_CONTRAENTE)
+        //links
+        $links=$object->GetLinks();
+        $val=new AA_XML_Div_Element($id."_".uniqid(),$this);
+        $val->SetStyle('width:7%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $val->SetText("<a href='".$links['atti']."' target='_blank'>Consulta gli atti</a><a href='https://dati.anticorruzione.it/superset/dashboard/dettaglio_cig/?cig=".$object->GetProp("Cig")."&standalone=2' target='_blank'>Consulta la BDNCP</a>");
+
+        //commissione
+        $commissione=$object->GetCommissione();
+        $val=new AA_XML_Div_Element($id."_".uniqid(),$this);
+        $val->SetStyle('width:13%; font-size: .6em; padding: .1em; height:91%; display: flex; flex-direction:column;justify-content:space-evenly;align-items:start');
+        $text="";
+        $ruoli=AA_Gecop_Const::GetListaRuoloComponente();
+        $count=1;
+        $totalCount=sizeof($commissione);
+        foreach($commissione as $key=>$value)
         {
-            #modalità----------------------------------
-            $oggetto=new AA_XML_Div_Element($id."_modalita",$this);
-            $oggetto->SetStyle('width:20%; font-size: .5em; padding: .1em');
-            $oggetto->SetText($object->GetModalita());
-            #-----------------------------------------------
+            $border="border-bottom: 1px solid #f0f0f0";
+            if($count >= $totalCount) $border= "";
+            $text.="<div style='display: flex; width:100%; align-items:center;justify-content: space-between;".$border."'><div style='width: 50%; text-align: left'>".$value['nominativo']."</div><div style='width: 35%; text-align: left; font-size:smaller;'>".$ruoli[$value['ruolo']]."</div>";
+            if(!empty($value['url']))
+            {
+                $text.="<div style='width:15%; text-align:center'><a href='".$value['url']."' target='_blank'><span class='mdi mdi-eye'>vedi</span></a></div>";
+            }
+            else
+            {
+                $text.="<div style='width:15%; text-align:center'><a href='https://".AA_Const::AA_DOMAIN_NAME."/".AA_Const::AA_WWW_ROOT."/storage.php?object=".$value['filehash']."' target='_blank'><span class='mdi mdi-eye'>vedi</span></a></div>";
+            }
+            $text.="</div>";
+            $count++;
         }
-        else
-        {
-            #contraente----------------------------------
-            $oggetto=new AA_XML_Div_Element($id."_contraente",$this);
-            $oggetto->SetStyle('width:20%; font-size: .6em; padding: .1em');
-            $oggetto->SetText($object->GetProp("Contraente"));
-            #-----------------------------------------------                        
-        }*/
+        $val->SetText($text);
 
-        #estremi----------------------------------
-        $oggetto=new AA_XML_Div_Element($id."_estremi",$this);
-        $oggetto->SetStyle('width:19%; font-size: .6em; padding: .1em');
-        $oggetto->SetText($object->GetProp("Estremi"));
-        #-----------------------------------------------        
+        //rendiconto gestione finanziaria
+        $gestioneFinanziaria=$object->GetGestioneFinanziaria();
+        $data_inizio="n.d.";
+        if(!empty($gestioneFinanziaria['data_inizio'])) $data_inizio=$gestioneFinanziaria['data_inizio'];
+        $data_fine="n.d.";
+        if(!empty($gestioneFinanziaria['data_fine_effettiva'])) $data_fine=$gestioneFinanziaria['data_fine_effettiva'];
+        $importo_aggiudicazione="n.d.";
+        if(!empty($gestioneFinanziaria['importo_aggiudicazione'])) $importo_aggiudicazione="&euro; ".AA_Utils::number_format($gestioneFinanziaria['importo_aggiudicazione'],2,",",".");
+        $importo_liquidato="n.d.";
+        $scostamento="n.d.";
+        if(!empty($gestioneFinanziaria['data_fine_effettiva']) && !empty($gestioneFinanziaria['importo_liquidato']))
+        {
+            $importo_liquidato="&euro; ".AA_Utils::number_format($gestioneFinanziaria['importo_liquidato'],2,",",".");
+            $scostamento="&euro; ".AA_Utils::number_format($gestioneFinanziaria['importo_liquidato']-$gestioneFinanziaria['importo_aggiudicazione'],2,",",".");
+        }
+
+        $val=new AA_XML_Div_Element($id."_".uniqid(),$this);
+        $row_1="<div style='display: flex; width:100%; align-items:center;justify-content: space-between;'>";
+        $row_1.="<div style='width: 25%; text-align: left'>Inizio:</div><div style='width: 25%; text-align: center;'>".$data_inizio."</div>";
+        $row_1.="<div style='width: 25%; text-align: left'>Contratto:</div><div style='width: 25%; text-align: right;'>".$importo_aggiudicazione."</div>";
+        $row_1.="</div>";
+        $row_2="<div style='display: flex; width:100%; align-items:center;justify-content: space-between; border-bottom: 1px solid #dedede'>";
+        $row_2.="<div style='width: 25%; text-align: left'>Conclusione:</div><div style='width: 25%; text-align: center;'>".$data_fine."</div>";
+        $row_2.="<div style='width: 25%; text-align: left'>Liquidato:</div><div style='width: 25%; text-align: right;'>".$importo_liquidato."</div>";
+        $row_2.="</div>";
+        $row_3="<div style='display: flex; width:100%; align-items:center;justify-content: space-between;'>";
+        $row_3.="<div style='width: 25%; text-align: left'>&nbsp;</div><div style='width: 25%; text-align: left;'>&nbsp;</div>";
+        $row_3.="<div style='width: 25%; text-align: left'>Scostamento:</div><div style='width: 25%; text-align: right;'>".$scostamento."</div>";
+        $row_3.="</div>";
+
+        $val->SetStyle('width:18%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $val->SetText($row_1.$row_2.$row_3);
+
+        //calcolo dell'altezza del report
+        if(sizeof($commissione) > 3) $this->rowCount=intVal(round(sizeof($commissione)/3+.4));
+    }
+
+    protected $rowCount=1;
+    public function GetRowCount()
+    {
+        return $this->rowCount; //basato sull'altezza minima dell'elemento in riferimento al numero di elementi per pagina.
     }
 }
