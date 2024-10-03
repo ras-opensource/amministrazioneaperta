@@ -617,7 +617,7 @@ Class AA_GecopModule extends AA_GenericModule
         }
 
         $content=$this->TemplateGenericSection_Pubblicate($params,$bCanModify);
-        $content->EnableExportFunctions(false);
+        //$content->EnableExportFunctions(false);
         //$content->EnableTrash(false);
 
         return $content->toObject();
@@ -4716,8 +4716,8 @@ Class AA_GecopModule extends AA_GenericModule
         
         //aggiudicatario
         $val=new AA_XML_Div_Element($id."_aggiudicatario",$header);
-        $val->SetStyle('width:8%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $val->SetText("<span><b>Aggiudicatario</b></span>");
+        $val->SetStyle('width:8%; font-size: .6em; padding: .1em; height:100%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Aggiudicatario</div><div style='display: flex; justify-content:space-evenly; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'>Nominativo/Cf-P.Iva</div>");
 
         //links
         $val=new AA_XML_Div_Element($id."_links",$header);
@@ -4732,7 +4732,7 @@ Class AA_GecopModule extends AA_GenericModule
         //rendiconto gestione finanziaria
         $val=new AA_XML_Div_Element($id."_rendiconto",$header);
         $val->SetStyle('width:18.5%; font-size: .6em; height:100%; display: flex;flex-direction: column; justify-content:space-between;align-items:center');
-        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Rendiconto gestione finanziaria</div><div style='display: flex; justify-content:center; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'><div style='width:50%; font-weight:500; text-align:center;'>Tempi di esecuzione</div><div style='width:50%;font-weight:500; text-align:center'>Importi</div></div>");
+        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Rendiconto gestione finanziaria</div><div style='display: flex; justify-content:center; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'><div style='width:50%; font-weight:500; text-align:center;'>Tempi di esecuzione</div><div style='width:50%;font-weight:500; text-align:center'>Importi in &euro;</div></div>");
 
         return $header->__toString();
     }
@@ -4946,33 +4946,44 @@ Class AA_GecopPublicReportTemplateView extends AA_GenericObjectTemplateView
         $data_inizio="n.d.";
         if(!empty($gestioneFinanziaria['data_inizio'])) $data_inizio=$gestioneFinanziaria['data_inizio'];
         $data_fine="n.d.";
-        if(!empty($gestioneFinanziaria['data_fine_effettiva'])) $data_fine=$gestioneFinanziaria['data_fine_effettiva'];
+        $data_fine_effettiva="n.d.";
+        if(!empty($gestioneFinanziaria['data_fine'])) $data_fine=$gestioneFinanziaria['data_fine'];
         $importo_aggiudicazione="n.d.";
-        if(!empty($gestioneFinanziaria['importo_aggiudicazione'])) $importo_aggiudicazione="&euro; ".AA_Utils::number_format($gestioneFinanziaria['importo_aggiudicazione'],2,",",".");
+        if(!empty($gestioneFinanziaria['importo_aggiudicazione'])) $importo_aggiudicazione=AA_Utils::number_format($gestioneFinanziaria['importo_aggiudicazione'],2,",",".");
         $importo_liquidato="n.d.";
         $scostamento="n.d.";
+        $scostamento_t="n.d.";
         if(!empty($gestioneFinanziaria['data_fine_effettiva']) && !empty($gestioneFinanziaria['importo_liquidato']))
         {
-            $importo_liquidato="&euro; ".AA_Utils::number_format($gestioneFinanziaria['importo_liquidato'],2,",",".");
-            $scostamento="&euro; ".AA_Utils::number_format($gestioneFinanziaria['importo_liquidato']-$gestioneFinanziaria['importo_aggiudicazione'],2,",",".");
+            $inizio=new DateTime($gestioneFinanziaria['data_fine']);
+            $fine=new DateTime($gestioneFinanziaria['data_fine_effettiva']);
+
+            $scostamento_t=date_diff($inizio, $fine)->days."gg";
+            $data_fine_effettiva=$gestioneFinanziaria['data_fine_effettiva'];
+            $importo_liquidato=AA_Utils::number_format($gestioneFinanziaria['importo_liquidato'],2,",",".");
+            $scostamento=AA_Utils::number_format($gestioneFinanziaria['importo_liquidato']-$gestioneFinanziaria['importo_aggiudicazione'],2,",",".");
         }
 
         $val=new AA_XML_Div_Element($id."_".uniqid(),$this);
         $row_1="<div style='display: flex; width:100%; align-items:center;justify-content: space-between;'>";
         $row_1.="<div style='width: 25%; text-align: left'>Inizio:</div><div style='width: 25%; text-align: center;'>".$data_inizio."</div>";
-        $row_1.="<div style='width: 25%; text-align: left'>Contratto:</div><div style='width: 25%; text-align: right;'>".$importo_aggiudicazione."</div>";
+        $row_1.="<div style='width: 20%; text-align: left'>Contratto:</div><div style='width: 30%; text-align: right;'>".$importo_aggiudicazione."</div>";
         $row_1.="</div>";
-        $row_2="<div style='display: flex; width:100%; align-items:center;justify-content: space-between; border-bottom: 1px solid #dedede'>";
-        $row_2.="<div style='width: 25%; text-align: left'>Conclusione:</div><div style='width: 25%; text-align: center;'>".$data_fine."</div>";
-        $row_2.="<div style='width: 25%; text-align: left'>Liquidato:</div><div style='width: 25%; text-align: right;'>".$importo_liquidato."</div>";
+        $row_2="<div style='display: flex; width:100%; align-items:center;justify-content: space-between;'>";
+        $row_2.="<div style='width: 25%; text-align: left'>Fine prevista:</div><div style='width: 25%; text-align: center;'>".$data_fine."</div>";
+        $row_2.="<div style='width: 20%; text-align: left'>Liquidato:</div><div style='width: 30%; text-align: right;'>".$importo_liquidato."</div>";
         $row_2.="</div>";
-        $row_3="<div style='display: flex; width:100%; align-items:center;justify-content: space-between;'>";
-        $row_3.="<div style='width: 25%; text-align: left'>&nbsp;</div><div style='width: 25%; text-align: left;'>&nbsp;</div>";
-        $row_3.="<div style='width: 25%; text-align: left'>Scostamento:</div><div style='width: 25%; text-align: right;'>".$scostamento."</div>";
+        $row_3="<div style='display: flex; width:100%; align-items:center;justify-content: space-between; border-bottom: 1px solid #dedede'>";
+        $row_3.="<div style='width: 25%; text-align: left'>Fine effettiva:</div><div style='width: 25%; text-align: center;'>".$data_fine_effettiva."</div>";
+        $row_3.="<div style='width: 25%; text-align: left'>&nbsp;</div><div style='width: 25%; text-align: right;'>&nbsp;</div>";
         $row_3.="</div>";
+        $row_4="<div style='display: flex; width:100%; align-items:center;justify-content: space-between;'>";
+        $row_4.="<div style='width: 25%; text-align: left'>Scostamento:</div><div style='width: 25%; text-align: center;'>".$scostamento_t."</div>";
+        $row_4.="<div style='width: 20%; text-align: left'>&nbsp;</div><div style='width: 30%; text-align: right;'>".$scostamento."</div>";
+        $row_4.="</div>";
 
         $val->SetStyle('width:18%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $val->SetText($row_1.$row_2.$row_3);
+        $val->SetText($row_1.$row_2.$row_3.$row_4);
 
         //calcolo dell'altezza del report
         if(sizeof($commissione) > 3) $this->rowCount=intVal(round(sizeof($commissione)/3+.4));
