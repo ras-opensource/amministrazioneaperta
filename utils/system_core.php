@@ -3559,6 +3559,10 @@ class AA_User
                 AA_Log::Log(__METHOD__." - legacyPwd: ".$oldMd5Pwd,100);
                 $sql.=", passwd='".AA_Utils::password_hash($oldMd5Pwd)."'";
             }
+            else
+            {
+                $sql.=", passwd='".AA_Utils::password_hash(uniqid())."'";
+            }
         }
 
         {
