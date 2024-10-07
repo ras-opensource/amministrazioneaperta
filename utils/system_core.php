@@ -5730,7 +5730,7 @@ class AA_Object
     }
 
     //Aggiorna il db in base all'utente corrente ed eventualmente ai dati passati
-    public function UpdateDb($user = null, $data = null, $bLog = true)
+    public function UpdateDb($user = null, $data = null, $bLog = true,$sDetailLog="")
     {
         //verifica utente
         if ($user == null || !$user->isValid() || !$user->isCurrentUser()) {
@@ -5777,11 +5777,13 @@ class AA_Object
 
         //Aggiorna il db
         if ($this->bLogEnabled && $bLog) {
-            $this->AddLog("Modifica", AA_Const::AA_OPS_UPDATE, $user);
+            $sLog="Modifica";
+            if($sDetailLog) $sLog.=" - ".$sDetailLog;
+            $this->AddLog($sLog, AA_Const::AA_OPS_UPDATE, $user);
         }
 
         if ($this->DbSync($user)) {
-            if ($this->oParent instanceof AA_Object && $this->IsParentUpdateEnabled()) return $this->oParent->UpdateDb($user);
+            if ($this->oParent instanceof AA_Object && $this->IsParentUpdateEnabled()) return $this->oParent->UpdateDb($user,null,$bLog,$sDetailLog);
             else return true;
         }
 

@@ -4255,7 +4255,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $this->sRisultatiBilancio=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
     }
 
-    public function UpdateDb($user=null,$data=null,$bLog=false)
+    public function UpdateDb($user=null,$data=null,$bLog=true,$sDetailLog="")
     {
         //verifica utente
         if($user==null || !$user->isValid() || !$user->isCurrentUser()) 
@@ -4270,7 +4270,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
             }
         }
 
-        return parent::UpdateDb($user,$data);
+        return parent::UpdateDb($user,$data,$bLog,$sDetailLog);
     }
 
     //Funzione di Parsing a partire da un array (non cambia l'identificativo dell'oggetto)
@@ -7295,7 +7295,7 @@ Class AA_OrganismiNomine extends AA_Object
             $new_nomina->SetDataFine($new_nomina->GetDataInizio());
         }
 
-        if(!$new_nomina->SetParent($parent))
+        if(!$new_nomina->SetParent($parent,$user))
         {
             return null;
         }
@@ -7306,7 +7306,7 @@ Class AA_OrganismiNomine extends AA_Object
         }
 
         $new_nomina->EnableDbSync();
-        if(!$new_nomina->UpdateDb($user))
+        if(!$new_nomina->UpdateDb($user,null,true," Aggiunta nuovo incarico: ".$new_nomina->GetTipologia()." per: ".$new_nomina->GetNome()." ".$new_nomina->GetCognome()))
         {
             AA_Log::Log(__METHOD__." - Errore durante il salvataggio della nuova nomina sul DB.", 100,false,true);
             return null;    
@@ -7715,7 +7715,7 @@ Class AA_OrganismiNomine extends AA_Object
     }
 
     //Aggiorna il database
-    public function UpdateDb($user=null,$data=null, $bLog=false)
+    public function UpdateDb($user=null,$data=null, $bLog=true,$sDetailLog="")
     {
         if(!($this->VerifyData()))
         {
@@ -7741,7 +7741,7 @@ Class AA_OrganismiNomine extends AA_Object
             $data['sDataFine']=$data['sDataInizio'];
         }
 
-        return parent::UpdateDb($user,$data);
+        return parent::UpdateDb($user,$data,$bLog,$sDetailLog);
     }
 
     //Funzione di Parsing a partire da un array (non cambia l'identificativo dell'oggetto)
@@ -8810,7 +8810,7 @@ Class AA_OrganismiTask_EditNomina extends AA_GenericTask
             return false;
         }
 
-        if(!$obj->UpdateDb(null,$this->oUser))
+        if(!$obj->UpdateDb(null,$this->oUser,true,"Aggiornamento nomina: ".$obj->GetNome()." ".$obj->GetCognome()))
         {
             $this->sTaskError=AA_Log::$lastErrorLog;
             $this->sTaskLog="<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";

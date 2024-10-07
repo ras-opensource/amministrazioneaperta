@@ -6018,6 +6018,80 @@ Class AA_SinesModule extends AA_GenericModule
         
         return true;
     }
+
+    //help task
+    //funzione di aiuto
+    public function Task_AMAAI_Start($task)
+    {
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        
+        $task->SetContent($this->Template_GetSinesHelpDlg(),true);
+        
+        //$help_url="";
+        //$action='AA_MainApp.utils.callHandler("pdfPreview", { url: this.taskManager + "?task=PdfExport&section=" + this.curSection.id }, this.id);';
+        
+        return true;
+
+    }
+
+    //Help dlg
+    public function Template_GetSinesHelpDlg()
+    {
+        $id=$this->GetId()."_Help_Dlg";
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Aiuto", $this->id);
+        
+        $wnd->SetWidth(350);
+
+        $platform=AA_Platform::GetInstance($this->oUser);
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale.pdf";
+        $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
+
+        $layout=new AA_JSON_Template_Layout($id."_Aiuto_box",array("type"=>"clean"));
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("type"=>"clean","borderless"=>true));
+
+        //manuale operatore comunale
+        $btn=new AA_JSON_Template_Generic($id."_Manuale_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-help-circle",
+            "label"=>"Manuale operativo",
+            "align"=>"center",
+            "inputWidth"=>300,
+            "click"=>$action,
+            "tooltip"=>"Visualizza o scarica il manuale operativo."
+        ));
+
+        $toolbar_oc->AddCol($btn);
+        $layout->AddRow($toolbar_oc);
+
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+
+        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("type"=>"clean","borderless"=>true));
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale_oc_rendiconti.pdf";
+        $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
+        //manuale operatore comunale rendiconti
+        $btn=new AA_JSON_Template_Generic($id."_ManualeRendiconti_btn",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-help-circle",
+            "label"=>"Manuale caricamento rendiconti",
+            "align"=>"center",
+            "inputWidth"=>300,
+            "click"=>$action,
+            "tooltip"=>"Visualizza o scarica il manuale operatore comunale per la compilazione dei rendiconti"
+        ));
+
+        $toolbar_oc->AddCol($btn);
+        $layout->AddRow($toolbar_oc);
+
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+
+        $wnd->AddView($layout);        
+
+        return $wnd;
+    }
     
     //Task Aggiungi dato contabile
     public function Task_AddNewOrganismoNomina($task)
@@ -6830,7 +6904,7 @@ Class AA_SinesModule extends AA_GenericModule
         }
         
         //Salva i dati
-        if(!$incarico->UpdateDb($this->oUser))
+        if(!$incarico->UpdateDb($this->oUser,null,true,"Aggiornamento incarico di ".$incarico->GetTipologia()." per : ".$incarico->GetNome()." ".$incarico->GetCognome()))
         {
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salvataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
