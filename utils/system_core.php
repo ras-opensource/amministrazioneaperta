@@ -6394,8 +6394,8 @@ class AA_Object_V2
             $csv.=$separator.$struct_text;
         }
 
-        $csv.=$separator.$this->GetName();
-        $csv.= $separator.$this->GetDescr();
+        $csv.=$separator.str_replace("\n",' ',$this->GetName());
+        $csv.= $separator.str_replace("\n",' ',$this->GetDescr());
         
         $data=$this->CsvData($separator);
         if(!empty($data)) $csv.= $data;
