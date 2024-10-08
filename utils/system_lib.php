@@ -2113,6 +2113,7 @@ class AA_GenericModule
         $taskManager->RegisterTask("GetObjectData");
         $taskManager->RegisterTask("GetLogDlg");
         $taskManager->RegisterTask("PdfExport");
+        $taskManager->RegisterTask("CsvExport");
         $taskManager->RegisterTask("AMAAI_Start");
 
         if ($bDefaultSections) {
@@ -3508,6 +3509,123 @@ class AA_GenericModule
     public function Template_PdfExport($objects = array())
     {
         return $this->Template_GenericPdfExport($objects);
+    }
+
+    //Task generic export csv 
+    public function Task_CsvExport($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        //Verifica della classe degli oggetti
+        if (!class_exists(static::AA_MODULE_OBJECTS_CLASS)) {
+
+            $task->SetError("Classe di gestione degli oggetti non definita.");
+            $sTaskLog = "<status id='status'>-1</status><error id='error'>Classe di gestione degli oggetti non definita.</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+
+        $sessVar = AA_SessionVar::Get("SaveAsCsv_ids");
+        $sessParams = AA_SessionVar::Get("SaveAsCsv_params");
+        $objectClass = static::AA_MODULE_OBJECTS_CLASS;
+
+        //lista elementi da esportare
+        if ($sessVar->IsValid() && !isset($_REQUEST['fromParams'])) {
+            $ids = $sessVar->GetValue();
+
+            if (is_array($ids)) {
+                foreach ($ids as $curId) {
+                    $object = new $objectClass($curId, $this->oUser);
+                    if ($object->isValid() && ($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_READ) > 0) {
+                        $ids_final[$curId] = $object;
+                    }
+                }
+            }
+
+            //Esiste almeno un organismo che può essere letto dall'utente corrente
+            if (sizeof($ids_final) > 0) {
+                $this->Template_CsvExport($ids_final);
+            } else {
+                $task->SetError("Nella selezione non sono presenti dati leggibili dall'utente corrente (" . $this->oUser->GetName() . ").");
+                $sTaskLog = "<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti elementi leggibili dall'utente corrente (" . $this->oUser->GetName() . ").</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;
+            }
+        } else {
+            if ($sessParams->isValid()) {
+                $params = (array) $sessParams->GetValue();
+
+                //Verifica della sezione 
+                if ($params['section'] == static::AA_ID_SECTION_BOZZE) {
+                    $params["status"] = AA_Const::AA_STATUS_BOZZA;
+                } else {
+                    $params["status"] = AA_Const::AA_STATUS_PUBBLICATA;
+                }
+
+                if ($params['cestinate'] == 1) {
+                    $params['status'] |= AA_Const::AA_STATUS_CESTINATA;
+                }
+
+                if ($objectClass == "AA_Object") $objects = $objectClass::Search($params, false, $this->oUser);
+                else $objects = $objectClass::Search($params, $this->oUser);
+
+                if ($objects[0] == 0) {
+                    $task->SetError("Non è stata individuata nessuna corrispondenza in base ai parametri indicati.");
+                    $sTaskLog = "<status id='status'>-1</status><error id='error'>Non è stata individuata nessuna corrispondenza in base ai parametri indicati.</error>";
+                    $task->SetLog($sTaskLog);
+                    return false;
+                } else {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+                    $task->SetContent("Exportazione effettuata con successo.",false);
+
+                    $this->Template_CsvExport($objects[1],$params);
+
+                    return true;
+                }
+            }
+        }
+    }
+
+    //Funzione di esportazione in csv (da specializzare)
+    public function Template_CsvExport($objects = array(),$params=null)
+    {
+        return $this->Template_GenericCsvExport($objects, $params);
+    }
+
+    public function Template_GenericCsvExport($objects=array(), $params=null)
+    {
+        $separator="|";
+        $showHeader=true;
+        $showDetails=true;
+        $toBrowser=true;
+        if(is_array($params) && !empty($params['separator'])) $separator=$params['separator'];
+        if(is_array($params) && !empty($params['showHeader'])) $header=$params['showHeader'];
+        if(is_array($params) && !empty($params['showDetails'])) $header=$params['showDetails'];
+        if(is_array($params) && !empty($params['toBrowser'])) $header=$params['toBrowser'];
+
+        $bFirst=true;
+        $csv="";
+        foreach($objects as $curObj)
+        {
+            if($bFirst)
+            {
+                if($params['showHeader']) $csv .=$curObj->ToCsv($separator, $showHeader, $showDetails,false);
+                else $csv .=$curObj->ToCsv($separator, $showHeader, $showDetails,false);
+                $bFirst=false;
+            }
+            else $csv .="\n".$curObj->ToCsv($separator,false, $showDetails,false);
+        }
+
+        if($toBrowser)
+        {
+            header('Content-Type: application/csv');
+            header('Content-Disposition: attachment; filename="export.csv"');
+            die($csv);
+        }
+
+        return $csv;
     }
 
     //Template pdf export generic

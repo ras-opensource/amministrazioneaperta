@@ -9,7 +9,7 @@ include_once("lib.php");
 header('Content-Type: text/javascript');
 ?>
 //modulo
-var <?php echo AA_GecoModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_GecoModule::AA_ID_MODULE?>", "SIER");
+var <?php echo AA_GecoModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_GecoModule::AA_ID_MODULE?>", "GECO");
 <?php echo AA_GecoModule::AA_ID_MODULE?>.valid = true;
 <?php echo AA_GecoModule::AA_ID_MODULE?>.content = {};
 <?php echo AA_GecoModule::AA_ID_MODULE?>.contentType = "json";

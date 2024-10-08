@@ -1923,7 +1923,17 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 if (list_box) {
                     sel = list_box.getSelectedId(true);
                     if (sel.length == 0) {
-                        sel = list_box.data.order;
+                        //sel = list_box.data.order;
+                        let filter_id = list_box.config.filter_id;
+                        if (!AA_MainApp.utils.isDefined(filter_id)) filter_id = this.getActiveView();
+                        queryString = this.getRuntimeValue(filter_id, "filter_data");
+                        if (!AA_MainApp.utils.isDefined(queryString)) {
+                            queryString = { count: "all", section: this.curSection.id };
+                        } else {
+                            queryString.count = "all";
+                            queryString.section = this.curSection.id;
+                        }
+                        //console.log("defaultHandlers.saveAsPdf - queryString:", queryString);
                     }
                 }
             }
@@ -1934,10 +1944,20 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
             }
 
             if (sel.length > 0) {
-                if (!AA_MainApp.utils.isDefined(params.task)) params.task = "saveAsCsvItems";
-
-                params.postParams = { ids: JSON.stringify(sel) };
-                this.dlg(params);
+                let result = await AA_MainApp.setSessionVar("SaveAsCsv_ids", sel);
+                if (result) {
+                    window.open(this.taskManager + "?task=CsvExport&section=" + this.curSection.id);
+                    return true;
+                } else {
+                    console.error("defaultHandlers.saveAsCsv", this, arguments);
+                    return false;
+                }
+            } else {
+                let result = await AA_MainApp.setSessionVar("SaveAsCsv_params", queryString);
+                if (result) {
+                    window.open(this.taskManager + "?task=CsvExport&fromParams=1&section=" + this.curSection.id);
+                }
+                return true;
             }
         } catch (msg) {
             console.error("defaultHandlers.saveAsCsv", msg, this, arguments);
