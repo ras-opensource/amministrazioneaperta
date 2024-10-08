@@ -4673,12 +4673,12 @@ class AA_User
             }
 
             if ($credenziali != "") {
-                $oggetto = static::$aResetPasswordEmailParams['oggetto'];
+                $oggetto = str_replace(array("%NOME%","%COGNOME%"),array($user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['oggetto']);
 
                 //$corpo = static::$aResetPasswordEmailParams['incipit'].$credenziali.static::$aResetPasswordEmailParams['post'];
                 //$firma = static::$aResetPasswordEmailParams['firma'];
 
-                $corpo = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,static::$aResetPasswordEmailParams['incipit']).$credenziali.static::$aResetPasswordEmailParams['post'];
+                $corpo = str_replace(array("#www#","%NOME%","%COGNOME%"),array(AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,$user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['incipit']).$credenziali.str_replace(array("%NOME%","%COGNOME%"),array($user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['post']);
                 $firma = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,static::$aResetPasswordEmailParams['firma']);
 
                 if ($bSendEmail) 
@@ -4757,10 +4757,10 @@ class AA_User
             }
         
             if ($credenziali != "") {
-                $oggetto = static::$aResetPasswordEmailParams['oggetto'];
+                $oggetto = str_replace(array("%NOME%","%COGNOME%"),array($user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['oggetto']);
 
-                $corpo = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,static::$aResetPasswordEmailParams['incipit']).$credenziali.static::$aResetPasswordEmailParams['post'];
-                $firma = str_replace("#www#",AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,static::$aResetPasswordEmailParams['firma']);
+                $corpo = str_replace(array("#www#","%NOME%","%COGNOME%"),array(AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,$user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['incipit']).$credenziali.str_replace(array("%NOME%","%COGNOME%"),array($user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['post']);
+                $firma = str_replace(array("#www#"),array(AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT),static::$aResetPasswordEmailParams['firma']);
 
                 if ($bSendEmail) {
                     if (!SendMail(array($user->GetEmail()), array(), $oggetto, nl2br($corpo) . $firma, array(), 1)) 
