@@ -1412,6 +1412,21 @@ class AA_User
         <img src="https://#www#/immagini/logo.jpg" data-mce-src="https://#www#/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
     );
 
+    protected static $aSendCredentialsEmailParams=array(
+        "oggetto"=>'Amministrazione Aperta - Credenziali accesso.',
+        "incipit"=>"<p>Buongiorno,<br>Di seguito le credenziali per l'accesso alla piattaforma applicativa \"Amministrazione Aperta\":<br>url d'accesso: https://#www#",
+        "bShowStruct"=>true,
+        "sendToUs"=>true,
+        "post"=>'<p>Per ragioni di sicurezza e\' preferibile effettuare l\'accesso in piattaforma nella modalita\' email/otp.<br>La modalita\' di accesso tramite user id e password verra\' riomossa dal 1 gennaio 2025.</p>Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
+        "firma"=>'<div>--
+        <div><strong>Amministrazione Aperta</strong></div>
+        <div>Presidentzia</div>
+        <div>Presidenza</div>
+        <div>V.le Trento, 69 - 09123 Cagliari</div>
+        <img src="https://#www#/immagini/logo.jpg" data-mce-src="https://#www#/immagini/logo.jpg" moz-do-not-send="true" width="205" height="60"></div>'
+    );
+
+
     //send OTP password email params
     protected static $aOTPAuthEmailParams=array(
         "oggetto"=>'Amministrazione Aperta - OTP accesso piattaforma.',
@@ -1449,6 +1464,14 @@ class AA_User
         foreach($params as $key=>$val)
         {
             if(isset(static::$aResetPasswordEmailParams[$key])) static::$aResetPasswordEmailParams[$key]=$val;
+        }
+    }
+
+    public static function SetSendCredentialsEmailParams($params=array())
+    {
+        foreach($params as $key=>$val)
+        {
+            if(isset(static::$aSendCredentialsEmailParams[$key])) static::$aSendCredentialsEmailParams[$key]=$val;
         }
     }
 
@@ -4730,7 +4753,7 @@ class AA_User
             $struttura="";
             if(AA_Const::AA_ENABLE_LEGACY_DATA)
             {
-                if(static::$aResetPasswordEmailParams['bShowStruct'])
+                if(static::$aSendCredentialsEmailParams['bShowStruct'])
                 {
                     $struttura = $user->GetStruct()->GetAssessorato();
                     if ($user->GetStruct()->GetDirezione(true) != 0) $struttura .= " - " . $user->GetStruct()->GetDirezione();
@@ -4750,17 +4773,17 @@ class AA_User
             if (!$db->Query($query)) {
                 AA_Log::Log(__METHOD__."- Errore durante l'aggiornamento della password per l'utente: " . $user->GetUserName() . " - " . $db->GetErrorMessage(), 100);
             } else {
-                if(static::$aResetPasswordEmailParams['bShowStruct']) $credenziali .= '<br>struttura: ' . $struttura;
+                if(static::$aSendCredentialsEmailParams['bShowStruct']) $credenziali .= '<br>struttura: ' . $struttura;
                 $credenziali .= '
                 nome utente: <b>' . $user->GetUserName() . '</b>
                 password: <b>' . $newPwd . '</b>';
             }
         
             if ($credenziali != "") {
-                $oggetto = str_replace(array("%NOME%","%COGNOME%"),array($user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['oggetto']);
+                $oggetto = str_replace(array("%NOME%","%COGNOME%"),array($user->GetName(),$user->GetCognome()),static::$aSendCredentialsEmailParams['oggetto']);
 
-                $corpo = str_replace(array("#www#","%NOME%","%COGNOME%"),array(AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,$user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['incipit']).$credenziali.str_replace(array("%NOME%","%COGNOME%"),array($user->GetName(),$user->GetCognome()),static::$aResetPasswordEmailParams['post']);
-                $firma = str_replace(array("#www#"),array(AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT),static::$aResetPasswordEmailParams['firma']);
+                $corpo = str_replace(array("#www#","%NOME%","%COGNOME%"),array(AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT,$user->GetName(),$user->GetCognome()),static::$aSendCredentialsEmailParams['incipit']).$credenziali.str_replace(array("%NOME%","%COGNOME%"),array($user->GetName(),$user->GetCognome()),static::$aSendCredentialsEmailParams['post']);
+                $firma = str_replace(array("#www#"),array(AA_Const::AA_DOMAIN_NAME.AA_const::AA_WWW_ROOT),static::$aSendCredentialsEmailParams['firma']);
 
                 if ($bSendEmail) {
                     if (!SendMail(array($user->GetEmail()), array(), $oggetto, nl2br($corpo) . $firma, array(), 1)) 
@@ -4769,7 +4792,7 @@ class AA_User
                         return false;
                     }
 
-                    if(isset(static::$aResetPasswordEmailParams['sendToUs']) && static::$aResetPasswordEmailParams['sendToUs'])
+                    if(isset(static::$aSendCredentialsEmailParams['sendToUs']) && static::$aSendCredentialsEmailParams['sendToUs'])
                     {
                         //invio notifica a se stesso
                         if(!SendMail(array(AA_Const::AA_EMAIL_FROM),array(),"Notifica reinvio credenziali utente: ". $user->GetUserName()." - email: ".$user->GetEmail(),"Reinvio credenziali all'utente:<br>login: ".$user->GetUsername()."<br>email: ".$user->GetEmail()."<br>Data: ".date("Y-m-d").$firma))

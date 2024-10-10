@@ -582,6 +582,35 @@ Class AA_Organismi_Organigramma
         else return false;
     }
 
+    //rappresentazione xml
+    public function toXml($detail=true)
+    {
+        $incarichi=$this->GetIncarichi();
+        if(!is_array($incarichi))
+        {
+            return '<organigramma id="'.$this->GetId().'" tipo="'.$this->GetTipologia().'" componentiTot="0" componentiRas="0" />';
+        }
+        $incarichiTot=sizeof($incarichi);
+        $nomineRasTot=0;
+        $incarichi_xml="";
+        if($detail) $incarichi_xml="<incarichi>";
+        foreach($incarichi as $curIncarico)
+        {
+            if($curIncarico->IsNominaRas()) $nomineRasTot++;
+            if($detail)
+            {
+                $incarichi_xml.=$curIncarico->ToXml();
+            }
+        }
+        if($detail) $incarichi_xml="</incarichi>";
+
+        $xml='<organigramma id="'.$this->GetId().'" tipo="'.$this->GetTipologia().'" componentiTot="'.$incarichiTot.'" componentiRas="'.$nomineRasTot.'">';
+        $xml.=$incarichi_xml;
+        $xml.="</organigramma>";
+
+        return $xml;
+    }
+
     //Restituisce una proprietà
     public function SetProp($prop="",$val="")
     {
@@ -847,6 +876,7 @@ class AA_Organismi extends AA_Object
         if(!$bAsObject) return $this->sPartecipazione;
         else
         {
+            if($this->nTipologia == AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO) return array("percentuale"=>100,"euro"=>0);
             $partecipazione=json_decode($this->sPartecipazione,true);
             if($partecipazione) return $partecipazione;
             else 
@@ -1487,9 +1517,10 @@ class AA_Organismi extends AA_Object
         $xml='<organismo id="'.$this->GetID().'" aggiornamento="'.$this->GetAggiornamento().'" stato="'.$this->GetStatus().'">';
 
         $codice_partecipo=array(AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"EPV",AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"SP",AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"EDP");
+        
         $partecipazione=$this->GetPartecipazione(true);
         $partecipazione_indiretta=$this->GetPartecipazioneIndiretta();
-        
+                
         //Aggiunte per interoperabilita' partecipo
         if($partecipazione['percentuale']+$partecipazione_indiretta['percentuale']>=100)
         {
@@ -1497,7 +1528,7 @@ class AA_Organismi extends AA_Object
         }
         else $xml.="<soggetto_controllato>0</soggetto_controllato>";
 
-        if($partecipazione['percentuale']==0)
+        if($partecipazione['percentuale']==0 && $this->nTipologia == AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
         {
             $xml.="<indiretta>1</indiretta>";
         }
@@ -1544,6 +1575,19 @@ class AA_Organismi extends AA_Object
         $xml.="</nomine>";
         //-----------
 
+        //organigrammi
+        $xml.="<organigrammi>";
+        $organigrammi=$this->GetOrganigrammi();
+        foreach($organigrammi as $curOrganigramma)
+        {
+            if($curOrganigramma->IsScadenzarioEnabled())
+            {
+                $xml.=$curOrganigramma->toXml(false);
+            }
+        }
+
+        $xml.="</organigrammi>";
+        //-------------
         $xml.="</organismo>";
 
         return $xml;
