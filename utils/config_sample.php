@@ -68,6 +68,9 @@ Class AA_Config
 
     //abilita la manutenzione
     const AA_MANUTENTION=false;
+
+    //default email domain
+    const AA_DEFAULT_EMAIL_DOMAIN="";
 }
 
 //percorso librerie

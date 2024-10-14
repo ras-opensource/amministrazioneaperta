@@ -92,6 +92,7 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("GetHomeUtentiTrashDlg");
         $taskManager->RegisterTask("HomeUtentiTrash");
         $taskManager->RegisterTask("HomeUtentiResume");
+        $taskManager->RegisterTask("GetEmailSuggest");
         
         //gestione strutture
         $taskManager->RegisterTask("GetHomeStructAddNewDlg");
@@ -421,6 +422,33 @@ Class AA_HomeModule extends AA_GenericModule
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetHomeRngDlg(),true);
         return true;
+    }
+
+    //Task lista
+    public function Task_GetEmailSuggest($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        $filter=$_REQUEST["filter"];
+        $at=strpos($filter['value'],"@");
+        if(!empty(AA_Const::AA_DEFAULT_EMAIL_DOMAIN))
+        {
+            if($at > 0)
+            {
+                if(str_contains(AA_Const::AA_DEFAULT_EMAIL_DOMAIN,substr($filter["value"],$at+1)))
+                {
+                    $result[]=array("id"=>"1","value"=>substr($filter['value'],0,$at)."@".AA_Const::AA_DEFAULT_EMAIL_DOMAIN);
+                }
+                else $result[]=array("id"=>"1","value"=>$filter['value']);
+            }
+            else $result[]=array("id"=>"1","value"=>$filter['value']."@".AA_Const::AA_DEFAULT_EMAIL_DOMAIN);
+        }
+        else 
+        {
+            $result[]=array("id"=>"1","value"=>$filter['value']);
+        }
+
+        die(json_encode($result));
     }
 
     //Task rng out
@@ -1283,7 +1311,7 @@ Class AA_HomeModule extends AA_GenericModule
         $section_box=new AA_JSON_Template_Layout("AA_Home_Risorse_Box",array("type"=>"space","css"=>"AA_Desktop_Section_Box"));
         
         //mdi-server-security mdi-finance
-        $section_box->AddRow(new AA_JSON_Template_Generic("HomeRisorseBoxTitle",array("view"=>"label","align"=>"center","label"=>"<span class='AA_Desktop_Section_Label'>Risorse</span>")));
+        $section_box->AddRow(new AA_JSON_Template_Generic("HomeRisorseBoxTitle",array("view"=>"label","align"=>"center","label"=>"<span class='AA_Desktop_Section_Label'>Risorse e utilita'</span>")));
  
         $template="<div style='width:100%;height:100%;display:flex;flex-direction:column;'>";
         $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetHomeRngDlg'},'".$this->id."');\">Generatore estrazioni casuali</a></div>";
@@ -2508,7 +2536,7 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->AddSelectField("ruolo","Ruolo",array("gravity"=>1,"required"=>true, "validateFunction"=>"IsSelected","bottomLabel"=>"*Ruolo da assegnare all'utente.","options"=>$options),false);
         
         //email
-        $wnd->AddTextField("email","Email",array("required"=>true,"gravity"=>2, "validateFunction"=>"IsEmail","bottomLabel"=>"*Email", "placeholder"=>"Email associata all'utente."));
+        $wnd->AddTextField("email","Email",array("required"=>true,"gravity"=>2, "validateFunction"=>"IsEmail","bottomLabel"=>"*Email", "placeholder"=>"Email associata all'utente.","suggest"=>$this->taskManagerUrl."?task=GetEmailSuggest"));
 
         //stato
         $wnd->AddSwitchBoxField("status","Stato",array("gravity"=>1,"onLabel"=>"Abilitato","offLabel"=>"Disabilitato","bottomLabel"=>"*stato dell'utente","value"=>1),false);
@@ -2664,7 +2692,7 @@ Class AA_HomeModule extends AA_GenericModule
         }
        
         //email
-        $wnd->AddTextField("email","Email",array("required"=>true,"gravity"=>2, "validateFunction"=>"IsEmail","bottomLabel"=>"*Email", "placeholder"=>"Email associata all'utente."));
+        $wnd->AddTextField("email","Email",array("required"=>true,"gravity"=>2, "validateFunction"=>"IsEmail","bottomLabel"=>"*Email", "placeholder"=>"Email associata all'utente.","suggest"=>$this->taskManagerUrl."?task=GetEmailSuggest"));
 
         //stato
         $wnd->AddSwitchBoxField("status","Stato",array("gravity"=>1,"onLabel"=>"Abilitato","offLabel"=>"Disabilitato","bottomLabel"=>"*stato dell'utente","value"=>1),false);
@@ -2748,6 +2776,7 @@ Class AA_HomeModule extends AA_GenericModule
         $form_data['id_direzione']=$id_direzione;
         $form_data['data_istituzione']=date("Y-m-d");
         $form_data['data_soppressione']="9999-12-31";
+        $form_data['web']="";
 
         $wnd=new AA_GenericFormDlg($id, "Aggiungi nuova struttura", $this->id,$form_data,$form_data);
         
@@ -2773,6 +2802,9 @@ Class AA_HomeModule extends AA_GenericModule
         
         //descrizione
         $wnd->AddTextField("descrizione","Denominazione",array("required"=>true,"gravity"=>2, "bottomLabel"=>"*Denominazione struttura", "placeholder"=>"..."));
+
+        //sito web
+        $wnd->AddTextField("web","Sito web",array("validateFunction"=>"IsUrl","gravity"=>2, "bottomLabel"=>"*Sito web della struttura", "placeholder"=>"https://www..."));
 
         $wnd->AddDateField("data_istituzione","Data istituzione",array("required"=>true));
 
@@ -2823,6 +2855,9 @@ Class AA_HomeModule extends AA_GenericModule
         
         //descrizione
         $wnd->AddTextField("descrizione","Denominazione",array("required"=>true,"gravity"=>2, "bottomLabel"=>"*Denominazione struttura", "placeholder"=>"..."));
+
+        //sito web
+        $wnd->AddTextField("web","Sito web",array("validateFunction"=>"IsUrl","gravity"=>2, "bottomLabel"=>"*Sito web della struttura", "placeholder"=>"https://www..."));
 
         $wnd->AddDateField("data_istituzione","Data istituzione",array("required"=>true));
 

@@ -6655,6 +6655,7 @@ Class AA_Struttura extends AA_GenericParsableDbObject
         $this->aProps['descrizione']="";
         $this->aProps['data_istituzione']=date("Y-m-d");
         $this->aProps['data_soppressione']="9999-12-31";
+        $this->aProps['web']="";
 
         parent::__construct($params);
     }
