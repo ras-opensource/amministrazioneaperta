@@ -595,17 +595,24 @@ class AA_Struct
             if ((!isset($params['hideDirs']) || $params['hideDirs'] !=1)) {
                 foreach ($ass['direzioni'] as $id_dir => $dir) {
                     //AA_Log::Log(get_class()."->toArray() - direzione: ".$dir['descrizione'],100);
-
-                    if (sizeof($dir['servizi']) > 0 && (!isset($params['hideServices']) || $params['hideServices'] !=1)) $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso'], "data" => array());
-                    else $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso']);
-                    if ((!isset($params['hideServices']) || $params['hideServices'] !=1)) {
-                        foreach ($dir['servizi'] as $id_ser => $ser) {
-                            $curDirezione['data'][] = array("id" => $id_ass . "." . $id_dir . "." . $id_ser, "id_servizio" => $id_ser, "id_assessorato" => $id_ass, "id_direzione" => $id_dir, "data_soppressione" => $ser['data_soppressione'], "soppresso" => $ser['soppresso'], "value" => $ser['descrizione']);
-                            $servizio_num++;
+                    if(empty($params['bHideSuppressed'])  || (empty($dir['soppresso']) && !empty($params['bHideSuppressed'])))
+                    {
+                        if (sizeof($dir['servizi']) > 0 && (!isset($params['hideServices']) || $params['hideServices'] !=1)) $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso'], "data" => array());
+                        else $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso']);
+                        if ((!isset($params['hideServices']) || $params['hideServices'] !=1)) 
+                        {
+                            foreach ($dir['servizi'] as $id_ser => $ser) {
+                                if(empty($params['bHideSuppressed'])  || (empty($ser['soppresso']) && !empty($params['bHideSuppressed'])))
+                                {
+                                    $curDirezione['data'][] = array("id" => $id_ass . "." . $id_dir . "." . $id_ser, "id_servizio" => $id_ser, "id_assessorato" => $id_ass, "id_direzione" => $id_dir, "data_soppressione" => $ser['data_soppressione'], "soppresso" => $ser['soppresso'], "value" => $ser['descrizione']);
+                                    $servizio_num++;
+                                }
+                            }
                         }
+                        $direzione_num++;
+                        $curAssessorato['data'][] = $curDirezione;
                     }
-                    $direzione_num++;
-                    $curAssessorato['data'][] = $curDirezione;
+
                 }
             }
             $assessorato_num++;

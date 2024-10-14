@@ -2905,17 +2905,24 @@ Class AA_HomeModule extends AA_GenericModule
                 $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), 0, 0, $userStruct->GetTipo()); //Altri
             }
 
-            $tree=$struct->toArray();
+            $tree=$struct->toArray(array("bHideSuppressed"=>!$bShowSuppressed));
             foreach($tree[0]['data'] as $id_assessorato=>$curAssessorato)
             {
                 if($curAssessorato['soppresso']==0 || $bShowSuppressed)
                 {
-                    if($struct->GetAssessorato(true) == 0) 
+                    if($struct->GetAssessorato(true) == 0 || $struct->GetAssessorato(true) == $id_assessorato) 
                     {
                         $addnew='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructAddNewDlg", params: [{id_assessorato: "'.$curAssessorato['id_assessorato'].'"}]},"'.$this->id.'")';
-                        $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructModifyDlg", params: [{id_assessorato: "'.$curAssessorato['id_assessorato'].'"}]},"'.$this->id.'")';
-                        $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructTrashDlg", params: [{id_assessorato: "'.$curAssessorato['id_assessorato'].'"}]},"'.$this->id.'")';
-                        $tree[0]['data'][$id_assessorato]['ops']="<a class='AA_DataTable_Ops_Button' title='Aggiungi una sottostruttura' onClick='".$addnew."'><span class='mdi mdi-office-building-plus'></span></a>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica questa struttura' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a>&nbsp;<a class='AA_DataTable_Ops_Button_Red' title='Elimina questa struttura' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
+                        if($struct->GetAssessorato(true) == 0 )
+                        {
+                            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructModifyDlg", params: [{id_assessorato: "'.$curAssessorato['id_assessorato'].'"}]},"'.$this->id.'")';
+                            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructTrashDlg", params: [{id_assessorato: "'.$curAssessorato['id_assessorato'].'"}]},"'.$this->id.'")';
+                            $tree[0]['data'][$id_assessorato]['ops']="<a class='AA_DataTable_Ops_Button' title='Aggiungi una sottostruttura' onClick='".$addnew."'><span class='mdi mdi-office-building-plus'></span></a>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica questa struttura' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a>&nbsp;<a class='AA_DataTable_Ops_Button_Red' title='Elimina questa struttura' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
+                        }
+                        else
+                        {
+                            $tree[0]['data'][$id_assessorato]['ops']="<a class='AA_DataTable_Ops_Button' title='Aggiungi una sottostruttura' onClick='".$addnew."'><span class='mdi mdi-office-building-plus'></span></a>";
+                        }
                     }
                     else $tree[0]['data'][$id_assessorato]['ops']="";
     
@@ -2936,12 +2943,19 @@ Class AA_HomeModule extends AA_GenericModule
                         {
                             if($curDirezione['soppresso']==0 || $bShowSuppressed)
                             {
-                                if($struct->GetDirezione(true) == 0) 
+                                if($struct->GetDirezione(true) == 0 || $struct->GetDirezione(true)==$id_direzione) 
                                 {
                                     $addnew='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructAddNewDlg", params: [{id_assessorato: "'.$curDirezione['id_assessorato'].'"},{id_direzione: "'.$curDirezione['id_direzione'].'"}]},"'.$this->id.'")';
-                                    $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructModifyDlg", params: [{id_assessorato: "'.$curDirezione['id_assessorato'].'"},{id_direzione: "'.$curDirezione['id_direzione'].'"}]},"'.$this->id.'")';
-                                    $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructTrashDlg", params: [{id_assessorato: "'.$curDirezione['id_assessorato'].'"},{id_direzione: "'.$curDirezione['id_direzione'].'"}]},"'.$this->id.'")';
-                                    $tree[0]['data'][$id_assessorato]['data'][$id_direzione]['ops']="<a class='AA_DataTable_Ops_Button' title='Aggiungi una sottostruttura' onClick='".$addnew."'><span class='mdi mdi-office-building-plus'></span></a>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica questa struttura' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a>&nbsp;<a class='AA_DataTable_Ops_Button_Red' title='Elimina questa struttura' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
+                                    if($struct->GetDirezione(true) == 0 )
+                                    {
+                                        $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructModifyDlg", params: [{id_assessorato: "'.$curDirezione['id_assessorato'].'"},{id_direzione: "'.$curDirezione['id_direzione'].'"}]},"'.$this->id.'")';
+                                        $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructTrashDlg", params: [{id_assessorato: "'.$curDirezione['id_assessorato'].'"},{id_direzione: "'.$curDirezione['id_direzione'].'"}]},"'.$this->id.'")';
+                                        $tree[0]['data'][$id_assessorato]['data'][$id_direzione]['ops']="<a class='AA_DataTable_Ops_Button' title='Aggiungi una sottostruttura' onClick='".$addnew."'><span class='mdi mdi-office-building-plus'></span></a>&nbsp;<a class='AA_DataTable_Ops_Button' title='Modifica questa struttura' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a>&nbsp;<a class='AA_DataTable_Ops_Button_Red' title='Elimina questa struttura' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a>";
+                                    }
+                                    else
+                                    {
+                                        $tree[0]['data'][$id_assessorato]['data'][$id_direzione]['ops']="<a class='AA_DataTable_Ops_Button' title='Aggiungi una sottostruttura' onClick='".$addnew."'><span class='mdi mdi-office-building-plus'></span></a>";
+                                    }
                                 }
                                 else $tree[0]['data'][$id_assessorato]['data'][$id_direzione]['ops']="";
         
@@ -2962,7 +2976,7 @@ Class AA_HomeModule extends AA_GenericModule
                                     {
                                         if($curServizio['soppresso']==0 || $bShowSuppressed)
                                         {
-                                            if($curServizio['soppresso']==1) 
+                                            if($curServizio['soppresso']==1)
                                             {
                                                 $tree[0]['data'][$id_assessorato]['data'][$id_direzione]['data'][$id_servizio]['class']='AA_Struct_soppressa';
                                                 $tree[0]['data'][$id_assessorato]['data'][$id_direzione]['data'][$id_servizio]['soppresso']=1;
@@ -2973,7 +2987,7 @@ Class AA_HomeModule extends AA_GenericModule
                                                 $tree[0]['data'][$id_assessorato]['data'][$id_direzione]['data'][$id_servizio]['soppresso']=0;
                                             }
             
-                                            if($struct->GetServizio(true) == 0) 
+                                            if($struct->GetServizio(true) == 0)
                                             {
                                                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructModifyDlg", params: [{id_assessorato: "'.$curDirezione['id_assessorato'].'"},{id_direzione: "'.$curDirezione['id_direzione'].'"},{id_servizio: "'.$curServizio['id_servizio'].'"}]},"'.$this->id.'")';
                                                 $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeStructTrashDlg", params: [{id_assessorato: "'.$curDirezione['id_assessorato'].'"},{id_direzione: "'.$curDirezione['id_direzione'].'"},{id_servizio: "'.$curServizio['id_servizio'].'"}]},"'.$this->id.'")';
@@ -2989,7 +3003,7 @@ Class AA_HomeModule extends AA_GenericModule
                 }
             }
 
-            $tree = new AA_JSON_Template_Tree($tree_view_id, array(
+            $tree_view = new AA_JSON_Template_Tree($tree_view_id, array(
                 "data" => json_encode($tree),
                 "status_id"=>$id."_tree",
                 "select" => false,
@@ -2999,10 +3013,10 @@ Class AA_HomeModule extends AA_GenericModule
         } 
         else 
         {
-            $tree=new AA_JSON_Template_Template($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTSTRUCT_NAME,"template"=>"Non sono presenti strutture."));
+            $tree_view=new AA_JSON_Template_Template($id,array("type"=>"clean","name" => static::AA_UI_SECTION_GESTSTRUCT_NAME,"template"=>"Non sono presenti strutture."));
         }
 
-        $layout->AddRow($tree);
+        $layout->AddRow($tree_view);
         $initialValue = $bShowSuppressed ? 1 : 0;
         $layout->AddRow(new AA_JSON_Template_Generic($id . "_Switch_Supressed", array("view" => "switch", "filter_id"=>static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTSTRUCT,"width" => 350, "label" => "Strutture cessate:", "labelWidth" => 150, "onLabel" => "visibili", "offLabel" => "nascoste","value"=>$initialValue, "tooltip" => "mostra/nascondi le strutture cessate","eventHandlers"=>array("onChange"=>array("handler"=>"onShowSupressedChange","module_id"=>$this->GetId())))));
         return $layout;
