@@ -1424,7 +1424,7 @@ class AA_User
         "incipit"=>"<p>Buongiorno,<br>Di seguito le credenziali per l'accesso alla piattaforma applicativa \"Amministrazione Aperta\":<br>url d'accesso: https://#www#",
         "bShowStruct"=>true,
         "sendToUs"=>true,
-        "post"=>'<p>Per ragioni di sicurezza e\' preferibile effettuare l\'accesso in piattaforma nella modalita\' email/otp.<br>La modalita\' di accesso tramite user id e password verra\' riomossa dal 1 gennaio 2025.</p>Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
+        "post"=>'<p>Per ragioni di sicurezza e\' preferibile effettuare l\'accesso in piattaforma nella modalita\' email/otp.<br>La modalita\' di accesso tramite user id e password verra\' rimossa dal 1 gennaio 2025.</p>Per le richieste di supporto o la segnalazione di anomalie è disponibile la casella: <a href="mailto:amministrazioneaperta@regione.sardegna.it">amministrazioneaperta@regione.sardegna.it</a></p>',
         "firma"=>'<div>--
         <div><strong>Amministrazione Aperta</strong></div>
         <div>Presidentzia</div>
