@@ -1632,10 +1632,10 @@ Class AA_HomeModule extends AA_GenericModule
         
         $layout->AddRow($second_row);
 
-        $minCountModulesToCarousel=5;
+        $minCountModulesToCarousel=6;
         if(AA_Config::AA_ENABLE_LEGACY_DATA && AA_Config::AA_SHOW_LEGACY_MODULES_BOX)
         {
-            $minCountModulesToCarousel=4;
+            $minCountModulesToCarousel=5;
         }
 
         $sso_auth_token=$this->oUser->GetSSOAuthToken();
@@ -1645,12 +1645,16 @@ Class AA_HomeModule extends AA_GenericModule
         if($platform->IsValid())
         {
             $platform_modules=$platform->GetModules();
-            if(sizeof($platform_modules) <=$minCountModulesToCarousel ) 
+            AA_Log::Log(__METHOD__." - moduli: ".sizeof($platform_modules)." - minModules: ".$minCountModulesToCarousel,100);
+
+            if(sizeof($platform_modules) < $minCountModulesToCarousel ) 
             {
+                AA_Log::Log(__METHOD__." - Aggiungo layout: ".$id."_ModuliBox" ,100);
                 $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
             }
             else 
             {
+                AA_Log::Log(__METHOD__." - Aggiungo carosello: ".$id."_ModuliBox" ,100);
                 $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
             }
 
@@ -1674,38 +1678,42 @@ Class AA_HomeModule extends AA_GenericModule
 
                 $nSlide=0;
                 $nMod=0;
-                $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+                $moduli_view=null;
                 foreach($platform_modules as $curModId => $curMod)
                 {
                     $admins = explode(",", $curMod['admins']); 
                     if($curModId != $this->GetId() && ($curMod['visible']==1 || in_array($this->oUser->GetId(), $admins) || $this->oUser->IsSuperUser()))
                     {
                         $nMod++;
-                        //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
-
+                        AA_Log::Log(__METHOD__." - Aggiungo il modulo: ".$curModId,100);
                         $name="<span style='font-weight:900;'>".implode("</span><span>",explode("-",$curMod['tooltip']))."</span>";
                         $onclick="AA_MainApp.utils.callHandler('ModuleBoxClick','".$curModId."','".$this->GetId()."')";
                         $moduli_data=array("id"=>$curModId,"name"=>$name,'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon'],"onclick"=>$onclick);
+                        if($moduli_view==null) $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
                         $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
                         
                         if($nMod%4==0)
                         {
-                            if(sizeof($platform_modules) <=$minCountModulesToCarousel) $moduli_box->AddRow($moduli_view);
-                            else $moduli_box->AddSlide($moduli_view);
+                            
+                            if(sizeof($platform_modules) < $minCountModulesToCarousel) 
+                            {
+                                AA_Log::Log(__METHOD__." - Aggiungo box moduli: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                                $moduli_box->AddRow($moduli_view);
+                            }
+                            else 
+                            {
+                                AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                                $moduli_box->AddSlide($moduli_view);
+                            }
                             $nSlide++;
-                            $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+                            $moduli_view=null;
+                            $nMod=0;
                         }
                     }
                 }
 
                 if(AA_Config::AA_ENABLE_LEGACY_DATA && AA_Config::AA_SHOW_LEGACY_MODULES_BOX)
                 {
-                    if($nMod%4==0 && $nMod > 0)
-                    {
-                        if(sizeof($platform_modules) <= $minCountModulesToCarousel) $moduli_box->AddRow($moduli_view);
-                        else $moduli_box->AddSlide($moduli_view);
-                        $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
-                    }
                     $nMod++;
 
                     $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 97%; margin:5px;'>";
@@ -1723,7 +1731,26 @@ Class AA_HomeModule extends AA_GenericModule
                     $descr="<span>Registro accessi</span><span>Mappatura processi</span><span>Gestione incarichi</span><span>Contributi e vantaggi economici</span><span>Bandi di gara e contratti</span>";
                     $onclick="AA_MainApp.utils.callHandler('ModuleLegacyBoxClick',{'SSO_AUTH_TOKEN':'".$sso_auth_token."','url':'/web/amministrazione_aperta/admin'},'".$this->GetId()."')";
                     $moduli_data=array("id"=>"Legacy_Modules","name"=>$name,'descr'=>$descr,"icon"=>"mdi mdi-table","onclick"=>$onclick);
+                    if($moduli_view==null) $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
                     $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
+                    AA_Log::Log(__METHOD__." - aggiungo il modulo legacy",100);
+
+                    if($nMod%4 && $nMod > 0 && $moduli_view !=null)
+                    {
+                         //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide,100);
+                        if(sizeof($platform_modules) < $minCountModulesToCarousel) 
+                        {
+                            AA_Log::Log(__METHOD__." - Aggiungo il box moduli: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                            $moduli_box->AddRow($moduli_view);
+                        }
+                        else 
+                        {
+                            AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                            $moduli_box->AddSlide($moduli_view);
+                        }
+                        $moduli_view=null; //new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+                        $nMod=0;
+                    }
                 }
 
                 //AA_Log::Log(__METHOD__." - nMod: ".$nMod. " - %: ".$nMod%4,100);
@@ -1734,16 +1761,19 @@ Class AA_HomeModule extends AA_GenericModule
                     if($nMod > 4) $i=$nMod%4;
                     for($i;$i < 4;$i++)
                     {
-                        $moduli_view->addCol(new AA_JSON_Template_Generic());
+                        if($moduli_view !=null) $moduli_view->addCol(new AA_JSON_Template_Generic());
                     }
                 }
-                if(sizeof($platform_modules) <= $minCountModulesToCarousel) 
+
+                if(sizeof($platform_modules) < $minCountModulesToCarousel) 
                 {
-                    $moduli_box->AddRow($moduli_view);
+                    AA_Log::Log(__METHOD__." - Aggiungo il box al layout: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                    if($moduli_view !=null) $moduli_box->AddRow($moduli_view);
                 }
                 else 
                 {
-                    $moduli_box->AddSlide($moduli_view);
+                    AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                    if($moduli_view !=null) $moduli_box->AddSlide($moduli_view);
                 }
             }
             else
@@ -1769,6 +1799,11 @@ Class AA_HomeModule extends AA_GenericModule
                     $onclick="AA_MainApp.utils.callHandler('ModuleLegacyBoxClick',{'SSO_AUTH_TOKEN':'".$sso_auth_token."','url':'/web/amministrazione_aperta/admin'},'".$this->GetId()."')";
                     $moduli_data=array("id"=>"Legacy_Modules","name"=>$name,'descr'=>$descr,"icon"=>"mdi mdi-table","onclick"=>$onclick);
                     $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
+
+                    for($i=1;$i < 4;$i++)
+                    {
+                        if($moduli_view !=null) $moduli_view->addCol(new AA_JSON_Template_Generic());
+                    }
                 }
                 else
                 {
