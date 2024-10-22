@@ -1734,23 +1734,6 @@ Class AA_HomeModule extends AA_GenericModule
                     if($moduli_view==null) $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
                     $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data),"eventHandlers"=>array("onItemClick"=>array("handler"=>"ModuleBoxClick","module_id"=>$this->GetId())))));
                     AA_Log::Log(__METHOD__." - aggiungo il modulo legacy",100);
-
-                    if($nMod%4 && $nMod > 0 && $moduli_view !=null)
-                    {
-                         //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide,100);
-                        if(sizeof($platform_modules) < $minCountModulesToCarousel) 
-                        {
-                            AA_Log::Log(__METHOD__." - Aggiungo il box moduli: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
-                            $moduli_box->AddRow($moduli_view);
-                        }
-                        else 
-                        {
-                            AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
-                            $moduli_box->AddSlide($moduli_view);
-                        }
-                        $moduli_view=null; //new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
-                        $nMod=0;
-                    }
                 }
 
                 //AA_Log::Log(__METHOD__." - nMod: ".$nMod. " - %: ".$nMod%4,100);
@@ -1765,7 +1748,7 @@ Class AA_HomeModule extends AA_GenericModule
                     }
                 }
 
-                if(sizeof($platform_modules) < $minCountModulesToCarousel) 
+                if(sizeof($platform_modules) < $minCountModulesToCarousel && $moduli_view != null) 
                 {
                     AA_Log::Log(__METHOD__." - Aggiungo il box al layout: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
                     if($moduli_view !=null) $moduli_box->AddRow($moduli_view);
