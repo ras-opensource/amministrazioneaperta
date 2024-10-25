@@ -6069,18 +6069,18 @@ Class AA_SinesModule extends AA_GenericModule
         $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
 
         $toolbar_oc=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("type"=>"clean","borderless"=>true));
-        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale_oc_rendiconti.pdf";
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/lista_referenti.pdf";
         $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
         //manuale operatore comunale rendiconti
-        $btn=new AA_JSON_Template_Generic($id."_ManualeRendiconti_btn",array(
+        $btn=new AA_JSON_Template_Generic($id."_ReferentiSines_btn",array(
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-help-circle",
-            "label"=>"Manuale caricamento rendiconti",
+            "label"=>"Lista refrerenti",
             "align"=>"center",
             "inputWidth"=>300,
             "click"=>$action,
-            "tooltip"=>"Visualizza o scarica il manuale operatore comunale per la compilazione dei rendiconti"
+            "tooltip"=>"Visualizza o scarica la lista dei referenti"
         ));
 
         $toolbar_oc->AddCol($btn);
