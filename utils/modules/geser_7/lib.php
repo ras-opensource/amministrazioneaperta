@@ -881,7 +881,7 @@ Class AA_GeserModule extends AA_GenericModule
                     $bInsert=false;
                 }
 
-                if(!is_array($infoImpianto))
+                if(!is_array($infoImpianto) || empty($infoImpianto['responseHashMap']['data']['itemDB']))
                 {
                     //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Errore nel parsing delle info dell'impianto: ".print_r($impianti[$i],true)." - ".$output,FILE_APPEND);
                     echo " - Errore nel parsing delle informazioni dell'impianto: ".$itemId." - ".$output;
