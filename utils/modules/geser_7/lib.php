@@ -569,6 +569,7 @@ Class AA_GeserModule extends AA_GenericModule
     const AA_ID_SECTION_CRITERI="Criteri";
     //section ui ids
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
+    const AA_UI_DETAIL_PRATICHE_BOX = "Pratiche_Box";
 
     const AA_UI_TEMPLATE_PRATICHE="Pratiche";
 
@@ -630,7 +631,8 @@ Class AA_GeserModule extends AA_GenericModule
         
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
-            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGeserDettaglio_Generale_Tab")
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateGeserDettaglio_Generale_Tab"),
+            array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_PRATICHE_BOX, "value"=>"Pratiche","tooltip"=>"Pratiche","template"=>"TemplateGeserDettaglio_Pratiche_Tab")
         ));
 
         //$criteri=new AA_GenericModuleSection(static::AA_ID_SECTION_CRITERI,"Criteri e modalita'",true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_CRITERI,$this->GetId(),false,true,false,false,'mdi-text-box-multiple',"TemplateSection_Criteri");
@@ -645,6 +647,284 @@ Class AA_GeserModule extends AA_GenericModule
         //$this->AddObjectTemplate(static::AA_UI_PREFIX."_".static::AA_UI_WND_RENDICONTI_COMUNALI."_".static::AA_UI_LAYOUT_RENDICONTI_COMUNALI,"Template_GetGeserComuneRendicontiViewLayout");
     }
     
+    static public function GeserDownloadGSEData($url="", $from=0,$count=19)
+    {
+
+        $maxCount=0;
+        $numImpiantiForBatch=5000;
+        $log_file=sys_get_temp_dir().'/log_gse_fetch.log';
+        $resultFile=sys_get_temp_dir().'/export_gse.json';
+        $impianti=null;
+        if(file_exists($resultFile))
+        {
+            $impianti=json_decode(file_get_contents($resultFile),true);
+        }
+
+        if(!is_array($impianti)) $impianti=array();
+        
+        //file_put_contents($log_file,date("Y-m-d h:i:s")." - Recupero i primi 20 impianti dal sito del GSE");
+        if(empty($url)) $url="https://atla.gse.it/atlaimpianti/project/Atlaimpianti_Internet.html";
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_setopt($ch, CURLOPT_COOKIEJAR, sys_get_temp_dir().'/gse_cookie.txt');
+        $http_headers = array(
+                            'Host: atla.gse.it',
+                            'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0',
+                            'Accept: text/javascript, text/html, application/xml, application/json, text/xml',
+                            'Accept-Language: it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3',
+                            'Connection: keep-alive'
+                        );
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $http_headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        $output = curl_exec($ch);
+        curl_close($ch);
+
+        //richiesta lista primi impianti
+        $firstBatch=$from+19;
+        if($count < $firstBatch && $count > 1) $firstBatch=$from+$count;
+
+        $url = 'https://atla.gse.it/atlaimpianti/rest/attributesJsonRest/Atlaimpianti_Internet/impianti_internet/?query=requestBody';
+        $poststring = '{"filters":[{"condition":"AND","columnName":"ai_regione","attributeGwid":"137615","operator":"IN","filterType":"STRING","value":["SARDEGNA"]}],"parameters":{}}';
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_COOKIEJAR, sys_get_temp_dir().'/gse_cookie.txt');
+        curl_setopt($ch, CURLOPT_COOKIEFILE, sys_get_temp_dir().'/gse_cookie.txt');
+        $http_headers = array(
+                            'Host: atla.gse.it',
+                            'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0',
+                            'Accept: text/javascript, text/html, application/xml, application/json, text/xml',
+                            'Accept-Language: it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3',
+                            'Connection: keep-alive',
+                            'Referer: https://atla.gse.it/atlaimpianti/project/Atlaimpianti_Internet.html',
+                            'X-Range: items='.intVal($from).'-'.$firstBatch,
+                            'Content-Type: application/json',
+                            'X-Requested-With: XMLHttpRequest'
+                        );
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $http_headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt ($ch, CURLOPT_POST, 1);
+        curl_setopt ($ch, CURLOPT_POSTFIELDS, $poststring);
+        //curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+        $output = curl_exec ($ch);
+        
+        $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $header = explode("\r",substr($output, 0, $header_size));
+        $firstBatchImpianti = json_decode(substr($output, $header_size),true);
+        curl_close($ch);
+
+        if(!is_array($header) || $header[0] != "HTTP/1.1 200 OK")
+        {
+            //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Errore nel recupero dei primi ".($firstBatch-$from)." impianti: ".$output,FILE_APPEND);
+            die("\nErrore nel recupero dei primi ".($firstBatch-$from)." impianti: ".$output);
+        }
+
+        if(!is_array($firstBatchImpianti))
+        {
+            //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Errore nel parsing dei primi ".($firstBatch-$from)." impianti: ".$output,FILE_APPEND);
+            die("\nErrore nel parsing dei primi ".($firstBatch-$from)." impianti: ".$firstBatchImpianti." - out: ".$output." - header: ".print_r($http_headers,true));
+        }
+        else
+        {
+            //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - I primi ".($firstBatch-$from)." impianti sono stati recuperati con successo.",FILE_APPEND);
+        }
+
+        $maxCount=explode("/",$header[2]);
+        if(!empty($maxCount[1])) 
+        {
+            $maxCount=intVal($maxCount['1']);
+            //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Sono stati trovati n. ".$maxCount." impianti",FILE_APPEND);
+            echo "\nSono stati trovati n. ".$maxCount." impianti";
+        }
+        else
+        {
+            //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Non sono stati trovati impianti. - ".print_r($header,true),FILE_APPEND);
+            die("Non sono stati trovati impianti. - ".print_r($header,true));
+        }
+
+        if(sizeof($impianti) < $maxCount)
+        {
+            $impianti=$firstBatchImpianti;
+            $fetched=sizeof($firstBatchImpianti);
+
+            //recupero i dati relativi agli impianti successivi
+            if($maxCount-$from > $count && $count > 0) $maxCount=$from+$count;
+
+            for($i=$from+$firstBatch; $i < $maxCount; $i+=$numImpiantiForBatch)
+            {
+                $nextTo=$i+$numImpiantiForBatch;
+                if($nextTo > $maxCount) $nextTo=$maxCount;
+
+                //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Recupero i dati degli impianti dal: ".($i+1)." al: ".$nextTo. " - ImpiantiforBatch: ".$numImpiantiForBatch,FILE_APPEND);
+                echo "\n".date("Y-m-d h:i:s")." - Recupero i dati degli impianti dal: ".($i+1)." al: ".$nextTo. " - ImpiantiforBatch: ".$numImpiantiForBatch;
+
+                $url = 'https://atla.gse.it/atlaimpianti/rest/attributesJsonRest/Atlaimpianti_Internet/impianti_internet/?query=requestBody';
+                $poststring = '{"filters":[{"condition":"AND","columnName":"ai_regione","attributeGwid":"137615","operator":"IN","filterType":"STRING","value":["SARDEGNA"]}],"parameters":{}}';
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_COOKIEJAR, sys_get_temp_dir().'/gse_cookie.txt');
+                curl_setopt($ch, CURLOPT_COOKIEFILE, sys_get_temp_dir().'/gse_cookie.txt');
+                $http_headers = array(
+                                    'Host: atla.gse.it',
+                                    'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0',
+                                    'Accept: text/javascript, text/html, application/xml, application/json, text/xml',
+                                    'Accept-Language: it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3',
+                                    'Connection: keep-alive',
+                                    'Referer: https://atla.gse.it/atlaimpianti/project/Atlaimpianti_Internet.html',
+                                    'X-Range: items='.intVal($i+1).'-'.$nextTo,
+                                    'Content-Type: application/json',
+                                    'X-Requested-With: XMLHttpRequest'
+                                );
+                curl_setopt($ch, CURLOPT_HEADER, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, $http_headers);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+                curl_setopt ($ch, CURLOPT_POST, 1);
+                curl_setopt ($ch, CURLOPT_POSTFIELDS, $poststring);
+                //curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+                $output = curl_exec ($ch);
+                
+                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+                $header = explode("\r",substr($output, 0, $header_size));
+                $nextImpianti=json_decode(substr($output, $header_size),true);
+                if(!is_array($header) || $header[0] != "HTTP/1.1 200 OK")
+                {
+                    //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Errore nel recupero degli impianti dal: ".($i+1)." al: ".$nextTo." ".$output,FILE_APPEND);
+                    die("Errore nel recupero degli impianti dal: ".($i+1)." al: ".$nextTo." ".$output);
+                }
+
+                if(!is_array($nextImpianti))
+                {
+                    //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Errore nel parsing degli impianti dal: ".($i+1)." al: ".$nextTo." ".$output,FILE_APPEND);
+                    die("Errore nel parsing degli impianti dal: ".($i+1)." al: ".$nextTo." ".$output);
+                }
+                else
+                {
+                    //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Gli impianti dal: ".($i+1)." al: ".$nextTo." sono stati recuperati con successo.",FILE_APPEND);
+                }
+
+                $fetched+=sizeof($nextImpianti);
+                $impianti = array_merge($impianti,$nextImpianti);
+                //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Salvo gli impianti ".sizeof($impianti),FILE_APPEND);
+                file_put_contents($resultFile,json_encode($impianti));
+
+                curl_close($ch);
+            }
+        }
+        else
+        {
+            //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Sono presenti n. ".sizeof($impianti)." impianti",FILE_APPEND);
+            echo "\n".date("Y-m-d h:i:s")." - sono presenti n. ".sizeof($impianti)." impianti.";
+        }
+
+        //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Sono stati recuperati n. ".$fetched." nuovi impianti",FILE_APPEND);
+        echo "\n".date("Y-m-d h:i:s")." - sono stati recuperati n. ".$fetched." nuovi impianti.";
+
+        //richiesta info singolo impianto
+        $fetched=0;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_COOKIEJAR, sys_get_temp_dir().'/gse_cookie.txt');
+        curl_setopt($ch, CURLOPT_COOKIEFILE, sys_get_temp_dir().'/gse_cookie.txt');
+        $http_headers = array(
+                            'Host: atla.gse.it',
+                            'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0',
+                            'Accept: text/javascript, text/html, application/xml, application/json, text/xml',
+                            'Accept-Language: it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3',
+                            'Connection: keep-alive',
+                            'Referer: https://atla.gse.it/atlaimpianti/project/Atlaimpianti_Internet.html',
+                            'Content-Type: application/x-www-form-urlencoded',
+                            'X-Requested-With: XMLHttpRequest',
+                            'Sec-Fetch-Dest: empty',
+                            'Sec-Fetch-Mode: cors',
+                            'Sec-Fetch-Site: same-origin',
+                            'Priority: u=0'
+                        );
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $http_headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt ($ch, CURLOPT_POST, 1);
+        
+        for($i=0; $i<sizeof($impianti); $i++ )
+        {
+            $itemId=$impianti[$i]['pk_sequ_georeferenze'];
+            if(empty($impianti[$i]['details']))
+            {
+                //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Recupero delle info per l'impianto: ".$itemId." - (".$i."/".$maxCount.")",FILE_APPEND);
+                echo "\n".date("Y-m-d h:i:s")." - Recupero delle info per l'impianto: ".$itemId." - (".$i."/".$maxCount.")";
+
+                $url = 'https://atla.gse.it/atlaimpianti/rest/retrieveUserActionsForSingleRecord?request.preventCache='.time();
+                $poststring = 'itemId='.$itemId.'&classGwid=137591&projectGwid=137590&projectName=Atlaimpianti_Internet';
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt ($ch, CURLOPT_POSTFIELDS, $poststring);
+                //curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+                $output = curl_exec ($ch);
+                
+                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+                $header = substr($output, 0, $header_size);
+                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+                $header = explode("\r",substr($output, 0, $header_size));
+                $infoImpianto=json_decode(substr($output, $header_size),true);
+                $bInsert=true;
+
+                if(!is_array($header) || $header[0] != "HTTP/1.1 200 OK")
+                {
+                    //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Errore nel recupero delle info dell'impianto: ".print_r($impianti[$i],true)." - ".$output,FILE_APPEND);
+                    echo " - Errore nel recupero delle informazioni dell'impianto: ".$itemId." - ".$output;
+                    $bInsert=false;
+                }
+
+                if(!is_array($infoImpianto))
+                {
+                    //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Errore nel parsing delle info dell'impianto: ".print_r($impianti[$i],true)." - ".$output,FILE_APPEND);
+                    echo " - Errore nel parsing delle informazioni dell'impianto: ".$itemId." - ".$output;
+                    $bInsert=false;
+                }
+                
+                if($bInsert)
+                {
+                    $impianti[$i]['details']=$infoImpianto['responseHashMap']['data']['itemDB'];
+                    $fetched++;
+                    
+                    //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Le info dell'impianto: ".$impianti[$i]['pk_sequ_georeferenze']." sono state recuperate con successo.",FILE_APPEND);
+                    echo " - OK";
+
+                    if($fetched>=10) 
+                    {
+                        //file_put_contents($log_file,"\n------------------------------------------\n".date("Y-m-d h:i:s")." - Salvo il file impianti\n------------------------------------------\n",FILE_APPEND);
+                        echo "\n------------------------------------\n".date("Y-m-d h:i:s")." - Salvo il file impianti\n------------------------------------\n";
+                        file_put_contents($resultFile,json_encode($impianti));
+                        $fetched=0;
+                    }
+                }
+            }
+            else
+            {
+                //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Le info dell'impianto: ".$impianti[$i]['pk_sequ_georeferenze']." sono gia' presenti.",FILE_APPEND);
+                echo "\n".date("Y-m-d h:i:s")." - Le info dell'impianto: ".$impianti[$i]['pk_sequ_georeferenze']." sono gia' presenti.";
+            }
+        }
+        curl_close($ch);
+
+        if($fetched > 0)
+        {
+            //file_put_contents($log_file,"\n".date("Y-m-d h:i:s")." - Salvo il file impianti ".sizeof($impianti));
+            echo "\n------------------------------------------\n".date("Y-m-d h:i:s")." - Salvo il file impianti n. ".sizeof($impianti);
+            file_put_contents($resultFile,json_encode($impianti));
+            $fetched=0;
+        }
+        //file_put_contents($resultFile,json_encode($impianti));
+        //file_put_contents($log_file,"\n------------------------------------------\n".date("Y-m-d h:i:s")." - sono stati salvati n. ".sizeof($impianti));
+        echo "\n------------------------------------------\n".date("Y-m-d h:i:s")." - sono stati salvati n. ".sizeof($impianti);
+    }
+
     protected function TemplateGenericNavbar_Atti($level = 1, $last = false, $refresh_view = true)
     {
         $class = "n" . $level;
@@ -2380,6 +2660,7 @@ Class AA_GeserModule extends AA_GenericModule
         $riga->addCol($layout_gen);
         $layout->AddRow($riga);
 
+        $layout->AddRow(new AA_JSON_Template_Generic(""));
         //-------------------- Allegati --------------------------------------
         //$allegati_box->AddRow($this->TemplateDettaglio_Allegati($object,$id,$canModify));
         //$riga->AddCol($allegati_box);
@@ -2391,10 +2672,65 @@ Class AA_GeserModule extends AA_GenericModule
         //$toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Gestione Pratiche</span>", "align"=>"center")));
         //$toolbar->AddElement(new AA_JSON_Template_Generic(""));
         //$layout->AddRow($toolbar);
-        $layout->AddRow($this->TemplateDettaglio_Pratiche($object));
+        //$layout->AddRow($this->TemplateDettaglio_Pratiche($object));
         //------------------------------------------------------------------------
 
         return $layout;
+    }
+
+    public function TemplateGeserDettaglio_Pratiche_Tab($object=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_PRATICHE_BOX;
+
+        if(!($object instanceof AA_Geser)) return new AA_JSON_Template_Template($id,array("template"=>"Dati non validi"));
+
+        $rows_fixed_height=50;
+        $canModify=false;
+        if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) > 0 && $this->oUser->HasFlag(AA_Geser_Const::AA_USER_FLAG_GESER)) $canModify=true;
+
+        $stati_pratica=AA_Geser_Const::GetListaStatiPratica();
+        $tipo_pratica=AA_Geser_Const::GetListaTipoPratica();
+        $tipo_via=AA_Geser_Const::GetListaTipoVia();
+        $pratiche=$object->GetPratiche();
+        foreach($pratiche as $id_pratica=>$curPratica)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserTrashPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserModifyPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
+            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGeserCopyPraticaDlg", params: [{id:"'.$object->GetId().'"},{id_pratica:"'.$id_pratica.'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="&nbsp;";
+
+            $pratiche_data[]=array("id"=>$id_pratica,"rif_temporali"=>"<div style='display:flex; flex-direction:column; justify-content:center'><span><b>Data inizio</b>: ".$curPratica['data_inizio']."</span><span><b>Data fine</b>: ".$curPratica['data_fine']."</span></div>","stato"=>$stati_pratica[$curPratica['stato']],"tipo"=>$tipo_pratica[$curPratica['tipo']],"estremi"=>$curPratica['estremi'],"descrizione"=>$curPratica['descrizione'],"via"=>$tipo_via[$curPratica['via']],"societa"=>$curPratica['societa'],"note"=>$curPratica['note'],"ops"=>$ops);
+        }
+
+        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Gestione pratiche</span>",9,null,array("css"=>"AA_Header_DataTable"));
+        $template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
+        $template->SetAddNewBtnCss("webix_primary");
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader();
+        $template->SetHeaderHeight(38);
+
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetGeserAddNewPraticaDlg");
+            $template->SetAddNewTaskParams(array("postParams"=>array("id"=>$object->GetId())));
+        }
+
+        $template->SetColumnHeaderInfo(0,"stato","<div style='text-align: center'>Stato</div>",120,"selectFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(1,"tipo","<div style='text-align: center'>Tipologia</div>",160,"selectFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(2,"rif_temporali","<div style='text-align: center'>Rif. temporali</div>",200,"textFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(3,"descrizione","<div style='text-align: center'>Descrizione</div>","fillspace","textFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(4,"estremi","<div style='text-align: center'>Estremi</div>","fillspace","textFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(5,"via","<div style='text-align: center'>Tipo VIA</div>",120,"selectFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(6,"societa","<div style='text-align: center'>Ragione sociale</div>",200,"selectFilter","text","PraticheTable");
+        $template->SetColumnHeaderInfo(7,"note","<div style='text-align: center'>Note</div>","fillspace","textFilter","text","PraticheTable_left");
+        $template->SetColumnHeaderInfo(8,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"PraticheTable");
+
+        $template->SetData($pratiche_data);
+
+        return $template;
     }
 
     //Template section detail, tab generale
@@ -3728,6 +4064,11 @@ Class AA_GeserModule extends AA_GenericModule
     }
 
     protected function ElaborateCsvImportAssIndustria($rows=null)
+    {
+        return false;
+    }
+
+    protected function ElaborateCsvImportAssAmbiente($rows=null)
     {
         return false;
     }
