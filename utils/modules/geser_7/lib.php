@@ -253,6 +253,44 @@ Class AA_Geser extends AA_Object_V2
         return $this->pratiche;
     }
 
+    //proprietario
+    protected $proprietario=null;
+    public function GetProprietario()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->proprietario))
+        {
+            $this->proprietario=json_decode($this->GetProp('Proprietario'),true);
+            if(!is_array($this->proprietario))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing",100);
+                return array();
+            }
+        }
+
+        return $this->proprietario;
+    }
+
+    //proprietario
+    protected $gseData=null;
+    public function GetGseData()
+    {
+        if(!$this->IsValid()) return array();
+
+        if(!is_array($this->gseData))
+        {
+            $this->gseData=json_decode($this->GetProp('GseData'),true);
+            if(!is_array($this->gseData))
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing",100);
+                return array();
+            }
+        }
+
+        return $this->gseData;
+    }
+
     //Funzione di clonazione dei dati
     protected function CloneData($idData = 0, $user = null)
     {
@@ -275,12 +313,15 @@ Class AA_Geser extends AA_Object_V2
         $this->AddProp("Superficie",0,"superficie");
         $this->AddProp("Stato",0,"stato");
         $this->AddProp("AnnoAutorizzazione","","anno_autorizzazione");
+        $this->AddProp("InizioLavori","","inizio_lavori");
         $this->AddProp("AnnoCostruzione","","anno_costruzione");
         $this->AddProp("AnnoEsercizio","","anno_entrata_esercizio");
         $this->AddProp("AnnoDismissione","","anno_dismissione");
         $this->AddProp("Potenza",0,"potenza");
         $this->AddProp("Geolocalizzazione","","geolocalizzazione");
         $this->AddProp("Pratiche","","pratiche");
+        $this->AddProp("Proprietario","","proprietario");
+        $this->AddProp("GseData","","gse_data");
         //$this->AddProp("Allegati","","allegati");
 
         //disabilita la revisione
@@ -1096,7 +1137,8 @@ Class AA_GeserModule extends AA_GenericModule
             $potenza=$object->GetProp("Potenza");
             if(intVal($potenza)>0)
             {
-                $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".AA_Utils::number_format($object->GetProp("Potenza"),2,",",".")." MWatt</span>";
+                if($potenza < 1000) $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".AA_Utils::number_format($object->GetProp("Potenza"),2,",",".")." KWatt</span>";
+                else $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".AA_Utils::number_format($object->GetProp("Potenza")/1000,2,",",".")." MWatt</span>";
             }
             $data['tags']=$tags;
             $geolocalizzazione=$object->GetGeolocalizzazione();
@@ -1313,9 +1355,12 @@ Class AA_GeserModule extends AA_GenericModule
         $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
 
         $options=array(
-            array("id"=>1,"value"=>"Terna"),
+            array("id"=>5,"value"=>"Ass. Ambiente - VIA Regionale"),
+            array("id"=>5,"value"=>"Ass. Ambiente - VIA Nazionale"),
             array("id"=>2,"value"=>"Ass. Industria"),
-            array("id"=>3,"value"=>"Suape")
+            array("id"=>3,"value"=>"Suape"),
+            array("id"=>1,"value"=>"Terna"),
+            array("id"=>4,"value"=>"GSE")
         );
 
         $wnd->AddSelectField("tracciato","Tipo tracciato",array("required"=>true,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare il tipo di importazione.", "placeholder"=>"...","options"=>$options));
@@ -1356,7 +1401,7 @@ Class AA_GeserModule extends AA_GenericModule
             //array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"selectFilter")),"width"=>60, "css"=>array("text-align"=>"left"),"sort"=>"text"),
             array("id"=>"titolo","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true,"sort"=>"text","css"=>"PraticheTable_left"),
             array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"width"=>200, "sort"=>"text","css"=>"PraticheTable"),
-            array("id"=>"potenza","header"=>array("<div style='text-align: center'>Potenza (MW)</div>",array("content"=>"textFilter")),"width"=>90, "sort"=>"text","css"=>"PraticheTable"),
+            array("id"=>"potenza","header"=>array("<div style='text-align: center'>Potenza (KW)</div>",array("content"=>"textFilter")),"width"=>120, "sort"=>"text","css"=>"PraticheTable"),
             array("id"=>"comune","header"=>array("<div style='text-align: center'>Comune</div>",array("content"=>"selectFilter")),"width"=>250, "sort"=>"text","css"=>"PraticheTable"),
             array("id"=>"date","header"=>array("<div style='text-align: center'>Date</div>",array("content"=>"textFilter")),"width"=>250, "css"=>"PraticheTable_left"),
             array("id"=>"nuovo","header"=>array("<div style='text-align: center'>Nuovo</div>",array("content"=>"selectFilter")),"width"=>60, "css"=>"PraticheTable")
@@ -1384,7 +1429,7 @@ Class AA_GeserModule extends AA_GenericModule
                     "tipologia"=>$impianto->GetTipo(),
                     "potenza"=>AA_Utils::number_format($impianto->GetProp('Potenza'),2,",","."),
                     "comune"=>$geolocalizzazione['comune'],
-                    "date"=>"<div style='display: flex;flex-direction: column;justify-content: space-between;align-items: start;font-size: smaller;'><div>autorizzazione: ".$impianto->GetProp('AnnoAutorizzazione')."</div><div>costruzione: ".$impianto->GetProp('AnnoCostruzione')."</div><div>esercizio: ".$impianto->GetProp('AnnoEsercizio')."</div><div>dismissione: ".$impianto->GetProp('AnnoDismissione')."</div></div>",
+                    "date"=>"<div style='display: flex;flex-direction: column;justify-content: space-between;align-items: start;font-size: smaller;'><div>autorizzazione: ".$impianto->GetProp('AnnoAutorizzazione')."</div><div>inizio lavori: ".$impianto->GetProp('InizioLavori')."</div><div>costruzione: ".$impianto->GetProp('AnnoCostruzione')."</div><div>esercizio: ".$impianto->GetProp('AnnoEsercizio')."</div><div>dismissione: ".$impianto->GetProp('AnnoDismissione')."</div></div>",
                     "nuovo"=>"No"
                 );
             }
@@ -1395,7 +1440,7 @@ Class AA_GeserModule extends AA_GenericModule
                     "tipologia"=>$tipologiaImpianti[$row['Tipologia']],
                     "potenza"=>AA_Utils::number_format($row['Potenza'],2,",","."),
                     "comune"=>$row['Geo_comune'],
-                    "date"=>"<div style='display: flex;flex-direction: column;justify-content: space-between;align-items: start;font-size: smaller;'><div>autorizzazione: ".$row['AnnoAutorizzazione']."</div><div>costruzione: ".$row['AnnoCostruzione']."</div><div>esercizio: ".$row['AnnoEsercizio']."</div><div>dismissione: ".$row['AnnoDismissione']."</div></div>",
+                    "date"=>"<div style='display: flex;flex-direction: column;justify-content: space-between;align-items: start;font-size: smaller;'><div>autorizzazione: ".$row['AnnoAutorizzazione']."</div><div>inizio lavori: ".$row['InizioLavori']."</div><div>costruzione: ".$row['AnnoCostruzione']."</div><div>esercizio: ".$row['AnnoEsercizio']."</div><div>dismissione: ".$row['AnnoDismissione']."</div></div>",
                     "nuovo"=>"Si"
                 );
                 $nuovi_inserimenti++;
@@ -1416,7 +1461,7 @@ Class AA_GeserModule extends AA_GenericModule
             "css"=>"AA_Header_DataTable",
             "hover"=>"AA_DataTable_Row_Hover",
             "fixedRowHeight"=>false,
-            "rowHeight"=>80,
+            "rowHeight"=>90,
             "rowLineHeight"=>18,
             "eventHandlers"=>array("onresize"=>array("handler"=>"adjustRowHeight","module_id"=>$this->GetId())),
             "columns"=>$columns,
@@ -2540,7 +2585,11 @@ Class AA_GeserModule extends AA_GenericModule
 
         //potenza
         $value=$object->GetProp("Potenza");
-        if(floatVal($value) > 0) $value="<span class='AA_Label AA_Label_Orange'>".AA_Utils::number_format($value,2,",",".")." MWatt</span>";
+        if(floatVal($value) > 0) 
+        {
+            if($value < 1000 ) $value="<span class='AA_Label AA_Label_Orange'>".AA_Utils::number_format($value,2,",",".")." KWatt</span>";
+            else $value="<span class='AA_Label AA_Label_Orange'>".AA_Utils::number_format($value/1000,2,",",".")." MWatt</span>";
+        }
         else $value="n.d.";
         $potenza=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
@@ -2577,6 +2626,16 @@ Class AA_GeserModule extends AA_GenericModule
             "gravity"=>1,
             "width"=>180,
             "data"=>array("title"=>"Data autorizzazione:","value"=>$value)
+        ));
+
+        //inizio lavori
+        $value=$object->GetProp("InizioLavori");
+        if($value=="")$value="n.d.";
+        $inizio_lavori=new AA_JSON_Template_Template("",array(
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "gravity"=>1,
+            "width"=>180,
+            "data"=>array("title"=>"Data inizio lavori:","value"=>$value)
         ));
 
         //anno costruzione
@@ -2642,6 +2701,7 @@ Class AA_GeserModule extends AA_GenericModule
         $riga->AddCol($potenza);
         $riga->AddCol($superficie);
         $riga->AddCol($anno_autorizzazione);
+        $riga->AddCol($inizio_lavori);
         $riga->AddCol($anno_costruzione);
         $riga->AddCol($anno_esercizio);
         $riga->AddCol($anno_dismissione);
@@ -3196,6 +3256,11 @@ Class AA_GeserModule extends AA_GenericModule
                 $geolocalizzazione['coordinate']=$curData['Geo_coordinate'];
                 $newImpianto->SetProp('Geolocalizzazione',json_encode($geolocalizzazione));
 
+                $proprietario=$newImpianto->GetProprietario();
+                $proprietario['denominazione']=$curData['Proprietario_nome'];
+                $proprietario['cf']=$curData['Proprietario_cf'];
+                $newImpianto->SetProp('Proprietario',json_encode($proprietario));
+
                 $newImpianto->Parse($curData);
 
                 if(!AA_Geser::AddNew($newImpianto,$this->oUser))
@@ -3208,40 +3273,43 @@ Class AA_GeserModule extends AA_GenericModule
 
                 if($newImpianto->IsValid())
                 {
-                    $pratiche=$newImpianto->GetPratiche();
-                    $pratica=array();
-                    if(isset($curData['pratica_tipo'])) $pratica["tipo"]=$curData['pratica_tipo'];
-                    else $pratica["tipo"]=AA_Geser_Const::AA_GESER_TIPO_PRATICA_AU;
-                    if(isset($curData['pratica_stato'])) $pratica["stato"]=$curData['pratica_stato'];
-                    else $pratica["stato"]=AA_Geser_Const::AA_GESER_STATO_PRATICA_DAISTRUIRE;
-                    if(isset($curData['pratica_estremi'])) $pratica["estremi"]=$curData['pratica_estremi'];
-                    else $pratica["estremi"]='';
-                    if(isset($curData['pratica_descrizione'])) $pratica["descrizione"]=$curData['pratica_descrizione'];
-                    else $pratica["descrizione"]='';
-                    if(isset($curData['pratica_via'])) $pratica["via"]=$curData['pratica_via'];
-                    else $pratica["via"]=AA_Geser_Const::AA_GESER_TIPO_VIA_NESSUNO;
-                    if(isset($curData['pratica_societa'])) $pratica["societa"]=trim($curData['pratica_societa']);
-                    else $pratica["societa"]='';
-                    if(isset($curData['pratica_data_inizio'])) $pratica["data_inizio"]=$curData['pratica_data_inizio'];
-                    else $pratica["data_inizio"]='';
-                    if(isset($curData['pratica_data_fine'])) $pratica["data_fine"]=$curData['pratica_data_fine'];
-                    else $pratica["data_fine"]='';
-                    if(isset($curData['pratica_note'])) $pratica["note"]=$curData['pratica_note'];
-                    else $pratica["note"]='';
-
-                    $newId=uniqid();
-                    $pratiche[$newId]=$pratica;
-
-                    $newImpianto->SetProp('Pratiche',json_encode($pratiche));
-                    
-                    if(!$newImpianto->Update($this->oUser,true,"Aggiunta pratica - id: ".$newId))
+                    if(isset($curData['societa']))
                     {
-                        $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                        $task->SetError("Errore nell'aggiunta della nuova pratica all'impianto: ".$impianto->GetName(),false);
+                        $pratiche=$newImpianto->GetPratiche();
+                        $pratica=array();
+                        if(isset($curData['pratica_tipo'])) $pratica["tipo"]=$curData['pratica_tipo'];
+                        else $pratica["tipo"]=AA_Geser_Const::AA_GESER_TIPO_PRATICA_AU;
+                        if(isset($curData['pratica_stato'])) $pratica["stato"]=$curData['pratica_stato'];
+                        else $pratica["stato"]=AA_Geser_Const::AA_GESER_STATO_PRATICA_DAISTRUIRE;
+                        if(isset($curData['pratica_estremi'])) $pratica["estremi"]=$curData['pratica_estremi'];
+                        else $pratica["estremi"]='';
+                        if(isset($curData['pratica_descrizione'])) $pratica["descrizione"]=$curData['pratica_descrizione'];
+                        else $pratica["descrizione"]='';
+                        if(isset($curData['pratica_via'])) $pratica["via"]=$curData['pratica_via'];
+                        else $pratica["via"]=AA_Geser_Const::AA_GESER_TIPO_VIA_NESSUNO;
+                        if(isset($curData['pratica_societa'])) $pratica["societa"]=trim($curData['pratica_societa']);
+                        else $pratica["societa"]='';
+                        if(isset($curData['pratica_data_inizio'])) $pratica["data_inizio"]=$curData['pratica_data_inizio'];
+                        else $pratica["data_inizio"]='';
+                        if(isset($curData['pratica_data_fine'])) $pratica["data_fine"]=$curData['pratica_data_fine'];
+                        else $pratica["data_fine"]='';
+                        if(isset($curData['pratica_note'])) $pratica["note"]=$curData['pratica_note'];
+                        else $pratica["note"]='';
 
-                        return false;
+                        $newId=uniqid();
+                        $pratiche[$newId]=$pratica;
+
+                        $newImpianto->SetProp('Pratiche',json_encode($pratiche));
+
+                        if(!$newImpianto->Update($this->oUser,true,"Aggiunta pratica - id: ".$newId))
+                        {
+                            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                            $task->SetError("Errore nell'aggiunta della nuova pratica all'impianto: ".$impianto->GetName(),false);
+
+                            return false;
+                        }
                     }
-
+                    
                     $count['inseriti']++;
                 }
             }
@@ -3874,7 +3942,9 @@ Class AA_GeserModule extends AA_GenericModule
             return false;
         }
 
-        $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        if($_REQUEST['tracciato'] != 4) $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        else $csvRows=json_decode(file_get_contents($csv["tmp_name"]),true);
+
         //Elimina il file temporaneo
         if(is_file($csv["tmp_name"]))
         {
@@ -3898,6 +3968,11 @@ Class AA_GeserModule extends AA_GenericModule
             $data=$this->ElaborateCsvImportSuape($csvRows);
         }
 
+        if($_REQUEST['tracciato']==4)
+        {
+            $data=$this->ImportGseJson($csvRows);
+        }
+
         if($data===false)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -3917,6 +3992,127 @@ Class AA_GeserModule extends AA_GenericModule
         return true;
     }
 
+    protected function ImportGseJson($impianti=null)
+    {
+        if(!is_array($impianti))
+        {
+           AA_Log::Log(__METHOD__." - file JSON non formattato correttamente.",100);
+           return false;
+        }
+
+        $tipo_impianti=AA_Geser_Const::GetListaTipoImpianti();
+        $impianti_esistenti=AA_Geser::Search(array("stato"=>AA_Const::AA_STATUS_PUBBLICATA),$this->oUser);
+        $data=array();
+
+        $tipo_impianti_match=array(
+            "biogas"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_BIOGAS,
+            "biomasse liquide"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_BIOMASSA,
+            "biomasse solide"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_BIOMASSA,
+            "rifiuti"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_BIOMASSA,
+            "solare"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_FOTOVOLTAICO|AA_Geser_Const::AA_GESER_TIPOIMPIANTO_AGRIVOLTAICO|AA_Geser_Const::AA_GESER_TIPOIMPIANTO_TERMODINAMICO,
+            "eolica"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_EOLICO|AA_Geser_Const::AA_GESER_TIPOIMPIANTO_OFFSHORE,
+            "eolico on-shore"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_EOLICO,
+            "idraulica"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_IDROELETTRICO,
+        );
+
+        $tipo_impianti_match_new=array(
+            "biogas"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_BIOGAS,
+            "biomasse liquide"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_BIOMASSA,
+            "biomasse solide"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_BIOMASSA,
+            "rifiuti"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_BIOMASSA,
+            "solare"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_FOTOVOLTAICO,
+            "eolica"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_EOLICO,
+            "eolico on-shore"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_EOLICO,
+            "idraulica"=>AA_Geser_Const::AA_GESER_TIPOIMPIANTO_IDROELETTRICO,
+        );
+
+        foreach($impianti as $curGseImpianto)
+        {
+            if($curGseImpianto['ai_fonte'] != "NO FER")
+            {
+                foreach($impianti_esistenti[1] as $curImpianto)
+                {
+                    $matching=0;
+                    //comune
+                    $geolocalizzazione=$curImpianto->GetGeolocalizzazione();
+                    if(isset($geolocalizzazione['comune']) && strpos(strtolower($geolocalizzazione['comune']),strtolower($curGseImpianto['ai_comune'])) !== false)
+                    {
+                        $matching++;
+                    }
+    
+                    //potenza (+- 10%)
+                    if(floatVal($curImpianto->GetProp('potenza'))-floatVal($curGseImpianto['ai_potenza']) <=.1)
+                    {
+                        $matching++;
+                    }
+    
+                    //Tipo impianto
+                    $tipo_impianto=$curImpianto->GetProp('tipologia');
+                    if(isset($tipo_impianti_match[strtolower($curGseImpianto['ai_fonte'])]) && ($tipo_impianto & $tipo_impianti_match[strtolower($curGseImpianto['ai_fonte'])]) > 0)
+                    {
+                        $matching++;
+                    }
+    
+                    if($matching > 0 && $matching > $max_matching)
+                    {
+                        $impianto_matched=$curImpianto;
+                        $max_matching=$matching;
+                    }
+                }
+
+                $curDataValues=array();
+                    
+                if($impianto_matched) 
+                {
+                    $curDataValues['id_impianto']=$impianto_matched->GetId();
+                }
+                else 
+                {
+                    $curDataValues['id_impianto']=0;
+                    $curDataValues['nome']="Impianto ad energia rinnovabile sito in  ".$$curGseImpianto['ai_comune'];
+                    if(isset($tipo_impianti_match_new[strtolower($curGseImpianto['ai_fonte'])])) 
+                    {
+                        $curDataValues['Tipologia']=$tipo_impianti_match_new[strtolower($curGseImpianto['ai_fonte'])];
+                        $curDataValues['nome']="Impianto ".$tipo_impianti[$curDataValues['Tipologia']]." sito in  ".$curGseImpianto['ai_comune'];
+                    }
+                    $curDataValues['Stato']=AA_Geser_Const::AA_GESER_STATO_ESERCIZIO;
+                    $curDataValues['AnnoAutorizzazione']="";
+                    $curDataValues['AnnoCostruzione']="";
+                    $curDataValues['InizioLavori']="";
+                    $curDataValues['AnnoEsercizio']=date("Y-m-d",intVal($curGseImpianto['details']['ai_data_esercizio']/1000));
+                    $curDataValues['AnnoDismissione']="";
+                    $curDataValues['Potenza']=AA_Utils::number_format(floatVal($curGseImpianto['ai_potenza']),2,".","");
+
+                    $curDataValues['Superficie']="";
+                    $curDataValues['Geo_comune']=trim($curGseImpianto['ai_comune']);
+                    $curDataValues['Geo_localita']=trim($curGseImpianto['details']['ai_indirizzo']);
+                    $curDataValues['Geo_coordinate']="";
+
+                    $curDataValues['Note']="Impianto importato da GSE - ".date("d/m/Y H:i:s");
+                    //^([A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST]{1}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{3}[A-Z]{1})$
+                    if(preg_match('/^([A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST]{1}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{3}[A-Z]{1})$/',$curGseImpianto['details']['ai_codfisc_operatore']))
+                    {
+                        $curDataValues['nome']="Impianto ".$tipo_impianti[$curDataValues['Tipologia']]." residenziale sito in  ".$curGseImpianto['ai_comune'];
+                        $curDataValues['Proprietario_nome']="Privato cittadino";
+                        $curDataValues['Proprietario_cf']="";
+                    }
+                    else
+                    {
+                        $curDataValues['nome']="Impianto ".$tipo_impianti[$curDataValues['Tipologia']]." - ".$curGseImpianto['details']['ai_nome_impianto']." - sito in  ".$curGseImpianto['ai_comune'];
+                        $curDataValues['Proprietario_nome']=$curGseImpianto['details']['ai_rag_soc_operatore'];
+                        $curDataValues['Proprietario_cf']=$curGseImpianto['details']['ai_codfisc_operatore'];
+                    }
+
+                    $curDataValues['GseData']=json_encode($curGseImpianto);
+                }
+
+                $data[]=$curDataValues;
+            }
+        }
+
+        return $data;
+        
+    }
     protected function ElaborateCsvImportTerna($csvRows=null)
     {
         if($csvRows==null)
