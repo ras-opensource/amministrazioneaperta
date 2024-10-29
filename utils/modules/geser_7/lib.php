@@ -1079,7 +1079,8 @@ Class AA_GeserModule extends AA_GenericModule
         $potenza=$object->GetProp("Potenza");
         if(intVal($potenza)>0)
         {
-            $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".$potenza." MWatt</span>";
+            if($potenza < 1000) $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".AA_Utils::number_format($object->GetProp("Potenza"),2,",",".")." KWatt</span>";
+            else $tags.="&nbsp;<span class='AA_DataView_Tag AA_Label AA_Label_Orange'>".AA_Utils::number_format($object->GetProp("Potenza")/1000,2,",",".")." MWatt</span>";
         }
         $data['tags']=$tags;
         $geolocalizzazione=$object->GetGeolocalizzazione();
