@@ -1641,29 +1641,30 @@ Class AA_HomeModule extends AA_GenericModule
         $sso_auth_token=$this->oUser->GetSSOAuthToken();
 
         //Moduli Row
+        $modules_added=0;
         $platform=AA_Platform::GetInstance($this->oUser);
         if($platform->IsValid())
         {
             $platform_modules=$platform->GetModules();
             AA_Log::Log(__METHOD__." - moduli: ".sizeof($platform_modules)." - minModules: ".$minCountModulesToCarousel,100);
 
-            if(sizeof($platform_modules) < $minCountModulesToCarousel ) 
-            {
-                AA_Log::Log(__METHOD__." - Aggiungo layout: ".$id."_ModuliBox" ,100);
-                $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
-            }
-            else 
-            {
-                AA_Log::Log(__METHOD__." - Aggiungo carosello: ".$id."_ModuliBox" ,100);
-                $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
-            }
-
-            if(is_array($platform_modules) && sizeof($platform_modules) > 0)
+            if(is_array($platform_modules) && sizeof($platform_modules) > 1)
             {
                 $minHeightModuliItem=intval(($_REQUEST['vh']-180)/2);
                 //$numModuliBoxForrow=intval(sqrt(sizeof($moduli_data)));
                 $WidthModuliItem=intval(($_REQUEST['vw']-110)/4);
                 //$HeightModuliItem=intval(/$numModuliBoxForrow);"css"=>"AA_DataView_Moduli_item","margin"=>10
+
+                if(sizeof($platform_modules) < $minCountModulesToCarousel ) 
+                {
+                    AA_Log::Log(__METHOD__." - Aggiungo layout: ".$id."_ModuliBox" ,100);
+                    $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+                }
+                else 
+                {
+                    AA_Log::Log(__METHOD__." - Aggiungo carosello: ".$id."_ModuliBox" ,100);
+                    $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+                }
 
                 $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 97%; margin:5px;'>";
                 //icon
@@ -1685,6 +1686,7 @@ Class AA_HomeModule extends AA_GenericModule
                     if($curModId != $this->GetId() && ($curMod['visible']==1 || in_array($this->oUser->GetId(), $admins) || $this->oUser->IsSuperUser()))
                     {
                         $nMod++;
+                        $modules_added++;
                         AA_Log::Log(__METHOD__." - Aggiungo il modulo: ".$curModId,100);
                         $name="<span style='font-weight:900;'>".implode("</span><span>",explode("-",$curMod['tooltip']))."</span>";
                         $onclick="AA_MainApp.utils.callHandler('ModuleBoxClick','".$curModId."','".$this->GetId()."')";
@@ -1715,6 +1717,7 @@ Class AA_HomeModule extends AA_GenericModule
                 if(AA_Config::AA_ENABLE_LEGACY_DATA && AA_Config::AA_SHOW_LEGACY_MODULES_BOX)
                 {
                     $nMod++;
+                    $modules_added++;
 
                     $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 97%; margin:5px;'>";
                     //icon
@@ -1748,19 +1751,25 @@ Class AA_HomeModule extends AA_GenericModule
                     }
                 }
 
-                if(sizeof($platform_modules) < $minCountModulesToCarousel && $moduli_view != null) 
+                if($moduli_view != null)
                 {
-                    AA_Log::Log(__METHOD__." - Aggiungo il box al layout: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
-                    if($moduli_view !=null) $moduli_box->AddRow($moduli_view);
-                }
-                else 
-                {
-                    AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
-                    if($moduli_view !=null) $moduli_box->AddSlide($moduli_view);
+                    if(sizeof($platform_modules) < $minCountModulesToCarousel) 
+                    {
+                        AA_Log::Log(__METHOD__." - Aggiungo il box al layout: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                        if($moduli_view !=null) $moduli_box->AddRow($moduli_view);
+                    }
+                    else 
+                    {
+                        AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                        if($moduli_view !=null) $moduli_box->AddSlide($moduli_view);
+                    }
                 }
             }
             else
             {
+                AA_Log::Log(__METHOD__." - Aggiungo layout: ".$id."_ModuliBox" ,100);
+                $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+
                 if(AA_Config::AA_ENABLE_LEGACY_DATA && AA_Config::AA_SHOW_LEGACY_MODULES_BOX)
                 {
 
@@ -1790,13 +1799,25 @@ Class AA_HomeModule extends AA_GenericModule
                 }
                 else
                 {
-                    $moduli_view=new AA_JSON_Template_Template($id."_Riepilogo_Tab",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>Non sono presenti elementi.</div></div>"));
+                    $moduli_view=new AA_JSON_Template_Template($id."_Riepilogo_Tab",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>&nbsp;</div></div>"));
                 }
 
                 $moduli_box->AddRow($moduli_view);
+                $modules_added=1;
             }
           
-            $layout->AddRow($moduli_box);
+            if($moduli_box)
+            {
+                if($modules_added==0)
+                {
+                    $moduli_box->AddRow(new AA_JSON_Template_Template(uniqid(),array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>&nbsp;</div></div>")));
+                }
+                $layout->AddRow($moduli_box);
+            }
+            else
+            {
+                $layout->AddRow(new AA_JSON_Template_Template(uniqid(),array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>&nbsp;</div></div>")));
+            }
         }
         
         return $layout;
