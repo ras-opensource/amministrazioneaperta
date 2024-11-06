@@ -1419,6 +1419,32 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         }
     };
 
+    //DefaultDetailItemMenuHandler
+    this.eventHandlers['defaultHandlers'].onStructDlgShowSupressedChange = function() {
+        try 
+        {
+            if(arguments[2]=="user")
+            {
+                let treeView=$$(this.config.treeView_id);
+                if(treeView)
+                {
+                    if(arguments[0]==1)
+                    {
+                        treeView.load(AA_MainApp.taskManager+this.config.struct_params+"&show_suppressed=1","json",null,true);
+                    }
+                    else
+                    {
+                        treeView.load(AA_MainApp.taskManager+this.config.struct_params,"json",null,true);
+                    }
+                }
+            }
+        } 
+        catch (msg) 
+        {
+            console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onStructDlgShowSupressedChange", msg, this);
+        }
+    };
+
     //DefaultPdfPreview
     this.eventHandlers['defaultHandlers'].pdfPreview = async function(params = null) {
         try {

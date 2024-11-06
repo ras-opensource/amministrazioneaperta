@@ -390,6 +390,9 @@ class AA_SystemTaskManager extends AA_GenericTaskManager
         //Restituisce lo stato dell piattaforma
         $this->RegisterTask("GetAppStatus", "AA_SystemTask_GetAppStatus");
 
+        //Restituisce lo stato dell piattaforma
+        $this->RegisterTask("GetStructTreeData", "AA_SystemTask_GetStructTreeData");
+
         //Restituisce il contenuto del sidemenu
         $this->RegisterTask("GetSideMenuContent", "AA_SystemTask_GetSideMenuContent");
 
@@ -680,6 +683,52 @@ class AA_SystemTask_GetAppStatus extends AA_GenericTask
 
             return true;
         }
+    }
+}
+#--------------------------------------------
+
+//Task che restituisce i dati della struttura (structDlg)
+class AA_SystemTask_GetStructTreeData extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("GetStructTreeData", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $this->GetName());
+
+        $this->sTaskLog = "";
+        $data=array(array("id" => "root", "parent"=>0,"value" => "strutture"));
+        if ($this->oUser->IsValid()) 
+        {
+            $struct = "";
+            $userStruct = $this->oUser->GetStruct();
+            if (is_array($_REQUEST)) {
+                if (isset($_REQUEST['showAll']) && $_REQUEST['showAll'] == 1) {
+                    if ($userStruct->GetTipo() <= 0) $struct = AA_Struct::GetStruct(0, 0, 0, $userStruct->GetTipo()); //RAS
+                    else $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), 0, 0, $userStruct->GetTipo()); //Altri
+                }
+
+                if (isset($_REQUEST['showAllDir']) && $_REQUEST['showAllDir'] == 1) {
+                    $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), 0, 0, $userStruct->GetTipo());
+                }
+
+                if (isset($_REQUEST['showAllServ']) && $_REQUEST['showAllServ'] == 1) {
+                    $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), $userStruct->GetDirezione(true), 0, $userStruct->GetTipo());
+                }
+            }
+            if (!($struct instanceof AA_Struct)) $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), $userStruct->GetDirezione(true), $userStruct->GetServizio(true), $userStruct->GetTipo());
+
+            if(empty($_REQUEST['show_suppressed'])) $_REQUEST['bHideSuppressed']=1;
+
+            AA_Log::Log(__METHOD__." - query: ".print_r($_REQUEST,true),100);
+            $data=$struct->toArray($_REQUEST);
+        }
+
+        $this->sTaskLog=json_encode($data);
     }
 }
 #--------------------------------------------
@@ -5444,6 +5493,7 @@ class AA_GenericStructDlg extends AA_GenericWindowTemplate
         //target Form
         if ($options['targetForm'] != "") $this->targetForm = $options['targetForm'];
 
+        /*
         if ($user->IsValid()) {
             $struct = "";
             $userStruct = $user->GetStruct();
@@ -5464,15 +5514,24 @@ class AA_GenericStructDlg extends AA_GenericWindowTemplate
             if (!($struct instanceof AA_Struct)) $struct = AA_Struct::GetStruct($userStruct->GetAssessorato(true), $userStruct->GetDirezione(true), $userStruct->GetServizio(true), $userStruct->GetTipo());
         } else {
             $struct = array(array("id" => "root", "value" => "strutture"));
-        }
+        }*/
 
         //Struttura
         $filterLevel = 4;
 
         if (isset($options['hideServices'])) $filterLevel = 3;
 
+        //AA_Log::Log(__METHOD__." - options: ".print_r($_REQUEST,true),100);
+
+        $url_params="?task=GetStructTreeData";
+        foreach($options as $key=>$val)
+        {
+            if($key !="task") $url_params.="&".$key."=".$val;
+        }
+
         $tree = new AA_JSON_Template_Tree($this->id . "_Tree", array(
-            "data" => $struct->toArray($options),
+            //"data" => $struct->toArray($options),
+            "url"=>AA_Config::AA_PUBLIC_LIB_PATH."/system_ops.php".$url_params,
             "select" => true,
             "switch_suppressed_id"=>$this->id . "_Switch_Supressed",
             "search_text_id"=>$this->id . "_Search_Text",
@@ -5495,7 +5554,7 @@ class AA_GenericStructDlg extends AA_GenericWindowTemplate
         $toolbar->addCol(new AA_JSON_Template_Generic("", array("view" => "spacer", "width" => 15)));
 
         //mostra/nascondi strutture soppresse
-        $toolbar->addCol(new AA_JSON_Template_Generic($this->id . "_Switch_Supressed", array("view" => "switch", "width" => 350, "label" => "Strutture soppresse:", "labelWidth" => 150, "onLabel" => "visibili", "offLabel" => "nascoste", "tooltip" => "mostra/nascondi le strutture soppresse")));
+        $toolbar->addCol(new AA_JSON_Template_Generic($this->id . "_Switch_Supressed", array("view" => "switch", "width" => 350, "struct_params"=>$url_params, "treeView_id"=>$this->id . "_Tree","label" => "Strutture soppresse:", "labelWidth" => 150, "onLabel" => "visibili", "offLabel" => "nascoste", "tooltip" => "mostra/nascondi le strutture soppresse","eventHandlers"=>array("onChange"=>array("handler"=>"onStructDlgShowSupressedChange")))));
 
         $toolbar->addCol(new AA_JSON_Template_Generic());
         $toolbar->addCol($this->applyButton);
@@ -6653,6 +6712,7 @@ Class AA_Struttura extends AA_GenericParsableDbObject
     public function __construct($params = null)
     {
         $this->aProps['descrizione']="";
+        $this->aProps['aggiornamento']=date("Y-m-d");
         $this->aProps['data_istituzione']=date("Y-m-d");
         $this->aProps['data_soppressione']="9999-12-31";
         $this->aProps['web']="";

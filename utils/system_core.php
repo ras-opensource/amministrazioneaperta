@@ -585,10 +585,10 @@ class AA_Struct
         $assessorato_num = 1;
         $direzione_num = 1;
         $servizio_num = 1;
-        $result = array(array("id" => $root, "value" => "Strutture", "open" => true,"ops"=>"", "data" => array()));
+        $result = array(array("id" => $root, "value" => "Strutture", "open" => true,"ops"=>"","parent"=>0, "data" => array()));
         foreach ($this->aTree['assessorati'] as $id_ass => $ass) {
-            if (sizeof($ass['direzioni']) > 0 && (!isset($params['hideDirs']) || $params['hideDirs'] !=1)) $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0, "data" => array());
-            else $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0);
+            if (sizeof($ass['direzioni']) > 0 && (!isset($params['hideDirs']) || $params['hideDirs'] !=1)) $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0,"parent"=>$root, "tipo" => $ass['tipo'], "value" => $ass['descrizione'], "soppresso" => 0, "data" => array());
+            else $curAssessorato = array("id" => $id_ass, "id_assessorato" => $id_ass, "id_direzione" => 0, "id_servizio" => 0, "tipo" => $ass['tipo'],"parent"=>$root, "value" => $ass['descrizione'], "soppresso" => 0);
 
             //AA_Log::Log(__METHOD__." - curAssessorato: ".print_r($curAssessorato,true),100);
 
@@ -597,14 +597,14 @@ class AA_Struct
                     //AA_Log::Log(get_class()."->toArray() - direzione: ".$dir['descrizione'],100);
                     if(empty($params['bHideSuppressed'])  || (empty($dir['soppresso']) && !empty($params['bHideSuppressed'])))
                     {
-                        if (sizeof($dir['servizi']) > 0 && (!isset($params['hideServices']) || $params['hideServices'] !=1)) $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso'], "data" => array());
-                        else $curDirezione = array("id" => $id_ass . "." . $id_dir, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso']);
+                        if (sizeof($dir['servizi']) > 0 && (!isset($params['hideServices']) || $params['hideServices'] !=1)) $curDirezione = array("id" => $id_ass . "." . $id_dir, "parent"=>$id_ass, "id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso'], "data" => array());
+                        else $curDirezione = array("id" => $id_ass . "." . $id_dir, "parent"=>$id_ass,"id_direzione" => $id_dir, "id_assessorato" => $id_ass, "id_servizio" => 0, "value" => $dir['descrizione'], "data_soppressione" => $dir['data_soppressione'], "soppresso" => $dir['soppresso']);
                         if ((!isset($params['hideServices']) || $params['hideServices'] !=1)) 
                         {
                             foreach ($dir['servizi'] as $id_ser => $ser) {
                                 if(empty($params['bHideSuppressed'])  || (empty($ser['soppresso']) && !empty($params['bHideSuppressed'])))
                                 {
-                                    $curDirezione['data'][] = array("id" => $id_ass . "." . $id_dir . "." . $id_ser, "id_servizio" => $id_ser, "id_assessorato" => $id_ass, "id_direzione" => $id_dir, "data_soppressione" => $ser['data_soppressione'], "soppresso" => $ser['soppresso'], "value" => $ser['descrizione']);
+                                    $curDirezione['data'][] = array("id" => $id_ass . "." . $id_dir . "." . $id_ser, "parent"=>$id_ass . "." . $id_dir,"id_servizio" => $id_ser, "id_assessorato" => $id_ass, "id_direzione" => $id_dir, "data_soppressione" => $ser['data_soppressione'], "soppresso" => $ser['soppresso'], "value" => $ser['descrizione']);
                                     $servizio_num++;
                                 }
                             }
@@ -5881,7 +5881,7 @@ class AA_Object
             return false;
         }
 
-        if (($this->nStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0 && ($this->nStatus & AA_Const::AA_STATUS_REVISIONATA) > 0) {
+        if (($this->nStatus & AA_Const::AA_STATUS_PUBBLICATA) > 0) {
             //Imposta il flag "PUBBLICATA"
             $this->nStatus = AA_Const::AA_STATUS_PUBBLICATA;
             $this->SetChanged();
