@@ -698,8 +698,6 @@ class AA_SystemTask_GetStructTreeData extends AA_GenericTask
     //Funzione per la gestione del task
     public function Run()
     {
-        //AA_Log::Log(__METHOD__ . "() - task: " . $this->GetName());
-
         $this->sTaskLog = "";
         $data=array(array("id" => "root", "parent"=>0,"value" => "strutture"));
         if ($this->oUser->IsValid()) 
@@ -724,7 +722,6 @@ class AA_SystemTask_GetStructTreeData extends AA_GenericTask
 
             if(empty($_REQUEST['show_suppressed'])) $_REQUEST['bHideSuppressed']=1;
 
-            AA_Log::Log(__METHOD__." - query: ".print_r($_REQUEST,true),100);
             $data=$struct->toArray($_REQUEST);
         }
 
