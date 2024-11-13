@@ -1577,14 +1577,10 @@ Class AA_PatrimonioModule extends AA_GenericModule
         if($canone instanceof AA_Patrimonio_Canone)
         {
             $annodal=date("Y",strtotime($canone->GetProp("data_inizio")));
-            $annoal=date("Y",strtotime($canone->GetProp("data_fine")));
-            if(($annoal-date("Y")) > 5)
+            $annoal=Min(date("Y",strtotime($canone->GetProp("data_fine"))),date("Y"));
+            if($annoal-$annodal >= 5)
             {
-                $annoal=date("Y");
-                if($annoal - $annodal > 5)
-                {
-                    $annodal=$annoal-4;
-                }
+                $annodal=$annoal-5;
             }
 
             for($i=$annodal;$i<=$annoal;$i++)
@@ -1638,12 +1634,17 @@ Class AA_PatrimonioModule extends AA_GenericModule
         $wnd->AddDateField("data_fine","Data fine",array("required"=>true,"editable"=>true,"validateFunction"=>"IsIsoDate","bottomLabel"=>"*Inserire la data di scadenza del canone o la dicitura 9999-12-31 se non c'è una data di scadenza.", "placeholder"=>"inserisci qui la data di scadenza."),false);
 
         $section=new AA_FieldSet(uniqid(),"Importo per annualita'");
+        $row=0;
         for($i=$annodal;$i<=$annoal;$i++)
         {
             //importo
+            $newrow=true;
+            if($row%2) $newrow=false;
+            $row++;
             $label="Importo per l'anno ".$i;
-            $section->AddTextField("importo_".$i,$label,array("labelWidth"=>200,"bottomLabel"=>"*Inserire l'importo, relativo all'anno indicato, in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."));
+            $section->AddTextField("importo_".$i,$label,array("labelWidth"=>200,"bottomLabel"=>"*Inserire l'importo, relativo all'anno indicato, in cifre.", "required"=>true,"validateFunction"=>"IsNumber","customInvalidMessage"=>"*Indicare esclusivamente numeri interi o decimali.","placeholder"=>"Inserisci qui l'importo."),$newrow);
         }
+        if($row%2) $section->AddSpacer(false);
 
         $wnd->AddGenericObject($section);
         
