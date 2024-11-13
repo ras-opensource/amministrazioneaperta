@@ -25,13 +25,42 @@ AA_sines_module.eventHandlers['defaultHandlers'].NominaDblClick = function()
         //console.log("eventHandlers.defaultHandlers.CoalizioneDblClick", this, arguments);
         let item=this.getItem(arguments[0]);    
         let tabbar=$$(this.config.tabbar);
-        console.log("eventHandlers.defaultHandlers.ListaDblClick",tabbar,item);
+        //console.log("eventHandlers.defaultHandlers.ListaDblClick",tabbar,item);
         if(tabbar && item)
         {
             tabbar.setValue(item.id_view);
         }
     } catch (msg) {
         console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.NominaDblClick", msg, this);
+    }
+};
+
+AA_sines_module.eventHandlers['defaultHandlers'].onFFChange = function() 
+{
+    try 
+    {
+        if(arguments[2]=="user")
+        {
+            //console.log("eventHandlers.defaultHandlers.onFFChange",this,arguments);
+            let section=$$(this.config.section_id);
+            if(section)
+            {
+                //console.log("eventHandlers.defaultHandlers.onFFChange",this,arguments);
+                if(arguments[0]==1)
+                {
+                    console.log("eventHandlers.defaultHandlers.onFFChange - nascondo",this,arguments);
+                    section.hide();
+                }
+                else 
+                {
+                    console.log("eventHandlers.defaultHandlers.onFFChange - mostro",this,arguments);
+                    section.show();
+                }
+            }
+        }
+        
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onFFChange", msg, this);
     }
 };
 

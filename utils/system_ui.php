@@ -2103,6 +2103,14 @@ class AA_FieldSet extends AA_JSON_Template_Generic
 
     public function __construct($id = "field_set", $label = "Generic field set", $formId = "", $gravity = 1, $props = array("type" => "clean"))
     {
+        if(is_array($props))
+        {
+            foreach($props as $key=>$val)
+            {
+                $this->props[$key]=$val;
+            }
+        }
+
         $this->props['view'] = "fieldset";
         $this->props['label'] = $label;
         $this->props['id'] = $id;

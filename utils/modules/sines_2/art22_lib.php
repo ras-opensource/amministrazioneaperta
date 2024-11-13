@@ -10530,7 +10530,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
 
                         $dati['tipo_nomina']=$curNomina->GetTipologia();
                         $dati['ff']=1;
-                        $dati['cessazione']="<div style=''>".date("d-m-Y",strtotime($curNomina->GetDataFine()))." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div>";
+                        $dati['cessazione']="<div style=''>facente funzione dal <br>".date("d-m-Y",strtotime($curNomina->GetDataFine()))." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div>";
 
                         $nomine_list[$index][$tipo_organigramma]['text'].="<div class='AA_Label AA_Label_LightYellow' style='margin-right: 1em; margin-bottom:1em;font-size:larger; padding:10px'>".$organigramma_label."<div style='font-weight: 900; margin-top: .5em'>".$curNomina->GetTipologia()."<br><span style='font-weight:normal;font-size:smaller'>(facente funzione)</span></div><div>".$nomina_label."</div>$nominaRas<div style='margin-top: .5em'>".$label_scadenza.$curNomina->GetDataFine()." <span style='font-size: smaller'>(".$datafine->diff($data_scadenzario)->format("%a")." gg)</span></div></div>";
                         
@@ -10569,7 +10569,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                 //$table_data->SetClass($table_colors[$index]);
                 $table_data->SetColSizes(array("30","20","20","30"));
                 $table_data->SetCellPadding("5px");
-                $table_data->SetHeaderLabels(array("<div style='text-align: left'>Incarico</div>","<div style='text-align: left'>Nome e cognome</div>","Data cessazione", "<div style='text-align: left'>estremi atto di nomina</div>"));
+                $table_data->SetHeaderLabels(array("<div style='text-align: left'>Incarico</div>","<div style='text-align: left'>Nome e cognome</div>","Data", "<div style='text-align: left'>estremi atto di nomina</div>"));
                 $curRow=1;
                 foreach($y['struct'] as $val)
                 {
@@ -10608,7 +10608,7 @@ Class AA_OrganismiReportScadenzarioNomineTemplateView extends AA_GenericObjectTe
                 $box[$index]->SetText("<div style='font-size: larger'>Incarichi <span style='color: red; font-weight: bold'>cessati da meno di ".$parametri['finestra_temporale']." $mese</span> a far data del ".date("d-m-Y",strtotime($data)).":</div>");
             }
             
-            if($index=="scadute") 
+            if($index=="cessate") 
             {
                 $box[$index]->SetStyle("display:flex; flex-direction: row; align-items: left; flex-wrap: wrap; width: 100%; margin-bottom: 2em; border-bottom: 2px solid gray");
                 //$box[$index]->SetClass($table_colors[$index]);

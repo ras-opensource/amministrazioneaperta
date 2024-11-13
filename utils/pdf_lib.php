@@ -464,7 +464,7 @@ Class AA_PDF_Document
             } 
         }
 
-       $cmd = "cd ".$this->working_dir."; LD_LIBRARY_PATH=/usr/lib:/lib  chromium-browser --headless --disable-gpu --no-sandbox --run-all-compositor-stages-before-draw --print-to-pdf ./".$this->id.".html --virtual-time-budget=20000";
+       $cmd = "cd ".$this->working_dir."; LD_LIBRARY_PATH=/usr/lib:/lib  chromium-browser --headless --disable-gpu --no-sandbox --run-all-compositor-stages-before-draw --print-to-pdf ./".$this->id.".html --virtual-time-budget=20000 --disable-crash-reporter --no-crashpad 2>&1";
 
         //error_log("eseguo: ".$cmd);
         $result = shell_exec($cmd);
@@ -473,7 +473,7 @@ Class AA_PDF_Document
         //Errore durante la generazione del file pdf
         if(!is_file($this->working_dir."/output.pdf"))
         {
-            error_log($result);  
+            error_log("executing: ".$cmd." - result: ".print_r($result,true));  
             if($toBrowser)
             {
                 die("ERRORE durante la generazione del documento pdf.");

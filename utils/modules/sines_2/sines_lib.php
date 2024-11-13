@@ -2167,32 +2167,43 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(720);
-        $wnd->SetHeight(720);
+        $wnd->SetHeight(800);
         
         //nomina Ras
         $wnd->AddSwitchBoxField("bNominaRas","Tipo nomina",array("onLabel"=>"RAS","offLabel"=>"non RAS","bottomLabel"=>"*Indica se la nomina/designazione/indicazione è effettuata dalla RAS."));        
         
         //facente funzione
-        $wnd->AddSwitchBoxField("nFacenteFunzione","Facente funzione",array("onLabel"=>"si","offLabel"=>"no","tooltip"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.","bottomLabel"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.", "value"=>"0"));
+        $wnd->AddSwitchBoxField("nFacenteFunzione","Facente funzione",array("onLabel"=>"si","offLabel"=>"no","section_id"=>$id."_dataFine","tooltip"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.","bottomLabel"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.", "eventHandlers"=>array("onChange"=>array("handler"=>"onFFChange")),"value"=>"0"));
 
         //Tipologia
         $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Organismi_Const::GetTipoNomine() as $id=>$label)
+        foreach(AA_Organismi_Const::GetTipoNomine() as $value=>$label)
         {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+            if($value > 0) $options[]=array("id"=>$value,"value"=>$label);
         }
-        $wnd->AddSelectField("nTipologia","Incarico",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di incarico.","tooltip"=>"Seleziona il tipo di incarico.","options"=>$options,"value"=>"0"));
+        $wnd->AddSelectField("nTipologia","Incarico",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di incarico.","tooltip"=>"Seleziona il tipo di incarico.","options"=>$options));
         
         //Data inizio
         $wnd->AddDateField("sDataInizio","Data inizio",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di inizio dell'incarico", "placeholder"=>"inserisci qui la data di inizio."));
         $wnd->AddSpacer(false);
 
+        $hidden=false;
+        if($incarico->IsFacenteFunzione()) 
+        {
+            AA_Log::Log(__METHOD__." - facente funzione: ".print_r($incarico->IsFacenteFunzione(),true),100);
+            $hidden=true;
+        }
+        
+        $section=new AA_FieldSet($id."_dataFine","Conclusione",'',1,array("type"=>"clean","hidden"=>$hidden));
+
         //Data fine
-        $wnd->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
+        $section->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
         
         //Data fine presunta
-        $wnd->AddCheckBoxField("bDataFinePresunta","Presunta",array("gravity"=>1,"labelWidth"=>90,"bottomLabel"=>"*Abilitare se presunta."),false);
+        $section->AddCheckBoxField("bDataFinePresunta","Presunta",array("gravity"=>1,"labelWidth"=>90,"bottomLabel"=>"*Abilitare se presunta."),false);
         
+        $wnd->AddGenericObject($section);
+
         //Storico
         $wnd->AddSwitchBoxField("nStorico","Storico",array("onLabel"=>"si","offLabel"=>"no","bottomLabel"=>"*Abilita per archiviare l'incarico come storico."));
 
@@ -2232,31 +2243,44 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(720);
-        $wnd->SetHeight(640);
+        $wnd->SetHeight(800);
         
         //nomina Ras
         $wnd->AddSwitchBoxField("bNominaRas","Tipo nomina",array("onLabel"=>"RAS","offLabel"=>"non RAS","bottomLabel"=>"*Indica se la nomina/designazione/indicazione è effettuata dalla RAS."));        
         
         //Tipologia
         $options=array(array("id"=>"0","value"=>"Qualunque"));
-        foreach(AA_Organismi_Const::GetTipoNomine() as $id=>$label)
+        foreach(AA_Organismi_Const::GetTipoNomine() as $key=>$label)
         {
-            if($id > 0) $options[]=array("id"=>$id,"value"=>$label);
+            if($key > 0) $options[]=array("id"=>$key,"value"=>$label);
         }
         $wnd->AddSelectField("nTipologia","Incarico",array("required"=>true,"validateFunction"=>"IsPositive","customInvalidMessage"=>"*Occorre selezionare il tipo di incarico.","tooltip"=>"Seleziona il tipo di incarico.","options"=>$options,"value"=>"0"));
         
         //facente funzione
-        $wnd->AddCheckBoxField("nFacenteFunzione","Facente funzione",array("tooltip"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.","bottomLabel"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.", "value"=>"0"));
+         //facente funzione
+        $wnd->AddSwitchBoxField("nFacenteFunzione","Facente funzione",array("onLabel"=>"si","offLabel"=>"no","section_id"=>$id."_dataFine","tooltip"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.","bottomLabel"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.", "eventHandlers"=>array("onChange"=>array("handler"=>"onFFChange")),"value"=>"0"));
+
+        //$wnd->AddCheckBoxField("nFacenteFunzione","Facente funzione",array("tooltip"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.","bottomLabel"=>"Abilita se l'incarico è una sostituzione temporanea, ad esempio ex art.30.", "value"=>"0"));
 
         //Data inizio
         $wnd->AddDateField("sDataInizio","Data inizio",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di inizio dell'incarico", "placeholder"=>"inserisci qui la data di inizio."));
         $wnd->AddSpacer(false);
 
+        $section=new AA_FieldSet($id."_dataFine","Conclusione",'',1,array("type"=>"clean"));
+
         //Data fine
-        $wnd->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
+        $section->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
         
         //Data fine presunta
-        $wnd->AddCheckBoxField("bDataFinePresunta","Presunta",array("gravity"=>1,"labelWidth"=>90,"bottomLabel"=>"*Abilitare se presunta."),false);
+        $section->AddCheckBoxField("bDataFinePresunta","Presunta",array("gravity"=>1,"labelWidth"=>90,"bottomLabel"=>"*Abilitare se presunta."),false);
+        
+        $wnd->AddGenericObject($section);
+
+        //Data fine
+        //$wnd->AddDateField("sDataFine","Data conclusione",array("required"=>true,"editable"=>true,"gravity"=>2,"bottomLabel"=>"*Inserire la data di conclusione dell'incarico", "placeholder"=>"inserisci qui la data di conclusione."));
+        
+        //Data fine presunta
+        //$wnd->AddCheckBoxField("bDataFinePresunta","Presunta",array("gravity"=>1,"labelWidth"=>90,"bottomLabel"=>"*Abilitare se presunta."),false);
 
         //Estremi del provvedimento
         $wnd->AddTextField("sEstremiProvvedimento","Estremi provvedimento",array("required"=>true,"bottomLabel"=>"*Riportare gli estremi del provvedimento di nomina.", "placeholder"=>"inserisci qui gli estremi del provvedimento di nomina."));
@@ -3938,7 +3962,7 @@ Class AA_SinesModule extends AA_GenericModule
                     
                 //data fine
                 $val=$incarico->GetDataFine();
-                if(strpos($val,"9999") !== false)
+                if(strpos($val,"9999") !== false || $incarico->IsFacenteFunzione())
                 {
                     $val="a tempo indeterminato";
                 }
