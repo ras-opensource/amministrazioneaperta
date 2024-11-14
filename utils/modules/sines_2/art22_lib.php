@@ -3624,7 +3624,7 @@ class AA_Organismi extends AA_Object
     /**
      * Summary of HasOrganigrammi
      * @param mixed $params
-     * @return array<AA_Organismi_Organigramma>
+     * @return bool
      */
     public function HasOrganigrammi($params=array())
     {
@@ -3634,7 +3634,7 @@ class AA_Organismi extends AA_Object
         {
             AA_Log::Log(__METHOD__."() - oggetto non valido.");
 
-            return array();
+            return false;
         }
 
         //Impostazione dei parametri
@@ -3644,7 +3644,7 @@ class AA_Organismi extends AA_Object
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__."() - errore nella query: ".$query,100,false,true);
-            return array();
+            return false;
         }
 
         //AA_Log::Log(__METHOD__."() - query: ".$query,100);
