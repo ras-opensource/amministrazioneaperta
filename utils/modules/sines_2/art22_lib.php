@@ -4429,7 +4429,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
         }
 
         $new_bilancio->EnableDbSync();
-        if(!$new_bilancio->UpdateDb($user))
+        if(!$new_bilancio->UpdateDb($user,null,true," Aggiunta nuovi dati contabili (anno ".$new_bilancio->GetAnno().")"))
         {
             AA_Log::Log(__METHOD__." - Errore durante il salvataggio del nuovo bilancio sul DB.", 100,false,true);
             return null;    
@@ -4612,7 +4612,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
             $data=array("sRisultatiBilancio"=>"");
         }
         
-        return $this->UpdateDb($user,$data);
+        return $this->UpdateDb($user,$data,true," Rimozione ".$bilancio->GetTipo()." per l'anno ".$this->GetAnno()."");
     }
 
     //Elimina i bilanci
@@ -4718,7 +4718,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
             $data=array("nTipologia"=>$bilancio->GetTipo(true),"sRisultatiBilancio"=>$bilancio->GetRisultati());
         }
 
-        return $this->UpdateDb($user,$data);
+        return $this->UpdateDb($user,$data,true," Aggiunta nuovo bilancio (".$bilancio->GetTipo().")");
     }
 
     //Aggiorna un bilancio
@@ -4781,7 +4781,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
             $data=array("nTipologia"=>$bilancio->GetTipo(true),"sRisultatiBilancio"=>$bilancio->GetRisultati());
         }
 
-        return $this->UpdateDb($user,$data);
+        return $this->UpdateDb($user,$data,true," Aggiornamento bilancio (".$bilancio->GetTipo().")");
         
     }
 
@@ -4823,7 +4823,17 @@ Class AA_OrganismiDatiContabili extends AA_Object
             return false;
         }
 
-        return parent::Trash($user,true);
+        $return=parent::Trash($user,true);
+        if($return)
+        {
+            $org=$this->GetParent($user);
+            if($org)
+            {
+                $org->UpdateDb($user,null,true, " Rimozione dati contabili per l'anno ".$this->GetAnno());
+            }
+            
+            return $return;
+        }
     }
 }
 
@@ -7869,6 +7879,7 @@ Class AA_OrganismiNomine extends AA_Object
         {
             return false;
         }
+
         $perms=$this->GetUserCaps($user);
         if(($perms & AA_Const::AA_PERMS_DELETE) == 0)
         {
@@ -7881,7 +7892,16 @@ Class AA_OrganismiNomine extends AA_Object
             return false;
         }
         
-        if($this->DeleteAllDocs("",0,"",$user)) return parent::Trash($user, true);
+        if($this->DeleteAllDocs("",0,"",$user)) 
+        {
+            $return = parent::Trash($user, true);
+            $organismo=$this->GetParent($user);
+            if($organismo)
+            {
+                $organismo->UpdateDb($user,null,true," Eliminazione nomina/incarico per ".$this->GetCognome()." ".$this->GetNome());
+            }
+            return $return;
+        }
         else
         {
             return false;
@@ -11045,7 +11065,7 @@ Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateVi
             }
 
             $footer="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>1. I nominativi dei rappresentanti dell'Amministrazione Regionale sono indicati in colore verde.</div>";
-            $footer.="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>2. Il trattamento economico complessivo è la somma degli emolumenti percepiti relativi all'arco temporale di validità dell'incarico o alla data di aggiornamento del presente prospetto qualora l'incarico sia ancora in corso.</div>";
+            $footer.="<div style='font-style: italic; text-align: left; width: 100%; margin-top: .3em;font-size: smaller;'>2. Il trattamento economico complessivo è la somma degli emolumenti spettanti relativi all'arco temporale di validità dell'incarico o alla data di aggiornamento del presente prospetto qualora l'incarico sia ancora in corso.</div>";
             if($num_nomine_ras >0) $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Il numero dei rappresentanti in carica dell'Amministrazione Regionale è ".$num_nomine_ras.".</div>";
             else $footer.="<div style='text-align: left; width: 100%; margin-top: .8em;'>Non sono presenti rappresentanti in carica dell'Amministrazione Regionale.</div>";
 

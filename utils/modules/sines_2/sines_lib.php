@@ -5380,7 +5380,7 @@ Class AA_SinesModule extends AA_GenericModule
         }
         
         //Salva i dati
-        if(!$organismo->UpdateDb($this->oUser))
+        if(!$organismo->UpdateDb($this->oUser,null,true," Aggiornamento dati generali"))
         {
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salavataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
@@ -6219,7 +6219,7 @@ Class AA_SinesModule extends AA_GenericModule
         $organismo->SetPartecipazione(json_encode($partecipazione));
        
         //Salva i dati
-        if(!$organismo->UpdateDb($this->oUser))
+        if(!$organismo->UpdateDb($this->oUser,null,true," Aggiunta nuova partecipazione (".$organismoPartecipante->GetDenominazione().")"))
         {
             $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
             $task->SetError(AA_Log::$lastErrorLog,false);
@@ -6290,7 +6290,7 @@ Class AA_SinesModule extends AA_GenericModule
         $organismo->SetPartecipazione(json_encode($partecipazione));
        
         //Salva i dati
-        if(!$organismo->UpdateDb($this->oUser))
+        if(!$organismo->UpdateDb($this->oUser,null,true," Aggionamento partecipazione (".$organismoPartecipante->GetDenominazione().")"))
         {
             $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
             $task->SetError(AA_Log::$lastErrorLog,false);
@@ -6345,7 +6345,7 @@ Class AA_SinesModule extends AA_GenericModule
         $organismo->SetPartecipazione(json_encode($partecipazione));
        
         //Salva i dati
-        if(!$organismo->UpdateDb($this->oUser))
+        if(!$organismo->UpdateDb($this->oUser,null,true," Rimozione partecipazione per ".$organismoPartecipante->GetDenominazione().""))
         {
             $task->SetStatus(AA_GenericModuleTask::AA_STATUS_FAILED);
             $task->SetError(AA_Log::$lastErrorLog,false);
@@ -6865,7 +6865,7 @@ Class AA_SinesModule extends AA_GenericModule
         }
         
         //Salva i dati
-        if(!$dato->UpdateDb($this->oUser))
+        if(!$dato->UpdateDb($this->oUser,null,true," Aggiornamento dati contabili (anno ".$dato->GetAnno().")"))
         {
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salavataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
@@ -7107,7 +7107,7 @@ Class AA_SinesModule extends AA_GenericModule
         $bilancio->SetId($_REQUEST['id_bilancio']);
 
         //Aggiorna i dati
-        if(!$dato->UpdateBilancio($bilancio))
+        if(!$dato->UpdateBilancio($bilancio,$this->oUser))
         {
             $task->SetError(AA_Log::$lastErrorLog);
             $sTaskLog="<status id='status'>-1</status><error id='error'>".AA_Log::$lastErrorLog."</error>";
