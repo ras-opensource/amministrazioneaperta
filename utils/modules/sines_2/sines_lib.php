@@ -14,7 +14,10 @@ Class AA_SinesModule extends AA_GenericModule
     const AA_UI_PREFIX="AA_Sines";
     const AA_UI_SCADENZARIO_BOX="Scadenzario_Content_Box";
     const AA_UI_TEMPLATE_PARTECIPAZIONI="Partecipazioni";
-    
+    const AA_UI_WND_NOMINA_DETAIL="NominaDetailWnd";
+    const AA_UI_LAYOUT_NOMINA_DETAIL="NominaDetailLayout";
+
+
     //Id modulo
     const AA_ID_MODULE="AA_MODULE_SINES";
 
@@ -118,6 +121,7 @@ Class AA_SinesModule extends AA_GenericModule
         $taskManager->RegisterTask("TrashOrganismoIncaricoCompenso");
         $taskManager->RegisterTask("GetOrganismoModifyIncaricoCompensoDlg");
         $taskManager->RegisterTask("UpdateOrganismoIncaricoCompenso");
+        $taskManager->RegisterTask("GetOrganismoNominaDetailViewDlg");
         
         //Organigrammi
         $taskManager->RegisterTask("GetOrganismoAddNewOrganigrammaDlg");
@@ -164,6 +168,9 @@ Class AA_SinesModule extends AA_GenericModule
         $this->AddSection($section);
         
         #-------------------------------------------
+
+        $this->AddObjectTemplate(static::AA_UI_PREFIX."_".static::AA_UI_WND_NOMINA_DETAIL."_".static::AA_UI_LAYOUT_NOMINA_DETAIL,"Template_GetOrganismoNominaDetailViewLayout");
+
     }
     
     //istanza
@@ -2055,6 +2062,7 @@ Class AA_SinesModule extends AA_GenericModule
 
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
+
         $wnd->SetSaveTask("UpdateOrganismo");
         
         return $wnd;
@@ -2215,7 +2223,9 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddTextareaField("sNote",$label);
 
         $wnd->EnableCloseWndOnSuccessfulSave();
-        $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        
         $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_incarico"=>$incarico->GetId()));
         $wnd->SetSaveTask("UpdateOrganismoIncarico");
         
@@ -2933,6 +2943,297 @@ Class AA_SinesModule extends AA_GenericModule
         return $wnd;
     }
     
+    //Template dlg nomna detail
+    public function Template_GetOrganismoNominaDetailViewDlg($object=null,$nomina=null)
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_NOMINA_DETAIL;
+        if(!($object instanceof AA_Organismi)) return new AA_GenericWindowTemplate($id, "Dettagli incarico", $this->id);
+        if(!($nomina instanceof AA_OrganismiNomine)) return new AA_GenericWindowTemplate($id, "Dettagli incarico", $this->id);
+
+
+        $wnd = new AA_GenericWindowTemplate($id, "Dettaglio incarico di ".$nomina->GetCognome()." ".$nomina->GetNome(), $this->id);
+
+        $layout=$this->Template_GetOrganismoNominaDetailViewLayout($object,$nomina,$id);
+        $wnd->AddView($layout);
+        return $wnd;
+    }
+
+    //Template layout nomina
+    public function Template_GetOrganismoNominaDetailViewLayout($object=null,$incarico=null,$id="")
+    {
+        if(!$object) $object=new AA_Organismi($_REQUEST['id']);
+        if(!$object->isValid())
+        {
+            $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati.</span></div>")));
+            return $layout;
+        }
+
+        if(!$incarico) $incarico = new AA_OrganismiNomine($_REQUEST["id_incarico"],$object,$this->oUser);
+        if(!($incarico->isValid()))
+        {
+            $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+            $layout->AddRow(new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Errore nel recupero dei dati dell'incarico.</span></div>")));
+            return $layout;
+        }
+
+        $canModify=false;
+        if(($incarico->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_WRITE)>0) $canModify=true;
+        if($id=="") $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_NOMINA_DETAIL."_".static::AA_UI_LAYOUT_NOMINA_DETAIL;
+        else $id.="_".static::AA_UI_LAYOUT_NOMINA_DETAIL;
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id,"css"=>"AA_Detail_Content"));
+        
+        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important","background-color"=>"#dadee0 !important")));
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+        $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"label","align"=>"center", "label"=>"<span style='color:#003380'>".$incarico->GetTipologia()."</span>")));
+
+        //modifica
+        if($canModify)
+        {
+            $modify_btn=new AA_JSON_Template_Generic($id."_ModifyIncarico_btn",array(
+                "view"=>"button",
+                 "type"=>"icon",
+                 "icon"=>"mdi mdi-pencil",
+                 "label"=>"Modifica",
+                 "css"=>"webix_primary",
+                 "align"=>"right",
+                 "width"=>120,
+                 "tooltip"=>"Modifica",
+                 "click"=>"AA_MainApp.utils.callHandler('dlg', {task: 'GetOrganismoModifyIncaricoDlg', postParams: {id: ".$object->GetId().", id_incarico:".$incarico->GetId().", refresh: 1, refresh_obj_id:'".$id."'}, module: '" . $this->id . "'},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);   
+        }
+        else
+        {
+            $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+        $layout->addRow($toolbar);
+
+        //--------------------- Dati incarico -------------------------------
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
+        $now=date("Y-m-d");
+
+        //stato incarico
+        $incarico_label="<span class='AA_Label AA_Label_LightBlue'>in corso</span>&nbsp;";
+        if($incarico->GetDataFine() < $now && !$incarico->IsStorico() && !$incarico->IsFacenteFunzione()) $incarico_label="<span class='AA_Label AA_Label_LightRed'>cessato</span>&nbsp;";
+        if($incarico->IsStorico() && !$incarico->IsFacenteFunzione()) $incarico_label="<span class='AA_Label AA_Label_LightGray'>storico</span>&nbsp;";
+        if($incarico->IsFacenteFunzione()) $incarico_label="<span class='AA_Label AA_Label_LightYellow'>facente funzione</span>&nbsp;";
+        if($incarico->GetNominaRas()) $incarico_label.="<span class='AA_Label AA_Label_LightGreen'>nomina RAS</span>&nbsp;";
+        if($incarico->IsOver65()) $incarico_label.="<span class='AA_Label AA_Label_LightOrange'>+65</span>";
+        $toolbar->AddElement(new AA_JSON_Template_Template($id."_Nomina_Ras",array("type"=>"clean", "width"=>210,"template"=>"<div style='margin-top: 2px; padding-left: .7em; border-right: 1px solid #dedede;'><span style='font-weight: 700;'>Stato incarico: </span><br>$incarico_label</div>")));
+            
+        //Codice fiscale
+        //$value=$incarico->GetCodiceFiscale();
+        //if($value=="") $value="n.d";
+        //$toolbar->AddElement(new AA_JSON_Template_Template($curId."_Codice_Fiscale",array("type"=>"clean", "width"=>150,"template"=>"<div style='padding-left: .7em; margin-top: 2px;'><span style='font-weight: 700;'>Codice fiscale: </span><br>".$value."</div>")));
+        
+        //data inizio
+        $toolbar->AddElement(new AA_JSON_Template_Template("",array("type"=>"clean", "width"=>150,"template"=>"<div style='padding-left: .7em;margin-top: 2px;'><span style='font-weight: 700;'>Data inizio incarico: </span><br>".$incarico->GetDataInizio()."</div>")));
+            
+        //data fine
+        $val=$incarico->GetDataFine();
+        if(strpos($val,"9999") !== false || $incarico->IsFacenteFunzione())
+        {
+            $val="a tempo indeterminato";
+        }
+        if($incarico->IsDataFinePresunta())
+        {
+            $val.="&nbsp;<span class='AA_Label AA_Label_LightYellow'>presunta</span>";
+        }
+        $toolbar->AddElement(new AA_JSON_Template_Template("",array("type"=>"clean","width"=>160, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Data fine incarico: </span><br>".$val."</div>")));
+
+        //estremi provvedimento
+        $value=$incarico->GetEstremiProvvedimento();
+        if($value=="") $value="n.d.";
+        $toolbar->AddElement(new AA_JSON_Template_Template("",array("type"=>"clean","width"=>"auto", "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede'><span style='font-weight: 700;'>Estremi del provvedimento: </span><br>".$value."</div>")));
+        
+        //Trattamento economico complessivo
+        $value=$incarico->GetCompensoSpettante();
+        if($value=="") $value="n.d.";
+        $toolbar->AddElement(new AA_JSON_Template_Template("",array("type"=>"clean","width"=>300, "template"=>"<div style='padding-left: .7em;margin-top: 2px; border-left: 1px solid #dedede;'><span style='font-weight: 700;'>Trattamento economico complessivo in €: </span><br>".$value."</div>")));
+            
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>50)));
+        $layout->AddRow($toolbar);
+        
+        //note
+        $value=$incarico->GetNote();
+        $val1=new AA_JSON_Template_Template("",array("height"=>90,"css"=>"AA_Header_Tabbar_Title",
+            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+            "data"=>array("title"=>"Note:","value"=>$value)
+        ));
+        $layout->AddRow($val1);                
+        
+        //Riga compensi e documenti
+        $curId=$id."_".uniqid();
+        $multiview=new AA_JSON_Template_Multiview($id."_MultiviewNominaDetail",array(
+            "type"=>"clean",
+            "css"=>"AA_Detail_Content"
+        ));
+
+        $tabbar=new AA_JSON_Template_Toolbar("",array("height"=>42, "css"=>"AA_Header_Tabbar_Title"));
+        $detail_options=array(
+            array("id"=>$id."_NominaDetailCompensi", "value"=>"Compensi"),
+            array("id"=>$id."_NominaDetailDocumenti", "value"=>"Documenti"),
+        );
+
+        $tabbar->addCol(new AA_JSON_Template_Generic($id."_TabBarNominaDetail",array(
+            "view"=>"tabbar",
+            "borderless"=>true,
+            "value"=>$id."_NominaDetailCompensi",
+            "css"=>"AA_Header_TabBar",
+            "multiview"=>true,
+            "view_id"=>$id."_MultiviewNominaDetail",
+            "options"=>$detail_options
+        )));
+        $layout->AddRow($tabbar);
+
+        #compensi----------------------------------
+        $curId=$id."_NominaDetailCompensi";
+        $incarico_compensi=new AA_JSON_Template_Layout($id."_NominaDetailCompensi",array("type"=>"clean","css"=>array("border-right"=>"1px solid #dedede !important;")));
+        
+        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_Compensi",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Compensi_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Trattamento economico</span>", "align"=>"center")));
+
+        if($canModify)
+        {
+            //Pulsante di aggiunta compenso
+            $add_compenso_btn=new AA_JSON_Template_Generic($curId."_AddCompenso_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-pencil-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi trattamento economico per l'incarico",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:'GetOrganismoAddNewIncaricoCompensoDlg', params: [{id: ".$object->GetId()."},{id_incarico:".$incarico->GetId()."}]},'".$this->id."')"
+            ));
+
+            $toolbar->AddElement($add_compenso_btn);
+        }
+        else 
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+
+        $incarico_compensi->AddRow($toolbar);
+
+        $options_compensi=array();
+
+        if($canModify)
+        {
+            $options_compensi[]=array("id"=>"anno", "header"=>"Anno", "width"=>60, "css"=>array("text-align"=>"left"));
+            $options_compensi[]=array("id"=>"parte_fissa", "header"=>"Parte fissa in €", "width"=>150,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"parte_variabile", "header"=>"Parte variabile in €", "width"=>150,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"rimborsi", "header"=>"Rimborsi in €", "width"=>150,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"totale", "header"=>"Totale (fissa+variabile) in €", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+        else
+        {
+            $options_compensi[]=array("id"=>"anno", "header"=>"Anno", "width"=>60, "css"=>array("text-align"=>"left"));
+            $options_compensi[]=array("id"=>"parte_fissa", "header"=>"Parte fissa in €", "width"=>150,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"parte_variabile", "header"=>"Parte variabile in €", "width"=>150,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"rimborsi", "header"=>"Rimborsi in €", "width"=>150,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"totale", "header"=>"Totale (fissa+variabile) in €", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+            $options_compensi[]=array("id"=>"note", "header"=>"Note", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+        }
+
+        $compensi=new AA_JSON_Template_Generic($curId."_Compensi_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true, "scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_compensi));
+
+        $compensi_data=array();
+        foreach($incarico->GetCompensi($this->oUser) as $id_comp=>$curComp)
+        {
+            $tot=0;
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoModifyIncaricoCompensoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_compenso:"'.$curComp->GetId().'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashIncaricoCompensoDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{id_compenso:"'.$curComp->GetId().'"}]},"'.$this->id.'")';
+            $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            $tot= number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteFissa()))+doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteVariabile())),2,",",".");
+            $compensi_data[]=array("id"=>$id_comp,"anno"=>$curComp->GetAnno(),"parte_fissa"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteFissa())),2,",","."),"parte_variabile"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetParteVariabile())),2,",","."),"rimborsi"=>number_format(doubleval(str_replace(array(".",","),array("","."),$curComp->GetRimborsi())),2,",","."),"note"=>$curComp->GetNote(), "totale"=>$tot,"ops"=>$ops);
+        }
+        $compensi->SetProp("data",$compensi_data);
+        if(sizeof($compensi_data) > 0) $incarico_compensi->AddRow($compensi);
+        else $incarico_compensi->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        #--------------------------------------
+        
+        #documenti----------------------------------
+        $curId=$id."_NominaDetailDocumenti";
+        $incarico_documenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","css"=>array("border-left"=>"1px solid #dedede !important;")));
+        
+        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_Documenti",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic($curId."_Toolbar_Documenti_Title",array("view"=>"label","label"=>"<span style='color:#003380'>Documenti</span>", "align"=>"center")));
+
+        if($canModify)
+        {
+            //Pulsante di aggiunta documento
+            $add_documento_btn=new AA_JSON_Template_Generic($curId."_AddDocumento_btn",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-file-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi documento per l'incarico",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task: 'GetOrganismoAddNewIncaricoDocDlg', params: [{id: ".$object->GetId()."},{id_incarico:".$incarico->GetId()."}]},'$this->id')"
+            ));
+
+            $toolbar->AddElement($add_documento_btn);
+        }
+        else 
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+
+        $incarico_documenti->AddRow($toolbar);
+
+        $options_documenti=array();
+
+        if($canModify)
+        {
+            $options_documenti[]=array("id"=>"anno", "header"=>"Anno", "width"=>60, "css"=>array("text-align"=>"left"));
+            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+        else
+        {
+            $options_documenti[]=array("id"=>"anno", "header"=>"Anno", "width"=>60, "css"=>array("text-align"=>"left"));
+            $options_documenti[]=array("id"=>"tipo", "header"=>"Tipo", "fillspace"=>true,"css"=>array("text-align"=>"center"));
+            $options_documenti[]=array("id"=>"ops", "header"=>"operazioni", "width"=>100,"css"=>array("text-align"=>"center"));
+        }
+
+        $documenti=new AA_JSON_Template_Generic($curId."_Documenti_Table",array("view"=>"datatable", "headerRowHeight"=>28, "select"=>true,"scrollX"=>false,"css"=>"AA_Header_DataTable","columns"=>$options_documenti));
+
+        $documenti_data=array();
+        foreach($incarico->GetDocs() as $id_doc=>$curDoc)
+        {
+            $modify='AA_MainApp.utils.callHandler("pdfPreview", {url: "'.$curDoc->GetPublicDocumentPath().'&embed=1"},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashIncaricoDocDlg", params: [{id: "'.$object->GetId().'"},{id_incarico:"'.$incarico->GetId().'"},{anno:"'.$curDoc->GetAnno().'"},{tipo:"'.$curDoc->GetTipologia(true).'"},{serial:"'.$curDoc->GetSerial().'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops'><a class='AA_DataTable_Ops_Button' title='Download' onClick='".$modify."'><span class='mdi mdi-floppy'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center'><a class='AA_DataTable_Ops_Button' title='Download' onClick='".$modify."'><span class='mdi mdi-floppy'></span></a></div>";
+            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetAnno(),"id_tipo"=>$curDoc->GetTipologia(true) ,"tipo"=>$curDoc->GetTipologia(),"ops"=>$ops);
+        }
+        $documenti->SetProp("data",$documenti_data);
+        if(sizeof($documenti_data) > 0) $incarico_documenti->AddRow($documenti);
+        else $incarico_documenti->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        #--------------------------------------
+        
+        //Aggiunge i compensi
+        $multiview->addCell($incarico_compensi);
+        
+        //Aggiunge i documenti
+        $multiview->AddCell($incarico_documenti);
+        
+        //Aggiunge compensi e documenti al body dell'elemento
+        $layout->AddRow($multiview);
+
+        return $layout;
+    }
+
     //Template Detail
     public function TemplateSection_Detail($params)
     {
@@ -3774,29 +4075,9 @@ Class AA_SinesModule extends AA_GenericModule
             $toolbar->AddElement(new AA_JSON_Template_Generic());
         }
         
-        $footer=new AA_JSON_Template_Layout($id."_Footer",array("type"=>"clean", "height"=>38, "css"=>"AA_SectionContentHeader"));
-        
-        $tabbar=new AA_JSON_Template_Generic($id."_TabBar",array(
-            "view"=>"tabbar",
-            "borderless"=>true,
-            "css"=>"AA_Bottom_TabBar",
-            "multiview"=>true,
-            "optionWidth"=>130,
-            "view_id"=>$id."_Multiview",
-            "type"=>"bottom"
-        ));
-        
-        $footer->AddCol($tabbar);
-        //$header->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
-        $footer->AddCol($toolbar);
-        
-        $multiview=new AA_JSON_Template_Multiview($id."_Multiview",array(
-            "type"=>"clean",
-            "css"=>"AA_Detail_Content"
-         ));
-        $layout->AddRow($multiview);
-        $layout->addRow($footer);
-        
+        //$layout->addRow($toolbar);
+        //$layout->AddRow($multiview);
+
         //Recupera le nomine
         $riepilogo_layout_id=$id."_Riepilogo_Layout";
         $filterNomine="";
@@ -3816,30 +4097,57 @@ Class AA_SinesModule extends AA_GenericModule
         //Data odierna
         $now = Date("Y-m-d");
         
-        foreach($nomine as $id_intestazione_nomina=>$curNomina)
+        foreach($nomine as $id_intestazione_nomine=>$curNomine)
         {
+            $curNomina=current($curNomine);
+
             //Dati riepilogo
-            $riepilogo_data_item=array("nome"=>trim(current($curNomina)->GetNome()),"cognome"=>trim(current($curNomina)->GetCognome()),"cf"=>"","incarichi"=>"","id_view"=>$id."_".$id_intestazione_nomina."_Tab");
-            if(trim(current($curNomina)->GetCodiceFiscale()) !="") $riepilogo_data_item['cf']=" (".trim(current($curNomina)->GetCodiceFiscale()).")";
-            
-            $tab_label=current($curNomina)->GetNome()." ".current($curNomina)->GetCognome();
-            if(strlen($tab_label)>20)
-            {
-                $original_size=strlen($tab_label);
-                $tab_label=explode(" ",$tab_label);
-                
-                $tab_result=$tab_label[0];
-                if((strlen($tab_label[1])+strlen($tab_label[2])) < 13 && $tab_label[2] !="") $tab_result.=" ".$tab_label[1]." ".$tab_label[2];
-                else $tab_result.=" ".$tab_label[1];
-                    
-                if(strlen($tab_result) != $original_size) $tab_result.="...";
-                //if(strlen($tab_result) > 24) $tab_result.=substr($tab_result,0,10)."...";
-                $tab_label=$tab_result;
-            }
-            $ids=array_keys($curNomina);
+            $riepilogo_data_item=array("nome"=>trim($curNomina->GetNome()),"cognome"=>trim($curNomina->GetCognome()),"cf"=>"","incarichi"=>"","id_view"=>"");
+            if(trim($curNomina->GetCodiceFiscale()) !="") $riepilogo_data_item['cf']=" (".trim($curNomina->GetCodiceFiscale()).")";
+
+            $tab_label=$curNomina->GetNome()." ".$curNomina->GetCognome();
+            $ids=array_keys($curNomine);
             if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina nomina' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashNominaDlg", params: [{ids: "'.json_encode($ids).'"},{id: "'.$object->GetID().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else$tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
+            else $tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
            
+            //dati incarichi per riepilogo
+            $riepilogo_incarico_label="<div style='display:flex;flex-direction: column; align-items:center'><b>".$curNomina->GetTipologia()."</b></div>";
+            $curTipoIncarico=$curNomina->GetTipologia(true);
+            $scaduto=false;
+            if($curNomina->GetDataFine()< $now) $scaduto=true;
+
+            $facenteFunzione=$curNomina->IsFacenteFunzione();
+            
+            $dataScadenza=$curNomina->GetDataFine();
+            $dataInizio=$curNomina->GetDataInizio();
+            $ras=$curNomina->IsNominaRas();
+            $tempo_indeterminato=false;
+            if($dataScadenza == "9999-12-31" || $facenteFunzione) $tempo_indeterminato=true;
+          
+            $riepilogo_incarico_label.="<div style='display:flex;align-items:center;flex-direction:column'>";
+            if($ras) $riepilogo_incarico_label.="<span style='font-size: smaller;'>nomina RAS</span>";
+         
+            if($scaduto && !$facenteFunzione) $riepilogo_incarico_label.="<span style='font-size: smaller;'>cessato il: ".$dataScadenza."</span>";
+            if(!$scaduto && !$tempo_indeterminato && !$facenteFunzione) $riepilogo_incarico_label.="<span style='font-size: smaller;'>cessa il: ".$dataScadenza."</span>";
+            if($facenteFunzione) $riepilogo_incarico_label.="<span style='font-size: smaller;'>facente funzione</span><br/><span style='font-size: smaller;'>dal: ".$dataInizio."</span>";
+            if($tempo_indeterminato && !$facenteFunzione) $riepilogo_incarico_label.="<span style='font-size: smaller;'>a tempo indeterminato</span>";
+            $riepilogo_incarico_label.="</div>";
+
+            if($ras) $labelTheme="AA_Label_LightGreen";
+            else $labelTheme="AA_Label_LightBlue";
+            if($scaduto) $labelTheme="AA_Label_LightRed";
+            if($facenteFunzione) $labelTheme="AA_Label_LightYellow";
+            if($curNomina->IsStorico())  $labelTheme="AA_Label_LightGray";
+
+            $onClick="AA_MainApp.curModule.setRuntimeValue('".static::AA_UI_PREFIX."_".static::AA_UI_WND_NOMINA_DETAIL."_".static::AA_UI_LAYOUT_NOMINA_DETAIL."', 'filter_data', {id:".$object->GetId().",id_incarico:".$curNomina->GetId()."});AA_MainApp.utils.callHandler('dlg', {task:'GetOrganismoNominaDetailViewDlg', postParams: {id: ".$object->GetId().",id_incarico:".$curNomina->GetId()."},module: '" . $this->id . "'},'".$this->id."')";
+            $riepilogo_data_item['incarichi'].="<div onclick=\"".$onClick."\" class='AA_Label $labelTheme' style='display:flex;justify-content:space-between; align-items:center; flex-direction:column; text-align: center; margin-right: 5px;min-width: 220px'>".$riepilogo_incarico_label."</div>";
+            //-------------------------
+
+            $ids=array_keys($curNomine);
+            if($canModify) $tab_label="<div style='display: flex; justify-content: space-between; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span><a style='margin-left: 1em;' class='AA_DataTable_Ops_Button_Red' title='Elimina nomina' onClick='".'AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoTrashNominaDlg", params: [{ids: "'.json_encode($ids).'"},{id: "'.$object->GetID().'"}]},"'.$this->id.'")'."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $tab_label="<div style='display: flex; justify-content: center; align-items: center; padding-left: 5px; padding-right: 5px; font-size: smaller'><span>".$tab_label."</span></div>";
+
+            /*
             //Tab label
             $options[]=array("id"=>$id."_".$id_intestazione_nomina."_Tab", "value"=>$tab_label);
             
@@ -3906,27 +4214,28 @@ Class AA_SinesModule extends AA_GenericModule
             foreach($curNomina as $id_incarico=>$incarico)
             {
                 //dati incarico per riepilogo
+                $onClick="AA_MainApp.utils.callHandler('dlg', {task:'GetOrganismoNominaDetailViewDlg', postParams: {id: ".$object->GetId().",id_incarico:".$id_incarico."},module: '" . $this->id . "'},'".$this->id."')";
                 $riepilogo_incarico_label=$incarico->GetTipologia();
                 if($incarico->IsOver65()) $riepilogo_incarico_label.=" (+65)";
                 if($incarico->IsFacenteFunzione()) $riepilogo_incarico_label.=" (ff)";
                 if($incarico->IsStorico())
                 {
-                    $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGray'>".$riepilogo_incarico_label."</span>&nbsp;";
+                    $riepilogo_data_item['incarichi'].="<span onclick=\"".$onClick."\" class='AA_Label AA_Label_LightGray'>".$riepilogo_incarico_label."</span>&nbsp;";
                 }
                 else
                 {
                     if($incarico->IsFacenteFunzione())
                     {
-                        $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightYellow'>".$riepilogo_incarico_label."</span>&nbsp;";        
+                        $riepilogo_data_item['incarichi'].="<span onclick=\"".$onClick."\" class='AA_Label AA_Label_LightYellow'>".$riepilogo_incarico_label."</span>&nbsp;";        
                     }
                     else
                     {
                         if($incarico->GetDataFine() > $now) 
                         {
                             if($incarico->GetNominaRas() == "1") $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightGreen'>".$riepilogo_incarico_label."</span>&nbsp;";
-                            else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightBlue'>".$riepilogo_incarico_label."</span>&nbsp;";
+                            else $riepilogo_data_item['incarichi'].="<span onclick=\"".$onClick."\" class='AA_Label AA_Label_LightBlue'>".$riepilogo_incarico_label."</span>&nbsp;";
                         }
-                        else $riepilogo_data_item['incarichi'].="<span class='AA_Label AA_Label_LightRed'>".$riepilogo_incarico_label."</span>&nbsp;";        
+                        else $riepilogo_data_item['incarichi'].="<span onclick=\"".$onClick."\" class='AA_Label AA_Label_LightRed'>".$riepilogo_incarico_label."</span>&nbsp;";        
                     }
                 }
                         
@@ -4189,23 +4498,24 @@ Class AA_SinesModule extends AA_GenericModule
             
             //Aggiunge una barra
             $curNominaTab->AddRow(new AA_JSON_Template_Generic("",array("view"=>"spacer","height"=>3,"css"=>array("border-top"=>"1px solid #dedede !important;"))));
-            
+            */
+
             //Imposta l'azione del pulsante di dettaglio
-            $riepilogo_data_item["onclick"]='$$("'.$tabbar->GetId().'").setValue("'.$curNominaTab->GetId().'")';
+            //$riepilogo_data_item["onclick"]='$$("'.$tabbar->GetId().'").setValue("'.$curNominaTab->GetId().'")';
             $riepilogo_data[]=$riepilogo_data_item;
             
             //Aggiunge la pagina alla lista delle pagine
-            $multiview->AddCell($curNominaTab);
+            //$multiview->AddCell($curNominaTab);
         }
         
         //Riepilogo tab
         $riepilogo_layout=$this->TemplateDettaglio_Nomine_Riepilogo_Tab($object,$id, $riepilogo_data, $id);
         
-        array_unshift($options,array("id"=>$riepilogo_layout->GetId(), "value"=>"Riepilogo"));
+        //array_unshift($options,array("id"=>$riepilogo_layout->GetId(), "value"=>"Riepilogo"));
         
-        $multiview->AddCell($riepilogo_layout,true);
+        $layout->AddRow($riepilogo_layout);
         
-        $tabbar->SetProp("options",$options);
+        //$tabbar->SetProp("options",$options);
         
         return $layout;
     }
@@ -4788,19 +5098,18 @@ Class AA_SinesModule extends AA_GenericModule
         
         $riepilogo_layout=new AA_JSON_Template_Layout($id."_Riepilogo_Layout",array("type"=>"clean"));
         //$onDblClickEvent="try{console.log('_TabBar')}catch(msg){console.error(msg)}";
-        $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%'><div class='AA_DataView_ItemContent'>"
-            . "<div><span class='AA_DataView_ItemTitle'>#cognome# #nome#</span><span style='font-size: smaller'>#cf#</span></div>"
-            . "<div><span class='AA_DataView_ItemSubTitle'>#incarichi#</span></div>"
-            . "</div><div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 5px'><a title='Visualizza i dettagli degli incarichi' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
+        $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%;'>"
+            . "<div style='min-width: 300px; padding:5px'><span class='AA_DataView_ItemTitle'>#cognome# #nome#</span><br><span style='font-size: smaller'>#cf#</span></div>"
+            . "<div style='height:90%; width:100%; padding: 5px; display: flex;'>#incarichi#</div>"
+            . "<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; min-width: 120px;padding: 5px'><a title='Visualizza i dettagli degli incarichi' onclick='#onclick#' class='AA_Button_Link'><span class='mdi mdi-account-search'></span>&nbsp;<span>Dettagli</span></a></div></div>";
         $riepilogo_tab=new AA_JSON_Template_Generic($id."_Riepilogo_Tab",array(
             "view"=>"dataview",
             "filtered"=>true,
             "xCount"=>1,
             "module_id"=>$this->id,
-            "tabbar"=>static::AA_UI_PREFIX."_Detail_Nomine_Tab_".$object->GetID()."_TabBar",
             "type"=>array(
                 "type"=>"tiles",
-                "height"=>60,
+                "height"=>90,
                 "width"=>"auto",
                 "css"=>"AA_DataView_Nomine_item",
             ),
@@ -8858,6 +9167,33 @@ Class AA_SinesModule extends AA_GenericModule
         }
     }
     
+    //Task affluenza view Comune
+    public function Task_GetOrganismoNominaDetailViewDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Organismi($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+
+        $incarico=new AA_OrganismiNomine($_REQUEST['id_incarico'],$object,$this->oUser);
+        if(!($incarico->IsValid()))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Incarico non valido",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetOrganismoNominaDetailViewDlg($object,$incarico),true);
+        return true;
+    }
+
     //Task modifica dato contabile
     public function Task_GetOrganismoModifyIncaricoDlg($task)
     {
@@ -9387,10 +9723,11 @@ Class AA_SinesModule extends AA_GenericModule
      //TAsk section layout
     public function Task_GetObjectContent($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $sTaskLog="<status id='status'>0</status><content id='content' type='json' encode='base64'>";
-        
+        $content="";
+
         switch($_REQUEST['object'])
         {
             case "Bozze":
@@ -9418,11 +9755,14 @@ Class AA_SinesModule extends AA_GenericModule
                 break;
             
             default:
-                 $content=array(
+                return $this->Task_GetGenericObjectContent($task, $_REQUEST);
+                /*$content=array(
                     array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()),
-                    array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()));
+                    array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_DETAIL_BOX,"content"=>$this->TemplateSection_Placeholder()->toArray()));*/
         }
         
+        AA_Log::Log(__METHOD__." - task: ".$task->GetName(),100);
+
         //Codifica il contenuto in base64
         $sTaskLog.= base64_encode(json_encode($content))."</content>";
         
