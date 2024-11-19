@@ -1631,6 +1631,12 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     {
         $this->refresh = $bVal;
     }
+
+    protected $refreshSection = false; //Rinfresca la section view in caso di salvataggio 
+    public function enableRefreshSectionOnSuccessfulSave($bVal = true)
+    {
+        $this->refreshSection = $bVal;
+    }
     protected $refresh_obj_id = "";
     public function SetRefreshObjId($id = "")
     {
@@ -1683,6 +1689,8 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
                     $params .= ", wnd_id: '" . $this->id . "_Wnd'";
                 if ($this->refresh)
                     $params .= ", refresh: true";
+                if ($this->refreshSection)
+                    $params .= ", refresh_section: true";
                 if ($this->refresh_obj_id)
                     $params .= ", refresh_obj_id: '$this->refresh_obj_id'";
                 if ($this->fileUploader_id != "")

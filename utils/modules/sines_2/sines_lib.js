@@ -35,6 +35,22 @@ AA_sines_module.eventHandlers['defaultHandlers'].NominaDblClick = function()
     }
 };
 
+AA_sines_module.eventHandlers['defaultHandlers'].CloseNominaDetailWnd = function() 
+{
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.CloseNominaDetailWnd", this, arguments);
+        let wnd=$$(arguments[0].wnd);
+        //console.log("eventHandlers.defaultHandlers.ListaDblClick",tabbar,item);
+        if(wnd)
+        {
+            wnd.close();
+        }
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.CloseNominaDetailWnd", msg, this);
+    }
+};
+
 AA_sines_module.eventHandlers['defaultHandlers'].onFFChange = function() 
 {
     try 
