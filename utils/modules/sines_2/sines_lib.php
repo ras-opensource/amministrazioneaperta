@@ -367,13 +367,13 @@ Class AA_SinesModule extends AA_GenericModule
         if($_REQUEST['data_scadenzario'] =="") $_REQUEST['data_scadenzario']=Date("Y-m-d");
         $data=new DateTime($_REQUEST['data_scadenzario']);
         
-        $contentBoxTemplate="<div class='AA_DataView_ScadenzarioItem'><div class='AA_DataView_ItemContent'>"
+        $contentBoxTemplate="<div class='AA_DataView_ScadenzarioItem'><div style='min-width: 550px' class='AA_DataView_ItemContent'>"
             ."<div><span class='AA_Label AA_Label_Orange'>#pretitolo#</span></div>"
             . "<div><span class='AA_DataView_ItemTitle'>#denominazione#</span></div>"
             . "<div>#tags#</div>"
             . "<div><span class='AA_DataView_ItemSubTitle'>#sottotitolo#</span></div>"
             . "<div><span class='AA_Label AA_Label_LightBlue' title='Stato elemento'>#stato#</span>&nbsp;<span class='AA_DataView_ItemDetails'>#dettagli#</span></div>"
-            . "</div><div class='AA_DataView_ScadenzarioItemContent'>#nomine#</div></div>";
+            . "</div><div style='width:100%' class='AA_DataView_ScadenzarioItemContent'>#nomine#</div></div>";
         $content->SetContentBoxTemplate($contentBoxTemplate);
         
         $content->SetSectionName("Agenda nomine al ".$data->format("Y-m-d"));
@@ -555,7 +555,7 @@ Class AA_SinesModule extends AA_GenericModule
             $userCaps=$object->GetUserCaps($this->oUser);
             $struct=$object->GetStruct();
             $struttura_gest=$struct->GetAssessorato();
-            if($struct->GetDirezione() !="") $struttura_gest.=" -> ".$struct->GetDirezione();
+            if($struct->GetDirezione() !="") $struttura_gest=$struct->GetDirezione();
             
             #Stato-----------
             $soc_tags="";
@@ -3094,8 +3094,8 @@ Class AA_SinesModule extends AA_GenericModule
         
         //note
         $value=$incarico->GetNote();
-        $val1=new AA_JSON_Template_Template("",array("height"=>90,"css"=>"AA_Header_Tabbar_Title",
-            "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
+        $val1=new AA_JSON_Template_Template("",array("autoheight"=>true,"css"=>"AA_Header_Tabbar_Title",
+            "template"=>"<span style='font-weight:700'>#title#</span><div style='min-height:60px; overflow: auto'>#value#</div>",
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
         $layout->AddRow($val1);                
