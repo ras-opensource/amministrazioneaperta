@@ -653,6 +653,18 @@ Class AA_GecopModule extends AA_GenericModule
             $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".cig like '%".addslashes($params['Cig'])."%'";
         }
 
+        //componente commissione
+        if(isset($params['componente_commissione']) && $params['componente_commissione'] > 0)
+        {
+            $params['where'][]=" AND (".AA_Gecop::AA_DBTABLE_DATA.".commissione like '%\"nominativo\":\"%".addslashes($params['componente_commissione'])."%\"%' OR ".AA_Gecop::AA_DBTABLE_DATA.".commissione like '%\"cf\":\"%".addslashes($params['componente_commissione'])."%\"%')";
+        }
+
+        //aggiudicatario
+        if(isset($params['aggiudicatario']) && $params['aggiudicatario'] > 0)
+        {
+            $params['where'][]=" AND (".AA_Gecop::AA_DBTABLE_DATA.".aggiudicatario like '%\"nominativo\":\"%".addslashes($params['aggiudicatario'])."%\"%' OR ".AA_Gecop::AA_DBTABLE_DATA.".aggiudicatario like '%\"cf\":\"%".addslashes($params['aggiudicatario'])."%\"%')";
+        }
+
         return $params;
     }
 
@@ -689,6 +701,18 @@ Class AA_GecopModule extends AA_GenericModule
         if(isset($params['Cig']) && $params['Cig'] > 0)
         {
             $params['where'][]=" AND ".AA_Gecop::AA_DBTABLE_DATA.".cig like '%".addslashes($params['Cig'])."%'";
+        }
+
+        //componente commissione
+        if(isset($params['componente_commissione']) && $params['componente_commissione'] > 0)
+        {
+            $params['where'][]=" AND (".AA_Gecop::AA_DBTABLE_DATA.".commissione like '{\"nominativo\":\"%".addslashes($params['componente_commissione'])."%\"%' OR ".AA_Gecop::AA_DBTABLE_DATA.".commissione like '%\"cf\":\"%".addslashes($params['componente_commissione'])."%\"%')";
+        }
+
+        //aggiudicatario
+        if(isset($params['aggiudicatario']) && $params['aggiudicatario'] > 0)
+        {
+            $params['where'][]=" AND (".AA_Gecop::AA_DBTABLE_DATA.".aggiudicatario like '{\"nominativo\":\"%".addslashes($params['aggiudicatario'])."%\"%' OR ".AA_Gecop::AA_DBTABLE_DATA.".aggiudicatario like '%\"cf\":\"%".addslashes($params['aggiudicatario'])."%\"%')";
         }
 
         return $params;
@@ -4603,7 +4627,7 @@ Class AA_GecopModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("cig"=>$params['cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
+        $formData=array("componente_commissione"=>$params['componente_commissione'],"aggiudicatario"=>$params['aggiudicatario'],"Cig"=>$params['Cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4612,7 +4636,9 @@ Class AA_GecopModule extends AA_GenericModule
         if($params['id_servizio']=="") $formData['id_servizio']=0;
         if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['nome']=="") $formData['nome']="";
-        if($params['cig']=="") $formData['cig']="";
+        if($params['Cig']=="") $formData['Cig']="";
+        if($params['componente_commissione']=="") $formData['componente_commissione']="";
+        if($params['aggiudicatario']=="") $formData['aggiudicatario']="";
     
         //Valori reset
         $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
@@ -4620,7 +4646,7 @@ Class AA_GecopModule extends AA_GenericModule
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter".uniqid(), "Parametri di ricerca per le schede in bozza",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Pubblicate_Filter".uniqid(), "Parametri di ricerca per le schede pubblicate",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 
@@ -4636,6 +4662,12 @@ Class AA_GecopModule extends AA_GenericModule
         //cig
         $dlg->AddTextField("Cig","Cig",array("bottomLabel"=>"*Filtra in base al cig.", "placeholder"=>"..."));
 
+        //componente commissione
+        $dlg->AddTextField("componente_commissione","Commissario",array("bottomLabel"=>"*Filtra in base al nominativo/cf di un componente della commissione.", "placeholder"=>"..."));
+
+        //aggiudicatario
+        $dlg->AddTextField("aggiudicatario","Aggiudicatario",array("bottomLabel"=>"*Filtra in base al nominativo/cf dell'aggiudicatario.", "placeholder"=>"..."));
+
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();
@@ -4645,7 +4677,7 @@ Class AA_GecopModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("Cig"=>$params['Cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
+        $formData=array("componente_commissione"=>$params['componente_commissione'],"aggiudicatario"=>$params['aggiudicatario'],"Cig"=>$params['Cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4655,6 +4687,8 @@ Class AA_GecopModule extends AA_GenericModule
         if($params['cestinate']=="") $formData['cestinate']=0;
         if($params['nome']=="") $formData['nome']="";
         if($params['Cig']=="") $formData['Cig']="";
+        if($params['componente_commissione']=="") $formData['componente_commissione']="";
+        if($params['aggiudicatario']=="") $formData['aggiudicatario']="";
 
 
         //Valori reset
@@ -4679,6 +4713,12 @@ Class AA_GecopModule extends AA_GenericModule
         //cig
         $dlg->AddTextField("Cig","Cig",array("bottomLabel"=>"*Filtra in base al cig.", "placeholder"=>"..."));
 
+        //componente commissione
+        $dlg->AddTextField("componente_commissione","Commissario",array("bottomLabel"=>"*Filtra in base al nominativo/cf di un componente della commissione.", "placeholder"=>"..."));
+
+        //aggiudicatario
+        $dlg->AddTextField("aggiudicatario","Aggiudicatario",array("bottomLabel"=>"*Filtra in base al nominativo/cf dell'aggiudicatario.", "placeholder"=>"..."));
+ 
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();
