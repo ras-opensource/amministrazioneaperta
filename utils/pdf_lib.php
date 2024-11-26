@@ -466,7 +466,7 @@ Class AA_PDF_Document
 
        $cmd = "cd ".$this->working_dir."; LD_LIBRARY_PATH=/usr/lib:/lib  chromium-browser --headless --disable-gpu --no-sandbox --run-all-compositor-stages-before-draw --print-to-pdf ./".$this->id.".html --virtual-time-budget=20000 --disable-crash-reporter --no-crashpad 2>&1";
 
-        //error_log("eseguo: ".$cmd);
+        error_log("eseguo: ".$cmd);
         $result = shell_exec($cmd);
         //error_log($result);
 
