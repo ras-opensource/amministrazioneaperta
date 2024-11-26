@@ -173,7 +173,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                         form.config.rules = { $all: AA_MainApp.utils.getEventHandler(form.config.validation, this.id) };
                     } 
                     
-                    form.reconstruct();
+                    //form.reconstruct();
                     form.setValues(oldValues);
                     if($$(form.config.defaultFocusedItem)) $$(form.config.defaultFocusedItem).focus();
                     /*{
@@ -574,7 +574,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                             if (AA_MainApp.utils.isDefined(form.config.validation)) {
                                 form.config.rules = { $all: AA_MainApp.utils.getEventHandler(form.config.validation, module.id) };
                             }
-                            form.reconstruct();
+                            //form.reconstruct();
                             form.setValues(oldValues);
                             if($$(form.config.defaultFocusedItem))
                             {

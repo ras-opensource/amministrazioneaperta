@@ -911,6 +911,21 @@ class AA_JSON_Template_Ckeditor5 extends AA_JSON_Template_Generic
     }
 }
 
+class AA_JSON_Template_Ckeditor5_field extends AA_JSON_Template_Generic
+{
+    public function __construct($id = "", $props = null)
+    {
+        $this->props["view"] = "ckeditor5_field";
+        $props["type"] = "clean";
+        $props["borderless"] = true;
+
+        if ($id == "")
+            $id = "AA_JSON_TEMPLATE_CKEDITOR5_" . uniqid(time());
+
+        parent::__construct($id, $props);
+    }
+}
+
 //Classe per la gestione dei campi di testo
 class AA_JSON_Template_Select extends AA_JSON_Template_Generic
 {
@@ -1761,7 +1776,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
             if ($type == "richtext")
                 $this->curRow->AddCol(new AA_JSON_Template_Richtext($this->id . "_Field_" . $name, $props));
             if ($type == "ckeditor5")
-                $this->curRow->AddCol(new AA_JSON_Template_Ckeditor5($this->id . "_Field_" . $name, $props));
+                $this->curRow->AddCol(new AA_JSON_Template_Ckeditor5_field($this->id . "_Field_" . $name, $props));
             if ($type == "textarea")
                 $this->curRow->AddCol(new AA_JSON_Template_Textarea($this->id . "_Field_" . $name, $props));
             if ($type == "checkbox")

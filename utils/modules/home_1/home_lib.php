@@ -78,6 +78,10 @@ Class AA_HomeModule extends AA_GenericModule
         #--------------------------------Registrazione dei task-----------------------------
         $taskManager=$this->GetTaskManager();
 
+        //test
+        $taskManager->RegisterTask("GetCKeditor5Dlg");
+        $taskManager->RegisterTask("HomeCkeditor5Test");
+        
         //Gestione utenti
         $taskManager->RegisterTask("GetHomeUtentiFilterDlg");
         $taskManager->RegisterTask("GetHomeUtentiModifyDlg");
@@ -417,13 +421,19 @@ Class AA_HomeModule extends AA_GenericModule
     }
 
     //Task trash user dlg
-    public function Task_GetHomeRngDlg($task)
+    public function Task_GetCKeditor5Dlg($task)
     {
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent($this->Template_GetHomeRngDlg(),true);
+        $task->SetContent($this->Template_GetCKeditor5Dlg(),true);
         return true;
     }
 
+    public function Task_HomeCkeditor5Test($task)
+    {
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Dati salvati",false);
+        return true;
+    }
     //Task lista
     public function Task_GetEmailSuggest($task)
     {
@@ -1318,6 +1328,7 @@ Class AA_HomeModule extends AA_GenericModule
         if($this->oUser->IsSuperUser())
         {
             $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetServerStatusDlg', taskManager: AA_MainApp.taskManager},'".$this->id."');\">Stato del server</a></div>";
+            $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetCKeditor5Dlg'},'".$this->id."');\">Test dialogo CKeditor5</a></div>";
         }
         $template.="</div>";
 
@@ -2649,6 +2660,39 @@ Class AA_HomeModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg modify user
+    public function Template_GetCKeditor5Dlg()
+    {
+        $id=static::AA_UI_PREFIX."_".uniqid();
+
+        $form_data['content']="<p>Che sei bellino</p>";
+    
+        $wnd=new AA_GenericFormDlg($id, "Prova CKEditor5", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(160);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(900);
+        
+        //username
+        $wnd->AddCkeditor5Field("content","Contenuto",array("required"=>true,"gravity"=>2, "bottomLabel"=>"*Puo' essere usato in fase di autenticazione."));
+
+        $section=new AA_FieldSet($id."_Section_DatiPersonali","Dati personali");
+        $section->AddTextField("nome", "Nome", array("required"=>true,"bottomLabel"=>"*Nome dell'utente", "placeholder"=>"Caio"));
+        $section->AddTextField("cognome", "Cognome", array("required"=>true,"bottomLabel"=>"*Cognome dell'utente", "placeholder"=>"Sempronio"),false);
+        $section->AddTextField("cf", "Codice fiscale", array("bottomLabel"=>"*Codice fiscale", "placeholder"=>"..."));
+        $section->AddTextField("phone", "Recapiti", array("bottomLabel"=>"*Recapito telefonico", "placeholder"=>"..."),false);
+        
+        $wnd->AddGenericObject($section);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("HomeCkeditor5Test");
+        
+        return $wnd;
+    }
     //Template dlg add new user
     public function Template_GetHomeUtentiAddNewDlg()
     {
