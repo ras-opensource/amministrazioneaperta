@@ -24,7 +24,8 @@ header("Pragma: no-cache");
 <link rel="stylesheet" href="<?php echo $lib_path;?>/jointjs/joint.min.css" />
 <link rel="stylesheet" type="text/css" href="<?php echo $lib_path;?>/webix/codebase/webix.min.css" />
 <link rel="stylesheet" href="stili/mdi/css/materialdesignicons.min.css" type="text/css" />
-<link rel="stylesheet" href="<?php echo $lib_path;?>/ckeditor5/document_style.css" type="text/css" />
+<link rel="stylesheet" href="<?php echo $lib_path;?>/ckeditor5-builder-43.3.1/ckeditor5/ckeditor5.css">
+<link rel="stylesheet" href="<?php echo $lib_path;?>/ckeditor5-builder-43.3.1/document_style.css" type="text/css" />
 <link href="stili/system.css" rel="stylesheet" type="text/css" />
 <link href="stili/system_custom.css" rel="stylesheet" type="text/css" />
 <script defer src="<?php echo $lib_path;?>/cryptojs/aes.js"></script>
