@@ -2467,7 +2467,7 @@ Class AA_GecopModule extends AA_GenericModule
 
         $numCols=4;
         if($canModify) $numCols=5;
-        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Composizione commissione aggiudicatrice</span>",$numCols,null,array("css"=>"AA_Header_DataTable"));
+        $template=new AA_GenericDatatableTemplate($id,"<span style='color:#003380'>Composizione commissione giudicatrice</span>",$numCols,null,array("css"=>"AA_Header_DataTable"));
         $template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
         $template->SetAddNewBtnCss("webix_primary");
         $template->EnableScroll(false,true);
@@ -4767,7 +4767,7 @@ Class AA_GecopModule extends AA_GenericModule
         //commissione
         $val=new AA_XML_Div_Element($id."_commissione",$header);
         $val->SetStyle('width:13%; font-size: .6em; padding: .1em; height:100%; display: flex; flex-direction:column;justify-content:center; align-items: center');
-        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Commissione aggiudicatrice</div><div style='display: flex; justify-content:space-evenly; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'><div style='width:50%; font-weight:500; text-align:left;'>Nominativo</div><div style='width:30%;font-weight:500; text-align:left'>Ruolo</div><div style='width:15%; font-weight:500; text-align:center'>CV</div></div>");
+        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Commissione giudicatrice</div><div style='display: flex; justify-content:space-evenly; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'><div style='width:50%; font-weight:500; text-align:left;'>Nominativo</div><div style='width:30%;font-weight:500; text-align:left'>Ruolo</div><div style='width:15%; font-weight:500; text-align:center'>CV</div></div>");
 
         //rendiconto gestione finanziaria
         $val=new AA_XML_Div_Element($id."_rendiconto",$header);
