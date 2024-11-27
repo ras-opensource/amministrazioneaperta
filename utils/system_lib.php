@@ -3205,7 +3205,7 @@ class AA_GenericModule
                     return false;
                 } else {
                     $sTaskLog = "<status id='status'>0</status><content id='content'>";
-                    $sTaskLog .= "SOno stati cestinati " . sizeof($ids_final) . " elementi.";
+                    $sTaskLog .= "Sono stati cestinati " . sizeof($ids_final) . " elementi.";
                     $sTaskLog .= "</content>";
 
                     $task->SetLog($sTaskLog);

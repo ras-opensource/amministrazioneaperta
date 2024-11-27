@@ -2362,7 +2362,7 @@ Class AA_GecopModule extends AA_GenericModule
         $wnd->SetWidth(350);
 
         $platform=AA_Platform::GetInstance($this->oUser);
-        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale_oc.pdf";
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale.pdf";
         $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
 
         $layout=new AA_JSON_Template_Layout($id."_Aiuto_box",array("type"=>"clean"));
@@ -2374,11 +2374,11 @@ Class AA_GecopModule extends AA_GenericModule
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-help-circle",
-            "label"=>"Manuale caricamento risultati",
+            "label"=>"Manuale operatore",
             "align"=>"center",
             "inputWidth"=>300,
             "click"=>$action,
-            "tooltip"=>"Visualizza o scarica il manuale operatore comunale per iul caricamento dei risultati elettorali"
+            "tooltip"=>"Visualizza o scarica il manuale operatore"
         ));
 
         $toolbar_oc->AddCol($btn);
@@ -2387,18 +2387,18 @@ Class AA_GecopModule extends AA_GenericModule
         $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
 
         $toolbar_oc=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("type"=>"clean","borderless"=>true));
-        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale_oc_rendiconti.pdf";
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/faq.pdf";
         $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
         //manuale operatore comunale rendiconti
-        $btn=new AA_JSON_Template_Generic($id."_ManualeRendiconti_btn",array(
+        $btn=new AA_JSON_Template_Generic($id."_Faq_btn",array(
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-help-circle",
-            "label"=>"Manuale caricamento rendiconti",
+            "label"=>"FAQ e link utili",
             "align"=>"center",
             "inputWidth"=>300,
             "click"=>$action,
-            "tooltip"=>"Visualizza o scarica il manuale operatore comunale per la compilazione dei rendiconti"
+            "tooltip"=>"Visualizza o scarica le FAQ e i link utili"
         ));
 
         $toolbar_oc->AddCol($btn);
