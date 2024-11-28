@@ -75,7 +75,10 @@ webix.protoUI({
     },
     $setSize:function(x,y){
         if (webix.ui.view.prototype.$setSize.call(this, x, y) && this._body_container)
+        {
             this._set_height(y);
+            this._set_width(x);
+        }
     },
     _set_height:function(y){
         var toolbar = this._tools_container,
