@@ -594,7 +594,7 @@ class AA_SystemTask_UploadSessionFile extends AA_GenericTask
             $this->sTaskLog = json_encode(array("status" => "server", "value" => $value['tmp_name']));
             return true;
         } else {
-            return $this->sTaskLog = json_encode(array("status" => "error", "value" => "errore nel caricamento del file."));
+            $this->sTaskLog = json_encode(array("status" => "error", "value" => "errore nel caricamento del file."));
             return false;
         }
     }
@@ -6930,5 +6930,132 @@ Class AA_Servizio extends AA_Struttura
         $this->aProps['data_soppressione']="9999-12-31";
 
         parent::__construct($params);
+    }
+}
+
+Class AA_Risorse extends AA_GenericParsableDbObject
+{
+    static protected $dbDataTable="aa_risorse";
+    static protected $ObjectClass=__CLASS__;
+
+    public function __construct($params = null)
+    {
+        $this->aProps['url_name']="";
+        $this->aProps['categorie']="";
+        $this->aProps['file_info']="";
+
+        parent::__construct($params);
+    }
+
+    protected function Parse($values = null)
+    {
+        $file_info=array();
+        if(is_array($values) && isset($values['file_info']))
+        {
+            /*
+            [name] => MyFile.txt (comes from the browser, so treat as tainted)
+            [type] => text/plain  (not sure where it gets this from - assume the browser, so treat as tainted)
+            [size] => 123   (the size in bytes)
+            [hash] => file hash (storage)
+            */
+            if(is_array($values['file_info']))
+            {
+                foreach($values['file_info'] as $key=>$curValue)
+                {
+
+                    if($key=="name" || $key=="type" || $key=="size" || $key=="hash") $file_info[$key]=$curValue;
+                }
+            }
+
+            if(sizeof($file_info)>0) $values['file_info']=json_encode($file_info);
+        }
+
+        return parent::Parse($values);
+    }
+
+    protected $fileInfo=null;
+    public function GetFileInfo()
+    {
+        if(!empty($this->aProps['file_info']) && !$this->fileInfo)
+        {
+            $this->fileInfo=json_decode($this->aProps['file_info'],true);
+            if(!$this->fileInfo)
+            {
+                AA_Log::Log(__METHOD__." - errore nel parsing del file info: ".$this->aProps['file_info'],100);
+                return array();
+            }
+        }
+
+        return $this->fileInfo;
+    }
+    public function SetFileInfo($val=null)
+    {
+        if(is_array($val)) 
+        {
+            $this->fileInfo=$val;
+            $this->aProps['file_info']=json_encode($val);
+        }
+    }
+
+    static protected function AddFile($params=null,$user=null)
+    {
+        $storage=AA_Storage::GetInstance($user);
+        if(!$storage->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Storage non configurato.",100);
+            return false;
+        }
+
+        $fileInfo=array(
+            'name'=>$params['name'],
+            'type'=>$params['type'],
+            'size'=>$params['size']
+        );
+
+        $newRes=array();
+        $public=false;
+        $newRes['url_name']=$params['url_name'];
+
+        //carica il file sullo storage
+        $newFile=$storage->AddFile($params['path'],$params['name'],$params['type'],$public);
+        if($newFile->isValid())
+        {
+            $fileInfo['hash']=$newFile->GetFileHash();
+            $newRes['file_info']=json_encode($fileInfo);
+            
+            if(!empty($params['categorie'])) $newRes['categorie']=$params['categorie'];
+
+            $newResource=new AA_Risorse();
+            if($newResource->Update($newRes,$user))
+            {
+                return $newResource;
+            }
+        }          
+
+        return false;
+    }
+
+    public function AddGenericFileFromUpload($url_name="",$categorie="",$user=null)
+    {
+        if(!($user instanceof AA_User) || $user->isCurrentUser()) $user=AA_User::GetCurrentUser();
+        if(!$user->IsSuperUser())
+        {
+            AA_Log::Log(__METHOD__." - L'utente corrente non puo' effettuare l'upload di file.",100);
+            return false;
+        }
+
+        if(empty($_FILES))
+        {
+            AA_Log::Log(__METHOD__." - Non sono presenti file.",100);
+            return false;
+        }
+
+        $file=current($_FILES);
+        if(!is_file($file['tmp_name']))
+        {
+            AA_Log::Log(__METHOD__." - file non trovato: ".print_r($file,true),100);
+            return false;
+        }
+        return AA_Risorse::AddFile(array('url_name'=>$url_name,'categorie'=>$categorie,'name'=>$file['name'],'type'=>$file['type'],'size'=>$file['size'],'path'=>$file['tmp_name']),$user);
     }
 }

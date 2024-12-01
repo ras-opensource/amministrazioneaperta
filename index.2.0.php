@@ -39,11 +39,11 @@ if(AA_Config::AA_MANUTENTION)
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/webix/codebase/webix.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/pdfobject.min.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/pulltorefresh.js/dist/index.umd.min.js"></script>
-<script defer type="text/javascript" src="<?php echo $lib_path;?>/ckeditor5-builder-43.3.1/ckeditor5.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/cookie-consent/cookie-consent.js" charset="UTF-8"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_legacy.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_lib.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_custom.js"></script>
+<script defer type="text/javascript" src="<?php echo $lib_path;?>/ckeditor5-builder-43.3.1/ckeditor5.js"></script>
 <?php
 foreach($platform->GetModules() as $curMod)
 {

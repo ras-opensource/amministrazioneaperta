@@ -421,6 +421,14 @@ Class AA_HomeModule extends AA_GenericModule
     }
 
     //Task trash user dlg
+    public function Task_GetHomeRngDlg($task)
+    {
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetHomeRngDlg(),true);
+        return true;
+    }
+
+    //Task trash user dlg
     public function Task_GetCKeditor5Dlg($task)
     {
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);

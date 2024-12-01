@@ -96,7 +96,7 @@ class Timestamp extends Plugin {
     }
 }
 
-const editorConfig = {
+export const config = {
 	toolbar: {
 		items: [
 			'undo',
@@ -286,5 +286,4 @@ const editorConfig = {
 	translations: [translations]
 };
 
-window.ckeditor5_config=editorConfig;
-window.ckeditor5_editor=DecoupledEditor;
+export const editor=DecoupledEditor;
