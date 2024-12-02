@@ -4518,7 +4518,7 @@ class AA_GenericModule
         if ($object->GetStatus() & AA_Const::AA_STATUS_PUBBLICATA) $status = "pubblicata";
         if ($object->GetStatus() & AA_Const::AA_STATUS_REVISIONATA) $status .= " revisionata";
         if ($object->GetStatus() & AA_Const::AA_STATUS_CESTINATA) $status .= " cestinata";
-        $status = "<span class='AA_Label AA_Label_LightBlue' title='Stato scheda organismo'>" . $status . "</span>";
+        $status = "<span class='AA_Label AA_Label_LightBlue' title='Stato scheda'>" . $status . "</span>";
 
         #Dettagli
         if ($this->oUser->IsSuperUser() && $object->GetAggiornamento() != "") {
