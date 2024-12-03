@@ -58,6 +58,18 @@ Class AA_HomeModule extends AA_GenericModule
     const AA_UI_SECTION_GESTSTRUCT_ICON="mdi mdi-office-building-cog";
     //------------------------------
 
+     //------- Sezione gestione risorse -------
+    //Id sezione
+    const AA_ID_SECTION_GESTRISORSE="home_gestrisorse";
+
+    //nome sezione
+    const AA_UI_SECTION_GESTRISORSE_NAME="Gestione risorse";
+
+    const AA_UI_SECTION_GESTRISORSE="Gestrisorse_Content_Box";
+
+    const AA_UI_SECTION_GESTRISORSE_ICON="mdi mdi-file-tree";
+    //------------------------------
+
     //istanza
     protected static $oInstance=null;
     
@@ -106,6 +118,9 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("GetHomeStructTrashDlg");
         $taskManager->RegisterTask("HomeStructDelete");
 
+        //gestione risorse
+
+
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
             $taskManager->RegisterTask("GetHomeUtentiLegacyImportDlg");
@@ -127,15 +142,30 @@ Class AA_HomeModule extends AA_GenericModule
         $gestGruppi=false;
         if($user instanceof AA_User && $user->CanGestUtenti()) $gestGruppi =true;
 
+        //gestione risorse
+        $gestRisorse=false;
+        if($user->IsSuperUser()) $gestRisorse =true;
+
         //main
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_DESKTOP,static::AA_UI_SECTION_DESKTOP_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_DESKTOP,$this->GetId(),true,true,false,true);
         $section->SetIcon(static::AA_UI_SECTION_DESKTOP_ICON);
         if($gestutenti) 
         {
-            if($geststrutture) $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1,false)->toArray(),$this->TemplateNavbar_GestStruct(2)->toArray()));
-            else $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1)->toArray()));
+            if($geststrutture) 
+            {
+                if($gestRisorse) $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1,false)->toArray(),$this->TemplateNavbar_GestStruct(2,false)->toArray(),$this->TemplateNavbar_GestRisorse(3)->toArray()));
+                else $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1,false)->toArray(),$this->TemplateNavbar_GestStruct(2)->toArray()));
+            }
+            else 
+            {
+                $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1)->toArray()));
+            }
         }
-        else $section->SetNavbarTemplate($this->TemplateGenericNavbar_Void(1,true)->toArray());
+        else 
+        {
+            if($gestRisorse) $section->SetNavbarTemplate(array($this->TemplateNavbar_GestRisorse(1)->toArray()));
+            else $section->SetNavbarTemplate($this->TemplateGenericNavbar_Void(1,true)->toArray());
+        }
 
         $this->AddSection($section);
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DESKTOP,"TemplateSection_Desktop");
@@ -145,11 +175,7 @@ Class AA_HomeModule extends AA_GenericModule
             //Gestione utenti
             $section=new AA_GenericModuleSection(static::AA_ID_SECTION_GESTUTENTI,static::AA_UI_SECTION_GESTUTENTI_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTUTENTI,$this->GetId(),false,true,false,true);
             $section->SetIcon(static::AA_UI_SECTION_GESTUTENTI_ICON);
-            if($geststrutture)
-            {
-                $section->SetNavbarTemplate(array($this->TemplateNavbar_Cruscotto(1,false)->toArray(),$this->TemplateNavbar_Geststruct(2)->toArray()));
-            }
-            else $section->SetNavbarTemplate($this->TemplateNavbar_Cruscotto()->toArray());
+            $section->SetNavbarTemplate($this->TemplateNavbar_Cruscotto()->toArray());
             $this->AddSection($section);
             $this->SetSectionItemTemplate(static::AA_ID_SECTION_GESTUTENTI,"TemplateSection_GestUtenti");
         }
@@ -159,13 +185,20 @@ Class AA_HomeModule extends AA_GenericModule
             //Gestione strutture
             $section=new AA_GenericModuleSection(static::AA_ID_SECTION_GESTSTRUCT,static::AA_UI_SECTION_GESTSTRUCT_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTSTRUCT,$this->GetId(),false,true,false,true);
             $section->SetIcon(static::AA_UI_SECTION_GESTSTRUCT_ICON);
-            if($gestutenti)
-            {
-                $section->SetNavbarTemplate(array($this->TemplateNavbar_Cruscotto(1,false)->toArray(),$this->TemplateNavbar_Gestutenti(2)->toArray()));
-            }
-            else $section->SetNavbarTemplate($this->TemplateNavbar_Cruscotto()->toArray());
+            $section->SetNavbarTemplate($this->TemplateNavbar_Cruscotto()->toArray());
             $this->AddSection($section);
             $this->SetSectionItemTemplate(static::AA_ID_SECTION_GESTSTRUCT,"TemplateSection_GestStruct");
+        }
+        #-------------------------------------------
+
+        if($gestRisorse)
+        {
+            //Gestione strutture
+            $section=new AA_GenericModuleSection(static::AA_ID_SECTION_GESTRISORSE,static::AA_UI_SECTION_GESTRISORSE_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTRISORSE,$this->GetId(),false,true,false,true);
+            $section->SetIcon(static::AA_UI_SECTION_GESTRISORSE_ICON);
+            $section->SetNavbarTemplate($this->TemplateNavbar_Cruscotto()->toArray());
+            $this->AddSection($section);
+            $this->SetSectionItemTemplate(static::AA_ID_SECTION_GESTRISORSE,"TemplateSection_GestRisorse");
         }
         #-------------------------------------------
     }
@@ -1225,6 +1258,27 @@ Class AA_HomeModule extends AA_GenericModule
         return $navbar;
     }
 
+     //Template navbar gestione risorse
+     protected function TemplateNavbar_GestRisorse($level=1,$last=true)
+     {
+         $class = "n" . $level;
+         if ($last) $class .= " AA_navbar_terminator_left";
+         $id=static::AA_UI_PREFIX . "_Navbar_Link_".uniqid(time());
+         $navbar =  new AA_JSON_Template_Template(
+             $id,
+             array(
+                 "type" => "clean",
+                 "css" => "AA_NavbarEventListener",
+                 "borderless"=>true,
+                 "module_id" => $this->GetId(),
+                 "tooltip" => "Visualizza la gestione risorse",
+                 "template" => "<div class='AA_navbar_link_box_left #class#'><a class='".$id."' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"".static::AA_ID_SECTION_GESTRISORSE."\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                 "data" => array("label" => static::AA_UI_SECTION_GESTRISORSE_NAME, "class" => $class,"icon"=>static::AA_UI_SECTION_GESTRISORSE_ICON)
+             )
+         );
+         return $navbar;
+     } 
+
     //Template cruscotto context menu
     public function TemplateActionMenu_Cruscotto()
     {
@@ -1839,6 +1893,64 @@ Class AA_HomeModule extends AA_GenericModule
             }
         }
         
+        return $layout;
+    }
+
+    //Template gestutenti content
+    public function TemplateSection_GestRisorse()
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTRISORSE;
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean","borderless"=>true,"name" => static::AA_UI_SECTION_GESTRISORSE_NAME,"filtered"=>true));
+
+        #risorse----------------------------------
+        if($this->oUser->IsSuperUser()) $canModify=true;
+
+        $risorse_data=array();
+        $risorse=AA_Risorse::Search();
+
+        foreach($risorse as $id_doc=>$curDoc)
+        {   
+            $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetProp("url").'"},"'.$this->id.'")';
+            $view_icon="mdi-eye";
+            $tip="Naviga (in un&apos;altra finestra)";
+
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeRisorseTrashCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeRisorseModifyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center; width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+
+            $categorieLabel=array();
+            $categorie=explode(",",$curDoc->GetProp("categorie"));
+            foreach($categorie as $key=>$val)
+            {
+                $categorieLabel[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
+            }
+            
+            $risorse_data[]=array("id"=>$id_doc,"url_name"=>$curDoc->GetProp("url_name"),"tipo"=>$curDoc->GetProp("tipo"),"size"=>$curDoc->GetProp("size"),"categorie"=>implode("&nbsp;",$categorieLabel),"ops"=>$ops);
+        }
+
+        $template=new AA_GenericDatatableTemplate($id."_RisorseTable","",5,null,array("css"=>"AA_Header_DataTable"));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader();
+        $template->SetHeaderHeight(38);
+
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetGecoAddNewRisorseDlg");
+            //$template->SetAddNewTaskParams(array("postParams"=>array("postParam1"=>0)));
+        }
+
+        $template->SetColumnHeaderInfo(0,"url_name","<div style='text-align: center'>Url pubblica</div>","fillspace","textFilter","int","RisorseTable_left");
+        $template->SetColumnHeaderInfo(1,"tipo","<div style='text-align: center'>Tipo</div>",200,"textFilter","text","RisorseTable_left");
+        $template->SetColumnHeaderInfo(2,"categorie","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","RisorseTable_left");
+        $template->SetColumnHeaderInfo(3,"size","<div style='text-align: center'>Dimensione</div>",120,"","","RisorseTable");
+        $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"RisorseTable");
+
+        $template->SetData($risorse_data);
+
+        $layout->AddRow($template);
         return $layout;
     }
 

@@ -498,6 +498,32 @@ class AA_Storage
         else return new AA_StorageFile();
     }
 
+    public function AddFileReference($hash="",$user=null)
+    {
+        if(empty($hash))
+        {
+            AA_Log::Log(__METHOD__." - Hash non valido. ",100);
+            return false;
+        }
+
+        $file=$this->GetFileByHash($hash);
+        if(!$file->isValid())
+        {
+            AA_Log::Log(__METHOD__." - File non trovato. ",100);
+            return false;
+        }
+
+        $db=new AA_Database();
+        $query="UPDATE ".static::AA_DBTABLE_STORAGE." set referencesCount=(referencesCount+1),aggiornamento=".date("Y-m-d")." WHERE fileHash='".$file->GetFileHash()."' LIMIT 1";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - Errore nella query: ".$query,100);
+            return false;    
+        }
+
+        return true;
+    }
+
     //rimuove dal db tutti i riferimenti a file inesistenti
     public function Purge()
     {

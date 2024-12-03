@@ -123,6 +123,11 @@ div.AA_header_module_title span:first-child {
     width: fit-content;
 }
 
+.AA_NavbarEventListener
+{
+    margin-right: -1px;
+}
+
 .AA_navbar_link_box_left a {
     padding-left: 1.5em;
     padding-right: 1.5em;
@@ -150,7 +155,7 @@ div.AA_header_module_title span:first-child {
 }
 
 .n3 {
-    background: #93cfea;
+    background: linear-gradient(180deg, rgba(52, 151, 197, 1) 0%, #93cfea 25%, #93cfea 75%, rgba(52, 151, 197, 1) 100%) !important;
 }
 
 .n4 {
