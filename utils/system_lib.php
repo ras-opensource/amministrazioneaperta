@@ -6976,7 +6976,7 @@ Class AA_Risorse extends AA_GenericParsableDbObject
     protected $fileInfo=null;
     public function GetFileInfo()
     {
-        if(!empty($this->aProps['file_info']) && !$this->fileInfo)
+        if(!empty($this->aProps['file_info']) && !is_array($this->fileInfo))
         {
             $this->fileInfo=json_decode($this->aProps['file_info'],true);
             if(!$this->fileInfo)
@@ -6986,7 +6986,8 @@ Class AA_Risorse extends AA_GenericParsableDbObject
             }
         }
 
-        return $this->fileInfo;
+        if(is_array($this->fileInfo)) return $this->fileInfo;
+        else return array();
     }
     public function SetFileInfo($val=null)
     {

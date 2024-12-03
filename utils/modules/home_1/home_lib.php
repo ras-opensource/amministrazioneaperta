@@ -119,7 +119,8 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("HomeStructDelete");
 
         //gestione risorse
-
+        $taskManager->RegisterTask("GetHomeRisorseAddNewDlg");
+        $taskManager->RegisterTask("HomeRisorseAddNew");
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -530,6 +531,21 @@ Class AA_HomeModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetHomeUtentiAddNewDlg(),true);
+        return true;
+    }
+
+    //Task add new risorsa
+    public function Task_GetHomeRisorseAddNewDlg($task)
+    {
+        if(!$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione risorse.");
+            return false; 
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetHomeRisorseAddNewDlg(),true);
         return true;
     }
 
@@ -962,6 +978,109 @@ Class AA_HomeModule extends AA_GenericModule
         return true;
     }
 
+    //Task addnew risorsa
+    public function Task_HomeRisorseAddNew($task)
+    {
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if(!$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione risorse.");
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }
+
+            return false; 
+        }
+        //Elimina il file temporaneo
+        if(!$uploadedFile->isValid())
+        {   
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Occorre scegliere un file.");
+
+            return false;
+        }
+
+        $newRes=new AA_Risorse();
+        if(!empty($_REQUEST['condividi']))
+        {
+            if(!empty($_REQUEST['url_name']))
+            {
+                $newRes->SetProp('url_name',urlencode($_REQUEST['url_name']));
+
+            }
+            else $newRes->SetProp('url_name',"res-".time());
+        }
+
+        if(!empty($_REQUEST['categorie']))
+        {
+            $categorie=implode(",", preg_split('/[\s,]+/', $_REQUEST['categorie'], -1, PREG_SPLIT_NO_EMPTY));
+        }
+
+        $storage = AA_Storage::GetInstance($this->oUser);
+        if(!$storage->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Storage non abilitato.");
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }
+
+            return false; 
+        }
+
+        $storageFile=$storage->AddFileFromUpload($uploadedFile);
+        if(!$storageFile->IsValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nel salvataggio del file.");
+
+            return false;
+        }
+
+        $fileInfo=array(
+            'name'=>$storageFile->GetName(),
+            'type'=>$storageFile->GetMimeType(),
+            'size'=>$storageFile->GetFileSize(),
+            'hash'=>$storageFile->GetFileHash()
+        );
+
+        $newRes->SetFileInfo($fileInfo);
+
+        if(!$newRes->Update(null,$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiunta della nuova risorsa.");
+            return false; 
+        }
+ 
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Risorsa aggiunta con successo.");
+        
+        return true;
+    }
+
     //Task addnew struct
     public function Task_HomeStructAddNew($task)
     {
@@ -1330,6 +1449,25 @@ Class AA_HomeModule extends AA_GenericModule
                    "module_id" => $this->GetId(),
                    "handler"=>"refreshUiObject",
                    "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTSTRUCT,true)
+                ))
+            ));
+        
+        return $menu;  
+    }
+
+    //Template gestrisorse context menu
+    public function TemplateActionMenu_GestRisorse()
+    {
+        $menu=new AA_JSON_Template_Generic(
+            static::AA_UI_PREFIX."_".static::AA_ID_SECTION_GESTRISORSE."_ActionMenu",array(
+            "view"=>"contextmenu",
+            "data"=>array(array(
+                   "id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_GESTRISORSE."_ActionMenuItem_Aggiorna",
+                   "value"=>"Aggiorna",
+                   "icon"=>"mdi mdi-reload",
+                   "module_id" => $this->GetId(),
+                   "handler"=>"refreshUiObject",
+                   "handler_params"=>array(static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GESTRISORSE,true)
                 ))
             ));
         
@@ -1910,8 +2048,10 @@ Class AA_HomeModule extends AA_GenericModule
         $risorse=AA_Risorse::Search();
 
         foreach($risorse as $id_doc=>$curDoc)
-        {   
-            $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetProp("url").'"},"'.$this->id.'")';
+        {
+            $fileInfo=$curDoc->GetFileInfo();   
+            $url = $fileInfo['hash'];
+            $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$url.'"},"'.$this->id.'")';
             $view_icon="mdi-eye";
             $tip="Naviga (in un&apos;altra finestra)";
 
@@ -1924,11 +2064,13 @@ Class AA_HomeModule extends AA_GenericModule
             $categorie=explode(",",$curDoc->GetProp("categorie"));
             foreach($categorie as $key=>$val)
             {
-                $categorieLabel[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
+                if(!empty($val)) $categorieLabel[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
             }
             
-            $risorse_data[]=array("id"=>$id_doc,"url_name"=>$curDoc->GetProp("url_name"),"tipo"=>$curDoc->GetProp("tipo"),"size"=>$curDoc->GetProp("size"),"categorie"=>implode("&nbsp;",$categorieLabel),"ops"=>$ops);
+            $risorse_data[]=array("id"=>$id_doc,"url_name"=>$curDoc->GetProp("url_name"),"type"=>$fileInfo["type"],"size"=>$fileInfo["size"],"categorie"=>implode("&nbsp;",$categorieLabel),"ops"=>$ops);
         }
+
+        AA_Log::Log(__METHOD__." - risorse: ".print_r($risorse_data,true),100);
 
         $template=new AA_GenericDatatableTemplate($id."_RisorseTable","",5,null,array("css"=>"AA_Header_DataTable"));
         $template->EnableScroll(false,true);
@@ -1938,12 +2080,12 @@ Class AA_HomeModule extends AA_GenericModule
 
         if($canModify) 
         {
-            $template->EnableAddNew(true,"GetGecoAddNewRisorseDlg");
+            $template->EnableAddNew(true,"GetHomeRisorseAddNewDlg");
             //$template->SetAddNewTaskParams(array("postParams"=>array("postParam1"=>0)));
         }
 
-        $template->SetColumnHeaderInfo(0,"url_name","<div style='text-align: center'>Url pubblica</div>","fillspace","textFilter","int","RisorseTable_left");
-        $template->SetColumnHeaderInfo(1,"tipo","<div style='text-align: center'>Tipo</div>",200,"textFilter","text","RisorseTable_left");
+        $template->SetColumnHeaderInfo(0,"url_name","<div style='text-align: center'>Nome condivisione</div>","fillspace","textFilter","int","RisorseTable_left");
+        $template->SetColumnHeaderInfo(1,"type","<div style='text-align: center'>Tipo</div>",200,"textFilter","text","RisorseTable_left");
         $template->SetColumnHeaderInfo(2,"categorie","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","RisorseTable_left");
         $template->SetColumnHeaderInfo(3,"size","<div style='text-align: center'>Dimensione</div>",120,"","","RisorseTable");
         $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"RisorseTable");
@@ -1952,6 +2094,49 @@ Class AA_HomeModule extends AA_GenericModule
 
         $layout->AddRow($template);
         return $layout;
+    }
+
+    //Template dlg aggiungi risorsa
+    public function Template_GetHomeRisorseAddNewDlg()
+    {
+        $id=uniqid();
+        
+        $form_data=array();
+        $wnd=new AA_GenericFormDlg($id, "Aggiungi nuova risorsa", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(800);
+        $wnd->SetHeight(680);
+
+        //categorie
+        $wnd->AddTextField("categorie", "Categorie", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci le categorie da associare alla risorsa.","placeholder" => "immagini,mare,..."));
+        //Condividi
+        $section=new AA_FieldSet($id."_Section_Url","Condividi");
+        $section->AddCheckBoxField("condividi", "Condividi", array("gravity"=>2,"bottomPadding"=>0,"labelRight"=>"Abilita per condividere pubblicamente la risorsa","labelWidth"=>0,"relatedView"=>$id."_Section_Url_Field_url_name", "relatedAction"=>"show"));
+        $section->AddTextField("url_name", "Nome", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci il nome da utilizzare per generare l'url pubblica (lascia vuoto se non vuoi che venga generato automaticamente).","placeholder" => "risorsa_pubblica"));
+        $wnd->AddGenericObject($section);
+        
+        //file upload------------------
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        $section=new AA_FieldSet($id."_Section_Url","Curriculum - Inserire un'url oppure scegliere un file");
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 2Mb).","accept"=>"application/pdf,application/zip"));
+        
+        $wnd->AddGenericObject($section);
+        //---------------------------------
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("HomeRisorseAddNew");
+        
+        return $wnd;
     }
 
     //Template gestutenti content
@@ -3388,6 +3573,9 @@ Class AA_HomeModule extends AA_GenericModule
                 break;
             case static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_GESTSTRUCT:
                 $content = $this->TemplateActionMenu_GestStruct();
+                break;
+            case static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_GESTRISORSE:
+                $content = $this->TemplateActionMenu_GestRisorse();
                 break;
             default:
                 $content = new AA_JSON_Template_Generic();
