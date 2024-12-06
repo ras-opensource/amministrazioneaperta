@@ -36,7 +36,7 @@ Class AA_Geco_Const extends AA_Const
                 static::AA_GECO_MODALITA_ASSEGNAZIONE_DIRETTA=>"Assegnazione diretta su istanza individuale",
                 static::AA_GECO_MODALITA_ATTO_NORMATIVO=>"Beneficiario individuato da atto normativo",
                 static::AA_GECO_MODALITA_CONCORSO_PUBBLICO=>"Concorso pubblico",
-                static::AA_GECO_MODALITA_PROCEDURA_EVIDENZA_PUBBLICA=>"Procedura di evidenza pubblica"
+                static::AA_GECO_MODALITA_PROCEDURA_EVIDENZA_PUBBLICA=>"Procedura ad evidenza pubblica"
             );
         }
 
