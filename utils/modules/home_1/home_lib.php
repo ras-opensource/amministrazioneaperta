@@ -124,6 +124,7 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("GetHomeRisorseModifyDlg");
         $taskManager->RegisterTask("HomeRisorseUpdate");
         $taskManager->RegisterTask("GetHomeRisorseTrashDlg");
+        $taskManager->RegisterTask("HomeRisorseDelete");
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -1068,7 +1069,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             if(!empty($_REQUEST['url_name']))
             {
-                $newRes->SetProp('url_name',implode("-", preg_split('/[\s,]+/', $_REQUEST['url_name'], -1, PREG_SPLIT_NO_EMPTY)));
+                $newRes->SetProp('url_name',preg_replace('/\s+/', '_', preg_replace('/[^a-zA-Z\s_]/', '', $_REQUEST['url_name'])));
 
             }
             else $newRes->SetProp('url_name',"res-".time());
@@ -1186,7 +1187,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             if(!empty($_REQUEST['url_name']))
             {
-                $newRes->SetProp('url_name',implode("-", preg_split('/[\s,]+/', $_REQUEST['url_name'], -1, PREG_SPLIT_NO_EMPTY)));
+                $newRes->SetProp('url_name',preg_replace('/\s+/', '_', preg_replace('/[^a-zA-Z\s_]/', '', $_REQUEST['url_name'])));
             }
             else $newRes->SetProp('url_name',"res-".time());
         }
@@ -1265,6 +1266,40 @@ Class AA_HomeModule extends AA_GenericModule
  
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Risorsa modificata con successo.");
+        
+        return true;
+    }
+
+    //Task delete risorsa
+    public function Task_HomeRisorseDelete($task)
+    {
+        if(!$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione risorse.");
+
+            return false; 
+        }
+
+        $newRes=new AA_Risorse();
+
+        if(!$newRes->Load($_REQUEST['id']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Risorsa non trovata.");
+
+            return false; 
+        }
+
+        if(!$newRes->Delete($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'eliminazione della risorsa.");
+            return false; 
+        }
+ 
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Risorsa eliminata con successo.");
         
         return true;
     }
@@ -1505,6 +1540,8 @@ Class AA_HomeModule extends AA_GenericModule
         
         return true;
     }
+
+    
 
     //Template navbar cruscotto
     protected function TemplateNavbar_Cruscotto($level=1,$last=true)
@@ -2239,15 +2276,20 @@ Class AA_HomeModule extends AA_GenericModule
         foreach($risorse as $id_doc=>$curDoc)
         {
             $fileInfo=$curDoc->GetFileInfo();   
-            $url = $fileInfo['hash'];
-            $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$url.'"},"'.$this->id.'")';
-            $view_icon="mdi-eye";
-            $tip="Naviga (in un&apos;altra finestra)";
+            $url = "risorse/".$curDoc->GetProp('url_name');
+            if(!empty($url))
+            {
+                $view='';
+                $view_icon="mdi-eye";
+                $tip="Naviga (in un&apos;altra finestra)";
+                $view="<a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='AA_MainApp.utils.callHandler(\"wndOpen\", {url: \"".$url."\"},\"".$this->id."\")'><span class='mdi ".$view_icon."'></span></a>";
+            }
+            else $view="";
 
             $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeRisorseTrashDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
             $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeRisorseModifyDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center; width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
+            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'>$view<a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
+            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center; width: 100%'>$view</div>";
 
             $categorieLabel=array();
             $categorie=explode(",",$curDoc->GetProp("categorie"));
@@ -2260,7 +2302,7 @@ Class AA_HomeModule extends AA_GenericModule
             $risorse_data[]=array("id_risorsa"=>$curDoc->GetProp('id'),"url_name"=>$url_name,"type"=>$fileInfo["type"],"size"=>$fileInfo["size"],"categorie"=>implode("&nbsp;",$categorieLabel),"ops"=>$ops);
         }
 
-        AA_Log::Log(__METHOD__." - risorse: ".print_r($risorse_data,true),100);
+        //AA_Log::Log(__METHOD__." - risorse: ".print_r($risorse_data,true),100);
 
         $template=new AA_GenericDatatableTemplate($id."_RisorseTable","",6,null,array("css"=>"AA_Header_DataTable"));
         $template->EnableScroll(false,true);

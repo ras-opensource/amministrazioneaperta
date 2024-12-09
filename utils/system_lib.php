@@ -1023,9 +1023,11 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
         $query.=$where.$order.$limit;
         if(!$db->Query($query))
         {
-            AA_Log::Log(__METHOD__." - Errore: ".$db->GetErrorMessage(),100);
+            AA_Log::Log(__METHOD__." Query - ".$query." - Errore: ".$db->GetErrorMessage(),100);
             return array();
         }
+
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         if($db->GetAffectedRows() == 0) return array();
         
@@ -6947,6 +6949,22 @@ Class AA_Risorse extends AA_GenericParsableDbObject
         parent::__construct($params);
     }
 
+    public static function LoadFromUrlName($url_name)
+    {
+        if(empty($url_name))
+        {
+            return false;
+        }
+
+        $risorse=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"url_name","VALUE"=>"'".addslashes(trim($url_name))."'"))));
+        if(sizeof($risorse) > 0)
+        {
+            return current($risorse);
+        }
+
+        return false;
+    } 
+
     protected function Parse($values = null)
     {
         $file_info=array();
@@ -7152,8 +7170,7 @@ Class AA_Risorse extends AA_GenericParsableDbObject
             return false;
         }
 
-        if(!parent::Delete($user)) return false;
-
+        
         $storage=AA_Storage::GetInstance($user);
         if(!$storage->IsValid())
         {
@@ -7163,6 +7180,6 @@ Class AA_Risorse extends AA_GenericParsableDbObject
         $fileInfo=$this->GetFileInfo();
         if(!$storage->DelFile($fileInfo['hash'])) return false;
 
-        return true;
+        return parent::Delete($user);
     }
 }

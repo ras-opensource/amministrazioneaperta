@@ -1,0 +1,2 @@
+RewriteEngine on
+RewriteRule ^risorse/([^/]+)$ risorse/index.php?risorsa=$1 [L,QSA]
