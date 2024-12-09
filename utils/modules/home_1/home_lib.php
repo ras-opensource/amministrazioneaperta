@@ -1069,7 +1069,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             if(!empty($_REQUEST['url_name']))
             {
-                $newRes->SetProp('url_name',preg_replace('/\s+/', '_', preg_replace('/[^a-zA-Z\s_]/', '', $_REQUEST['url_name'])));
+                $newRes->SetProp('url_name',preg_replace('/\s+/', '_', preg_replace('/[^a-zA-Z\s_0-9]/', '', $_REQUEST['url_name'])));
 
             }
             else $newRes->SetProp('url_name',"res-".time());
@@ -1187,7 +1187,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             if(!empty($_REQUEST['url_name']))
             {
-                $newRes->SetProp('url_name',preg_replace('/\s+/', '_', preg_replace('/[^a-zA-Z\s_]/', '', $_REQUEST['url_name'])));
+                $newRes->SetProp('url_name',preg_replace('/\s+/', '_', preg_replace('/[^a-zA-Z\s_0-9]/', '', $_REQUEST['url_name'])));
             }
             else $newRes->SetProp('url_name',"res-".time());
         }

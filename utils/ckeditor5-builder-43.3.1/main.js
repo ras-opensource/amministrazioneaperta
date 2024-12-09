@@ -7,7 +7,7 @@ import {
 	AutoLink,
 	Autosave,
 	BalloonToolbar,
-	Base64UploadAdapter,
+	SimpleUploadAdapter,
 	Bold,
 	Code,
 	Essentials,
@@ -135,7 +135,7 @@ export const config = {
 		AutoLink,
 		Autosave,
 		BalloonToolbar,
-		Base64UploadAdapter,
+		SimpleUploadAdapter,
 		Bold,
 		Code,
 		Essentials,
@@ -188,6 +188,19 @@ export const config = {
 		Underline,
 		Undo
 	],
+	simpleUpload: {
+		// The URL that the images are uploaded to.
+		uploadUrl: AA_MainApp.taskManager+"?task=UploadFromCKeditor5",
+
+		// Enable the XMLHttpRequest.withCredentials property.
+		withCredentials: true,
+
+		// Headers sent along with the XMLHttpRequest to the upload server.
+		headers: {
+			'X-CSRF-TOKEN': 'CSRF-Token',
+			Authorization: 'Bearer Ab123456'
+		}
+	},
 	balloonToolbar: ['bold', 'italic', '|', 'link', 'insertImage', '|', 'bulletedList', 'numberedList'],
 	fontFamily: {
 		supportAllValues: true
