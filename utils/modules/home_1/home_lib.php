@@ -121,6 +121,9 @@ Class AA_HomeModule extends AA_GenericModule
         //gestione risorse
         $taskManager->RegisterTask("GetHomeRisorseAddNewDlg");
         $taskManager->RegisterTask("HomeRisorseAddNew");
+        $taskManager->RegisterTask("GetHomeRisorseModifyDlg");
+        $taskManager->RegisterTask("HomeRisorseUpdate");
+        $taskManager->RegisterTask("GetHomeRisorseTrashDlg");
 
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
@@ -549,6 +552,52 @@ Class AA_HomeModule extends AA_GenericModule
         return true;
     }
 
+    //Task modify risorsa
+    public function Task_GetHomeRisorseModifyDlg($task)
+    {
+        if(!$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione risorse.");
+            return false; 
+        }
+
+        $risorsa=new AA_Risorse();
+        if(!$risorsa->Load($_REQUEST['id']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Risorsa non trovata.");
+            return false; 
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetHomeRisorseModifyDlg($risorsa),true);
+        return true;
+    }
+
+    //Task modify risorsa
+    public function Task_GetHomeRisorseTrashDlg($task)
+    {
+        if(!$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione risorse.");
+            return false; 
+        }
+
+        $risorsa=new AA_Risorse();
+        if(!$risorsa->Load($_REQUEST['id']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Risorsa non trovata.");
+            return false; 
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetHomeRisorseTrashDlg($risorsa),true);
+        return true;
+    }
+
     //Task add new struct dlg
     public function Task_GetHomeStructAddNewDlg($task)
     {
@@ -577,6 +626,8 @@ Class AA_HomeModule extends AA_GenericModule
         $task->SetContent($this->Template_GetHomeStructAddNewDlg($_REQUEST['id_assessorato'],$_REQUEST['id_direzione']),true);
         return true;
     }
+
+    
 
     //Task modify struct dlg
     public function Task_GetHomeStructModifyDlg($task)
@@ -1017,7 +1068,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             if(!empty($_REQUEST['url_name']))
             {
-                $newRes->SetProp('url_name',urlencode($_REQUEST['url_name']));
+                $newRes->SetProp('url_name',implode("-", preg_split('/[\s,]+/', $_REQUEST['url_name'], -1, PREG_SPLIT_NO_EMPTY)));
 
             }
             else $newRes->SetProp('url_name',"res-".time());
@@ -1025,7 +1076,7 @@ Class AA_HomeModule extends AA_GenericModule
 
         if(!empty($_REQUEST['categorie']))
         {
-            $categorie=implode(",", preg_split('/[\s,]+/', $_REQUEST['categorie'], -1, PREG_SPLIT_NO_EMPTY));
+            $newRes->SetProp("categorie",implode(",", preg_split('/[\s,]+/', $_REQUEST['categorie'], -1, PREG_SPLIT_NO_EMPTY)));
         }
 
         $storage = AA_Storage::GetInstance($this->oUser);
@@ -1077,6 +1128,143 @@ Class AA_HomeModule extends AA_GenericModule
  
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Risorsa aggiunta con successo.");
+        
+        return true;
+    }
+
+    //Task addnew risorsa
+    public function Task_HomeRisorseUpdate($task)
+    {
+        $uploadedFile = AA_SessionFileUpload::Get("NewAllegatoDoc");
+
+        if(!$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non è abilitato alla gestione risorse.");
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }
+
+            return false; 
+        }
+
+        $newRes=new AA_Risorse();
+
+        if(!$newRes->Load($_REQUEST['id']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Risorsa non trovata.");
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }
+
+            return false; 
+        }
+
+        
+        if(!empty($_REQUEST['condividi']))
+        {
+            if(!empty($_REQUEST['url_name']))
+            {
+                $newRes->SetProp('url_name',implode("-", preg_split('/[\s,]+/', $_REQUEST['url_name'], -1, PREG_SPLIT_NO_EMPTY)));
+            }
+            else $newRes->SetProp('url_name',"res-".time());
+        }
+        else
+        {
+            $newRes->SetProp('url_name',"");
+        }
+
+        if(!empty($_REQUEST['categorie']))
+        {
+            $newRes->SetProp("categorie",implode(",", preg_split('/[\s,]+/', $_REQUEST['categorie'], -1, PREG_SPLIT_NO_EMPTY)));
+        }
+
+        $storage = AA_Storage::GetInstance($this->oUser);
+        if(!$storage->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Storage non abilitato.");
+
+            //Elimina il file temporaneo
+            if($uploadedFile->isValid())
+            {   
+                $file=$uploadedFile->GetValue();
+                if(file_exists($file['tmp_name']))
+                {
+                    if(!unlink($file['tmp_name']))
+                    {
+                        AA_Log::Log(__METHOD__." - Errore nella rimozione del file temporaneo. ".$file['tmp_name'],100);
+                    }
+                }
+            }
+
+            return false; 
+        }
+
+        if($uploadedFile->isValid())
+        {
+
+            $fileInfo=$newRes->GetFileInfo();
+            
+            //elimina il file precedente
+            if(!empty($fileInfo['hash']))
+            {
+                AA_Log::Log(__METHOD__." - Eliminazione del file: ".$fileInfo['hash'],100);
+                if(!$storage->Delete($fileInfo['hash'],$this->oUser))
+                {
+                    AA_Log::Log(__METHOD__." - Errore nell'eliminazione del file: ".$fileInfo['hash'],100);
+                }
+            }
+
+            $storageFile=$storage->AddFileFromUpload($uploadedFile);
+            if(!$storageFile->IsValid())
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Errore nel salvataggio del file.");
+    
+                return false;
+            }
+    
+            $fileInfo=array(
+                'name'=>$storageFile->GetName(),
+                'type'=>$storageFile->GetMimeType(),
+                'size'=>$storageFile->GetFileSize(),
+                'hash'=>$storageFile->GetFileHash()
+            );
+    
+            $newRes->SetFileInfo($fileInfo);
+        }
+
+        if(!$newRes->Update(null,$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento della risorsa.");
+            return false; 
+        }
+ 
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Risorsa modificata con successo.");
         
         return true;
     }
@@ -1171,7 +1359,7 @@ Class AA_HomeModule extends AA_GenericModule
         }
 
         $struct=$this->oUser->GetStruct();
-        if($_REQUEST['id_assessorato'] != $struct->GetAssessorato(true) && $struct->GetAssessorato(true) !=0)
+        if($_REQUEST['id_assessorato'] != $struct->GetAssessorato(true) && $struct->GetAssessorato(true) != 0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non puo' modificare la struttura (0).");
@@ -1228,6 +1416,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             if(!$newStruct->Update(null,$this->oUser))
             {
+                //AA_Log::Log(__METHOD__." - ".print_r($newStruct,true),100);
                 $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
                 $task->SetError("Errore nell'aggiornamento della struttura (0).");
                 return false; 
@@ -2055,8 +2244,8 @@ Class AA_HomeModule extends AA_GenericModule
             $view_icon="mdi-eye";
             $tip="Naviga (in un&apos;altra finestra)";
 
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeRisorseTrashCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeRisorseModifyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeRisorseTrashDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeRisorseModifyDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
             if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
             else $ops="<div class='AA_DataTable_Ops' style='justify-content: center; width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
 
@@ -2066,13 +2255,14 @@ Class AA_HomeModule extends AA_GenericModule
             {
                 if(!empty($val)) $categorieLabel[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
             }
-            
-            $risorse_data[]=array("id"=>$id_doc,"url_name"=>$curDoc->GetProp("url_name"),"type"=>$fileInfo["type"],"size"=>$fileInfo["size"],"categorie"=>implode("&nbsp;",$categorieLabel),"ops"=>$ops);
+            $url_name=$curDoc->GetProp("url_name");
+            if(empty($url_name)) $ur_name="Non condiviso";
+            $risorse_data[]=array("id_risorsa"=>$curDoc->GetProp('id'),"url_name"=>$url_name,"type"=>$fileInfo["type"],"size"=>$fileInfo["size"],"categorie"=>implode("&nbsp;",$categorieLabel),"ops"=>$ops);
         }
 
         AA_Log::Log(__METHOD__." - risorse: ".print_r($risorse_data,true),100);
 
-        $template=new AA_GenericDatatableTemplate($id."_RisorseTable","",5,null,array("css"=>"AA_Header_DataTable"));
+        $template=new AA_GenericDatatableTemplate($id."_RisorseTable","",6,null,array("css"=>"AA_Header_DataTable"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader();
@@ -2084,11 +2274,12 @@ Class AA_HomeModule extends AA_GenericModule
             //$template->SetAddNewTaskParams(array("postParams"=>array("postParam1"=>0)));
         }
 
-        $template->SetColumnHeaderInfo(0,"url_name","<div style='text-align: center'>Nome condivisione</div>","fillspace","textFilter","int","RisorseTable_left");
-        $template->SetColumnHeaderInfo(1,"type","<div style='text-align: center'>Tipo</div>",200,"textFilter","text","RisorseTable_left");
+        $template->SetColumnHeaderInfo(0,"id_risorsa","<div style='text-align: center'>id</div>",90,"textFilter","int","RisorseTable");
+        $template->SetColumnHeaderInfo(1,"url_name","<div style='text-align: center'>Nome condivisione</div>",300,"textFilter","int","RisorseTable_left");
         $template->SetColumnHeaderInfo(2,"categorie","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","RisorseTable_left");
-        $template->SetColumnHeaderInfo(3,"size","<div style='text-align: center'>Dimensione</div>",120,"","","RisorseTable");
-        $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"RisorseTable");
+        $template->SetColumnHeaderInfo(3,"type","<div style='text-align: center'>Tipo</div>",200,"textFilter","text","RisorseTable");
+        $template->SetColumnHeaderInfo(4,"size","<div style='text-align: center'>Dimensione</div>",120,"","","RisorseTable");
+        $template->SetColumnHeaderInfo(5,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"RisorseTable");
 
         $template->SetData($risorse_data);
 
@@ -2123,9 +2314,9 @@ Class AA_HomeModule extends AA_GenericModule
         //file upload------------------
         $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
 
-        $section=new AA_FieldSet($id."_Section_Url","Curriculum - Inserire un'url oppure scegliere un file");
+        $section=new AA_FieldSet($id."_Section_Url","Scegliere un file");
         //file
-        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti pdf o file zip (dimensione max: 2Mb).","accept"=>"application/pdf,application/zip"));
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo file di dimensione max: 2Mb."));
         
         $wnd->AddGenericObject($section);
         //---------------------------------
@@ -2135,6 +2326,111 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
         $wnd->SetSaveTask("HomeRisorseAddNew");
+        
+        return $wnd;
+    }
+
+    //Template dlg modifica risorsa
+    public function Template_GetHomeRisorseModifyDlg($risorsa=null)
+    {
+        $id=uniqid();
+        
+        $form_data=array();
+        if($risorsa instanceof AA_Risorse)
+        {
+            $form_data['id']=$risorsa->GetProp("id");
+            $form_data['categorie']=$risorsa->GetProp("categorie");
+            $form_data['url_name']=$risorsa->GetProp("url_name");
+            if(!empty($form_data['url_name']))
+            {
+                $form_data['condividi']=1;
+            }
+        }
+        $wnd=new AA_GenericFormDlg($id, "Modifica risorsa esistente", $this->id,$form_data,$form_data);
+        
+        //$wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(100);
+        $wnd->SetBottomPadding(30);
+        $wnd->EnableValidation();
+        
+        $wnd->SetWidth(800);
+        $wnd->SetHeight(680);
+
+        //categorie
+        $wnd->AddTextField("categorie", "Categorie", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci le categorie da associare alla risorsa.","placeholder" => "immagini,mare,..."));
+        //Condividi
+        $section=new AA_FieldSet($id."_Section_Url","Condividi");
+        $section->AddCheckBoxField("condividi", "Condividi", array("gravity"=>2,"bottomPadding"=>0,"labelRight"=>"Abilita per condividere pubblicamente la risorsa","labelWidth"=>0,"relatedView"=>$id."_Section_Url_Field_url_name", "relatedAction"=>"show"));
+        $section->AddTextField("url_name", "Nome", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci il nome da utilizzare per generare l'url pubblica (lascia vuoto se non vuoi che venga generato automaticamente).","placeholder" => "risorsa_pubblica"));
+        $wnd->AddGenericObject($section);
+        
+        //file upload------------------
+        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+
+        $section=new AA_FieldSet($id."_Section_Url","Scegliere un file");
+        //file
+        $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo file di dimensione max: 2Mb)."));
+        
+        $wnd->AddGenericObject($section);
+        //---------------------------------
+
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("type"=>"spacer","height"=>20)));
+        
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("HomeRisorseUpdate");
+        
+        return $wnd;
+    }
+
+    //Template dlg trash risorsa
+    public function Template_GetHomeRisorseTrashDlg($object=null)
+    {
+        $id=$this->id."_HomeRisorseTrash_Dlg_".uniqid();
+        
+        $form_data=array("id"=>$object->GetProp('id'));
+        $form_data["url_name"]=$object->GetProp('url_name');
+        if(empty($form_data["url_name"])) $form_data["url_name"]="non condiviso";
+        $form_data["categorie"]=$object->GetProp('categorie');
+
+        $wnd=new AA_GenericFormDlg($id, "Elimina risorsa", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(800);
+        $wnd->SetHeight(480);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+        
+        $tabledata=array();
+        $tabledata[]=array("id_risorsa"=>$object->getProp('id'),"url_name"=>$object->getProp('url_name'),"categorie"=>$object->getProp('categorie'));
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("borderless"=>true,"autoheight"=>true,"template"=>"La seguente risorsa <b>verra' eliminata definitivamente</b>, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"id_risorsa", "header"=>"id", "width"=>80),
+              array("id"=>"url_name", "header"=>"nome condivisione", "fillspace"=>true),
+              array("id"=>"categorie", "header"=>"categorie", "fillspace"=>true),
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("HomeRisorseDelete");
         
         return $wnd;
     }

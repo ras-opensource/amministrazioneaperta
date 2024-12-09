@@ -2866,8 +2866,8 @@ Class AA_GecoModule extends AA_GenericModule
         
         $params['MultiviewEventHandlers']=array("onViewChange"=>array("handler"=>"onDetailViewChange"));
 
-        $params['disable_SaveAsPdf']=true;
-        $params['disable_SaveAsCsv']=true;
+        //$params['disable_SaveAsPdf']=false;
+        //$params['disable_SaveAsCsv']=false;
         //$params['disable_trash']=true;
         $params['disable_public_trash']=true;
 
