@@ -2298,7 +2298,7 @@ Class AA_HomeModule extends AA_GenericModule
                 if(!empty($val)) $categorieLabel[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
             }
             $url_name=$curDoc->GetProp("url_name");
-            if(empty($url_name)) $ur_name="Non condiviso";
+            if(empty($url_name)) $url_name="Non condiviso";
             $risorse_data[]=array("id_risorsa"=>$curDoc->GetProp('id'),"url_name"=>$url_name,"type"=>$fileInfo["type"],"size"=>$fileInfo["size"],"categorie"=>implode("&nbsp;",$categorieLabel),"ops"=>$ops);
         }
 
