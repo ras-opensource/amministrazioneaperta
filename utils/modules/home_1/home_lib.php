@@ -163,7 +163,7 @@ Class AA_HomeModule extends AA_GenericModule
             }
             else 
             {
-                $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1)->toArray()));
+                $section->SetNavbarTemplate(array($this->TemplateNavbar_Gestutenti(1,false)->toArray(),$this->TemplateNavbar_GestRisorse(2)->toArray()));
             }
         }
         else 
