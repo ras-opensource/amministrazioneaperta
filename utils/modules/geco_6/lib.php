@@ -2807,7 +2807,7 @@ Class AA_GecoModule extends AA_GenericModule
         $wnd->SetWidth(350);
 
         $platform=AA_Platform::GetInstance($this->oUser);
-        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale_oc.pdf";
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale.pdf";
         $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
 
         $layout=new AA_JSON_Template_Layout($id."_Aiuto_box",array("type"=>"clean"));
@@ -2819,11 +2819,11 @@ Class AA_GecoModule extends AA_GenericModule
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-help-circle",
-            "label"=>"Manuale caricamento risultati",
+            "label"=>"Manuale operatore",
             "align"=>"center",
             "inputWidth"=>300,
             "click"=>$action,
-            "tooltip"=>"Visualizza o scarica il manuale operatore comunale per iul caricamento dei risultati elettorali"
+            "tooltip"=>"Visualizza o scarica il manuale operatore"
         ));
 
         $toolbar_oc->AddCol($btn);
@@ -2831,19 +2831,20 @@ Class AA_GecoModule extends AA_GenericModule
 
         $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
 
-        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("type"=>"clean","borderless"=>true));
-        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/manuale_oc_rendiconti.pdf";
-        $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
+        //video tutorial
+        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_".uniqid(),array("type"=>"clean","borderless"=>true));
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/tutorial.mp4";
+        $action='window.open("'.$manualPath.'","_blank");';
         //manuale operatore comunale rendiconti
-        $btn=new AA_JSON_Template_Generic($id."_ManualeRendiconti_btn",array(
+        $btn=new AA_JSON_Template_Generic($id."_".uniqid(),array(
             "view"=>"button",
             "type"=>"icon",
-            "icon"=>"mdi mdi-help-circle",
-            "label"=>"Manuale caricamento rendiconti",
+            "icon"=>"mdi mdi-filmstrip",
+            "label"=>"Video presentazione",
             "align"=>"center",
             "inputWidth"=>300,
             "click"=>$action,
-            "tooltip"=>"Visualizza o scarica il manuale operatore comunale per la compilazione dei rendiconti"
+            "tooltip"=>"Scarica la registrazione della presentazione del modulo"
         ));
 
         $toolbar_oc->AddCol($btn);
@@ -5253,7 +5254,7 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
             if(!empty($beneficiario['privacy']))
             {
                 $text="<div><b>".$beneficiario['nome']."</b></div>";
-                if(!empty($beneficiario['cf'])) $text.="<div style='font-size:smaller;'>Cf: ".$beneficiario['cf']."</div>";
+                if(!empty($beneficiario['cf']) && $beneficiario['tipo'] == 0) $text.="<div style='font-size:smaller;'>Cf: ".$beneficiario['cf']."</div>";
                 if(!empty($beneficiario['piva'])) $text.="<div style='font-size:smaller;'>P.iva: ".$beneficiario['cf']."</div>";
             }
             else $text="<div style='font-size:smaller;'>informazioni oscurate ai sensi dell'art. 26, comma 4 del d.lgs 33/2013</div>";

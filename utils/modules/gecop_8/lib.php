@@ -2386,7 +2386,7 @@ Class AA_GecopModule extends AA_GenericModule
 
         $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
 
-        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("type"=>"clean","borderless"=>true));
+        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_".uniqid(),array("type"=>"clean","borderless"=>true));
         $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/faq.pdf";
         $action='AA_MainApp.utils.callHandler("pdfPreview", { url: "'.$manualPath.'" }, "'.$this->GetId().'");';
         //manuale operatore comunale rendiconti
@@ -2400,6 +2400,49 @@ Class AA_GecopModule extends AA_GenericModule
             "click"=>$action,
             "tooltip"=>"Visualizza o scarica le FAQ e i link utili"
         ));
+
+        $toolbar_oc->AddCol($btn);
+        $layout->AddRow($toolbar_oc);
+
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+
+        //video tutorial
+        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_".uniqid(),array("type"=>"clean","borderless"=>true));
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/tutorial.mp4";
+        $action='window.open("'.$manualPath.'","_blank");';
+        //manuale operatore comunale rendiconti
+        $btn=new AA_JSON_Template_Generic($id."_".uniqid(),array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-filmstrip",
+            "label"=>"Video tutorial",
+            "align"=>"center",
+            "inputWidth"=>300,
+            "click"=>$action,
+            "tooltip"=>"Scarica il video tutorial"
+        ));
+
+        $toolbar_oc->AddCol($btn);
+        $layout->AddRow($toolbar_oc);
+
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+        
+        //video RPCT
+        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_".uniqid(),array("type"=>"clean","borderless"=>true));
+        $manualPath=$platform->GetModulePathURL($this->GetId())."/docs/intervento_rpct.mp4";
+        $action='window.open("'.$manualPath.'","_blank");';
+        //manuale operatore comunale rendiconti
+        $btn=new AA_JSON_Template_Generic($id."_".uniqid(),array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-filmstrip",
+            "label"=>"Video intervento RPCT",
+            "align"=>"center",
+            "inputWidth"=>300,
+            "click"=>$action,
+            "tooltip"=>"Scarica il video dell'intervento del RPCT"
+        ));
+
 
         $toolbar_oc->AddCol($btn);
         $layout->AddRow($toolbar_oc);
