@@ -1139,6 +1139,7 @@ Class AA_GecoModule extends AA_GenericModule
         $form_data['Beneficiario_privacy']=0;
 
         $form_data['Responsabile_nome']="";
+        $form_data['Responsabile_qualifica']="";
 
         $form_data['Importo_impegnato']="";
         $form_data['Importo_erogato']=0;
@@ -1178,9 +1179,16 @@ Class AA_GecoModule extends AA_GenericModule
         $label="Descrizione";
         $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Inserisci un breve testo esplicativo per il cittadino (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"Breve descrizione ad uso esterno..."));
 
+        //responsabile
+        $section=new AA_FieldSet($id."_Responsabile","Responsabile");
+            
         //Responsabile
-        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo e qualifica del responsabile del procedimento amministrativo.", "placeholder"=>"es. Nome, cognome e qualifica ..."));
+        $section->AddTextField("Responsabile_nome","Nominativo",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile del procedimento amministrativo.", "placeholder"=>"es. Giuseppe Verdi"));
 
+        //Qualifica
+        $section->AddTextField("Responsabile_qualifica","Qualifica",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci la qualifica del responsabile del procedimento amministrativo.", "placeholder"=>"es. Direttore del servizio"),false);
+
+        $wnd->AddGenericObject($section);
         //Norma
         $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
 
@@ -2551,6 +2559,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         $responsabile=$object->GetResponsabile();
         $form_data['Responsabile_nome']=$responsabile['nome'];
+        $form_data['Responsabile_qualifica']=$responsabile['qualifica'];
 
         $form_data['Importo_impegnato']=AA_utils::number_format(floatVal($object->GetProp('Importo_impegnato')),2,",",".");
         $form_data['Importo_erogato']=AA_utils::number_format(floatVal($object->GetProp('Importo_erogato')),2,",",".");
@@ -2591,8 +2600,16 @@ Class AA_GecoModule extends AA_GenericModule
         $label="Descrizione";
         $wnd->AddTextareaField("descrizione",$label,array("required"=>true,"bottomLabel"=>"*Inserisci un breve testo esplicativo per il cittadino (max 1024 caratteri, visibilita' pubblica).", "placeholder"=>"Breve descrizione ad uso esterno..."));
 
+        //responsabile
+        $section=new AA_FieldSet($id."_Responsabile","Responsabile");
+        
         //Responsabile
-        $wnd->AddTextField("Responsabile_nome","Responsabile",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile e qualifica del procedimento amministrativo.", "placeholder"=>"es. Nome, cognome e qualifica..."));
+        $section->AddTextField("Responsabile_nome","Nominativo",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci il nominativo del responsabile del procedimento amministrativo.", "placeholder"=>"es. Giuseppe Verdi"));
+
+        //Qualifica
+        $section->AddTextField("Responsabile_qualifica","Qualifica",array("required"=>true,"bottomPadding"=>32, "bottomLabel"=>"*Inserisci la qualifica del responsabile del procedimento amministrativo.", "placeholder"=>"es. Direttore del servizio"),false);
+
+        $wnd->AddGenericObject($section);
 
         //Norma
         $section=new AA_FieldSet($id."_Norma","Norma o titolo a base dell'attribuzione");
@@ -2976,10 +2993,12 @@ Class AA_GecoModule extends AA_GenericModule
 
         //responsabile
         $value = $object->GetResponsabile();
+        $text=$value['nome'];
+        if(!empty($value['qualifica'])) $text.=", ".$value['qualifica'];
         $responsabile=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "width"=>250,
-            "data"=>array("title"=>"Responsabile:","value"=>$value['nome'])
+            "width"=>400,
+            "data"=>array("title"=>"Responsabile del procedimento:","value"=>$text)
         ));
 
         //importo impegnato
@@ -3462,6 +3481,7 @@ Class AA_GecoModule extends AA_GenericModule
         }
         
         if(isset($_REQUEST['Responsabile_nome'])) $responsabile['nome']=trim($_REQUEST['Responsabile_nome']);
+        if(isset($_REQUEST['Responsabile_qualifica'])) $responsabile['qualifica']=trim($_REQUEST['Responsabile_qualifica']);
         
         if(isset($_REQUEST['Norma_estremi'])) $norma['estremi']=trim($_REQUEST['Norma_estremi']);
         if(isset($_REQUEST['Norma_link'])) $norma['link']=trim($_REQUEST['Norma_link']);
@@ -3806,6 +3826,7 @@ Class AA_GecoModule extends AA_GenericModule
         }
         
         if(isset($_REQUEST['Responsabile_nome'])) $responsabile['nome']=trim($_REQUEST['Responsabile_nome']);
+        if(isset($_REQUEST['Responsabile_qualifica'])) $responsabile['qualifica']=trim($_REQUEST['Responsabile_qualifica']);
         
         if(isset($_REQUEST['Norma_estremi'])) $norma['estremi']=trim($_REQUEST['Norma_estremi']);
         if(isset($_REQUEST['Norma_link'])) $norma['link']=trim($_REQUEST['Norma_link']);
@@ -5058,8 +5079,8 @@ Class AA_GecoModule extends AA_GenericModule
         $border="";
         //anno
         $cig=new AA_XML_Div_Element($id."_anno",$header);
-        $cig->SetStyle($border.'width:5%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $cig->SetText("<span><b>Anno</b></span><span><b>Identificativo</b></span>");
+        $cig->SetStyle($border.'width:5%; font-size: .6em; padding: .1em; height:100%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $cig->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Anno</div><div style='display: flex; justify-content:space-evenly; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'>Identificativo</div>");
 
         #descrizione----------------------------------
         $oggetto=new AA_XML_Div_Element($id."_descrizione",$header);
@@ -5069,8 +5090,8 @@ Class AA_GecoModule extends AA_GenericModule
 
         #Ufficio----------------------------------
         $ufficio=new AA_XML_Div_Element($id."_ufficio",$header);
-        $ufficio->SetStyle('width:17%; font-size: .6em; padding: .1em; height:91%;display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $ufficio->SetText("<span><b>Responsabile del procedimento</b></span><span style='font-size: smaller'><b>Struttura proponente</b></span>");
+        $ufficio->SetStyle('width:17%; font-size: .6em; padding: .1em; height:100%;display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $ufficio->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Responsabile del procedimento</div><div style='display: flex; justify-content:space-evenly; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'>Qualifica/Ufficio</div>");
         #-----------------------------------------------
         
         //beneficiario
@@ -5091,7 +5112,7 @@ Class AA_GecoModule extends AA_GenericModule
         //importi
         $val=new AA_XML_Div_Element($id."_importi",$header);
         $val->SetStyle($border.'width:8.5%; font-size: .6em; height:100%; display: flex;flex-direction: column; justify-content:space-between;align-items:center');
-        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Importi in &euro;</div><div style='display: flex; justify-content:center; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'><div style='width:50%; font-weight:500; text-align:center;'>Impegnato</div><div style='width:50%;font-weight:500; text-align:center'>Erogato</div></div>");
+        $val->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Importi in &euro;</div><div style='display: flex; justify-content:center; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'><div style='width:50%; text-align:center;'>Impegnato</div><div style='width:50%; text-align:center'>Erogato</div></div>");
 
         //links
         $val=new AA_XML_Div_Element($id."_links",$header);
@@ -5240,13 +5261,59 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
             //if(strlen($servizio) > 65) $servizio=mb_substr($servizio,0,60)."...";
 
             $struct_desc=$assessorato;
-            if($direzione !="Qualunque") $struct_desc=$direzione;
-            if($servizio !="Qualunque") $struct_desc=$servizio;
+            $web="";
+            if($direzione !="Qualunque") 
+            {
+                if($servizio !="Qualunque") 
+                {
+                    $struct_desc=$servizio;
+                    $struttura=new AA_Servizio();
+                    if($struttura->Load($struct->GetServizio(true)))
+                    {
+                        $web=$struttura->GetProp("web");
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - servizio non trovato (".$struct->GetServizio(true).")");
+                    }
+                }
+                else
+                {
+                    $struct_desc=$direzione;
+                    $struttura=new AA_Direzione();
+                    if($struttura->Load($struct->GetDirezione(true)))
+                    {
+                        $web=$struttura->GetProp("web");
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - direzione non trovata (".$struct->GetDirezione(true).")");
+                    }
+                }
+            }
+            else
+            {
+                if($struct->GetAssessorato(true) > 0)
+                {
+                    $struttura=new AA_Assessorato();
+                    if($struttura->Load($struct->GetAssessorato(true)))
+                    {
+                        $web=$struttura->GetProp("web");
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - assessorato non trovato (".$struct->GetAssessorato(true).")");
+                    }
+                }
+            }
 
+            if(empty($web)) $web="https://www.regione.sardegna.it/regione/istituzione/struttura-organizzativa";
             $responsabile=$object->GetResponsabile();
+            $qualifica="";
+            if(!empty($responsabile['qualifica'])) $qualifica="<div style='font-size: smaller'>".$responsabile['qualifica']."</div>";
             $ufficio=new AA_XML_Div_Element($id."_ufficio",$this);
             $ufficio->SetStyle($border.'width:17%; font-size: .6em; padding: .1em; height:91%;display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-            $ufficio->SetText("<div><b>".$responsabile['nome']."</b></div><div style='font-size: smaller'>".$struct_desc."</div>");
+            $ufficio->SetText("<div><b>".$responsabile['nome']."</b></div>".$qualifica."<div style='font-size: smaller'><a href='".$web."' target='_blank'>".$struct_desc."</a></div>");
             #-----------------------------------------------
 
             #beneficiario-----------------------------------
