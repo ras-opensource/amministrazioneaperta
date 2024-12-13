@@ -1877,6 +1877,42 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         }
     };
 
+    //Pick image from gallery
+    this.eventHandlers['defaultHandlers'].OnDblClickItemGallery = async function(params) {
+        try {
+            //console.log("defaultHandlers.OnDblClickItemGallery", this, arguments);
+
+            let editor=$$(this.config.target);
+            let item=this.getItem(arguments[0]);
+            if(editor)
+            {
+                if(editor.config.view=="ckeditor5_field")
+                {
+                    //console.log("defaultHandlers.OnDblClickItemGallery - item", item);
+                    let ckeditor=editor.getEditor();
+                    if(ckeditor) ckeditor.execute( 'insertImage', { source: item.img_url } );
+                    let wnd=$$(this.config.wnd_id);
+                    if(wnd) wnd.close();
+                }
+                else
+                {
+                    //console.log("defaultHandlers.OnDblClickItemGallery - normal text item", item);
+                    editor.setValue(item.img_url);
+                    let wnd=$$(this.config.wnd_id);
+                    if(wnd) wnd.close();
+                }
+            }
+            else
+            {
+                console.log("defaultHandlers.OnDblClickItemGallery - editor non trovato", this.config.target);
+            }
+        } catch (msg) {
+            console.error("defaultHandlers.OnDblClickItemGallery", msg, this, arguments);
+            AA_MainApp.ui.alert(msg);
+            return Promise.reject(msg);
+        }
+    };
+
     //Gestore evento sectionActionMenu
     this.eventHandlers['defaultHandlers'].sectionActionMenu = [];
 

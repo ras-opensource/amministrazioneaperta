@@ -1153,6 +1153,65 @@ class AA_GenericWindowTemplate
     }
 }
 
+//Classe per la gestione della galleria immagini
+class AA_GalleryDlg extends AA_GenericWindowTemplate
+{
+    protected $target="";
+    public function GetTarget(){return $this->target;}
+    public function SetTarget($target=''){$this->target=$target;}
+
+    protected $list=null;
+
+    public function __construct($id='',$title="Galleria immagini",$target="")
+    {
+        parent::__construct($id,$title);
+
+        $immagini=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"categorie","VALUE"=>"'%galleria%'"))));
+        $itemTemplate="<div style='display:flex; flex-direction:column; justify-content: space-evenly; align-items: center; height:100%; padding: 10px;'><img src='#img_url#' width='80%' /><span>#url#</span></div>";
+
+        $listData=array();
+        foreach($immagini as $curImage)
+        {
+            $listData[]=array("id"=>$curImage->GetProp("id"),"img_url"=>AA_Config::AA_WWW_ROOT."/risorse/".$curImage->GetProp("url_name"),"url"=>$curImage->GetProp("url_name"));
+        }
+
+        $this->list=new AA_JSON_Template_Generic("",array(
+            "view" => "dataview",
+            "xCount"=>2,
+            "type" =>
+            array(
+                    "type" => "tiles",
+                    "height" => "auto",
+                    "width" => "auto",
+                    "css" => "AA_DataView_item"
+            ),
+            "target"=>$target,
+            "template" => $itemTemplate,
+            "wnd_id"=>$this->GetWndId(),
+            "data" => $listData
+        ));
+
+        $this->target=$target;
+    }
+
+    protected function Update()
+    {
+        if($this->list)
+        {
+            if($this->target) 
+            {
+                $this->list->SetProp("target",$this->target);
+                $onDblClickEvent = "try{AA_MainApp.utils.getEventHandler('OnDblClickItemGallery','" . $this->module . "','" . $this->list->GetProp("id") . "')}catch(msg){console.error(msg)}";
+                $this->list->SetProp("on",array("onItemDblClick" => $onDblClickEvent));
+            }
+
+            $this->Addview($this->list);
+        }
+
+        return parent::Update();
+    }
+}
+
 //Classe per la gestione del layout dei popup
 class AA_GenericPopupTemplate
 {

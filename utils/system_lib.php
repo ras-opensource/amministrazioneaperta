@@ -438,7 +438,10 @@ class AA_SystemTaskManager extends AA_GenericTaskManager
         $this->RegisterTask("GetServerStatusDlg","AA_SystemTask_GetServerStatusDlg");
 
         //caricamento file da ckeditor5
-        $this->RegisterTask("UploadFromCKeditor5","AA_SystemTask_UploadFromCKeditor5");   
+        $this->RegisterTask("UploadFromCKeditor5","AA_SystemTask_UploadFromCKeditor5");
+
+        //galleria immagini
+        $this->RegisterTask("GetGalleryDlg","AA_SystemTask_GetGalleryDlg");
     }
 }
 
@@ -542,6 +545,27 @@ class AA_SystemTask_GetPdfPreviewDlg extends AA_GenericTask
     {
         AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
         $wnd = new AA_GenericPdfPreviewDlg();
+
+        //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
+
+        $this->sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>" . $wnd->toBase64() . "</content><error id='error'></error>";
+        return true;
+    }
+}
+
+//Task per la gestione della galleria
+class AA_SystemTask_GetGalleryDlg extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("GetGalleryDlg", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
+        $wnd = new AA_GalleryDlg("GalleriaDlg_".uniqid(),"Galleria immagini",$_REQUEST['target']);
 
         //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
 

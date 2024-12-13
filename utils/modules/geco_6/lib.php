@@ -2869,6 +2869,27 @@ Class AA_GecoModule extends AA_GenericModule
 
         $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
 
+        //video tutorial
+        $toolbar_oc=new AA_JSON_Template_Toolbar($id."_".uniqid(),array("type"=>"clean","borderless"=>true));
+        $manualPath="https://www.anticorruzione.it/documents/91439/198537/FAQ+IN+MATERIA+DI+TRASPARENZA+%E2%80%93+formato+PDF+%28921Kb%29.pdf/0381b99e-7fd8-1693-71ca-baae86e9de23?t=1631609380300";
+        $action='window.open("'.$manualPath.'","_blank");';
+        //manuale operatore comunale rendiconti
+        $btn=new AA_JSON_Template_Generic($id."_".uniqid(),array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-help-circle",
+            "label"=>"FAQ Anac",
+            "align"=>"center",
+            "inputWidth"=>300,
+            "click"=>$action,
+            "tooltip"=>"Visualizza le FAQ ANAC"
+        ));
+
+        $toolbar_oc->AddCol($btn);
+        $layout->AddRow($toolbar_oc);
+
+        $layout->AddRow(new AA_JSON_Template_Generic("",array("height"=>20)));
+
         $wnd->AddView($layout);        
 
         return $wnd;

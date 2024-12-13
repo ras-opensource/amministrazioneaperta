@@ -24,8 +24,8 @@ header("Pragma: no-cache");
 <link rel="stylesheet" href="<?php echo $lib_path;?>/jointjs/joint.min.css" />
 <link rel="stylesheet" type="text/css" href="<?php echo $lib_path;?>/webix/codebase/webix.min.css" />
 <link rel="stylesheet" href="stili/mdi/css/materialdesignicons.min.css" type="text/css" />
-<link rel="stylesheet" href="<?php echo $lib_path;?>/ckeditor5-builder-43.3.1/ckeditor5/ckeditor5.css">
-<link rel="stylesheet" href="<?php echo $lib_path;?>/ckeditor5-builder-43.3.1/document_style.css" type="text/css" />
+<link rel="stylesheet" href="<?php echo $lib_path;?>/ckeditor5-builder-44.0.0/ckeditor5/ckeditor5.css">
+<link rel="stylesheet" href="<?php echo $lib_path;?>/ckeditor5-builder-44.0.0/document_style.css" type="text/css" />
 <link href="stili/system.css" rel="stylesheet" type="text/css" />
 <link href="stili/system_custom.css" rel="stylesheet" type="text/css" />
 <script defer src="<?php echo $lib_path;?>/cryptojs/aes.js"></script>
@@ -43,7 +43,7 @@ if(AA_Config::AA_MANUTENTION)
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_legacy.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_lib.js"></script>
 <script defer type="text/javascript" src="<?php echo $lib_path;?>/system_custom.js"></script>
-<script defer type="text/javascript" src="<?php echo $lib_path;?>/ckeditor5-builder-43.3.1/ckeditor5.js"></script>
+<script defer type="text/javascript" src="<?php echo $lib_path;?>/ckeditor5-builder-44.0.0/ckeditor5.js"></script>
 <?php
 foreach($platform->GetModules() as $curMod)
 {
