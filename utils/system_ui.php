@@ -1153,107 +1153,6 @@ class AA_GenericWindowTemplate
     }
 }
 
-//Classe per la gestione della galleria immagini
-class AA_GalleryDlg extends AA_GenericWindowTemplate
-{
-    protected $target="";
-    public function GetTarget(){return $this->target;}
-    public function SetTarget($target=''){$this->target=$target;}
-
-    protected $list=null;
-
-    public function __construct($id='',$title="Galleria immagini",$target="",$user='')
-    {
-        parent::__construct($id,$title);
-
-        $modify=false;
-        if(!($user instanceof AA_User)) $user=AA_User::GetCurrentUser();
-        if($user->IsSuperUser()) $modify=true;
-
-        $immagini=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"categorie","VALUE"=>"'%galleria%'"))));
-        $itemTemplate="<div style='display:flex; flex-direction:column; justify-content: end; align-items: center; height: 100%; font-size: smaller'><div style='display:flex; flex-direction:column; justify-content: center; align-items: center; height: 150px; width:150px; background-image: url(#img_url#); background-size: cover;background-repeat: no-repeat; background-position: center'>&nbsp;</div><div style='text-align: center;'>#url#</div>";
-        $itemTemplate.="<div style='width: 90%; display: flex; justify-content:space-between; align-items: center'><a class='AA_DataTable_Ops_Button' title='Scarica' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-download'></span></a>";
-        $itemTemplate.="<a class='AA_DataTable_Ops_Button' title='Copia negli appunti' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-content-copy'></span></a>";
-        if($modify)
-        {
-            $itemTemplate.="<a class='AA_DataTable_Ops_Button AA_DataTable_Ops_Button_Red' title='Elimina' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-trash-can'></span></a></div></div>";
-        }
-        else $itemTemplate.="</div></div>";
-
-        $listData=array();
-        foreach($immagini as $curImage)
-        {
-            $listData[]=array("id"=>$curImage->GetProp("id"),"img_url"=>AA_Config::AA_WWW_ROOT."/risorse/".$curImage->GetProp("url_name"),"url"=>$curImage->GetProp("url_name"));
-        }
-
-        $id="AA_SystemGallery_".uniqid();
-        if(sizeof($immagini) > 0)
-        {
-            $this->list=new AA_JSON_Template_Generic($id,array(
-                "view" => "dataview",
-                "filtered"=>true,
-                "xCount"=>6,
-                "type" =>
-                array(
-                        "type" => "tiles",
-                        "height" => "auto",
-                        "width" => "auto",
-                        "css" => "AA_DataView_item"
-                ),
-                "target"=>$target,
-                "template" => $itemTemplate,
-                "wnd_id"=>$this->GetWndId(),
-                "data" => $listData
-            ));    
-        }
-
-        $toolbar=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("css"=>array("border-bottom"=>"1px solid #dedede !important")));
-        $toolbar->addCol(new AA_JSON_Template_Generic());
-        if($modify)
-        {
-              //carica nuova
-            $action="AA_MainApp.utils.callHandler('UploadToGallery', {task: 'GetGalleryAddNew', postParams: {refresh: 1, refresh_obj_id:'".$id."'}, taskManager: AA_MainApp.taskManager, module: '" . $this->module. "'},'".$this->module."')";
-            $btn=new AA_JSON_Template_Generic($id."_Manuale_btn",array(
-                "view"=>"button",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-image-plus",
-                "label"=>"Aggiungi",
-                "align"=>"right",
-                "inputWidth"=>120,
-                "click"=>$action,
-                "tooltip"=>"Aggiungi una nuova immagine"
-            ));
-
-            $toolbar->AddCol($btn);
-        }
-        
-        $this->AddView($toolbar);
-
-        $this->target=$target;
-    }
-
-    protected function Update()
-    {
-        if($this->list)
-        {
-            if($this->target) 
-            {
-                $this->list->SetProp("target",$this->target);
-                $onDblClickEvent = "try{AA_MainApp.utils.getEventHandler('OnDblClickItemGallery','" . $this->module . "','" . $this->list->GetProp("id") . "')}catch(msg){console.error(msg)}";
-                $this->list->SetProp("on",array("onItemDblClick" => $onDblClickEvent));
-            }
-
-            $this->Addview($this->list);
-        }
-        else
-        {
-            $this->AddView(new AA_JSON_Template_Template("",array("borderless"=>true,"template"=>"<div style='display:flex; justify-content: center; align-items: center:width: 100%;heignt:100%'>La galleria e' vuota.</div>")));
-        }
-
-        return parent::Update();
-    }
-}
-
 //Classe per la gestione del layout dei popup
 class AA_GenericPopupTemplate
 {
@@ -3202,5 +3101,160 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
         }
 
         return parent::toArray();
+    }
+}
+
+//Classe per la gestione della galleria immagini
+class AA_GalleryDlg extends AA_GenericWindowTemplate
+{
+    protected $target="";
+    public function GetTarget(){return $this->target;}
+    public function SetTarget($target=''){$this->target=$target;}
+
+    protected $list=null;
+
+    public function __construct($id='',$title="Galleria immagini",$target="",$user='')
+    {
+        parent::__construct($id,$title);
+
+        $modify=false;
+        if(!($user instanceof AA_User)) $user=AA_User::GetCurrentUser();
+        if($user->IsSuperUser()) $modify=true;
+
+        $id_list="AA_SystemGallery_".uniqid();
+
+        $immagini=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"categorie","VALUE"=>"'%galleria%'"))));
+        $itemTemplate="<div style='display:flex; flex-direction:column; justify-content: end; align-items: center; height: 100%; font-size: smaller'><div style='display:flex; flex-direction:column; justify-content: center; align-items: center; height: 150px; width:150px; background-image: url(#img_url#); background-size: cover;background-repeat: no-repeat; background-position: center'>&nbsp;</div><div style='text-align: center;'>#url#</div>";
+        $itemTemplate.="<div style='width: 90%; display: flex; justify-content: space-evenly; align-items: center'><a class='AA_DataTable_Ops_Button' title='Scarica' onclick='window.open(\"#img_url#\",\"_blank\");'><span class='mdi mdi-download'></span></a>";
+        $itemTemplate.="<a class='AA_DataTable_Ops_Button' title='Copia negli appunti' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-content-copy'></span></a>";
+        if($modify)
+        {
+            $action="AA_MainApp.utils.callHandler('dlg', {task: 'GetGalleryTrashDlg', postParams: {id:'#id#',refresh: 1, refresh_obj_id:'".$id_list."'}, taskManager: AA_MainApp.taskManager, module: '" . $this->module. "'},'".$this->module."')";
+            $itemTemplate.="<a class='AA_DataTable_Ops_Button AA_DataTable_Ops_Button_Red' title='Elimina' onclick=\"".$action."\";'><span class='mdi mdi-trash-can'></span></a></div></div>";
+        }
+        else $itemTemplate.="</div></div>";
+
+        $listData=array();
+        foreach($immagini as $curImage)
+        {
+            $listData[]=array("id"=>$curImage->GetProp("id"),"img_url"=>AA_Config::AA_WWW_ROOT."/risorse/".$curImage->GetProp("url_name"),"url"=>$curImage->GetProp("url_name"));
+        }
+
+        if(sizeof($immagini) > 0)
+        {
+            $this->list=new AA_JSON_Template_Generic($id_list,array(
+                "view" => "dataview",
+                "filtered"=>true,
+                "xCount"=>6,
+                "type" =>
+                array(
+                        "type" => "tiles",
+                        "height" => "auto",
+                        "width" => "auto",
+                        "css" => "AA_DataView_item"
+                ),
+                "target"=>$target,
+                "template" => $itemTemplate,
+                "wnd_id"=>$this->GetWndId(),
+                "data" => $listData
+            ));    
+        }
+
+        $toolbar=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("css"=>array("border-bottom"=>"1px solid #dedede !important")));
+        $toolbar->addCol(new AA_JSON_Template_Generic());
+        if($modify)
+        {
+              //carica nuova
+            $action="AA_MainApp.utils.callHandler('UploadToGallery', {task: 'GetGalleryAddNew', postParams: {refresh: 1, refresh_obj_id:'".$id_list."'}, taskManager: AA_MainApp.taskManager, module: '" . $this->module. "'},'".$this->module."')";
+            $btn=new AA_JSON_Template_Generic($id."_Manuale_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-image-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "inputWidth"=>120,
+                "click"=>$action,
+                "tooltip"=>"Aggiungi una nuova immagine"
+            ));
+
+            $toolbar->AddCol($btn);
+        }
+        
+        $this->AddView($toolbar);
+
+        $this->target=$target;
+    }
+
+    protected function Update()
+    {
+        if($this->list)
+        {
+            if($this->target) 
+            {
+                $this->list->SetProp("target",$this->target);
+                $onDblClickEvent = "try{AA_MainApp.utils.getEventHandler('OnDblClickItemGallery','" . $this->module . "','" . $this->list->GetProp("id") . "')}catch(msg){console.error(msg)}";
+                $this->list->SetProp("on",array("onItemDblClick" => $onDblClickEvent));
+            }
+
+            $this->Addview($this->list);
+        }
+        else
+        {
+            $this->AddView(new AA_JSON_Template_Template("",array("borderless"=>true,"template"=>"<div style='display:flex; justify-content: center; align-items: center:width: 100%;heignt:100%'>La galleria e' vuota.</div>")));
+        }
+
+        return parent::Update();
+    }
+}
+
+//template trash img from gallery
+class AA_GalleryTrashDlg extends AA_GenericFormDlg
+{
+    public function __construct($id = "", $title = "", $img=null, $formData = array(), $resetData = array(), $applyActions = "", $save_formdata_id = "")
+    {
+        //AA_Log::Log(__METHOD__." - ".$module,100);
+
+        $form_data=array("id"=>$img->GetProp('id'));
+        $form_data["url_name"]=$img->GetProp('url_name');
+        if(empty($form_data["url_name"])) $form_data["url_name"]="non condiviso";
+        $form_data["categorie"]=$img->GetProp('categorie');
+
+        parent::__construct($id, $title,'',$form_data);
+        
+        $this->SetWidth("640");
+        $this->SetHeight("300");
+
+        //Disattiva il pulsante di reset
+        $this->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $this->SetApplyButtonName("Procedi");
+        
+        $tabledata=array();
+        $tabledata[]=array("id_risorsa"=>$img->getProp('id'),"url_name"=>$img->getProp('url_name'),"categorie"=>$img->getProp('categorie'));
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $this->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+        $this->AddGenericObject(new AA_JSON_Template_Template("",array("borderless"=>true,"autoheight"=>true,"template"=>"La seguente immagine <b>verra' eliminata definitivamente</b>, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"id_risorsa", "header"=>"id", "width"=>80),
+              array("id"=>"url_name", "header"=>"nome condivisione", "fillspace"=>true),
+              array("id"=>"categorie", "header"=>"categorie", "fillspace"=>true),
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $this->AddGenericObject($table);
+
+        $this->EnableCloseWndOnSuccessfulSave();
+        $this->enableRefreshOnSuccessfulSave(false);
+        $this->SetSaveTask("TrashFromGallery");
+        $this->SetTaskManager("AA_MainApp.taskManager");
+        $this->SetSaveTaskParams(array("id"=>$img->GetProp("id"),"refresh"=>1,"refresh_obj_id"=>$_REQUEST['refresh_obj_id']));
     }
 }

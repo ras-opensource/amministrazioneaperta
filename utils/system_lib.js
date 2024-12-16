@@ -1948,6 +1948,38 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         }
     };
 
+    //Refresh gallery
+    this.eventHandlers['defaultHandlers'].RefreshGallery = async function(params) {
+        try 
+        {
+            //console.log("defaultHandlers.RefreshGallery", params.galleryId);
+            
+            let galleryId=null;
+            if(params && params['galleryId'])
+            {
+                galleryId=params['galleryId'];
+            }
+            else
+            {
+                console.log("defaultHandlers.RefreshGallery - galleryId non trovato", this, arguments);
+                return;
+            }
+
+            let galleryContent=$$(galleryId);
+            if(galleryContent)
+            {
+                //console.log("defaultHandlers.UploadToGallery - dataview", galleryContent);
+                galleryContent.load(AA_MainApp.taskManager+"?task=RefreshGalleryContent","json",null,true);
+            }
+        } 
+        catch (msg) 
+        {
+            console.error("defaultHandlers.RefreshGallery", msg, this, arguments);
+            AA_MainApp.ui.alert(msg);
+            return Promise.reject(msg);
+        }
+    };
+
     //Gestore evento sectionActionMenu
     this.eventHandlers['defaultHandlers'].sectionActionMenu = [];
 
@@ -2320,7 +2352,7 @@ var AA_MainApp = {
             }),
             fileDialog: async function(params,uploadUrl="",callbkFunc=null,callbkErrorFunc=null)
             {
-                console.log("AA_MainApp.utils.uploader",this,typeof callbkFunc);
+                //console.log("AA_MainApp.utils.uploader",this,typeof callbkFunc);
                 if(uploadUrl == "")
                 {
                     AA_MainApp.ui.alert("Occorre impostare un url per l'upload.");
@@ -2329,7 +2361,7 @@ var AA_MainApp = {
 
                 if(typeof(callbkFunc) === "function")
                 {
-                    console.log("AA_MainApp.utils.uploader - imposto la funzione di upload callback on success");
+                    //console.log("AA_MainApp.utils.uploader - imposto la funzione di upload callback on success");
                     this._uploaderObj.onFileUpload = this._uploaderObj.attachEvent("onFileUpload",callbkFunc);
                 }
                 else 

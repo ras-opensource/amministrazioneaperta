@@ -446,8 +446,14 @@ class AA_SystemTaskManager extends AA_GenericTaskManager
         //galleria immagini
         $this->RegisterTask("GetGalleryDlg","AA_SystemTask_GetGalleryDlg");
 
+        //galleria trash immagini
+        $this->RegisterTask("GetGalleryTrashDlg","AA_SystemTask_GetGalleryTrashDlg");
+
         //refresh galleria immagini
         $this->RegisterTask("RefreshGalleryContent","AA_SystemTask_RefreshGalleryContent");
+
+        //trash from galleria immagini
+        $this->RegisterTask("TrashFromGallery","AA_SystemTask_TrashFromGallery");
     }
 }
 
@@ -576,6 +582,86 @@ class AA_SystemTask_GetGalleryDlg extends AA_GenericTask
         //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
 
         $this->sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>" . $wnd->toBase64() . "</content><error id='error'></error>";
+        return true;
+    }
+}
+
+//Task per la gestione della galleria
+class AA_SystemTask_GetGalleryTrashDlg extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("GetGalleryTrashDlg", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        if(!$this->oUser->IsSuperUser())
+        {
+            $this->sTaskLog = "<status id='status'>-1</status><error id='error'>L'utente corrente non puo' effettuare l'azione indicata.</error>";
+            return false;
+        }
+
+        if(empty($_REQUEST['id']))
+        {
+            $this->sTaskLog = "<status id='status'>-1</status><error id='error'>Id immagine impostato.</error>";
+            return false;
+        }
+
+        $img=new AA_Risorse();
+        if(!$img->Load($_REQUEST['id']))
+        {
+            $this->sTaskLog = "<status id='status'>-1</status><error id='error'>Immagine non trovata</error>";
+            return false;
+        } 
+        //AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
+        $wnd = new AA_GalleryTrashDlg("GalleriaTrashDlg_".uniqid(),"Galleria immagini",$img);
+
+        //AA_Log::Log(__METHOD__." - ".$wnd->toString(),100);
+
+        $this->sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>" . $wnd->toBase64() . "</content><error id='error'></error>";
+        return true;
+    }
+}
+
+//Task per la gestione della galleria
+class AA_SystemTask_TrashFromGallery extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("TrashFromGallery", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        if(!$this->oUser->IsSuperUser())
+        {
+            $this->sTaskLog = "<status id='status'>-1</status><error id='error'>L'utente corrente non puo' effettuare l'azione indicata.</error>";
+            return false;
+        }
+
+        if(empty($_REQUEST['id']))
+        {
+            $this->sTaskLog = "<status id='status'>-1</status><error id='error'>Id immagine impostato.</error>";
+            return false;
+        }
+
+        $img=new AA_Risorse();
+        if(!$img->Load($_REQUEST['id']))
+        {
+            $this->sTaskLog = "<status id='status'>-1</status><error id='error'>Immagine non trovata</error>";
+            return false;
+        } 
+
+        if(!$img->Delete($this->oUser))
+        {
+            $this->sTaskLog = "<status id='status'>-1</status><error id='error'>Errore nell'eliminazione dell'immagine.</error>";
+            return false;
+        }
+
+        $this->sTaskLog = "<status id='status' action='RefreshGallery' action_params='{\"galleryId\":\"".$_REQUEST['refresh_obj_id']."\"}'>0</status><content id='content'>Immagine eliminata</content><error id='error'></error>";
         return true;
     }
 }
