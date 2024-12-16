@@ -1913,6 +1913,41 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
         }
     };
 
+    //Upload image to gallery
+    this.eventHandlers['defaultHandlers'].UploadToGallery = async function(params) {
+        try 
+        {
+            //console.log("defaultHandlers.UploadToGallery", this, arguments);
+            AA_MainApp.utils.uploader.fileDialog(params,AA_MainApp.taskManager+"?task=UploadFromGallery",function (params,response)
+            {
+                let upload_params=JSON.parse(response.params);
+                //console.log("defaultHandlers.UploadToGallery - upload params", upload_params);
+                if(upload_params.postParams)
+                {
+                    if(upload_params.postParams.refresh==1)
+                    {
+                        if(upload_params.postParams.refresh_obj_id)
+                        {
+                            //console.log("defaultHandlers.UploadToGallery - refresh gallery content", upload_params.postParams.refresh_obj_id);
+                            let galleryContent=$$(upload_params.postParams.refresh_obj_id);
+                            if(galleryContent)
+                            {
+                                //console.log("defaultHandlers.UploadToGallery - dataview", galleryContent);
+                                galleryContent.load(AA_MainApp.taskManager+"?task=RefreshGalleryContent","json",null,true);
+                            }
+                        }
+                    }
+                }
+            });
+        } 
+        catch (msg) 
+        {
+            console.error("defaultHandlers.UploadToGallery", msg, this, arguments);
+            AA_MainApp.ui.alert(msg);
+            return Promise.reject(msg);
+        }
+    };
+
     //Gestore evento sectionActionMenu
     this.eventHandlers['defaultHandlers'].sectionActionMenu = [];
 
@@ -2264,8 +2299,70 @@ var AA_MainApp = {
     //task manager
     taskManager: "utils/system_ops.php",
 
+    //self
+    thisApp: this,
+
     //utility functions
     utils: {
+        uploader:
+        {
+            _uploaderObj:
+            webix.ui({
+                view:"uploader",
+                multiple: false,
+                on:{
+                    onFileUploadError:function(params,response){
+                        console.error("AA_MainApp.utils.uploader: Errore nell'upload del file.",params,response);
+                        AA_MainApp.ui.alert("Errore nel caricamento del file.");
+                    }
+                },
+                apiOnly:true
+            }),
+            fileDialog: async function(params,uploadUrl="",callbkFunc=null,callbkErrorFunc=null)
+            {
+                console.log("AA_MainApp.utils.uploader",this,typeof callbkFunc);
+                if(uploadUrl == "")
+                {
+                    AA_MainApp.ui.alert("Occorre impostare un url per l'upload.");
+                    return;
+                }
+
+                if(typeof(callbkFunc) === "function")
+                {
+                    console.log("AA_MainApp.utils.uploader - imposto la funzione di upload callback on success");
+                    this._uploaderObj.onFileUpload = this._uploaderObj.attachEvent("onFileUpload",callbkFunc);
+                }
+                else 
+                {
+                    if(this._uploaderObj.hasEvent("onFileUpload"))
+                    {
+                        this._uploaderObj.detachEvent(this._uploaderObj.onFileUpload);
+                    }
+                    this._uploaderObj.onFileUpload=null;
+                }
+
+                if(typeof(callbkErrorFunc) === "function")
+                {
+                    this._uploaderObj.onFileUploadError=this._uploaderObj.attachEvent("onFileUploadError",callbkErrorFunc);
+                }
+                else 
+                {
+                    if(this._uploaderObj.hasEvent("onFileUploadError"))
+                    {
+                        this._uploaderObj.detachEvent(this._uploaderObj.onFileUploadError);
+                    }
+                    this._uploaderObj.onFileUploadError=null;
+                }
+
+                if(params)
+                {
+                    this._uploaderObj.config.formData={"params": JSON.stringify(params)};
+                }
+
+                this._uploaderObj.config.upload=uploadUrl;
+                return  this._uploaderObj.fileDialog(params);
+            }
+        },
         getMaxZindex: function() {
             return Math.max(
                 ...Array.from(document.querySelectorAll('body *'), el =>

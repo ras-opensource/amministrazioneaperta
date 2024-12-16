@@ -1755,6 +1755,7 @@ Class AA_HomeModule extends AA_GenericModule
         {
             $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetServerStatusDlg', taskManager: AA_MainApp.taskManager},'".$this->id."');\">Stato del server</a></div>";
             $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetCKeditor5Dlg'},'".$this->id."');\">Test dialogo CKeditor5</a></div>";
+            $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetGalleryDlg',taskManager: AA_MainApp.taskManager},'".$this->id."');\">Galleria immagini</a></div>";
         }
         $template.="</div>";
 

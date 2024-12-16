@@ -1162,12 +1162,21 @@ class AA_GalleryDlg extends AA_GenericWindowTemplate
 
     protected $list=null;
 
-    public function __construct($id='',$title="Galleria immagini",$target="")
+    public function __construct($id='',$title="Galleria immagini",$target="",$user='')
     {
         parent::__construct($id,$title);
 
+        $modify=false;
+        if(!($user instanceof AA_User)) $user=AA_User::GetCurrentUser();
+        if($user->IsSuperUser()) $modify=true;
+
         $immagini=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"categorie","VALUE"=>"'%galleria%'"))));
-        $itemTemplate="<div style='display:flex; flex-direction:column; justify-content: space-evenly; align-items: center; height:100%; padding: 10px;'><img src='#img_url#' width='80%' /><span>#url#</span></div>";
+        $itemTemplate="<div style='display:flex; flex-direction:column; justify-content: end; align-items: center; height: 100%; font-size: smaller'><div style='display:flex; flex-direction:column; justify-content: center; align-items: center; height: 150px; width:150px; background-image: url(#img_url#); background-size: cover;background-repeat: no-repeat; background-position: center'>&nbsp;</div><div style='text-align: center;'>#url#&nbsp;<a class='AA_DataTable_Ops_Button' title='Copia l&apos;url negli appunti' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-content-copy'></span></a></div>";
+        if($modify)
+        {
+            $itemTemplate.="<div><a class='AA_DataTable_Ops_Button AA_DataTable_Ops_Button_Red' title='Elimina' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-trash-can'></span></a></div></div>";
+        }
+        else $itemTemplate.="</div>";
 
         $listData=array();
         foreach($immagini as $curImage)
@@ -1175,21 +1184,48 @@ class AA_GalleryDlg extends AA_GenericWindowTemplate
             $listData[]=array("id"=>$curImage->GetProp("id"),"img_url"=>AA_Config::AA_WWW_ROOT."/risorse/".$curImage->GetProp("url_name"),"url"=>$curImage->GetProp("url_name"));
         }
 
-        $this->list=new AA_JSON_Template_Generic("",array(
-            "view" => "dataview",
-            "xCount"=>2,
-            "type" =>
-            array(
-                    "type" => "tiles",
-                    "height" => "auto",
-                    "width" => "auto",
-                    "css" => "AA_DataView_item"
-            ),
-            "target"=>$target,
-            "template" => $itemTemplate,
-            "wnd_id"=>$this->GetWndId(),
-            "data" => $listData
-        ));
+        $id="AA_SystemGallery_".uniqid();
+        if(sizeof($immagini) > 0)
+        {
+            $this->list=new AA_JSON_Template_Generic($id,array(
+                "view" => "dataview",
+                "filtered"=>true,
+                "xCount"=>6,
+                "type" =>
+                array(
+                        "type" => "tiles",
+                        "height" => "auto",
+                        "width" => "auto",
+                        "css" => "AA_DataView_item"
+                ),
+                "target"=>$target,
+                "template" => $itemTemplate,
+                "wnd_id"=>$this->GetWndId(),
+                "data" => $listData
+            ));    
+        }
+
+        $toolbar=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("css"=>array("border-bottom"=>"1px solid #dedede !important")));
+        $toolbar->addCol(new AA_JSON_Template_Generic());
+        if($modify)
+        {
+              //carica nuova
+            $action="AA_MainApp.utils.callHandler('UploadToGallery', {task: 'GetGalleryAddNew', postParams: {refresh: 1, refresh_obj_id:'".$id."'}, taskManager: AA_MainApp.taskManager, module: '" . $this->module. "'},'".$this->module."')";
+            $btn=new AA_JSON_Template_Generic($id."_Manuale_btn",array(
+                "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-image-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "inputWidth"=>120,
+                "click"=>$action,
+                "tooltip"=>"Aggiungi una nuova immagine"
+            ));
+
+            $toolbar->AddCol($btn);
+        }
+        
+        $this->AddView($toolbar);
 
         $this->target=$target;
     }
@@ -1206,6 +1242,10 @@ class AA_GalleryDlg extends AA_GenericWindowTemplate
             }
 
             $this->Addview($this->list);
+        }
+        else
+        {
+            $this->AddView(new AA_JSON_Template_Template("",array("borderless"=>true,"template"=>"<div style='display:flex; justify-content: center; align-items: center:width: 100%;heignt:100%'>La galleria e' vuota.</div>")));
         }
 
         return parent::Update();

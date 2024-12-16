@@ -440,8 +440,14 @@ class AA_SystemTaskManager extends AA_GenericTaskManager
         //caricamento file da ckeditor5
         $this->RegisterTask("UploadFromCKeditor5","AA_SystemTask_UploadFromCKeditor5");
 
+        //caricamento file dalla galleria
+        $this->RegisterTask("UploadFromGallery","AA_SystemTask_UploadFromGallery");
+
         //galleria immagini
         $this->RegisterTask("GetGalleryDlg","AA_SystemTask_GetGalleryDlg");
+
+        //refresh galleria immagini
+        $this->RegisterTask("RefreshGalleryContent","AA_SystemTask_RefreshGalleryContent");
     }
 }
 
@@ -571,6 +577,29 @@ class AA_SystemTask_GetGalleryDlg extends AA_GenericTask
 
         $this->sTaskLog = "<status id='status'>0</status><content id='content' type='json' encode='base64'>" . $wnd->toBase64() . "</content><error id='error'></error>";
         return true;
+    }
+}
+
+//Task per la gestione della galleria
+class AA_SystemTask_RefreshGalleryContent extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("RefreshGalleryContent", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        $immagini=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"categorie","VALUE"=>"'%galleria%'"))));
+
+        $listData=array();
+        foreach($immagini as $curImage)
+        {
+            $listData[]=array("id"=>$curImage->GetProp("id"),"img_url"=>AA_Config::AA_WWW_ROOT."/risorse/".$curImage->GetProp("url_name"),"url"=>$curImage->GetProp("url_name"));
+        }
+        
+        die(json_encode($listData));
     }
 }
 
@@ -706,6 +735,106 @@ class AA_SystemTask_UploadFromCKeditor5 extends AA_GenericTask
         }
 
         $return['url']=AA_Const::AA_WWW_ROOT."/risorse/".$newRes->GetProp("url_name");
+        die(json_encode($return));
+    }
+}
+
+//Task per l'upload di file direttamente dalla galleria
+class AA_SystemTask_UploadFromGallery extends AA_GenericTask
+{
+    public function __construct($user = null)
+    {
+        parent::__construct("UploadFromGallery", $user);
+    }
+
+    //Funzione per la gestione del task
+    public function Run()
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: ".$this->GetName());
+        $return=array();
+
+        if(!$this->oUser->IsSuperUser())
+        {
+            $return['status']="error";
+            $return['params']=$_REQUEST['params'];
+            $return['value']=array("message"=>"Utente non abilitato.");
+
+            die(json_encode($return));
+        }
+
+        if(empty($_FILES))
+        {
+            $return['status']="error";
+            $return['params']=$_REQUEST['params'];
+            $return['value']=array("message"=>"File non presente (0).");
+
+            die(json_encode($return));
+        }
+
+        $file=current($_FILES);
+        if(!is_file($file['tmp_name']))
+        {
+            $return['status']="error";
+            $return['params']=$_REQUEST['params'];
+            $return['value']=array("message"=>"File non presente (1).");
+
+            die(json_encode($return));
+        }
+
+        if(strpos($file["type"],"image")===false)
+        {
+            $return['status']="error";
+            $return['params']=$_REQUEST['params'];
+            $return['value']=array("message"=>"Il tipo di file selezionato non e' supportato.");
+
+            die(json_encode($return));
+        }
+
+        $storage=AA_Storage::GetInstance($this->oUser);
+        if(!$storage->IsValid())
+        {
+            $return['status']="error";
+            $return['params']=$_REQUEST['params'];
+            $return['value']=array("message"=>"Storage non inizializzato.");
+
+            die(json_encode($return));
+        }
+
+        $storageFile=$storage->AddFile($file['tmp_name'],$file['name'],$file['type']);
+        if(!$storageFile->isValid())
+        {
+            $return['status']="error";
+            $return['params']=$_REQUEST['params'];
+            $return['value']=array("message"=>"Errore nel caricamento del file sullo storage.");
+
+            die(json_encode($return));
+        }
+
+        $fileInfo=array(
+            "name"=>$storageFile->GetName(),
+            "type"=>$storageFile->GetMimeType(),
+            "size"=>$storageFile->GetFileSize(),
+            "hash"=>$storageFile->GetFileHash()
+        );
+
+        $newRes=new AA_Risorse();
+        $newRes->SetProp("categorie","galleria");
+        $newRes->SetProp("url_name","res_".uniqid(time()));
+        $newRes->SetFileInfo($fileInfo);
+
+        if(!$newRes->Update(null,$this->oUser))
+        {
+            $return['status']="error";
+            $return['params']=$_REQUEST['params'];
+            $return['value']=array("message"=>"Errore nel salvataggio della risorsa.");
+
+            die(json_encode($return));
+        }
+
+        $return['status']="server";
+        $return['value']=AA_Const::AA_WWW_ROOT."/risorse/".$newRes->GetProp("url_name");
+        $return['params']=$_REQUEST['params'];
+
         die(json_encode($return));
     }
 }
