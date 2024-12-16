@@ -1171,12 +1171,14 @@ class AA_GalleryDlg extends AA_GenericWindowTemplate
         if($user->IsSuperUser()) $modify=true;
 
         $immagini=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"categorie","VALUE"=>"'%galleria%'"))));
-        $itemTemplate="<div style='display:flex; flex-direction:column; justify-content: end; align-items: center; height: 100%; font-size: smaller'><div style='display:flex; flex-direction:column; justify-content: center; align-items: center; height: 150px; width:150px; background-image: url(#img_url#); background-size: cover;background-repeat: no-repeat; background-position: center'>&nbsp;</div><div style='text-align: center;'>#url#&nbsp;<a class='AA_DataTable_Ops_Button' title='Copia l&apos;url negli appunti' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-content-copy'></span></a></div>";
+        $itemTemplate="<div style='display:flex; flex-direction:column; justify-content: end; align-items: center; height: 100%; font-size: smaller'><div style='display:flex; flex-direction:column; justify-content: center; align-items: center; height: 150px; width:150px; background-image: url(#img_url#); background-size: cover;background-repeat: no-repeat; background-position: center'>&nbsp;</div><div style='text-align: center;'>#url#</div>";
+        $itemTemplate.="<div style='width: 90%; display: flex; justify-content:space-between; align-items: center'><a class='AA_DataTable_Ops_Button' title='Scarica' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-download'></span></a>";
+        $itemTemplate.="<a class='AA_DataTable_Ops_Button' title='Copia negli appunti' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-content-copy'></span></a>";
         if($modify)
         {
-            $itemTemplate.="<div><a class='AA_DataTable_Ops_Button AA_DataTable_Ops_Button_Red' title='Elimina' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-trash-can'></span></a></div></div>";
+            $itemTemplate.="<a class='AA_DataTable_Ops_Button AA_DataTable_Ops_Button_Red' title='Elimina' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-trash-can'></span></a></div></div>";
         }
-        else $itemTemplate.="</div>";
+        else $itemTemplate.="</div></div>";
 
         $listData=array();
         foreach($immagini as $curImage)
