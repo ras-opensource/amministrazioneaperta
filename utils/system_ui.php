@@ -3123,7 +3123,6 @@ class AA_GalleryDlg extends AA_GenericWindowTemplate
 
         $id_list="AA_SystemGallery_".uniqid();
 
-        $immagini=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"categorie","VALUE"=>"'%galleria%'"))));
         $itemTemplate="<div style='display:flex; flex-direction:column; justify-content: end; align-items: center; height: 100%; font-size: smaller'><div style='display:flex; flex-direction:column; justify-content: center; align-items: center; height: 150px; width:150px; background-image: url(#img_url#); background-size: cover;background-repeat: no-repeat; background-position: center'>&nbsp;</div><div style='text-align: center;'>#url#</div>";
         $itemTemplate.="<div style='width: 90%; display: flex; justify-content: space-evenly; align-items: center'><a class='AA_DataTable_Ops_Button' title='Scarica' onclick='window.open(\"#img_url#\",\"_blank\");'><span class='mdi mdi-download'></span></a>";
         $itemTemplate.="<a class='AA_DataTable_Ops_Button' title='Copia negli appunti' onclick='navigator.clipboard.writeText(\"#img_url#\");'><span class='mdi mdi-content-copy'></span></a>";
@@ -3134,32 +3133,23 @@ class AA_GalleryDlg extends AA_GenericWindowTemplate
         }
         else $itemTemplate.="</div></div>";
 
-        $listData=array();
-        foreach($immagini as $curImage)
-        {
-            $listData[]=array("id"=>$curImage->GetProp("id"),"img_url"=>AA_Config::AA_WWW_ROOT."/risorse/".$curImage->GetProp("url_name"),"url"=>$curImage->GetProp("url_name"));
-        }
-
-        if(sizeof($immagini) > 0)
-        {
-            $this->list=new AA_JSON_Template_Generic($id_list,array(
-                "view" => "dataview",
-                "filtered"=>true,
-                "xCount"=>6,
-                "type" =>
-                array(
-                        "type" => "tiles",
-                        "height" => "auto",
-                        "width" => "auto",
-                        "css" => "AA_DataView_item"
-                ),
-                "target"=>$target,
-                "template" => $itemTemplate,
-                "wnd_id"=>$this->GetWndId(),
-                "data" => $listData
-            ));    
-        }
-
+        $this->list=new AA_JSON_Template_Generic($id_list,array(
+            "view" => "dataview",
+            "filtered"=>true,
+            "xCount"=>6,
+            "type" =>
+            array(
+                    "type" => "tiles",
+                    "height" => "auto",
+                    "width" => "auto",
+                    "css" => "AA_DataView_item"
+            ),
+            "target"=>$target,
+            "template" => $itemTemplate,
+            "wnd_id"=>$this->GetWndId(),
+            "url" => AA_Const::AA_WWW_ROOT."/".AA_Const::AA_PUBLIC_LIB_PATH."/system_ops.php?task=GetGalleryData"
+        ));    
+        
         $toolbar=new AA_JSON_Template_Toolbar($id."_ToolbarOC",array("css"=>array("border-bottom"=>"1px solid #dedede !important")));
         $toolbar->addCol(new AA_JSON_Template_Generic());
         if($modify)

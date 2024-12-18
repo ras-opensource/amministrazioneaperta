@@ -1256,6 +1256,10 @@ Class AA_HomeModule extends AA_GenericModule
     
             $newRes->SetFileInfo($fileInfo);
         }
+        else
+        {
+            AA_Log::Log(__METHOD__." - Nessuna modifica al fila gia' caricato.",100);
+        }
 
         if(!$newRes->Update(null,$this->oUser))
         {
@@ -2349,15 +2353,15 @@ Class AA_HomeModule extends AA_GenericModule
         //categorie
         $wnd->AddTextField("categorie", "Categorie", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci le categorie da associare alla risorsa.","placeholder" => "immagini,mare,..."));
         //Condividi
-        $section=new AA_FieldSet($id."_Section_Url","Condividi");
+        $section=new AA_FieldSet($id."_Section_Url_Share","Condividi");
         $section->AddCheckBoxField("condividi", "Condividi", array("gravity"=>2,"bottomPadding"=>0,"labelRight"=>"Abilita per condividere pubblicamente la risorsa","labelWidth"=>0,"relatedView"=>$id."_Section_Url_Field_url_name", "relatedAction"=>"show"));
         $section->AddTextField("url_name", "Nome", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci il nome da utilizzare per generare l'url pubblica (lascia vuoto se non vuoi che venga generato automaticamente).","placeholder" => "risorsa_pubblica"));
         $wnd->AddGenericObject($section);
         
         //file upload------------------
-        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+        $wnd->SetFileUploaderId($id."_Section_Url_File_FileUpload_Field");
 
-        $section=new AA_FieldSet($id."_Section_Url","Scegliere un file");
+        $section=new AA_FieldSet($id."_Section_Url_File","Scegliere un file");
         //file
         $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo file di dimensione max: 2Mb."));
         
@@ -2402,15 +2406,15 @@ Class AA_HomeModule extends AA_GenericModule
         //categorie
         $wnd->AddTextField("categorie", "Categorie", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci le categorie da associare alla risorsa.","placeholder" => "immagini,mare,..."));
         //Condividi
-        $section=new AA_FieldSet($id."_Section_Url","Condividi");
-        $section->AddCheckBoxField("condividi", "Condividi", array("gravity"=>2,"bottomPadding"=>0,"labelRight"=>"Abilita per condividere pubblicamente la risorsa","labelWidth"=>0,"relatedView"=>$id."_Section_Url_Field_url_name", "relatedAction"=>"show"));
+        $section=new AA_FieldSet($id."_Section_Url_Share","Condividi");
+        $section->AddCheckBoxField("condividi", "Condividi", array("gravity"=>2,"bottomPadding"=>0,"labelRight"=>"Abilita per condividere pubblicamente la risorsa","labelWidth"=>0,"relatedView"=>$id."_Section_Url_Share_Field_url_name", "relatedAction"=>"show"));
         $section->AddTextField("url_name", "Nome", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci il nome da utilizzare per generare l'url pubblica (lascia vuoto se non vuoi che venga generato automaticamente).","placeholder" => "risorsa_pubblica"));
         $wnd->AddGenericObject($section);
         
         //file upload------------------
-        $wnd->SetFileUploaderId($id."_Section_Url_FileUpload_Field");
+        $wnd->SetFileUploaderId($id."_Section_Url_File_FileUpload_Field");
 
-        $section=new AA_FieldSet($id."_Section_Url","Scegliere un file");
+        $section=new AA_FieldSet($id."_Section_Url_File","Scegliere un file");
         //file
         $section->AddFileUploadField("NewAllegatoDoc","", array("validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo file di dimensione max: 2Mb)."));
         
