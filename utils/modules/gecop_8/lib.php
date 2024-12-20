@@ -333,7 +333,15 @@ Class AA_Gecop extends AA_Object_V2
         $db=new AA_Database();
 
         $query="SELECT id from ".AA_Gecop::AA_DBTABLE_DATA." where cig='".trim($cig)."' ";
-        if($escludeId > 0) $query.=" AND id <> ".$escludeId;
+        if($escludeId > 0) 
+        {
+            $scheda=new AA_Gecop($escludeId);
+            if($scheda->IsValid())
+            {
+                $query.=" AND id <> ".$scheda->GetIdData();
+            }
+        }
+
         $query.=" LIMIT 1";
 
         if(!$db->Query($query))

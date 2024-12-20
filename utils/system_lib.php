@@ -725,7 +725,7 @@ class AA_SystemTask_GetGalleryData extends AA_GenericTask
 
         $immagini=AA_Risorse::Search(array("WHERE"=>array(array("FIELD"=>"categorie","VALUE"=>"'%galleria%'")),"LIMIT"=>$pos.",".$count));
 
-        $listData=array("pos"=>$pos,"total_count"=>$tot);
+        $listData=array("pos"=>$pos,"total_count"=>$tot,"data"=>array());
 
         foreach($immagini as $curImage)
         {

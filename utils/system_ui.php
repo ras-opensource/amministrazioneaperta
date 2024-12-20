@@ -3113,7 +3113,7 @@ class AA_GalleryDlg extends AA_GenericWindowTemplate
 
     protected $list=null;
 
-    public function __construct($id='',$title="Galleria immagini",$target="",$user='')
+    public function __construct($id='',$title="Galleria immagini",$target="",$user=null)
     {
         parent::__construct($id,$title);
 

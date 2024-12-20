@@ -1327,7 +1327,10 @@ Class AA_GecoModule extends AA_GenericModule
             array("id"=>"beneficiario","header"=>array("<div style='text-align: center'>Beneficiario</div>",array("content"=>"textFilter")),"width"=>250, "sort"=>"text","css"=>array("text-align"=>"left")),
             array("id"=>"persona_fisica","header"=>array("<div style='text-align: center'>Persona fisica</div>",array("content"=>"selectFilter")),"width"=>90, "sort"=>"text","css"=>array("text-align"=>"center")),
             array("id"=>"privacy","header"=>array("<div style='text-align: center'>Privacy</div>",array("content"=>"selectFilter")),"width"=>90, "sort"=>"text","css"=>array("text-align"=>"center")),
-            array("id"=>"note","header"=>array("<div style='text-align: center'>Note</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"right"),"sort"=>"text")
+            array("id"=>"link_curriculum","header"=>array("<div style='text-align: center'>Curriculum</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"link_progetto","header"=>array("<div style='text-align: center'>Progetto</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"link_curriculum","header"=>array("<div style='text-align: center'>Normativa</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text"),
+            array("id"=>"note","header"=>array("<div style='text-align: center'>Note</div>",array("content"=>"textFilter")),"width"=>250, "css"=>array("text-align"=>"left"),"sort"=>"text")
         );
 
         $data=AA_SessionVar::Get("GecoAddNewMultiFromCSV_ParsedData")->GetValue();
@@ -4331,6 +4334,9 @@ Class AA_GecoModule extends AA_GenericModule
             "beneficiario_piva"=>-1,
             "beneficiario_persona_fisica"=>-1,
             "beneficiario_privacy"=>-1,
+            "link_curriculum"=>-1,
+            "link_progetto"=>-1,
+            "link_normativa"=>-1,
             "note"=>-1
         );
         
