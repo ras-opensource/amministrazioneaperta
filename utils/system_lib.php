@@ -2507,6 +2507,19 @@ class AA_GenericModule
         return $this->oUser;
     }
 
+    public static function RegisterPublicService()
+    {
+        //da specializzare nel modulo derivato
+
+        //return AA_Platform::RegisterPublicService("<service_name>","<service_handler>");
+    }
+
+    public static function PublicServiceHandler()
+    {
+        //da specializzare nel modulo derivato
+        return true;
+    }
+
     public function __construct($user = null, $bDefaultSections = true)
     {
 

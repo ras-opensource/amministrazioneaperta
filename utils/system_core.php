@@ -7916,6 +7916,59 @@ class AA_Platform
         }
     }
 
+    //public services
+    protected $aPublicServices=array();
+
+    public static function RegisterPublicService($service="",$serviceFunc=null)
+    {
+        $platform=AA_Platform::GetInstance(AA_User::GetCurrentUser());
+        if(!$platform->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Piattaforma non inizializzata o utente non valido: ",100);
+            return false;
+        }
+
+        if(!empty($service) && is_callable($serviceFunc,true))
+        {
+            $platform->aPublicServices[$service]=$serviceFunc;
+            AA_Log::Log(__METHOD__." - Servizio registrato correttamente: ".$service." - Funzione: ".print_r($serviceFunc,true),100);
+            return true;
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - Servizio non registrato: ".$service." - Funzione: ".print_r($serviceFunc,true),100);
+            return false;
+        }
+    }
+    public static function RunPublicService($service="")
+    {
+        $platform=AA_Platform::GetInstance(AA_User::GetCurrentUser());
+        if(!$platform->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Piattaforma non inizializzata o utente non valido: ",100);
+            return false;
+        }
+
+        if(!empty($platform->aPublicServices[$service]) && is_callable($platform->aPublicServices[$service])) return call_user_func($platform->aPublicServices[$service]);
+        else
+        {
+            AA_Log::Log(__METHOD__." - Servizio non registrato o non funzione non definita: ".$service." - Funzione: ".print_r($platform->aPublicServices[$service],true),100);
+            return false;
+        }
+    }
+
+    public function IsPublicServiceRegistered($service="")
+    {
+        $platform=AA_Platform::GetInstance(AA_User::GetCurrentUser());
+        if(!$platform->IsValid())
+        {
+            AA_Log::Log(__METHOD__." - Piattaforma non inizializzata o utente non valido: ",100);
+            return false;
+        }
+
+        if(!empty($this->aPublicServices[$service]) && is_callable($this->aPublicServices[$service])) return true;
+        return false;
+    }
     protected function __construct($user = null)
     {
         //Verifica utente

@@ -834,6 +834,21 @@ Class AA_GecoModule extends AA_GenericModule
         );
         return $navbar;
     }
+
+    //Specializzazione della gestione del servizio pubblico
+    public static function PublicServiceHandler()
+    {
+        AA_Log::Log(__METHOD__." - Funzione specializzata per il modulo AA_GECO",100);
+
+        return parent::PublicServiceHandler();
+    }
+
+    public static function RegisterPublicService()
+    {
+        //register public service
+        return AA_Platform::RegisterPublicService("geco",array("AA_GecoModule","PublicServiceHandler"));
+    }
+
     //istanza
     protected static $oInstance=null;
     
