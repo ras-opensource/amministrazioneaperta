@@ -762,6 +762,7 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecoAddNewMultiDlg");
         $taskManager->RegisterTask("GetGecoAddNewMultiPreviewCalc");
         $taskManager->RegisterTask("GetGecoAddNewMultiPreviewDlg");
+        $taskManager->RegisterTask("GecoAddNewMulti");
         $taskManager->RegisterTask("GetGecoTrashDlg");
         $taskManager->RegisterTask("TrashGeco");
         $taskManager->RegisterTask("GetGecoDeleteDlg");
@@ -1335,7 +1336,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         $data=AA_SessionVar::Get("GecoAddNewMultiFromCSV_ParsedData")->GetValue();
         
-        AA_SessionVar::UnsetVar("GecoAddNewMultiFromCSV_ParsedData");
+        //AA_SessionVar::UnsetVar("GecoAddNewMultiFromCSV_ParsedData");
 
         if(!is_array($data))
         {
@@ -3103,7 +3104,7 @@ Class AA_GecoModule extends AA_GenericModule
             if($beneficiario['privacy']==0) $beneficiario['privacy_descr']="Visibili";
             else $beneficiario['privacy_descr']="Oscurati";
 
-            if($beneficiario['tipo']==1) $beneficiario['tipo_descr']="Persona fisica";
+            if($beneficiario['tipo']==1) $beneficiario['tipo_descr']="Persona fisica/Ditta individuale";
             else 
             {
                 $beneficiario['tipo_descr']="Persona giuridica";
@@ -3910,6 +3911,144 @@ Class AA_GecoModule extends AA_GenericModule
         return $this->Task_GenericAddNew($task,$_REQUEST);
     }
 
+    //Task Aggiungi provvedimenti
+    public function Task_GecoAddNewMulti($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi",false);
+
+            return false;
+        }
+
+        $data=AA_SessionVar::Get("GecoAddNewMultiFromCSV_ParsedData")->GetValue();
+        
+        AA_SessionVar::UnsetVar("GecoAddNewMultiFromCSV_ParsedData");
+        
+        //----------- verify values ---------------------
+        if(!is_array($data))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Dati di caricamento multiplo non trovati.",false);
+
+            return false;
+        }
+
+        $result=array("inseriti"=>0,"non_inseriti"=>0,"tot"=>sizeof($data));
+        $transazione=date("YmdHis");
+        foreach($data as $curData)
+        {
+            $newData=array(
+                "Anno"=>trim($curData["anno"]),
+                "nome"=>trim($curData["titolo"])." - ".$transazione,
+                "descrizione"=>trim($curData["descrizione"]),
+                "Note"=>trim($curData["note"]),
+                "Allegati"=>"",
+                "Importo_impegnato"=>0,
+                "Importo_erogato"=>0
+            );
+            $modalita=array();
+            $norma=array();
+            $beneficiario=array();
+            $responsabile=array();
+            $links=array();
+
+            //modalita
+            $modalita['tipo']=intVal($curData['modalita_tipo']);
+            $modalita['link']=trim($curData['modalita_link']);
+
+            //norma
+            $norma['estremi']=trim($curData['norma_estremi']);
+            $norma['link']=trim($curData['norma_link']);
+
+            //responsabile
+            $responsabile['nome']=trim($curData['responsabile_nome']);
+            $responsabile['qualifica']=trim($curData['responsabile_qualifica']);
+
+            //beneficiario
+            $beneficiario['nome']=trim($curData['beneficiario_nominativo']);
+            $beneficiario['cf']=trim($curData['beneficiario_cf']);
+            $beneficiario['piva']=trim($curData['beneficiario_piva']);
+            $beneficiario['tipo']=intVal($curData['beneficiario_persona_fisica']);
+            $beneficiario['privacy']=intVal($curData['beneficiario_privacy']);
+
+            //Se il beneficiario non e' una persona fisica disabilita l'oscuramento dei dati personali.
+            if($beneficiario['tipo'] == 0) 
+            {
+                $beneficiario['privacy'] = 0;
+            }
+
+            //importi
+            if(!empty($curData["importo_impegnato"])) $newData['Importo_impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$curData['importo_impegnato']))),2,".");
+            if(!empty($curData["importo_erogato"])) $newData['Importo_erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$curData['importo_erogato']))),2,".");
+
+            //------------------------ links -----------------------------
+            if(!empty($curData['link_curriculum']))
+            {
+                $links[uniqid()]=array(
+                    "descrizione"=>"Curriculum",
+                    "tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_CURRICULUM,
+                    "url"=>trim($curData['link_curriculum']),
+                    "filehash"=>""
+                );
+            }
+
+            if(!empty($curData['link_progetto']))
+            {
+                $links[uniqid()]=array(
+                    "descrizione"=>"Link al progetto",
+                    "tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_PROGETTO,
+                    "url"=>trim($curData['link_progetto']),
+                    "filehash"=>""
+                );
+            }
+
+            if(!empty($curData['link_normativa']))
+            {
+                $links[uniqid()]=array(
+                    "descrizione"=>"Link alla normativa",
+                    "tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_LINK_NORMA,
+                    "url"=>trim($curData['link_normativa']),
+                    "filehash"=>""
+                );
+            }
+
+            if(sizeof($links)>0)
+            {
+                $newData['Allegati']=json_encode($links);
+            }
+            //----------------------------------------------------------------------
+                            
+            $newData['Modalita']=json_encode($modalita);
+            $newData['Norma']=json_encode($norma);
+            $newData['Beneficiario']=json_encode($beneficiario);
+            $newData['Responsabile']=json_encode($responsabile);
+
+            $newGeco=new AA_Geco(0,$this->oUser);
+            $newGeco->Parse($newData);
+            if(AA_Geco::AddNew($newGeco,$this->oUser))
+            {
+                $result["inseriti"]++;
+            }
+            else
+            {
+                $result["non_inseriti"]++;
+            }
+        }
+        //---------------------------------------------------------
+        
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $text="Sono stati inseriti: ".$result['inseriti']." nuovi elementi su ".$result['tot'];
+        $task->SetStatusAction("AA_CustomModalDlg",array($text,"Importazione da CSV"),true);
+        $task->SetContent("Elaborazione conclusa.",false);
+
+        return true;
+        
+    }
+
     //Task modifica dati generali elemento
     public function Task_GetGecoModifyDlg($task)
     {
@@ -4322,7 +4461,8 @@ Class AA_GecoModule extends AA_GenericModule
             "anno"=>-1,
             "titolo"=>-1,
             "descrizione"=>-1,
-            "responsabile"=>-1,
+            "responsabile_nome"=>-1,
+            "responsabile_qualifica"=>-1,
             "norma_estremi"=>-1,
             "norma_link"=>-1,
             "modalita_tipo"=>-1,
@@ -4351,10 +4491,10 @@ Class AA_GecoModule extends AA_GenericModule
         }
         //----------------------------------------
 
-        if($fieldPos['titolo']==-1 || $fieldPos['responsabile'] ==-1 || $fieldPos['norma_estremi'] ==-1 || $fieldPos['norma_link'] ==-1 || $fieldPos['modalita_tipo'] ==-1 || $fieldPos['modalita_link'] ==-1 || $fieldPos['importo_impegnato'] ==-1 || $fieldPos['beneficiario_nominativo'] ==-1 || $fieldPos['beneficiario_cf'] ==-1 || $fieldPos['beneficiario_persona_fisica'] ==-1 || $fieldPos['beneficiario_privacy'] ==-1)
+        if($fieldPos['titolo']==-1 || $fieldPos['responsabile_nome'] ==-1 || $fieldPos['responsabile_qualifica'] ==-1 || $fieldPos['norma_estremi'] ==-1 || $fieldPos['norma_link'] ==-1 || $fieldPos['modalita_tipo'] ==-1 || $fieldPos['modalita_link'] ==-1 || $fieldPos['importo_impegnato'] ==-1 || $fieldPos['beneficiario_nominativo'] ==-1 || $fieldPos['beneficiario_cf'] ==-1 || $fieldPos['beneficiario_persona_fisica'] ==-1 || $fieldPos['beneficiario_privacy'] ==-1)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Non sono stati trovati tutti i campi relativi a: titolo,responsabile,norma_estremi,norma_link,modalita_tipo,modalita_link,importo_impegnato,beneficiario_nominativo,beneficiario_cf,beneficiario_persona_fisica,beneficiario_privacy. Verificare che il file csv sia strutturato correttamente e riprovare",false);
+            $task->SetError("Non sono stati trovati tutti i campi relativi a: titolo,responsabile_nome,responsabile_qualifica,norma_estremi,norma_link,modalita_tipo,modalita_link,importo_impegnato,beneficiario_nominativo,beneficiario_cf,beneficiario_persona_fisica,beneficiario_privacy. Verificare che il file csv sia strutturato correttamente e riprovare",false);
             return false;
         }
 
@@ -4383,6 +4523,7 @@ Class AA_GecoModule extends AA_GenericModule
                     $curDataValues['norma']="<a href='".$curDataValues['norma_link']."'>".$curDataValues['norma_estremi']."</a>";
                     $curDataValues['modalita']="<a href='".$curDataValues['modalita_link']."'>".$modalita[$curDataValues['modalita_tipo']]."</a>";
                     $curDataValues['beneficiario']=$curDataValues['beneficiario_nominativo']." - ".$curDataValues['beneficiario_cf'];
+                    $curDataValues['responsabile']=$curDataValues['responsabile_nome']." (".$curDataValues['responsabile_qualifica'].")";
                     $curDataValues['persona_fisica']="no";
                     if($curDataValues['beneficiario_persona_fisica']==1) $curDataValues['persona_fisica']="si";
                     $curDataValues['privacy']="no";
