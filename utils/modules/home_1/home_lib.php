@@ -2354,7 +2354,7 @@ Class AA_HomeModule extends AA_GenericModule
         $wnd->AddTextField("categorie", "Categorie", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci le categorie da associare alla risorsa.","placeholder" => "immagini,mare,..."));
         //Condividi
         $section=new AA_FieldSet($id."_Section_Url_Share","Condividi");
-        $section->AddCheckBoxField("condividi", "Condividi", array("gravity"=>2,"bottomPadding"=>0,"labelRight"=>"Abilita per condividere pubblicamente la risorsa","labelWidth"=>0,"relatedView"=>$id."_Section_Url_Field_url_name", "relatedAction"=>"show"));
+        $section->AddCheckBoxField("condividi", "Condividi", array("gravity"=>2,"bottomPadding"=>0,"labelRight"=>"Abilita per condividere pubblicamente la risorsa","labelWidth"=>0,"relatedView"=>$id."_Section_Url_Share_Field_url_name", "relatedAction"=>"show"));
         $section->AddTextField("url_name", "Nome", array("gravity"=>2,"labelAlign"=>"right","bottomLabel" => "*Inserisci il nome da utilizzare per generare l'url pubblica (lascia vuoto se non vuoi che venga generato automaticamente).","placeholder" => "risorsa_pubblica"));
         $wnd->AddGenericObject($section);
         

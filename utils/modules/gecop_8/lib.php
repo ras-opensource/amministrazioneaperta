@@ -2285,7 +2285,7 @@ Class AA_GecopModule extends AA_GenericModule
 
         //aggiudicatario
         $section=new AA_FieldSet($id."_Aggiudicatario","Aggiudicatario");
-        $section->AddTextField("aggiudicatario_nominativo","Nominativo",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire la ragione sociale o il nome e cognome dell'aggiudicatario.", "placeholder"=>"..."));
+        $section->AddTextField("aggiudicatario_nominativo","Nominativo",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire la ragione sociale o il nome e cognome dell'aggiudicatario (max 180 caratteri).", "placeholder"=>"..."));
         $section->AddTextField("aggiudicatario_cf","Cf/Piva",array("gravity"=>1,"bottomPadding"=>32, "bottomLabel"=>"*Inserire il codice fiscale o la partita iva dell'aggiudicatario.", "placeholder"=>"..."),false);
         $wnd->AddGenericObject($section);
 
@@ -3727,7 +3727,7 @@ Class AA_GecopModule extends AA_GenericModule
         //----------- verify values ---------------------
         if(!empty($_REQUEST['aggiudicatario_nominativo']))
         {
-            $aggiudicatario['nominativo']=trim($_REQUEST['aggiudicatario_nominativo']);
+            $aggiudicatario['nominativo']=trim(mb_substr($_REQUEST['aggiudicatario_nominativo'],0,190));
         }
         if(!empty($_REQUEST['aggiudicatario_cf']))
         {
@@ -3805,7 +3805,7 @@ Class AA_GecopModule extends AA_GenericModule
         if(!$object->Update($this->oUser,true,"Modifica rendicontazione gestione finanziaria - id: ".$object->GetId()))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiornamento della rendicontazione finanaziaria id: ".$object->GetId(),false);
+            $task->SetError("Errore nell'aggiornamento della rendicontazione finanziaria id: ".$object->GetId(),false);
 
             return false;
         }
