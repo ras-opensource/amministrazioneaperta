@@ -2173,7 +2173,7 @@ Class AA_HomeModule extends AA_GenericModule
                     $riepilogo_template.="</div>";
 
                     $name="<span style='font-weight:900;'>ALTRI MODULI APPLICATIVI</span>";
-                    $descr="<span>Registro accessi</span><span>Mappatura processi</span><span>Gestione incarichi</span><span>Contributi e vantaggi economici</span><span>Bandi di gara e contratti</span>";
+                    $descr="<span>Registro accessi</span><span>Mappatura processi</span><span>Gestione incarichi</span><span>Contributi e vantaggi economici (2024 e precedenti)</span><span>Bandi di gara e contratti (2024 e precedenti)</span>";
                     $onclick="AA_MainApp.utils.callHandler('ModuleLegacyBoxClick',{'SSO_AUTH_TOKEN':'".$sso_auth_token."','url':'/web/amministrazione_aperta/admin'},'".$this->GetId()."')";
                     $moduli_data=array("id"=>"Legacy_Modules","name"=>$name,'descr'=>$descr,"icon"=>"mdi mdi-table","onclick"=>$onclick);
                     if($moduli_view==null) $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_Legacy",array("type"=>"clean","css"=>array("background-color"=>"transparent")));

@@ -5300,7 +5300,7 @@ Class AA_GecoModule extends AA_GenericModule
         //links
         $val=new AA_XML_Div_Element($id."_links",$header);
         $val->SetStyle($border.'width:7%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $val->SetText("<span><b>Allegati</b></span>");
+        $val->SetText("<span><b>Allegati e links</b></span>");
 
         return $header->__toString();
     }
@@ -5539,9 +5539,26 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
             #----------------------------------------------- 
 
             #links----------------------------------
-            $text="&nbsp;";
+            $allegati=$object->GetAllegati();
+            if(sizeof($allegati)==0) $text="&nbsp;";
+            else
+            {
+                AA_Log::Log(__METHOD__." - allegati: ".print_r($allegati,true),100);
+
+                $text="";
+                foreach($allegati as $curAllegato)
+                {
+                    $url=$curAllegato['url'];
+                    if($curAllegato['filehash']!="")
+                    {
+                        $url="https://".AA_Config::AA_DOMAIN_NAME.AA_Config::AA_WWW_ROOT."/storage.php?object=".$curAllegato['filehash'];
+                    }
+                    $text.="<a href='".$url."' target='_blank'>".$curAllegato['descrizione']."</a>";
+                }
+            }
+            
             $val=new AA_XML_Div_Element($id."_links",$this);
-            $val->SetStyle($border.'width: 7%; font-size: .6em; padding: .1em; height:91%;display: flex;justify-content:space-between;align-items:center');
+            $val->SetStyle($border.'width: 7%; font-size: .6em; padding: .1em; height:91%;display: flex;flex-direction: column; justify-content:space-evenly;align-items:center');
             $val->SetText($text);
             #-----------------------------------------------   
         }
