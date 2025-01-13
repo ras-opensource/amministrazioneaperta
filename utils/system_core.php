@@ -5535,6 +5535,70 @@ class AA_Object
         return $xml;
     }
 
+    //esportazione in csv
+    public function ToCsv($separator="|",$bHeader=true,$bDetail=true,$bToBrowser=true)
+    {
+        $csv="";
+        $header="";
+        $rowSeparator="\n";
+
+        if ($bHeader)
+        {
+            $header="id";
+            if($bDetail)
+            {
+                $header.=$separator."aggiornamento".$separator."stato".$separator."struttura";
+            }
+
+            $header.=$separator."nome";
+            $header.=$separator."descrizione";
+            $header.=$this->CsvDataHeader($separator);
+        }
+
+        if(!empty($header))$csv=$header.$rowSeparator;
+
+        $csv.=$this->GetID();
+        if($bDetail)
+        {
+            $csv.=$separator.$this->GetAggiornamento();
+            $csv.=$separator.$this->GetStatus();
+            $struct= $this->GetStruct();
+            $struct_text="Nessuna";
+            if(!empty($struct->GetAssessorato(true))) $struct_text = (String) $struct->GetAssessorato();
+            if(!empty($struct->GetDirezione(true))) $struct_text .= " - ".(String) $struct->GetDirezione();
+            if(!empty($struct->GetServizio(true))) $struct_text .= " - ".(String) $struct->GetServizio();
+            $csv.=$separator.$struct_text;
+        }
+
+        $csv.=$separator.str_replace("\n",' ',$this->GetTitolo());
+        $csv.= $separator.str_replace("\n",' ',$this->GetDescrizione());
+        
+        $data=$this->CsvData($separator);
+        if(!empty($data)) $csv.= $data;
+
+        if($bToBrowser)
+        {
+            header('Content-Type: application/csv');
+            header('Content-Disposition: attachment; filename="export.csv"');
+            die($csv);
+        }
+
+        return $csv;
+    }
+
+    //da specializzare
+    protected function CsvDataHeader($separator="|")
+    {
+        return "";
+    }
+
+    //da specializzare
+    protected function CsvData($separator= "|")
+    {
+        return "";
+    }
+    //--------------------------------------------
+
     //flag di modifica dall'ultima sincronizzazione col db
     private $bChanged = false;
     protected function SetChanged($bVal = true)

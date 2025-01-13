@@ -1624,6 +1624,23 @@ class AA_Organismi extends AA_Object
         );
     }
 
+    //da specializzare
+    protected function CsvDataHeader($separator="|")
+    {
+        return $separator."tipo".$separator."partecipazione_diretta".$separator."partecipazione_indiretta".$separator."partecipazione_tot";
+    }
+
+    //da specializzare
+    protected function CsvData($separator= "|")
+    {
+        $tipo=$this->GetTipologia();
+        $partecipazione=$this->GetPartecipazione(true);
+        $partecipazione_indiretta=$this->GetPartecipazioneIndiretta();
+
+        return $separator.$tipo.$separator.AA_Utils::number_format($partecipazione['percentuale'],2,",",".").$separator.AA_Utils::number_format($partecipazione_indiretta['percentuale'],2,",",".").$separator.AA_Utils::number_format(($partecipazione['percentuale']+$partecipazione_indiretta['percentuale']),2,",",".");
+    }
+    //--------------------------------------------
+
     //Verifica che l'oggetto collegato sia aggiornabile dall'utente corrente
     /**
      * Summary of VerifyDbSync

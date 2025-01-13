@@ -17,6 +17,7 @@ Class AA_SinesModule extends AA_GenericModule
     const AA_UI_WND_NOMINA_DETAIL="NominaDetailWnd";
     const AA_UI_LAYOUT_NOMINA_DETAIL="NominaDetailLayout";
 
+    const AA_MODULE_OBJECTS_CLASS = "AA_Organismi";
 
     //Id modulo
     const AA_ID_MODULE="AA_MODULE_SINES";
@@ -5469,6 +5470,7 @@ Class AA_SinesModule extends AA_GenericModule
         } 
     }
     
+    
     //Task trash Organismi
     public function Task_PdfExport($task)
     {
@@ -9773,6 +9775,83 @@ Class AA_SinesModule extends AA_GenericModule
         return $dlg->GetObject();
     }
     
+    
+    //Task generic export csv 
+    public function Task_CsvExport($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $sessVar = AA_SessionVar::Get("SaveAsCsv_ids");
+        $sessParams = AA_SessionVar::Get("SaveAsCsv_params");
+
+        $ids_final=array();
+
+        //lista elementi da esportare
+        if ($sessVar->IsValid() && !isset($_REQUEST['fromParams'])) {
+            $ids = $sessVar->GetValue();
+
+            if (is_array($ids)) {
+                foreach ($ids as $curId) {
+                    $object = new AA_Organismi($curId, $this->oUser);
+                    if ($object->isValid() && ($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_READ) > 0) {
+                        $ids_final[$curId] = $object;
+                    }
+                }
+            }
+
+            //Esiste almeno un organismo che può essere letto dall'utente corrente
+            if (sizeof($ids_final) > 0) {
+                $this->Template_CsvExport($ids_final);
+            } else {
+                $task->SetError("Nella selezione non sono presenti dati leggibili dall'utente corrente (" . $this->oUser->GetName() . ").");
+                $sTaskLog = "<status id='status'>-1</status><error id='error'>Nella selezione non sono presenti elementi leggibili dall'utente corrente (" . $this->oUser->GetName() . ").</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;
+            }
+        } else {
+            if ($sessParams->isValid()) {
+                $params = (array) $sessParams->GetValue();
+                //AA_Log::Log(__METHOD__." - params: ".print_r($params,true),100);
+
+                //Verifica della sezione 
+                if ($params['section'] == static::AA_ID_SECTION_BOZZE) {
+                    $params["status"] = AA_Const::AA_STATUS_BOZZA;
+                } else {
+                    $params["status"] = AA_Const::AA_STATUS_PUBBLICATA;
+                }
+
+                if ($params['cestinate'] == 1) {
+                    $params['status'] |= AA_Const::AA_STATUS_CESTINATA;
+                }
+
+                $objects = AA_Organismi::Search($params, false, $this->oUser);
+
+                if ($objects[0] == 0) {
+                    $task->SetError("Non è stata individuata nessuna corrispondenza in base ai parametri indicati.");
+                    $sTaskLog = "<status id='status'>-1</status><error id='error'>Non è stata individuata nessuna corrispondenza in base ai parametri indicati.</error>";
+                    $task->SetLog($sTaskLog);
+                    return false;
+                } else {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+                    $task->SetContent("Exportazione effettuata con successo.",false);
+
+                    $this->Template_CsvExport($objects[1],$params);
+
+                    return true;
+                }
+            }
+        }
+    }
+
+    //Funzione di esportazione in csv (da specializzare)
+    public function Template_CsvExport($objects = array(),$params=null)
+    {
+        //AA_Log::Log(__METHOD__." - objects: ".print_r($objects,true),100);
+
+        return $this->Template_GenericCsvExport($objects, $params);
+    }
+
     //Template pdf export generic
     public function Template_OrganismiPdfExport($organismi=array(), $bToBrowser=true,$tipo_organismo="")
     {

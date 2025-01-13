@@ -3962,6 +3962,7 @@ class AA_GenericModule
         $sessVar = AA_SessionVar::Get("SaveAsCsv_ids");
         $sessParams = AA_SessionVar::Get("SaveAsCsv_params");
         $objectClass = static::AA_MODULE_OBJECTS_CLASS;
+        $ids_final=array();
 
         //lista elementi da esportare
         if ($sessVar->IsValid() && !isset($_REQUEST['fromParams'])) {
@@ -3989,6 +3990,7 @@ class AA_GenericModule
         } else {
             if ($sessParams->isValid()) {
                 $params = (array) $sessParams->GetValue();
+                AA_Log::Log(__METHOD__." - params: ".print_r($params,true),100);
 
                 //Verifica della sezione 
                 if ($params['section'] == static::AA_ID_SECTION_BOZZE) {
@@ -4034,9 +4036,9 @@ class AA_GenericModule
         $showDetails=true;
         $toBrowser=true;
         if(is_array($params) && !empty($params['separator'])) $separator=$params['separator'];
-        if(is_array($params) && !empty($params['showHeader'])) $header=$params['showHeader'];
-        if(is_array($params) && !empty($params['showDetails'])) $header=$params['showDetails'];
-        if(is_array($params) && !empty($params['toBrowser'])) $header=$params['toBrowser'];
+        if(is_array($params) && !empty($params['showHeader'])) $showHeader=$params['showHeader'];
+        if(is_array($params) && !empty($params['showDetails'])) $showDetails=$params['showDetails'];
+        if(is_array($params) && !empty($params['toBrowser'])) $toBrowser=$params['toBrowser'];
 
         $bFirst=true;
         $csv="";
