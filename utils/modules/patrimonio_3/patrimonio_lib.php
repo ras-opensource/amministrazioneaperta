@@ -3239,7 +3239,7 @@ Class AA_PatrimonioModule extends AA_GenericModule
     //Funzione di esportazione in pdf (da specializzare)
     public function Template_PdfExport($ids=array())
     {
-        if(sizeof($ids) > 1) return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.30 del d.lgs. 33/2013","Template_PatrimonioPdfExportShort",12);
+        if(sizeof($ids) > 1) return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.30 del d.lgs. 33/2013","Template_PatrimonioPdfExportShort",12,false);
         else return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.30 del d.lgs. 33/2013","Template_PatrimonioPdfExport");
     }
 
