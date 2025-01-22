@@ -215,9 +215,9 @@ Class AA_Gecop extends AA_Object_V2
 
         //Db data binding
         $this->AddProp("Note","","note");
-        $this->AddProp("Cig",0,"cig");
+        $this->AddProp("Cig","","cig");
         $this->AddProp("Anno",0,"anno");
-        $this->AddProp("Aggiudicatario",0,"aggiudicatario");
+        $this->AddProp("Aggiudicatario","","aggiudicatario");
         $this->AddProp("Links","","links");
         $this->AddProp("Commissione","","commissione");
         $this->AddProp("GestioneFinanziaria","","gestione_finanziaria");
@@ -2201,7 +2201,9 @@ Class AA_GecopModule extends AA_GenericModule
     public function Template_GetGecopModifyDlg($object=null)
     {
         $id=$this->GetId()."_Modify_Dlg_".uniqid();
-        if(!($object instanceof AA_Gecop)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali dell'impianto", $this->id);
+        if(!($object instanceof AA_Gecop)) return new AA_GenericWindowTemplate($id, "Modifica i dati generali della pubblicazione", $this->id);
+        if(!$object->IsValid()) return new AA_GenericWindowTemplate($id, "Modifica i dati generali della pubblicazione", $this->id);
+        if($object->GetId()==0) return new AA_GenericWindowTemplate($id, "Modifica i dati generali della pubblicazione", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetId();
@@ -2259,6 +2261,7 @@ Class AA_GecopModule extends AA_GenericModule
     {
         $id=$this->GetId()."_Modify_Dlg_".uniqid();
         if(!($object instanceof AA_Gecop)) return new AA_GenericWindowTemplate($id, "Modifica rendicontazione finanziaria", $this->id);
+        if(empty($object->GetId())) return new AA_GenericWindowTemplate($id, "Modifica rendicontazione finanziaria", $this->id);
 
         $form_data=array();
         $form_data['id']=$object->GetId();
