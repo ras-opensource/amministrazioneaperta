@@ -3223,7 +3223,7 @@ async function AA_DefaultSystemInitialization(params) {
 
             //imposta il dialogo login su email
             const urlParams = new URLSearchParams(window.location.search);
-            if(urlParams.get("emailLogin")=="true")
+            if(urlParams.get("emailLogin")!="false")
             {
                 //console.log("AA_DefaultSystemInitialization", urlParams);
                 AA_MainApp.logIn=AA_MailUserAuth;
@@ -4345,8 +4345,8 @@ async function AA_MailUserAuth(params = null) {
             let login_dlg = {
                 id: "AA_MailUserAuthDlg",
                 view: "window",
-                height: 400,
-                width: 400,
+                height: 300,
+                width: 450,
                 position: "center",
                 modal: true,
                 css: "AA_Wnd"
@@ -4383,8 +4383,6 @@ async function AA_MailUserAuth(params = null) {
                                     return;
                                 }
 
-                                let button = $$(arguments[0]);
-
                                 let form_data = $$("AA_MailUserAuth_Form").getValues();
 
                                 //console.log("AA_UserAuth",form_data);
@@ -4403,31 +4401,6 @@ async function AA_MailUserAuth(params = null) {
                                     AA_MainApp.ui.alert(result.error.value);
                                     console.error("AA_MailUserAuthDlg - " + result.error.value);
                                 }
-                            } catch (msg) {
-                                console.error("AA_MainApp.AA_MailUserAuth", msg);
-                                AA_MainApp.ui.alert(msg);
-                                return;
-                            }
-                        }
-                    },
-                    {view: "label", label:"oppure",align:"center"},
-                    {
-                        id: "AA_MailUserAuth_return_btn",
-                        view: "button",
-                        label: "Accedi con credenziali",
-                        type: "icon",
-                        css: "webix_primary ",
-                        icon: "mdi mdi-key",
-                        width: 200,
-                        align: "center",
-                        params: params,
-                        click: async function() {
-                            try {
-                                //console.log("AA_UserAuth", arguments);
-                                $$("AA_MailUserAuthDlg").close();
-
-                                AA_MainApp.userAuth();
-
                             } catch (msg) {
                                 console.error("AA_MainApp.AA_MailUserAuth", msg);
                                 AA_MainApp.ui.alert(msg);
@@ -4453,34 +4426,70 @@ async function AA_MailUserAuth(params = null) {
                             view: "text",
                             icon: "mdi mdi-email",
                             name: "email",
-                            bottomLabel: "Inserisci la tua email.",
+                            bottomLabel: "Per effettuare l'accesso inserisci la tua email istituzionale e fai click sul pulsante sottostante. Il sistema inviera' alla tua casella di posta un codice OTP che dovrai inserire nella successiva schermata di verifica.",
                             required: true,
-                            label: "email"
+                            label: "Email"
                         },
+                        {},
+                        {
+                            cols:
+                            [
+                                {},
+                                apply_btn,
+                                {}
+                            ]
+                        },
+                        {},
                         {
                             type: "space",
                             css: { "background-color": "transparent" },
-                            cols: [
+                            rows:
+                            [
                                 {
-                                    view: "checkbox",
-                                    id: "remember_me",
-                                    name: "remember_me",
-                                    label: "Ricordami",
-                                    //labelRight:"Ricordami",
-                                    labelAlign: "right",
-                                    labelPosition: "right",
-                                    labelWidth: 95,
-                                    align: "right",
-                                    bottomPadding: 0,
-                                    tooltip: "Se abilitato, ricorda l'utente (su questo browser) per 30 giorni.",
-                                    value: 0,
-                                },
-                                {
-                                    rows:
+                                    cols: 
                                     [
-                                        apply_btn
+                                        {
+                                            view: "checkbox",
+                                            id: "remember_me",
+                                            name: "remember_me",
+                                            label: "Ricordami",
+                                            //labelRight:"Ricordami",
+                                            labelAlign: "right",
+                                            labelPosition: "right",
+                                            labelWidth: 90,
+                                            width: 130,
+                                            align: "right",
+                                            bottomPadding: 0,
+                                            tooltip: "Se abilitato, ricorda l'utente (su questo browser) per 30 giorni.",
+                                            value: 0,
+                                        },
+                                        {},
+                                        {
+                                            id: "AA_MailUserAuth_return_btn",
+                                            view: "button",
+                                            label: "Accedi con credenziali",
+                                            type: "icon",
+                                            icon: "mdi mdi-key",
+                                            width: 250,
+                                            align: "center",
+                                            params: params,
+                                            click: async function() 
+                                            {
+                                                try {
+                                                    //console.log("AA_UserAuth", arguments);
+                                                    $$("AA_MailUserAuthDlg").close();
+        
+                                                    await AA_UserAuth();
+        
+                                                } catch (msg) {
+                                                    console.error("AA_MainApp.AA_MailUserAuth", msg);
+                                                    AA_MainApp.ui.alert(msg);
+                                                    return;
+                                                }
+                                            }
+                                        }
                                     ]
-                                }
+                                }                               
                             ]
                         }
                     ]
