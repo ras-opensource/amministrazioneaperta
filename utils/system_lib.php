@@ -2883,7 +2883,8 @@ class AA_GenericModule
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
 
-        if (class_exists(static::AA_MODULE_OBJECTS_CLASS)) {
+        if (class_exists(static::AA_MODULE_OBJECTS_CLASS)) 
+        {
             if (method_exists(static::AA_MODULE_OBJECTS_CLASS, "AddNew")) {
                 $objectClass = static::AA_MODULE_OBJECTS_CLASS;
                 $object = new $objectClass(0, $this->oUser);

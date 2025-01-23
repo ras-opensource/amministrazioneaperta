@@ -6699,7 +6699,7 @@ class AA_Object_V2
         $query .= " id_data='" . $object->GetIdData() . "'";
         $query .= ", id_data_rev='" . $object->GetIdDataRev() . "'";
         $query .= ", status='" . $object->GetStatus() . "'";
-        $query .= ", nome='" . addslashes($object->GetName()) . "'";
+        $query .= ", nome='" . addslashes(mb_substr($object->GetName(),0,250)) . "'";
         $query .= ", descrizione='" . addslashes($object->GetDescr()) . "'";
         $query .= ", id_assessorato='" . $struct->GetAssessorato(true) . "'";
         $query .= ", id_direzione='" . $struct->GetDirezione(true) . "'";
