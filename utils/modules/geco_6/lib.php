@@ -5522,7 +5522,7 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
             $val->SetText($text);
             #-----------------------------------------------
 
-            #norma------------
+            #norma------------------------------------------
             $norma=$object->GetNorma();
             $text="<a href='".$norma['link']."' target='_blank'>".$norma['estremi']."</a>";
             $val=new AA_XML_Div_Element($id."_norma",$this);
@@ -5530,15 +5530,15 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
             $val->SetText($text);
             #-----------------------------------------------
 
-            #importi----------------------------------
+            #importi----------------------------------------
             $text="<div style='width: 50%; font-size:smaller; text-align: center;'>".AA_Utils::number_format($object->GetProp("Importo_impegnato"),2,",",".")."</div>";
             $text.="<div style='width: 50%; font-size:smaller; text-align: center;'>".AA_Utils::number_format($object->GetProp("Importo_erogato"),2,",",".")."</div>";
             $val=new AA_XML_Div_Element($id."_importi",$this);
             $val->SetStyle($border.'width: 8.3%; font-size: .6em; padding: .1em; height:91%;display: flex;justify-content:space-between;align-items:center');
             $val->SetText($text);
-            #----------------------------------------------- 
+            #-----------------------------------------------
 
-            #links----------------------------------
+            #links------------------------------------------
             $allegati=$object->GetAllegati();
             if(sizeof($allegati)==0) $text="&nbsp;";
             else
@@ -5560,11 +5560,11 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
             $val=new AA_XML_Div_Element($id."_links",$this);
             $val->SetStyle($border.'width: 7%; font-size: .6em; padding: .1em; height:91%;display: flex;flex-direction: column; justify-content:space-evenly;align-items:center');
             $val->SetText($text);
-            #-----------------------------------------------   
+            #-----------------------------------------------
         }
         else
         {
-            #descrizione----------------------------------
+            #descrizione------------------------------------
             $text="<div><b>Contributo revocato in data ".$revoca['data']."</b></div>";
             $text.="<div>estremi provvedimento: ".$revoca['estremi']."</div>";
             $text.="<div>causale: ".$revoca['causale']."</div>";
