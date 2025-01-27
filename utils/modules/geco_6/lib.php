@@ -5501,7 +5501,7 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
 
             #beneficiario-----------------------------------
             $beneficiario=$object->GetBeneficiario();
-            if(!empty($beneficiario['privacy']))
+            if(empty($beneficiario['privacy']))
             {
                 $text="<div><b>".$beneficiario['nome']."</b></div>";
                 if(!empty($beneficiario['cf']) && $beneficiario['tipo'] == 0) $text.="<div style='font-size:smaller;'>Cf: ".$beneficiario['cf']."</div>";
