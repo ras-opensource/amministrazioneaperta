@@ -4044,6 +4044,7 @@ Class AA_GecoModule extends AA_GenericModule
 
             $newGeco=new AA_Geco(0,$this->oUser);
             $newGeco->Parse($newData);
+            $newGeco->SetStruct($this->oUser->GetStruct());
             if(AA_Geco::AddNew($newGeco,$this->oUser))
             {
                 $result["inseriti"]++;
