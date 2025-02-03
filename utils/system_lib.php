@@ -1143,7 +1143,7 @@ class AA_SystemTask_GetServerStatus extends AA_GenericTask
             else
             {
                 
-               die(json_encode(array("status"=>"<div>".substr($result,strpos($result,"<body>")+7,-15)."</div>")));
+               die(json_encode(array("status"=>"<div>".mb_substr($result,strpos($result,"<body>")+7,-15)."</div>")));
             }
         }
         else
@@ -1551,7 +1551,7 @@ class AA_SystemTask_GetNews extends AA_GenericTask
             else
             {
                 
-               die(json_encode(array("status"=>"<div>".substr($result,strpos($result,"<body>")+7,-15)."</div>")));
+               die(json_encode(array("status"=>"<div>".mb_substr($result,strpos($result,"<body>")+7,-15)."</div>")));
             }
         }
         else
@@ -2673,7 +2673,7 @@ class AA_GenericModule
             if (($userCaps & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
 
             $object_name=$object->GetName();
-            if(strlen($object_name) > 190) $object_name=substr($object_name,0,190)."...";
+            if(strlen($object_name) > 190) $object_name=mb_substr($object_name,0,190)."...";
             $result = array(
                 "id" => $object->GetId(),
                 "tags" => "",
@@ -4178,7 +4178,7 @@ class AA_GenericModule
                 if(method_exists($this, $headerTemplateFunct)) $curPage_row = $this->$headerTemplateFunct($curObject);
             }
 
-            $indice[$curObject->GetID()] = $curNumPage . "|" . substr($curObject->GetName(),0,90);
+            $indice[$curObject->GetID()] = $curNumPage . "|" . mb_substr($curObject->GetName(),0,90);
             $curPage_row .= "<div id='" . $curObject->GetID() . "' style='display:flex;  flex-direction: column; width: 99.8%; align-items: center; text-align: center; padding: 0mm; margin-top: 2mm; min-height: 9mm; ".$maxItemHeight."; overflow: hidden;'>";
 
             //AA_Log::Log($template,100,false,true);
@@ -4407,8 +4407,12 @@ class AA_GenericModule
                 );
         }
 
+        //AA_Log::Log(__METHOD__." content: ".print_r($content,true),100);
+
         //Codifica il contenuto in base64
         $sTaskLog .= base64_encode(json_encode($content)) . "</content>";
+
+        //AA_Log::Log(__METHOD__." - params: ".print_r($params,true)." - param: ".$param." - object content: ".$sTaskLog,100);
 
         $task->SetLog($sTaskLog);
 
@@ -4770,7 +4774,7 @@ class AA_GenericModule
             if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) $details .= "&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
 
             $object_name=$object->GetName();
-            if(strlen($object_name) > 190) $object_name=substr($object_name,0,190)."...";
+            if(strlen($object_name) > 190) $object_name=mb_substr($object_name,0,190)."...";
             $newData = array(
                 "id" => $object->GetId(),
                 "tags" => "",
@@ -4783,7 +4787,8 @@ class AA_GenericModule
                 "module_id" => $this->GetId()
             );
 
-            if (method_exists($this, $customTemplateDataFunction)) {
+            if (method_exists($this, $customTemplateDataFunction)) 
+            {
                 $result=$this->$customTemplateDataFunction($newData, $object);
                 if($result['pretitolo'] !="" && strpos($result['pretitolo'],"span") === false)
                 {
@@ -5116,7 +5121,7 @@ class AA_GenericModule
 
         //Content box
         $name=$object->GetName();
-        if(strlen($name>225)) $name=substr($name,0,217)."...";
+        if(strlen($name>225)) $name=mb_substr($name,0,217)."...";
 
         $content = new AA_JSON_Template_Layout(
             static::AA_UI_PREFIX . "_" . static::AA_UI_DETAIL_BOX,

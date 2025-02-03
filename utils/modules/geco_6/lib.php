@@ -901,7 +901,16 @@ Class AA_GecoModule extends AA_GenericModule
         }
 
         $params['enableAddNewMultiFromCsv']=true;
-        $content=$this->TemplateGenericSection_Bozze($params,null);
+
+        //$params['count'] = 10;
+        //$contentData = $this->GetDataSectionBozze_List($params);
+
+        //AA_Log::Log(__METHOD__." - content: ".print_r($contentData,true),100);
+
+        //$contentData=array(0,array());
+        $content=$this->TemplateGenericSection_Bozze($params, null);
+
+        //AA_Log::Log(__METHOD__." - content: ".print_r($content,true),100);
 
         return $content->toObject();
     }
