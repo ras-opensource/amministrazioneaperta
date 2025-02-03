@@ -1550,7 +1550,7 @@ class AA_Organismi extends AA_Object
         $xml.="<web>".mb_encode_numericentity($this->GetSitoWeb(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</web>";
         $xml.="<data_inizio>".$this->GetDataInizioImpegno()."</data_inizio>";
         $xml.="<data_fine>".$this->GetDataFineImpegno()."</data_fine>";
-        $xml.="<partecipazione>".$this->GetPartecipazione()."</partecipazione>";
+        //$xml.="<partecipazione>".$this->GetPartecipazione()."</partecipazione>";
         $xml.="<stato_organismo id_tipo='".$this->GetStatoOrganismo(true)."'>".$this->GetStatoOrganismo()."</stato_organismo>";
         $xml.="<funzioni>".mb_encode_numericentity($this->GetFunzioni(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</funzioni>";
         $xml.="<note>".mb_encode_numericentity($this->GetNote(),array (0x0, 0xffff, 0, 0xffff), 'UTF-8')."</note>";
