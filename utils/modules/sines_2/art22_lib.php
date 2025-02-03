@@ -1514,6 +1514,9 @@ class AA_Organismi extends AA_Object
      */
     public function toXml()
     {
+        $status="bozza";
+        if(($this->GetStatus()&AA_Const::AA_STATUS_PUBBLICATA)>0) $status="pubblicato";
+        
         $xml='<organismo id="'.$this->GetID().'" aggiornamento="'.$this->GetAggiornamento().'" stato="'.$this->GetStatus().'">';
 
         $codice_partecipo=array(AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"EPV",AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"SP",AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"EDP");
