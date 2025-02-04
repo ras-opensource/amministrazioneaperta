@@ -698,6 +698,24 @@ Class AA_Geco extends AA_Object_V2
         if(is_array($val)) $this->aProps['Allegati']=json_encode($val);
         else $this->aProps['Allegati']=$val;
     }
+
+    //da specializzare
+    protected function CsvDataHeader($separator="|")
+    {
+        return $separator."anno".$separator."responsabile_nome".$separator."responsabile_qualifica".$separator."norma_estremi".$separator."norma_link".$separator."modalita_tipo".$separator."modalita_link".$separator."importo_impegnato".$separator."importo_erogato".$separator."beneficiario_nominativo".$separator."beneficiario_cf".$separator."beneficiario_piva".$separator."beneficiario_persona_fisica".$separator."beneficiario_privacy".$separator."note";
+    }
+
+    //da specializzare
+    protected function CsvData($separator= "|")
+    {
+        $responsabile=$this->GetResponsabile();
+        $beneficiario=$this->GetBeneficiario();
+        $norma=$this->GetNorma();
+        $modalita=$this->GetModalita();
+        $allegati=$this->GetAllegati();
+        return $separator.$this->GetProp("Anno").$separator.$responsabile['nome'].$separator.$responsabile['qualifica'].$separator.$norma['estremi'].$separator.$norma['link'].$separator.$modalita['tipo'].$separator.$modalita['link'].$separator.AA_Utils::number_format($this->GetProp('Importo_impegnato'),2,",",".").$separator.AA_Utils::number_format($this->GetProp("Importo_erogato"),2,",",".").$separator.$beneficiario['nome'].$separator.$beneficiario['cf'].$separator.$beneficiario['piva'].$separator.$beneficiario['tipo'].$separator.$beneficiario['privacy'].$separator.$this->GetProp("Note");
+    }
+    //--------------------------------------------
 }
 
 
