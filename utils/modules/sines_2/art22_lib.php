@@ -9663,9 +9663,9 @@ Class AA_OrganismiPublicReportTemplateGeneralPageView extends AA_GenericObjectTe
         #-------------------
 
         //Provvedimenti
-        $provvedimenti=$organismo->GetProvvedimenti();
+        /*$provvedimenti=$organismo->GetProvvedimenti();
 
-        if(sizeof($provvedimenti) > 0)
+        if(sizeof($provvedimenti) > 0 && sizeof($provvedimenti) < 21)
         {
             //Chiama il costruttore della classe base
             $provvedimenti_table= new AA_GenericTableTemplateView($id."_provvedimenti_table",$generale,$organismo,array("evidentiate-rows"=>true,"title"=>"Provvedimenti","border"=>"1px solid black;","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
@@ -9704,14 +9704,16 @@ Class AA_OrganismiPublicReportTemplateGeneralPageView extends AA_GenericObjectTe
                 $curRow++;
             }
         }
+        
+        */
 
         //Aggiunge i dati contabili
         $bilanci=new AA_OrganismiReportDatiContabiliListTemplateView("AA_OrganismiReportDatiContabiliListTemplateView",null,$organismo, $user);
         $this->AppendChild($bilanci);
 
         //legenda
-        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
-        $this->SetText($footer,false);
+        //$footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+        //$this->SetText($footer,false);
     }
 }
 
@@ -10318,6 +10320,54 @@ Class AA_OrganismiPublicReportTemplateNominePageView extends AA_GenericObjectTem
         //legenda
         $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%; margin-bottom: 2em'>Nel presente prospetto sono esposti i dati dei rappresentanti designati dall'Amministrazione regionale negli organi di governo dell’ente e quelli relativi ai titolari di incarichi di amministratore dell'ente, siano essi nominati dalla Regione o meno.</span></div>";
         $footer.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
+        $this->SetText($footer,false);
+    }
+}
+
+#Classe template per la gestione del report pdf dell'organismo (pagina nomine)
+Class AA_OrganismiPublicReportTemplateProvvedimentiPageView extends AA_GenericObjectTemplateView
+{
+    public function __construct($id="AA_OrganismiPublicReportTemplateProvvedimentiPageView",$parent=null,$organismo=null, $user=null,$provvedimenti=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return;
+            }
+        }
+
+        if(!($organismo instanceof AA_Organismi))
+        {
+            AA_Log::Log(__METHOD__." - organismo non valido.", 100,false,true);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$organismo);
+        
+        $this->SetStyle("width: 99%; display:flex; flex-direction: column; align-items: center;");
+
+        #Parte generale---------------------------------
+        $generale=new AA_XML_Div_Element("AA_OrganismiPublicReportTemplateView-generale",$this);
+        $generale->SetStyle("display:flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%");
+
+        #Denominazione----------------------------------
+        $denominazione=new AA_XML_Div_Element("generale-tab-denominazione",$generale);
+        $denominazione->SetStyle('width:100%; border-bottom: 1px solid gray; margin-bottom: .5em; margin-top: .2em; font-size: 20px; font-weight: bold');
+        $denominazione->SetText($organismo->GetDenominazione()."<br><span style='font-size: x-small; font-weight: normal'>".$organismo->GetTipologia()."</span>");
+        #-----------------------------------------------
+
+        //Aggiunge i provvedimenti
+        $list=new AA_OrganismiReportProvvedimentiListTemplateView("AA_OrganismiPublicReportTemplateView-provvedimenti",null,$organismo, $user,$provvedimenti);        
+        $this->AppendChild($list);
+
+        //legenda
+        $footer="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$organismo->GetAggiornamento()."</span></div>";
         $this->SetText($footer,false);
     }
 }
@@ -10957,8 +11007,74 @@ Class AA_OrganismiReportDatiContabiliListTemplateView extends AA_GenericTableTem
     }
 }
 
+#Classe template per la visualizzazione dei dati contabili sul report
+Class AA_OrganismiReportProvvedimentiListTemplateView extends AA_GenericTableTemplateView
+{
+    public function __construct($id="AA_OrganismiReportProvvedimentiListTemplateView",$parent=null,$organismo=null, $user=null,$provvedimenti=null)
+    {
+        //Verifica utente
+        if(!($user instanceof AA_User) || !$user->isValid() || !$user->isCurrentUser()) 
+        {
+            $user=AA_User::GetCurrentUser();
+        
+            if($user==null || !$user->isValid() || !$user->isCurrentUser())
+            {
+                AA_Log::Log(__METHOD__." - utente non valido.", 100,false,true);
+                return;
+            }
+        }
 
+        if(!($organismo instanceof AA_Organismi))
+        {
+            AA_Log::Log(__METHOD__." - organismo non valido.", 100,false,true);
+            return;
+        }
 
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$organismo,array("evidentiate-rows"=>true,"title"=>"Provvedimenti","border"=>"1px solid black;","width"=>"99%","style"=>"font-size: smaller; margin-bottom: 1em; margin-top: 1em"));
+
+        //Provvedimenti
+        if(!$provvedimenti) $provvedimenti=$organismo->GetProvvedimenti();
+
+        if(sizeof($provvedimenti) > 0)
+        {
+            //Chiama il costruttore della classe base
+            $this->SetColSizes(array("5","30","50","10"));
+            $this->SetHeaderLabels(array("Anno","Tipo","Estremi","Url"));    
+
+            $curRow=1;
+            foreach($provvedimenti as $id=>$curProvvedimento)
+            {
+                //Anno
+                $this->SetCellText($curRow,0,$curProvvedimento->GetAnno(), "center");
+
+                //tipo provvedimento
+                $curval=$curProvvedimento->GetTipologia();
+                if($curval=="" || $curval=="n.d.") $curval="n.d.";
+                $this->SetCellText($curRow,1,$curval,"center");
+
+                //estremi
+                $note=$curProvvedimento->GetEstremi();
+                $text_align="left";
+                $this->SetCellText($curRow,2,$note, $text_align);
+
+                if($curProvvedimento->GetUrl() !="")
+                {
+                    //url
+                    $url="<a href='".$curProvvedimento->GetUrl()."' target='_blank'>consulta</a>";
+                    $this->SetCellText($curRow,3,$url, "center");
+                }
+                else
+                {
+                    $url="<a href='https://".AA_Config::AA_DOMAIN_NAME.$curProvvedimento->GetFilePublicPath()."' target='_blank'>consulta</a>";
+                    $this->SetCellText($curRow,3,$url, "center");
+                }
+
+                $curRow++;
+            }
+        }
+    }
+}
 
 #Classe template per la visualizzazione della lista delle nomine sul report
 Class AA_OrganismiReportNomineListTemplateView extends AA_GenericTableTemplateView

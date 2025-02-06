@@ -9940,15 +9940,51 @@ Class AA_SinesModule extends AA_GenericModule
             
             //Prima pagina
             $curPage_row.=new AA_OrganismiPublicReportTemplateGeneralPageView("report_organismo_pdf_general_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
-            $curPage_row.="</div>";
-            $curPage->SetContent($curPage_row);
+            
+            $provvedimenti=$curOrganismo->GetProvvedimenti();
+            if(sizeof($provvedimenti) > 0)
+            {
+                if(sizeof($provvedimenti) < 10)
+                {
+                    $provvedimenti_table = new AA_OrganismiReportProvvedimentiListTemplateView("report_organismo_pdf_provvedimenti_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser,$provvedimenti);
+                    $curPage_row.=$provvedimenti_table;
+
+                    //footer
+                    $curPage_row.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>";
+                    $curPage_row.="</div>";
+                    $curPage->SetContent($curPage_row);
+                }
+                else
+                {
+                    $curPage_row.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>";
+                    $curPage_row.="</div>";
+                    $curPage->SetContent($curPage_row);
+
+                    $curPage=$doc->AddPage();
+                    $curNumPage++;
+                    $curPage_row="";
+
+                    $curPage_row.="<div style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+
+                    $curPage_row.=new AA_OrganismiPublicReportTemplateProvvedimentiPageView("report_organismo_pdf_provvedimenti_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser,$provvedimenti);
+
+                    $curPage_row.="</div>";
+                    $curPage->SetContent($curPage_row);
+                }
+            }
+            else
+            {
+                $curPage_row.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>";
+                $curPage_row.="</div>";
+                $curPage->SetContent($curPage_row);
+            }
 
             //seconda pagina
             //Aggiunge una pagina
             $curPage=$doc->AddPage();
             $curNumPage++;
             $curPage_row="";
-            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+            $curPage_row.="<div style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
             $curPage_row.=new AA_OrganismiPublicReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
             $curPage_row.="</div>";
             $curPage->SetContent($curPage_row);

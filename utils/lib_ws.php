@@ -11,7 +11,7 @@ include_once "lib_accessi.php";
 include_once "lib_sibar.php";
 include_once "lib_mail.php";
 */
-include_once "libs.php";
+//include_once "libs.php";
 
 $log=false;
 function UserAuth($user,$pwd,$token)
@@ -3854,6 +3854,7 @@ function AA_XML_ReportArt22($param="")
   $params['dal']=$dal;
   $params['al']=$al;
   $params['count']="all";
+  if(($params['tipo']&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $params['partecipazione']=3;
 
   $xml=new AA_XML_FEED_ART22();
   $xml->SetURL($_SERVER['SCRIPT_NAME']);
@@ -3861,21 +3862,16 @@ function AA_XML_ReportArt22($param="")
   $return="";
 
   $filename="pubblicazioni_art22";
+  $filename="pubblicazioni_art22";
   if($tipo_organismo !="")
   {
     $tipo=AA_Organismi_Const::GetTipoOrganismi(true);
-    $filename.="-".str_replace(" ","_",$tipo[$tipo_organismo]);
+    //$filename.="-".str_replace(" ","_",$tipo[$tipo_organismo]);
   }
-  $filename.="-".date("Y-m-d");
+  $filename.="_".date("Y-m-d");
 
   //Imposta l'utente
-  $user=AA_User::GetCurrentUser();
-
-  if($user->IsGuest())
-  {
-    $user=AA_User::UserAuth("","aa_user_art22","Ab123456");
-    $bLogOut=true;
-  } 
+  $user=AA_User::UserAuth("","aa_user_art22","A3a3babbfa",false,true);
 
   $organismi=AA_Organismi::Search($params);
   $count = $organismi[0];
@@ -3884,8 +3880,6 @@ function AA_XML_ReportArt22($param="")
     $doc=null;
     if($output=="pdf")
     {
-      if($struttura !="") $id="_".$struttura;
-      if($id_struttura !="") $id="_".$id_struttura;
       $doc = new AA_PDF_RAS_TEMPLATE_A4_PORTRAIT($filename);
       if($idAssessorato == 27)
       {
@@ -3957,8 +3951,48 @@ function AA_XML_ReportArt22($param="")
         
         //Prima pagina
         $curPage_row.=new AA_OrganismiPublicReportTemplateGeneralPageView("report_organismo_pdf_general_page_".$curOrganismo->GetId(),null,$curOrganismo,$user);
-        $curPage_row.="</div>";
-        $curPage->SetContent($curPage_row);
+        
+        $provvedimenti=$curOrganismo->GetProvvedimenti();
+        $provvedimenti_newPage=false;
+        if(sizeof($provvedimenti) > 0 && sizeof($provvedimenti) < 10 && strlen($curOrganismo->GetNote())>1500) $provvedimenti_newPage=true;
+        if(sizeof($provvedimenti) > 10) $provvedimenti_newPage=true;
+        
+        if(sizeof($provvedimenti) > 0)
+        {
+            if(!$provvedimenti_newPage)
+            {
+                $provvedimenti_table = new AA_OrganismiReportProvvedimentiListTemplateView("report_organismo_pdf_provvedimenti_page_".$curOrganismo->GetId(),null,$curOrganismo,$user,$provvedimenti);
+                $curPage_row.=$provvedimenti_table;
+
+                //footer
+                $curPage_row.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>";
+                $curPage_row.="</div>";
+                $curPage->SetContent($curPage_row);
+            }
+            else
+            {
+                $curPage_row.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>";
+                $curPage_row.="</div>";
+                $curPage->SetContent($curPage_row);
+
+                $curPage=$doc->AddPage();
+                $curNumPage++;
+                $curPage_row="";
+
+                $curPage_row.="<div style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+
+                $curPage_row.=new AA_OrganismiPublicReportTemplateProvvedimentiPageView("report_organismo_pdf_provvedimenti_page_".$curOrganismo->GetId(),null,$curOrganismo,$user,$provvedimenti);
+
+                $curPage_row.="</div>";
+                $curPage->SetContent($curPage_row);
+            }
+        }
+        else
+        {
+            $curPage_row.="<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>";
+            $curPage_row.="</div>";
+            $curPage->SetContent($curPage_row);
+        }
 
         //seconda pagina
         //Aggiunge una pagina
@@ -4029,19 +4063,12 @@ function AA_XML_ReportArt22($param="")
       $vociCount++;
     }
 
-    //Rimuove i dati dell'utente
-    if($bLogOut) $user->LogOut();
-
     //render del documento
     $doc->Render();
     exit;
   }
   
   $xml->SetContent($return);
-  
-  //Rimuove i dati dell'utente
-  if($bLogOut) $user->LogOut();
-  
   return $xml->toXML();
 }
 #-------------------------------------------------------------------------------------
