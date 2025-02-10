@@ -1388,6 +1388,16 @@ Class AA_GecoModule extends AA_GenericModule
 
         //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
 
+        if(sizeof($data)==0)
+        {
+            $wnd= new AA_GenericWindowTemplate(uniqid(),"Caricamento multiplo da file CSV - Errore file csv",$this->id);
+            $wnd->SetWidth(480);
+            $desc="<p>Non sono state riconosciute delle voci importabili, verificare che il file csv sia conforme alle specifiche e che i campi obbligatori siano valorizzati.</p>";
+            $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+
+            return $wnd;
+        }
+
         $desc="<p>Sono stati riconosciute <b>".sizeof((array)$data)." voci</b> differenti.</p>";
         $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
 
@@ -3030,7 +3040,8 @@ Class AA_GecoModule extends AA_GenericModule
         if(sizeof($modalita)==0)$value="n.d.";
         else
         {
-            $value="<a href='".$modalita['link']."' target='_blank'>".$modalita['descrizione']."</a>";
+            if($modalita['link'] != "") $value="<a href='".$modalita['link']."' target='_blank'>".$modalita['descrizione']."</a>";
+            else $value=$modalita['descrizione']." (link assente)";
         }
         $modalita_text=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
@@ -3043,7 +3054,8 @@ Class AA_GecoModule extends AA_GenericModule
         if(sizeof($norma)==0)$value="n.d.";
         else
         {
-            $value="<a href='".$norma['link']."' target='_blank'>".$norma['estremi']."</a>";
+            if(trim($norma['link'])!="") $value="<a href='".$norma['link']."' target='_blank'>".$norma['estremi']."</a>";
+            else $value=$norma['estremi']." (link assente)";
         }
         $norma_text=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
@@ -4554,28 +4566,67 @@ Class AA_GecoModule extends AA_GenericModule
                 $csvValues=explode("|",$curCsvRow);
                 if(sizeof($csvValues) >= $recognizedFields)
                 {
-                    $curDataValues=array();
-                    foreach($fieldPos as $fieldName=>$pos)
+                    $bAdd=true;
+                    //------------- verifica dati ------------------------
+                    //titolo e descrizione
+                    if(trim($csvValues[$fieldPos['titolo']])=="" || trim($csvValues[$fieldPos['descrizione']])=="")
                     {
-                        if($pos>=0)
-                        {
-                            $curDataValues[$fieldName]=trim($csvValues[$pos]);                            
-                        }
+                        AA_Log::Log(__METHOD__." - riga esclusa (titolo o descrizione vuoti): ".print_r($csvValues,true),100);
+                        $bAdd=false;
                     }
 
-                    $curDataValues['norma']="<a href='".$curDataValues['norma_link']."'>".$curDataValues['norma_estremi']."</a>";
-                    $curDataValues['modalita']="<a href='".$curDataValues['modalita_link']."'>".$modalita[$curDataValues['modalita_tipo']]."</a>";
-                    $curDataValues['beneficiario']=$curDataValues['beneficiario_nominativo']." - ".$curDataValues['beneficiario_cf'];
-                    $curDataValues['responsabile']=$curDataValues['responsabile_nome']." (".$curDataValues['responsabile_qualifica'].")";
-                    $curDataValues['persona_fisica']="no";
-                    if($curDataValues['beneficiario_persona_fisica']==1) $curDataValues['persona_fisica']="si";
-                    $curDataValues['privacy']="no";
-                    if($curDataValues['beneficiario_privacy']==1) $curDataValues['privacy']="si";
+                    //modalita'
+                    if(trim($csvValues[$fieldPos['modalita_tipo']])=="" || strpos($csvValues[$fieldPos['modalita_link']],"https")===false)
+                    {
+                        AA_Log::Log(__METHOD__." - riga esclusa (modalita' non conforme): ".print_r($csvValues,true),100);
+                        $bAdd=false;
+                    }
 
-                    $curDataValues['importo_impegnato']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curDataValues['importo_impegnato'])),2,",",".");
-                    $curDataValues['importo_erogato']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curDataValues['importo_erogato'])),2,",",".");
+                    //responsabile
+                    if(trim($csvValues[$fieldPos['responsabile_nome']])=="" || trim($csvValues[$fieldPos['responsabile_qualifica']])=="")
+                    {
+                        AA_Log::Log(__METHOD__." - riga esclusa (responsabile non conforme): ".print_r($csvValues,true),100);
+                        $bAdd=false;
+                    }
                     
-                    $data[]=$curDataValues;
+                    //norma
+                    if(trim($csvValues[$fieldPos['norma_estremi']])=="" || strpos($csvValues[$fieldPos['norma_link']],"https")===false)
+                    {
+                        AA_Log::Log(__METHOD__." - riga esclusa (norma non conforme): ".print_r($csvValues,true),100);
+                        $bAdd=false;
+                    }
+
+                    if(trim($csvValues[$fieldPos['importo_impegnato']])=="")
+                    {
+                        AA_Log::Log(__METHOD__." - riga esclusa (importo non conforme): ".print_r($csvValues,true),100);
+                        $bAdd=false;
+                    }
+                    //----------------------------------------------------
+
+                    if($bAdd)
+                    {
+                        $curDataValues=array();
+                        foreach($fieldPos as $fieldName=>$pos)
+                        {
+                            if($pos>=0)
+                            {
+                                $curDataValues[$fieldName]=trim($csvValues[$pos]);                            
+                            }
+                        }
+                        $curDataValues['norma']="<a href='".$curDataValues['norma_link']."'>".$curDataValues['norma_estremi']."</a>";
+                        $curDataValues['modalita']="<a href='".$curDataValues['modalita_link']."'>".$modalita[$curDataValues['modalita_tipo']]."</a>";
+                        $curDataValues['beneficiario']=$curDataValues['beneficiario_nominativo']." - ".$curDataValues['beneficiario_cf'];
+                        $curDataValues['responsabile']=$curDataValues['responsabile_nome']." (".$curDataValues['responsabile_qualifica'].")";
+                        $curDataValues['persona_fisica']="no";
+                        if($curDataValues['beneficiario_persona_fisica']==1) $curDataValues['persona_fisica']="si";
+                        $curDataValues['privacy']="no";
+                        if($curDataValues['beneficiario_privacy']==1) $curDataValues['privacy']="si";
+    
+                        $curDataValues['importo_impegnato']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curDataValues['importo_impegnato'])),2,",",".");
+                        $curDataValues['importo_erogato']=AA_Utils::number_format(str_replace(",",".",str_replace(".","",$curDataValues['importo_erogato'])),2,",",".");
+                        
+                        $data[]=$curDataValues;
+                    }
                 }
             }
             $curRowNum++;
