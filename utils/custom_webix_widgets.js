@@ -1,5 +1,5 @@
 // Custom webix widget for rating
-// { view:"rating", label:"rating", scale:10, value:3, id:"rating"}
+// { view:"rating", label:"rating", scale:10, value:3, id:"rating", tooltip: "Fai click per valutare l'articolo"}
 webix.protoUI({
     name: "rating",
     $cssName:"text",
