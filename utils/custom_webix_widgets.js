@@ -6,13 +6,20 @@ webix.protoUI({
     defaults:{
       scale: 5,
       icon: "fas fa-star",
-      samples: 0
+      samples: 0,
+      showSamples: true,
+      directRating: false
     },
-    $init:function(){
-      this.on_click.webix_rating_point = function(e, id, target){
-        if(!this.config.readonly)
-          this.setValue(target.getAttribute("data-value"))
-      }
+    $init:function()
+    {
+        if(this.config.directRating)
+        {
+            this.on_click.webix_rating_point = function(e, id, target)
+            {
+                if(!this.config.readonly)
+                    this.setValue(target.getAttribute("data-value"))
+            }
+        }
     },
     $renderInput: function(config, div_start, id){
       var value = parseInt(config.value||0), scale = config.scale;
@@ -25,8 +32,9 @@ webix.protoUI({
         }
         div_start += '" style="line-height:'+config.cheight+'px;"';
         div_start += ' data-value="'+(i+1)+'"></span>';
-        div_start += '<span>&nbsp; ('+config.samples+')</span>';
       }
+      if(config.showSamples) div_start += '<span>&nbsp; ('+config.samples+')</span>';
+
       return webix.ui.text.prototype.$renderInput.apply(this, [config,div_start,id]);
     },
     $renderIcon: function(){
