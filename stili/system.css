@@ -990,3 +990,11 @@ div.AA_Footer_Gradient {
   align-items: center;
   justify-content: center;
 }
+
+.webix_rating_point{
+    cursor:pointer;
+}
+
+.webix_rating_selected{
+    color:gold;
+}
