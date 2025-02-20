@@ -3507,7 +3507,7 @@ class AA_User
         $sql.=", status='".$status."'";
         if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".AA_Utils::password_hash($params['passwd'])."'";
         else $sql.=", passwd='".AA_Utils::password_hash(uniqid(date("Y-m-d")))."'";
-        $sql.=", groups='".implode(",",$groups)."'";
+        $sql.=", ".static::AA_DB_TABLE.".groups='".implode(",",$groups)."'";
         
         if (!$db->Query($sql)) 
         {
@@ -3998,7 +3998,7 @@ class AA_User
         $sql.=", status='".$status."'";
         if (isset($params['passwd']) && $params['passwd'] !="") $sql.=", passwd='".AA_Utils::password_hash($params['passwd'])."'";
 
-        $sql.=", groups='".addslashes(implode(",",$groups))."'";
+        $sql.=", ".static::AA_DB_TABLE.".groups='".addslashes(implode(",",$groups))."'";
 
         $sql.=" WHERE id='".$user->GetId()."' LIMIT 1";
 
