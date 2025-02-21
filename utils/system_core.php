@@ -2854,10 +2854,10 @@ class AA_User
             case AA_User::AA_USER_GROUP_SUPERUSER:
                 break;
             case AA_User::AA_USER_GROUP_SERVEROPERATORS:
-                $query.=" AND (FIND_IN_SET('1',groups) = 0 OR groups like '')";
+                $query.=" AND (FIND_IN_SET('1',".static::AA_DB_TABLE.".groups) = 0 OR ".static::AA_DB_TABLE.".groups like '')";
                 break;
             case AA_User::AA_USER_GROUP_ADMINS:
-                $query.=" AND (FIND_IN_SET(groups,'3,4') > 0 OR groups like '')";
+                $query.=" AND (FIND_IN_SET(".static::AA_DB_TABLE.".groups,'3,4') > 0 OR ".static::AA_DB_TABLE.".groups like '')";
                 break;
             default:
             $query.=" AND id=".$user->GetId();
@@ -2866,7 +2866,7 @@ class AA_User
         //username
         if(isset($params['user']) && $params['user']!="")
         {
-            $query.=" AND user like '%".addslashes($params['user'])."%'";
+            $query.=" AND ".static::AA_DB_TABLE.".user like '%".addslashes($params['user'])."%'";
         }
 
         //email
@@ -2925,7 +2925,7 @@ class AA_User
 
         if(isset($params['ruolo']) && $params['ruolo'] > 0)
         {
-            $query.=" AND FIND_IN_SET('".addslashes($params['ruolo'])."',groups) > 0 ";
+            $query.=" AND FIND_IN_SET('".addslashes($params['ruolo'])."',".static::AA_DB_TABLE.".groups) > 0 ";
         }
 
         $db=new AA_AccountsDatabase();
@@ -2971,12 +2971,12 @@ class AA_User
             return array();
         }
 
-        $query="SELECT id from ".static::AA_DB_TABLE." WHERE groups = ".AA_User::AA_USER_GROUP_USERS." AND status=".AA_User::AA_USER_STATUS_ENABLED;
+        $query="SELECT id from ".static::AA_DB_TABLE." WHERE ".static::AA_DB_TABLE.".groups = ".AA_User::AA_USER_GROUP_USERS." AND status=".AA_User::AA_USER_STATUS_ENABLED;
 
         //username
         if(isset($params['user']) && $params['user']!="")
         {
-            $query.=" AND user like '%".addslashes($params['user'])."%'";
+            $query.=" AND ".static::AA_DB_TABLE.".user like '%".addslashes($params['user'])."%'";
         }
 
         //email
