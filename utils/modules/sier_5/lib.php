@@ -5626,6 +5626,7 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierConfirmTrashWebAppQRCodeDlg");
             $taskManager->RegisterTask("DeleteSierWebAppQrCode");
             $taskManager->RegisterTask("GetSierSerialize");
+            $taskManager->RegisterTask("GetSierExportDatiServizioElettoraleDlg");
             
             //Allegati
             $taskManager->RegisterTask("GetSierAddNewAllegatoDlg");
@@ -11725,7 +11726,7 @@ Class AA_SierModule extends AA_GenericModule
         }
 
         $section=new AA_FieldSet($id."_Section_CP_ExportComuni","Export dati dei Comuni");
-        //corpo elettorale
+        //dati
         $btn=new AA_JSON_Template_Generic($id."_ExportDatiComuni_btn",array(
             "view"=>"button",
             "type"=>"icon",
@@ -11751,6 +11752,7 @@ Class AA_SierModule extends AA_GenericModule
             "click"=>"AA_MainApp.utils.callHandler('ExportOperatoriComunali', {task:\"GetSierOCEmailsCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $section->AddGenericObject($btn,false);
+        $section->AddSpacer(false);
 
         //corpo elettorale
         $btn=new AA_JSON_Template_Generic($id."_ExportCorpoElettoraleComuni_btn",array(
@@ -11764,9 +11766,23 @@ Class AA_SierModule extends AA_GenericModule
             "click"=>"AA_MainApp.utils.callHandler('ExportCorpoElettoraleCSV', {task:\"ExportCorpoElettoraleComuniCSV\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
 
-        $section->AddSpacer(false);
         $section->AddGenericObject($btn,false);
+        $section->AddSpacer(false);
 
+        //Esportazioni servizio elettorale
+        $btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Varie...",
+            "align"=>"right",
+            "width"=>150,
+            "tooltip"=>"Esporta i dati dei comuni in formato CSV definito dall'ufficio elettorale",
+            "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSierExportDatiServizioElettoraleDlg\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $section->AddGenericObject($btn,false);
+        $section->AddSpacer(false);
+        
         $wnd->AddGenericObject($section);
 
         if($this->oUser->HasFlag(AA_Sier_Const::AA_USER_FLAG_SIER))
@@ -11869,6 +11885,105 @@ Class AA_SierModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg tools
+    public function Template_GetSierExportDatiServizioElettoraleDlg($object=null)
+    {
+        $id=$this->GetId()."_ExportCSV_ServiziElettorali_Dlg";
+        if(!($object instanceof AA_Sier)) return new AA_GenericWindowTemplate($id, "Esportazione in CSV", $this->id);
+
+        $wnd=new AA_GenericWindowTemplate($id, "Esportazione in CSV", $this->id);
+
+        $wnd->SetWidth(500);
+        $wnd->SetHeight(300);
+
+        $wnd->AddView(new AA_JSON_Template_Generic());
+     
+        //Esportazioni risultati regionali
+        $btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Risultati Regionali",
+            "align"=>"right",
+            "width"=>350,
+            "tooltip"=>"Risultati Regionali",
+            "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_Regionale\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $wnd->AddView($btn);
+        $wnd->AddView(new AA_JSON_Template_Generic());
+        
+        //Esportazioni risultati circoscrizionali
+        $btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Risultati Circoscrizionali",
+            "align"=>"right",
+            "width"=>350,
+            "tooltip"=>"Risultati circoscrizionali",
+            "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_Circoscrizionale\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $wnd->AddView($btn);
+        $wnd->AddView(new AA_JSON_Template_Generic());
+
+        //Esportazioni risultati comunali
+        $btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Risultati Comunali",
+            "align"=>"right",
+            "width"=>350,
+            "tooltip"=>"Risultati comunali",
+            "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_Comunale\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $wnd->AddView($btn);
+        $wnd->AddView(new AA_JSON_Template_Generic());
+
+        //Esportazioni preferenze circoscrizionali
+        $btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Preferenze per circoscrizione",
+            "align"=>"right",
+            "width"=>350,
+            "tooltip"=>"Preferenze ",
+            "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_PreferenzeCircoscrizionali\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $wnd->AddView($btn);
+        $wnd->AddView(new AA_JSON_Template_Generic());
+
+        //Esportazioni preferenze per comune
+        $btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Preferenze per comune",
+            "align"=>"right",
+            "width"=>350,
+            "tooltip"=>"Preferenze per comune",
+            "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_PreferenzeComunali\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $wnd->AddView($btn);
+        $wnd->AddView(new AA_JSON_Template_Generic());
+
+        //Esportazioni dati sui votanti per comune
+        $btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+            "type"=>"icon",
+            "icon"=>"mdi mdi-file-table",
+            "label"=>"Dati sui votanti",
+            "align"=>"right",
+            "width"=>350,
+            "tooltip"=>"Preferenze per comune",
+            "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_Votanti\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+        ));
+        $wnd->AddView($btn);
+        $wnd->AddView(new AA_JSON_Template_Generic());
+
+        return $wnd;
+    }
 
     //Template pdf sorteggio comuni
     protected function Template_BuildSorteggioComuniRendicontazione($object=null)
@@ -19853,6 +19968,25 @@ Class AA_SierModule extends AA_GenericModule
     
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierComuneDatiGeneraliViewDlg($object,$comune),true);
+        return true;
+    }
+
+    //Template_GetSierExportDatiServizioElettoraleDlg
+    public function Task_GetSierExportDatiServizioElettoraleDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Elemento non valido o permessi insufficienti.",false);
+            return false;
+        }
+    
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSierExportDatiServizioElettoraleDlg($object),true);
         return true;
     }
 
