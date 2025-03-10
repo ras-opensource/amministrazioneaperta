@@ -3255,10 +3255,13 @@ Class AA_HomeModule extends AA_GenericModule
         $curRow=0;
         foreach($moduli as $curFlag=>$descr)
         {
-            $newLine=false;
-            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-            $section->AddCheckBoxField("flag_".$curFlag, $descr, array("bottomPadding"=>8),$newLine);
-            $curRow++;
+            if($this->oUser->HasFlag($curFlag))
+            {
+                $newLine=false;
+                if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+                $section->AddCheckBoxField("flag_".$curFlag, $descr, array("bottomPadding"=>8),$newLine);
+                $curRow++;
+            }
         }
 
         if($curRow < 4 || $curRow%4 != 0)
