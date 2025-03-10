@@ -6516,7 +6516,7 @@ Class AA_SierModule extends AA_GenericModule
         $wnd->SetWidth(640);
         $wnd->SetHeight(400);
         $wnd->EnableValidation();
-              
+        
         $anno_fine=date("Y")+5;
         $anno_start=($anno_fine-10);
         //anno riferimento
