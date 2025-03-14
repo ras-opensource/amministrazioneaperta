@@ -3031,6 +3031,371 @@ Class AA_Sier extends AA_Object_V2
         return $csv;
     }
 
+    //Export dati CSV regione
+    public function ExportDatiComuniCSV_Regionale()
+    {
+        if(!$this->bValid) 
+        {
+            return "Sezioni|Sezioni scrutinate|Candidato PRESIDENTE|Voti PRESIDENTE|Percentuale Voti PRESIDENTE|Liste collegate|Voti Liste collegate|Percentuale Voti Liste collegate|TOTALE Voti Liste collegate (COALIZIONE)|Percentuale TOTALE Voti LISTE collegate (COALIZIONE)";
+        }
+        
+        $csv="Sezioni|Sezioni scrutinate|Candidato PRESIDENTE|Voti PRESIDENTE|Percentuale Voti PRESIDENTE|Liste collegate|Voti Liste collegate|Percentuale Voti Liste collegate|TOTALE Voti Liste collegate (COALIZIONE)|Percentuale TOTALE Voti LISTE collegate (COALIZIONE)";
+
+        $pc=$this->GetControlPannel();
+        
+        // make request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $pc['url_feed_risultati']);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+        $output = curl_exec($ch);   
+
+        // convert response
+        $feed=json_decode($output,true);
+
+        // handle error; error output
+        if(curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
+
+            AA_Log::Log(__METHOD__." - feed non trovato o non parsato correttamente (".$pc['url_feed_risultati'].")"." - errore: ".curl_error($ch),100);
+        }
+
+        curl_close($ch);
+        
+        $separator="|";
+        if($feed)
+        {
+            foreach($feed['stats']['regionale']['risultati']['voti_lista'] as $id_lista=>$curLista)
+            {
+                if(is_array($curLista))
+                {
+                    $csv.="\n".$feed['stats']['regionale']['sezioni'];
+                    $csv.=$separator.$feed['stats']['regionale']['risultati']['sezioni_scrutinate'];
+                    AA_Log::Log(__METHOD__." - curLista ".print_r($curLista,true),100);
+
+                    $csv.=$separator.$feed['stats']['regionale']['risultati']['voti_presidente'][$curLista['id_presidente']]['denominazione'];
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['voti_presidente'][$curLista['id_presidente']]['voti'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['voti_presidente'][$curLista['id_presidente']]['percent'],2,",",".");
+                    $csv.=$separator.$curLista['denominazione'];
+                    $csv.=$separator.AA_Utils::number_format($curLista['voti'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curLista['percent'],2,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['voti_presidente'][$curLista['id_presidente']]['voti_coalizione'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['voti_presidente'][$curLista['id_presidente']]['percent_coalizione'],2,",",".");
+                }
+            }
+        }
+
+        return $csv;
+    }
+
+    public function ExportDatiComuniCSV_Comunale()
+    {
+        if(!$this->bValid) 
+        {
+            return "Circoscrizione|Comune|Sezioni|Sezioni scrutinate|Candidato PRESIDENTE|Voti PRESIDENTE|Percentuale Voti PRESIDENTE|Liste collegate|Voti Liste collegate|Percentuale Voti Liste collegate|TOTALE Voti Liste collegate (COALIZIONE)|Percentuale TOTALE Voti LISTE collegate (COALIZIONE)";
+        }
+        
+        $csv="Circoscrizione|Comune|Sezioni|Sezioni scrutinate|Candidato PRESIDENTE|Voti PRESIDENTE|Percentuale Voti PRESIDENTE|Liste collegate|Voti Liste collegate|Percentuale Voti Liste collegate|TOTALE Voti Liste collegate (COALIZIONE)|Percentuale TOTALE Voti LISTE collegate (COALIZIONE)";
+
+        $pc=$this->GetControlPannel();
+        
+        // make request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $pc['url_feed_risultati']);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+        $output = curl_exec($ch);   
+
+        // convert response
+        $feed=json_decode($output,true);
+
+        // handle error; error output
+        if(curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
+
+            AA_Log::Log(__METHOD__." - feed non trovato o non parsato correttamente (".$pc['url_feed_risultati'].")"." - errore: ".curl_error($ch),100);
+        }
+
+        curl_close($ch);
+        
+        $separator="|";
+        foreach($feed['comuni'] as $id_comune=>$curComune)
+        {
+            foreach($curComune['risultati']['voti_lista'] as $id_lista=>$curLista)
+            {
+                if(is_array($curLista))
+                {
+                    //AA_Log::Log(__METHOD__." - curLista ".print_r($curLista,true),100);
+                    $csv.="\n".$curComune['circoscrizione'];
+                    $csv.=$separator.$curComune['denominazione'];
+                    $csv.=$separator.$curComune['sezioni'];
+                    $csv.=$separator.$curComune['risultati']['sezioni_scrutinate'];
+
+                    $csv.=$separator.$curComune['risultati']['voti_presidente'][$curLista['id_presidente']]['denominazione'];
+                    $csv.=$separator.AA_Utils::number_format($curComune['risultati']['voti_presidente'][$curLista['id_presidente']]['voti'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curComune['risultati']['voti_presidente'][$curLista['id_presidente']]['percent'],2,",",".");
+                    $csv.=$separator.$curLista['denominazione'];
+                    $csv.=$separator.AA_Utils::number_format($curLista['voti'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curLista['percent'],2,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curComune['risultati']['voti_presidente'][$curLista['id_presidente']]['voti_coalizione'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curComune['risultati']['voti_presidente'][$curLista['id_presidente']]['percent_coalizione'],2,",",".");
+                }
+            }
+        }
+
+        return $csv;
+    }
+
+    //ExportDatiComuniCSV_PreferenzeCircoscrizionali
+    public function ExportDatiComuniCSV_PreferenzeCircoscrizionali()
+    {
+        if(!$this->bValid) 
+        {
+            return "Lista|TOTALE Voti (REGIONE)|TOTALE Percentuale Voti (REGIONE)|Circoscrizione|TOTALE Voti (COALIZIONE)|Totale Percentuale TOTALE Voti (COALIZIONE)|Candidato|Voti";
+        }
+        
+        $csv="Lista|TOTALE Voti (REGIONE)|TOTALE Percentuale Voti (REGIONE)|Circoscrizione|TOTALE Voti (COALIZIONE)|Totale Percentuale TOTALE Voti (COALIZIONE)|Candidato|Voti";
+
+        $pc=$this->GetControlPannel();
+        
+        // make request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $pc['url_feed_risultati']);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+        $output = curl_exec($ch);   
+
+        // convert response
+        $feed=json_decode($output,true);
+
+        // handle error; error output
+        if(curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
+
+            AA_Log::Log(__METHOD__." - feed non trovato o non parsato correttamente (".$pc['url_feed_risultati'].")"." - errore: ".curl_error($ch),100);
+        }
+
+        curl_close($ch);
+        
+        $separator="|";
+        if($feed)
+        {
+            foreach($feed['stats']['circoscrizionale'] as $id_circoscrizione=>$curCircoscrizione)
+            {
+                if(is_array($curCircoscrizione))
+                {
+                    foreach($curCircoscrizione['risultati']['voti_candidato'] as $id_candidato=>$curCandidato)
+                    {
+                        if(is_array($curCandidato))
+                        {
+                            $idLista=$feed['candidati'][$id_candidato]['id_lista'];
+                            $csv.="\n".$curCircoscrizione['risultati']['voti_lista'][$idLista]['denominazione'];
+                            $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['voti'],0,",",'.');
+                            $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['voti_lista'][$idLista]['percent'],2,",",'.');
+                            $csv.=$separator.$feed['candidati'][$id_candidato]['circoscrizione'];
+                            $csv.=$separator.AA_Utils::number_format($curCircoscrizione['risultati']['voti_lista'][$feed['candidati'][$id_candidato]['id_lista']]['voti'],0,",",'.');
+                            $csv.=$separator.AA_Utils::number_format($curCircoscrizione['risultati']['voti_lista'][$feed['candidati'][$id_candidato]['id_lista']]['percent'],2,",",".");
+                            $csv.=$separator.$feed['candidati'][$id_candidato]['nome']." ".$feed['candidati'][$id_candidato]['cognome'];
+                            $csv.=$separator.AA_Utils::number_format($curCandidato['voti'],0,",",".");
+                        }
+                    }
+                }
+            }
+        }
+
+        return $csv;
+    }
+
+    //Export dati CSV circoscrizione
+    public function ExportDatiComuniCSV_Circoscrizionale()
+    {
+        if(!$this->bValid) 
+        {
+            return "Circoscrizione|Sezioni|Sezioni scrutinate|Candidato PRESIDENTE|Voti PRESIDENTE|Percentuale Voti PRESIDENTE|Liste collegate|Voti Liste collegate|Percentuale Voti Liste collegate|TOTALE Voti Liste collegate (COALIZIONE)|Percentuale TOTALE Voti LISTE collegate (COALIZIONE)";
+        }
+        
+        $csv="Circoscrizione|Sezioni|Sezioni scrutinate|Candidato PRESIDENTE|Voti PRESIDENTE|Percentuale Voti PRESIDENTE|Liste collegate|Voti Liste collegate|Percentuale Voti Liste collegate|TOTALE Voti Liste collegate (COALIZIONE)|Percentuale TOTALE Voti LISTE collegate (COALIZIONE)";
+
+        $pc=$this->GetControlPannel();
+        
+        // make request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $pc['url_feed_risultati']);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+        $output = curl_exec($ch);   
+
+        // convert response
+        $feed=json_decode($output,true);
+
+        // handle error; error output
+        if(curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
+
+            AA_Log::Log(__METHOD__." - feed non trovato o non parsato correttamente (".$pc['url_feed_risultati'].")"." - errore: ".curl_error($ch),100);
+        }
+
+        curl_close($ch);
+        
+        $separator="|";
+        if($feed)
+        {
+            foreach($feed['stats']['circoscrizionale'] as $id_circoscrizione=>$curCircoscrizione)
+            {
+                if(is_array($curCircoscrizione))
+                {
+                    foreach($curCircoscrizione['risultati']['voti_lista'] as $id_lista=>$curLista)
+                    {
+                        if(is_array($curLista))
+                        {
+                            $csv.="\n".$curCircoscrizione['denominazione'];
+                            $csv.=$separator.$curCircoscrizione['sezioni'];
+                            $csv.=$separator.$curCircoscrizione['risultati']['sezioni_scrutinate'];
+                            //AA_Log::Log(__METHOD__." - curLista ".print_r($curLista,true),100);
+        
+                            $csv.=$separator.$curCircoscrizione['risultati']['voti_presidente'][$curLista['id_presidente']]['denominazione'];
+                            $csv.=$separator.AA_Utils::number_format($curCircoscrizione['risultati']['voti_presidente'][$curLista['id_presidente']]['voti'],0,",",".");
+                            $csv.=$separator.AA_Utils::number_format($curCircoscrizione['risultati']['voti_presidente'][$curLista['id_presidente']]['percent'],2,",",".");
+                            $csv.=$separator.$curLista['denominazione'];
+                            $csv.=$separator.AA_Utils::number_format($curLista['voti'],0,",",".");
+                            $csv.=$separator.AA_Utils::number_format($curLista['percent'],2,",",".");
+                            $csv.=$separator.AA_Utils::number_format($curCircoscrizione['risultati']['voti_presidente'][$curLista['id_presidente']]['voti_coalizione'],0,",",".");
+                            $csv.=$separator.AA_Utils::number_format($curCircoscrizione['risultati']['voti_presidente'][$curLista['id_presidente']]['percent_coalizione'],2,",",".");
+                        }
+                    }
+                }
+            }
+        }
+
+        return $csv;
+    }
+
+    public function ExportDatiComuniCSV_PreferenzeComunali()
+    {
+        if(!$this->bValid) 
+        {
+            return "Comune|Circoscrizione|Sezioni|Sezioni scrutinate|Lista|TOTALE Voti Lista|TOTALE Percentuale Voti Lista|Candidato|Voti";
+        }
+        
+        $csv="Comune|Circoscrizione|Sezioni|Sezioni scrutinate|Lista|TOTALE Voti Lista|TOTALE Percentuale Voti Lista|Candidato|Voti";
+
+        $pc=$this->GetControlPannel();
+        
+        // make request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $pc['url_feed_risultati']);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+        $output = curl_exec($ch);   
+
+        // convert response
+        $feed=json_decode($output,true);
+
+        // handle error; error output
+        if(curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
+
+            AA_Log::Log(__METHOD__." - feed non trovato o non parsato correttamente (".$pc['url_feed_risultati'].")"." - errore: ".curl_error($ch),100);
+        }
+
+        curl_close($ch);
+        
+        $separator="|";
+        if($feed)
+        {
+            foreach($feed['comuni'] as $id_comune=>$curComune)
+            {
+                if(is_array($curComune))
+                {
+                    foreach($curComune['risultati']['voti_candidato'] as $id_candidato=>$curCandidato)
+                    {
+                        if(is_array($curCandidato))
+                        {
+                            $idLista=$feed['candidati'][$id_candidato]['id_lista'];
+
+                            $csv.="\n".$curComune['denominazione'];
+                            $csv.=$separator.$curComune['circoscrizione'];
+                            $csv.=$separator.$curComune['sezioni'];
+                            $csv.=$separator.$curComune['risultati']['sezioni_scrutinate'];
+                            $csv.=$separator.$curComune['risultati']['voti_lista'][$idLista]['denominazione'];
+                            $csv.=$separator.AA_Utils::number_format($curComune['risultati']['voti_lista'][$idLista]['voti'],0,",",".");
+                            $csv.=$separator.AA_Utils::number_format($curComune['risultati']['voti_lista'][$idLista]['percent'],2,",",".");
+                            $csv.=$separator.$feed['candidati'][$id_candidato]['nome']." ".$feed['candidati'][$id_candidato]['cognome'];
+                            $csv.=$separator.AA_Utils::number_format($curCandidato['voti'],0,",",".");
+                        }
+                    }
+                }
+            }
+        }
+
+        return $csv;
+    }
+
+    public function ExportDatiComuniCSV_DatiVotanti()
+    {
+        if(!$this->bValid) 
+        {
+            return "Comune|Circoscrizione|Sezioni|Sezioni scrutinate|Elettori maschi|Elettori femmine|TOTALE elettori|Votanti maschi|Votanti femmine|TOTALE votanti|Elettori maschi (REGIONE)|Elettori femmine (REGIONE)|TOTALE elettori (REGIONE)|Votanti maschi (REGIONE)|Votanti femmine (REGIONE)|TOTALE votanti (REGIONE)|Elettori maschi (CIRCOSCRIZIONE)|Elettori femmine (CIRCOSCRIZIONE)|TOTALE elettori (CIRCOSCRIZIONE)|Votanti maschi (CIRCOSCRIZIONE)|Votanti femmine (CIRCOSCRIZIONE)|TOTALE votanti (CIRCOSCRIZIONE)";
+        }
+        
+        $csv="Comune|Circoscrizione|Sezioni|Sezioni scrutinate|Elettori maschi|Elettori femmine|TOTALE elettori|Votanti maschi|Votanti femmine|TOTALE votanti|Elettori maschi (REGIONE)|Elettori femmine (REGIONE)|TOTALE elettori (REGIONE)|Votanti maschi (REGIONE)|Votanti femmine (REGIONE)|TOTALE votanti (REGIONE)|Elettori maschi (CIRCOSCRIZIONE)|Elettori femmine (CIRCOSCRIZIONE)|TOTALE elettori (CIRCOSCRIZIONE)|Votanti maschi (CIRCOSCRIZIONE)|Votanti femmine (CIRCOSCRIZIONE)|TOTALE votanti (CIRCOSCRIZIONE)";
+
+        $pc=$this->GetControlPannel();
+        
+        // make request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $pc['url_feed_risultati']);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
+        $output = curl_exec($ch);   
+
+        // convert response
+        $feed=json_decode($output,true);
+
+        // handle error; error output
+        if(curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) {
+
+            AA_Log::Log(__METHOD__." - feed non trovato o non parsato correttamente (".$pc['url_feed_risultati'].")"." - errore: ".curl_error($ch),100);
+        }
+
+        curl_close($ch);
+        
+        $separator="|";
+        if($feed)
+        {
+            foreach($feed['comuni'] as $id_comune=>$curComune)
+            {
+                if(is_array($curComune))
+                {
+                    $idCircoscrizione=$curComune['id_circoscrizione'];
+                    $csv.="\n".$curComune['denominazione'];
+                    $csv.=$separator.$curComune['circoscrizione'];
+                    $csv.=$separator.$curComune['sezioni'];
+                    $csv.=$separator.$curComune['risultati']['sezioni_scrutinate'];
+                    $csv.=$separator.AA_Utils::number_format($curComune['elettori_m'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curComune['elettori_f'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curComune['elettori_tot'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curComune['risultati']['votanti_m'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curComune['risultati']['votanti_f'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($curComune['risultati']['votanti_tot'],0,",",".");
+
+                    //regione
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['elettori_m'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['elettori_f'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['elettori_tot'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['votanti_m'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['votanti_f'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['regionale']['risultati']['votanti_tot'],0,",",".");
+
+                    //circoscrizione
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_m'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_f'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['circoscrizionale'][$idCircoscrizione]['elettori_tot'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['votanti_m'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['votanti_f'],0,",",".");
+                    $csv.=$separator.AA_Utils::number_format($feed['stats']['circoscrizionale'][$idCircoscrizione]['risultati']['votanti_tot'],0,",",".");
+                }
+            }
+        }
+
+        return $csv;
+    }
+
     public function ExportCandidatiCSV($circoscrizione=null)
     {
         if(!$this->bValid) 
@@ -5610,6 +5975,13 @@ Class AA_SierModule extends AA_GenericModule
             $taskManager->RegisterTask("GetSierOCEmailsCSV");
             $taskManager->RegisterTask("ExportCorpoElettoraleComuniCSV");
             $taskManager->RegisterTask("ExportDatiComuniCSV");
+            $taskManager->RegisterTask("ExportDatiComuniCSV_Regionale");
+            $taskManager->RegisterTask("ExportDatiComuniCSV_Circoscrizionale");
+            $taskManager->RegisterTask("ExportDatiComuniCSV_Comunale");
+            $taskManager->RegisterTask("ExportDatiComuniCSV_PreferenzeCircoscrizionali");
+            $taskManager->RegisterTask("ExportDatiComuniCSV_PreferenzeComunali");
+            $taskManager->RegisterTask("ExportDatiComuniCSV_DatiVotanti");
+
             $taskManager->RegisterTask("GetSierConfirmResetComunicazioniComuniDlg");
             $taskManager->RegisterTask("ResetComunicazioniComuni");
             $taskManager->RegisterTask("ResetAffluenzaComuni");
@@ -11903,10 +12275,10 @@ Class AA_SierModule extends AA_GenericModule
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-file-table",
-            "label"=>"Risultati Regionali",
+            "label"=>"Risultati riassuntivi",
             "align"=>"right",
             "width"=>350,
-            "tooltip"=>"Risultati Regionali",
+            "tooltip"=>"Risultati riassuntivi Regionali",
             "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_Regionale\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $wnd->AddView($btn);
@@ -11917,10 +12289,10 @@ Class AA_SierModule extends AA_GenericModule
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-file-table",
-            "label"=>"Risultati Circoscrizionali",
+            "label"=>"Risultati per Circoscrizione",
             "align"=>"right",
             "width"=>350,
-            "tooltip"=>"Risultati circoscrizionali",
+            "tooltip"=>"Risultati per Circoscrizione",
             "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_Circoscrizionale\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $wnd->AddView($btn);
@@ -11931,10 +12303,10 @@ Class AA_SierModule extends AA_GenericModule
             "view"=>"button",
             "type"=>"icon",
             "icon"=>"mdi mdi-file-table",
-            "label"=>"Risultati Comunali",
+            "label"=>"Risultati per Comune",
             "align"=>"right",
             "width"=>350,
-            "tooltip"=>"Risultati comunali",
+            "tooltip"=>"Risultati per Comune",
             "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_Comunale\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $wnd->AddView($btn);
@@ -11948,7 +12320,7 @@ Class AA_SierModule extends AA_GenericModule
             "label"=>"Preferenze per circoscrizione",
             "align"=>"right",
             "width"=>350,
-            "tooltip"=>"Preferenze ",
+            "tooltip"=>"Preferenze per circoscrizione",
             "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_PreferenzeCircoscrizionali\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $wnd->AddView($btn);
@@ -11977,7 +12349,7 @@ Class AA_SierModule extends AA_GenericModule
             "align"=>"right",
             "width"=>350,
             "tooltip"=>"Preferenze per comune",
-            "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_Votanti\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
+            "click"=>"AA_MainApp.utils.callHandler('ExportDatiServizioElettoraleCSV', {task:\"ExportDatiComuniCSV_DatiVotanti\",params: {id: ".$object->GetId()."}, module: \"" . $this->id . "\"},'".$this->id."')"
         ));
         $wnd->AddView($btn);
         $wnd->AddView(new AA_JSON_Template_Generic());
@@ -19988,6 +20360,99 @@ Class AA_SierModule extends AA_GenericModule
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSierExportDatiServizioElettoraleDlg($object),true);
         return true;
+    }
+
+    //
+    //Template_GetSierExportDatiServizioElettoraleDlg
+    public function Task_ExportDatiComuniCSV_Regionale($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            die("Oggetto non definito");
+        }
+
+        header('Content-Type: text/csv');
+        die($object->ExportDatiComuniCSV_Regionale());
+    }
+
+    public function Task_ExportDatiComuniCSV_Circoscrizionale($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            die("Oggetto non definito");
+        }
+
+        header('Content-Type: text/csv');
+        die($object->ExportDatiComuniCSV_Circoscrizionale());
+    }
+
+    
+    public function Task_ExportDatiComuniCSV_PreferenzeCircoscrizionali($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            die("Oggetto non definito");
+        }
+
+        header('Content-Type: text/csv');
+        die($object->ExportDatiComuniCSV_PreferenzeCircoscrizionali());
+    }
+
+    public function Task_ExportDatiComuniCSV_PreferenzeComunali($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            die("Oggetto non definito");
+        }
+
+        header('Content-Type: text/csv');
+        die($object->ExportDatiComuniCSV_PreferenzeComunali());
+    }
+
+    public function Task_ExportDatiComuniCSV_DatiVotanti($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            die("Oggetto non definito");
+        }
+
+        header('Content-Type: text/csv');
+        die($object->ExportDatiComuniCSV_DatiVotanti());
+    }
+
+    public function Task_ExportDatiComuniCSV_Comunale($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        $object= new AA_Sier($_REQUEST['id'],$this->oUser);
+        
+        if(!$object->isValid())
+        {
+            die("Oggetto non definito");
+        }
+
+        header('Content-Type: text/csv');
+        die($object->ExportDatiComuniCSV_Comunale());
     }
 
     //Task corpo elettorale

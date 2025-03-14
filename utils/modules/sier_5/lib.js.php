@@ -334,6 +334,19 @@ var AA_SierWebAppParams = new AA_SierWebAppGenericParams();
 };
 //---------------------------------------------------------------------------------------------------------------------------
 
+//Export dati in csv per servizio elettorale
+<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ExportDatiServizioElettoraleCSV = function() {
+    try 
+    {
+        console.log("ExportDatiServizioElettoraleCSV",arguments);
+        let task=arguments[0];
+        window.open(<?php echo AA_SierModule::AA_ID_MODULE?>.taskManager+"?task="+arguments[0].task+"&id="+arguments[0].params.id);  
+    } catch (msg) {
+        console.error("<?php echo AA_SierModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].ExportDatiServizioElettoraleCSV", msg);
+    }
+};
+//---------------------------------------------------------------------------------------------------------------------------
+
 <?php
 //parte operatori comunali
 if(isset($_SESSION['oc_ui_enable']) && $_SESSION['oc_ui_enable']==1)
