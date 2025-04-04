@@ -1319,6 +1319,13 @@ Class AA_HomeModule extends AA_GenericModule
         }
 
         $struct=$this->oUser->GetStruct();
+        if(empty($_REQUEST['id_assessorato']) && empty($_REQUEST['id_direzione']) && (!$this->oUser->IsSuperUser() || $struct->GetAssessorato(true) != 0))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' aggiungere strutture di primo livello.");
+            return false; 
+        }
+
         if($_REQUEST['id_assessorato'] != $struct->GetAssessorato(true) && $struct->GetAssessorato(true) !=0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -1398,14 +1405,21 @@ Class AA_HomeModule extends AA_GenericModule
         }
 
         $struct=$this->oUser->GetStruct();
-        if($_REQUEST['id_assessorato'] != $struct->GetAssessorato(true) && $struct->GetAssessorato(true) != 0)
+        if(empty($_REQUEST['id_assessorato']) && empty($_REQUEST['id_direzione']) && $struct->GetAssessorato(true) != 0 && $struct->GetAssessorato(true) != $_REQUEST['id'])
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' modificare la struttura.");
+            return false; 
+        }
+
+        if(isset($_REQUEST['id_assessorato']) && $_REQUEST['id_assessorato'] != $struct->GetAssessorato(true) && $struct->GetAssessorato(true) != 0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non puo' modificare la struttura (0).");
             return false; 
         }
 
-        if($_REQUEST['id_direzione'] != $struct->GetDirezione(true) && $struct->GetDirezione(true) !=0)
+        if(isset($_REQUEST['id_direzione']) && $_REQUEST['id_direzione'] != $struct->GetDirezione(true) && $struct->GetDirezione(true) !=0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non puo' modificare la struttura (1).");
@@ -1435,7 +1449,7 @@ Class AA_HomeModule extends AA_GenericModule
 
         $newStruct=null;
 
-        if($_REQUEST['id_direzione'] !=0)
+        if($_REQUEST['id_direzione'] != 0)
         {
             $newStruct=new AA_Servizio($_REQUEST);
         }
@@ -1485,24 +1499,31 @@ Class AA_HomeModule extends AA_GenericModule
         }
 
         $struct=$this->oUser->GetStruct();
-        if($_REQUEST['id_assessorato'] != $struct->GetAssessorato(true) && $struct->GetAssessorato(true) !=0)
+        if(empty($_REQUEST['id_assessorato']) && empty($_REQUEST['id_direzione']) && (!$this->oUser->IsSuperUser() || $struct->GetAssessorato(true) != 0))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non puo' modificare la struttura (0).");
+            $task->SetError("L'utente corrente non puo' rimuovere la struttura.");
             return false; 
         }
 
-        if($_REQUEST['id_direzione'] != $struct->GetDirezione(true) && $struct->GetDirezione(true) !=0)
+        if(!empty($_REQUEST['id_assessorato']) && $_REQUEST['id_assessorato'] != $struct->GetAssessorato(true) && $struct->GetAssessorato(true) !=0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non puo' modificare la struttura (1).");
+            $task->SetError("L'utente corrente non puo' rimuovere la struttura (0).");
+            return false; 
+        }
+
+        if(!empty($_REQUEST['id_direzione']) && $_REQUEST['id_direzione'] != $struct->GetDirezione(true) && $struct->GetDirezione(true) !=0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non puo' rimuovere la struttura (1).");
             return false; 
         }
 
         if($struct->GetServizio(true) !=0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non puo' modificare la struttura (3).");
+            $task->SetError("L'utente corrente non puo' rimuovere la struttura (3).");
             return false; 
         }
 
@@ -2388,6 +2409,7 @@ Class AA_HomeModule extends AA_GenericModule
             $form_data['id']=$risorsa->GetProp("id");
             $form_data['categorie']=$risorsa->GetProp("categorie");
             $form_data['url_name']=$risorsa->GetProp("url_name");
+
             if(!empty($form_data['url_name']))
             {
                 $form_data['condividi']=1;
