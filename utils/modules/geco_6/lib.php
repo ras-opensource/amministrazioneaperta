@@ -5300,10 +5300,10 @@ Class AA_GecoModule extends AA_GenericModule
     }
     
     //Funzione di esportazione in pdf (da specializzare)
-    public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.26-27 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="")
+    public function Template_PdfExport($ids=array(),$toBrowser=true,$title="Pubblicazione ai sensi dell'art.26-27 del d.lgs. 33/2013",$rowsForPage=20,$index=false,$subTitle="",$layoutTemplate="AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE")
     {
         //return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_GecoPdfExport", $rowsForPage, $index,$subTitle);
-        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.26 e 27 del d.lgs. 33/2013","Template_GecoPdfExport", 12, false,"","AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE",99,"Template_PublicReportPageHeaderPdf");
+        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.26 e 27 del d.lgs. 33/2013","Template_GecoPdfExport", 12, false,"",$layoutTemplate,99,"Template_PublicReportPageHeaderPdf");
     }
 
     //funzione di aiuto
