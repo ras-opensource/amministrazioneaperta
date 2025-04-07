@@ -4779,9 +4779,9 @@ Class AA_GecopModule extends AA_GenericModule
     }
     
     //Funzione di esportazione in pdf (da specializzare)
-    public function Template_PdfExport($ids=array(),$layoutTemplate="AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE")
+    public function Template_PdfExport($ids=array(),$subTitle="",$layoutTemplate="AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE")
     {
-        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.37 del d.lgs. 33/2013","Template_GecopPdfExport", 12, false,"",$layoutTemplate,99,"Template_PublicReportPageHeaderPdf");
+        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.37 del d.lgs. 33/2013","Template_GecopPdfExport", 12, false,$subTitle,$layoutTemplate,99,"Template_PublicReportPageHeaderPdf");
     }
 
     //header public report pdf export
