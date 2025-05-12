@@ -2873,6 +2873,7 @@ Class AA_HomeModule extends AA_GenericModule
         include_once "pdf_lib.php";
 
         $count = 1;
+        $index=false;
 
         $rowsForPage=1;
         $vociIndice=array(
@@ -3047,7 +3048,7 @@ Class AA_HomeModule extends AA_GenericModule
         if($end<0 || $end<=$start) $end=$start+100;
         if($count<=0) $count=1;
         
-        if($count>($end-$start)/2) $count=1;
+        if($count>($end-1)) $count=$end;
         
         $val="<ul>Si attesta che:";
         $val.="<li>Ogni numero puo' essere estratto una sola volta.</li>";
@@ -3092,11 +3093,27 @@ Class AA_HomeModule extends AA_GenericModule
             $rngExtract[]=$num;
         }
 
-        $content="<div style='display:flex;justify-content:space-around'>";
+        $content="<div style='display:flex;flex-direction:column; align-items: center; justify-content:space-around; width:100%; height:99%'>";
+        $rowItemsCount=0;
+        //10 numeri per riga
+        $maxRowItems=10;
+        $curItemsCount=0;
+        $itemBoxWidth=intVal(90/$maxRowItems);
         foreach($rngExtract as $curVal)
         {
-            if($content=="") $content.="<span>".$curVal."</span>";
-            else $content.="<span>".$curVal."</span>";
+            if($rowItemsCount==0) 
+            {
+                $content.="<div style='display:flex; align-items: center; justify-content: space-around; width: 98%'>";
+            }
+
+            $content.="<div style='width: ".$itemBoxWidth."; margin-top: 1em; margin-bottom; 1em;'>".$curVal."</div>";
+            $curItemsCount++;
+            $rowItemsCount++;
+            if($rowItemsCount==$maxRowItems || $curItemsCount==$count) 
+            {
+                $content.="</div>";
+                $rowItemsCount=0;
+            }
         }
         $content.="</div>";
         $template->SetCellText($curRow,0,$content,"center");
