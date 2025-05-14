@@ -44,6 +44,9 @@ Class AA_HomeModule extends AA_GenericModule
     const AA_UI_TABLE_IMPORT_UTENTI_LEGACY="DataTable";
 
     const AA_UI_SECTION_GESTUTENTI_ICON="mdi mdi-account-edit";
+
+    const AA_UI_WND_CORSI="AA_CorsiFormazioneWnd";
+    const AA_UI_LAYOUT_CORSI="AA_CorsiFormazioneLayout";
     //------------------------------
 
     //------- Sezione gestione strutture -------
@@ -126,6 +129,9 @@ Class AA_HomeModule extends AA_GenericModule
         $taskManager->RegisterTask("GetHomeRisorseTrashDlg");
         $taskManager->RegisterTask("HomeRisorseDelete");
 
+        //corsi di formazione
+        $taskManager->RegisterTask("GetHomeCorsiViewDlg");
+
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
             $taskManager->RegisterTask("GetHomeUtentiLegacyImportDlg");
@@ -206,6 +212,10 @@ Class AA_HomeModule extends AA_GenericModule
             $this->SetSectionItemTemplate(static::AA_ID_SECTION_GESTRISORSE,"TemplateSection_GestRisorse");
         }
         #-------------------------------------------
+
+        #---------------------- Corsi di formazione --------------------
+        $this->AddObjectTemplate(static::AA_UI_WND_CORSI."_".static::AA_UI_LAYOUT_CORSI,"Template_GetHomeCorsiViewLayout");
+        #---------------------------------------------------------------
     }
 
     //Task filter dlg
@@ -471,6 +481,14 @@ Class AA_HomeModule extends AA_GenericModule
     {
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetCKeditor5Dlg(),true);
+        return true;
+    }
+
+    //Task corsi dlg
+    public function Task_GetHomeCorsiViewDlg($task)
+    {
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetHomeCorsiViewDlg(),true);
         return true;
     }
 
@@ -1781,6 +1799,7 @@ Class AA_HomeModule extends AA_GenericModule
             $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetServerStatusDlg', taskManager: AA_MainApp.taskManager},'".$this->id."');\">Stato del server</a></div>";
             $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetCKeditor5Dlg'},'".$this->id."');\">Test dialogo CKeditor5</a></div>";
             $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetGalleryDlg',taskManager: AA_MainApp.taskManager},'".$this->id."');\">Galleria immagini</a></div>";
+            $template.="<div><a href=\"#\" onclick=\"AA_MainApp.utils.callHandler('dlg',{task: 'GetHomeCorsiViewDlg'},'".$this->id."');\">Gestione corsi di formazione del personale</a></div>";
         }
         $template.="</div>";
 
@@ -2829,6 +2848,79 @@ Class AA_HomeModule extends AA_GenericModule
         $dlg->EnableApplyHotkey();
 
         return $dlg->GetObject();
+    }
+
+    //Template dlg corsi RAS
+    public function Template_GetHomeCorsiViewDlg()
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_WND_CORSI;
+
+        $wnd = new AA_GenericWindowTemplate($id, "Gestione corsi di formazione dipendenti RAS", $this->id);
+
+        $layout=$this->Template_GetHomeCorsiViewLayout($id);
+        $wnd->AddView($layout);
+        return $wnd;
+    }
+
+    //Template layout corsi RAS
+    public function Template_GetHomeCorsiViewLayout($id="",$idCorso=0)
+    {
+        $id.="_".static::AA_UI_LAYOUT_CORSI;
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $data=array();
+        $corsi= AA_CorsiFormazione::GetCorsi($idCorso=0);
+
+        if(sizeof($corsi) > 0)
+        {
+            $columns=array(
+                array("id"=>"matricola","header"=>array("<div style='text-align: center'>Matricola</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>array("text-align"=>"center"))
+            );
+                
+            $keys=array_keys(current($corsi)->GetDati());
+            foreach($keys as $curKey)
+            {
+                if($curKey !="id" && $curkey != "id_corso" && $curkey != "matricola")
+                {
+                    $columns[]=array("id"=>$curkey,"header"=>array("<div style='text-align: center'>".$curkey."</div>",array("content"=>"textFilter")),"width"=>150, "css"=>array("text-align"=>"center"),"sort"=>"text");
+                }
+            }
+            array("id"=>"ops","header"=>"<div style='text-align: center'>Operazioni</div>","width"=>120, "css"=>array("text-align"=>"center"));
+
+            foreach($corsi as $curCorso)
+            {
+                {
+                    $dati=$curCorso->GetDati();
+                    $modify_op='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeCorsiModifyDlg",postParams: {id: '.$curCorso->GetId().',matricola:'.$curCorso->GetProp('matricola').'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
+                    $trash_op='AA_MainApp.utils.callHandler("dlg", {task:"GetHomeCorsiTrashDlg",postParams: {id: '.$curCorso->GetId().',matricola:'.$curCorso->GetProp('matricola').'",refresh: 1,refresh_obj_id:"'.$id.'"}},"'.$this->id.'");';
+                    $ops="<div class='AA_DataTable_Ops'><span>&nbsp;</span><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify_op."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina operatore' onClick='".$trash_op."'><span class='mdi mdi-trash-can'></span></a><span>&nbsp;</span></div>";
+                }
+                
+                $data_row=array("id"=>$curCorso->GetProp('id'),"matricola"=>$curCorso->GetProp('matricola'),"ops"=>$ops);
+                foreach($keys as $curVal)
+                {
+                    $data_row[$curVal]=$dati[$curVal];
+                }
+                $data[]=$data_row;
+            }
+
+            $table=new AA_JSON_Template_Generic($id."_View", array(
+                "view"=>"datatable",
+                "scrollX"=>false,
+                "select"=>false,
+                "css"=>"AA_Header_DataTable",
+                "hover"=>"AA_DataTable_Row_Hover",
+                "columns"=>$columns,
+                "data"=>$data
+            ));
+        }
+        else
+        {
+            $table=new AA_JSON_Template_Template($id."_vuoto",array("type"=>"clean","template"=>"<div style='display: flex; align-items: center; justify-content: center; width:100%;height:100%'><span>Non sono presenti informazioni.</span></div>"));
+        }
+
+        $layout->AddRow($table);
+        return $layout;
     }
 
     //Template rng dlg
@@ -3980,3 +4072,31 @@ Class AA_HomeModule extends AA_GenericModule
     }
 }
 #----------------------------------------
+
+class AA_CorsiFormazione extends AA_GenericParsableDbObject
+{
+    static protected $dbDataTable="aa_corsi_formazione";
+
+    public function __construct($params = null)
+    {
+        $this->aProps['id_corso']="0";
+        $this->aProps['matricola']="000000";
+        $this->aProps['dati']="";
+
+        parent::__construct($params);
+    }
+
+    public function GetDati()
+    {
+        if($this->aProps['dati']=="") return array();
+
+        $dati=json_decode($this->aProps['dati'],true);
+        if(!$dati) return array();
+
+        return $dati;
+    }
+    static public function GetCorsi($code='')
+    {
+        return array();
+    }
+}
