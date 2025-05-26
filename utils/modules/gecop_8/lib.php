@@ -673,6 +673,12 @@ Class AA_GecopModule extends AA_GenericModule
             $params['where'][]=" AND (".AA_Gecop::AA_DBTABLE_DATA.".aggiudicatario like '%\"nominativo\":\"%".addslashes($params['aggiudicatario'])."%\"%' OR ".AA_Gecop::AA_DBTABLE_DATA.".aggiudicatario like '%\"cf\":\"%".addslashes($params['aggiudicatario'])."%\"%')";
         }
 
+        //ids
+        if(isset($params['ids']) &&  $params['ids']!="")
+        {
+            $params['where'][]=" AND ".AA_Gecop::GetObjectsDbDataTable().".id in (".addslashes($params['ids']).")";
+        }
+    
         return $params;
     }
 
@@ -723,6 +729,12 @@ Class AA_GecopModule extends AA_GenericModule
             $params['where'][]=" AND (".AA_Gecop::AA_DBTABLE_DATA.".aggiudicatario like '{\"nominativo\":\"%".addslashes($params['aggiudicatario'])."%\"%' OR ".AA_Gecop::AA_DBTABLE_DATA.".aggiudicatario like '%\"cf\":\"%".addslashes($params['aggiudicatario'])."%\"%')";
         }
 
+        //ids
+        if(isset($params['ids']) &&  $params['ids']!="")
+        {
+            $params['where'][]=" AND ".AA_Gecop::GetObjectsDbDataTable().".id in (".addslashes($params['ids']).")";
+        }
+    
         return $params;
     }
 
@@ -4681,7 +4693,7 @@ Class AA_GecopModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("componente_commissione"=>$params['componente_commissione'],"aggiudicatario"=>$params['aggiudicatario'],"Cig"=>$params['Cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
+        $formData=array("ids"=>$params['ids'],"componente_commissione"=>$params['componente_commissione'],"aggiudicatario"=>$params['aggiudicatario'],"Cig"=>$params['Cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4693,9 +4705,10 @@ Class AA_GecopModule extends AA_GenericModule
         if($params['Cig']=="") $formData['Cig']="";
         if($params['componente_commissione']=="") $formData['componente_commissione']="";
         if($params['aggiudicatario']=="") $formData['aggiudicatario']="";
+        if($params['ids']=="") $formData['ids']="";
     
         //Valori reset
-        $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
+        $resetData=array("ids"=>"","comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -4722,6 +4735,9 @@ Class AA_GecopModule extends AA_GenericModule
         //aggiudicatario
         $dlg->AddTextField("aggiudicatario","Aggiudicatario",array("bottomLabel"=>"*Filtra in base al nominativo/cf dell'aggiudicatario.", "placeholder"=>"..."));
 
+        //ids
+        $dlg->AddTextField("ids","Identificativi",array("bottomLabel"=>"*Filtra in base a uno o piu' identificativi (separati da virgola es. 101,105,205).", "placeholder"=>"..."));
+
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();
@@ -4731,7 +4747,7 @@ Class AA_GecopModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("componente_commissione"=>$params['componente_commissione'],"aggiudicatario"=>$params['aggiudicatario'],"Cig"=>$params['Cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
+        $formData=array("ids"=>$params['ids'],"componente_commissione"=>$params['componente_commissione'],"aggiudicatario"=>$params['aggiudicatario'],"Cig"=>$params['Cig'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -4743,10 +4759,10 @@ Class AA_GecopModule extends AA_GenericModule
         if($params['Cig']=="") $formData['Cig']="";
         if($params['componente_commissione']=="") $formData['componente_commissione']="";
         if($params['aggiudicatario']=="") $formData['aggiudicatario']="";
-
+        if($params['ids']=="") $formData['ids']="";
 
         //Valori reset
-        $resetData=array("comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
+        $resetData=array("ids"=>"","comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -4773,6 +4789,9 @@ Class AA_GecopModule extends AA_GenericModule
         //aggiudicatario
         $dlg->AddTextField("aggiudicatario","Aggiudicatario",array("bottomLabel"=>"*Filtra in base al nominativo/cf dell'aggiudicatario.", "placeholder"=>"..."));
  
+        //ids
+        $dlg->AddTextField("ids","Identificativi",array("bottomLabel"=>"*Filtra in base a uno o piu' identificativi (separati da virgola es. 101,105,205).", "placeholder"=>"..."));
+
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();

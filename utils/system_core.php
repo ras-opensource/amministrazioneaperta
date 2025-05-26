@@ -6240,6 +6240,10 @@ class AA_Object_V2
 {
     //tabella oggetti
     static protected $AA_DBTABLE_OBJECTS = "aa_objects";
+    public static function GetObjectsDbDataTable()
+    {
+        return static::$AA_DBTABLE_OBJECTS;
+    }
 
     //identificativo
     protected $nId = 0;

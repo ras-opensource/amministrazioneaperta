@@ -980,6 +980,12 @@ Class AA_GecoModule extends AA_GenericModule
             $params['where'][]=" AND ".$query;
         }
 
+        //ids
+        if(isset($params['ids']) &&  $params['ids']!="")
+        {
+            $params['where'][]=" AND ".AA_Geco::GetObjectsDbDataTable().".id in (".addslashes($params['ids']).")";
+        }
+    
         return $params;
     }
 
@@ -1058,6 +1064,12 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $query=AA_Geco::AA_DBTABLE_DATA.".modalita like '{\"tipo\":". addslashes($params['Modalita']).",%'";
             $params['where'][]=" AND ".$query;
+        }
+
+        //ids
+        if(isset($params['ids']) &&  $params['ids']!="")
+        {
+            $params['where'][]=" AND ".AA_Geco::GetObjectsDbDataTable().".id in (".addslashes($params['ids']).")";
         }
 
         return $params;
@@ -5175,7 +5187,7 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplatePubblicateFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"revocate"=>$params['revocate'],"Responsabile"=>$params['Responsabile'],"Beneficiario"=>$params['Beneficiario'],"Anno"=>$params['Anno'],"Modalita"=>$params['Modalita']);
+        $formData=array("ids"=>$params['ids'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"revocate"=>$params['revocate'],"Responsabile"=>$params['Responsabile'],"Beneficiario"=>$params['Beneficiario'],"Anno"=>$params['Anno'],"Modalita"=>$params['Modalita']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -5188,9 +5200,10 @@ Class AA_GecoModule extends AA_GenericModule
         if($params['Beneficiario']=="") $formData['Beneficiario']="";
         if($params['Anno']=="") $formData['Anno']=0;
         if($params['Modalita']=="") $formData['Modalita']=0;
+        if($params['ids']=="") $formData['ids']="";
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","revocate"=>0,"Responsabile"=>"", "Beneficiario"=>"","Anno"=>0,"Modalita"=>0);
+        $resetData=array("ids"=>"","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","revocate"=>0,"Responsabile"=>"", "Beneficiario"=>"","Anno"=>0,"Modalita"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -5230,6 +5243,9 @@ Class AA_GecoModule extends AA_GenericModule
         //Responsabile
         $dlg->AddTextField("Responsabile","Responsabile",array("bottomLabel"=>"*Filtra in base al nominativo del responsabile del procedimento.", "placeholder"=>"..."));
         
+        //ids
+        $dlg->AddTextField("ids","Identificativi",array("bottomLabel"=>"*Filtra in base a uno o piu' identificativi (separati da virgola es. 101,105,205).", "placeholder"=>"..."));
+
         $dlg->SetApplyButtonName("Filtra");
 
         return $dlg->GetObject();
@@ -5239,7 +5255,7 @@ Class AA_GecoModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Beneficiario"=>$params['Beneficiario'],"Responsabile"=>$params['Responsabile'],"Anno"=>$params['Anno'],"Modalita"=>$params['Modalita']);
+        $formData=array("ids"=>$params['ids'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate'],"Beneficiario"=>$params['Beneficiario'],"Responsabile"=>$params['Responsabile'],"Anno"=>$params['Anno'],"Modalita"=>$params['Modalita']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -5252,9 +5268,10 @@ Class AA_GecoModule extends AA_GenericModule
         if($params['Beneficiario']=="") $formData['Beneficiario']="";
         if($params['Anno']=="") $formData['Anno']=0;
         if($params['Modalita']=="") $formData['Modalita']=0;
+        if($params['ids']=="") $formData['ids']="";
 
         //Valori reset
-        $resetData=array("id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"Responsabile"=>"","Beneficiario"=>"","Anno"=>0,"Modalita"=>0);
+        $resetData=array("ids"=>"","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"Responsabile"=>"","Beneficiario"=>"","Anno"=>0,"Modalita"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
@@ -5293,6 +5310,9 @@ Class AA_GecoModule extends AA_GenericModule
 
         //Responsabile
         $dlg->AddTextField("Responsabile","Responsabile",array("bottomLabel"=>"*Filtra in base al nominativo del responsabile del procedimento.", "placeholder"=>"..."));
+
+        //ids
+        $dlg->AddTextField("ids","Identificativi",array("bottomLabel"=>"*Filtra in base a uno o piu' identificativi (separati da virgola es. 101,105,205).", "placeholder"=>"..."));
 
         $dlg->SetApplyButtonName("Filtra");
 
