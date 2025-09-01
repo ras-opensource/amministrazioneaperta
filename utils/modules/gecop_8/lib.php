@@ -13,7 +13,7 @@ Class AA_Gecop_Const extends AA_Const
 {
     const AA_USER_FLAG_GECOP="gecop";
 
-    const AA_USER_FLAG_GECOP_RO="gescop_ro";
+    const AA_USER_FLAG_GECOP_RO="gecop_ro";
 
     const AA_DBTABLE_CODICI_ISTAT="aa_patrimonio_codici_istat";
 
