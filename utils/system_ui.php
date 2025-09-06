@@ -1899,6 +1899,27 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         $this->curRow->AddCol(new AA_JSON_Template_Search($this->id . "_Field_Struct_Search", $fieldParams));
     }
 
+    //aggiungi un campo di ricerca personalizzato
+    public function AddSearchField($dlgParams=array(), $fieldParams = array(), $newRow = true)
+    {
+        $onSearchScript = "try{ if($$('" . $this->form->GetId() . "')){AA_MainApp.curModule.dlg(" . json_encode($dlgParams) . ");}}catch(msg){console.error(msg)}";
+
+        if ($newRow || !($this->curRow instanceof AA_JSON_Template_Layout)) {
+            $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_" . uniqid(time()));
+            $this->layout->AddRow($this->curRow);
+        }
+
+        if (!isset($fieldParams['name']) || $fieldParams['name'] == "")
+            $fieldParams['name'] = "search_desc";
+        if (!isset($fieldParams['label']) || $fieldParams['label'] == "")
+            $fieldParams['label'] = "Cerca";
+        if (!isset($fieldParams['readonly']) || $fieldParams['readonly'] == "")
+            $fieldParams['readonly'] = true;
+        if (!isset($fieldParams['click']) || $fieldParams['click'] == "")
+            $fieldParams['click'] = $onSearchScript;
+
+        $this->curRow->AddCol(new AA_JSON_Template_Search($this->id . "_Field_Search", $fieldParams));
+    }
     //Aggiungi un campo per l'upload di file
     public function AddFileUploadField($name = "AA_FileUploader", $label = "Sfoglia...", $props = array(), $newRow = true)
     {
