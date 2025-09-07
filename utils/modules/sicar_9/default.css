@@ -1,0 +1,45 @@
+.scrollTextFromLeft {
+    /* animation properties */
+    -moz-animation: ScrollFromLeftAnimation 15s linear infinite;
+    -webkit-animation: ScrollFromLeftAnimation 15s linear infinite;
+    animation: ScrollFromLeftAnimation 15s linear infinite;
+  }
+  
+  /* for Firefox */
+  @-moz-keyframes ScrollFromLeftAnimation {
+    from { -moz-transform: translateX(380px); }
+    to { -moz-transform: translateX(-100%); }
+  }
+  
+  /* for Chrome */
+  @-webkit-keyframes ScrollFromLeftAnimation {
+    from { -webkit-transform: translateX(380px); }
+    to { -webkit-transform: translateX(-100%); }
+  }
+  
+  @keyframes ScrollFromLeftAnimation {
+    from {
+      -moz-transform: translateX(380px);
+      -webkit-transform: translateX(380px);
+      transform: translateX(380px);
+    }
+    to {
+      -moz-transform: translateX(-100%);
+      -webkit-transform: translateX(-100%);
+      transform: translateX(-100%);
+    }
+}
+
+.ImmobiliTable_left .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: start;
+}
+
+.ImmobiliTable .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+}

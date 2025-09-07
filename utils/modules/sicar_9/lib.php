@@ -809,6 +809,7 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSicarComuni");
         $taskManager->RegisterTask("ExportSicarCsv");
         $taskManager->RegisterTask("GetSicarListaCodiciIstat");
+        $taskManager->RegisterTask("GetSicarSearchImmobiliDlg");
 
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
@@ -1164,8 +1165,8 @@ class AA_SicarModule extends AA_GenericModule
         
         $wnd=new AA_GenericWindowTemplate($id, "Ricerca immobili", $this->id);
         
-        $wnd->SetWidth($_REQUEST['vw']);
-        $wnd->SetHeight($_REQUEST['vh']);
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(640);
         
         $wnd->AddView($this->Template_DatatableSearchImmobili($id));
         
@@ -1175,6 +1176,7 @@ class AA_SicarModule extends AA_GenericModule
     //Template data table SearchImmobili
     public function Template_DatatableSearchImmobili($id="")
     {
+        if($id=="") $id=static::AA_UI_WND_SEARCH_IMMOBILI;
         $id.="_".static::AA_UI_TABLE_SEARCH_IMMOBILI;
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
         
@@ -1190,7 +1192,7 @@ class AA_SicarModule extends AA_GenericModule
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         
         //filtro
-        $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
+        $modify_btn=new AA_JSON_Template_Generic($id."_".uniqid(),array(
             "view"=>"button",
              "type"=>"icon",
              "icon"=>"mdi mdi-filter-cog",
@@ -1199,73 +1201,26 @@ class AA_SicarModule extends AA_GenericModule
              "width"=>120,
              "tooltip"=>"Opzioni di filtraggio",
              "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarSearchImmobiliFilterDlg\",postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
-         ));
-         $toolbar->AddElement($modify_btn);
+        ));
+        $toolbar->AddElement($modify_btn);
         
-        $layout->addRow($toolbar);
+        //$layout->addRow($toolbar);
 
         #criteri----------------------------------
-        if($this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI)) $canModify=true;
+        if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
 
-        $storage=AA_Storage::GetInstance();
-
-        $documenti_data=array();
-        $criteri=AA_Geco_Criteri::Search();
-        $categorie=AA_Geco_Const::GetCategorieAllegati();
-        foreach($criteri as $id_doc=>$curDoc)
+        $immobili=AA_SicarImmobile::Search();
+        $data=[];
+        foreach($immobili as $curImmobile)
         {
             //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
-
-            if(($curDoc->GetUserCaps($this->oUser)&AA_Const::AA_PERMS_ALL) > 0) $canModify=true;
-            else $canModify=false;
-
-            if($curDoc->GetProp("url") == "")
-            {
-                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
-                $view_icon="mdi-floppy";
-                $tip="Scarica";
-
-                if($storage->IsValid())
-                {
-                    $file=$storage->GetFileByHash($curDoc->GetProp("file"));
-                    if($file->IsValid())
-                    {
-                        if(strpos($file->GetmimeType(),"pdf",0) !==false)
-                        {
-                            $view='AA_MainApp.utils.callHandler("pdfPreview", {url: "storage.php?object='.$curDoc->GetProp("file").'"},"'.$this->id.'")';
-                            $view_icon="mdi-eye";
-                            $tip="Consulta";
-                        }
-                    }
-                }
-            }
-            else 
-            {
-                $view='AA_MainApp.utils.callHandler("wndOpen", {url: "'.$curDoc->GetProp("url").'"},"'.$this->id.'")';
-                $view_icon="mdi-eye";
-                $tip="Naviga (in un&apos;altra finestra)";
-            }
-            
-            
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoTrashCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoModifyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            $copy='AA_MainApp.utils.callHandler("dlg", {task:"GetGecoCopyCriteriDlg", params: [{id:"'.$curDoc->GetProp("id").'"}]},"'.$this->id.'")';
-            if($canModify) $ops="<div class='AA_DataTable_Ops' style='justify-content: space-between;width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Copia' onClick='".$copy."'><span class='mdi mdi-content-copy'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi mdi-trash-can'></span></a></div>";
-            else $ops="<div class='AA_DataTable_Ops' style='justify-content: center; width: 100%'><a class='AA_DataTable_Ops_Button' title='".$tip."' onClick='".$view."'><span class='mdi ".$view_icon."'></span></a></div>";
-
-            $docTipo=array();
-            foreach($categorie as $key=>$val)
-            {
-                if(($curDoc->GetProp('categorie')&$key)>0) $docTipo[]="<span class='AA_Label AA_Label_LightGreen'>".$val."</span>";
-            }
-            
-            $documenti_data[]=array("id"=>$id_doc,"anno"=>$curDoc->GetProp("anno"),"descrizione"=>$curDoc->GetProp("descrizione"),"estremi"=>$curDoc->GetProp("estremi"),"tipoDescr"=>implode("&nbsp;",$docTipo),"ops"=>$ops);
+            $data[]=array("id"=>$curImmobile->GetProp("id"),"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")));
         }
 
-        $template=new AA_GenericDatatableTemplate($id,"Ricerca immobili",5,null,array("css"=>"AA_Header_DataTable"));
+        $template=new AA_GenericDatatableTemplate($id,"Ricerca immobili",3,null,array("css"=>"AA_Header_DataTable"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
-        $template->EnableHeader();
+        $template->EnableHeader(false);
         $template->SetHeaderHeight(38);
 
         if($canModify) 
@@ -1274,13 +1229,13 @@ class AA_SicarModule extends AA_GenericModule
             //$template->SetAddNewTaskParams(array("postParams"=>array("postParam1"=>0)));
         }
 
-        $template->SetColumnHeaderInfo(0,"anno","<div style='text-align: center'>Anno</div>",90,"textFilter","int","CriteriTable_left");
-        $template->SetColumnHeaderInfo(1,"estremi","<div style='text-align: center'>Estremi</div>","fillspace","textFilter","text","CriteriTable_left");
-        $template->SetColumnHeaderInfo(2,"descrizione","<div style='text-align: center'>Descrizione</div>","fillspace","textFilter","text","CriteriTable_left");
-        $template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"CriteriTable");
+        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
+        //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        //$template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"CriteriTable");
 
-        $template->SetData($documenti_data);
+        $template->SetData($data);
 
         $layout->AddRow($template);
         return $layout;
