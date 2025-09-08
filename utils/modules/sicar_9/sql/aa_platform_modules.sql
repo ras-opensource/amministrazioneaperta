@@ -25,7 +25,7 @@ SET time_zone = "+00:00";
 -- Dumping data for table `aa_platform_modules`
 --
 
-INSERT INTO `aa_platform_modules` (`id`, `id_modulo`, `class`, `icon`, `name`, `tooltip`, `id_sidebar`, `admins`, `enable`, `descrizione`, `flags`, `ordine`) VALUES
+INSERT INTO `aa_platform_modules` (`id`, `id_modulo`, `class`, `icon`, `name`, `tooltip`, `id_sidebar`, `admins`, `enable`, `descrizione`, `flags`, `ordine`,`visible`,`path`) VALUES
 (9, 'AA_MODULE_SICAR', 'AA_SicarAlloggio', 'mdi mdi-briefcase', 'Sistema informativo capacita abitativa Regionale', 'SICAR - Sistema informativo capacita abitativa Regionale', 'sicar', '1', 0, 'Modulo per la gestione della edilizia residenziale', '{\"sicar\":\"SICAR\"}', 0, 0, '');
 COMMIT;
 

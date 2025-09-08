@@ -7981,28 +7981,6 @@ INSERT INTO `aa_sicar_immobili` (`id`, `tipologia`, `comune`, `ubicazione`, `ind
 -- --------------------------------------------------------
 
 --
--- Struttura della tabella `aa_sicar_objects`
---
-
-CREATE TABLE `aa_sicar_objects` (
-  `id` int(11) UNSIGNED NOT NULL,
-  `id_data` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  `status` int(2) NOT NULL DEFAULT 1,
-  `nome` varchar(255) NOT NULL,
-  `descrizione` text NOT NULL,
-  `struttura` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  `id_assessorato` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  `id_direzione` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  `id_servizio` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  `class` varchar(255) NOT NULL DEFAULT 'AA_Object_V2',
-  `logs` longtext NOT NULL,
-  `id_data_rev` int(11) UNSIGNED NOT NULL DEFAULT 0,
-  `aggiornamento` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Struttura della tabella `aa_sicar_stati_conservazione_alloggio`
 --
 
@@ -8099,14 +8077,14 @@ CREATE TABLE `aa_sicar_zone_urbanistiche_immobile` (
 --
 
 INSERT INTO `aa_sicar_zone_urbanistiche_immobile` (`id`, `descrizione`) VALUES
-(1, 'A'),
-(2, 'B'),
-(3, 'C'),
-(4, 'D'),
-(5, 'E'),
-(6, 'F'),
-(7, 'G'),
-(8, 'H');
+(1, 'Zona A - Centro storico'),
+(2, 'Zona B - Residenziale'),
+(3, 'Zona C - Commerciale'),
+(4, 'Zona D - Industriale'),
+(5, 'Zona E - Agricola'),
+(6, 'Zona F - Verde pubblico'),
+(7, 'Zona G - Servizi'),
+(8, 'Zona H - Attrezzature collettive');
 
 --
 -- Indici per le tabelle scaricate
@@ -8123,16 +8101,6 @@ ALTER TABLE `aa_sicar_immobili`
   ADD KEY `idx_zona_urbanistica` (`zona_urbanistica`);
 
 --
--- Indici per le tabelle `aa_sicar_objects`
---
-ALTER TABLE `aa_sicar_objects`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `id_object` (`id_data`,`status`,`nome`,`struttura`),
-  ADD KEY `id_assessorato` (`id_assessorato`,`id_direzione`,`id_servizio`),
-  ADD KEY `class` (`class`),
-  ADD KEY `status` (`status`),
-  ADD KEY `id_data_rev` (`id_data_rev`),
-  ADD KEY `id_data` (`id_data`,`id_data_rev`);
 
 --
 -- Indici per le tabelle `aa_sicar_stati_conservazione_alloggio`

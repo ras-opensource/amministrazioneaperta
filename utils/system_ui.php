@@ -1900,9 +1900,9 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
     }
 
     //aggiungi un campo di ricerca personalizzato
-    public function AddSearchField($dlgParams=array(), $fieldParams = array(), $newRow = true)
+    public function AddSearchField($handler="dlg",$handlerParams=array(),$module="", $fieldParams = array(), $newRow = true)
     {
-        $onSearchScript = "try{ if($$('" . $this->form->GetId() . "')){AA_MainApp.curModule.dlg(" . json_encode($dlgParams) . ");}}catch(msg){console.error(msg)}";
+        $onSearchScript = "try{ if($$('" . $this->form->GetId() . "')){AA_MainApp.utils.callHandler('".$handler."'," . json_encode($handlerParams) . ",'".$module."');}}catch(msg){console.error(msg)}";
 
         if ($newRow || !($this->curRow instanceof AA_JSON_Template_Layout)) {
             $this->curRow = new AA_JSON_Template_Layout($this->id . "_Layout_Row_" . uniqid(time()));

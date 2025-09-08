@@ -817,7 +817,7 @@ class AA_SicarModule extends AA_GenericModule
         ));
 
         #----------------------search immobili --------------------
-        $this->AddObjectTemplate(static::AA_UI_WND_SEARCH_IMMOBILI."_".static::AA_UI_TABLE_SEARCH_IMMOBILI,"Template_GetSicarSearchImmobiliTable");
+        $this->AddObjectTemplate(static::AA_UI_WND_SEARCH_IMMOBILI."_".static::AA_UI_TABLE_SEARCH_IMMOBILI,"Template_DatatableSearchImmobili");
         #---------------------------------------------------------------
 
     }        
@@ -941,7 +941,7 @@ class AA_SicarModule extends AA_GenericModule
         }
         //$wnd->AddSelectField("immobile", "Immobile", ["required" => true, "bottomLabel" => "*Scegli un elemento della lista o fai click su nuovo se non e' presente l'immobile nella lista.","options" => $options]);
         $dlgParams = array("task" => "GetSicarSearchImmobiliDlg", "postParams" => array("wnd_alloggio" => $wnd->GetId()));
-        $wnd->AddSearchField($dlgParams,["required" => true,"label"=>"Immobile", "bottomLabel" => "*Cerca un immobile gia' esistente o aggiungine uno se non e' presente."]);
+        $wnd->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => true,"label"=>"Immobile", "bottomLabel" => "*Cerca un immobile gia' esistente o aggiungine uno se non e' presente."]);
 
         $addnew_btn=new AA_JSON_Template_Generic("",array(
             "view"=>"button",
@@ -1090,6 +1090,9 @@ class AA_SicarModule extends AA_GenericModule
             $wnd->SetSaveTaskParams(array("wnd_alloggio" => $AlloggioWnd));
         }
 
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
         return $wnd;
     }
 
@@ -1186,7 +1189,7 @@ class AA_SicarModule extends AA_GenericModule
 
         if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
         
-        $toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
@@ -1220,13 +1223,13 @@ class AA_SicarModule extends AA_GenericModule
         $template=new AA_GenericDatatableTemplate($id,"Ricerca immobili",3,null,array("css"=>"AA_Header_DataTable"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
-        $template->EnableHeader(false);
+        $template->EnableHeader(true);
         $template->SetHeaderHeight(38);
 
         if($canModify) 
         {
             $template->EnableAddNew(true,"GetSicarAddNewImmobileDlg");
-            //$template->SetAddNewTaskParams(array("postParams"=>array("postParam1"=>0)));
+            $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id)));
         }
 
         $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
@@ -1238,6 +1241,7 @@ class AA_SicarModule extends AA_GenericModule
         $template->SetData($data);
 
         $layout->AddRow($template);
+        //$layout->AddRow($toolbar);
         return $layout;
     }
 
