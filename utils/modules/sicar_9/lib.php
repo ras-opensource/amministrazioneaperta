@@ -940,8 +940,8 @@ class AA_SicarModule extends AA_GenericModule
             $options[] = array("id" => $option->GetProp("id"), "value" => $option->GetDisplayName());
         }
         //$wnd->AddSelectField("immobile", "Immobile", ["required" => true, "bottomLabel" => "*Scegli un elemento della lista o fai click su nuovo se non e' presente l'immobile nella lista.","options" => $options]);
-        $dlgParams = array("task" => "GetSicarSearchImmobiliDlg", "postParams" => array("wnd_alloggio" => $wnd->GetId()));
-        $wnd->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => true,"label"=>"Immobile", "bottomLabel" => "*Cerca un immobile gia' esistente o aggiungine uno se non e' presente."]);
+        $dlgParams = array("task" => "GetSicarSearchImmobiliDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"immobile","field_desc"=>"immobile_desc"));
+        $wnd->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => true,"label"=>"Immobile","name"=>"immobile_desc", "bottomLabel" => "*Cerca un immobile gia' esistente o aggiungine uno se non e' presente."]);
 
         $addnew_btn=new AA_JSON_Template_Generic("",array(
             "view"=>"button",
@@ -994,12 +994,24 @@ class AA_SicarModule extends AA_GenericModule
     // Template per la finestra di dialogo di aggiunta nuovo immobile
     public function Template_GetSicarAddNewImmobileDlg()
     {
-        $AlloggioWnd = "";
-        if(!empty($_REQUEST['wnd_alloggio']))
+        $form = "";
+        if(!empty($_REQUEST['form']))
         {
-            $AlloggioWnd = $_REQUEST['wnd_alloggio'];
+            $form = $_REQUEST['form'];
         }
 
+        $field_id="";
+        if(!empty($_REQUEST['field_id']))
+        {
+            $field_id = $_REQUEST['field_id'];
+        }
+
+        $field_desc="";
+        if(!empty($_REQUEST['field_desc']))
+        {
+            $field_desc = $_REQUEST['field_desc'];
+        }
+        
         $id = $this->GetId() . "_AddNew_Dlg_" . uniqid();
         $form_data = array();
 
@@ -1085,9 +1097,9 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Note aggiuntive"]);
 
         $wnd->SetSaveTask("AddNewImmobileSicar");
-        if(!empty($AlloggioWnd))
+        if(!empty($form))
         {
-            $wnd->SetSaveTaskParams(array("wnd_alloggio" => $AlloggioWnd));
+            $wnd->SetSaveTaskParams(array("form" => $form,"field_id"=>$field_id,"field_desc"=>$field_desc));
         }
 
         if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
@@ -1181,9 +1193,17 @@ class AA_SicarModule extends AA_GenericModule
     {
         if($id=="") $id=static::AA_UI_WND_SEARCH_IMMOBILI;
         $id.="_".static::AA_UI_TABLE_SEARCH_IMMOBILI;
+        
+        //form di destinazione
+        if(!empty($_REQUEST['form'])) $form=trim($_REQUEST['form']);
+
+        //campo di destinazione
+        if(!empty($_REQUEST['field_id'])) $field_id=trim($_REQUEST['field_id']);
+        if(!empty($_REQUEST['field_desc'])) $field_desc=trim($_REQUEST['field_desc']);
+
         $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
         
-        $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
 
         $filter="";
 
@@ -1194,54 +1214,78 @@ class AA_SicarModule extends AA_GenericModule
         
         //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
         
-        //filtro
-        $modify_btn=new AA_JSON_Template_Generic($id."_".uniqid(),array(
+        //Aggiunta
+        if(!empty($form) && !empty($field_id) && !empty($field_desc)) $filter=array("refresh"=>1,"refresh_obj_id"=>$id,"form"=>$form,"field_id"=>$field_id,"field_desc"=>$field_desc);
+        else $filter=array("refresh"=>1,"refresh_obj_id"=>$id);
+        $modify_btn=new AA_JSON_Template_Generic("",array(
             "view"=>"button",
              "type"=>"icon",
              "icon"=>"mdi mdi-filter-cog",
-             "label"=>"Filtra",
+             "label"=>"Aggiungi",
              "align"=>"right",
              "width"=>120,
-             "tooltip"=>"Opzioni di filtraggio",
-             "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarSearchImmobiliFilterDlg\",postParams: module.getRuntimeValue('" . $id . "','filter_data'), module: \"" . $this->id . "\"},'".$this->id."')"
+             "tooltip"=>"Aggiungi un nuovo immobile",
+             "click"=>"AA_MainApp.curModule.setRuntimeValue('" . $id . "','filter_data',".json_encode($filter)."); AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewImmobileDlg\",postParams: AA_MainApp.curModule.getRuntimeValue('" . $id . "','filter_data'), module: '" . $this->id . "'},'".$this->id."')"
         ));
         $toolbar->AddElement($modify_btn);
         
-        //$layout->addRow($toolbar);
+        $layout->addRow($toolbar);
 
         #criteri----------------------------------
         if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
 
         $immobili=AA_SicarImmobile::Search();
         $data=[];
+        //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+        //$modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+        if(!empty($form) && !empty($field_id) && !empty($field_desc)) 
+        {
+            $select_icon="mdi mdi-cursor-pointer";
+        }
+        else
+        {
+            $ops="";
+        }
+
         foreach($immobili as $curImmobile)
         {
             //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
-            $data[]=array("id"=>$curImmobile->GetProp("id"),"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")));
+            if(!empty($form) && !empty($field_id) && !empty($field_desc))
+            {
+                $select="try{if($$('".$form."')){ AA_MainApp.utils.callHandler('SicarSelectImmobile', {form:'".$form."', values:{'".$field_id."':'".$curImmobile->GetProp('id')."','".$field_desc."':'".$curImmobile->GetDescrizione()."'}},'".$this->GetId()."'); $$('".static::AA_UI_WND_SEARCH_IMMOBILI."_Wnd').close();}}catch(msg){console.error(msg)}";
+                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Scegli' onClick=\"".$select."\"><span class='mdi ".$select_icon."'></span></a></div>";
+                $data[]=array("id"=>$curImmobile->GetProp("id"),"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")),"ops"=>$ops);
+            }
+            else
+            {
+                $data[]=array("id"=>$curImmobile->GetProp("id"),"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")));
+            }
         }
 
-        $template=new AA_GenericDatatableTemplate($id,"Ricerca immobili",3,null,array("css"=>"AA_Header_DataTable"));
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id."_TableSearch_".uniqid(),"Ricerca immobili",3,null,array("css"=>"AA_Header_DataTable"));
+        else $template=new AA_GenericDatatableTemplate($id."_TableSearch_".uniqid(),"Ricerca immobili",4,null,array("css"=>"AA_Header_DataTable"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
-        $template->EnableHeader(true);
+        $template->EnableHeader(false);
         $template->SetHeaderHeight(38);
 
+        /*
         if($canModify) 
         {
             $template->EnableAddNew(true,"GetSicarAddNewImmobileDlg");
-            $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id)));
-        }
+            if(!empty($form) && !empty($field_id) && !empty($field_desc)) $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id,"form"=>$form,"field_id"=>$field_id,"field_desc"=>$field_desc)));
+            else $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id)));
+        }*/
 
         $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
         $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
         $template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
         //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        //$template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"CriteriTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
 
         $template->SetData($data);
 
         $layout->AddRow($template);
-        //$layout->AddRow($toolbar);
         return $layout;
     }
 

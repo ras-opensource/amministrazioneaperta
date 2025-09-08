@@ -1918,7 +1918,7 @@ class AA_GenericFormDlg extends AA_GenericWindowTemplate
         if (!isset($fieldParams['click']) || $fieldParams['click'] == "")
             $fieldParams['click'] = $onSearchScript;
 
-        $this->curRow->AddCol(new AA_JSON_Template_Search($this->id . "_Field_Search", $fieldParams));
+        $this->curRow->AddCol(new AA_JSON_Template_Search($this->id . "_Field_Search_".$fieldParams['name'], $fieldParams));
     }
     //Aggiungi un campo per l'upload di file
     public function AddFileUploadField($name = "AA_FileUploader", $label = "Sfoglia...", $props = array(), $newRow = true)
@@ -2858,18 +2858,22 @@ Class AA_GenericDatatableTemplate extends AA_JSON_Template_Layout
                 $params=",postParams: AA_MainApp.curModule.getRuntimeValue('" . $filterId . "','filter_data'), module: AA_MainApp.curModule.id";
             }
 
-            //filtro
-            $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
-                "view"=>"button",
-                "type"=>"icon",
-                "icon"=>"mdi mdi-filter-cog",
-                "label"=>"Filtra",
-                "align"=>"right",
-                "width"=>120,
-                "tooltip"=>"Opzioni di filtraggio",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sFilterTask."\"".$params."},AA_MainApp.curModule.id)"
-            ));
-            $toolbar->AddElement($modify_btn);
+            //bottone filtro
+            
+            if(!empty($this->sFilterTask))
+            {
+                $modify_btn=new AA_JSON_Template_Generic($id."_FilterUtenti_btn",array(
+                    "view"=>"button",
+                    "type"=>"icon",
+                    "icon"=>"mdi mdi-filter-cog",
+                    "label"=>"Filtra",
+                    "align"=>"right",
+                    "width"=>120,
+                    "tooltip"=>"Opzioni di filtraggio",
+                    "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"".$this->sFilterTask."\"".$params."},AA_MainApp.curModule.id)"
+                ));
+                $toolbar->AddElement($modify_btn);
+            }
         }
         else
         {
