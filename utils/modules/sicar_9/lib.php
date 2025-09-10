@@ -876,6 +876,25 @@ class AA_SicarModule extends AA_GenericModule
             $params['where'][]=" AND ".AA_SicarAlloggio::AA_DBTABLE_DATA.".immobile like '%".addslashes($params['immobile'])."%'";
         }
 
+        //comune
+        if(!empty($params['comune']))
+        {
+            $params['join'][]=" LEFT JOIN ".AA_SicarImmobile::GetDatatable()." ON ".AA_SicarAlloggio::AA_DBTABLE_DATA.".immobile=".AA_SicarImmobile::GetDatatable().".id";
+            $params['where'][]=" AND ".AA_SicarImmobile::GetDatatable().".comune like '".addslashes($params['comune'])."'";
+        }
+
+        //indirizzo
+        if(!empty($params['indirizzo']))
+        {
+            $params['join'][]=" LEFT JOIN ".AA_SicarImmobile::GetDatatable()." ON ".AA_SicarAlloggio::AA_DBTABLE_DATA.".immobile=".AA_SicarImmobile::GetDatatable().".id";
+            $params['where'][]=" AND ".AA_SicarImmobile::GetDatatable().".indirizzo like '%".addslashes($params['indirizzo'])."%'";
+        }
+
+        if(!empty($params['stato_conservazione']) && $params['stato_conservazione'] > 0)
+        {
+            $params['where'][]=" AND ".AA_SicarAlloggio::AA_DBTABLE_DATA.".stato_conservazione like '".addslashes($params['stato_conservazione'])."'";
+        }
+
         //ids
         if(isset($params['ids']) &&  $params['ids']!="")
         {
@@ -1425,7 +1444,7 @@ class AA_SicarModule extends AA_GenericModule
     public function TemplateBozzeFilterDlg($params=array())
     {
         //Valori runtime
-        $formData=array("immobile_desc"=>$params["immobile_desc"],"immobile"=>$params["immobile"],"ids"=>$params['ids'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
+        $formData=array("stato_conservazione"=>$params["stato_conservazione"],"indirizzo"=>$params["indirizzo"],"comune"=>$params["comune"],"immobile_desc"=>$params["immobile_desc"],"immobile"=>$params["immobile"],"ids"=>$params['ids'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
         
         //Valori default
         if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
@@ -1438,14 +1457,18 @@ class AA_SicarModule extends AA_GenericModule
         //Immobile
         if($params['immobile_desc']=="") $formData['immobile_desc']="Qualunque";
         if($params['immobile']=="") $formData['immobile']=0;
-        
+        if($params['indirizzo']=="") $formData['indirizzo']="";
+
+        //stato conservazione
+        if(empty($params['stato_conservazione'])) $formData['stato_conservazione']=-1;
+
         //Valori reset
-        $resetData=array("ids"=>"","comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
+        $resetData=array("stato_conservazione"=>-1,"indirizzo"=>"","comune"=>"","immobile_desc"=>"Qualunque","immobile"=>0,"ids"=>"","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0);
         
         //Azioni da eseguire dopo l'applicazione del filtro
         $applyActions="module.refreshCurSection()";
         
-        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Bozze_Filter".uniqid(), "Parametri di ricerca per le schede in bozza",$this->GetId(),$formData,$resetData,$applyActions);
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Bozze_Filter".uniqid(), "Parametri di ricerca per gli elementi in bozza",$this->GetId(),$formData,$resetData,$applyActions);
         
         $dlg->SetHeight(580);
                 
@@ -1458,9 +1481,22 @@ class AA_SicarModule extends AA_GenericModule
         //titolo
         $dlg->AddTextField("nome","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione dell'alloggio", "placeholder"=>"..."));
  
+        //comune
+        $dlg->AddTextField("comune", "Comune", ["bottomLabel" => "*Comune dell'immobile (codice ISTAT)", "suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetSicarListaCodiciIstat")]);
+       
+        //immobile
         $dlgParams = array("task" => "GetSicarSearchImmobiliDlg", "postParams" => array("form" => $dlg->GetFormId(),"field_id"=>"immobile","field_desc"=>"immobile_desc"));
         $dlg->AddSearchField("dlg",$dlgParams,$this->GetId(),["label"=>"Immobile","name"=>"immobile_desc", "bottomLabel" => "*Immobile di cui fa parte l'alloggio."]);
 
+        //indirizzo
+        $dlg->AddTextField("indirizzo","Indirizzo",array("bottomLabel"=>"*Filtra in base all'indirizzo dell'immobile di cui fa parte l'alloggio", "placeholder"=>"..."));
+ 
+        //Stato conservazione
+        $options=[0=>array("id"=>-1,"value"=>"Qualunque")];
+        $options=array_merge($options,AA_Sicar_Const::GetListaStatiConservazioneAlloggio());
+        AA_Log::Log(__METHOD__." - ".print_r($options,true),100);
+        $dlg->AddSelectField("stato_conservazione","Stato di conservazione",array("bottomLabel"=>"*Filtra in base allo stato di conservazione dell'alloggio", "options"=>$options));
+        
         //ids
         $dlg->AddTextField("ids","Identificativi",array("bottomLabel"=>"*Filtra in base a uno o piu' identificativi (separati da virgola es. 101,105,205).", "placeholder"=>"..."));
 
@@ -2140,8 +2176,8 @@ class AA_SicarModule extends AA_GenericModule
         $riga->AddCol($superficie);
         $riga->AddCol($piano);
         $riga->AddCol($condominio);
-        $riga->AddCol($fruibile_dis);
         $riga->AddCol($ascensore);
+        $riga->AddCol($fruibile_dis);
         $layout->AddRow($riga);
         
         //seconda riga
