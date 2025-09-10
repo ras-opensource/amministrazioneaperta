@@ -20,7 +20,7 @@ class AA_Sicar_Const extends AA_Const
      */
 
     const AA_DBTABLE_TIPOLOGIE_IMM = 'aa_sicar_tipologie_immobile';
-    public static function GetListaTipologie()
+    public static function GetListaTipologie($bSimpleArray=false)
     {
         $options = array();
         $db = new AA_Database();
@@ -28,7 +28,8 @@ class AA_Sicar_Const extends AA_Const
         if ($db->Query($query)) {
             $rs = $db->GetResultSet();
             foreach ($rs as $row) {
-                $options[] = array("id" => $row['id'], "value" => $row['descrizione']);
+                if(!$bSimpleArray) $options[] = array("id" => $row['id'], "value" => $row['descrizione']);
+                else $options[$row['id']] = $row['descrizione'];
             }
         }
         return $options;
@@ -474,9 +475,14 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
     }
 
     // Tipologia
-    public function GetTipologia()
+    public function GetTipologia($bAsText=true)
     {
-        return $this->GetProp("tipologia");
+        if(!$bAsText) return $this->GetProp("tipologia"); 
+        
+        $tipo=AA_Sicar_Const::GetListaTipologie(true);
+        if(!empty($tipo[$this->GetProp("tipologia")])) return $tipo[$this->GetProp("tipologia")];
+        else return "n.d.";
+        
     }
     
     public function SetTipologia($var = 0)
@@ -2085,7 +2091,7 @@ class AA_SicarModule extends AA_GenericModule
             "css" => array("border-bottom" => "1px solid #dadee0 !important")
         ));
 
-        // ultima ristrutturazione
+        //ultima ristrutturazione
         $value = "<span class='AA_Label AA_Label_LightYellow'>" . $object->GetAnnoRistrutturazione() . "</span>";
         $ultima_ristrutturazione = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
@@ -2186,17 +2192,18 @@ class AA_SicarModule extends AA_GenericModule
         
         //titolo
         $value = $object->GetName();
-        $titolo=new AA_JSON_Template_Template($id."_Note",array(
+        $titolo=new AA_JSON_Template_Template("",array(
             "maxHeight"=>100,
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Descrizione:","value"=>$value)
         ));
         
         //immobile
-        $immobile=new AA_JSON_Template_Template($id."_Note",array(
+        $immobile_obj=$object->GetImmobile();
+        $immobile=new AA_JSON_Template_Template("",array(
             "maxHeight"=>100,
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Immobile:","value"=>$object->GetImmobile(false))
+            "data"=>array("title"=>"Immobile:","value"=>$immobile_obj->GetDescrizione()."<br>".$immobile_obj->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($immobile_obj->GetComune()).")<br><i>".$immobile_obj->GetTipologia()."</i>")
         ));
         $riga->addCol($titolo);
 
@@ -2206,8 +2213,8 @@ class AA_SicarModule extends AA_GenericModule
         $layout->AddRow($riga);
 
         //note
-        $value = $object->GetProp("Note");
-        $note=new AA_JSON_Template_Template($id."_Note",array(
+        $value = $object->GetNote();
+        $note=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
