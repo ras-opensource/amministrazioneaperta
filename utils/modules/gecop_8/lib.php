@@ -3447,7 +3447,7 @@ Class AA_GecopModule extends AA_GenericModule
         }
     }
     
-    //Task publish organismo
+    //Task publish
     public function Task_GetGecopPublishDlg($task)
     {
         //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
@@ -3455,7 +3455,7 @@ Class AA_GecopModule extends AA_GenericModule
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per ripristinare elementi.");
+            $task->SetError("L'utente corrente non ha i permessi per pubblicare elementi.");
             return false;
         }
         

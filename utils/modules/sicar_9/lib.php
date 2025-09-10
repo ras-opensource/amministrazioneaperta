@@ -845,8 +845,6 @@ class AA_SicarModule extends AA_GenericModule
         }
 
         // Recupera immobili in stato bozza
-        $params['status'] = AA_Const::AA_STATUS_BOZZA;
-        $params['class'] = 'AA_SicarAlloggio';
         return $this->GetDataGenericSectionBozze_List($params,"GetDataSectionBozze_CustomFilter","GetDataSectionBozze_CustomDataTemplate");
     }
 
@@ -854,9 +852,11 @@ class AA_SicarModule extends AA_GenericModule
     protected function GetDataSectionBozze_CustomDataTemplate($data = array(), $object = null)
     {
         if ($object instanceof AA_SicarAlloggio) {
-            $data['pretitolo'] = $object->GetProp("Anno");
+            $data['pretitolo'] = $object->GetImmobile(false);
             $data['titolo'] = $object->GetDisplayName();
-            $data['tags'] = "<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow'>Bozza</span>";
+            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>".$object->GetTipologiaUtilizzo()."</span>";
+            if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightGreen' title='Anno ultima ristrutturazione'>".$object->GetAnnoRistrutturazione()."</span>";
+            $data['tags']=$tags;
         }
         else
         {
@@ -866,6 +866,25 @@ class AA_SicarModule extends AA_GenericModule
         //AA_Log::Log(__METHOD__." - oggetto: ".print_r($object,true),100);
         return $data;
     }
+
+    //Personalizza il filtro delle bozze per il modulo corrente
+    protected function GetDataSectionBozze_CustomFilter($params = array())
+    {
+        //immobile
+        if(isset($params['immobile']) && $params['immobile'] > 0)
+        {
+            $params['where'][]=" AND ".AA_SicarAlloggio::AA_DBTABLE_DATA.".immobile like '%".addslashes($params['immobile'])."%'";
+        }
+
+        //ids
+        if(isset($params['ids']) &&  $params['ids']!="")
+        {
+            $params['where'][]=" AND ".AA_SicarAlloggio::GetObjectsDbDataTable().".id in (".addslashes($params['ids']).")";
+        }
+    
+        return $params;
+    }
+
 
     // Template della sezione bozze
     public function TemplateSection_Bozze($params = array())
@@ -887,8 +906,6 @@ class AA_SicarModule extends AA_GenericModule
             }
 
             // Recupera immobili in stato pubblicato
-            $params['status'] = AA_Const::AA_STATUS_PUBBLICATA;
-            $params['class'] = 'AA_SicarAlloggio';
             return AA_SicarAlloggio::Search($params, $this->oUser);
         }
 
@@ -1267,6 +1284,13 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la restituzione della finestra di dialogo di filtro bozze
+    public function Task_GetSicarBozzeFilterDlg($task)
+    {
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->TemplateBozzeFilterDlg($_REQUEST), true);
+        return true;
+    }
      //Task search immobili
      public function Task_GetSicarSearchImmobiliDlg($task)
      {
@@ -1397,6 +1421,53 @@ class AA_SicarModule extends AA_GenericModule
         return $layout;
     }
 
+    //Template filtro di ricerca bozze
+    public function TemplateBozzeFilterDlg($params=array())
+    {
+        //Valori runtime
+        $formData=array("immobile_desc"=>$params["immobile_desc"],"immobile"=>$params["immobile"],"ids"=>$params['ids'],"id_assessorato"=>$params['id_assessorato'],"id_direzione"=>$params['id_direzione'],"struct_desc"=>$params['struct_desc'],"id_struct_tree_select"=>$params['id_struct_tree_select'],"nome"=>$params['nome'],"cestinate"=>$params['cestinate']);
+        
+        //Valori default
+        if($params['struct_desc']=="") $formData['struct_desc']="Qualunque";
+        if($params['id_assessorato']=="") $formData['id_assessorato']=0;
+        if($params['id_direzione']=="") $formData['id_direzione']=0;
+        if($params['id_servizio']=="") $formData['id_servizio']=0;
+        if($params['cestinate']=="") $formData['cestinate']=0;
+        if($params['nome']=="") $formData['nome']="";
+
+        //Immobile
+        if($params['immobile_desc']=="") $formData['immobile_desc']="Qualunque";
+        if($params['immobile']=="") $formData['immobile']=0;
+        
+        //Valori reset
+        $resetData=array("ids"=>"","comune"=>"Qualunque","id_assessorato"=>0,"id_direzione"=>0,"id_servizio"=>0, "struct_desc"=>"Qualunque","id_struct_tree_select"=>"","nome"=>"","cestinate"=>0,"tipo"=>0,"stato"=>0);
+        
+        //Azioni da eseguire dopo l'applicazione del filtro
+        $applyActions="module.refreshCurSection()";
+        
+        $dlg = new AA_GenericFilterDlg(static::AA_UI_PREFIX."_Bozze_Filter".uniqid(), "Parametri di ricerca per le schede in bozza",$this->GetId(),$formData,$resetData,$applyActions);
+        
+        $dlg->SetHeight(580);
+                
+        //Cestinate
+        $dlg->AddSwitchBoxField("cestinate","Cestino",array("onLabel"=>"mostra","offLabel"=>"nascondi","bottomLabel"=>"*Mostra/nascondi le schede cestinate."));
+      
+        //Struttura
+        $dlg->AddStructField(array("targetForm"=>$dlg->GetFormId()),array("select"=>true),array("bottomLabel"=>"*Filtra in base alla struttura di gestione."));
+    
+        //titolo
+        $dlg->AddTextField("nome","Descrizione",array("bottomLabel"=>"*Filtra in base alla descrizione dell'alloggio", "placeholder"=>"..."));
+ 
+        $dlgParams = array("task" => "GetSicarSearchImmobiliDlg", "postParams" => array("form" => $dlg->GetFormId(),"field_id"=>"immobile","field_desc"=>"immobile_desc"));
+        $dlg->AddSearchField("dlg",$dlgParams,$this->GetId(),["label"=>"Immobile","name"=>"immobile_desc", "bottomLabel" => "*Immobile di cui fa parte l'alloggio."]);
+
+        //ids
+        $dlg->AddTextField("ids","Identificativi",array("bottomLabel"=>"*Filtra in base a uno o piu' identificativi (separati da virgola es. 101,105,205).", "placeholder"=>"..."));
+
+        $dlg->SetApplyButtonName("Filtra");
+
+        return $dlg->GetObject();
+    }
      // Task per la restituzione della finestra di dialogo di aggiunta nuovo immobile
      public function Task_GetSicarAddNewImmobileDlg($task)
      {
@@ -1708,7 +1779,7 @@ class AA_SicarModule extends AA_GenericModule
     // Task per aggiornare un alloggio
     public function Task_UpdateSicar($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
         
         // Verifica che l'utente abbia i permessi per modificare gli alloggi
         if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
@@ -1736,247 +1807,68 @@ class AA_SicarModule extends AA_GenericModule
             return false;
         }
         
-        // Utilizza il metodo generico della classe base
-        return $this->Task_GenericUpdateObject($task, $_REQUEST);
+        $alloggio->Parse($_REQUEST);
+
+        if(!$alloggio->Update($this->oUser,true,"Aggiornamento dati generali"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dei dati generali.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
     }
     
     // Task per eliminare un alloggio
     public function Task_DeleteSicar($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
-        
-        // Verifica che l'utente abbia i permessi per eliminare gli alloggi
-        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+        if(!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR))
+        {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per eliminare gli alloggi", false);
+            $task->SetError("L'utente corrente non ha i permessi per eliminare l'elemento.", false);
             return false;
         }
-        
-        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
-        
-        if ($id <= 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo alloggio non valido", false);
-            return false;
-        }
-        
-        $alloggio = new AA_SicarAlloggio($id, $this->oUser);
-        if (!$alloggio->IsValid()) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Alloggio non trovato", false);
-            return false;
-        }
-        
-        // Verifica che l'utente abbia i permessi di scrittura sull'alloggio
-        if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi di eliminazione dell'alloggio", false);
-            return false;
-        }
-        
-        $result = $alloggio->Delete($this->oUser);
-        
-        if ($result) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent("Alloggio eliminato con successo", true);
-            return true;
-        } else {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'eliminazione dell'alloggio", false);
-            return false;
-        }
+
+        return $this->Task_GenericDeleteObject($task,$_REQUEST);
     }
     
     // Task per pubblicare un alloggio
     public function Task_PublishSicar($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
-        
-        // Verifica che l'utente abbia i permessi per pubblicare gli alloggi
-        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per pubblicare gli alloggi", false);
-            return false;
-        }
-        
-        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
-        
-        if ($id <= 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo alloggio non valido", false);
-            return false;
-        }
-        
-    $alloggio = new AA_SicarAlloggio($id, $this->oUser);
-        if (!$alloggio->IsValid()) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Alloggio non trovato", false);
-            return false;
-        }
-        
-        // Verifica che l'utente abbia i permessi di scrittura sull'alloggio
-        if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi di pubblicazione dell'alloggio", false);
-            return false;
-        }
-        
-        $result = $alloggio->Publish($this->oUser, true);
-        
-        if ($result) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent("Alloggio pubblicato con successo", true);
-            return true;
-        } else {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nella pubblicazione dell'alloggio", false);
-            return false;
-        }
+         return $this->Task_GenericPublishObject($task,$_REQUEST);
     }
     
     // Task per cestinare un alloggio
     public function Task_TrashSicar($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
-        
-        // Verifica che l'utente abbia i permessi per cestinare gli alloggi
-        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+        if(!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR))
+        {
+            
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per cestinare gli alloggi", false);
+            $task->SetError("L'utente corrente non ha i permessi per cestinare l'elemento.", false);
+
             return false;
         }
-        
-        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
-        
-        if ($id <= 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo alloggio non valido", false);
-            return false;
-        }
-        
-    $alloggio = new AA_SicarAlloggio($id, $this->oUser);
-        if (!$alloggio->IsValid()) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Alloggio non trovato", false);
-            return false;
-        }
-        
-        // Verifica che l'utente abbia i permessi di scrittura sull'alloggio
-        if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi di cestinazione dell'alloggio", false);
-            return false;
-        }
-        
-        $result = $alloggio->Trash($this->oUser, true);
-        
-        if ($result) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent("Alloggio cestinato con successo", true);
-            return true;
-        } else {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nella cestinazione dell'alloggio", false);
-            return false;
-        }
+
+        return $this->Task_GenericTrashObject($task,$_REQUEST);
     }
     
     // Task per ripristinare un alloggio
     public function Task_ResumeSicar($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
-        
-        // Verifica che l'utente abbia i permessi per ripristinare gli alloggi
-        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per ripristinare gli alloggi", false);
-            return false;
-        }
-        
-        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
-        
-        if ($id <= 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo alloggio non valido", false);
-            return false;
-        }
-        
-    $alloggio = new AA_SicarAlloggio($id, $this->oUser);
-        if (!$alloggio->IsValid()) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Alloggio non trovato", false);
-            return false;
-        }
-        
-        // Verifica che l'utente abbia i permessi di scrittura sull'alloggio
-        if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi di ripristino dell'alloggio", false);
-            return false;
-        }
-        
-        $result = $alloggio->Resume($this->oUser, true);
-        
-        if ($result) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent("Alloggio ripristinato con successo", true);
-            return true;
-        } else {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nel ripristino dell'alloggio", false);
-            return false;
-        }
+        return $this->Task_GenericResumeObject($task,$_REQUEST);
     }
     
     // Task per riassegnare un alloggio
     public function Task_ReassignSicar($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
-        
-        // Verifica che l'utente abbia i permessi per riassegnare gli alloggi
-        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi per riassegnare gli alloggi", false);
-            return false;
-        }
-        
-        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
-        $id_assessorato = isset($_POST['id_assessorato']) ? intval($_POST['id_assessorato']) : 0;
-        $id_direzione = isset($_POST['id_direzione']) ? intval($_POST['id_direzione']) : 0;
-        $id_servizio = isset($_POST['id_servizio']) ? intval($_POST['id_servizio']) : 0;
-        
-        if ($id <= 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Identificativo alloggio non valido", false);
-            return false;
-        }
-        
-        $immobile = new AA_SicarAlloggio($id, $this->oUser);
-        if (!$immobile->IsValid()) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Alloggio non trovato", false);
-            return false;
-        }
-        
-        // Verifica che l'utente abbia i permessi di scrittura sull'alloggio
-        if (($immobile->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("L'utente corrente non ha i permessi di riassegnazione dell'alloggio", false);
-            return false;
-        }
-        
-        $struct = AA_Struct::GetStruct($id_assessorato, $id_direzione, $id_servizio);
-        $result = $immobile->Reassign($struct, $this->oUser, true);
-        
-        if ($result) {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-            $task->SetContent("Alloggio riassegnato con successo", true);
-            return true;
-        } else {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nella riassegnazione dell'alloggio", false);
-            return false;
-        }
+        return $this->Task_GenericReassignObject($task,$_REQUEST);
     }
 
     // Task per la restituzione della finestra di dialogo di cestinazione alloggio
@@ -1997,6 +1889,58 @@ class AA_SicarModule extends AA_GenericModule
         } else {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Identificativi non presenti.", false);
+            return false;
+        }
+    }
+
+    //Task publish organismo
+    public function Task_GetSicarPublishDlg($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per pubblicare elementi.");
+            return false;
+        }
+        
+        if($_REQUEST['ids']!="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGenericPublishObjectDlg($_REQUEST,"PublishSicar"),true);
+            return true;
+        }    
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativi non presenti.",false);
+            return false;
+        }
+    }
+
+    //Task Riassegna
+    public function Task_GetSicarReassignDlg($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per riassegnare elementi.");
+            return false;
+        }
+
+        if($_REQUEST['ids']!="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGenericReassignObjectDlg($_REQUEST,"ReassignSicar"),true);
+            return true;
+        }    
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativi non presenti.",false);
             return false;
         }
     }
@@ -2142,8 +2086,13 @@ class AA_SicarModule extends AA_GenericModule
 
         //ascensore
         $val="No";
-        if(!empty($object->GetAscensore())) $val="Si";
-        $value = "<span class='AA_Label AA_Label_LightYellow'>" . $val. "</span>";
+        $color="LightRed";
+        if(!empty($object->GetAscensore())) 
+        {
+            $val="Si";
+            $color="LightGreen";
+        }
+        $value = "<span class='AA_Label AA_Label_$color'>" . $val. "</span>";
         $ascensore = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity" => 1,
@@ -2153,8 +2102,13 @@ class AA_SicarModule extends AA_GenericModule
 
         //condominio misto
         $val="No";
-        if(!empty($object->GetCondominioMisto())) $val="Si";
-        $value = "<span class='AA_Label AA_Label_LightYellow'>" . $val. "</span>";
+        $color="LightRed";
+        if(!empty($object->GetCondominioMisto()))
+        {
+            $val="Si";
+            $color="LightGreen";
+        }
+        $value = "<span class='AA_Label AA_Label_$color'>" . $val. "</span>";
         $condominio = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity" => 1,
@@ -2164,8 +2118,13 @@ class AA_SicarModule extends AA_GenericModule
         
         //disabile
         $val="No";
-        if(!empty($object->GetFruibileDis())) $val="Si";
-        $value = "<span class='AA_Label AA_Label_LightYellow'>" . $val. "</span>";
+        $color="LightRed";
+        if(!empty($object->GetFruibileDis()))
+        {
+            $val="Si";
+            $color="LightGreen";
+        }
+        $value = "<span class='AA_Label AA_Label_$color'>" . $val. "</span>";
         $fruibile_dis = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity" => 1,
