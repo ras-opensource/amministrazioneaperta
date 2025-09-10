@@ -35,7 +35,7 @@ var <?php echo AA_SicarModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sic
         if(form)
         {
             //console.log("values",arguments[0]['values']);
-            form.setValues(arguments[0]['values']);
+            form.setValues(arguments[0]['values'],true);
         }
 
     } catch (msg) {

@@ -2603,7 +2603,7 @@ class AA_GenericModule
     }
 
     //Restituisce la lista delle schede pubblicate 
-    protected function GetDataGenericSectionPubblicate_List($params = array(), $customFilterFunction = null, $customTemplateDataFunction = null)
+    protected function GetDataGenericSectionPubblicate_List($params = array(), $customFilterFunction = "GetDataSectionBozze_CustomFilter", $customTemplateDataFunction = "GetDataSectionBozze_CustomDataTemplate")
     {
         $templateData = array();
 
@@ -4709,7 +4709,7 @@ class AA_GenericModule
     }
 
     //Restituisce la lista delle schede pubblicate 
-    protected function GetDataGenericSectionBozze_List($params = array(), $customFilterFunction = null, $customTemplateDataFunction = null)
+    protected function GetDataGenericSectionBozze_List($params = array(), $customFilterFunction = "GetDataSectionBozze_CustomFilter", $customTemplateDataFunction = "GetDataSectionBozze_CustomDataTemplate")
     {
         $templateData = array();
 

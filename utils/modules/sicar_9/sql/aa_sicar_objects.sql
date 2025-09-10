@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1-4.fc40
+-- version 5.2.2-1.fc42
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 31, 2024 at 09:01 PM
--- Server version: 10.11.8-MariaDB
--- PHP Version: 8.3.9
+-- Creato il: Set 10, 2025 alle 13:10
+-- Versione del server: 10.11.11-MariaDB
+-- Versione PHP: 8.4.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,9 +24,10 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `aa_geser_objects`
+-- Struttura della tabella `aa_sicar_objects`
 --
 
+DROP TABLE IF EXISTS `aa_sicar_objects`;
 CREATE TABLE `aa_sicar_objects` (
   `id` int(11) UNSIGNED NOT NULL,
   `id_data` int(11) UNSIGNED NOT NULL DEFAULT 0,
@@ -44,11 +45,11 @@ CREATE TABLE `aa_sicar_objects` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 --
--- Indexes for dumped tables
+-- Indici per le tabelle scaricate
 --
 
 --
--- Indexes for table `aa_geser_objects`
+-- Indici per le tabelle `aa_sicar_objects`
 --
 ALTER TABLE `aa_sicar_objects`
   ADD PRIMARY KEY (`id`),
@@ -60,11 +61,11 @@ ALTER TABLE `aa_sicar_objects`
   ADD KEY `id_data` (`id_data`,`id_data_rev`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT per le tabelle scaricate
 --
 
 --
--- AUTO_INCREMENT for table `aa_geser_objects`
+-- AUTO_INCREMENT per la tabella `aa_sicar_objects`
 --
 ALTER TABLE `aa_sicar_objects`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
