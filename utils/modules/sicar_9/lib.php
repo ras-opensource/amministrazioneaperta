@@ -428,7 +428,7 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         $this->aProps['catasto']="";
         $this->aProps['zona_urbanistica']="";
         $this->aProps['geolocalizzazione']="";
-        $this->aProps['piani']=0;
+        $this->aProps['piani']=1;
         $this->aProps['note']="";
         
         // Chiama il costruttore padre
@@ -702,6 +702,13 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
     {
         $object = new AA_SicarImmobile($params);
 
+        $validate=$object->Validate();
+        if(sizeof($validate)>0)
+        {
+            AA_Log::Log(__METHOD__." - Sono stati trovati i seguenti errori: ".print_r($validate,true),100);
+            return false;
+        }
+
         return $object->Sync($user);
     }
 
@@ -751,7 +758,15 @@ class AA_SicarModule extends AA_GenericModule
 
     //ui id sezione dettaglio
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
+
+    const AA_UI_SECTION_BOZZE_NAME="Alloggi (bozze)";
+     const AA_UI_SECTION_PUBBLICATE_NAME="Alloggi (pubblicate)";
     
+    //id sezione gestione immobili
+    const AA_ID_SECTION_IMMOBILI = "GestImmobili";
+    const AA_UI_SECTION_IMMOBILI_BOX = "GestImmobiliBox";
+    const AA_UI_SECTION_IMMOBILI_NAME = "Gestione Immobili";
+
     const AA_MODULE_OBJECTS_CLASS = "AA_SicarAlloggio";
     
     // Task per la gestione dei dialoghi standard
@@ -829,7 +844,36 @@ class AA_SicarModule extends AA_GenericModule
         $this->AddObjectTemplate(static::AA_UI_WND_SEARCH_IMMOBILI."_".static::AA_UI_TABLE_SEARCH_IMMOBILI,"Template_DatatableSearchImmobili");
         #---------------------------------------------------------------
 
-    }        
+        #----------------------- Gest immobili -------------------------
+        $gest_immobili=new AA_GenericModuleSection(static::AA_ID_SECTION_IMMOBILI,"Gestione Immobili",true,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_IMMOBILI,$this->GetId(),false,true,false,false,'mdi-office-building-marker',"TemplateSection_Immobili");
+        $this->AddSection($gest_immobili);
+
+        $bozze=$this->GetSection(static::AA_ID_SECTION_BOZZE);
+        $bozze->SetNavbarTemplate(array($this->TemplateGenericNavbar_Pubblicate(1)->toArray(),$this->TemplateGenericNavbar_Section($gest_immobili,2,true)->toArray()));
+
+        $gest_immobili->SetNavbarTemplate(array($this->TemplateGenericNavbar_Immobili(1,true,true)->toArray()));
+    }
+    
+    //Navbar Immobili
+    protected function TemplateGenericNavbar_Immobili($level = 1, $last = false, $refresh_view = true)
+    {
+        $class = "n" . $level;
+        if ($last) $class .= " AA_navbar_terminator_left";
+        $navbar =  new AA_JSON_Template_Template(
+            "",
+            array(
+                "type" => "clean",
+                "section_id" => static::AA_ID_SECTION_BOZZE,
+                "module_id" => $this->GetId(),
+                "refresh_view" => $refresh_view,
+                "tooltip" => "Fai click per visualizzare la sezione relativa alle bozze",
+                "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" . static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_ID_SECTION_IMMOBILI . "' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"".static::AA_ID_SECTION_BOZZE."\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                "data" => array("label" => "Gestione alloggi (bozze)", "icon" => "mdi mdi-office-building", "class" => $class)
+            )
+        );
+        return $navbar;
+    }
+    
     //Layout del modulo
     function TemplateLayout()
     {
@@ -1011,10 +1055,10 @@ class AA_SicarModule extends AA_GenericModule
         
         // Campo testuale: tipologia utilizzo
         $options = AA_Sicar_Const::GetListaTipologieUtilizzoAlloggio();
-        $wnd->AddSelectField("tipologia_utilizzo", "Tipologia utilizzo", ["required" => true, "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options]);
+        $wnd->AddSelectField("tipologia_utilizzo", "Tipologia utilizzo", ["required" => true,"validateFunction"=>"IsSelected", "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options]);
         // Campo testuale: stato conservazione
         $options = AA_Sicar_Const::GetListaStatiConservazioneAlloggio();
-        $wnd->AddSelectField("stato_conservazione", "Stato conservazione", ["required" => true,"labelWidth"=>160, "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options],false);
+        $wnd->AddSelectField("stato_conservazione", "Stato conservazione", ["required" => true,"validateFunction"=>"IsSelected","labelWidth"=>160, "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options],false);
         
         // Campo numerico: anno ristrutturazione
         $wnd->AddTextField("anno_ristrutturazione", "Anno ristrutturazione", ["required" => false, "bottomLabel" => "Anno (se presente)"]);
@@ -1110,10 +1154,10 @@ class AA_SicarModule extends AA_GenericModule
         
         // Campo testuale: tipologia utilizzo
         $options = AA_Sicar_Const::GetListaTipologieUtilizzoAlloggio();
-        $wnd->AddSelectField("tipologia_utilizzo", "Tipologia utilizzo", ["required" => true, "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options]);
+        $wnd->AddSelectField("tipologia_utilizzo", "Tipologia utilizzo", ["required" => true,"validateFunction"=>"IsSelected", "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options]);
         // Campo testuale: stato conservazione
         $options = AA_Sicar_Const::GetListaStatiConservazioneAlloggio();
-        $wnd->AddSelectField("stato_conservazione", "Stato conservazione", ["required" => true,"labelWidth"=>160, "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options],false);
+        $wnd->AddSelectField("stato_conservazione", "Stato conservazione", ["required" => true,"validateFunction"=>"IsSelected","labelWidth"=>160, "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options],false);
         
         // Campo numerico: anno ristrutturazione
         $wnd->AddTextField("anno_ristrutturazione", "Anno ristrutturazione", ["required" => false, "bottomLabel" => "Anno (se presente)"]);
@@ -1193,27 +1237,27 @@ class AA_SicarModule extends AA_GenericModule
         
         // Campo testuale: tipologia
         $options = AA_Sicar_Const::GetListaTipologie();
-        $wnd->AddSelectField("tipologia", "Tipologia", ["required" => true, "bottomLabel" => "*Tipologia dell'immobile", "options" => $options]);
+        $wnd->AddSelectField("tipologia", "Tipologia", ["required" => true,"validateFunction"=>"IsSelected", "bottomLabel" => "*Tipologia dell'immobile", "options" => $options]);
         
         // Campo testuale: comune
         $wnd->AddTextField("comune", "Comune", ["required" => true, "bottomLabel" => "*Comune dell'immobile (codice ISTAT)", "suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetSicarListaCodiciIstat")],false);
        
         // Campo testuale: ubicazione
         $options= AA_Sicar_Const::GetListaUbicazioni();
-        $wnd->AddSelectField("ubicazione", "Ubicazione", ["required" => true,"gravity"=>2, "bottomLabel" => "*Ubicazione dell'immobile", "options" => $options]);
+        $wnd->AddSelectField("ubicazione", "Ubicazione", ["required" => true,"validateFunction"=>"IsSelected","gravity"=>2, "bottomLabel" => "*Ubicazione dell'immobile", "options" => $options]);
         
         // Campo testuale: zona urbanistica
         $options = AA_Sicar_Const::GetListaZoneUrbanistiche();
-        $wnd->AddSelectField("zona_urbanistica", "Zona urb.", ["required" => true,"gravity"=>1, "bottomLabel" => "*Zona urbanistica dell'immobile", "options" => $options],false);
+        $wnd->AddSelectField("zona_urbanistica", "Zona urb.", ["required" => true,"gravity"=>2, "bottomLabel" => "*Zona urbanistica dell'immobile", "options" => $options],false);
         
         // Campo numerico: piani
-        $wnd->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1, "bottomLabel" => "*Numero di piani dell'immobile"],false);
+        $wnd->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1,"validateFunction"=>"IsPositive", "bottomLabel" => "*Numero di piani dell'immobile"],false);
 
         // Campo testuale: indirizzo
         $wnd->AddTextField("indirizzo", "Indirizzo", ["required" => true,"gravity"=>3, "bottomLabel" => "*Indirizzo dell'immobile comprensivo del numero civico."]);
         
         // Campo testuale: geolocalizzazione
-        $wnd->AddTextField("geolocalizzazione", "Geolocalizzazione", ["required" => true,"gravity"=>1, "bottomLabel" => "*Geolocalizzazione dell'immobile (latitudine e longitudine) in gradi decimali separate da virgola."]);
+        $wnd->AddTextField("geolocalizzazione", "Geoloc.", ["required" => true,"gravity"=>1, "bottomLabel" => "*Geolocalizzazione dell'immobile (latitudine e longitudine) in gradi decimali separate da virgola (es.: 39.225048459422766, 9.102739130435575)","placeholder"=>"es. 39.225048459422766, 9.102739130435575"]);
 
         //Dati catastali
         $catasto = new AA_FieldSet("AA_SICAR_CATASTO","Dati catastali");
@@ -1732,6 +1776,17 @@ class AA_SicarModule extends AA_GenericModule
         return $this->Task_GenericAddNew($task, $_REQUEST);
     }
 
+    //Task NavBarContent
+    public function Task_GetNavbarContent($task)
+    {
+        if(!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR))
+        {
+            $_REQUEST['section']=static::AA_UI_PREFIX."_".static::AA_UI_PUBBLICATE_BOX;
+        }
+        
+        return $this->Task_GetGenericNavbarContent($task,$_REQUEST);
+    }
+
     // Task per aggiungere un nuovo immobile
     public function Task_AddNewImmobileSicar($task)
     {
@@ -1807,6 +1862,21 @@ class AA_SicarModule extends AA_GenericModule
         $_REQUEST['catasto']=json_encode($catasto);
        
         $immobile = new AA_SicarImmobile($_REQUEST);
+        $validate=$immobile->Validate();
+        if(sizeof($validate)>0)
+        {
+            AA_Log::Log(__METHOD__." - Sono stati trovati i seguenti errori: ".print_r($validate,true),100);
+            $error="Sono state riscontrate le seguenti criticita': <br>";
+            foreach($validate as $curError)
+            {
+                $error.="<li>".$curError."</li>";
+            }
+
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
         if(!$immobile->Sync($this->oUser))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -2203,7 +2273,7 @@ class AA_SicarModule extends AA_GenericModule
         $immobile=new AA_JSON_Template_Template("",array(
             "maxHeight"=>100,
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Immobile:","value"=>$immobile_obj->GetDescrizione()."<br>".$immobile_obj->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($immobile_obj->GetComune()).")<br><i>".$immobile_obj->GetTipologia()."</i>")
+            "data"=>array("title"=>"Immobile:","value"=>$immobile_obj->GetDescrizione()."<br>".$immobile_obj->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($immobile_obj->GetComune()).") <a href='https://www.google.com/maps/search/?api=1&query=".$immobile_obj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a><br><i>".$immobile_obj->GetTipologia()."</i>")
         ));
         $riga->addCol($titolo);
 
@@ -2221,6 +2291,73 @@ class AA_SicarModule extends AA_GenericModule
         $layout->AddRow($note);
 
         return $layout;
+    }
+
+    //Template section immobili
+    public function TemplateSection_Immobili($params=array())
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_ID_SECTION_IMMOBILI;
+        $canModify=false;
+
+        #immobili----------------------------------
+        if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
+
+        //$layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $immobili=AA_SicarImmobile::Search($params);
+        $data=[];
+        //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+        //$modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+        if(!empty($form) && !empty($field_id) && !empty($field_desc)) 
+        {
+            $select_icon="mdi mdi-cursor-pointer";
+        }
+        else
+        {
+            $ops="";
+        }
+
+        foreach($immobili as $curImmobile)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            if(!empty($form) && !empty($field_id) && !empty($field_desc))
+            {
+                $select="try{if($$('".$form."')){ AA_MainApp.utils.callHandler('SicarSelectImmobile', {form:'".$form."', values:{'".$field_id."':'".$curImmobile->GetProp('id')."','".$field_desc."':'".$curImmobile->GetDisplayName()."'}},'".$this->GetId()."'); $$('".static::AA_UI_WND_SEARCH_IMMOBILI."_Wnd').close();}}catch(msg){console.error(msg)}";
+                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Scegli' onClick=\"".$select."\"><span class='mdi ".$select_icon."'></span></a></div>";
+                $data[]=array("id"=>$curImmobile->GetProp("id"),"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")),"ops"=>$ops);
+            }
+            else
+            {
+                $data[]=array("id"=>$curImmobile->GetProp("id"),"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")));
+            }
+        }
+
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"Gestione immobili",3,null,array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"Gestione immobili",4,null,array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader(false);
+        $template->SetHeaderHeight(38);
+
+        /*
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetSicarAddNewImmobileDlg");
+            if(!empty($form) && !empty($field_id) && !empty($field_desc)) $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id,"form"=>$form,"field_id"=>$field_id,"field_desc"=>$field_desc)));
+            else $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id)));
+        }*/
+
+        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
+        //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
+
+        $template->SetData($data);
+
+        //$layout->AddRow($template);
+
+        return $template;
     }
 
     // Metodi di utilità

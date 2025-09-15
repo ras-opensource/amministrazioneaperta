@@ -4254,12 +4254,12 @@ class AA_GenericModule
             static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_UI_BOZZE_BOX,
             array(
                 "type" => "clean",
-                "section_id" => "Bozze",
+                "section_id" => static::AA_ID_SECTION_BOZZE,
                 "module_id" => $this->GetId(),
                 "refresh_view" => $refresh_view,
                 "tooltip" => "Fai click per visualizzare le schede in bozza",
                 "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" . static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_UI_BOZZE_BOX . "' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"Bozze\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
-                "data" => array("label" => "Bozze", "icon" => "mdi mdi-file-document-edit", "class" => $class)
+                "data" => array("label" => static::AA_UI_SECTION_BOZZE_NAME, "icon" => "mdi mdi-file-document-edit", "class" => $class)
             )
         );
         return $navbar;
@@ -4508,12 +4508,12 @@ class AA_GenericModule
             static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_UI_PUBBLICATE_BOX,
             array(
                 "type" => "clean",
-                "section_id" => "Pubblicate",
+                "section_id" => static::AA_ID_SECTION_PUBBLICATE,
                 "module_id" => $this->GetId(),
                 "refresh_view" => $refresh_view,
                 "tooltip" => "Fai click per visualizzare le schede pubblicate",
                 "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" . static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_UI_PUBBLICATE_BOX . "' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"Pubblicate\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
-                "data" => array("label" => "Pubblicate", "icon" => "mdi mdi-certificate", "class" => $class)
+                "data" => array("label" => static::AA_UI_SECTION_PUBBLICATE_NAME, "icon" => "mdi mdi-certificate", "class" => $class)
             )
         );
         return $navbar;
@@ -4641,7 +4641,7 @@ class AA_GenericModule
     //Template sezione pubblicate
     protected function TemplateGenericSection_Pubblicate($params = array(), $bCanModify = false, $contentData = null)
     {
-        $content = new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_PUBBLICATE_NAME, $this->GetId());
+        $content = new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX . "_" . static::AA_ID_SECTION_PUBBLICATE, $this->GetId());
 
         //custom items templates
         if (is_array($this->aSectionItemTemplates)) {
@@ -4814,7 +4814,7 @@ class AA_GenericModule
     //Template section bozze content
     protected function TemplateGenericSection_Bozze($params, $contentData = null)
     {
-        $content = new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX . "_" . static::AA_UI_SECTION_BOZZE_NAME, $this->GetId());
+        $content = new AA_GenericPagedSectionTemplate(static::AA_UI_PREFIX . "_" . static::AA_ID_SECTION_BOZZE, $this->GetId());
 
         //custom items templates
         if (is_array($this->aSectionItemTemplates)) {
