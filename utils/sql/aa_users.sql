@@ -35,7 +35,7 @@ CREATE TABLE `aa_users` (
   `data_abilitazione` varchar(10) NOT NULL,
   `flags` varchar(2048) NOT NULL,
   `status` int(10) NOT NULL DEFAULT 0,
-  `lastlogin` varchar(10) NOT NULL,
+  `lastlogin` varchar(20) NOT NULL,
   `info` varchar(2048) NOT NULL,
   `passwd` varchar(255) NOT NULL,
   `legacy_data` varchar(512) NOT NULL DEFAULT '{"id_assessorato":0,"id_direzione":0,"id_servizio":0,"level":2,"flags":[],"id":0,"pwd":""}'
