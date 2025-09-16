@@ -1950,7 +1950,11 @@ class AA_User
                     $user->bCurrentUser = true;
 
                     //update last login time
-                    $db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = NOW() WHERE id='".$user->GetId()."' LIMIT 1");
+                    //AA_Log::Log(__METHOD__." - update last login time for user ".$user->GetId(),100);
+                    if(!$db->Query("UPDATE ".static::AA_DB_TABLE." set lastlogin = NOW() WHERE id='".$user->GetId()."' LIMIT 1"))
+                    {
+                        AA_Log::Log(__METHOD__." - errore: " . $db->GetErrorMessage(), 100);
+                    }
                     
                     return $user;
                 }
