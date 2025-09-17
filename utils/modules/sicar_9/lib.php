@@ -460,6 +460,12 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         return $return;
     }
 
+    //lista alloggi associati
+    public function GetAlloggi($bAsObject=true,$user=null)
+    {
+        return AA_SicarAlloggio::GetAssociatedOfImmobile($this->GetProp("id"),$bAsObject,$user);
+    }
+
     // Metodi Getter e Setter per le proprietà
     
     // Descrizione
@@ -540,14 +546,19 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
     }
     
     // Catasto
-    public function GetCatasto()
+    public function GetCatasto($bAsObject=true)
     {
-        return $this->GetProp("catasto");
+        if(!$bAsObject) return $this->GetProp("catasto");
+        
+        $val=json_decode($this->aProps['catasto'],true);
+        if(is_array($val)) return $val;
+        else return array();
     }
     
     public function SetCatasto($var = "")
     {
-        $this->SetProp("catasto", $var);
+        if(is_array($var)) $this->SetProp("catasto", json_encode($var));
+        else $this->SetProp("catasto",$var);
         return true;
     }
     
@@ -815,17 +826,21 @@ class AA_SicarModule extends AA_GenericModule
         
         //immobili
         $taskManager->RegisterTask("GetSicarAddNewImmobileDlg");
-        // Task per le operazioni CRUD
-        $taskManager->RegisterTask("AddNewAlloggioSicar");
         $taskManager->RegisterTask("AddNewImmobileSicar");
+        $taskManager->RegisterTask("GetSicarModifyImmobileDlg");
+        $taskManager->RegisterTask("UpdateImmobileSicar");
+        $taskManager->RegisterTask("GetSicarDeleteImmobileDlg");
+        $taskManager->RegisterTask("DeleteImmobileSicar");
 
+        // Task per le operazioni CRUD
+        $taskManager->RegisterTask("AddNewAlloggioSicar");        
         $taskManager->RegisterTask("UpdateSicar");
         $taskManager->RegisterTask("DeleteSicar");
         $taskManager->RegisterTask("PublishSicar");
         $taskManager->RegisterTask("TrashSicar");
         $taskManager->RegisterTask("ResumeSicar");
         $taskManager->RegisterTask("ReassignSicar");
-        
+
         // Task specifici per SICAR
         $taskManager->RegisterTask("GetSicarTipologie");
         $taskManager->RegisterTask("GetSicarUbicazioni");
@@ -834,7 +849,7 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("ExportSicarCsv");
         $taskManager->RegisterTask("GetSicarListaCodiciIstat");
         $taskManager->RegisterTask("GetSicarSearchImmobiliDlg");
-
+        
         //template dettaglio
         $this->SetSectionItemTemplate(static::AA_ID_SECTION_DETAIL,array(
             array("id"=>static::AA_UI_PREFIX."_".static::AA_ID_SECTION_DETAIL."_".static::AA_UI_DETAIL_GENERALE_BOX, "value"=>"Generale","tooltip"=>"Dati generali","template"=>"TemplateSicarDettaglio_Generale_Tab")
@@ -1302,6 +1317,186 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+    // Template per la finestra di dialogo di modifica immobile esistente
+    public function Template_GetSicarModifyImmobileDlg($immobile=null)
+    {        
+        $id = $this->GetId() . "_Modify_Dlg_" . uniqid();
+        $form_data = array();
+
+        foreach($immobile->GetProps() as $prop=>$value)
+        {
+            $form_data[$prop] = $value;
+        }
+
+        $form_data['id']=$immobile->GetProp("id");
+
+        //dati catastali
+        $catasto=$immobile->GetCatasto();
+
+        $form_data['catasto']="";
+        $form_data['SezioneCatasto'] = $catasto['SezioneCatasto'];
+        $form_data['FoglioCatasto'] = $catasto['FoglioCatasto'];
+        $form_data['MappaleCatasto'] = $catasto['MappaleCatasto'];
+        $form_data['ParticellaCatasto'] = $catasto['ParticellaCatasto'];
+        $form_data['Subalterno'] = $catasto['Subalterno'];
+
+        $wnd = new AA_GenericFormDlg($id, "Modifica immobile", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(800);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        // Campo testuale: descrizione
+        $wnd->AddTextField("descrizione", "Descrizione", ["required" => true, "bottomLabel" => "*Descrizione dell'immobile"]);
+        
+        // Campo testuale: tipologia
+        $options = AA_Sicar_Const::GetListaTipologie();
+        $wnd->AddSelectField("tipologia", "Tipologia", ["required" => true,"validateFunction"=>"IsSelected", "bottomLabel" => "*Tipologia dell'immobile", "options" => $options]);
+        
+        // Campo testuale: comune
+        $wnd->AddTextField("comune", "Comune", ["required" => true, "bottomLabel" => "*Comune dell'immobile (codice ISTAT)", "suggest"=>array("template"=>"#codice#","url"=>$this->taskManagerUrl."?task=GetSicarListaCodiciIstat")],false);
+       
+        // Campo testuale: ubicazione
+        $options= AA_Sicar_Const::GetListaUbicazioni();
+        $wnd->AddSelectField("ubicazione", "Ubicazione", ["required" => true,"validateFunction"=>"IsSelected","gravity"=>2, "bottomLabel" => "*Ubicazione dell'immobile", "options" => $options]);
+        
+        // Campo testuale: zona urbanistica
+        $options = AA_Sicar_Const::GetListaZoneUrbanistiche();
+        $wnd->AddSelectField("zona_urbanistica", "Zona urb.", ["required" => true,"gravity"=>2, "bottomLabel" => "*Zona urbanistica dell'immobile", "options" => $options],false);
+        
+        // Campo numerico: piani
+        $wnd->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1,"validateFunction"=>"IsPositive", "bottomLabel" => "*Numero di piani dell'immobile"],false);
+
+        // Campo testuale: indirizzo
+        $wnd->AddTextField("indirizzo", "Indirizzo", ["required" => true,"gravity"=>3, "bottomLabel" => "*Indirizzo dell'immobile comprensivo del numero civico."]);
+        
+        // Campo testuale: geolocalizzazione
+        $wnd->AddTextField("geolocalizzazione", "Geoloc.", ["required" => true,"gravity"=>1, "bottomLabel" => "*Geolocalizzazione dell'immobile (latitudine e longitudine) in gradi decimali separate da virgola (es.: 39.225048459422766, 9.102739130435575)","placeholder"=>"es. 39.225048459422766, 9.102739130435575"]);
+
+        //Dati catastali
+        $catasto = new AA_FieldSet("AA_SICAR_CATASTO","Dati catastali");
+
+        //sezione catasto
+        $label="Sezione";
+        $options=array(
+            array("id"=>0,"value"=>"Catasto urbano"),
+            array("id"=>1,"value"=>"Catasto terreni")
+        );
+        $catasto->AddRadioField("SezioneCatasto",$label,array("options"=>$options,"bottomLabel"=>"*Indicare la sezione in cui è accatastato l'immobile.", "value"=>0,"required"=>true));
+        //foglio catasto
+        $label="Foglio";
+        $catasto->AddTextField("FoglioCatasto",$label,array("tooltip"=>"*Inserire il numero del foglio in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."));
+        
+        //mappale catasto
+        $label="Mappale";
+        $catasto->AddTextField("MappaleCatasto",$label,array("tooltip"=>"*Inserire il numero di mappale in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."),false);
+
+        //particella catasto
+        $label="Particella";
+        $catasto->AddTextField("ParticellaCatasto",$label,array("tooltip"=>"*Inserire il numero della particella in cui è accastato l'immobile.", "required"=>true,"placeholder"=>"..."),false);
+
+        //subalterno
+        $label="Subalterno";
+        $catasto->AddTextField("Subalterno",$label,array("required"=>true,"tooltip"=>"*Inserire il numero del sublaternose presente.", "placeholder"=>"..."),false);
+
+        $wnd->AddGenericObject($catasto);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Note aggiuntive"]);
+
+        $wnd->SetSaveTask("UpdateImmobileSicar");
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
+    // Task per la restituzione della finestra di dialogo di eliminazione immobile
+    public function Task_GetSicarDeleteImmobileDlg($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per eliminare l'immobile");
+            return false;
+        }
+
+        $immobile=new AA_SicarImmobile();
+        if (!$immobile->Load($_REQUEST['id'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Immobile non trovato (id: ".$_REQUEST['id'].")");
+            return false;
+        }
+
+        $alloggi=$immobile->GetAlloggi(false,$this->oUser);
+        if($alloggi===false || sizeof($alloggi)>0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'immobile contiene uno o piu' alloggi, è possibile eliminare esclusivamene immobili senza alloggi.");
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarDeleteImmobileDlg($immobile), true);
+        return true;
+    }
+
+    //Template dlg delete immobile
+    public function Template_GetSicarDeleteImmobileDlg($object=null)
+    {
+        $id=uniqid();
+        
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina immobile", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(380);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("descrizione"=>$object->GetDisplayName());
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente immobile verrà eliminato definitivamente, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"descrizione", "header"=>"Descrizione", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteImmobileSicar");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetProp("id")));
+        
+        return $wnd;
+    }
+
     //restituisce la lista dei comuni
     public function Task_GetSicarListaCodiciIstat($task)
     {
@@ -1554,18 +1749,47 @@ class AA_SicarModule extends AA_GenericModule
 
         return $dlg->GetObject();
     }
-     // Task per la restituzione della finestra di dialogo di aggiunta nuovo immobile
-     public function Task_GetSicarAddNewImmobileDlg($task)
-     {
-         if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
-             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-             $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi immobili", false);
-             return false;
-         }
-         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-         $task->SetContent($this->Template_GetSicarAddNewImmobileDlg(), true);
-         return true;
-     }
+    
+    // Task per la restituzione della finestra di dialogo di aggiunta nuovo immobile
+    public function Task_GetSicarAddNewImmobileDlg($task)
+    {
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi immobili", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarAddNewImmobileDlg(), true);
+        return true;
+    }
+
+    // Task per la finestra di modifica dati generali immobile
+    public function Task_GetSicarModifyImmobileDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare l'immmobile");
+            return false;
+        }
+
+        $object = new AA_SicarImmobile();
+        if (!$object->Load($_REQUEST['id'],$this->oUser)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarModifyImmobileDlg($object),true);
+        return true;
+    }
     
     // Task per la finestra di modifica dati generali alloggio
     public function Task_GetSicarModifyDlg($task)
@@ -1885,6 +2109,153 @@ class AA_SicarModule extends AA_GenericModule
         }
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Immobile aggiunto con successo", false);
+        return true;
+    }
+
+    // Task per aggiornare un immobile esistente
+    public function Task_UpdateImmobileSicar($task)
+    {
+        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare l'immobile", false);
+            return false;
+        }
+        
+        if(empty($_REQUEST))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Nessun dato indicato per l'immobile", false);
+            return false;
+        }
+
+        $immobile=new AA_SicarImmobile();
+        if(!$immobile->Load($_REQUEST['id']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Immobile non trovato (id: ".$_REQUEST['id'].")", false);
+            return false;
+        }
+
+        if(empty($_REQUEST['catasto']))
+        {
+            $catasto=array();
+            if(empty($_REQUEST['SezioneCatasto']))
+            {
+                $catasto['SezioneCatasto']=0;
+            }
+            $catasto['SezioneCatasto']=$_REQUEST['SezioneCatasto'];
+
+            if(empty($_REQUEST['FoglioCatasto']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Occorre indicare il foglio catastale", false);
+                return false;
+            }
+            $catasto['FoglioCatasto']=$_REQUEST['FoglioCatasto'];
+
+            if(empty($_REQUEST['MappaleCatasto']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Occorre indicare il mappale catastale", false);
+                return false;
+            }
+            $catasto['MappaleCatasto']=$_REQUEST['MappaleCatasto'];
+
+            if(empty($_REQUEST['ParticellaCatasto']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Occorre indicare la particella catastale", false);
+                return false;
+            }
+            $catasto['ParticellaCatasto']=$_REQUEST['ParticellaCatasto'];
+
+            if(empty($_REQUEST['Subalterno']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Occorre indicare il subalterno", false);
+                return false;
+            }
+            $catasto['Subalterno']=$_REQUEST['Subalterno'];
+            
+            $_REQUEST['catasto']=json_encode($catasto);
+        }
+        else
+        {
+            $catasto=json_decode($_REQUEST['catasto'],true);
+            if(empty($catasto))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("I dati catastali non sono correttamente formattati", false);
+                return false;
+            }
+        }
+       
+        $immobile->Parse($_REQUEST);
+
+        $validate=$immobile->Validate();
+        if(sizeof($validate)>0)
+        {
+            AA_Log::Log(__METHOD__." - Sono stati trovati i seguenti errori: ".print_r($validate,true),100);
+            $error="Sono state riscontrate le seguenti criticita': <br>";
+            foreach($validate as $curError)
+            {
+                $error.="<li>".$curError."</li>";
+            }
+
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$immobile->Sync($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dell'immobile", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Immobile aggiornato con successo", false);
+        return true;
+    }
+
+    // Task per aggiornare un immobile esistente
+    public function Task_DeleteImmobileSicar($task)
+    {
+        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per eliminare l'immobile", false);
+            return false;
+        }
+        
+        if(empty($_REQUEST))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Nessun dato indicato per l'immobile", false);
+            return false;
+        }
+
+        $immobile=new AA_SicarImmobile();
+        if(!$immobile->Load($_REQUEST['id']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Immobile non trovato (id: ".$_REQUEST['id'].")", false);
+            return false;
+        }
+
+        if(!$immobile->Delete($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'eliminazione dell'immobile", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Immobile eliminato con successo", false);
         return true;
     }
     
@@ -2322,7 +2693,7 @@ class AA_SicarModule extends AA_GenericModule
             {
                 $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailImmobileDlg", params: [{id:"'.$curImmobile->GetProp("id").'"}]},"'.$this->id.'")';
                 $detail_icon="mdi mdi-eye";
-                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarTrashImmobileDlg", params: [{id:"'.$curImmobile->GetProp("id").'"}]},"'.$this->id.'")';
+                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteImmobileDlg", params: [{id:"'.$curImmobile->GetProp("id").'"}]},"'.$this->id.'")';
                 $trash_icon="mdi mdi-trash-can";
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyImmobileDlg", params: [{id:"'.$curImmobile->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify_icon="mdi mdi-pencil";
@@ -2695,5 +3066,32 @@ class AA_SicarAlloggio extends AA_Object_V2
 
         // Salvataggio tramite classe base
         return parent::AddNew($object, $user, $bSaveData);
+    }
+
+    //Restituisce gli alloggi associati ad un immobile avente identificativo indicato
+    static public function GetAssociatedOfImmobile($id=0,$bAsObjects=true,$user=null)
+    {
+        if($id<=0) return false;
+
+        $db= new AA_Database();
+        if(!$db->Query("SELECT DISTINCT ".static::$AA_DBTABLE_OBJECTS.".id FROM ".static::$AA_DBTABLE_OBJECTS." INNER JOIN ".static::AA_DBTABLE_DATA." on ".static::$AA_DBTABLE_OBJECTS.".id_data=".static::AA_DBTABLE_DATA.".id WHERE ".static::AA_DBTABLE_DATA.".immobile='".addslashes($id)."'"))
+        {
+            AA_Log::Log(__METHOD__ . " - Errori nella query: " . $db->GetErrorMessage(), 100);
+            return false;
+        }
+
+        if($db->GetAffectedRows()==0) return array();
+
+        $rs=$db->GetResultSet();
+
+        if(!$bAsObjects) return $rs;
+        
+        $return = array();
+        foreach($rs as $curId)
+        {
+            $return[$curId['id']] = new AA_SicarAlloggio($curId['id'],$user);
+        }
+
+        return $return;
     }
 }
