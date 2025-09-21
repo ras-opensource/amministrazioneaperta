@@ -6905,6 +6905,61 @@ class AA_Object_V2
         return true;
     }
 
+    protected $aTemplateViewProps=array();
+    public function SetTemplateViewProps($props=null)
+    {
+        if(is_array($props))
+        {
+            $this->aTemplateViewProps=array();
+            $keys=array_keys($this->aProps);
+            foreach($keys as $key=>$value)
+            {
+                if(!empty($props[$key])) $this->aTemplateViewProps[$key]=$props[$key];
+            }
+        }
+    }
+    public function GetTemplateViewProps()
+    {
+        if(empty($this->aTemplateViewProps)) $this->SetDefaultTemplateViewProps();
+        
+        return $this->aTemplateViewProps;
+    }
+
+    protected function SetDefaultTemplateViewProps()
+    {
+        $this->aTemplateViewProps=array();
+        foreach($this->aProps as $key=>$value)
+        {
+            $this->aTemplateViewProps[$key]=array("label"=>$key);
+        }
+    }
+
+    //template view
+    protected $oTemplateView=null;
+    public function GetTemplateView($bUpdateData=true)
+    {
+        if(!$this->oTemplateView)
+        {
+            $this->oTemplateView=new AA_GenericTemplate_Grid();
+            $templateAreas=array();
+            foreach($this->aTemplateViewProps as $key=>$value)
+            {
+                $templateAreas[]=array("id"=>$key);
+            }
+            $this->oTemplateView->SetTemplateAreas($templateAreas);
+        }
+
+        return $this->oTemplateView;
+    }
+
+    public function SetTemplateView($var = null)
+    {
+        if($var instanceof AA_JSON_Template_Generic)
+        {
+            $this->oTemplateView=$var;
+        }
+    }
+
     //Aggiorna
     public function Update($user = null, $bSaveData = true, $logMsg = "")
     {

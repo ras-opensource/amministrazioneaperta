@@ -431,6 +431,17 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         $this->aProps['piani']=1;
         $this->aProps['note']="";
         
+        //template view props
+        $this->aTemplateViewProps['descrizione']=array("label"=>"Descrizione","type"=>"text","maxlength"=>AA_Sicar_Const::MAX_DESCRIZIONE_LENGTH,"required"=>true,"bottomLabel"=>"Inserisci la descrizione dell'immobile","visible"=>true);
+        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","required"=>true,"bottomLabel"=>"Scegli la tipologia dell'immobile","visible"=>true);
+        $this->aTemplateViewProps['comune']=array("label"=>"Comune","type"=>"text","required"=>true,"bottomLabel"=>"Comune dove e' situato l'immobile","function"=>"GetComune","visible"=>true);
+        $this->aTemplateViewProps['ubicazione']=array("label"=>"Ubicazione","type"=>"text","required"=>true,"bottomLabel"=>"Ubicazione dell'immobile all'interno del territorio comunale","function"=>"GetUbicazione","visible"=>true);
+        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","required"=>true,"bottomLabel"=>"Indirizzo dell'immobile","visible"=>true);
+        $this->aTemplateViewProps['catasto']=array("label"=>"Dati catastali","type"=>"text","required"=>true,"function"=>"GetTemplateViewCatasto","visible"=>true);
+        $this->aTemplateViewProps['zona_urbanistica']=array("label"=>"Zona urbanistica","type"=>"text","required"=>true,"bottomLabel"=>"Zona urbanistica dell'immobile","function"=>"GetZonaUrbanistica","visible"=>true);
+        $this->aTemplateViewProps['piani']=array("label"=>"Piani","type"=>"text","required"=>true,"bottomLabel"=>"Numero di piani dell'immobile","visible"=>true);
+        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","maxlength"=>AA_Sicar_Const::MAX_NOTE_LENGTH,"required"=>false,"bottomLabel"=>"Inserisci eventuali note sull'immobile","visible"=>true);
+
         // Chiama il costruttore padre
         parent::__construct($params);
     }
@@ -498,8 +509,9 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
     }
     
     // Comune
-    public function GetComune()
+    public function GetComune($bDescr=true)
     {
+        if($bDescr) return AA_Sicar_Const::GetComuneDescrFromCodiceIstat($this->GetProp("comune"));
         return $this->GetProp("comune");
     }
 
@@ -522,8 +534,15 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
     }
     
     // Ubicazione
-    public function GetUbicazione()
+    public function GetUbicazione($bDescr=true)
     {
+        if($bDescr)
+        {
+            $ubic=AA_Sicar_Const::GetListaUbicazioni(true);
+            if(!empty($ubic[$this->GetProp("ubicazione")])) return $ubic[$this->GetProp("ubicazione")];
+            else return "n.d.";
+        }
+
         return $this->GetProp("ubicazione");
     }
     
@@ -563,8 +582,17 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
     }
     
     // Zona Urbanistica
-    public function GetZonaUrbanistica()
+    public function GetZonaUrbanistica($bDescr=true)
     {
+        if($bDescr)
+        {
+            $zone=AA_Sicar_Const::GetListaZoneUrbanistiche();
+            foreach($zone as $z)
+            {
+                if($z['id']==$this->GetProp("zona_urbanistica")) return $z['value'];
+            }
+            return "n.d.";
+        }
         return $this->GetProp("zona_urbanistica");
     }
     
