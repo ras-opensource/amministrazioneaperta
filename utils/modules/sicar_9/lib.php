@@ -111,7 +111,7 @@ class AA_Sicar_Const extends AA_Const
     {
         $db = new AA_Database();
         $query = "SELECT comune FROM ".self::AA_DBTABLE_CODICI_ISTAT." WHERE codice = '".addslashes($codice_istat)."'";
-        if ($db->Query($query)) {
+        if ($db->Query($query) && $db->GetAffectedRows()>0) {
             $rs = $db->GetResultSet();
             return $rs[0]['comune'];
         }
@@ -122,7 +122,7 @@ class AA_Sicar_Const extends AA_Const
         return "";
     }
 
-    const DB_TABLE_IMMOBILI = 'aa_sicar_data';
+    const DB_TABLE_IMMOBILI = 'aa_sicar_immobili';
     const DB_TABLE_TIPOLOGIE = 'aa_sicar_tipologie';
     const DB_TABLE_UBICAZIONI = 'aa_sicar_ubicazioni';
     const DB_TABLE_ZONE_URBANISTICHE = 'aa_sicar_zone_urbanistiche';
@@ -674,8 +674,9 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         if (!empty($this->GetIndirizzo())) {
             $display .= " - " . $this->GetIndirizzo();
         }
-        if (!empty($this->GetComune())) {
-            $display .= " (" . AA_Sicar_Const::GetComuneDescrFromCodiceIstat($this->GetComune()) . ")";
+        $comune=$this->GetComune();
+        if (!empty($comune)) {
+            $display .= " (" . $comune . ")";
         }
         return $display;
     }
@@ -799,7 +800,7 @@ class AA_SicarModule extends AA_GenericModule
     const AA_UI_DETAIL_GENERALE_BOX = "Generale_Box";
 
     const AA_UI_SECTION_BOZZE_NAME="Alloggi (bozze)";
-     const AA_UI_SECTION_PUBBLICATE_NAME="Alloggi (pubblicate)";
+    const AA_UI_SECTION_PUBBLICATE_NAME="Alloggi (pubblicate)";
     
     //id sezione gestione immobili
     const AA_ID_SECTION_IMMOBILI = "GestImmobili";
@@ -1018,30 +1019,74 @@ class AA_SicarModule extends AA_GenericModule
             }
 
             // Recupera immobili in stato pubblicato
-            return AA_SicarAlloggio::Search($params, $this->oUser);
+            return $this->GetDataGenericSectionPubblicate_List($params,"GetDataSectionPubblicate_CustomFilter","GetDataSectionPubblicate_CustomDataTemplate");
+
         }
 
         // Personalizza il template dei dati delle pubblicate per il modulo corrente
         protected function GetDataSectionPubblicate_CustomDataTemplate($data = array(), $object = null)
         {
             if ($object instanceof AA_SicarAlloggio) {
-                $data['pretitolo'] = $object->GetProp("Anno");
+                $data['pretitolo'] = $object->GetImmobile(false);
                 $data['titolo'] = $object->GetDisplayName();
-                $data['tags'] = "<span class='AA_DataView_Tag AA_Label AA_Label_LightGreen'>Pubblicata</span>";
+                $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>".$object->GetTipologiaUtilizzo()."</span>";
+                if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightGreen' title='Anno ultima ristrutturazione'>".$object->GetAnnoRistrutturazione()."</span>";
+                $data['tags']=$tags;
             }
+            else
+            {
+                AA_Log::Log(__METHOD__." - oggetto non valido: ".print_r($object,true),100);
+            }
+
+            //restituisce il record al template base
             return $data;
         }
 
-        // Template della sezione pubblicate
-        public function TemplateSection_Pubblicate($params = array())
+        //Personalizza il filtro delle bozze per il modulo corrente
+    protected function GetDataSectionPubblicate_CustomFilter($params = array())
+    {
+        //immobile
+        if(isset($params['immobile']) && $params['immobile'] > 0)
         {
-            $bCanModify = $this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR);
-            $params['enableAddNewMultiFromCsv'] = false;
-
-            // Qui puoi usare AA_GenericSection_Pubblicate o un template simile a GECOP
-            $content=$this->TemplateGenericSection_Pubblicate($params,null);
-            return $content->toObject();
+            $params['where'][]=" AND ".AA_SicarAlloggio::AA_DBTABLE_DATA.".immobile like '%".addslashes($params['immobile'])."%'";
         }
+
+        //comune
+        if(!empty($params['comune']))
+        {
+            $params['join'][]=" LEFT JOIN ".AA_SicarImmobile::GetDatatable()." ON ".AA_SicarAlloggio::AA_DBTABLE_DATA.".immobile=".AA_SicarImmobile::GetDatatable().".id";
+            $params['where'][]=" AND ".AA_SicarImmobile::GetDatatable().".comune like '".addslashes($params['comune'])."'";
+        }
+
+        //indirizzo
+        if(!empty($params['indirizzo']))
+        {
+            $params['join'][]=" LEFT JOIN ".AA_SicarImmobile::GetDatatable()." ON ".AA_SicarAlloggio::AA_DBTABLE_DATA.".immobile=".AA_SicarImmobile::GetDatatable().".id";
+            $params['where'][]=" AND ".AA_SicarImmobile::GetDatatable().".indirizzo like '%".addslashes($params['indirizzo'])."%'";
+        }
+
+        if(!empty($params['stato_conservazione']) && $params['stato_conservazione'] > 0)
+        {
+            $params['where'][]=" AND ".AA_SicarAlloggio::AA_DBTABLE_DATA.".stato_conservazione like '".addslashes($params['stato_conservazione'])."'";
+        }
+
+        //ids
+        if(isset($params['ids']) &&  $params['ids']!="")
+        {
+            $params['where'][]=" AND ".AA_SicarAlloggio::GetObjectsDbDataTable().".id in (".addslashes($params['ids']).")";
+        }
+    
+        return $params;
+    }
+
+    // Template della sezione pubblicate
+    public function TemplateSection_Pubblicate($params = array())
+    {
+        $bCanModify = $this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR);
+
+        $content=$this->TemplateGenericSection_Pubblicate($params,$bCanModify,null);
+        return $content->toObject();
+    }
 
     // Template per la finestra di dialogo di aggiunta nuovo alloggio
     public function Template_GetSicarAddNewAlloggioDlg()

@@ -1235,7 +1235,8 @@ Class AA_GenericParsableObject
         {
             $this->oTemplateView=new AA_GenericTemplate_Grid();
             $templateAreas=array();
-            foreach($this->aTemplateViewProps as $key=>$value)
+            $templateViewProps=$this->GetTemplateViewProps();
+            foreach($templateViewProps as $key=>$value)
             {
                 $templateAreas[]=array("id"=>$key);
             }
@@ -2456,7 +2457,7 @@ class AA_GenericModule
     //Task layout
     public function Task_GetLayout($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
 
         $sTaskLog = "<status id='status'>0</status><content id='content' type='json'>";
         $content = $this->TemplateLayout();
@@ -2471,7 +2472,7 @@ class AA_GenericModule
     //Generic AMAAI Dlg
     public function Task_AMAAI_Start($task)
     {
-        AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
 
         $module = AA_AMAAI::GetInstance();
 
@@ -2657,7 +2658,7 @@ class AA_GenericModule
     }
 
     //Restituisce la lista delle schede pubblicate 
-    protected function GetDataGenericSectionPubblicate_List($params = array(), $customFilterFunction = "GetDataSectionBozze_CustomFilter", $customTemplateDataFunction = "GetDataSectionBozze_CustomDataTemplate")
+    protected function GetDataGenericSectionPubblicate_List($params = array(), $customFilterFunction = "GetDataSectionPubblicate_CustomFilter", $customTemplateDataFunction = "GetDataSectionPubblicate_CustomDataTemplate")
     {
         $templateData = array();
 

@@ -404,6 +404,20 @@ class AA_GenericTemplate_Grid extends AA_JSON_Template_Layout
         }
     }
 
+    public function ParseData($data=array())
+    {
+        if(is_array($data))
+        {
+            foreach($data as $curArea=>$curAreaData)
+            {
+                if(!empty($this->aGridCells[$curArea]))
+                {
+                    $this->aGridCells[$curArea]->SetProp("data",$curArea);
+                }
+            }
+        }
+    }
+
     protected $aGridCells=array();
     public function AddCellToGrid($cell=null, $area="")
     {
