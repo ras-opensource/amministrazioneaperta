@@ -433,7 +433,7 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         
         //template view props
         $this->aTemplateViewProps['descrizione']=array("label"=>"Descrizione","type"=>"text","maxlength"=>AA_Sicar_Const::MAX_DESCRIZIONE_LENGTH,"required"=>true,"bottomLabel"=>"Inserisci la descrizione dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","required"=>true,"bottomLabel"=>"Scegli la tipologia dell'immobile","visible"=>true);
+        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","required"=>true,"function"=>"GetTipologia","bottomLabel"=>"Scegli la tipologia dell'immobile","visible"=>true);
         $this->aTemplateViewProps['comune']=array("label"=>"Comune","type"=>"text","required"=>true,"bottomLabel"=>"Comune dove e' situato l'immobile","function"=>"GetComune","visible"=>true);
         $this->aTemplateViewProps['ubicazione']=array("label"=>"Ubicazione","type"=>"text","required"=>true,"bottomLabel"=>"Ubicazione dell'immobile all'interno del territorio comunale","function"=>"GetUbicazione","visible"=>true);
         $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","required"=>true,"bottomLabel"=>"Indirizzo dell'immobile","visible"=>true);
@@ -445,7 +445,69 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         // Chiama il costruttore padre
         parent::__construct($params);
     }
-    
+
+    public function GetTemplateViewCatasto()
+    {
+        $catasto=$this->GetCatasto();
+        if(empty($catasto)) return "n.d.";
+        $sezione=array("Fabbricati","Terreni");
+        $return="";
+        $return.="Sezione: ".$sezione[$catasto['SezioneCatasto']];
+        $return.=" - Foglio: ".$catasto['FoglioCatasto'];
+        $return.=" - Mappale: ".$catasto['MappaleCatasto'];
+        $return.=" - Particella: ".$catasto['ParticellaCatasto'];
+        $return.=" - Subalterno: ".$catasto['Subalterno'];
+        
+        return $return;
+    }
+    public function GetTemplateView($bResfresh=false)
+    {
+        if($this->oTemplateView !=null && !$bResfresh) return $this->oTemplateView;
+        
+        $templateView=new AA_GenericTemplate_Grid();
+        $templateAreas=array(
+            array("id"=>"descrizione descrizione descrizione"),
+            array("id"=>"tipologia . piani"),
+            array("id"=>"comune ubicazione zona_urbanistica"),
+            array("id"=>"indirizzo catasto catasto"),
+            array("id"=>"note note note")
+        );
+        $templateView->SetTemplateAreas($templateAreas);
+        $templateView->SetTemplateCols(array("1fr","1fr","1fr"));        
+
+        foreach($this->aTemplateViewProps as $propName=>$propConfig)
+        {
+            if($propConfig['visible'])
+            {
+                $class='';
+                if(!empty($propConfig['class'])) $class=$propConfig['class'];
+                else $class='aa-templateview-prop-'.$propName;
+
+                $value="";
+                if(empty($propConfig['function'])) $value = "<span class='".$class."'>" . $this->GetProp($propName) . "</span>";
+                else 
+                {
+                    if(method_exists($this,$propConfig['function'])) $value = "<span class='".$class."'>".$this->{$propConfig['function']}()."</span>";
+                    else $value = "<span class='".$class."'>n.d.</span>";
+                }
+
+                if(!$templateView->AddCellToGrid(new AA_JSON_Template_Template("", array(
+                    "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                    "data" => array("title" => "".$propConfig['label'].":", "value" => $value),
+                    "css" => array("border-bottom" => "1px solid #dadee0 !important","width"=>"auto !important","height"=> "auto !important"),
+                )), $propName))
+                {
+                    AA_Log::Log(__METHOD__ . " - ERRORE: non è stato possibile aggiungere la cella alla template view per la proprietà: " . $propName, 100);
+                }
+            }
+        }
+
+        $this->SetTemplateView($templateView);
+
+        //AA_Log::Log(__METHOD__ . " - INFO: generata la template view per l'immobile con ID: " . $this->GetProp("id")." - ".print_r($templateView,true), 100);
+        return $templateView;
+    }
+        
     //lista degli immobili
     public static function GetListaImmobili($comune = "")
     {
@@ -831,6 +893,7 @@ class AA_SicarModule extends AA_GenericModule
     
     //ricerca immobili
     const AA_UI_WND_SEARCH_IMMOBILI = "SicarSearchWnd";
+    const AA_UI_WND_DETAIL_IMMOBILI = "SicarDetailImmobileWnd";
     public function __construct($user = null, $bDefaultSections = true)
     {
         if (!($user instanceof AA_User)) {
@@ -860,6 +923,7 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateImmobileSicar");
         $taskManager->RegisterTask("GetSicarDeleteImmobileDlg");
         $taskManager->RegisterTask("DeleteImmobileSicar");
+        $taskManager->RegisterTask("GetSicarDetailImmobileDlg");
 
         // Task per le operazioni CRUD
         $taskManager->RegisterTask("AddNewAlloggioSicar");        
@@ -1251,9 +1315,9 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->AddTextField("anno_ristrutturazione", "Anno ristrutturazione", ["required" => false, "bottomLabel" => "Anno (se presente)"]);
     
         // Campo numerico: superficie netta
-        $wnd->AddTextField("superficie_netta", "Superficie netta", ["required" => false, "bottomLabel" => "Valore in metri quadri"],false);
+        $wnd->AddTextField("superficie_netta", "Superficie netta", ["required" => true,"validateFunction"=>"IsPositive", "bottomLabel" => "Valore in metri quadri"],false);
         // Campo numerico: superficie utile abitabile
-        $wnd->AddTextField("superficie_utile_abitabile", "Superficie abitabile", ["required" => false, "bottomLabel" => "Superficie utile in mq"],false);
+        $wnd->AddTextField("superficie_utile_abitabile", "Superficie abitabile", ["required" => true,"validateFunction"=>"IsPositive", "bottomLabel" => "Superficie utile in mq"],false);
         // Campo numerico: piano
         $wnd->AddTextField("piano", "Piano", ["required" => true, "bottomLabel" => "Numero del piano"],false);
 
@@ -1657,6 +1721,27 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+     //Template dlg search immobili
+    public function Template_GetSicarDetailImmobileDlg($immobile=null)
+    {
+        $id=static::AA_UI_WND_DETAIL_IMMOBILI;
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Dettaglio immobile", $this->id);
+
+        $wnd->SetWidth(800);
+        $wnd->SetHeight(600);
+        
+        if(!($immobile instanceof AA_SicarImmobile))
+        {
+            $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Immobile non trovato")));
+            return $wnd;
+        }
+
+        $wnd->AddView($immobile->GetTemplateView());
+        
+        return $wnd;
+    }
+
     //Template data table SearchImmobili
     public function Template_DatatableSearchImmobili($id="")
     {
@@ -1892,6 +1977,28 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la finestra visualizzazione dettaglio immobile
+    public function Task_GetSicarDetailImmobileDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarImmobile();
+        if (!$object->Load($_REQUEST['id'],$this->oUser)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarDetailImmobileDlg($object),true);
+        return true;
+    }
+
     // Template per la finestra di dialogo di modifica alloggio
     public function Template_GetSicarModifyDlg($object)
     {
@@ -2067,6 +2174,15 @@ class AA_SicarModule extends AA_GenericModule
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi alloggi", false);
             return false;
+        }
+        
+        if(isset($_REQUEST['superficie_utile_abitabile']) && $_REQUEST['superficie_utile_abitabile']!="")
+        {
+            $_REQUEST['superficie_utile_abitabile']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_utile_abitabile']));
+        }
+        if(isset($_REQUEST['superficie_netta']) && $_REQUEST['superficie_netta']!="")
+        {
+            $_REQUEST['superficie_netta']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_netta']));
         }
         
         // Utilizza il metodo generico della classe base
@@ -2335,8 +2451,6 @@ class AA_SicarModule extends AA_GenericModule
     // Task per aggiornare un alloggio
     public function Task_UpdateSicar($task)
     {
-        
-        
         // Verifica che l'utente abbia i permessi per modificare gli alloggi
         if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -2363,7 +2477,28 @@ class AA_SicarModule extends AA_GenericModule
             return false;
         }
         
+        if(isset($_REQUEST['superficie_utile_abitabile']) && $_REQUEST['superficie_utile_abitabile']!="")
+        {
+            $_REQUEST['superficie_utile_abitabile']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_utile_abitabile']));
+        }
+        if(isset($_REQUEST['superficie_netta']) && $_REQUEST['superficie_netta']!="")
+        {
+            $_REQUEST['superficie_netta']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_netta']));
+        }
+
         $alloggio->Parse($_REQUEST);
+        $validate = $alloggio->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
 
         if(!$alloggio->Update($this->oUser,true,"Aggiornamento dati generali"))
         {
@@ -2606,7 +2741,7 @@ class AA_SicarModule extends AA_GenericModule
         ));
 
         //ultima ristrutturazione
-        $value = "<span class='AA_Label AA_Label_LightYellow'>" . $object->GetAnnoRistrutturazione() . "</span>";
+        $value = "<span>" . $object->GetAnnoRistrutturazione() . "</span>";
         $ultima_ristrutturazione = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity" => 1,
@@ -2616,23 +2751,23 @@ class AA_SicarModule extends AA_GenericModule
 
         // superficie
         $superficie="";
-        if(!empty($object->GetSuperficieNetta())) $superficie="netta: ".$object->GetSuperficieNetta();
-        if(!empty($object->GetSuperficieNetta())) 
+        if(!empty($object->GetSuperficieNetta())) $superficie="<span>netta: ".$object->GetSuperficieNetta()."</span>";
+        if(!empty($object->GetSuperficieUtileAbitabile())) 
         {
-            if(!empty($superficie)) $superficie.="<br>"; 
-            $superficie="utile abitabile: ".$object->GetSuperficieUtileAbitabile();
+            if(!empty($superficie)) $superficie.=" - "; 
+            $superficie.="<span>utile abitabile: ".$object->GetSuperficieUtileAbitabile()."</span>";
         }
-        $value = "<span class='AA_Label AA_Label_LightYellow'>" . $superficie . "</span>";
+        $value =  $superficie;
         $superficie = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity" => 1,
-            "data" => array("title" => "Superficie:", "value" => $value),
+            "data" => array("title" => "Superficie (mq):", "value" => $value),
             "css" => array("border-bottom" => "1px solid #dadee0 !important")
         ));
 
         //piano
-        $piano="n.d.";
-        $value = "<span class='AA_Label AA_Label_LightYellow'>" . $object->GetPiano() . "</span>";
+        if(!empty($object->GetPiano())) $value = "<span>" . $object->GetPiano() . "</span>";
+        else $value = "<span>terra</span>";
         $piano = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity" => 1,
@@ -2717,7 +2852,7 @@ class AA_SicarModule extends AA_GenericModule
         $immobile=new AA_JSON_Template_Template("",array(
             "maxHeight"=>100,
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Immobile:","value"=>$immobile_obj->GetDescrizione()."<br>".$immobile_obj->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($immobile_obj->GetComune()).") <a href='https://www.google.com/maps/search/?api=1&query=".$immobile_obj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a><br><i>".$immobile_obj->GetTipologia()."</i>")
+            "data"=>array("title"=>"Immobile:","value"=>$immobile_obj->GetDescrizione()."<br>".$immobile_obj->GetIndirizzo()." (".$immobile_obj->GetComune().") <a href='https://www.google.com/maps/search/?api=1&query=".$immobile_obj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a><br><i>".$immobile_obj->GetTipologia()."</i>")
         ));
         $riga->addCol($titolo);
 
@@ -2938,11 +3073,23 @@ class AA_SicarAlloggio extends AA_Object_V2
     public function GetCondominioMisto() { return $this->GetProp("condominio_misto"); }
     public function SetCondominioMisto($var = false) { $this->SetProp("condominio_misto", $var); $this->SetChanged(true); return true; }
 
-    public function GetSuperficieNetta() { return $this->GetProp("superficie_netta"); }
-    public function SetSuperficieNetta($var = 0.0) { $this->SetProp("superficie_netta", $var); $this->SetChanged(true); return true; }
+    public function GetSuperficieNetta() { return AA_Utils::number_format($this->GetProp("superficie_netta"),2,",","."); }
+    public function SetSuperficieNetta($var = 0) 
+    {
+        $var=str_replace(",",".",str_replace(".","",$var));
+        $this->SetProp("superficie_netta", $var); 
+        $this->SetChanged(true); 
+        return true; 
+    }
 
-    public function GetSuperficieUtileAbitabile() { return $this->GetProp("superficie_utile_abitabile"); }
-    public function SetSuperficieUtileAbitabile($var = 0.0) { $this->SetProp("superficie_utile_abitabile", $var); $this->SetChanged(true); return true; }
+    public function GetSuperficieUtileAbitabile() { return AA_Utils::number_format($this->GetProp("superficie_utile_abitabile"),2,",","."); }
+    public function SetSuperficieUtileAbitabile($var = 0) 
+    {
+        $var=str_replace(",",".",str_replace(".","",$var));
+        $this->SetProp("superficie_utile_abitabile", $var); 
+        $this->SetChanged(true); 
+        return true; 
+    }
 
     public function GetPiano() { return $this->GetProp("piano"); }
     public function SetPiano($var = 0) { $this->SetProp("piano", $var); $this->SetChanged(true); return true; }
@@ -2965,6 +3112,11 @@ class AA_SicarAlloggio extends AA_Object_V2
     public function GetNote() { return $this->GetProp("note"); }
     public function SetNote($var = "") { $this->SetProp("note", $var); $this->SetChanged(true); return true; }
 
+    public function Update($user = null, $bSaveData = true,$logMsg="Aggiornamento dati generali alloggio")
+    {
+        return parent::Update($user, $bSaveData, $logMsg);
+    }
+
     // Validazione campi obbligatori e di tipo
     public function Validate()
     {
@@ -2979,14 +3131,14 @@ class AA_SicarAlloggio extends AA_Object_V2
         if (empty($this->GetTipologiaUtilizzo())) {
             $errors[] = "La tipologia di utilizzo è obbligatoria";
         }
-        if (!is_null($this->GetAnnoRistrutturazione()) && intval($this->GetAnnoRistrutturazione()) < 0) {
+        if (intval($this->GetAnnoRistrutturazione()) < 1900 || intval($this->GetAnnoRistrutturazione()) > intval(date("Y"))) {
             $errors[] = "Anno di ristrutturazione non valido";
         }
-        if (!is_numeric($this->GetSuperficieNetta()) || floatval($this->GetSuperficieNetta()) < 0) {
-            $errors[] = "Superficie netta non valida";
+        if (!is_numeric($this->GetProp("superficie_netta")) || floatval($this->GetProp("superficie_netta")) <= 0) {
+            $errors[] = "Superficie netta non valida (".$this->GetProp("superficie_netta").")";
         }
-        if (!is_numeric($this->GetSuperficieUtileAbitabile()) || floatval($this->GetSuperficieUtileAbitabile()) < 0) {
-            $errors[] = "Superficie utile abitabile non valida";
+        if (!is_numeric($this->GetProp('superficie_utile_abitabile')) || floatval($this->GetProp('superficie_utile_abitabile')) <= 0) {
+            $errors[] = "Superficie utile abitabile non valida (".$this->GetSuperficieUtileAbitabile().")";
         }
         if (empty($this->GetPiano()) && $this->GetPiano() !== 0 && $this->GetPiano() !== "0") {
             $errors[] = "Il piano è obbligatorio";
@@ -3049,23 +3201,6 @@ class AA_SicarAlloggio extends AA_Object_V2
     // Parse parametri stile AA_SicarImmobile
     public function Parse($params = array(), $bOnlyData = false)
     {
-        parent::Parse($params, $bOnlyData);
-
-        if (isset($params['immobile'])) { $this->SetImmobile($params['immobile']); }
-        if (isset($params['tipologia_utilizzo'])) { $this->SetTipologiaUtilizzo($params['tipologia_utilizzo']); }
-        if (isset($params['stato_conservazione'])) { $this->SetStatoConservazione($params['stato_conservazione']); }
-        if (isset($params['anno_ristrutturazione'])) { $this->SetAnnoRistrutturazione($params['anno_ristrutturazione']); }
-        if (isset($params['condominio_misto'])) { $this->SetCondominioMisto($params['condominio_misto']); }
-        if (isset($params['superficie_netta'])) { $this->SetSuperficieNetta($params['superficie_netta']); }
-        if (isset($params['superficie_utile_abitabile'])) { $this->SetSuperficieUtileAbitabile($params['superficie_utile_abitabile']); }
-        if (isset($params['piano'])) { $this->SetPiano($params['piano']); }
-        if (isset($params['ascensore'])) { $this->SetAscensore($params['ascensore']); }
-        if (isset($params['fruibile_dis'])) { $this->SetFruibileDis($params['fruibile_dis']); }
-        if (isset($params['note'])) { $this->SetNote($params['note']); }
-        if (isset($params['gestione'])) { $this->SetGestione($params['gestione']); }
-        if (isset($params['proprieta'])) { $this->SetProprieta($params['proprieta']); }
-        if (isset($params['stato'])) { $this->SetStato($params['stato']); }
-
         return parent::Parse($params,$bOnlyData);
     }
 

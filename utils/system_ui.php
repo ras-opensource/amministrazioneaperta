@@ -388,10 +388,12 @@ class AA_GenericTemplate_Grid extends AA_JSON_Template_Layout
         if(is_array($this->templateCols) && sizeof($this->templateCols)>0)
             $css['grid-template-columns']=implode(" ",$this->templateCols);
         else $css['grid-template-columns']="auto";
+
         if(is_array($this->templateRows) && sizeof($this->templateRows)>0)
             $css['grid-template-rows']=implode(" ",$this->templateRows);
         else $css['grid-template-rows']="auto";
 
+        //AA_Log::Log(__METHOD__." setting css grid - ".print_r($css,true),100);
         $this->SetProp("css", $css);
 
         $this->cells=array();
@@ -399,9 +401,12 @@ class AA_GenericTemplate_Grid extends AA_JSON_Template_Layout
         {
             foreach($this->aGridCells as $curCell)
             {
-                $this->addCell($curCell);
+                //AA_Log::Log(__METHOD__." Update grid - aggiungo la cella: ".print_r($curCell,true),100);
+                $this->addRow($curCell);
             }
         }
+
+        //AA_Log::Log(__METHOD__." Updated grid object - ".print_r($this,true),100);
     }
 
     public function ParseData($data=array())
