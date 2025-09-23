@@ -1260,7 +1260,7 @@ Class AA_GenericParsableObject
                 if(empty($propConfig['function'])) $value = "<span class='".$class."'>" . $this->GetProp($propName) . "</span>";
                 else 
                 {
-                    if(method_exists($this,$propConfig['function'])) $value = "<span class='".$class."'>".$this->{$propConfig['function']}()."</span>";
+                    if(method_exists($this,$propConfig['function'])) $value = "<div class='".$class."'>".$this->{$propConfig['function']}()."</div>";
                     else $value = "<span class='".$class."'>n.d.</span>";
                 }
 
