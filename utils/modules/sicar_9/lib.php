@@ -864,11 +864,34 @@ class AA_SicarModule extends AA_GenericModule
 
     const AA_UI_SECTION_BOZZE_NAME="Alloggi (bozze)";
     const AA_UI_SECTION_PUBBLICATE_NAME="Alloggi (pubblicate)";
+    const AA_UI_SECTION_PUBBLICATE_ICON="mdi mdi-folder-home";
+
     
     //id sezione gestione immobili
     const AA_ID_SECTION_IMMOBILI = "GestImmobili";
     const AA_UI_SECTION_IMMOBILI_BOX = "GestImmobiliBox";
-    const AA_UI_SECTION_IMMOBILI_NAME = "Gestione Immobili";
+    const AA_UI_SECTION_IMMOBILI_NAME = "Gestione immobili";
+    const AA_UI_SECTION_IMMOBILI_ICON = "mdi mdi-office-building-marker";
+    const AA_UI_SECTION_IMMOBILI_DESC = "Visualizza e gestisci gli immobili";
+    const AA_UI_SECTION_IMMOBILI_TOOLTIP = "Visualizza e gestisci gli immobili";
+
+    //id sezione tables
+    const AA_ID_SECTION_TABLES = "GestTables";
+    const AA_UI_SECTION_TABLES_BOX = "GestTablesBox";
+    const AA_UI_SECTION_TABLES_NAME = "Gestione Enti,immobili e nuclei";
+    const AA_UI_SECTION_TABLES_ICON = "mdi mdi-table";
+
+    //------- Sezione cruscotto -------
+    //Id sezione
+    const AA_ID_SECTION_DESKTOP="sicar_desktop";
+
+    //nome sezione
+    const AA_UI_SECTION_DESKTOP_NAME="Cruscotto";
+
+    const AA_UI_SECTION_DESKTOP_BOX="Sicar_Desktop_Content_Box";
+
+    const AA_UI_SECTION_DESKTOP_ICON="mdi mdi-desktop-classic";
+    //------------------------------
 
     const AA_MODULE_OBJECTS_CLASS = "AA_SicarAlloggio";
     
@@ -953,14 +976,24 @@ class AA_SicarModule extends AA_GenericModule
         $this->AddObjectTemplate(static::AA_UI_WND_SEARCH_IMMOBILI."_".static::AA_UI_TABLE_SEARCH_IMMOBILI,"Template_DatatableSearchImmobili");
         #---------------------------------------------------------------
 
+        #------------------------------- desktop -----------------------
+        $desktop=new AA_GenericModuleSection(static::AA_ID_SECTION_DESKTOP,static::AA_UI_SECTION_DESKTOP_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_DESKTOP_BOX,$this->GetId(),true,true,false,true,static::AA_UI_SECTION_DESKTOP_ICON,"TemplateSection_Desktop");
+        $desktop->SetNavbarTemplate($this->TemplateGenericNavbar_Void(1,true)->toArray());
+        $desktop->SetIcon(static::AA_UI_SECTION_DESKTOP_ICON);
+        $this->AddSection($desktop);
+        #---------------------------------------------------------------
+        
         #----------------------- Gest immobili -------------------------
-        $gest_immobili=new AA_GenericModuleSection(static::AA_ID_SECTION_IMMOBILI,"Gestione Immobili",true,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_IMMOBILI,$this->GetId(),false,true,false,false,'mdi-office-building-marker',"TemplateSection_Immobili");
+        $gest_immobili=new AA_GenericModuleSection(static::AA_ID_SECTION_IMMOBILI,static::AA_UI_SECTION_IMMOBILI_NAME,true,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_IMMOBILI,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_IMMOBILI_ICON,"TemplateSection_Immobili");
+        $gest_immobili->SetNavbarTemplate(array($this->TemplateGenericNavbar_Immobili(1,true,true)->toArray()));
         $this->AddSection($gest_immobili);
 
+        #---------------------------------------------------------------
         $bozze=$this->GetSection(static::AA_ID_SECTION_BOZZE);
-        $bozze->SetNavbarTemplate(array($this->TemplateGenericNavbar_Pubblicate(1)->toArray(),$this->TemplateGenericNavbar_Section($gest_immobili,2,true)->toArray()));
+        $bozze->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Pubblicate(2,true)->toArray(),));
 
-        $gest_immobili->SetNavbarTemplate(array($this->TemplateGenericNavbar_Immobili(1,true,true)->toArray()));
+        $pubblicate=$this->GetSection(static::AA_ID_SECTION_PUBBLICATE);
+        $pubblicate->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Bozze(2,true)->toArray()));  
     }
     
     //Navbar Immobili
@@ -972,12 +1005,12 @@ class AA_SicarModule extends AA_GenericModule
             "",
             array(
                 "type" => "clean",
-                "section_id" => static::AA_ID_SECTION_BOZZE,
+                "section_id" => static::AA_ID_SECTION_DESKTOP,
                 "module_id" => $this->GetId(),
                 "refresh_view" => $refresh_view,
-                "tooltip" => "Fai click per visualizzare la sezione relativa alle bozze",
-                "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" . static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_ID_SECTION_IMMOBILI . "' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"".static::AA_ID_SECTION_BOZZE."\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
-                "data" => array("label" => "Gestione alloggi (bozze)", "icon" => "mdi mdi-office-building", "class" => $class)
+                "tooltip" => "Fai click per tornare al dekstop",
+                "template" => "<div class='AA_navbar_link_box_left #class#'><a class='" . static::AA_UI_PREFIX . "_Navbar_Link_" . static::AA_ID_SECTION_DESKTOP . "' onClick='AA_MainApp.utils.callHandler(\"setCurrentSection\",\"".static::AA_ID_SECTION_DESKTOP."\",\"" . $this->id . "\")'><span class='#icon#' style='margin-right: .5em'></span><span>#label#</span></a></div>",
+                "data" => array("label" => static::AA_UI_SECTION_DESKTOP_NAME, "icon" => static::AA_UI_SECTION_DESKTOP_ICON, "class" => $class)
             )
         );
         return $navbar;
@@ -1142,6 +1175,173 @@ class AA_SicarModule extends AA_GenericModule
         }
     
         return $params;
+    }
+
+    //Template cruscotto content
+    public function TemplateSection_Desktop()
+    {
+        //AA_Log::Log(__METHOD__,100);
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_DESKTOP_BOX;
+        $layout = new AA_JSON_Template_Layout($id,array("type"=>"clean","name" => static::AA_UI_SECTION_DESKTOP_NAME));
+
+        $second_row=new AA_JSON_Template_Layout("",array("type"=>"space","css"=>array("background-color"=>"transparent")));
+        $second_row->AddCol($this->TemplateSection_News());
+        $layout->AddRow($second_row);
+
+        $minCountModulesToCarousel=6;
+
+        //Moduli Row
+        $modules_added=0;
+        $modules=array(
+            array("id_section"=>static::AA_ID_SECTION_PUBBLICATE,"icon"=>static::AA_UI_SECTION_PUBBLICATE_ICON,"label"=>"Gestione alloggi","descrizione"=>"Visualizza e gestisci gli alloggi","tooltip"=>"Visualizza e gestisci gli alloggi","visible"=>true),
+            array("id_section"=>static::AA_ID_SECTION_IMMOBILI,"icon"=>static::AA_UI_SECTION_IMMOBILI_ICON,"label"=>static::AA_UI_SECTION_IMMOBILI_NAME,"descrizione"=>static::AA_UI_SECTION_IMMOBILI_DESC,"tooltip"=>static::AA_UI_SECTION_IMMOBILI_TOOLTIP)
+        );
+ 
+        $minHeightModuliItem=intval(($_REQUEST['vh']-180)/2);
+        //$numModuliBoxForrow=intval(sqrt(sizeof($moduli_data)));
+        $WidthModuliItem=intval(($_REQUEST['vw']-110)/4);
+        //$HeightModuliItem=intval(/$numModuliBoxForrow);"css"=>"AA_DataView_Moduli_item","margin"=>10
+
+        if(sizeof($modules) < $minCountModulesToCarousel ) 
+        {
+            AA_Log::Log(__METHOD__." - Aggiungo layout: ".$id."_ModuliBox" ,100);
+            $moduli_box=new AA_JSON_Template_Layout($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+        }
+        else 
+        {
+            AA_Log::Log(__METHOD__." - Aggiungo carosello: ".$id."_ModuliBox" ,100);
+            $moduli_box=new AA_JSON_Template_Carousel($id."_ModuliBox",array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+        }
+
+        $riepilogo_template="<div class='AA_DataView_Moduli_item' onclick=\"#onclick#\" style='cursor: pointer; border: 1px solid; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 97%; margin:5px;'>";
+        //icon
+        $riepilogo_template.="<div style='display: flex; align-items: center; height: 120px; font-size: 90px;'><span class='#icon#'></span></div>";
+        //name
+        $riepilogo_template.="<div style='display: flex; align-items: center;justify-content: center; flex-direction: column; font-size: larger;height: 60px'>#name#</div>";
+        //descr
+        //$riepilogo_template.="<div style='display: flex; align-items: center;padding: 10px;height: 120px'><span>#descr#</span></div>";
+        //go
+        //$riepilogo_template.="<div style='display: flex; flex-direction: column; justify-content: center; align-items: center; height: 48px; padding: 5px'><a title='Apri il modulo' onclick=\"#onclick#\" class='AA_Button_Link'><span>Vai</span>&nbsp;<span class='mdi mdi-arrow-right-thick'></span></a></div>";
+        $riepilogo_template.="</div>";
+
+        $nSlide=0;
+        $nMod=0;
+        $moduli_view=null;
+        foreach($modules as $curModId => $curMod)
+        {
+            $nMod++;
+            $modules_added++;
+            AA_Log::Log(__METHOD__." - Aggiungo il modulo: ".$curModId,100);
+            $name="<span style='font-weight:900;font-variant-caps: all-small-caps;font-size:larger'>".$curMod['label']."</span><span>".$curMod['tooltip']."</span>";
+            $onclick="AA_MainApp.utils.callHandler('setCurrentSection','".$curMod['id_section']."','".$this->GetId()."')";
+            $moduli_data=array("id"=>$curMod['id_section'],"name"=>$name,'descr'=>$curMod['descrizione'],"icon"=>$curMod['icon'],"onclick"=>$onclick);
+            if($moduli_view==null) $moduli_view=new AA_JSON_Template_Layout($id."_ModuliView_".$nSlide,array("type"=>"clean","css"=>array("background-color"=>"transparent")));
+            $moduli_view->AddCol(new AA_JSON_Template_Template($id."_ModuleBox_".$moduli_data['id'],array("template"=>$riepilogo_template,"borderless"=>true,"data"=>array($moduli_data))));
+            
+            if($nMod%4==0)
+            {
+                
+                if(sizeof($modules) < $minCountModulesToCarousel) 
+                {
+                    AA_Log::Log(__METHOD__." - Aggiungo box moduli: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                    $moduli_box->AddRow($moduli_view);
+                }
+                else 
+                {
+                    AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                    $moduli_box->AddSlide($moduli_view);
+                }
+                $nSlide++;
+                $moduli_view=null;
+                $nMod=0;
+            }   
+        }
+
+        //AA_Log::Log(__METHOD__." - nMod: ".$nMod. " - %: ".$nMod%4,100);
+        if($nMod%4 || $nMod < 4)
+        {
+            //AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide,100);
+            $i=$nMod;
+            if($nMod > 4) $i=$nMod%4;
+            for($i;$i < 4;$i++)
+            {
+                if($moduli_view !=null) $moduli_view->addCol(new AA_JSON_Template_Generic());
+            }
+        }
+
+        if($moduli_view != null)
+        {
+            if(sizeof($modules) < $minCountModulesToCarousel) 
+            {
+                AA_Log::Log(__METHOD__." - Aggiungo il box al layout: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                if($moduli_view !=null) $moduli_box->AddRow($moduli_view);
+            }
+            else 
+            {
+                AA_Log::Log(__METHOD__." - Aggiungo la slide: ".$id."_ModuliView_".$nSlide." - nMod: ".$nMod ,100);
+                if($moduli_view !=null) $moduli_box->AddSlide($moduli_view);
+            }
+        }
+          
+        if($moduli_box)
+        {
+            if($modules_added==0)
+            {
+                $moduli_box->AddRow(new AA_JSON_Template_Template(uniqid(),array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>&nbsp;</div></div>")));
+            }
+            $layout->AddRow($moduli_box);
+        }
+        else
+        {
+            $layout->AddRow(new AA_JSON_Template_Template(uniqid(),array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>&nbsp;</div></div>")));
+        }
+        
+        return $layout;
+    }
+
+    //Template news content
+    public function TemplateSection_News()
+    {
+        $news_box=new AA_JSON_Template_Layout("",array("type"=>"space","css"=>"AA_Desktop_Section_Box"));
+      
+         
+        $db = new AA_Database();
+        
+        $query="SELECT * from aa_sicar_news WHERE archivio='0' order by data DESC";
+        
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__."() - errore: ".$db->GetErrorMessage()." nella query: ".$query,100);
+        }
+
+        $data=array();
+        foreach($db->GetResultSet() as $row)
+        {
+            $data[]=array("id"=>$row['id'],"date"=>$row['data'],"value"=>$row['oggetto'],"details"=>$row['corpo']);
+        }
+        
+        $news_box->AddRow(new AA_JSON_Template_Generic("",array("view"=>"label","align"=>"center","label"=>"<span class='AA_Desktop_Section_Label'>News</span>")));
+        if(sizeof($data)>0)
+        {
+            $news_layout = new AA_JSON_Template_Generic("",
+            array(
+            "view"=>"timeline",
+            "css"=>array("background-color"=>"transparent"),
+            "type"=>array(
+                "height"=>"auto",
+                "width"=>800,
+                "type"=>"left",
+                "lineColor"=>"skyblue"
+            )));
+            $news_layout->setProp('data',$data);
+            $news_box->AddRow($news_layout);
+        }
+        else
+        {
+            $news_box->AddRow(new AA_JSON_Template_Template("",array("template"=>"<div style='display: flex; justify-content: center; align-items: center; width: 100%;height:100%'><div>Non sono presenti news</div></div>")));
+        }
+
+        return $news_box;
     }
 
     // Template della sezione pubblicate
@@ -2916,8 +3116,8 @@ class AA_SicarModule extends AA_GenericModule
             }
         }
 
-        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id," ",3,null,array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
-        else $template=new AA_GenericDatatableTemplate($id," ",4,null,array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",3,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader(true);

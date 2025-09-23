@@ -4366,6 +4366,7 @@ class AA_GenericModule
                 array(
                     "type" => "clean",
                     "section_id" => $section->GetId(),
+                    "css" => array("width"=>"fit-content !important"),
                     "module_id" => $this->GetId(),
                     "refresh_view" => $refresh_view,
                     "tooltip" => "Fai click per visualizzare la sezione relativa a ".$section->GetName(),
