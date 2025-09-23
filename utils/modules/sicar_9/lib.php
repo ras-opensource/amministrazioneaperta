@@ -466,14 +466,15 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         
         $templateView=new AA_GenericTemplate_Grid();
         $templateAreas=array(
-            array("id"=>"descrizione descrizione descrizione"),
-            array("id"=>"tipologia . piani"),
-            array("id"=>"comune ubicazione zona_urbanistica"),
-            array("id"=>"indirizzo catasto catasto"),
-            array("id"=>"note note note")
+            array("descrizione", "descrizione","descrizione"),
+            array("tipologia",".","piani"),
+            array("comune", "ubicazione", "zona_urbanistica"),
+            array("indirizzo", "catasto", "catasto"),
+            array("note", "note", "note")
         );
         $templateView->SetTemplateAreas($templateAreas);
-        $templateView->SetTemplateCols(array("1fr","1fr","1fr"));        
+        $templateView->SetTemplateCols(array("1fr","1fr","1fr"));
+        $templateView->SetTemplateRows(array("1fr","1fr","1fr","1fr","2fr"));        
 
         foreach($this->aTemplateViewProps as $propName=>$propConfig)
         {

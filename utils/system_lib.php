@@ -1224,7 +1224,7 @@ Class AA_GenericParsableObject
         $this->aTemplateViewProps=array();
         foreach($this->aProps as $key=>$value)
         {
-            $this->aTemplateViewProps[$key]=array("label"=>$key,"visible"=>true,"class"=>"aa-text","function"=>"");
+            $this->aTemplateViewProps[$key]=array("label"=>$key,"visible"=>true,"class"=>"aa-text");
         }
     }
 
@@ -1251,7 +1251,7 @@ Class AA_GenericParsableObject
         {
             if($propConfig['visible'])
             {
-                $templateAreas[]=array("id"=>$propName);
+                $templateAreas[]=$propName;
                 $class='';
                 if(!empty($propConfig['class'])) $class=$propConfig['class'];
                 else $class='aa-templateview-prop-'.$propName;
