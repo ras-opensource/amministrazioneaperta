@@ -1489,7 +1489,7 @@ Class AA_GenericParsableDbObject extends AA_GenericParsableObject
             return array();
         }
 
-        AA_Log::Log(__METHOD__." - query: ".$query,100);
+        //AA_Log::Log(__METHOD__." - query: ".$query,100);
 
         if($db->GetAffectedRows() == 0) return array();
         
