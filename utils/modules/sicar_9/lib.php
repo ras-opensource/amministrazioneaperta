@@ -846,28 +846,94 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
         $this->aProps['denominazione']="Nuovo ente";
         $this->aProps['tipologia']=0;
         $this->aProps['indirizzo']="";
-        $this->aProps['contatti']="";
+        $this->aProps['web']="";
+        $this->aProps['pec']="";
         $this->aProps['geolocalizzazione']="";
+        $this->aProps['operatori']="";
         $this->aProps['note']="";
         
         //template view props
         $this->aTemplateViewProps['denominazione']=array("label"=>"Descrizione","type"=>"text","visible"=>true);
-        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","required"=>true,"function"=>"GetTipologia","visible"=>true);
-        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","required"=>true,"visible"=>true);
-        $this->aTemplateViewProps['contatti']=array("label"=>"Contatti","type"=>"text","required"=>false,"visible"=>true);
-        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","maxlength"=>AA_Sicar_Const::MAX_NOTE_LENGTH,"required"=>false,"visible"=>true);
+        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","function"=>"GetTipologia","visible"=>true);
+        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['web']=array("label"=>"SitoWeb","type"=>"text","function"=>"GetSitoWebView","visible"=>true);
+        $this->aTemplateViewProps['pec']=array("label"=>"PEC","type"=>"text","function"=>"GetPecView","visible"=>true);
+        $this->aTemplateViewProps['operatori']=array("label"=>"Contatti","type"=>"text","function"=>"GetOperatoriView","visible"=>true);
+        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","visible"=>true);
 
         //areas, cols e rows di default
         $this->aTemplateViewProps['__areas']=array(
             array("denominazione", "denominazione","tipologia"),
-            array("indirizzo","contatti","contatti"),
-            array("note", "note", "note")
+            array("indirizzo","web","pec"),
+            array("note", "note", "operatori"),
+            array("note", "note", "operatori")
         );
         $this->aTemplateViewProps['__cols']=array("1fr","1fr","1fr");
-        $this->aTemplateViewProps['__rows']=array("1fr","1fr","2fr");
+        $this->aTemplateViewProps['__rows']=array("1fr","1fr","1fr","1fr");
 
         // Chiama il costruttore padre
         parent::__construct($params);
+    }
+
+    //lista operatori dell'ente
+    public function GetOperatori($bAsObject=false)
+    {
+        $ret="";
+        if($bAsObject) $ret=array();
+        if(!isset($this->aProps['operatori']) || $this->aProps['operatori']=="") return $ret;
+        
+        if($bAsObject)
+        {
+            $ret=json_decode($this->aProps['operatori'],true);
+            if($ret) return $ret;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'importazione degli operatori: ".$this->aProps['id'],100);
+                return array();
+            }
+        }
+
+        return $this->aProps['operatori'];
+    }
+
+    public function SetOperatori($operatori="")
+    {
+        if(is_array($operatori))
+        {
+            if(sizeof($operatori)>0)
+            {
+                $operatori=json_encode($operatori);
+                if($operatori===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica degli operatori. ".print_r($operatori,true),100);
+                    return false;
+                }    
+            }
+            else $operatori="";
+        }
+
+        $this->SetProp("operatori",$operatori);
+        return true;
+    }
+
+    public function GetOperatoriView()
+    {
+        $operatori=$this->GetOperatori(true);
+        if(sizeof($operatori)==0) return "n.d.";
+        
+        $ret="<ul>";
+        foreach($operatori as $op)
+        {
+            $ret.="<li>";
+            if(!empty($op['nome']) || !empty($op['cognome'])) $ret.=trim($op['nome']." ".$op['cognome']);
+            if(!empty($op['email'])) $ret.=" - <a href='mailto:".$op['email']."'>".$op['email']."</a>";
+            if(!empty($op['telefono'])) $ret.=" - Tel: ".$op['telefono'];
+            if(!empty($op['cf'])) $ret.=" - cf: ".$op['cf'];
+            $ret.="</li>";
+        }
+        $ret.="</ul>";
+        
+        return $ret;
     }
 
     public function GetTemplateView($bRefresh=false)
@@ -938,9 +1004,16 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
     }
 
     // Contatti
-    public function GetContatti()
+    public function GetContatti($bAsObject=false)
     {
-        return $this->GetProp("contatti");
+        if($bAsObject)
+        {
+            return array(
+                "web"=>$this->GetSitoWeb(),
+                "pec"=>$this->GetPec(),
+            );
+        }
+        else return $this->GetSitoWebView()." - ".$this->GetPecView();
     }
     public function SetContatti($var = "")
     {
@@ -965,11 +1038,46 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
     {
         return $this->GetProp("note");
     }
-    
+
     public function SetNote($var = "")
     {
         $this->SetProp("note", $var);
         return true;
+    }
+
+    // web
+    public function GetSitoWeb()
+    {
+        return $this->GetProp("web");
+    }
+
+    public function SetSitoWeb($var = "")
+    {
+        $this->SetProp("web", $var);
+        return true;
+    }
+
+    public function GetSitoWebView()
+    {
+        if(empty($this->GetProp("web"))) return "n.d.";
+
+        return "<a href = '".$this->GetProp("web")."' target='_blank'>".$this->GetProp("web")."</a>";
+    }
+
+    public function GetPec()
+    {
+        return $this->GetProp("pec");
+    }
+    public function SetPec($var = "")
+    {
+        $this->SetProp("pec", $var);
+        return true;
+    }
+    public function GetPecView()
+    {
+        if(empty($this->GetProp("pec"))) return "n.d.";
+
+        return "<a href = 'mailto:".$this->GetProp("pec")."' target='_blank'>".$this->GetProp("pec")."</a>";
     }
     
     // Metodi per la validazione
@@ -988,6 +1096,19 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
 
         if (empty($this->GetIndirizzo())) {
             $errors[] = "L'indirizzo è obbligatorio";
+        }
+
+        if (empty($this->GetSitoWeb())) {
+            $errors[] = "L'indirizzo web è obbligatorio";
+        }
+        elseif (!filter_var($this->GetPec(), FILTER_VALIDATE_URL)) {
+            $errors[] = "L'indirizzo web non è valido";
+        }
+
+        if (empty($this->GetPec())) {
+            $errors[] = "L'indirizzo PEC è obbligatorio";
+        } elseif (!filter_var($this->GetPec(), FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "L'indirizzo PEC non è valido";
         }
         
         return $errors;
@@ -1434,6 +1555,10 @@ class AA_SicarModule extends AA_GenericModule
     const AA_UI_SECTION_ENTI_DESC = "Visualizza e gestisci gli enti";
     const AA_UI_SECTION_ENTI_TOOLTIP = "Visualizza e gestisci gli enti";
 
+    //operatori ente
+    const AA_UI_WND_OPERATORI_ENTE = "SicarOperatoriEnteWnd";
+    const AA_UI_TABLE_OPERATORI_ENTE = "TableOperatoriEnte";
+
     //id sezione gestione nuclei
     const AA_ID_SECTION_NUCLEI = "GestNuclei";
     const AA_UI_SECTION_NUCLEI_BOX = "GestNucleiBox";
@@ -1519,6 +1644,7 @@ class AA_SicarModule extends AA_GenericModule
         //enti
         $taskManager->RegisterTask("GetSicarAddNewEnteDlg");
         $taskManager->RegisterTask("AddNewEnteSicar");
+        $taskManager->RegisterTask("GetSicarOperatoriEnteDlg");
 
         // Task per le operazioni CRUD
         $taskManager->RegisterTask("AddNewAlloggioSicar");        
@@ -1545,6 +1671,10 @@ class AA_SicarModule extends AA_GenericModule
 
         #----------------------search immobili --------------------
         $this->AddObjectTemplate(static::AA_UI_WND_SEARCH_IMMOBILI."_".static::AA_UI_TABLE_SEARCH_IMMOBILI,"Template_DatatableSearchImmobili");
+        #---------------------------------------------------------------
+
+        #---------------------- operatori ente --------------------
+        $this->AddObjectTemplate(static::AA_UI_WND_OPERATORI_ENTE."_".static::AA_UI_TABLE_OPERATORI_ENTE,"Template_DatatableOperatoriEnte");
         #---------------------------------------------------------------
 
         #------------------------------- desktop -----------------------
@@ -2558,21 +2688,43 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
-     //Task search immobili
-     public function Task_GetSicarSearchImmobiliDlg($task)
-     {
+    //Task search immobili
+    public function Task_GetSicarSearchImmobiliDlg($task)
+    {
         if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per visualizzare gli immobili", false);
             return false;
         }
- 
-         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-         $task->SetContent($this->Template_GetSicarSearchImmobiliDlg(),true);
-         return true;
-     }
 
-     //Template dlg search immobili
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarSearchImmobiliDlg(),true);
+        return true;
+    }
+
+    //Task operatori ente
+    public function Task_GetSicarOperatoriEnteDlg($task)
+    {
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per visualizzare gli operatori dell'ente", false);
+            return false;
+        }
+
+        $ente=new AA_SicarEnte();
+        if(!$ente->Load($_REQUEST['id_ente']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Ente non trovato (id: ".$_REQUEST['id_ente'].")", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarOperatoriEnteDlg($ente),true);
+        return true;
+    }
+
+    //Template dlg search immobili
     public function Template_GetSicarSearchImmobiliDlg()
     {
         $id=static::AA_UI_WND_SEARCH_IMMOBILI;
@@ -2587,7 +2739,138 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
-     //Template dlg search immobili
+     //Template dlg operatori ente
+    public function Template_GetSicarOperatoriEnteDlg($ente=null)
+    {
+        $id=static::AA_UI_WND_OPERATORI_ENTE;
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Operatori ente", $this->id);
+        
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(640);
+        
+        $wnd->AddView($this->Template_DatatableOperatoriEnte($id,$ente));
+        
+        return $wnd;
+    }
+
+    //Template data table Operatori ente
+    public function Template_DatatableOperatoriEnte($id="",$ente=null)
+    {
+        if($id=="") $id=static::AA_UI_WND_OPERATORI_ENTE;
+        $id.="_".static::AA_UI_TABLE_OPERATORI_ENTE;
+
+        if(!($ente instanceof AA_SicarEnte))
+        {
+            $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+            $layout->addRow(new AA_JSON_Template_Template("",array("template"=>"Ente non trovato.")));
+            return $layout;
+        }
+        
+        $canModify=false;
+        if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
+
+        //form di destinazione
+        if(!empty($_REQUEST['form'])) $form=trim($_REQUEST['form']);
+
+        //campo di destinazione
+        if(!empty($_REQUEST['field_id'])) $field_id=trim($_REQUEST['field_id']);
+        if(!empty($_REQUEST['field_desc'])) $field_desc=trim($_REQUEST['field_desc']);
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        $filter="";
+
+        if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //Aggiunta
+        if(!empty($form) && !empty($field_id) && !empty($field_desc)) $filter=array("id_ente"=>$ente->GetProp('id'),"refresh"=>1,"refresh_obj_id"=>$id,"form"=>$form,"field_id"=>$field_id,"field_desc"=>$field_desc);
+        else $filter=array("refresh"=>1,"refresh_obj_id"=>$id,"id_ente"=>$ente->GetProp('id'));
+        $modify_btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-filter-cog",
+             "label"=>"Aggiungi",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Aggiungi un nuovo operatore",
+             "click"=>"AA_MainApp.curModule.setRuntimeValue('" . $id . "','filter_data',".json_encode($filter)."); AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewOperatoreEnteDlg\",postParams: AA_MainApp.curModule.getRuntimeValue('" . $id . "','filter_data'), module: '" . $this->id . "'},'".$this->id."')"
+        ));
+        $toolbar->AddElement($modify_btn);
+        
+        $layout->addRow($toolbar);
+
+        #criteri----------------------------------
+        if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
+
+        $operatori=$ente->GetOperatori();
+
+        $data=[];
+        //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+        //$modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+        if(!empty($form) && !empty($field_id) && !empty($field_desc)) 
+        {
+            $select_icon="mdi mdi-cursor-pointer";
+        }
+    
+        foreach($operatori as $curOperatore)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            if(!empty($form) && !empty($field_id) && !empty($field_desc))
+            {
+                $select="try{if($$('".$form."')){ AA_MainApp.utils.callHandler('SicarSelectOperatoreEnte', {form:'".$form."', values:{'".$field_id."':'".$curOperatore['cf']."','".$field_desc."':'".$curOperatore['nome']." ".$curOperatore['cognome']."'}},'".$this->GetId()."'); $$('".static::AA_UI_WND_ENTE_OPERATORI."_Wnd').close();}}catch(msg){console.error(msg)}";
+                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Scegli' onClick=\"".$select."\"><span class='mdi ".$select_icon."'></span></a></div>";
+                
+                $data[]=array("id"=>$curOperatore['cf'],"nome"=>$curOperatore['nome']." ".$curOperatore['cognome'],"cf"=>$curOperatore['cf'],"email"=>$curOperatore['email'],"ops"=>$ops);
+            }
+            else
+            {
+                $ops="";
+                if($canModify)
+                {
+                    $trash="AA_MainApp.utils.callHandler('dlg', {task:'GetSicarDeleteOperatoreEnteDlg', postParams: {id_ente:'".$ente->GetProp('id')."', cf:'".$curOperatore['cf']."'}, module: '".$this->id."'},'".$this->id."')";
+                    $modify="AA_MainApp.utils.callHandler('dlg', {task:'GetSicarModifyOperatoreEnteDlg', postParams: {id_ente:'".$ente->GetProp('id')."', cf:'".$curOperatore['cf']."'}, module: '".$this->id."'},'".$this->id."')";
+                    $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick=\"".$modify."\"><span class='mdi mdi-pencil'></span></a><a class='AA_DataTable_Ops_Button' title='Elimina' onClick=\"".$trash."\"><span class='mdi mdi-trash-can'></span></a></div>";
+                }
+                $data[]=array("id"=>$curOperatore['cf'],"nome"=>$curOperatore['nome']." ".$curOperatore['cognome'],"cf"=>$curOperatore['cf'],"email"=>$curOperatore['email'],"ops"=>$ops);
+            }
+        }
+
+        if(!$canModify) $template=new AA_GenericDatatableTemplate($id."_TableEnteOperatori_".uniqid(),"",3,null,array("css"=>"AA_Header_DataTable"));
+        else $template=new AA_GenericDatatableTemplate($id."_TableEnteOperatori_".uniqid(),"",4,null,array("css"=>"AA_Header_DataTable"));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader(false);
+        $template->SetHeaderHeight(38);
+
+        /*
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetSicarAddNewImmobileDlg");
+            if(!empty($form) && !empty($field_id) && !empty($field_desc)) $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id,"form"=>$form,"field_id"=>$field_id,"field_desc"=>$field_desc)));
+            else $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id)));
+        }*/
+
+        $template->SetColumnHeaderInfo(0,"nome","<div style='text-align: center'>Nome e cognome</div>",250,"textFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"cf","<div style='text-align: center'>Cf</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(2,"email","<div style='text-align: center'>Email</div>",250,"textFilter","text","GenericAutosizedRowTable");
+       
+        if($canModify) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
+
+        $template->SetData($data);
+
+        $layout->AddRow($template);
+        return $layout;
+    }
+
+    //Template dlg search immobili
     public function Template_GetSicarDetailImmobileDlg($immobile=null)
     {
         $id=static::AA_UI_WND_DETAIL_IMMOBILI;
@@ -3956,13 +4239,15 @@ class AA_SicarModule extends AA_GenericModule
             {
                 $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailEnteDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
                 $detail_icon="mdi mdi-eye";
+                $operatori='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarOperatoriEnteDlg", params: [{id_ente:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $operatori_icon="mdi mdi-account-multiple";
                 $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteEnteDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
                 $trash_icon="mdi mdi-trash-can";
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyEnteDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify_icon="mdi mdi-pencil";
 
-                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
-                $data[]=array("id"=>$curObj->GetProp("id"),"denominazione"=>$curObj->GetDenominazione(),"indirizzo"=>$curObj->GetIndirizzo()."<a href='https://www.google.com/maps/search/?api=1&query=".$curObj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","contatti"=>$curObj->GetContatti(),"note"=>$curObj->GetNote(),"ops"=>$ops);
+                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Operatori' onClick='".$operatori."'><span class='mdi ".$operatori_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
+                $data[]=array("id"=>$curObj->GetProp("id"),"denominazione"=>$curObj->GetDenominazione(),"indirizzo"=>$curObj->GetIndirizzo()."<a href='https://www.google.com/maps/search/?api=1&query=".$curObj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","contatti"=>$curObj->GetContatti(false),"note"=>$curObj->GetNote(),"ops"=>$ops);
             }
             else
             {
@@ -3971,7 +4256,7 @@ class AA_SicarModule extends AA_GenericModule
         }
 
         $nCols=4;
-        if($canModify) $nCols++;
+        if($canModify) $nCols=5;
         $template=new AA_GenericDatatableTemplate($id,"",$nCols,array("type"=>"clean","name"=>static::AA_UI_SECTION_ENTI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
         
         $template->EnableScroll(false,true);
@@ -3994,7 +4279,10 @@ class AA_SicarModule extends AA_GenericModule
         $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>",400,"textFilter","text","GenericAutosizedRowTable_left");
         $template->SetColumnHeaderInfo(2,"contatti","<div style='text-align: center'>Contatti</div>","fillspace","textFilter","text","GenericAutosizedRowTable_left");
         $template->SetColumnHeaderInfo(3,"note","<div style='text-align: center'>Note</div>","fillspace","textFilter","text","GenericAutosizedRowTabl_left");
-        if($canModify) $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
+        if($canModify) 
+        {
+            $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
+        }
 
         $template->SetData($data);
 
