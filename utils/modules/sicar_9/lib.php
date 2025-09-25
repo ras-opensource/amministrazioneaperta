@@ -35,6 +35,27 @@ class AA_Sicar_Const extends AA_Const
         return $options;
     }
 
+    /**
+     * Restituisce la lista delle tipologie di immobile
+     * @return array
+     */
+
+    const AA_DBTABLE_TIPOLOGIE_ENTE = 'aa_sicar_tipologie_ente';
+    public static function GetListaTipologieEnte($bSimpleArray=false)
+    {
+        $options = array();
+        $db = new AA_Database();
+        $query = "SELECT id, descrizione FROM ".self::AA_DBTABLE_TIPOLOGIE_ENTE." ORDER BY descrizione";
+        if ($db->Query($query)) {
+            $rs = $db->GetResultSet();
+            foreach ($rs as $row) {
+                if(!$bSimpleArray) $options[] = array("id" => $row['id'], "value" => $row['descrizione']);
+                else $options[$row['id']] = $row['descrizione'];
+            }
+        }
+        return $options;
+    }
+
     //stato conservazione alloggio
     const AA_DBTABLE_STATI_CONSERVAZIONE_ALL = 'aa_sicar_stati_conservazione_alloggio';
     public static function GetListaStatiConservazioneAlloggio($bSimpleArray=false)
@@ -442,6 +463,16 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         $this->aTemplateViewProps['piani']=array("label"=>"Piani","type"=>"text","required"=>true,"bottomLabel"=>"Numero di piani dell'immobile","visible"=>true);
         $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","maxlength"=>AA_Sicar_Const::MAX_NOTE_LENGTH,"required"=>false,"bottomLabel"=>"Inserisci eventuali note sull'immobile","visible"=>true);
 
+        $this->aTemplateViewProps['__areas']=array(
+            array("descrizione", "descrizione","descrizione"),
+            array("tipologia",".","piani"),
+            array("comune", "ubicazione", "zona_urbanistica"),
+            array("indirizzo", "catasto", "catasto"),
+            array("note", "note", "note")
+        );
+        $this->aTemplateViewProps['__cols']=array("1fr","1fr","1fr");
+        $this->aTemplateViewProps['__rows']=array("1fr","1fr","1fr","1fr","2fr");
+
         // Chiama il costruttore padre
         parent::__construct($params);
     }
@@ -460,53 +491,9 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         
         return $return;
     }
-    public function GetTemplateView($bResfresh=false)
+    public function GetTemplateView($bRefresh=false)
     {
-        if($this->oTemplateView !=null && !$bResfresh) return $this->oTemplateView;
-        
-        $templateView=new AA_GenericTemplate_Grid();
-        $templateAreas=array(
-            array("descrizione", "descrizione","descrizione"),
-            array("tipologia",".","piani"),
-            array("comune", "ubicazione", "zona_urbanistica"),
-            array("indirizzo", "catasto", "catasto"),
-            array("note", "note", "note")
-        );
-        $templateView->SetTemplateAreas($templateAreas);
-        $templateView->SetTemplateCols(array("1fr","1fr","1fr"));
-        $templateView->SetTemplateRows(array("1fr","1fr","1fr","1fr","2fr"));        
-
-        foreach($this->aTemplateViewProps as $propName=>$propConfig)
-        {
-            if($propConfig['visible'])
-            {
-                $class='';
-                if(!empty($propConfig['class'])) $class=$propConfig['class'];
-                else $class='aa-templateview-prop-'.$propName;
-
-                $value="";
-                if(empty($propConfig['function'])) $value = "<span class='".$class."'>" . $this->GetProp($propName) . "</span>";
-                else 
-                {
-                    if(method_exists($this,$propConfig['function'])) $value = "<div class='".$class."'>".$this->{$propConfig['function']}()."</div>";
-                    else $value = "<span class='".$class."'>n.d.</span>";
-                }
-
-                if(!$templateView->AddCellToGrid(new AA_JSON_Template_Template("", array(
-                    "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                    "data" => array("title" => "".$propConfig['label'].":", "value" => $value),
-                    "css" => array("border-bottom" => "1px solid #dadee0 !important","width"=>"auto !important","height"=> "auto !important"),
-                )), $propName))
-                {
-                    AA_Log::Log(__METHOD__ . " - ERRORE: non è stato possibile aggiungere la cella alla template view per la proprietà: " . $propName, 100);
-                }
-            }
-        }
-
-        $this->SetTemplateView($templateView);
-
-        //AA_Log::Log(__METHOD__ . " - INFO: generata la template view per l'immobile con ID: " . $this->GetProp("id")." - ".print_r($templateView,true), 100);
-        return $templateView;
+        return parent::GetTemplateView($bRefresh);
     }
         
     //lista degli immobili
@@ -856,79 +843,36 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
     {
         
         // Imposta i binding tra proprietà e campi database
-        $this->aProps['descrizione']="Nuovo ente";
+        $this->aProps['denominazione']="Nuovo ente";
         $this->aProps['tipologia']=0;
-        $this->aProps['comune']="";
-        $this->aProps['ubicazione']="";
         $this->aProps['indirizzo']="";
-        $this->aProps['catasto']="";
-        $this->aProps['zona_urbanistica']="";
+        $this->aProps['contatti']="";
         $this->aProps['geolocalizzazione']="";
-        $this->aProps['piani']=1;
         $this->aProps['note']="";
         
         //template view props
-        $this->aTemplateViewProps['descrizione']=array("label"=>"Descrizione","type"=>"text","maxlength"=>AA_Sicar_Const::MAX_DESCRIZIONE_LENGTH,"required"=>true,"bottomLabel"=>"Inserisci la descrizione dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","required"=>true,"function"=>"GetTipologia","bottomLabel"=>"Scegli la tipologia dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['comune']=array("label"=>"Comune","type"=>"text","required"=>true,"bottomLabel"=>"Comune dove e' situato l'immobile","function"=>"GetComune","visible"=>true);
-        $this->aTemplateViewProps['ubicazione']=array("label"=>"Ubicazione","type"=>"text","required"=>true,"bottomLabel"=>"Ubicazione dell'immobile all'interno del territorio comunale","function"=>"GetUbicazione","visible"=>true);
-        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","required"=>true,"bottomLabel"=>"Indirizzo dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['catasto']=array("label"=>"Dati catastali","type"=>"text","required"=>true,"function"=>"GetTemplateViewCatasto","visible"=>true);
-        $this->aTemplateViewProps['zona_urbanistica']=array("label"=>"Zona urbanistica","type"=>"text","required"=>true,"bottomLabel"=>"Zona urbanistica dell'immobile","function"=>"GetZonaUrbanistica","visible"=>true);
-        $this->aTemplateViewProps['piani']=array("label"=>"Piani","type"=>"text","required"=>true,"bottomLabel"=>"Numero di piani dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","maxlength"=>AA_Sicar_Const::MAX_NOTE_LENGTH,"required"=>false,"bottomLabel"=>"Inserisci eventuali note sull'immobile","visible"=>true);
+        $this->aTemplateViewProps['denominazione']=array("label"=>"Descrizione","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","required"=>true,"function"=>"GetTipologia","visible"=>true);
+        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","required"=>true,"visible"=>true);
+        $this->aTemplateViewProps['contatti']=array("label"=>"Contatti","type"=>"text","required"=>false,"visible"=>true);
+        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","maxlength"=>AA_Sicar_Const::MAX_NOTE_LENGTH,"required"=>false,"visible"=>true);
+
+        //areas, cols e rows di default
+        $this->aTemplateViewProps['__areas']=array(
+            array("denominazione", "denominazione","tipologia"),
+            array("indirizzo","contatti","contatti"),
+            array("note", "note", "note")
+        );
+        $this->aTemplateViewProps['__cols']=array("1fr","1fr","1fr");
+        $this->aTemplateViewProps['__rows']=array("1fr","1fr","2fr");
 
         // Chiama il costruttore padre
         parent::__construct($params);
     }
 
-    public function GetTemplateView($bResfresh=false)
+    public function GetTemplateView($bRefresh=false)
     {
-        if($this->oTemplateView !=null && !$bResfresh) return $this->oTemplateView;
-        
-        $templateView=new AA_GenericTemplate_Grid();
-        $templateAreas=array(
-            array("descrizione", "descrizione","descrizione"),
-            array("tipologia",".","piani"),
-            array("comune", "ubicazione", "zona_urbanistica"),
-            array("indirizzo", "catasto", "catasto"),
-            array("note", "note", "note")
-        );
-        $templateView->SetTemplateAreas($templateAreas);
-        $templateView->SetTemplateCols(array("1fr","1fr","1fr"));
-        $templateView->SetTemplateRows(array("1fr","1fr","1fr","1fr","2fr"));        
-
-        foreach($this->aTemplateViewProps as $propName=>$propConfig)
-        {
-            if($propConfig['visible'])
-            {
-                $class='';
-                if(!empty($propConfig['class'])) $class=$propConfig['class'];
-                else $class='aa-templateview-prop-'.$propName;
-
-                $value="";
-                if(empty($propConfig['function'])) $value = "<span class='".$class."'>" . $this->GetProp($propName) . "</span>";
-                else 
-                {
-                    if(method_exists($this,$propConfig['function'])) $value = "<div class='".$class."'>".$this->{$propConfig['function']}()."</div>";
-                    else $value = "<span class='".$class."'>n.d.</span>";
-                }
-
-                if(!$templateView->AddCellToGrid(new AA_JSON_Template_Template("", array(
-                    "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                    "data" => array("title" => "".$propConfig['label'].":", "value" => $value),
-                    "css" => array("border-bottom" => "1px solid #dadee0 !important","width"=>"auto !important","height"=> "auto !important"),
-                )), $propName))
-                {
-                    AA_Log::Log(__METHOD__ . " - ERRORE: non è stato possibile aggiungere la cella alla template view per la proprietà: " . $propName, 100);
-                }
-            }
-        }
-
-        $this->SetTemplateView($templateView);
-
-        //AA_Log::Log(__METHOD__ . " - INFO: generata la template view per l'immobile con ID: " . $this->GetProp("id")." - ".print_r($templateView,true), 100);
-        return $templateView;
+        return parent::GetTemplateView($bRefresh);
     }
         
     //lista degli enti
@@ -956,14 +900,14 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
     // Metodi Getter e Setter per le proprietà
     
     // Descrizione
-    public function GetDescrizione()
+    public function GetDenominazione()
     {
-        return $this->GetProp("descrizione");
+        return $this->GetProp("denominazione");
     }
     
-    public function SetDescrizione($var = "")
+    public function SetDenominazione($var = "")
     {
-        $this->SetProp("descrizione", $var);
+        $this->SetProp("denominazione", $var);
         return true;
     }
 
@@ -972,7 +916,7 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
     {
         if(!$bAsText) return $this->GetProp("tipologia"); 
         
-        $tipo=AA_Sicar_Const::GetListaTipologie(true);
+        $tipo=AA_Sicar_Const::GetListaTipologieEnte(true);
         if(!empty($tipo[$this->GetProp("tipologia")])) return $tipo[$this->GetProp("tipologia")];
         else return "n.d.";
         
@@ -983,7 +927,27 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
         $this->SetProp("tipologia", $var);
         return true;
     }
-    
+     // Geolocalizzazione
+    public function GetGeolocalizzazione()
+    {
+        return $this->GetProp("geolocalizzazione");
+    }
+     public function SetGeolocalizzazione($var="")
+    {
+        $this->SetProp("geolocalizzazione",$var);
+    }
+
+    // Contatti
+    public function GetContatti()
+    {
+        return $this->GetProp("contatti");
+    }
+    public function SetContatti($var = "")
+    {
+        $this->SetProp("contatti", $var);
+        return true;
+    }
+
     // Indirizzo
     public function GetIndirizzo()
     {
@@ -1014,8 +978,8 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
         $errors = array();
         
         // Validazione campi obbligatori
-        if (empty($this->GetDescrizione())) {
-            $errors[] = "La descrizione è obbligatoria";
+        if (empty($this->GetDenominazione())) {
+            $errors[] = "La denominazione è obbligatoria";
         }
         
         if (empty($this->GetTipologia())) {
@@ -1032,7 +996,7 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
     // Metodo per ottenere una rappresentazione testuale dell'immobile
     public function GetDisplayName()
     {
-        $display = strval($this->GetDescrizione());
+        $display = strval($this->GetDenominazione());
         if (!empty($this->GetIndirizzo())) {
             $display .= " - " . $this->GetIndirizzo();
         }
@@ -1049,7 +1013,7 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
     
     protected function CsvData($separator = "|")
     {
-        return $this->GetDescrizione().$separator . $this->GetTipologia() . 
+        return $this->GetDenominazione().$separator . $this->GetTipologia() . 
                $separator .  str_replace("\n", ' ', $this->GetIndirizzo()) . 
                $separator . str_replace("\n", ' ', $this->GetNote());
     }
@@ -1097,7 +1061,7 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
      */
     static public function AddNew($params, $user = null)
     {
-        $object = new AA_SicarImmobile($params);
+        $object = new AA_SicarEnte($params);
 
         $validate=$object->Validate();
         if(sizeof($validate)>0)
@@ -1131,7 +1095,7 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
 
         if(!empty($this->Validate())) 
         {
-            AA_Log::Log(__METHOD__ . " - ERRORE: i dati dell'immobile non sono validi.", 100);
+            AA_Log::Log(__METHOD__ . " - ERRORE: i dati dell'ente non sono validi.", 100);
             return false;
         }
 
@@ -1551,6 +1515,10 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSicarDeleteImmobileDlg");
         $taskManager->RegisterTask("DeleteImmobileSicar");
         $taskManager->RegisterTask("GetSicarDetailImmobileDlg");
+
+        //enti
+        $taskManager->RegisterTask("GetSicarAddNewEnteDlg");
+        $taskManager->RegisterTask("AddNewEnteSicar");
 
         // Task per le operazioni CRUD
         $taskManager->RegisterTask("AddNewAlloggioSicar");        
@@ -2272,6 +2240,77 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+    // Template per la finestra di dialogo di aggiunta nuovo ente
+    public function Template_GetSicarAddNewEnteDlg()
+    {
+        $form = "";
+        if(!empty($_REQUEST['form']))
+        {
+            $form = $_REQUEST['form'];
+        }
+
+        $field_id="";
+        if(!empty($_REQUEST['field_id']))
+        {
+            $field_id = $_REQUEST['field_id'];
+        }
+
+        $field_desc="";
+        if(!empty($_REQUEST['field_desc']))
+        {
+            $field_desc = $_REQUEST['field_desc'];
+        }
+        
+        $id = $this->GetId() . "_AddNewEnte_Dlg_" . uniqid();
+        $form_data = array();
+
+        $newImmobile = new AA_SicarEnte();
+        foreach($newImmobile->GetProps() as $prop=>$value)
+        {
+            $form_data[$prop] = $value;
+        }
+
+        $wnd = new AA_GenericFormDlg($id, "Aggiungi nuovo Ente", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(800);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        // Campo testuale: descrizione
+        $wnd->AddTextField("denominazione", "Denominazione", ["required" => true, "bottomLabel" => "*Denomoinazione dell'ente"]);
+        
+        // Campo testuale: tipologia
+        $options = AA_Sicar_Const::GetListaTipologieEnte();
+        $wnd->AddSelectField("tipologia", "Tipologia", ["required" => true,"validateFunction"=>"IsSelected", "bottomLabel" => "*Tipologia dell'ente", "options" => $options]);
+        
+        // Campo testuale: indirizzo
+        $wnd->AddTextField("indirizzo", "Indirizzo", ["required" => true,"gravity"=>3, "bottomLabel" => "*Indirizzo dell'ente comprensivo del numero civico."]);
+        
+        // Campo testuale: geolocalizzazione
+        $wnd->AddTextField("geolocalizzazione", "Geoloc.", ["required" => true,"gravity"=>1, "bottomLabel" => "*Geolocalizzazione dell'ente (latitudine e longitudine) in gradi decimali separate da virgola (es.: 39.225048459422766, 9.102739130435575)","placeholder"=>"es. 39.225048459422766, 9.102739130435575"]);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("contatti", "Contatti", ["required" => false, "bottomLabel" => "Contatti dell'ente (es. telefono, email, pec, sito web, etc.)"]);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Note aggiuntive"]);
+
+        $wnd->SetSaveTask("AddNewEnteSicar");
+        if(!empty($form))
+        {
+            $wnd->SetSaveTaskParams(array("form" => $form,"field_id"=>$field_id,"field_desc"=>$field_desc));
+        }
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
     // Template per la finestra di dialogo di modifica immobile esistente
     public function Template_GetSicarModifyImmobileDlg($immobile=null)
     {        
@@ -2813,6 +2852,19 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la restituzione della finestra di dialogo di aggiunta nuovo ente
+    public function Task_GetSicarAddNewEnteDlg($task)
+    {
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi immobili", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarAddNewEnteDlg(), true);
+        return true;
+    }
+
     // Task per la finestra di modifica dati generali immobile
     public function Task_GetSicarModifyImmobileDlg($task)
     {
@@ -3190,6 +3242,52 @@ class AA_SicarModule extends AA_GenericModule
         }
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Immobile aggiunto con successo", false);
+        return true;
+    }
+
+    // Task per aggiungere un nuovo ente
+    public function Task_AddNewEnteSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi enti", false);
+            return false;
+        }
+        
+        if(empty($_REQUEST))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Nessun dato indicato per il nuovo ente", false);
+            return false;
+        }
+       
+        $var = new AA_SicarEnte($_REQUEST);
+        $validate=$var->Validate();
+        if(sizeof($validate)>0)
+        {
+            AA_Log::Log(__METHOD__." - Sono stati trovati i seguenti errori: ".print_r($validate,true),100);
+            $error="Sono state riscontrate le seguenti criticita': <br>";
+            foreach($validate as $curError)
+            {
+                $error.="<li>".$curError."</li>";
+            }
+
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$var->Sync($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiunta dell'ente", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Ente aggiunto con successo", false);
         return true;
     }
 
@@ -3841,7 +3939,7 @@ class AA_SicarModule extends AA_GenericModule
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_ENTI_BOX;
         $canModify=false;
 
-        #immobili----------------------------------
+        #enti----------------------------------
         if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
 
         //$layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
@@ -3863,17 +3961,19 @@ class AA_SicarModule extends AA_GenericModule
                 $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyEnteDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify_icon="mdi mdi-pencil";
 
-                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
-                $data[]=array("id"=>$curObj->GetProp("id"),"descrizione"=>$curObj->GetDescrizione(),"indirizzo"=>$curObj->GetIndirizzo()."<a href='https://www.google.com/maps/search/?api=1&query=".$curObj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")),"ops"=>$ops);
+                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
+                $data[]=array("id"=>$curObj->GetProp("id"),"denominazione"=>$curObj->GetDenominazione(),"indirizzo"=>$curObj->GetIndirizzo()."<a href='https://www.google.com/maps/search/?api=1&query=".$curObj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","contatti"=>$curObj->GetContatti(),"note"=>$curObj->GetNote(),"ops"=>$ops);
             }
             else
             {
-                $data[]=array("id"=>$curObj->GetProp("id"),"descrizione"=>$curObj->GetDescrizione(),"indirizzo"=>$curObj->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")));
+                $data[]=array("id"=>$curObj->GetProp("id"),"denominazione"=>$curObj->GetDenominazione(),"indirizzo"=>$curObj->GetIndirizzo()."<a href='https://www.google.com/maps/search/?api=1&query=".$curObj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","contatti"=>$curObj->GetContatti(),"note"=>$curObj->GetNote());
             }
         }
 
-        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",3,array("type"=>"clean","name"=>static::AA_UI_SECTION_ENTI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
-        else $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean","name"=>static::AA_UI_SECTION_ENTI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        $nCols=4;
+        if($canModify) $nCols++;
+        $template=new AA_GenericDatatableTemplate($id,"",$nCols,array("type"=>"clean","name"=>static::AA_UI_SECTION_ENTI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader(true);
@@ -3885,12 +3985,16 @@ class AA_SicarModule extends AA_GenericModule
             $template->EnableAddNew(true,"GetSicarAddNewEnteDlg");
             $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1)));
         }
+        else
+        {
+            $template->EnableHeader(false);
+        }
 
-        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
-        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
-        $template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
-        //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        if(!empty($ops)) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
+        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: center'>Denominazione</div>",250,"textFilter","int","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>",400,"textFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(2,"contatti","<div style='text-align: center'>Contatti</div>","fillspace","textFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(3,"note","<div style='text-align: center'>Note</div>","fillspace","textFilter","text","GenericAutosizedRowTabl_left");
+        if($canModify) $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
 
         $template->SetData($data);
 

@@ -1230,13 +1230,12 @@ Class AA_GenericParsableObject
 
     //template view
     protected $oTemplateView=null;
-    public function GetTemplateView()
+    public function GetTemplateView($bRefresh=false)
     {
-        if(!$this->oTemplateView)
-        {
-            return $this->GetDefaultTemplateView();
-        }
+        if($this->oTemplateView !=null && !$bRefresh) return $this->oTemplateView;
 
+        $this->oTemplateView=$this->GetDefaultTemplateView();
+        
         return $this->oTemplateView;
     }
 
@@ -1266,7 +1265,6 @@ Class AA_GenericParsableObject
 
                 if(!$oTemplateView->AddCellToGrid(new AA_JSON_Template_Template("", array(
                     "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                    "gravity" => 1,
                     "data" => array("title" => "".$propConfig['label'].":", "value" => $value),
                     "css" => array("border-bottom" => "1px solid #dadee0 !important","width"=>"auto !important","height"=> "auto !important")
                 )), $propName))
@@ -1276,7 +1274,12 @@ Class AA_GenericParsableObject
             }
         }
 
+        if(isset($this->aTemplateViewProps['__areas'])) $templateAreas=$this->aTemplateViewProps['__areas'];
         $oTemplateView->SetTemplateAreas($templateAreas);
+      
+        if(isset($this->aTemplateViewProps['__cols'])) $oTemplateView->SetTemplateCols($this->aTemplateViewProps['__cols']);
+
+        if(isset($this->aTemplateViewProps['__rows'])) $oTemplateView->SetTemplateRows($this->aTemplateViewProps['__rows']);
 
         return $oTemplateView;
     }
