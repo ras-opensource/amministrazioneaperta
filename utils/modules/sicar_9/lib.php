@@ -1015,11 +1015,6 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
         }
         else return $this->GetSitoWebView()." - ".$this->GetPecView();
     }
-    public function SetContatti($var = "")
-    {
-        $this->SetProp("contatti", $var);
-        return true;
-    }
 
     // Indirizzo
     public function GetIndirizzo()
@@ -1101,7 +1096,7 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
         if (empty($this->GetSitoWeb())) {
             $errors[] = "L'indirizzo web è obbligatorio";
         }
-        elseif (!filter_var($this->GetPec(), FILTER_VALIDATE_URL)) {
+        elseif (!filter_var($this->GetSitoWeb(), FILTER_VALIDATE_URL)) {
             $errors[] = "L'indirizzo web non è valido";
         }
 
@@ -2404,28 +2399,30 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
         $wnd->SetWidth(980);
-        $wnd->SetHeight(800);
+        $wnd->SetHeight(600);
         $wnd->SetBottomPadding(36);
         $wnd->EnableValidation();
         $wnd->EnableCloseWndOnSuccessfulSave();
         $wnd->enableRefreshOnSuccessfulSave();
 
         // Campo testuale: descrizione
-        $wnd->AddTextField("denominazione", "Denominazione", ["required" => true, "bottomLabel" => "*Denomoinazione dell'ente"]);
+        $wnd->AddTextField("denominazione", "Denominazione", ["required" => true, "bottomLabel" => "*Denominazione dell'ente"]);
         
         // Campo testuale: tipologia
         $options = AA_Sicar_Const::GetListaTipologieEnte();
         $wnd->AddSelectField("tipologia", "Tipologia", ["required" => true,"validateFunction"=>"IsSelected", "bottomLabel" => "*Tipologia dell'ente", "options" => $options]);
         
+        // Campo testuale: geolocalizzazione
+        $wnd->AddTextField("geolocalizzazione", "Geoloc.", ["gravity"=>1, "bottomLabel" => "*Geolocalizzazione dell'ente (latitudine e longitudine) in gradi decimali separate da virgola.","placeholder"=>"es. 39.225048459422766, 9.102739130435575"],false);
+
         // Campo testuale: indirizzo
         $wnd->AddTextField("indirizzo", "Indirizzo", ["required" => true,"gravity"=>3, "bottomLabel" => "*Indirizzo dell'ente comprensivo del numero civico."]);
         
-        // Campo testuale: geolocalizzazione
-        $wnd->AddTextField("geolocalizzazione", "Geoloc.", ["required" => true,"gravity"=>1, "bottomLabel" => "*Geolocalizzazione dell'ente (latitudine e longitudine) in gradi decimali separate da virgola (es.: 39.225048459422766, 9.102739130435575)","placeholder"=>"es. 39.225048459422766, 9.102739130435575"]);
+        // Campo testuale: web
+        $wnd->AddTextField("web", "Sito web", ["required" => true,"gravity"=>1, "validateFunction"=>"IsUrl", "bottomLabel" => "*Url del sito web dell'ente","placeholder"=>"es. https://www.miosito.it"]);
 
-        // Campo testuale: note
-        $wnd->AddTextareaField("contatti", "Contatti", ["required" => false, "bottomLabel" => "Contatti dell'ente (es. telefono, email, pec, sito web, etc.)"]);
-
+        // Campo testuale: pec
+        $wnd->AddTextField("pec", "PEC", ["required" => true,"gravity"=>1, "validateFunction"=>"IsEmail", "bottomLabel" => "*PEC dell'ente","placeholder"=>"es. pec@ente.it"],false);
         // Campo testuale: note
         $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Note aggiuntive"]);
 
