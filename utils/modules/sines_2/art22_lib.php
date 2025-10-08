@@ -147,7 +147,8 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_PROVV_LIQUIDAZIONE=128;
     const AA_ORGANISMI_PROVV_ATTI_INDIRIZZO=256;
     const AA_ORGANISMI_PROVV_NULLA_OSTA=512;
-    const AA_ORGANISMI_PROVV_MASK=1022;
+    const AA_ORGANISMI_PROVV_TUPI=1024;
+    const AA_ORGANISMI_PROVV_MASK=2046;
 
     //tipo organigrammi
     static private $TIPO_ORGANIGRAMMA=null;
@@ -286,7 +287,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_PROVV_QUOTAZIONE=>"Quotazione in mercati regolamentati",
             self::AA_ORGANISMI_PROVV_RAZIONALIZZAZIONE=>"Razionalizzazione",
             self::AA_ORGANISMI_PROVV_LIQUIDAZIONE=>"Liquidazione",
-            self::AA_ORGANISMI_PROVV_NULLA_OSTA=>"Nulla osta"
+            self::AA_ORGANISMI_PROVV_TUPI=>"Provvedimenti ex art. 53 del TUPI"
             );
         }
 
