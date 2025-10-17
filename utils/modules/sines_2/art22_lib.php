@@ -1633,17 +1633,18 @@ class AA_Organismi extends AA_Object
     //da specializzare
     protected function CsvDataHeader($separator="|")
     {
-        return $separator."tipo".$separator."partecipazione_diretta".$separator."partecipazione_indiretta".$separator."partecipazione_tot";
+        return $separator."cf".$separator."tipo".$separator."partecipazione_diretta".$separator."partecipazione_indiretta".$separator."partecipazione_tot";
     }
 
     //da specializzare
     protected function CsvData($separator= "|")
     {
         $tipo=$this->GetTipologia();
+        $cf=$this->GetProp("cf");
         $partecipazione=$this->GetPartecipazione(true);
         $partecipazione_indiretta=$this->GetPartecipazioneIndiretta();
 
-        return $separator.$tipo.$separator.AA_Utils::number_format($partecipazione['percentuale'],2,",",".").$separator.AA_Utils::number_format($partecipazione_indiretta['percentuale'],2,",",".").$separator.AA_Utils::number_format(($partecipazione['percentuale']+$partecipazione_indiretta['percentuale']),2,",",".");
+        return $separator.$cf.$separator.$tipo.$separator.AA_Utils::number_format($partecipazione['percentuale'],2,",",".").$separator.AA_Utils::number_format($partecipazione_indiretta['percentuale'],2,",",".").$separator.AA_Utils::number_format(($partecipazione['percentuale']+$partecipazione_indiretta['percentuale']),2,",",".");
     }
     //--------------------------------------------
 
@@ -4385,7 +4386,9 @@ Class AA_OrganismiDatiContabili extends AA_Object
     //Restituisce la rappresentazione in formato xml
     public function ToXml()
     {
-        $return="<dato_contabile anno='".$this->GetAnno()."'>";
+        $gap = $this->IsInGap() ? "1" : "0";
+        $gbc = $this->IsInGbc() ? "1" : "0";
+        $return="<dato_contabile gap='".$gap."' gbc='".$gbc."' anno='".$this->GetAnno()."'>";
         $return.="<oneri>".$this->GetOneriTotali()."</oneri>";
         $return.="<spesa_lavoro_flessibile>".$this->GetSpesaLavoroFlessibile()."</spesa_lavoro_flessibile>";
         $return.="<spesa_incarichi>".$this->GetSpesaIncarichi()."</spesa_incarichi>";
