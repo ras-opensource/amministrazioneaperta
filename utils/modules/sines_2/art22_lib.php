@@ -1640,7 +1640,7 @@ class AA_Organismi extends AA_Object
     protected function CsvData($separator= "|")
     {
         $tipo=$this->GetTipologia();
-        $cf=$this->GetProp("cf");
+        $cf=$this->GetProp("sPivaCf");
         $partecipazione=$this->GetPartecipazione(true);
         $partecipazione_indiretta=$this->GetPartecipazioneIndiretta();
 
