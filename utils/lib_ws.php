@@ -3834,6 +3834,7 @@ function AA_XML_ReportArt22($param="")
  $idDirezione=$param->getElementsByTagName("id_direzione")->item(0)->textContent; //identificativo direzione
  $tipo_organismo=$param->getElementsByTagName("tipo_organismo")->item(0)->textContent; //tipologia organismo
  $output=$param->getElementsByTagName("output")->item(0)->textContent; //tipologia output ("pdf","csv","xml");
+ $partecipazione=$param->getElementsByTagName("partecipazione")->item(0)->textContent; //percentuale di partecipazione
  if($output == "") $output="xml";
  
  if($al == "")
@@ -3854,6 +3855,8 @@ function AA_XML_ReportArt22($param="")
   $params['dal']=$dal;
   $params['al']=$al;
   $params['count']="all";
+
+  if(!empty($partecipazione)) $params['partecipazione']=$partecipazione;
   if(($params['tipo']&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $params['partecipazione']=3;
 
   $xml=new AA_XML_FEED_ART22();

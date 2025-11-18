@@ -3030,12 +3030,6 @@ class AA_Organismi extends AA_Object
         {           
             $where.=" AND (data_inizio_impegno <= '".addslashes($params["al"])."' OR data_inizio_impegno = '0000-00-00')";
         }
-
-        //Filtra in funzione del tipo di organismo
-        if(isset($params['tipo']) && $params['tipo'] > 0)
-        {
-            $where.=" AND tipo & ".$params['tipo']." > 0 ";
-        }
                 
         //Filtra in base all'incaricato o tipo di nomina
         if($params['incaricato'] !="" || $params['tipo_nomina'] > 0 || $params['over65'] > 0)
@@ -3062,33 +3056,44 @@ class AA_Organismi extends AA_Object
         }
 
         //partecipazione
-        if(!empty($params['partecipazione'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
-        
-        if(($params['tipo']&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0)
+        if($params['partecipazione'] > 0)
         {
-            if($params['partecipazione']>0)
+            switch($params['partecipazione'])
             {
-                switch($params['partecipazione'])
-                {
-                    case 1:
-                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%\"partecipazioni\":{%') ";
-                        break;
-                    case 2:
-                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
-                        break;
-                    case 3:
-                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
-                        break;
-                    case 4:
-                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
-                        break;
-                    case 5:
-                        $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
-                        break;
-                }
+                case 6:
+                    //pubblicazioni trasparenza
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." = 0 OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
+                    break;
+                case 1:
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%\"partecipazioni\":{%') ";
+                    break;
+                case 2:
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
+                    break;
+                case 3:
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
+                    break;
+                case 4:
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
+                    break;
+                case 5:
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
+                    break;
             }
         }
         
+        //Filtra in funzione del tipo di organismo
+        if(isset($params['tipo']) && $params['tipo'] > 0)
+        {
+            $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".$params['tipo']." > 0 ";
+        }
+       
         //Filtra in base alla denominazione o alla partita iva/cf
         if(isset($params['denominazione']) && $params['denominazione'] !="") $where.=" AND (denominazione like '%".addslashes(trim($params['denominazione']))."%' OR piva_cf like '%".addslashes(trim($params['denominazione']))."%') ";
 
