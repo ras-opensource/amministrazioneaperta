@@ -2404,6 +2404,33 @@ class AA_FieldSet extends AA_JSON_Template_Generic
         }
     }
 
+    //aggiungi un campo di ricerca personalizzato
+    public function AddSearchField($handler="dlg",$handlerParams=array(),$module="", $fieldParams = array(), $newRow = true)
+    {
+         if ($this->formId != "")
+            $form = $this->formId;
+        else
+            $form = $this->GetId() . "_Form";
+
+        $onSearchScript = "try{ if($$('" . $form . "')){AA_MainApp.utils.callHandler('".$handler."'," . json_encode($handlerParams) . ",'".$module."');}}catch(msg){console.error(msg)}";
+
+        if ($newRow || !($this->curRow instanceof AA_JSON_Template_Layout)) {
+            $this->curRow = new AA_JSON_Template_Layout($this->GetId() . "_Layout_Row_" . uniqid(time()));
+            $this->layout->AddRow($this->curRow);
+        }
+
+        if (!isset($fieldParams['name']) || $fieldParams['name'] == "")
+            $fieldParams['name'] = "search_desc";
+        if (!isset($fieldParams['label']) || $fieldParams['label'] == "")
+            $fieldParams['label'] = "Cerca";
+        if (!isset($fieldParams['readonly']) || $fieldParams['readonly'] == "")
+            $fieldParams['readonly'] = true;
+        if (!isset($fieldParams['click']) || $fieldParams['click'] == "")
+            $fieldParams['click'] = $onSearchScript;
+
+        $this->curRow->AddCol(new AA_JSON_Template_Search($this->GetFormId() . "_Field_Search_".$fieldParams['name'], $fieldParams));
+    }
+
     //Aggiungi una nuova sezione
     public function AddSection($name = "New Section", $newRow = true)
     {

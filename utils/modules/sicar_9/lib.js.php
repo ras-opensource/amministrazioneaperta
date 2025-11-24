@@ -43,6 +43,23 @@ var <?php echo AA_SicarModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Sic
     }
 };
 
+//selezione l'ente
+<?php echo AA_SicarModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].SicarSelectFormItem = function() {
+    try 
+    {
+        //console.log("adjustRowHeight",arguments,this);
+        let form=$$(arguments[0]['form']);
+        if(form)
+        {
+            //console.log("values",arguments[0]['values']);
+            form.setValues(arguments[0]['values'],true);
+        }
+
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.SicarSelectImmobile", msg, this);
+    }
+};
+
 //Registrazione modulo
 AA_MainApp.registerModule(<?php echo AA_SicarModule::AA_ID_MODULE?>);
 
