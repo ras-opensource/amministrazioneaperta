@@ -751,6 +751,14 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         if(is_array($val)) return $val;
         else return array();
     }
+
+    //condominio misto
+    public function IsCondominioMisto()
+    {
+        $attributi=$this->GetAttributi();
+        if(isset($attributi['condominio_misto'])) return $attributi['condominio_misto'];
+        else return false;
+    }
     
     public function SetAttributi($var = "")
     {
@@ -2345,7 +2353,7 @@ class AA_SicarModule extends AA_GenericModule
         $form_data['superficie_utile_abitabile'] = $object->GetSuperficieUtileAbitabile();
         $form_data['piano'] = $object->GetPiano();
         $form_data['ascensore'] = $object->GetAscensore();
-        $form_data['fruibile_dis'] = $object->GetFruibileDis();
+        $form_data['fruibile_dis'] = $object->GetFruibileDis(true);
 
         $form_data['note'] = $object->GetNote();
 
@@ -4744,13 +4752,9 @@ class AA_SicarModule extends AA_GenericModule
         ));
         
         //disabile
-        $val="No";
-        $color="LightRed";
-        if(!empty($object->GetFruibileDis()))
-        {
-            $val="Si";
-            $color="LightGreen";
-        }
+        $val=$object->GetFruibileDis();
+        $color="LightGreen";
+        
         $value = "<span class='AA_Label AA_Label_$color'>" . $val. "</span>";
         $fruibile_dis = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
@@ -4859,10 +4863,12 @@ class AA_SicarModule extends AA_GenericModule
 
                 $num_alloggi=$curImmobile->GetNumeroAlloggiTot();
                 $alloggi_censiti=sizeof($curImmobile->GetAlloggi());
+                $condominio_misto="No";
+                if($curImmobile->IsCondominioMisto()) $condominio_misto="Si";
                 if($alloggi_censiti>0) $num_alloggi.=" (".sizeof($curImmobile->GetAlloggi())." <a class='AA_DataTable_Ops_Button' title='Visualizza gli alloggi censiti associati all&apos;immobile' onClick='".$alloggi_list."'><span class='".$alloggi_list_icon."'></span></a>)";
                 else $num_alloggi.=" (0)";
                 $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
-                $data[]=array("id"=>$curImmobile->GetProp("id"),"alloggi"=>$num_alloggi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc,"ops"=>$ops);
+                $data[]=array("id"=>$curImmobile->GetProp("id"),"condominio_misto"=>$condominio_misto,"alloggi"=>$num_alloggi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc,"ops"=>$ops);
             }
             else
             {
@@ -4876,12 +4882,14 @@ class AA_SicarModule extends AA_GenericModule
                 $alloggi_censiti=sizeof($curImmobile->GetAlloggi());
                 if($alloggi_censiti>0) $num_alloggi.=" (".sizeof($curImmobile->GetAlloggi())." <a class='AA_DataTable_Ops_Button' title='Visualizza gli alloggi censitiassociati all&apos;immobile' onClick='".$alloggi_list."'><span class='".$alloggi_list_icon."'></span></a>)";
                 else $num_alloggi.=" (0)";
-                $data[]=array("id"=>$curImmobile->GetProp("id"),"alloggi"=>$num_alloggi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc);
+                $condominio_misto="No";
+                if($curImmobile->IsCondominioMisto()) $condominio_misto="Si";
+                $data[]=array("id"=>$curImmobile->GetProp("id"),"condominio_misto"=>$condominio_misto,"alloggi"=>$num_alloggi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc);
             }
         }
 
-        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
-        else $template=new AA_GenericDatatableTemplate($id,"",5,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",5,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",6,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader(true);
@@ -4894,12 +4902,13 @@ class AA_SicarModule extends AA_GenericModule
             $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1)));
         }
 
-        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Denominazione</div>",250,"textFilter","int","ImmobiliTable_left");
         $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
-        $template->SetColumnHeaderInfo(2,"alloggi","<div style='text-align: center'>Alloggi</div>",120,null,null,"ImmobiliTable");
-        $template->SetColumnHeaderInfo(3,"gestore","<div style='text-align: center'>Gestore</div>",250,"textFilter","text","ImmobiliTable");
+        $template->SetColumnHeaderInfo(2,"condominio_misto","<div style='text-align: center'>Condominio Misto</div>",150,"selectFilter","text","ImmobiliTable");
+        $template->SetColumnHeaderInfo(3,"alloggi","<div style='text-align: center'>Alloggi</div>",130,null,null,"ImmobiliTable");
+        $template->SetColumnHeaderInfo(4,"gestore","<div style='text-align: center'>Gestore</div>",260,"textFilter","text","ImmobiliTable");
         //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        if(!empty($ops)) $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(5,"ops","<div style='text-align: center'>Operazioni</div>",130,null,null,"ImmobiliTable");
 
         $template->SetData($data);
 
@@ -5237,7 +5246,20 @@ class AA_SicarAlloggio extends AA_Object_V2
     public function GetAscensore() { return $this->GetProp("ascensore"); }
     public function SetAscensore($var = false) { $this->SetProp("ascensore", $var); $this->SetChanged(true); return true; }
 
-    public function GetFruibileDis() { return $this->GetProp("fruibile_dis"); }
+    public function GetFruibileDis($bNumeric=false) 
+    { 
+        if($bNumeric) return $this->GetProp("fruibile_dis");
+        else
+        {
+            $lista=AA_Sicar_Const::GetListaFruibilitaDisabile();
+            foreach($lista as $val)
+            {
+                if($val['id']==$this->GetProp("fruibile_dis")) return $val['value'];
+            }
+
+            return "n.d.";
+        }
+    }
     public function SetFruibileDis($var = false) { $this->SetProp("fruibile_dis", $var); $this->SetChanged(true); return true; }
 
     public function GetGestione($bAsObject=true) 
