@@ -6476,7 +6476,7 @@ class AA_GenericPagedSectionTemplate
             $filtered="";
             if($this->pager_filtered)
             {
-                $filtered=" <span class='mdi mdi-filter'></span>";
+                $filtered=" <span class='mdi mdi-filter' title='Contenuto filtrato'></span>";
             }
             $pager_title = new AA_JSON_Template_Generic($this->id . "_Pager_Title", array("view" => "template", "type" => "clean", "minWidth" => "150", "align" => "center", "template" => "<div style='display: flex; justify-content: center; align-items: center; height: 100%; color: #006699;'>Pagina #curPage# di #totPages#".$filtered."</div>", "data" => array("curPage" => ($this->pagerCurPage + 1), "totPages" => $totPages)));
         }
