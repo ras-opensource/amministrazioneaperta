@@ -1986,8 +1986,14 @@ class AA_SicarModule extends AA_GenericModule
             if ($object instanceof AA_SicarAlloggio) {
                 $data['pretitolo'] = $object->GetImmobile(false);
                 $data['titolo'] = $object->GetDisplayName();
-                $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>".$object->GetTipologiaUtilizzo()."</span>";
-                if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightGreen' title='Anno ultima ristrutturazione'>".$object->GetAnnoRistrutturazione()."</span>";
+                $gestore=$object->GetGestore();
+                if($gestore instanceof AA_SicarEnte)
+                {
+                    $data['sottotitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente gestore'>Ente gestore: <b>".$gestore->GetDenominazione()."</b></span>";
+                }
+                else $data['sottotitolo'] = "Nessun gestore associato";
+                $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>Tipologia di utilizzo: <b>".$object->GetTipologiaUtilizzo()."</b></span>";
+                if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Anno ultima ristrutturazione'>Anno ultima ristrutturazione: <b>".$object->GetAnnoRistrutturazione()."</b></span>";
                 $data['tags']=$tags;
             }
             else
@@ -2224,8 +2230,10 @@ class AA_SicarModule extends AA_GenericModule
         $form_data['stato_conservazione'] = 0;
         $form_data['anno_ristrutturazione'] = "";
         $form_data['condominio_misto'] = 0;
-        $form_data['superficie_netta'] = 0;
         $form_data['superficie_utile_abitabile'] = 0;
+        $form_data['superficie_non_residenziale'] = 0;
+        $form_data['superficie_parcheggi'] = 0;
+        $form_data['vani_abitabili'] = 0;
         $form_data['piano'] = 0;
         $form_data['ascensore'] = 0;
         $form_data['fruibile_dis'] = 0;
@@ -2261,15 +2269,25 @@ class AA_SicarModule extends AA_GenericModule
         $options = AA_Sicar_Const::GetListaStatiConservazioneAlloggio();
         $wnd->AddSelectField("stato_conservazione", "Stato conservazione", ["required" => true,"validateFunction"=>"IsSelected","labelWidth"=>160, "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options],false);
         
-        // Campo numerico: anno ristrutturazione
-        $wnd->AddTextField("anno_ristrutturazione", "Anno ristrutturazione", ["required" => false, "bottomLabel" => "Anno (se presente)"]);
-    
-        // Campo numerico: superficie netta
-        $wnd->AddTextField("superficie_netta", "Superficie netta", ["required" => false, "bottomLabel" => "Valore in metri quadri"],false);
+        //superfici
+        $superfici=new AA_FieldSet("AA_SICAR_ALLOGGI_SUPERFICI","Dati sulle superfici",$wnd->GetFormId(),1);
+        // Campo numerico: superficie non residenziale
+        $superfici->AddTextField("superficie_non_residenziale", "Non residenziale", ["required" => false,"labelWidth"=>120, "bottomLabel" => "Valore in metri quadri"]);
         // Campo numerico: superficie utile abitabile
-        $wnd->AddTextField("superficie_utile_abitabile", "Superficie abitabile", ["required" => false, "bottomLabel" => "Superficie utile in mq"],false);
+        $superfici->AddTextField("superficie_utile_abitabile", "Abitabile", ["required" => true,"labelWidth"=>120, "bottomLabel" => "Superficie utile in mq"],false);
+        // Campo numerico: superficie parcheggi
+        $superfici->AddTextField("superficie_parcheggi", "Parcheggi", ["required" => false,"labelWidth"=>120, "bottomLabel" => "Superficie utile in mq"],false);
+        $wnd->AddGenericObject($superfici);
+
+        //altri dati
+        $altro=new AA_FieldSet("AA_SICAR_ALLOGGI_ALTRO","Altri dati",$wnd->GetFormId(),1);
+        // Campo numerico: anno ristrutturazione
+        $altro->AddTextField("anno_ristrutturazione", "Anno ristrutturazione", ["required" => false,"labelWidth"=>150, "bottomLabel" => "Anno (se presente)"]);
+        // Campo numerico: vani abitabili
+        $altro->AddTextField("vani_abitabili", "Vani abitabili", ["required" => true, "labelWidth"=>120,"width"=>200,"bottomLabel" => "Numero di vani abitabili."],false);       
         // Campo numerico: piano
-        $wnd->AddTextField("piano", "Piano", ["required" => true, "bottomLabel" => "Numero del piano"],false);
+        $altro->AddTextField("piano", "Piano", ["required" => true,"labelWidth"=>90,"width"=>170, "bottomLabel" => "Numero del piano"],false);
+        $wnd->AddGenericObject($altro,false);
 
         // Campo booleano: condominio misto
         //$wnd->AddCheckBoxField("condominio_misto", " ", ["required" => false, "labelWidth"=>150,"labelRight" => "Condominio misto"]);
@@ -2321,7 +2339,9 @@ class AA_SicarModule extends AA_GenericModule
         $form_data['stato_conservazione'] = $object->GetStatoConservazione(false);
         $form_data['anno_ristrutturazione'] = $object->GetAnnoRistrutturazione();
         $form_data['condominio_misto'] = $object->GetCondominioMisto();
-        $form_data['superficie_netta'] = $object->GetSuperficieNetta();
+        $form_data['superficie_non_residenziale'] = $object->GetSuperficieNonResidenziale();
+        $form_data['superficie_parcheggi'] = $object->GetSuperficieParcheggi();
+        $form_data['vani_abitabili'] = $object->GetVaniAbitabili();
         $form_data['superficie_utile_abitabile'] = $object->GetSuperficieUtileAbitabile();
         $form_data['piano'] = $object->GetPiano();
         $form_data['ascensore'] = $object->GetAscensore();
@@ -2387,15 +2407,25 @@ class AA_SicarModule extends AA_GenericModule
         $options = AA_Sicar_Const::GetListaStatiConservazioneAlloggio();
         $wnd->AddSelectField("stato_conservazione", "Stato conservazione", ["required" => true,"validateFunction"=>"IsSelected","labelWidth"=>160, "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options],false);
         
-        // Campo numerico: anno ristrutturazione
-        $wnd->AddTextField("anno_ristrutturazione", "Anno ristrutturazione", ["required" => false, "bottomLabel" => "Anno (se presente)"]);
-    
-        // Campo numerico: superficie netta
-        $wnd->AddTextField("superficie_netta", "Superficie netta", ["required" => true,"validateFunction"=>"IsPositive", "bottomLabel" => "Valore in metri quadri"],false);
+        //superfici
+        $superfici=new AA_FieldSet("AA_SICAR_ALLOGGI_SUPERFICI","Dati sulle superfici",$wnd->GetFormId(),1);
+        // Campo numerico: superficie non residenziale
+        $superfici->AddTextField("superficie_non_residenziale", "Non residenziale", ["required" => false,"labelWidth"=>120, "bottomLabel" => "Valore in metri quadri"]);
         // Campo numerico: superficie utile abitabile
-        $wnd->AddTextField("superficie_utile_abitabile", "Superficie abitabile", ["required" => true,"validateFunction"=>"IsPositive", "bottomLabel" => "Superficie utile in mq"],false);
+        $superfici->AddTextField("superficie_utile_abitabile", "Abitabile", ["required" => true,"labelWidth"=>120, "bottomLabel" => "Superficie utile in mq"],false);
+        // Campo numerico: superficie parcheggi
+        $superfici->AddTextField("superficie_parcheggi", "Parcheggi", ["required" => false,"labelWidth"=>120, "bottomLabel" => "Superficie utile in mq"],false);
+        $wnd->AddGenericObject($superfici);
+
+        //altri dati
+        $altro=new AA_FieldSet("AA_SICAR_ALLOGGI_ALTRO","Altri dati",$wnd->GetFormId(),1);
+        // Campo numerico: anno ristrutturazione
+        $altro->AddTextField("anno_ristrutturazione", "Anno ristrutturazione", ["required" => false,"labelWidth"=>150, "bottomLabel" => "Anno (se presente)"]);
+        // Campo numerico: vani abitabili
+        $altro->AddTextField("vani_abitabili", "Vani abitabili", ["required" => true, "labelWidth"=>120,"width"=>200,"bottomLabel" => "Numero di vani abitabili."],false);       
         // Campo numerico: piano
-        $wnd->AddTextField("piano", "Piano", ["required" => true, "bottomLabel" => "Numero del piano"],false);
+        $altro->AddTextField("piano", "Piano", ["required" => true,"labelWidth"=>90,"width"=>170, "bottomLabel" => "Numero del piano"],false);
+        $wnd->AddGenericObject($altro,false);
 
         //ente gestore
         $dlgEntiParams = array("task" => "GetSicarSearchEntiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"gestione_ente","field_desc"=>"gestione_ente_desc"));
@@ -4353,12 +4383,16 @@ class AA_SicarModule extends AA_GenericModule
         {
             $_REQUEST['superficie_utile_abitabile']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_utile_abitabile']));
         }
-        if(isset($_REQUEST['superficie_netta']) && $_REQUEST['superficie_netta']!="")
+        if(isset($_REQUEST['superficie_non_residenziale']) && $_REQUEST['superficie_non_residenziale']!="")
         {
-            $_REQUEST['superficie_netta']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_netta']));
+            $_REQUEST['superficie_non_residenziale']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_non_residenziale']));
+        }
+        if(isset($_REQUEST['superficie_parcheggi']) && $_REQUEST['superficie_parcheggi']!="")
+        {
+            $_REQUEST['superficie_parcheggi']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_parcheggi']));
         }
 
-         if(empty($_REQUEST['gestione_ente']) || empty($_REQUEST['gestione_dal']))
+        if(empty($_REQUEST['gestione_ente']) || empty($_REQUEST['gestione_dal']))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("E' necessario specificare un ente gestore e una data iniziale di gestione.", false);
@@ -4634,17 +4668,26 @@ class AA_SicarModule extends AA_GenericModule
 
         // superficie
         $superficie="";
-        if(!empty($object->GetSuperficieNetta())) $superficie="<span>netta: ".$object->GetSuperficieNetta()."</span>";
+        if(!empty($object->GetSuperficieNonResidenziale())) $superficie="<span>Non residenziale: ".$object->GetSuperficieNonResidenziale()."</span>";
+        else $superficie="<span>Non residenziale: n.d.</span>";;
+        if(!empty($object->GetSuperficieParcheggi())) $superficie=" <span>parcheggi: ".$object->GetSuperficieParcheggi()."</span>";
+        else $superficie=" <span>parcheggi: n.d.</span>";
         if(!empty($object->GetSuperficieUtileAbitabile())) 
         {
             if(!empty($superficie)) $superficie.=" - "; 
-            $superficie.="<span>abitabile: ".$object->GetSuperficieUtileAbitabile()."</span>";
+            $superficie.=" <span>abitabile: ".$object->GetSuperficieUtileAbitabile()."</span>";
         }
+        else 
+        {
+            if(!empty($superficie)) $superficie.=" - "; 
+            $superficie.=" <span>abitabile: n.d.</span>";
+        }
+
         $value =  $superficie;
         $superficie = new AA_JSON_Template_Template("", array(
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "gravity" => 1,
-            "data" => array("title" => "Superficie (mq):", "value" => $value),
+            "gravity" => 2,
+            "data" => array("title" => "Superfici (mq):", "value" => $value),
             "css" => array("border-bottom" => "1px solid #dadee0 !important")
         ));
 
@@ -4655,6 +4698,16 @@ class AA_SicarModule extends AA_GenericModule
             "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity" => 1,
             "data" => array("title" => "Piano:", "value" => $value),
+            "css" => array("border-bottom" => "1px solid #dadee0 !important")
+        ));
+
+        //vani abitabili
+        if(!empty($object->GetVaniAbitabili())) $value = "<span>" . $object->GetVaniAbitabili() . "</span>";
+        else $value = "<span>n.d.</span>";
+        $piano = new AA_JSON_Template_Template("", array(
+            "template" => "<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "gravity" => 1,
+            "data" => array("title" => "Vani abitabili:", "value" => $value),
             "css" => array("border-bottom" => "1px solid #dadee0 !important")
         ));
 
@@ -4720,15 +4773,7 @@ class AA_SicarModule extends AA_GenericModule
         
         //seconda riga
         $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
-        $layout_right=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
-        
-        //titolo
-        $value = $object->GetName();
-        $titolo=new AA_JSON_Template_Template("",array(
-            "maxHeight"=>100,
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Descrizione:","value"=>$value)
-        ));
+        //$layout_riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"type"=>"clean"));
         
         //immobile
         $immobile_obj=$object->GetImmobile();
@@ -4738,11 +4783,17 @@ class AA_SicarModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Immobile:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$immobile_obj->GetDescrizione()."</a><br>".$immobile_obj->GetIndirizzo()." (".$immobile_obj->GetComune().") <a href='https://www.google.com/maps/search/?api=1&query=".$immobile_obj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a><br><i>".$immobile_obj->GetTipologia()."</i>")
         ));
-        $riga->addCol($titolo);
+        $riga->addCol($immobile);
 
-        $layout_right->addRow($immobile);
-        $riga->addCol($layout_right);
-
+        //Gestore
+        $gestore_obj=$object->GetGestore();
+        $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailEnteGestoreDlg", params: [{id:"'.$gestore_obj->GetProp("id").'"}]},"'.$this->id.'")';
+        $gestore=new AA_JSON_Template_Template("",array(
+            "maxHeight"=>100,
+            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+            "data"=>array("title"=>"Ente gestore:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$gestore_obj->GetDenominazione()."</a><br>dal ".$object->GetGestioneDaL()."</br>")
+        ));
+        $riga->addCol($gestore);
         $layout->AddRow($riga);
 
         //note
@@ -5061,6 +5112,9 @@ class AA_SicarAlloggio extends AA_Object_V2
         //$this->SetBind("condominio_misto", "condominio_misto", true);
         $this->SetBind("superficie_netta", "superficie_netta", true);
         $this->SetBind("superficie_utile_abitabile", "superficie_utile_abitabile", true);
+        $this->SetBind("superficie_non_residenziale", "superficie_non_residenziale", true);
+        $this->SetBind("superficie_parcheggi", "superficie_parcheggi", true);
+        $this->SetBind("vani_abitabili", "vani_abitabili", true);
         $this->SetBind("piano", "piano", true);
         $this->SetBind("ascensore", "ascensore", true);
         $this->SetBind("fruibile_dis", "fruibile_dis", true);
@@ -5137,6 +5191,33 @@ class AA_SicarAlloggio extends AA_Object_V2
     {
         $var=str_replace(",",".",str_replace(".","",$var));
         $this->SetProp("superficie_netta", $var); 
+        $this->SetChanged(true); 
+        return true; 
+    }
+
+    public function GetSuperficieNonResidenziale() { return AA_Utils::number_format($this->GetProp("superficie_non_residenziale"),2,",","."); }
+    public function SetSuperficieNonResidenziale($var = 0) 
+    {
+        $var=str_replace(",",".",str_replace(".","",$var));
+        $this->SetProp("superficie_non_residenziale", $var); 
+        $this->SetChanged(true); 
+        return true; 
+    }
+
+    public function GetSuperficieParcheggi() { return AA_Utils::number_format($this->GetProp("superficie_parcheggi"),2,",","."); }
+    public function SetSuperficieParcheggi($var = 0) 
+    {
+        $var=str_replace(",",".",str_replace(".","",$var));
+        $this->SetProp("superficie_parcheggi", $var); 
+        $this->SetChanged(true); 
+        return true; 
+    }
+
+    public function GetVaniAbitabili() { return AA_Utils::number_format($this->GetProp("vani_abitabili"),0,",","."); }          
+    public function SetVaniAbitabili($var = 0) 
+    {
+        $var=str_replace(",",".",str_replace(".","",$var));
+        $this->SetProp("vani_abitabili", intVal($var)); 
         $this->SetChanged(true); 
         return true; 
     }
@@ -5219,8 +5300,14 @@ class AA_SicarAlloggio extends AA_Object_V2
         if (intval($this->GetAnnoRistrutturazione()) < 1900 || intval($this->GetAnnoRistrutturazione()) > intval(date("Y"))) {
             $errors[] = "Anno di ristrutturazione non valido";
         }
-        if (!is_numeric($this->GetProp("superficie_netta")) || floatval($this->GetProp("superficie_netta")) <= 0) {
-            $errors[] = "Superficie netta non valida (".$this->GetProp("superficie_netta").")";
+        if (!is_numeric($this->GetProp("superficie_non_residenziale")) || floatval($this->GetProp("superficie_non_residenziale")) < 0) {
+            $errors[] = "Superficie non residenziale non valida (".$this->GetProp("superficie_non_residenziale").")";
+        }
+        if (!is_numeric($this->GetProp("superficie_parcheggi")) || floatval($this->GetProp("superficie_parcheggi")) < 0) {
+            $errors[] = "Superficie parcheggi non valida (".$this->GetProp("superficie_parcheggi").")";
+        }
+        if (!is_numeric($this->GetProp("vani_abitabili")) || floatval($this->GetProp("vani_abitabili")) < 0) {
+            $errors[] = "Vani abitabili non valida (".$this->GetProp("vani_abitabili").")";
         }
         if (!is_numeric($this->GetProp('superficie_utile_abitabile')) || floatval($this->GetProp('superficie_utile_abitabile')) <= 0) {
             $errors[] = "Superficie utile abitabile non valida (".$this->GetSuperficieUtileAbitabile().")";

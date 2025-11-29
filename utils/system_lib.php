@@ -5246,7 +5246,7 @@ class AA_GenericModule
 
         //Content box
         $name=$object->GetName();
-        if(strlen($name>225)) $name=mb_substr($name,0,217)."...";
+        if(strlen($name)>225) $name=mb_substr($name,0,217)."...";
 
         $content = new AA_JSON_Template_Layout(
             static::AA_UI_PREFIX . "_" . static::AA_UI_DETAIL_BOX,
