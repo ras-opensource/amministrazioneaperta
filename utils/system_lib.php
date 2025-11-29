@@ -4782,6 +4782,12 @@ class AA_GenericModule
 
         $content->SetSectionName($sectionName);
 
+        if($this->DataSectionIsFiltered($params))
+        {
+            AA_Log::Log(__METHOD__." - sezione pubblicate filtrata",100);
+            $content->SetPagerFiltered(true);
+        }
+
         if ($contentData == null) {
             $params['count'] = 10;
             $contentData = $this->GetDataSectionPubblicate_List($params);
@@ -4793,6 +4799,26 @@ class AA_GenericModule
         $content->EnableSelect();
 
         return $content;
+    }
+
+    //Verifica se la sezione è filtrata
+    protected function DataSectionIsFiltered($params = array())
+    {
+        if($this->CustomDataSectionIsFiltered($params)) return true;
+
+        if(isset($params['id_assessorato']) && $params['id_assessorato'] > 0) return true;
+        if(isset($params['id_direzione']) && $params['id_direzione'] > 0) return true;
+        if(isset($params['id_servizio']) && $params['id_servizio'] > 0) return true;
+        if(isset($params['struct_descr']) && $params['struct_descr'] != "Qualunque") return true;
+        if(isset($params['nome']) && $params['nome'] != "") return true;
+        if(isset($params['ids']) && $params['ids'] != "") return true;
+
+        return false;
+    }
+    //Funzione di filtro personalizzata per la verifica se la sezione è filtrata
+    protected function CustomDataSectionIsFiltered($params = array())
+    {
+        return false;
     }
 
     //Template sezione pubblicate (da specializzare)
@@ -4960,6 +4986,11 @@ class AA_GenericModule
             $content->HidePublish();
             $content->HideReassign();
             $content->EnableAddNew(false);
+        }
+
+        if($this->DataSectionIsFiltered($params))
+        {
+            $content->SetPagerFiltered(true);
         }
 
         if ($contentData == null) {
