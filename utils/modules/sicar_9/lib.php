@@ -4767,6 +4767,10 @@ class AA_SicarModule extends AA_GenericModule
 
         //$layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
         
+        //filtrare in base al comune dell'operatore comunale
+        //to do
+        //-------------------------------------------------
+
         $immobili=AA_SicarImmobile::Search($params);
         $data=[];
         if(!empty($form) && !empty($field_id) && !empty($field_desc)) 
