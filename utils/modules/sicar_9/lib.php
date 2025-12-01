@@ -1355,6 +1355,466 @@ class AA_SicarEnte extends AA_GenericParsableDbObject
     }
 }
 
+class AA_SicarFinanziamento extends AA_GenericParsableDbObject
+{
+    // Tabella dati per gli enti
+    static protected $dbDataTable="aa_sicar_finanziamenti";
+    static protected $ObjectClass=__CLASS__;
+    
+    // Costruttore
+    public function __construct($params = array())
+    {
+        
+        // Imposta i binding tra proprietà e campi database
+        $this->aProps['denominazione']="Nuovo finanziamento";
+        $this->aProps['note']="";
+        
+        //template view props
+        $this->aTemplateViewProps['denominazione']=array("label"=>"Descrizione","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","function"=>"GetTipologia","visible"=>true);
+        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['web']=array("label"=>"SitoWeb","type"=>"text","function"=>"GetSitoWebView","visible"=>true);
+        $this->aTemplateViewProps['pec']=array("label"=>"PEC","type"=>"text","function"=>"GetPecView","visible"=>true);
+        $this->aTemplateViewProps['operatori']=array("label"=>"Contatti","type"=>"text","function"=>"GetOperatoriView","visible"=>true);
+        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","visible"=>true);
+
+        //areas, cols e rows di default
+        $this->aTemplateViewProps['__areas']=array(
+            array("denominazione", "denominazione","tipologia"),
+            array("indirizzo","web","pec"),
+            array("note", "note", "operatori"),
+            array("note", "note", "operatori")
+        );
+        $this->aTemplateViewProps['__cols']=array("1fr","1fr","1fr");
+        $this->aTemplateViewProps['__rows']=array("1fr","1fr","1fr","1fr");
+
+        // Chiama il costruttore padre
+        parent::__construct($params);
+    }
+
+    public function GetTemplateView($bRefresh=false)
+    {
+        return parent::GetTemplateView($bRefresh);
+    }
+        
+    //lista degli enti
+    public static function GetListaFinanziamenti()
+    {
+        $db = new AA_Database();
+        $query = "SELECT * FROM ".static::$dbDataTable." ORDER BY descrizione";
+        
+        $return = array();
+
+        if($db->Query($query)) {
+            $rs = $db->GetResultSet();
+            foreach($rs as $row) {
+                $return[] = new AA_SicarFinanziamento($row);
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__ . " - ERRORE: non è stato possibile ottenere la lista dei finanziamenti. - ".$db->GetErrorMessage(), 100);
+        }
+
+        return $return;
+    }
+
+    // Metodi Getter e Setter per le proprietà
+    
+    // Descrizione
+    public function GetDenominazione()
+    {
+        return $this->GetProp("denominazione");
+    }
+    
+    public function SetDenominazione($var = "")
+    {
+        $this->SetProp("denominazione", $var);
+        return true;
+    }
+
+    // Tipologia
+    public function GetTipologia($bAsText=true)
+    {
+        if(!$bAsText) return $this->GetProp("tipologia"); 
+        
+        $tipo=AA_Sicar_Const::GetListaTipologieEnte(true);
+        if(!empty($tipo[$this->GetProp("tipologia")])) return $tipo[$this->GetProp("tipologia")];
+        else return "n.d.";
+        
+    }
+    
+    public function SetTipologia($var = 0)
+    {
+        $this->SetProp("tipologia", $var);
+        return true;
+    }
+    
+    // Note
+    public function GetNote()
+    {
+        return $this->GetProp("note");
+    }
+
+    public function SetNote($var = "")
+    {
+        $this->SetProp("note", $var);
+        return true;
+    }
+    
+    // Metodi per la validazione
+    public function Validate()
+    {
+        $errors = array();
+        
+        // Validazione campi obbligatori
+        if (empty($this->GetDenominazione())) {
+            $errors[] = "La denominazione è obbligatoria";
+        }
+        
+        if (empty($this->GetTipologia())) {
+            $errors[] = "La tipologia è obbligatoria";
+        }
+        
+        return $errors;
+    }
+    
+    // Metodo per ottenere una rappresentazione testuale dell'immobile
+    public function GetDisplayName()
+    {
+        $display = strval($this->GetDenominazione());
+
+        return $display;
+    }
+    
+    // Metodo per l'esportazione CSV
+    protected function CsvDataHeader($separator = "|")
+    {
+        return "descrizione".$separator . "tipologia" . 
+               $separator . "indirizzo" . $separator . "note";
+    }
+    
+    protected function CsvData($separator = "|")
+    {
+        return $this->GetDenominazione().$separator . $this->GetTipologia() . 
+               $separator . str_replace("\n", ' ', $this->GetNote());
+    }
+    
+    /**
+     * Metodo per popolare l'oggetto dai parametri
+     * @param array $params Parametri da parsare
+     */
+    public function Parse($params = array())
+    {
+        // Chiama il metodo padre per le proprietà base
+        return parent::Parse($params);
+    }
+    
+    /**
+     * Funzione per verificare i permessi dell'utente
+     * @param AA_User $user Utente da verificare
+     * @return int Permessi dell'utente
+     */
+    public function GetUserCaps($user = null)
+    {
+        // Verifica utente
+        if ($user instanceof AA_User) {
+            if (!$user->isCurrentUser()) {
+                $user = AA_User::GetCurrentUser();
+            }
+        } else {
+            $user = AA_User::GetCurrentUser();
+        }
+        
+        $perms = AA_Const::AA_PERMS_READ;
+        
+        // Se l'utente ha il flag e può modificare l'immobile allora può fare tutto
+        if ($user->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $perms = AA_Const::AA_PERMS_ALL;
+        }
+        
+        return $perms;
+    }
+    
+    /**
+     * Funzione statica per l'aggiunta di nuovi immobili
+    * @param array $params dati dell'immobile
+     * @return bool|int ID dell'immobile creato o false in caso di errore
+     */
+    static public function AddNew($params, $user = null)
+    {
+        $object = new AA_SicarFinanziamento($params);
+
+        $validate=$object->Validate();
+        if(sizeof($validate)>0)
+        {
+            AA_Log::Log(__METHOD__." - Sono stati trovati i seguenti errori: ".print_r($validate,true),100);
+            return false;
+        }
+
+        return $object->Sync($user);
+    }
+
+    public function Sync($user = null)
+    {
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser())
+            {
+                $user = AA_User::GetCurrentUser();
+            }
+        }
+        else
+        {
+            $user = AA_User::GetCurrentUser();
+        }
+        
+        if($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE==0) 
+        {
+            AA_Log::Log(__METHOD__ . " - ERRORE: l'utente corrente: " . $user->GetName() . " non ha i permessi per inserire nuovi elementi.", 100);
+            return false;
+        }
+
+        if(!empty($this->Validate())) 
+        {
+            AA_Log::Log(__METHOD__ . " - ERRORE: i dati dell'ente non sono validi.", 100);
+            return false;
+        }
+
+        return parent::Sync();
+    }
+}
+
+class AA_SicarGraduatoria extends AA_GenericParsableDbObject
+{
+    // Tabella dati per gli enti
+    static protected $dbDataTable="aa_sicar_graduatorie";
+    static protected $ObjectClass=__CLASS__;
+    
+    // Costruttore
+    public function __construct($params = array())
+    {
+        
+        // Imposta i binding tra proprietà e campi database
+        $this->aProps['denominazione']="Nuova graduatoria";
+        $this->aProps['note']="";
+        
+        //template view props
+        $this->aTemplateViewProps['denominazione']=array("label"=>"Descrizione","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","function"=>"GetTipologia","visible"=>true);
+        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['web']=array("label"=>"SitoWeb","type"=>"text","function"=>"GetSitoWebView","visible"=>true);
+        $this->aTemplateViewProps['pec']=array("label"=>"PEC","type"=>"text","function"=>"GetPecView","visible"=>true);
+        $this->aTemplateViewProps['operatori']=array("label"=>"Contatti","type"=>"text","function"=>"GetOperatoriView","visible"=>true);
+        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","visible"=>true);
+
+        //areas, cols e rows di default
+        $this->aTemplateViewProps['__areas']=array(
+            array("denominazione", "denominazione","tipologia"),
+            array("indirizzo","web","pec"),
+            array("note", "note", "operatori"),
+            array("note", "note", "operatori")
+        );
+        $this->aTemplateViewProps['__cols']=array("1fr","1fr","1fr");
+        $this->aTemplateViewProps['__rows']=array("1fr","1fr","1fr","1fr");
+
+        // Chiama il costruttore padre
+        parent::__construct($params);
+    }
+
+    public function GetTemplateView($bRefresh=false)
+    {
+        return parent::GetTemplateView($bRefresh);
+    }
+        
+    //lista degli enti
+    public static function GetListaGraduatoria()
+    {
+        $db = new AA_Database();
+        $query = "SELECT * FROM ".static::$dbDataTable." ORDER BY descrizione";
+        
+        $return = array();
+
+        if($db->Query($query)) {
+            $rs = $db->GetResultSet();
+            foreach($rs as $row) {
+                $return[] = new AA_SicarGraduatoria($row);
+            }
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__ . " - ERRORE: non è stato possibile ottenere la lista dei finanziamenti. - ".$db->GetErrorMessage(), 100);
+        }
+
+        return $return;
+    }
+
+    // Metodi Getter e Setter per le proprietà
+    
+    // Descrizione
+    public function GetDenominazione()
+    {
+        return $this->GetProp("denominazione");
+    }
+    
+    public function SetDenominazione($var = "")
+    {
+        $this->SetProp("denominazione", $var);
+        return true;
+    }
+
+    // Tipologia
+    public function GetTipologia($bAsText=true)
+    {
+        if(!$bAsText) return $this->GetProp("tipologia"); 
+        
+        $tipo=AA_Sicar_Const::GetListaTipologieEnte(true);
+        if(!empty($tipo[$this->GetProp("tipologia")])) return $tipo[$this->GetProp("tipologia")];
+        else return "n.d.";
+        
+    }
+    
+    public function SetTipologia($var = 0)
+    {
+        $this->SetProp("tipologia", $var);
+        return true;
+    }
+    
+    // Note
+    public function GetNote()
+    {
+        return $this->GetProp("note");
+    }
+
+    public function SetNote($var = "")
+    {
+        $this->SetProp("note", $var);
+        return true;
+    }
+    
+    // Metodi per la validazione
+    public function Validate()
+    {
+        $errors = array();
+        
+        // Validazione campi obbligatori
+        if (empty($this->GetDenominazione())) {
+            $errors[] = "La denominazione è obbligatoria";
+        }
+        
+        if (empty($this->GetTipologia())) {
+            $errors[] = "La tipologia è obbligatoria";
+        }
+        
+        return $errors;
+    }
+    
+    // Metodo per ottenere una rappresentazione testuale dell'immobile
+    public function GetDisplayName()
+    {
+        $display = strval($this->GetDenominazione());
+
+        return $display;
+    }
+    
+    // Metodo per l'esportazione CSV
+    protected function CsvDataHeader($separator = "|")
+    {
+        return "descrizione".$separator . "tipologia" . 
+               $separator . "indirizzo" . $separator . "note";
+    }
+    
+    protected function CsvData($separator = "|")
+    {
+        return $this->GetDenominazione().$separator . $this->GetTipologia() . 
+               $separator . str_replace("\n", ' ', $this->GetNote());
+    }
+    
+    /**
+     * Metodo per popolare l'oggetto dai parametri
+     * @param array $params Parametri da parsare
+     */
+    public function Parse($params = array())
+    {
+        // Chiama il metodo padre per le proprietà base
+        return parent::Parse($params);
+    }
+    
+    /**
+     * Funzione per verificare i permessi dell'utente
+     * @param AA_User $user Utente da verificare
+     * @return int Permessi dell'utente
+     */
+    public function GetUserCaps($user = null)
+    {
+        // Verifica utente
+        if ($user instanceof AA_User) {
+            if (!$user->isCurrentUser()) {
+                $user = AA_User::GetCurrentUser();
+            }
+        } else {
+            $user = AA_User::GetCurrentUser();
+        }
+        
+        $perms = AA_Const::AA_PERMS_READ;
+        
+        // Se l'utente ha il flag e può modificare l'immobile allora può fare tutto
+        if ($user->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $perms = AA_Const::AA_PERMS_ALL;
+        }
+        
+        return $perms;
+    }
+    
+    /**
+     * Funzione statica per l'aggiunta di nuovi immobili
+    * @param array $params dati dell'immobile
+     * @return bool|int ID dell'immobile creato o false in caso di errore
+     */
+    static public function AddNew($params, $user = null)
+    {
+        $object = new AA_SicarFinanziamento($params);
+
+        $validate=$object->Validate();
+        if(sizeof($validate)>0)
+        {
+            AA_Log::Log(__METHOD__." - Sono stati trovati i seguenti errori: ".print_r($validate,true),100);
+            return false;
+        }
+
+        return $object->Sync($user);
+    }
+
+    public function Sync($user = null)
+    {
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser())
+            {
+                $user = AA_User::GetCurrentUser();
+            }
+        }
+        else
+        {
+            $user = AA_User::GetCurrentUser();
+        }
+        
+        if($this->GetUserCaps($user) & AA_Const::AA_PERMS_WRITE==0) 
+        {
+            AA_Log::Log(__METHOD__ . " - ERRORE: l'utente corrente: " . $user->GetName() . " non ha i permessi per inserire nuovi elementi.", 100);
+            return false;
+        }
+
+        if(!empty($this->Validate())) 
+        {
+            AA_Log::Log(__METHOD__ . " - ERRORE: i dati dell'ente non sono validi.", 100);
+            return false;
+        }
+
+        return parent::Sync();
+    }
+}
+
 class AA_SicarNucleo extends AA_GenericParsableDbObject
 {
     // Tabella dati per gli enti
@@ -1698,6 +2158,22 @@ class AA_SicarModule extends AA_GenericModule
     const AA_UI_SECTION_NUCLEI_DESC = "Visualizza e gestisci i nuclei familiari";
     const AA_UI_SECTION_NUCLEI_TOOLTIP = "Visualizza e gestisci i nuclei familiari";
 
+    //id sezione finanziamenti
+    const AA_ID_SECTION_FINANZIAMENTI = "GestFinanziamenti";
+    const AA_UI_SECTION_FINANZIAMENTI_BOX = "GestFinanziamentiBox";
+    const AA_UI_SECTION_FINANZIAMENTI_NAME = "Gestione finanziamenti";
+    const AA_UI_SECTION_FINANZIAMENTI_ICON = "mdi mdi-cash-fast";
+    const AA_UI_SECTION_FINANZIAMENTI_DESC = "Visualizza e gestisci i Finanziamenti";
+    const AA_UI_SECTION_FINANZIAMENTI_TOOLTIP = "Visualizza e gestisci i Finanziamenti";
+
+    //id sezione finanziamenti
+    const AA_ID_SECTION_GRADUATORIE = "GestGraduatorie";
+    const AA_UI_SECTION_GRADUATORIE_BOX = "GestGraduatorieBox";
+    const AA_UI_SECTION_GRADUATORIE_NAME = "Gestione graduatorie";
+    const AA_UI_SECTION_GRADUATORIE_ICON = "mdi mdi-format-list-numbered";
+    const AA_UI_SECTION_GRADUATORIE_DESC = "Visualizza e gestisci le graduatorie";
+    const AA_UI_SECTION_GRADUATORIE_TOOLTIP = "Visualizza e gestisci le graduatorie";
+
     //id sezione tables
     const AA_ID_SECTION_TABLES = "GestTables";
     const AA_UI_SECTION_TABLES_BOX = "GestTablesBox";
@@ -1830,19 +2306,31 @@ class AA_SicarModule extends AA_GenericModule
         
         #----------------------- Gest immobili -------------------------
         $gest_immobili=new AA_GenericModuleSection(static::AA_ID_SECTION_IMMOBILI,static::AA_UI_SECTION_IMMOBILI_NAME,true,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_IMMOBILI,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_IMMOBILI_ICON,"TemplateSection_Immobili");
-        $gest_immobili->SetNavbarTemplate(array($this->TemplateGenericNavbar_Immobili(1,true,true)->toArray()));
+        $gest_immobili->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
         $this->AddSection($gest_immobili);
         #---------------------------------------------------------------
 
         #----------------------- Gest enti -------------------------
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_ENTI,static::AA_UI_SECTION_ENTI_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_ENTI_BOX,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_ENTI_ICON,"TemplateSection_Enti");
-        $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Immobili(1,true,true)->toArray()));
+        $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
         $this->AddSection($section);
         #---------------------------------------------------------------
 
         #----------------------- Gest nuclei -------------------------
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_NUCLEI,static::AA_UI_SECTION_NUCLEI_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_NUCLEI_BOX,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_NUCLEI_ICON,"TemplateSection_Nuclei");
-        $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Immobili(1,true,true)->toArray()));
+        $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
+        $this->AddSection($section);
+        #---------------------------------------------------------------
+
+        #----------------------- Gest finanziamenti -------------------------
+        $section=new AA_GenericModuleSection(static::AA_ID_SECTION_FINANZIAMENTI,static::AA_UI_SECTION_FINANZIAMENTI_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_FINANZIAMENTI_BOX,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_FINANZIAMENTI_ICON,"TemplateSection_Finanziamenti");
+        $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
+        $this->AddSection($section);
+        #---------------------------------------------------------------
+
+        #----------------------- Gest graduatorie -------------------------
+        $section=new AA_GenericModuleSection(static::AA_ID_SECTION_GRADUATORIE,static::AA_UI_SECTION_GRADUATORIE_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GRADUATORIE_BOX,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_FINANZIAMENTI_ICON,"TemplateSection_Graduatorie");
+        $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
         $this->AddSection($section);
         #---------------------------------------------------------------
 
@@ -1854,7 +2342,7 @@ class AA_SicarModule extends AA_GenericModule
     }
     
     //Navbar Immobili
-    protected function TemplateGenericNavbar_Immobili($level = 1, $last = false, $refresh_view = true)
+    protected function TemplateGenericNavbar_Desktop($level = 1, $last = false, $refresh_view = true)
     {
         $class = "n" . $level;
         if ($last) $class .= " AA_navbar_terminator_left";
@@ -1901,10 +2389,16 @@ class AA_SicarModule extends AA_GenericModule
     protected function GetDataSectionBozze_CustomDataTemplate($data = array(), $object = null)
     {
         if ($object instanceof AA_SicarAlloggio) {
-            $data['pretitolo'] = $object->GetImmobile(false);
+           $data['pretitolo'] = $object->GetImmobile(false);
             $data['titolo'] = $object->GetDisplayName();
-            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>".$object->GetTipologiaUtilizzo()."</span>";
-            if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightGreen' title='Anno ultima ristrutturazione'>".$object->GetAnnoRistrutturazione()."</span>";
+            $gestore=$object->GetGestore();
+            if($gestore instanceof AA_SicarEnte)
+            {
+                $data['sottotitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente gestore'>Ente gestore: <b>".$gestore->GetDenominazione()."</b></span>";
+            }
+            else $data['sottotitolo'] = "Nessun ente gestore definito";
+            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>Tipologia di utilizzo: <b>".$object->GetTipologiaUtilizzo()."</b></span>";
+            if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Anno ultima ristrutturazione'>Anno ultima ristrutturazione: <b>".$object->GetAnnoRistrutturazione()."</b></span>";
             $data['tags']=$tags;
         }
         else
@@ -1999,7 +2493,7 @@ class AA_SicarModule extends AA_GenericModule
                 {
                     $data['sottotitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente gestore'>Ente gestore: <b>".$gestore->GetDenominazione()."</b></span>";
                 }
-                else $data['sottotitolo'] = "Nessun gestore associato";
+                else $data['sottotitolo'] = "Nessun ente gestore definito";
                 $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>Tipologia di utilizzo: <b>".$object->GetTipologiaUtilizzo()."</b></span>";
                 if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Anno ultima ristrutturazione'>Anno ultima ristrutturazione: <b>".$object->GetAnnoRistrutturazione()."</b></span>";
                 $data['tags']=$tags;
@@ -2069,7 +2563,9 @@ class AA_SicarModule extends AA_GenericModule
             array("id_section"=>static::AA_ID_SECTION_PUBBLICATE,"icon"=>static::AA_UI_SECTION_PUBBLICATE_ICON,"label"=>"Gestione alloggi","descrizione"=>"Visualizza e gestisci gli alloggi","tooltip"=>"Visualizza e gestisci gli alloggi","visible"=>true),
             array("id_section"=>static::AA_ID_SECTION_IMMOBILI,"icon"=>static::AA_UI_SECTION_IMMOBILI_ICON,"label"=>static::AA_UI_SECTION_IMMOBILI_NAME,"descrizione"=>static::AA_UI_SECTION_IMMOBILI_DESC,"tooltip"=>static::AA_UI_SECTION_IMMOBILI_TOOLTIP),
             array("id_section"=>static::AA_ID_SECTION_ENTI,"icon"=>static::AA_UI_SECTION_ENTI_ICON,"label"=>static::AA_UI_SECTION_ENTI_NAME,"descrizione"=>static::AA_UI_SECTION_ENTI_DESC,"tooltip"=>static::AA_UI_SECTION_ENTI_TOOLTIP),
-            array("id_section"=>static::AA_ID_SECTION_NUCLEI,"icon"=>static::AA_UI_SECTION_NUCLEI_ICON,"label"=>static::AA_UI_SECTION_NUCLEI_NAME,"descrizione"=>static::AA_UI_SECTION_NUCLEI_DESC,"tooltip"=>static::AA_UI_SECTION_NUCLEI_TOOLTIP)
+            array("id_section"=>static::AA_ID_SECTION_NUCLEI,"icon"=>static::AA_UI_SECTION_NUCLEI_ICON,"label"=>static::AA_UI_SECTION_NUCLEI_NAME,"descrizione"=>static::AA_UI_SECTION_NUCLEI_DESC,"tooltip"=>static::AA_UI_SECTION_NUCLEI_TOOLTIP),
+            array("id_section"=>static::AA_ID_SECTION_FINANZIAMENTI,"icon"=>static::AA_UI_SECTION_FINANZIAMENTI_ICON,"label"=>static::AA_UI_SECTION_FINANZIAMENTI_NAME,"descrizione"=>static::AA_UI_SECTION_FINANZIAMENTI_DESC,"tooltip"=>static::AA_UI_SECTION_FINANZIAMENTI_TOOLTIP),
+            array("id_section"=>static::AA_ID_SECTION_GRADUATORIE,"icon"=>static::AA_UI_SECTION_GRADUATORIE_ICON,"label"=>static::AA_UI_SECTION_GRADUATORIE_NAME,"descrizione"=>static::AA_UI_SECTION_GRADUATORIE_DESC,"tooltip"=>static::AA_UI_SECTION_GRADUATORIE_TOOLTIP)
         );
  
         $minHeightModuliItem=intval(($_REQUEST['vh']-180)/2);
@@ -4399,7 +4895,11 @@ class AA_SicarModule extends AA_GenericModule
         {
             $_REQUEST['superficie_parcheggi']=str_replace(",",".",str_replace(".","",$_REQUEST['superficie_parcheggi']));
         }
-
+        if(isset($_REQUEST['vani_abitabili']) && $_REQUEST['vani_abitabili']!="")
+        {
+            $_REQUEST['vani_abitabili']=str_replace(",",".",str_replace(".","",$_REQUEST['vani_abitabili']));
+        }
+        
         if(empty($_REQUEST['gestione_ente']) || empty($_REQUEST['gestione_dal']))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4410,8 +4910,8 @@ class AA_SicarModule extends AA_GenericModule
         $gestione=array(mb_substr($_REQUEST['gestione_dal'],0,10)=>$_REQUEST['gestione_ente']);
 
         $_REQUEST['gestione']=json_encode($gestione);
-
         $alloggio->Parse($_REQUEST);
+
         $validate = $alloggio->Validate();
         if (sizeof($validate) > 0) 
         {
@@ -4676,10 +5176,11 @@ class AA_SicarModule extends AA_GenericModule
 
         // superficie
         $superficie="";
-        if(!empty($object->GetSuperficieNonResidenziale())) $superficie="<span>Non residenziale: ".$object->GetSuperficieNonResidenziale()."</span>";
-        else $superficie="<span>Non residenziale: n.d.</span>";;
-        if(!empty($object->GetSuperficieParcheggi())) $superficie=" <span>parcheggi: ".$object->GetSuperficieParcheggi()."</span>";
-        else $superficie=" <span>parcheggi: n.d.</span>";
+        if(!empty($object->GetSuperficieNonResidenziale())) $superficie.="<span>Non residenziale: ".$object->GetSuperficieNonResidenziale()."</span>";
+        else $superficie.="<span>Non residenziale: n.d.</span>";
+        if(!empty($superficie)) $superficie.=" - "; 
+        if(!empty($object->GetSuperficieParcheggi())) $superficie.=" <span>parcheggi: ".$object->GetSuperficieParcheggi()."</span>";
+        else $superficie.=" <span>parcheggi: n.d.</span>";
         if(!empty($object->GetSuperficieUtileAbitabile())) 
         {
             if(!empty($superficie)) $superficie.=" - "; 
@@ -4791,12 +5292,28 @@ class AA_SicarModule extends AA_GenericModule
 
         //Gestore
         $gestore_obj=$object->GetGestore();
-        $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailEnteGestoreDlg", params: [{id:"'.$gestore_obj->GetProp("id").'"}]},"'.$this->id.'")';
-        $gestore=new AA_JSON_Template_Template("",array(
-            "maxHeight"=>100,
-            "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Ente gestore:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$gestore_obj->GetDenominazione()."</a><br>dal ".$object->GetGestioneDaL()."</br>")
-        ));
+        if($gestore_obj) 
+        {
+            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailEnteGestoreDlg", params: [{id:"'.$gestore_obj->GetProp("id").'"}]},"'.$this->id.'")';
+            $detail_gestore=$gestore_obj->GetDenominazione();
+            $gestore=new AA_JSON_Template_Template("",array(
+                "maxHeight"=>100,
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "data"=>array("title"=>"Ente gestore:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$detail_gestore."</a><br>dal ".$object->GetGestioneDaL()."</br>")
+            ));
+        }
+        else 
+        {
+            $detail="";
+            $detail_gestore="Ente gestore non definito";
+            $gestore=new AA_JSON_Template_Template("",array(
+                "maxHeight"=>100,
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "data"=>array("title"=>"Ente gestore:","value"=>$detail_gestore)
+            ));
+
+        }
+       
         $riga->addCol($gestore);
         $layout->AddRow($riga);
 
@@ -4992,7 +5509,7 @@ class AA_SicarModule extends AA_GenericModule
         return $template;
     }
 
-    //Template section enti
+    //Template section nuclei
     public function TemplateSection_Nuclei($params=array())
     {
         $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_NUCLEI_BOX;
@@ -5031,6 +5548,134 @@ class AA_SicarModule extends AA_GenericModule
 
         if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",3,array("type"=>"clean","name"=>static::AA_UI_SECTION_NUCLEI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
         else $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean","name"=>static::AA_UI_SECTION_NUCLEI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader(true);
+        $template->SetHeaderHeight(38);
+
+        
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetSicarAddNewNucleoDlg");
+            $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1)));
+        }
+
+        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
+        //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
+
+        $template->SetData($data);
+
+        //$layout->AddRow($template);
+
+        return $template;
+    }
+
+    //Template section finanziamenti
+    public function TemplateSection_Finanziamenti($params=array())
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_FINANZIAMENTI_BOX;
+        $canModify=false;
+
+        #immobili----------------------------------
+        if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
+
+        //$layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $objs=AA_SicarFinanziamento::Search($params);
+        $data=[];
+
+        $ops="";
+        
+        foreach($objs as $curObj)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            if($canModify)
+            {
+                $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailFinanziamentoDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $detail_icon="mdi mdi-eye";
+                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteFinaziamentoDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $trash_icon="mdi mdi-trash-can";
+                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyFinanziamentoDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $modify_icon="mdi mdi-pencil";
+
+                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
+                $data[]=array("id"=>$curObj->GetProp("id"),"descrizione"=>$curObj->GetDescrizione(),"indirizzo"=>$curObj->GetIndirizzo()."<a href='https://www.google.com/maps/search/?api=1&query=".$curObj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")),"ops"=>$ops);
+            }
+            else
+            {
+                $data[]=array("id"=>$curObj->GetProp("id"),"descrizione"=>$curObj->GetDescrizione(),"indirizzo"=>$curObj->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")));
+            }
+        }
+
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",3,array("type"=>"clean","name"=>static::AA_UI_SECTION_FINANZIAMENTI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean","name"=>static::AA_UI_SECTION_FINANZIAMENTI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader(true);
+        $template->SetHeaderHeight(38);
+
+        
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetSicarAddNewNucleoDlg");
+            $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1)));
+        }
+
+        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
+        //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
+
+        $template->SetData($data);
+
+        //$layout->AddRow($template);
+
+        return $template;
+    }
+
+    //Template section graduatorie
+    public function TemplateSection_Graduatorie($params=array())
+    {
+        $id=static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GRADUATORIE_BOX;
+        $canModify=false;
+
+        #immobili----------------------------------
+        if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
+
+        //$layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $objs=AA_SicarGraduatoria::Search($params);
+        $data=[];
+
+        $ops="";
+        
+        foreach($objs as $curObj)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            if($canModify)
+            {
+                $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailGraduatoriaDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $detail_icon="mdi mdi-eye";
+                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteGraduatoriaDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $trash_icon="mdi mdi-trash-can";
+                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifygraduatoriaDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $modify_icon="mdi mdi-pencil";
+
+                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
+                $data[]=array("id"=>$curObj->GetProp("id"),"descrizione"=>$curObj->GetDescrizione(),"indirizzo"=>$curObj->GetIndirizzo()."<a href='https://www.google.com/maps/search/?api=1&query=".$curObj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")),"ops"=>$ops);
+            }
+            else
+            {
+                $data[]=array("id"=>$curObj->GetProp("id"),"descrizione"=>$curObj->GetDescrizione(),"indirizzo"=>$curObj->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")));
+            }
+        }
+
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",3,array("type"=>"clean","name"=>static::AA_UI_SECTION_GRADUATORIE_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean","name"=>static::AA_UI_SECTION_GRADUATORIE_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader(true);
@@ -5098,9 +5743,6 @@ class AA_SicarAlloggio extends AA_Object_V2
     protected $sTipologiaUtilizzo = "";
     protected $sStatoConservazione = "";
     protected $nAnnoRistrutturazione = 0;
-    protected $bCondominioMisto = false;
-    protected $nSuperficieNetta = 0.0;
-    protected $nSuperficieUtileAbitabile = 0.0;
     protected $nPiano = 0;
     protected $bAscensore = false;
     protected $bFruibileDis = false;
@@ -5118,8 +5760,6 @@ class AA_SicarAlloggio extends AA_Object_V2
         $this->SetBind("tipologia_utilizzo", "tipologia_utilizzo", true);
         $this->SetBind("stato_conservazione", "stato_conservazione", true);
         $this->SetBind("anno_ristrutturazione", "anno_ristrutturazione", true);
-        //$this->SetBind("condominio_misto", "condominio_misto", true);
-        $this->SetBind("superficie_netta", "superficie_netta", true);
         $this->SetBind("superficie_utile_abitabile", "superficie_utile_abitabile", true);
         $this->SetBind("superficie_non_residenziale", "superficie_non_residenziale", true);
         $this->SetBind("superficie_parcheggi", "superficie_parcheggi", true);
