@@ -106,6 +106,40 @@ class AA_Sicar_Const extends AA_Const
         return $options;
     }
 
+    //lista tipologia occupazione
+    const AA_DBTABLE_TIPOLOGIE_OCCUPAZIONE = 'aa_sicar_tipologie_occupazione';
+    public static function GetListaTipologieOccupazione($bSimpleArray=false)
+    {
+        $options = array();
+        $db = new AA_Database();
+        $query = "SELECT id, descrizione FROM ".self::AA_DBTABLE_TIPOLOGIE_OCCUPAZIONE." ORDER BY descrizione";
+        if ($db->Query($query)) {
+            $rs = $db->GetResultSet();
+            foreach ($rs as $row) {
+                if(!$bSimpleArray) $options[] = array("id" => $row['id'], "value" => $row['descrizione']);
+                else $options[$row['id']] = $row['descrizione'];
+            }
+        }
+        return $options;
+    }
+
+    //lista tipologia interventi
+    const AA_DBTABLE_TIPOLOGIE_INTERVENTO = 'aa_sicar_tipologie_intervento';
+    public static function GetListaTipologieIntervento($bSimpleArray=false)
+    {
+        $options = array();
+        $db = new AA_Database();
+        $query = "SELECT id, descrizione FROM ".self::AA_DBTABLE_TIPOLOGIE_INTERVENTO." ORDER BY descrizione";
+        if ($db->Query($query)) {
+            $rs = $db->GetResultSet();
+            foreach ($rs as $row) {
+                if(!$bSimpleArray) $options[] = array("id" => $row['id'], "value" => $row['descrizione']);
+                else $options[$row['id']] = $row['descrizione'];
+            }
+        }
+        return $options;
+    }
+
     const AA_DBTABLE_ZONE_URBANISTICHE_IMM = 'aa_sicar_zone_urbanistiche_immobile';
     public static function GetListaZoneUrbanistiche()
     {
@@ -5320,12 +5354,202 @@ class AA_SicarModule extends AA_GenericModule
         //note
         $value = $object->GetNote();
         $note=new AA_JSON_Template_Template("",array(
+            "height"=>100,
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
         $layout->AddRow($note);
 
+        $riga=new AA_JSON_Template_Layout("",array("type"=>"clean","css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        //occupazione
+        $riga->AddCol($this->TemplateDettaglio_Occupazione($object,$id."_Occupazione",$canModify));
+        $riga->AddCol($this->TemplateDettaglio_Interventi($object,$id."_Interventi",$canModify));
+        $layout->AddRow($riga);
+        
         return $layout;
+    }
+
+    //Template dettaglio occupazione
+    public function TemplateDettaglio_Occupazione($object=null,$id="", $canModify=false)
+    {
+        #documenti----------------------------------
+        $curId=$id."_Layout_Occupazione";
+        $provvedimenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","gravity"=>4,"css"=>array("border-left"=>"1px solid gray !important;","border-top"=>"1px solid gray !important;")));
+
+        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_occupazione",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Stato occupazione</span>", "align"=>"center")));
+
+        if($canModify)
+        {
+            //Pulsante di aggiunta documento
+            $add_documento_btn=new AA_JSON_Template_Generic("",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-file-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi uno stato occupazione",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewOccupazioneDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+            ));
+
+            $toolbar->AddElement($add_documento_btn);
+        }
+        else 
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+
+        $provvedimenti->AddRow($toolbar);
+
+        $occupazioni=$object->GetOccupazione();
+        $occupazione_data=[];
+        $tipologia_occupazione_desc=AA_Sicar_Const::GetListaTipologieOccupazione();
+        foreach($occupazioni as $curOccupazione)
+        {
+            $nucleo_desc="n.d.";
+            if($curOccupazione['tipologia_occupazione'] > 1)    
+            {
+                
+                $nucleo=new AA_SicarNucleo();
+                if($nucleo->Load($curOccupazione['nucleo']))
+                {
+                    $nucleo_desc=$nucleo->GetDescrizione();
+                }
+            }
+
+            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailOccupazioneDlg", params: [{id:"'.$curOccupazione->GetProp("id").'"}]},"'.$this->id.'")';
+            $detail_icon="mdi mdi-eye";
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteOccupazioneDlg", params: [{id:"'.$curOccupazione->GetProp("id").'"}]},"'.$this->id.'")';
+            $trash_icon="mdi mdi-trash-can";
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyOccupazioneDlg", params: [{id:"'.$curOccupazione->GetProp("id").'"}]},"'.$this->id.'")';
+            $modify_icon="mdi mdi-pencil";
+            $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
+            
+            $occupazione_data[]=array(
+                "id"=>$curOccupazione['id'],
+                "data_inizio"=>$curOccupazione['data_inizio'],
+                "tipologia_desc"=>$tipologia_occupazione_desc[$curOccupazione['tipologia']],
+                "nucleo"=>$curOccupazione['nucleo'],
+                "nucleo_desc"=>$nucleo_desc,
+                "canone"=>$curOccupazione['canone'],
+                "note"=>$curOccupazione['note'],
+                "ops"=>$ops
+            );
+        }
+
+        if(!$canModify) $template=new AA_GenericDatatableTemplate($id,"",5,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",6,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader(true);
+        $template->SetHeaderHeight(38);
+        $template->EnableAddNew(false);
+        $template->SetColumnHeaderInfo(0,"tipologia_desc","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"dal","<div style='text-align: center'>Tiplogia</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(2,"nucleo","<div style='text-align: center'>Nucleo</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(3,"canone","<div style='text-align: center'>Canone</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(4,"note","<div style='text-align: center'>Note</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        if($canModify) $template->SetColumnHeaderInfo(5,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
+
+        $template->SetData($occupazione_data);
+        #--------------------------------------
+        
+        $provvedimenti->AddRow($template);
+        return $provvedimenti;
+    }
+
+    //Template dettaglio interventi
+    public function TemplateDettaglio_Interventi($object=null,$id="", $canModify=false)
+    {
+        #documenti----------------------------------
+        $curId=$id."_Layout_Interventi";
+        $provvedimenti=new AA_JSON_Template_Layout($curId,array("type"=>"clean","gravity"=>4,"css"=>array("border-left"=>"1px solid gray !important;","border-top"=>"1px solid gray !important;")));
+
+        $toolbar=new AA_JSON_Template_Toolbar($curId."_Toolbar_interventi",array("height"=>38, "css"=>array("background"=>"#dadee0 !important;")));
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+
+        $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"<span style='color:#003380'>Stato interventi</span>", "align"=>"center")));
+
+        if($canModify)
+        {
+            //Pulsante di aggiunta documento
+            $add_documento_btn=new AA_JSON_Template_Generic("",array(
+               "view"=>"button",
+                "type"=>"icon",
+                "icon"=>"mdi mdi-file-plus",
+                "label"=>"Aggiungi",
+                "align"=>"right",
+                "width"=>120,
+                "tooltip"=>"Aggiungi un intervento",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewInterventoDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+            ));
+
+            $toolbar->AddElement($add_documento_btn);
+        }
+        else 
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
+        }
+
+        $provvedimenti->AddRow($toolbar);
+
+        $interventi=$object->GetInterventi();
+        $interventi_data=[];
+        $tipologia_intervento_desc=AA_Sicar_Const::GetListaTipologieIntervento();
+        foreach($interventi as $curIntervento)
+        {
+            $finanziamento_desc="n.d.";
+            if($curIntervento['tipologia'] > 1)    
+            {
+                
+                $finanziamento=new AA_SicarFinanziamento();
+                if($finanziamento->Load($curIntervento['finanziamento']))
+                {
+                    $finanziamento_desc=$finanziamento->GetDenominazione();
+                }
+            }
+
+            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailInterventoDlg", params: [{id:"'.$curIntervento->GetProp("id").'"}]},"'.$this->id.'")';
+            $detail_icon="mdi mdi-eye";
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteInterventoDlg", params: [{id:"'.$curIntervento->GetProp("id").'"}]},"'.$this->id.'")';
+            $trash_icon="mdi mdi-trash-can";
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyInterventoDlg", params: [{id:"'.$curIntervento->GetProp("id").'"}]},"'.$this->id.'")';
+            $modify_icon="mdi mdi-pencil";
+            $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
+            
+            $intervento_data[]=array(
+                "id"=>$curIntervento['id'],
+                "data_inizio"=>$curIntervento['data_inizio'],
+                "tipologia_desc"=>$tipologia_intervento_desc[$curIntervento['tipologia']],
+                "finanziamento"=>$curIntervento['finanaziamento'],
+                "finanziamento_desc"=>$finanziamento_desc,
+                "ops"=>$ops
+            );
+        }
+
+        if(!$canModify) $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",5,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader(true);
+        $template->SetHeaderHeight(38);
+        $template->EnableAddNew(false);
+        $template->SetColumnHeaderInfo(0,"tipologia_desc","<div style='text-align: center'>Tipologia</div>",250,"textFilter","int","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"dal","<div style='text-align: center'>Dal</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(2,"finanziamento_desc","<div style='text-align: center'>Finanziamento</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(3,"note","<div style='text-align: center'>Note</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        if($canModify) $template->SetColumnHeaderInfo(4,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
+
+        $template->SetData($intervento_data);
+        #--------------------------------------
+        
+        $provvedimenti->AddRow($template);
+        return $provvedimenti;
     }
 
     //Template section immobili
@@ -5936,13 +6160,25 @@ class AA_SicarAlloggio extends AA_Object_V2
 
     public function GetStato() { return $this->GetProp("stato"); }
     public function SetStato($var = array()) { $this->SetProp("stato", $var); $this->SetChanged(true); return true; }
-
+    public function SetOccupazione($var = array()) { $this->SetProp("occupazione", $var); $this->SetChanged(true); return true; }
     public function GetNote() { return $this->GetProp("note"); }
     public function SetNote($var = "") { $this->SetProp("note", $var); $this->SetChanged(true); return true; }
 
     public function Update($user = null, $bSaveData = true,$logMsg="Aggiornamento dati generali alloggio")
     {
         return parent::Update($user, $bSaveData, $logMsg);
+    }
+
+    public function GetOccupazione() 
+    { 
+        //to do
+        return array();
+    }
+
+    public function GetInterventi() 
+    { 
+        //to do
+        return array();
     }
 
     // Validazione campi obbligatori e di tipo
