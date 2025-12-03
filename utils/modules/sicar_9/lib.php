@@ -1861,26 +1861,17 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         
         // Imposta i binding tra proprietà e campi database
         $this->aProps['descrizione']="Nuovo nucleo";
-        $this->aProps['tipologia']=0;
+        $this->aProps['cf']="";
         $this->aProps['comune']="";
-        $this->aProps['ubicazione']="";
         $this->aProps['indirizzo']="";
-        $this->aProps['catasto']="";
-        $this->aProps['zona_urbanistica']="";
-        $this->aProps['geolocalizzazione']="";
-        $this->aProps['piani']=1;
         $this->aProps['note']="";
         
         //template view props
-        $this->aTemplateViewProps['descrizione']=array("label"=>"Descrizione","type"=>"text","maxlength"=>AA_Sicar_Const::MAX_DESCRIZIONE_LENGTH,"required"=>true,"bottomLabel"=>"Inserisci la descrizione dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","required"=>true,"function"=>"GetTipologia","bottomLabel"=>"Scegli la tipologia dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['comune']=array("label"=>"Comune","type"=>"text","required"=>true,"bottomLabel"=>"Comune dove e' situato l'immobile","function"=>"GetComune","visible"=>true);
-        $this->aTemplateViewProps['ubicazione']=array("label"=>"Ubicazione","type"=>"text","required"=>true,"bottomLabel"=>"Ubicazione dell'immobile all'interno del territorio comunale","function"=>"GetUbicazione","visible"=>true);
-        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","required"=>true,"bottomLabel"=>"Indirizzo dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['catasto']=array("label"=>"Dati catastali","type"=>"text","required"=>true,"function"=>"GetTemplateViewCatasto","visible"=>true);
-        $this->aTemplateViewProps['zona_urbanistica']=array("label"=>"Zona urbanistica","type"=>"text","required"=>true,"bottomLabel"=>"Zona urbanistica dell'immobile","function"=>"GetZonaUrbanistica","visible"=>true);
-        $this->aTemplateViewProps['piani']=array("label"=>"Piani","type"=>"text","required"=>true,"bottomLabel"=>"Numero di piani dell'immobile","visible"=>true);
-        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","maxlength"=>AA_Sicar_Const::MAX_NOTE_LENGTH,"required"=>false,"bottomLabel"=>"Inserisci eventuali note sull'immobile","visible"=>true);
+        $this->aTemplateViewProps['descrizione']=array("label"=>"Descrizione","type"=>"text","maxlength"=>AA_Sicar_Const::MAX_DESCRIZIONE_LENGTH,"required"=>true,"visible"=>true);
+        $this->aTemplateViewProps['cf']=array("label"=>"Codice fiscale","type"=>"text","required"=>true,"visible"=>true);
+        $this->aTemplateViewProps['comune']=array("label"=>"Comune di residenza","type"=>"text","required"=>true,"function"=>"GetComune","visible"=>true);
+        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo di residenza","type"=>"text","required"=>true,"visible"=>true);
+        $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","required"=>false,"visible"=>true);
 
         // Chiama il costruttore padre
         parent::__construct($params);
@@ -1892,15 +1883,13 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         
         $templateView=new AA_GenericTemplate_Grid();
         $templateAreas=array(
-            array("descrizione", "descrizione","descrizione"),
-            array("tipologia",".","piani"),
-            array("comune", "ubicazione", "zona_urbanistica"),
-            array("indirizzo", "catasto", "catasto"),
+            array("descrizione", "descrizione","cf"),
+            array("indirizzo", "indirizzo", "comune"),
             array("note", "note", "note")
         );
         $templateView->SetTemplateAreas($templateAreas);
         $templateView->SetTemplateCols(array("1fr","1fr","1fr"));
-        $templateView->SetTemplateRows(array("1fr","1fr","1fr","1fr","2fr"));        
+        $templateView->SetTemplateRows(array("1fr","1fr","1fr"));        
 
         foreach($this->aTemplateViewProps as $propName=>$propConfig)
         {
@@ -1935,7 +1924,114 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         return $templateView;
     }
         
-    //lista degli enti
+    //stato assegnazione
+    public function GetStatoAssegnazione($bAsObject=true,$last=true)
+    {
+        $return = array();
+        $last_assegnazione=array();
+        $last_assegnazione_dal="";
+        $db=new AA_Database();
+        $query="SELECT id,occupazione from ".AA_SicarAlloggio::AA_DBTABLE_DATA." WHERE occupazione like '%\"nucleo\":".$this->GetProp('id')."}'";
+        if(!$db->Query($query))
+        {
+            AA_Log::Log(__METHOD__." - errore query: ".$db->GetErrorMessage(),100);
+            if($bAsObject) return array();
+            else return "Nessuna";
+        }
+        if($db->GetAffectedRows()>0)
+        {
+            $rs=$db->GetResultSet();
+            foreach($rs as $curAlloggio)
+            {
+                $occupazione=json_decode($curAlloggio['occupazione'],true);
+                $idAlloggio=$curAlloggio['id'];
+
+                if(is_array($occupazione))
+                {
+                    foreach($occupazione as $curOccupazione)
+                    {
+                        if($curOccupazione['nucleo']==$this->GetProp("id"))
+                        {
+                            $return[$idAlloggio]=$curOccupazione;
+                            if($curOccupazione['dal'] > $last_assegnazione_dal) 
+                            {
+                                $last_assegnazione_dal=$curOccupazione['dal'];
+                                $last_assegnazione=$curOccupazione;
+                            }
+                        }
+                        else
+                        {
+                            if($curOccupazione['dal'] > $last_assegnazione_dal) 
+                            {
+                                $last_assegnazione_dal = "";
+                                $last_assegnazione=array();
+                            }
+                        }
+                    }
+                }
+            }
+            ksort($return);
+        }
+
+        if($bAsObject)
+        {
+            if(!$last) return $return;
+            return $last_assegnazione;
+        }
+        else
+        {
+            if(sizeof($last_assegnazione) > 0) return $last_assegnazione['tipo'];
+            else return "Nessuna";
+        }
+    }
+
+    //isee
+    public function GetIseePreview()
+    {
+        return "n.d.";
+    }
+
+     public function GetComponenti($bAsObject=true)
+    {
+        $ret="";
+        if($bAsObject) $ret=array();
+        if(!isset($this->aProps['componenti']) || $this->aProps['componenti']=="") return $ret;
+        
+        if($bAsObject)
+        {
+            $ret=json_decode($this->aProps['componenti'],true);
+            if($ret) return $ret;
+            else
+            {
+                AA_Log::Log(__METHOD__." - Errore nell'importazione dei componenti: ".$this->aProps['id'],100);
+                return array();
+            }
+        }
+
+        return $this->aProps['componenti'];
+    }
+
+    public function SetComponenti($var="")
+    {
+        if(is_array($var))
+        {
+            if(sizeof($var)>0)
+            {
+                $var=json_encode($var);
+                if($var===false)
+                {
+                    AA_Log::Log(__METHOD__." - Errore nella codifica dei componenti. ".print_r($var,true),100);
+                    return false;
+                }    
+            }
+            else $var="";
+        }
+
+        $this->SetProp("componenti",$var);
+        return true;
+    }
+
+    //lista dei nuclei
     public static function GetListaNuclei()
     {
         $db = new AA_Database();
@@ -1971,23 +2067,18 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         return true;
     }
 
-    // Tipologia
-    public function GetTipologia($bAsText=true)
+    // CF
+    public function GetCf()
     {
-        if(!$bAsText) return $this->GetProp("tipologia"); 
-        
-        $tipo=AA_Sicar_Const::GetListaTipologie(true);
-        if(!empty($tipo[$this->GetProp("tipologia")])) return $tipo[$this->GetProp("tipologia")];
-        else return "n.d.";
-        
+        return $this->GetProp("cf");
     }
     
-    public function SetTipologia($var = 0)
+    public function SetCf($var = "")
     {
-        $this->SetProp("tipologia", $var);
+        $this->SetProp("cf", $var);
         return true;
     }
-    
+
     // Indirizzo
     public function GetIndirizzo()
     {
@@ -2019,15 +2110,18 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         
         // Validazione campi obbligatori
         if (empty($this->GetDescrizione())) {
-            $errors[] = "La descrizione è obbligatoria";
+            $errors[] = "La descrizione è obbligatoria.";
+        }
+        if (empty($this->GetCf())) {
+            $errors[] = "il codice fiscale è obbligatorio.";
         }
         
-        if (empty($this->GetTipologia())) {
-            $errors[] = "La tipologia è obbligatoria";
+        if (empty($this->GetIndirizzo())) {
+            $errors[] = "L'indirizzo è obbligatorio.";
         }
 
-        if (empty($this->GetIndirizzo())) {
-            $errors[] = "L'indirizzo è obbligatorio";
+        if (empty($this->GetComune(false))) {
+            $errors[] = "Il Comune di residenza è obbligatorio.";
         }
         
         return $errors;
@@ -2043,6 +2137,19 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
 
         return $display;
     }
+
+     // Comune
+    public function GetComune($bDescr=true)
+    {
+        if($bDescr) return AA_Sicar_Const::GetComuneDescrFromCodiceIstat($this->GetProp("comune"));
+        return $this->GetProp("comune");
+    }
+
+    public function SetComune($var = "")
+    {
+        $this->SetProp("comune", $var);
+        return true;
+    }
     
     // Metodo per l'esportazione CSV
     protected function CsvDataHeader($separator = "|")
@@ -2053,7 +2160,7 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
     
     protected function CsvData($separator = "|")
     {
-        return $this->GetDescrizione().$separator . $this->GetTipologia() . 
+        return $this->GetDescrizione().$separator .  
                $separator .  str_replace("\n", ' ', $this->GetIndirizzo()) . 
                $separator . str_replace("\n", ' ', $this->GetNote());
     }
@@ -2191,6 +2298,9 @@ class AA_SicarModule extends AA_GenericModule
     const AA_UI_SECTION_NUCLEI_ICON = "mdi mdi-account-group";
     const AA_UI_SECTION_NUCLEI_DESC = "Visualizza e gestisci i nuclei familiari";
     const AA_UI_SECTION_NUCLEI_TOOLTIP = "Visualizza e gestisci i nuclei familiari";
+    const AA_UI_WND_SEARCH_NUCLEI = "SicarSearchWnd";
+    const AA_UI_TABLE_SEARCH_NUCLEI = "TableSearchNuclei";
+    const AA_UI_WND_DETAIL_NUCLEI = "SicarDetailNucleoWnd";
 
     //id sezione finanziamenti
     const AA_ID_SECTION_FINANZIAMENTI = "GestFinanziamenti";
@@ -2296,6 +2406,13 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSicarOperatoriEnteDlg");
         $taskManager->RegisterTask("GetSicarSearchEntiDlg");
 
+        //nuclei
+        $taskManager->RegisterTask("GetSicarAddNewNucleoDlg");
+        $taskManager->RegisterTask("AddNewNucleoSicar");
+        $taskManager->RegisterTask("GetSicarModifyNucleoDlg");
+        $taskManager->RegisterTask("UpdateNucleoSicar");
+        $taskManager->RegisterTask("GetSicarSearchNucleiDlg");
+        
         // Task per le operazioni CRUD
         $taskManager->RegisterTask("AddNewAlloggioSicar");        
         $taskManager->RegisterTask("UpdateSicar");
@@ -2329,6 +2446,10 @@ class AA_SicarModule extends AA_GenericModule
 
         #---------------------- operatori ente --------------------
         $this->AddObjectTemplate(static::AA_UI_WND_OPERATORI_ENTE."_".static::AA_UI_TABLE_OPERATORI_ENTE,"Template_DatatableOperatoriEnte");
+        #---------------------------------------------------------------
+
+        #----------------------search nuclei --------------------
+        $this->AddObjectTemplate(static::AA_UI_WND_SEARCH_NUCLEI."_".static::AA_UI_TABLE_SEARCH_NUCLEI,"Template_DatatableSearchNuclei");
         #---------------------------------------------------------------
 
         #------------------------------- desktop -----------------------
@@ -2375,7 +2496,7 @@ class AA_SicarModule extends AA_GenericModule
         $pubblicate->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Bozze(2,true)->toArray()));  
     }
     
-    //Navbar Immobili
+    //Navbar Desktop
     protected function TemplateGenericNavbar_Desktop($level = 1, $last = false, $refresh_view = true)
     {
         $class = "n" . $level;
@@ -3203,6 +3324,140 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+    // Template per la finestra di dialogo di aggiunta nuovo nucleo
+    public function Template_GetSicarAddNewNucleoDlg()
+    {
+        $form = "";
+        if(!empty($_REQUEST['form']))
+        {
+            $form = $_REQUEST['form'];
+        }
+
+        $field_id="";
+        if(!empty($_REQUEST['field_id']))
+        {
+            $field_id = $_REQUEST['field_id'];
+        }
+
+        $field_desc="";
+        if(!empty($_REQUEST['field_desc']))
+        {
+            $field_desc = $_REQUEST['field_desc'];
+        }
+        
+        $id = $this->GetId() . "_AddNewNucleo_Dlg_" . uniqid();
+        $form_data = array();
+
+        $newNucleo = new AA_SicarNucleo();
+        foreach($newNucleo->GetProps() as $prop=>$value)
+        {
+            $form_data[$prop] = $value;
+        }
+
+        $wnd = new AA_GenericFormDlg($id, "Aggiungi nuovo Nucleo", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(600);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        // Campo testuale: descrizione
+        $wnd->AddTextField("descrizione", "Descrizione", ["required" => true,"gravity"=>2, "bottomLabel" => "*descrizione del nucleo","placeholder"=>"famiglia Rossi"]);
+        
+        // Campo testuale: cf
+        $wnd->AddTextField("cf", "Codice fiscale", ["required" => true, "bottomLabel" => "*codice fiscale del capofmiglia","placeholder"=>"..."],false);
+        
+        // Campo testuale: indirizzo
+        $wnd->AddTextField("indirizzo", "Indirizzo", ["required" => true,"gravity"=>2, "bottomLabel" => "*Indirizzo di residenza."]);
+        
+        // Campo testuale: comune
+        $wnd->AddTextField("comune", "Comune", ["required" => true, "bottomLabel" => "*Comune dell'immobile (codice ISTAT)", "suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetSicarListaCodiciIstat")],false);
+       
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Note aggiuntive"]);
+
+        $wnd->SetSaveTask("AddNewNucleoSicar");
+        if(!empty($form))
+        {
+            $wnd->SetSaveTaskParams(array("form" => $form,"field_id"=>$field_id,"field_desc"=>$field_desc));
+        }
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
+    // Template per la finestra di dialogo di modifica nucleo
+    public function Template_GetSicarModifyNucleoDlg($object)
+    {
+        $form = "";
+        if(!empty($_REQUEST['form']))
+        {
+            $form = $_REQUEST['form'];
+        }
+
+        $field_id="";
+        if(!empty($_REQUEST['field_id']))
+        {
+            $field_id = $_REQUEST['field_id'];
+        }
+
+        $field_desc="";
+        if(!empty($_REQUEST['field_desc']))
+        {
+            $field_desc = $_REQUEST['field_desc'];
+        }
+        
+        $id = $this->GetId() . "_ModifyNucleo_Dlg_" . uniqid();
+        $form_data = array();
+
+        foreach($object->GetProps() as $prop=>$value)
+        {
+            $form_data[$prop] = $value;
+        }
+        $form_data['comune']=AA_Sicar_Const::GetComuneDescrFromCodiceIstat($object->GetProp('comune'))." (".$object->GetProp("comune").")";
+
+        $wnd = new AA_GenericFormDlg($id, "Modifica Nucleo", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        $wnd->SetWidth(980);
+        $wnd->SetHeight(600);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        // Campo testuale: descrizione
+        $wnd->AddTextField("descrizione", "Descrizione", ["required" => true,"gravity"=>2, "bottomLabel" => "*descrizione del nucleo","placeholder"=>"famiglia Rossi"]);
+        
+        // Campo testuale: cf
+        $wnd->AddTextField("cf", "Codice fiscale", ["required" => true, "bottomLabel" => "*codice fiscale del capofmiglia","placeholder"=>"..."],false);
+        
+        // Campo testuale: indirizzo
+        $wnd->AddTextField("indirizzo", "Indirizzo", ["required" => true,"gravity"=>2, "bottomLabel" => "*Indirizzo di residenza."]);
+        
+        // Campo testuale: comune
+        $wnd->AddTextField("comune", "Comune", ["required" => true, "bottomLabel" => "*Comune dell'immobile (codice ISTAT)", "suggest"=>array("template"=>"#value#","url"=>$this->taskManagerUrl."?task=GetSicarListaCodiciIstat")],false);
+       
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Note aggiuntive"]);
+
+        $wnd->SetSaveTask("UpdateNucleoSicar");
+        if(!empty($form))
+        {
+            $wnd->SetSaveTaskParams(array("form" => $form,"field_id"=>$field_id,"field_desc"=>$field_desc));
+        }
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
     // Template per la finestra di dialogo di modifica ente
     public function Template_GetSicarModifyEnteDlg($object=null)
     {
@@ -3599,6 +3854,19 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    //Task search Nuclei
+    public function Task_GetSicarSearchNucleiDlg($task)
+    {
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per visualizzare i nuclei", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarSearchNucleiDlg(),true);
+        return true;
+    }
 
     //Task operatori ente
     public function Task_GetSicarOperatoriEnteDlg($task)
@@ -3652,7 +3920,22 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
-     //Template dlg operatori ente
+    //Template dlg search nuclei
+    public function Template_GetSicarSearchNucleiDlg()
+    {
+        $id=static::AA_UI_WND_SEARCH_NUCLEI;
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Ricerca nuclei", $this->id);
+        
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(640);
+        
+        $wnd->AddView($this->Template_DatatableSearchNuclei($id));
+        
+        return $wnd;
+    }
+
+    //Template dlg operatori ente
     public function Template_GetSicarOperatoriEnteDlg($ente=null)
     {
         $id=static::AA_UI_WND_OPERATORI_ENTE;
@@ -4006,6 +4289,107 @@ class AA_SicarModule extends AA_GenericModule
         return $layout;
     }
 
+    //Template data table SearchNuclei
+    public function Template_DatatableSearchNuclei($id="")
+    {
+        if($id=="") $id=static::AA_UI_WND_SEARCH_NUCLEI;
+        $id.="_".static::AA_UI_TABLE_SEARCH_NUCLEI;
+        
+        //form di destinazione
+        if(!empty($_REQUEST['form'])) $form=trim($_REQUEST['form']);
+
+        //campo di destinazione
+        if(!empty($_REQUEST['field_id'])) $field_id=trim($_REQUEST['field_id']);
+        if(!empty($_REQUEST['field_desc'])) $field_desc=trim($_REQUEST['field_desc']);
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "filtered"=>true,"filter_id"=>$id));
+        
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        $filter="";
+
+        if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //Aggiunta
+        if(!empty($form) && !empty($field_id) && !empty($field_desc)) $filter=array("refresh"=>1,"refresh_obj_id"=>$id,"form"=>$form,"field_id"=>$field_id,"field_desc"=>$field_desc);
+        else $filter=array("refresh"=>1,"refresh_obj_id"=>$id);
+        $modify_btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-filter-cog",
+             "label"=>"Aggiungi",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Aggiungi un nuovo Nucleo",
+             "click"=>"AA_MainApp.curModule.setRuntimeValue('" . $id . "','filter_data',".json_encode($filter)."); AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewNucleoDlg\",postParams: AA_MainApp.curModule.getRuntimeValue('" . $id . "','filter_data'), module: '" . $this->id . "'},'".$this->id."')"
+        ));
+        $toolbar->AddElement($modify_btn);
+        
+        $layout->addRow($toolbar);
+
+        #criteri----------------------------------
+        if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
+
+        $nuclei=AA_SicarNucleo::Search();
+        $data=[];
+        //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+        //$modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
+        if(!empty($form) && !empty($field_id) && !empty($field_desc)) 
+        {
+            $select_icon="mdi mdi-cursor-pointer";
+        }
+        else
+        {
+            $ops="";
+        }
+
+        foreach($nuclei as $curNucleo)
+        {
+            //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
+            if(!empty($form) && !empty($field_id) && !empty($field_desc))
+            {
+                $select="try{if($$('".$form."')){ AA_MainApp.utils.callHandler('SicarSelectFormItem', {form:'".$form."', values:{'".$field_id."':'".$curNucleo->GetProp('id')."','".$field_desc."':'".$curNucleo->GetDescrizione()."'}},'".$this->GetId()."'); $$('".static::AA_UI_WND_SEARCH_NUCLEI."_Wnd').close();}}catch(msg){console.error(msg)}";
+                $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Scegli' onClick=\"".$select."\"><span class='mdi ".$select_icon."'></span></a></div>";
+                $data[]=array("id"=>$curNucleo->GetProp("id"),"denominazione"=>$curNucleo->GetDescrizione(),"cf"=>$curNucleo->GetCf(),"ops"=>$ops);
+            }
+            else
+            {
+                $data[]=array("id"=>$curNucleo->GetProp("id"),"denominazione"=>$curNucleo->GetDenominazione(),"cf"=>$curNucleo->GetCf());
+            }
+        }
+
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id."_TableSearch_".uniqid(),"Ricerca nuclei",2,null,array("css"=>"AA_Header_DataTable"));
+        else $template=new AA_GenericDatatableTemplate($id."_TableSearch_".uniqid(),"Ricerca nuclei",3,null,array("css"=>"AA_Header_DataTable"));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader(false);
+        $template->SetHeaderHeight(38);
+
+        /*
+        if($canModify) 
+        {
+            $template->EnableAddNew(true,"GetSicarAddNewImmobileDlg");
+            if(!empty($form) && !empty($field_id) && !empty($field_desc)) $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id,"form"=>$form,"field_id"=>$field_id,"field_desc"=>$field_desc)));
+            else $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1,"refresh_obj_id"=>$id)));
+        }*/
+
+        $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","text","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(1,"cf","<div style='text-align: center'>Codice fiscale</div>","fillspace","textFilter","text","ImmobiliTable_left");
+        //$template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
+        //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(2,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
+
+        $template->SetData($data);
+
+        $layout->AddRow($template);
+        return $layout;
+    }
+
     //Template filtro di ricerca bozze
     public function TemplateBozzeFilterDlg($params=array())
     {
@@ -4162,6 +4546,19 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la restituzione della finestra di dialogo di aggiunta nuovo nucleo
+    public function Task_GetSicarAddNewNucleoDlg($task)
+    {
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi nuclei", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarAddNewNucleoDlg(), true);
+        return true;
+    }
+
     // Task per la finestra di modifica dati generali immobile
     public function Task_GetSicarModifyEnteDlg($task)
     {
@@ -4187,6 +4584,34 @@ class AA_SicarModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSicarModifyEnteDlg($object),true);
+        return true;
+    }
+
+    // Task per la finestra di modifica dati generali nucleo
+    public function Task_GetSicarModifyNucleoDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare il nucleo");
+            return false;
+        }
+
+        $object = new AA_SicarNucleo();
+        if (!$object->Load($_REQUEST['id'],$this->oUser)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarModifyNucleoDlg($object),true);
         return true;
     }
 
@@ -4653,6 +5078,58 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per aggiungere un nuovo nucleo
+    public function Task_AddNewNucleoSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi enti", false);
+            return false;
+        }
+        
+        if(empty($_REQUEST))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Nessun dato indicato per il nuovo nucleo", false);
+            return false;
+        }
+       
+        //comune
+        if(!empty($_REQUEST['comune']))
+        {
+            $_REQUEST['comune']=mb_substr($_REQUEST['comune'],-5,4);
+        }
+
+        $var = new AA_SicarNucleo($_REQUEST);
+        $validate=$var->Validate();
+        if(sizeof($validate)>0)
+        {
+            AA_Log::Log(__METHOD__." - Sono stati trovati i seguenti errori: ".print_r($validate,true),100);
+            $error="Sono state riscontrate le seguenti criticita': <br>";
+            foreach($validate as $curError)
+            {
+                $error.="<li>".$curError."</li>";
+            }
+
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$var->Sync($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiunta dell'ente", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Ente aggiunto con successo", false);
+        return true;
+    }
+
     // Task per modificare un ente esistente
     public function Task_UpdateEnteSicar($task)
     {
@@ -4705,6 +5182,66 @@ class AA_SicarModule extends AA_GenericModule
         }
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Ente aggiornato con successo", false);
+        return true;
+    }
+
+    // Task per modificare un nucleo esistente
+    public function Task_UpdateNucleoSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare i nuclei", false);
+            return false;
+        }
+        
+        if(empty($_REQUEST))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Nessun nucleo indicato", false);
+            return false;
+        }
+       
+        //comune
+        if(!empty($_REQUEST['comune']))
+        {
+            $_REQUEST['comune']=mb_substr($_REQUEST['comune'],-5,4);
+        }
+
+        $var = new AA_SicarNucleo();
+        if(!$var->Load($_REQUEST['id']))
+        {
+            AA_Log::Log(__METHOD__." - Nucleo non valido.",100);
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo nucleo non specificato o non valido.", false);
+            return false;
+        }
+        $var->Parse($_REQUEST);
+        $validate=$var->Validate();
+        if(sizeof($validate)>0)
+        {
+            AA_Log::Log(__METHOD__." - Sono stati trovati i seguenti errori: ".print_r($validate,true),100);
+            $error="Sono state riscontrate le seguenti criticita': <br>";
+            foreach($validate as $curError)
+            {
+                $error.="<li>".$curError."</li>";
+            }
+
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$var->Sync($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento del nucleo", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Nucleo aggiornato con successo", false);
         return true;
     }
 
@@ -5754,24 +6291,44 @@ class AA_SicarModule extends AA_GenericModule
             //AA_Log::Log(__METHOD__." - criterio: ".print_r($curDoc,true),100);
             if($canModify)
             {
-                $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailEnteDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailNucleoDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
                 $detail_icon="mdi mdi-eye";
-                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteEnteDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteNucleoDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
                 $trash_icon="mdi mdi-trash-can";
-                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyEnteDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
+                $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyNucleoDlg", params: [{id:"'.$curObj->GetProp("id").'"}]},"'.$this->id.'")';
                 $modify_icon="mdi mdi-pencil";
 
                 $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
-                $data[]=array("id"=>$curObj->GetProp("id"),"descrizione"=>$curObj->GetDescrizione(),"indirizzo"=>$curObj->GetIndirizzo()."<a href='https://www.google.com/maps/search/?api=1&query=".$curObj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")),"ops"=>$ops);
+                
+                $last_stato_assegnazione=$curObj->GetStatoAssegnazione(false);
+
+                $data[]=array(
+                    "id"=>$curObj->GetProp("id"),
+                    "descrizione"=>$curObj->GetDescrizione(),
+                    "indirizzo"=>$curObj->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")).")",
+                    "stato_assegnazione"=>$last_stato_assegnazione,
+                    "componenti"=>sizeof($curObj->GetComponenti()),
+                    "isee"=>$curObj->GetIseePreview(),
+                    "cf"=>$curObj->GetCf(),
+                    "ops"=>$ops
+                );
             }
             else
             {
-                $data[]=array("id"=>$curObj->GetProp("id"),"descrizione"=>$curObj->GetDescrizione(),"indirizzo"=>$curObj->GetIndirizzo(),"comune"=>AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")));
+                $data[]=array(
+                    "id"=>$curObj->GetProp("id"),
+                    "descrizione"=>$curObj->GetDescrizione(),
+                    "indirizzo"=>$curObj->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")).")",
+                    "stato_assegnazione"=>$last_stato_assegnazione,
+                    "componenti"=>sizeof($curObj->GetComponenti()),
+                    "isee"=>$curObj->GetIseePreview(),
+                    "cf"=>$curObj->GetCf()
+                );
             }
         }
 
-        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",3,array("type"=>"clean","name"=>static::AA_UI_SECTION_NUCLEI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
-        else $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean","name"=>static::AA_UI_SECTION_NUCLEI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",6,array("type"=>"clean","name"=>static::AA_UI_SECTION_NUCLEI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",7,array("type"=>"clean","name"=>static::AA_UI_SECTION_NUCLEI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader(true);
@@ -5784,15 +6341,16 @@ class AA_SicarModule extends AA_GenericModule
             $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1)));
         }
 
-        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","ImmobiliTable_left");
-        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
-        $template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
+        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(2,"cf","<div style='text-align: center'>Codice fiscale</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(3,"stato_assegnazione","<div style='text-align: center'>Assegnazioni</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(4,"componenti","<div style='text-align: center'>Componenti</div>",120,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(5,"isee","<div style='text-align: center'>ISEE</div>",120,"textFilter","text","GenericAutosizedRowTable");
         //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        if(!empty($ops)) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(6,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
 
         $template->SetData($data);
-
-        //$layout->AddRow($template);
 
         return $template;
     }
@@ -5844,7 +6402,7 @@ class AA_SicarModule extends AA_GenericModule
         
         if($canModify) 
         {
-            $template->EnableAddNew(true,"GetSicarAddNewNucleoDlg");
+            $template->EnableAddNew(true,"GetSicarAddNewFinanziamentoDlg");
             $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1)));
         }
 

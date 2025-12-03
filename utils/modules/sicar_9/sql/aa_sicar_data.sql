@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.2-1.fc42
+-- version 5.2.3-1.fc43
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Set 10, 2025 alle 13:06
--- Versione del server: 10.11.11-MariaDB
--- Versione PHP: 8.4.12
+-- Creato il: Dic 03, 2025 alle 16:43
+-- Versione del server: 10.11.13-MariaDB
+-- Versione PHP: 8.4.15
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -34,7 +34,7 @@ CREATE TABLE `aa_sicar_data` (
   `stato_conservazione` varchar(64) NOT NULL,
   `anno_ristrutturazione` int(11) DEFAULT NULL,
   `condominio_misto` tinyint(1) NOT NULL DEFAULT 0,
-  `superficie_netta` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `superficie_parcheggi` decimal(10,2) NOT NULL DEFAULT 0.00,
   `superficie_utile_abitabile` decimal(10,2) NOT NULL DEFAULT 0.00,
   `piano` int(11) NOT NULL DEFAULT 0,
   `ascensore` tinyint(1) NOT NULL DEFAULT 0,
@@ -42,17 +42,11 @@ CREATE TABLE `aa_sicar_data` (
   `gestione` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
   `proprieta` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
   `stato` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
-  `note` text DEFAULT NULL
+  `note` text DEFAULT NULL,
+  `vani_abitabili` int(10) NOT NULL DEFAULT 0,
+  `superficie_non_residenziale` float(10,2) NOT NULL DEFAULT 0.00,
+  `occupazione` longtext NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Alloggi associati agli immobili';
-
---
--- Dump dei dati per la tabella `aa_sicar_data`
---
-
-INSERT INTO `aa_sicar_data` (`id`, `immobile`, `tipologia_utilizzo`, `stato_conservazione`, `anno_ristrutturazione`, `condominio_misto`, `superficie_netta`, `superficie_utile_abitabile`, `piano`, `ascensore`, `fruibile_dis`, `gestione`, `proprieta`, `stato`, `note`) VALUES
-(1, '10', '1', '2', 2024, 1, 12.00, 10.00, 0, 1, 1, '', '', '', 'note'),
-(2, '5', '1', '2', 2024, 1, 12.00, 10.00, 0, 1, 0, '', '', '', 'note'),
-(3, '8', '3', '3', 2024, 0, 12.00, 10.00, 1, 0, 0, '', '', '', 'note 1');
 
 --
 -- Indici per le tabelle scaricate
@@ -79,7 +73,7 @@ ALTER TABLE `aa_sicar_data`
 -- AUTO_INCREMENT per la tabella `aa_sicar_data`
 --
 ALTER TABLE `aa_sicar_data`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
