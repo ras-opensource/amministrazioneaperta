@@ -5326,6 +5326,13 @@ Class AA_GecoModule extends AA_GenericModule
         return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.26 e 27 del d.lgs. 33/2013","Template_GecoPdfExport", 12, false,$subTitle,$layoutTemplate,99,"Template_PublicReportPageHeaderPdf");
     }
 
+    //funzione di esportazione in pdf async
+    public function Template_PdfExportAsync($ids=array(),$subTitle="",$layoutTemplate="AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE")
+    {
+        //return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_GecoPdfExport", $rowsForPage, $index,$subTitle);
+        return $this->Template_GenericPdfExport($ids,false,"Pubblicazione ai sensi dell'art.26 e 27 del d.lgs. 33/2013","Template_GecoPdfExport", 12, false,$subTitle,$layoutTemplate,99,"Template_PublicReportPageHeaderPdf");
+    }
+
     //funzione di aiuto
     public function Task_AMAAI_Start($task)
     {
