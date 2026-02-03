@@ -1,5 +1,5 @@
 <?php
-Class AA_NewsTags
+class AA_NewsTags
 {
     private $aTags=array();
 

@@ -1,5 +1,5 @@
 <?php
-Class AA_Servizio extends AA_Struttura
+class AA_Servizio extends AA_Struttura
 {
     static protected $dbDataTable="servizi";
 

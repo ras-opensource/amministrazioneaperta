@@ -1,5 +1,5 @@
 <?php
-Class AA_Risorse extends AA_GenericParsableDbObject
+class AA_Risorse extends AA_GenericParsableDbObject
 {
     static protected $dbDataTable="aa_risorse";
     static protected $ObjectClass=__CLASS__;

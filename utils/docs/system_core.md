@@ -1,0 +1,742 @@
+# PHP Class Documentation for system_core
+
+## Class `AA_Database`
+**Purpose**: *No description available*
+
+- **File**: `AA_Database.php`
+- **Relative Path**: `AA_Database.php`
+- **SHA-256 Hash**: `1941840fe01185c677f76d13c1ded45ff83fdad66afc915213bb667f709835a6`
+- **Methods**:
+  - `public function __construct($bReset = false)`
+    - **Purpose**: *No description available*
+
+## Class `AA_AccountsDatabase`
+**Purpose**: *No description available*
+
+- **File**: `AA_AccountsDatabase.php`
+- **Relative Path**: `AA_AccountsDatabase.php`
+- **SHA-256 Hash**: `0e4f6765026a75c2dc8b0d8eac2ae8c1b4631c8e141285b8be4ecfa899f25436`
+- **Methods**:
+  - `public function __construct($bReset = false)`
+    - **Purpose**: *No description available*
+
+## Class `AA_Const`
+**Purpose**: *No description available*
+
+- **File**: `AA_Const.php`
+- **Relative Path**: `AA_Const.php`
+- **SHA-256 Hash**: `28c9d767fd5492c3b7beb56050f6b337a94949b59bf3a6383550726af514a42b`
+- **Methods**: None
+
+## Class `AA_Struct`
+**Purpose**: *No description available*
+
+- **File**: `AA_Struct.php`
+- **Relative Path**: `AA_Struct.php`
+- **SHA-256 Hash**: `e97fe7e3fe010b041056dcd371caa5720e55a7db855a389c721b9bcf7c41f802`
+- **Methods**:
+  - `public function IsValid()`
+    - **Purpose**: *No description available*
+  - `public function __construct()`
+    - **Purpose**: *No description available*
+  - `public function GetStruct($id_assessorato = '', $id_direzione = '', $id_servizio = '', $type = '')`
+    - **Purpose**: *No description available*
+  - `public function GetStructTree()`
+    - **Purpose**: *No description available*
+  - `public function GetAssessorato($getID = false)`
+    - **Purpose**: *No description available*
+  - `public function GetTipo()`
+    - **Purpose**: *No description available*
+  - `public function GetDirezione($getID = false)`
+    - **Purpose**: *No description available*
+  - `public function GetServizio($getID = false)`
+    - **Purpose**: *No description available*
+  - `public function toXML()`
+    - **Purpose**: *No description available*
+  - `public function toJSON($bEncode = false)`
+    - **Purpose**: *No description available*
+  - `public function toArray($params = array()`
+    - **Purpose**: *No description available*
+  - `public function __toString()`
+    - **Purpose**: *No description available*
+
+## Class `AA_Group`
+**Purpose**: *No description available*
+
+- **File**: `AA_Group.php`
+- **Relative Path**: `AA_Group.php`
+- **SHA-256 Hash**: `bd8fbfaf7eb65906a0471c0f4dc9abb2472c227fb928a5321e7eadada08d2b0a`
+- **Methods**:
+  - `public function GetProp($key)`
+    - **Purpose**: *No description available*
+  - `public function IsValid()`
+    - **Purpose**: *No description available*
+  - `protected function Parse($props=array()`
+    - **Purpose**: *No description available*
+  - `protected function __construct($props=array()`
+    - **Purpose**: *No description available*
+  - `public function GetDescendants($id_group)`
+    - **Purpose**: *No description available*
+  - `public function GetGroup($id="",$user=null)`
+    - **Purpose**: *No description available*
+  - `public function AddGroup($newGroupData=null,$user=null)`
+    - **Purpose**: *No description available*
+  - `public function ModifyGroup($id_group=0,$groupData=null,$user=null)`
+    - **Purpose**: *No description available*
+  - `public function DelGroup($id_group=0,$user=null)`
+    - **Purpose**: *No description available*
+  - `public function SearchGroups($params=array()`
+    - **Purpose**: *No description available*
+  - `public function GetUsers()`
+    - **Purpose**: *No description available*
+
+## Class `AA_User`
+**Purpose**: *No description available*
+
+- **File**: `AA_User.php`
+- **Relative Path**: `AA_User.php`
+- **SHA-256 Hash**: `ce76891e8605aaa9e36a1d3473c8fc3bda40bb6f3f26e51bc3292bdda2b61e4c`
+- **Methods**:
+  - `public function GetLegacyData()`
+    - **Purpose**: *No description available*
+  - `public function GetStatus()`
+    - **Purpose**: *No description available*
+  - `public function GetGroups()`
+    - **Purpose**: *No description available*
+  - `public function GetLabelFlags()`
+    - **Purpose**: *No description available*
+  - `public function GetRuolo($bNumeric=false)`
+    - **Purpose**: *No description available*
+  - `public function GetRole($bNumeric=false)`
+    - **Purpose**: *No description available*
+  - `public function IsServerOperator()`
+    - **Purpose**: *No description available*
+  - `public function isAdministrator()`
+    - **Purpose**: *No description available*
+  - `public function isOperator()`
+    - **Purpose**: *No description available*
+  - `public function GetDefaultGroups()`
+    - **Purpose**: *No description available*
+  - `public function GetAllGroups()`
+    - **Purpose**: *No description available*
+  - `protected function LoadAllGroups()`
+    - **Purpose**: *No description available*
+  - `public function __construct()`
+    - **Purpose**: *No description available*
+  - `public function IsConcurrentEnabled()`
+    - **Purpose**: *No description available*
+  - `public function IsValid()`
+    - **Purpose**: *No description available*
+  - `public function GetProfileImagePublicPath()`
+    - **Purpose**: *No description available*
+  - `public function GetProfileImageLocalPath()`
+    - **Purpose**: *No description available*
+  - `public function IsDisabled()`
+    - **Purpose**: *No description available*
+  - `public function IsGuest()`
+    - **Purpose**: *No description available*
+  - `public function GetPhone()`
+    - **Purpose**: *No description available*
+  - `public function GetLastLogin()`
+    - **Purpose**: *No description available*
+  - `public function GetLastNotify()`
+    - **Purpose**: *No description available*
+  - `public function GetImage()`
+    - **Purpose**: *No description available*
+  - `public function IsAdmin()`
+    - **Purpose**: *No description available*
+  - `public function IsSuperUser()`
+    - **Purpose**: *No description available*
+  - `public function GetStruct()`
+    - **Purpose**: *No description available*
+  - `public function GetLevel()`
+    - **Purpose**: *No description available*
+  - `public function GetID()`
+    - **Purpose**: *No description available*
+  - `public function isCurrentUser()`
+    - **Purpose**: *No description available*
+  - `public function LoadUser($id_user)`
+    - **Purpose**: *No description available*
+  - `public function LegacyLoadUser($id_user)`
+    - **Purpose**: *No description available*
+  - `public staticfunction SetResetPwdEmailParams($params=array()`
+    - **Purpose**: *No description available*
+  - `public staticfunction SetSendCredentialsEmailParams($params=array()`
+    - **Purpose**: *No description available*
+  - `public staticfunction GetResetPwdEmailParams()`
+    - **Purpose**: *No description available*
+  - `public function LoadUserFromUserName($userName)`
+    - **Purpose**: *No description available*
+  - `public function LegacyLoadUserFromUserName($userName)`
+    - **Purpose**: *No description available*
+  - `public function LoadUsersFromEmail($email,$bLegacyUsers=true)`
+    - **Purpose**: *No description available*
+  - `public function LoadLastLoggedUsers($bLegacyUsers=true)`
+    - **Purpose**: *No description available*
+  - `public function GetProfiles()`
+    - **Purpose**: *No description available*
+  - `public function LegacyLoadUsersFromEmail($email)`
+    - **Purpose**: *No description available*
+  - `public function LegacyLoadLastLoggedUsers()`
+    - **Purpose**: *No description available*
+  - `public function TemporaryUserAuth($sUserName = "", $sUserPwd = "")`
+    - **Purpose**: *No description available*
+  - `public function UserAuth($sToken = "", $sUserName = "", $sUserPwd = "", $remember_me=false,$bTemporary=false)`
+    - **Purpose**: *No description available*
+  - `public function GetSSOAuthToken()`
+    - **Purpose**: *No description available*
+  - `public function VerifySSOAuthToken($token='',$bRegisterToken=false)`
+    - **Purpose**: *No description available*
+  - `public function legacyUserAuth($sToken = "", $sUserName = "", $sUserPwd = "", $remember_me=false)`
+    - **Purpose**: *No description available*
+  - `public function ChangeProfile($newProfileID = "")`
+    - **Purpose**: *No description available*
+  - `public function MailOTPAuthChallenge($email = null,$remember_me=false)`
+    - **Purpose**: *No description available*
+  - `public function MailOTPAuthChallengeVerify($code="")`
+    - **Purpose**: *No description available*
+  - `public function MailOTPChangePwdChallenge()`
+    - **Purpose**: *No description available*
+  - `public function MailOTPChangePwdChallengeVerify($code="")`
+    - **Purpose**: *No description available*
+  - `public function MailOTPAuthSend($email = null, $register = true)`
+    - **Purpose**: *No description available*
+  - `public function MailOTPAuthVerify($codice = null)`
+    - **Purpose**: *No description available*
+  - `public function MailOTPAuthIsMailRegistered($email = "")`
+    - **Purpose**: *No description available*
+  - `public function MailOTPAuthRegisterEmail($email = "")`
+    - **Purpose**: *No description available*
+  - `public function LogOut()`
+    - **Purpose**: *No description available*
+  - `private function GenerateToken($id_user, $remember_me=false, $concurrent_access=false)`
+    - **Purpose**: *No description available*
+  - `private function RefreshToken($token)`
+    - **Purpose**: *No description available*
+  - `public function GetCurrentUser()`
+    - **Purpose**: *No description available*
+  - `public function Guest()`
+    - **Purpose**: *No description available*
+  - `public function toXML()`
+    - **Purpose**: *No description available*
+  - `public function __toString()`
+    - **Purpose**: *No description available*
+  - `public function HasFlag($flag)`
+    - **Purpose**: *No description available*
+  - `public function GetNome()`
+    - **Purpose**: *No description available*
+  - `public function GetName()`
+    - **Purpose**: *No description available*
+  - `public function GetCognome()`
+    - **Purpose**: *No description available*
+  - `public function GetUsername()`
+    - **Purpose**: *No description available*
+  - `public function GetCf()`
+    - **Purpose**: *No description available*
+  - `public function GetEmail()`
+    - **Purpose**: *No description available*
+  - `public function GetFlags($bArray = false, $bLegacyFlags=true)`
+    - **Purpose**: *No description available*
+  - `public function GetLegacyFlags($bArray = false)`
+    - **Purpose**: *No description available*
+  - `public function UserNameExist($userName = "")`
+    - **Purpose**: *No description available*
+  - `public function Search($params=array()`
+    - **Purpose**: *No description available*
+  - `public function SearchUsers($params=array()`
+    - **Purpose**: *No description available*
+  - `public function LegacySearch($params=array()`
+    - **Purpose**: *No description available*
+  - `public function CanGestUtenti()`
+    - **Purpose**: *No description available*
+  - `public function CanGestStruct()`
+    - **Purpose**: *No description available*
+  - `public function CanPromoteUserAsAdmin($idUser = null)`
+    - **Purpose**: *No description available*
+  - `public function CanModifyUser($idUser = null)`
+    - **Purpose**: *No description available*
+  - `public function AddNewUser($params)`
+    - **Purpose**: *No description available*
+  - `public function MigrateLegacyUser($legacyUser,$legacyPwd,$oldMd5Pwd="")`
+    - **Purpose**: *No description available*
+  - `public function LegacyAddNewUser($params)`
+    - **Purpose**: *No description available*
+  - `public function UpdateUser($idUser, $params)`
+    - **Purpose**: *No description available*
+  - `public function LegacyUpdateUser($idUser, $params)`
+    - **Purpose**: *No description available*
+  - `public function ChangePwd($params=null)`
+    - **Purpose**: *No description available*
+  - `public staticfunction UpdateCurrentUserProfile($params,$imageFileName="")`
+    - **Purpose**: *No description available*
+  - `public staticfunction LegacyUpdateCurrentUserProfile($params,$imageFileName="")`
+    - **Purpose**: *No description available*
+  - `public function LegacyDeleteUser($idUser)`
+    - **Purpose**: *No description available*
+  - `public function DeleteUser($idUser,$bOnlyTrash=true)`
+    - **Purpose**: *No description available*
+  - `public function ResumeUser($idUser)`
+    - **Purpose**: *No description available*
+  - `public function ResetPassword($email, $bSendEmail = true)`
+    - **Purpose**: *No description available*
+  - `public function SendCredentials($userId=0, $bSendEmail = true)`
+    - **Purpose**: *No description available*
+
+## Class `AA_Utils`
+**Purpose**: *No description available*
+
+- **File**: `AA_Utils.php`
+- **Relative Path**: `AA_Utils.php`
+- **SHA-256 Hash**: `346e0f0799a8b05d602c043ff542f6fe3fb5d5f0876ccaf9de7d95906672aad2`
+- **Methods**:
+  - `public function password_hash($password="")`
+    - **Purpose**: *No description available*
+  - `public function password_verify($password="",$hash="")`
+    - **Purpose**: *No description available*
+  - `public function number_format($number, $decimals='', $sep1='', $sep2='',$round=true)`
+    - **Purpose**: *No description available*
+  - `public function AppendLogToSession()`
+    - **Purpose**: *No description available*
+  - `public function uniqid($lenght = 13)`
+    - **Purpose**: *No description available*
+  - `public function GetSessionLog()`
+    - **Purpose**: *No description available*
+  - `public function ResetSessionLog()`
+    - **Purpose**: *No description available*
+  - `public function GetSQLValueString($theValue, $theType, $theDefinedValue = "", $theNotDefinedValue = "")`
+    - **Purpose**: *No description available*
+  - `public function CheckUser($reqUser, $levelMin, $id_assessorato = 0, $id_direzione = 0, $id_servizio = 0, $id_settore = 0)`
+    - **Purpose**: *No description available*
+  - `staticfunction validateDate($date, $format = 'Y-m-d')`
+    - **Purpose**: *No description available*
+  - `public function CleanOldTokens()`
+    - **Purpose**: *No description available*
+  - `public function Xml_entities($string)`
+    - **Purpose**: *No description available*
+  - `public function xmlentities($string)`
+    - **Purpose**: *No description available*
+  - `public function CheckURL($url)`
+    - **Purpose**: *No description available*
+
+## Class `AA_Object`
+**Purpose**: *No description available*
+
+- **File**: `AA_Object.php`
+- **Relative Path**: `AA_Object.php`
+- **SHA-256 Hash**: `c8fbbbc4125813d6508ed218e5b285faedb2f06b91597e722250497eacc85f3f`
+- **Methods**:
+  - `protected function SetId($val = 0)`
+    - **Purpose**: *No description available*
+  - `public function GetType()`
+    - **Purpose**: *No description available*
+  - `protected function SetType($val = 0)`
+    - **Purpose**: *No description available*
+  - `public function SetParent($parent = null)`
+    - **Purpose**: *No description available*
+  - `public function GetParent()`
+    - **Purpose**: *No description available*
+  - `public function EnableUpdateParent($bEnable = true)`
+    - **Purpose**: *No description available*
+  - `public function IsParentUpdateEnabled()`
+    - **Purpose**: *No description available*
+  - `public function EnableParentPermsCheck($bEnable = true)`
+    - **Purpose**: *No description available*
+  - `public function IsParentPermsCheckEnabled()`
+    - **Purpose**: *No description available*
+  - `public function DisableLocalPermsCheck($bDisable = true)`
+    - **Purpose**: *No description available*
+  - `public function IsLocalPermsCheckDisabled()`
+    - **Purpose**: *No description available*
+  - `protected function SetAggiornamento($val = "")`
+    - **Purpose**: *No description available*
+  - `protected function EnableAggiornamentoDbSync($bEnable = true)`
+    - **Purpose**: *No description available*
+  - `public function IsAggiornamentoDbSyncEnabled()`
+    - **Purpose**: *No description available*
+  - `public function GetLog($bFormated = true)`
+    - **Purpose**: *No description available*
+  - `protected function AddLog($log = "", $actionType = "0", $user = null)`
+    - **Purpose**: *No description available*
+  - `protected function ResetLog()`
+    - **Purpose**: *No description available*
+  - `protected function SetStruct($struct = null)`
+    - **Purpose**: *No description available*
+  - `protected function EnableStructDbSync($bEnable = true)`
+    - **Purpose**: *No description available*
+  - `public function IsStructDbSyncEnabled()`
+    - **Purpose**: *No description available*
+  - `protected function EnableUserDbSync($bEnable = true)`
+    - **Purpose**: *No description available*
+  - `public function IsUserDbSyncEnabled()`
+    - **Purpose**: *No description available*
+  - `public function SetStatus($val = 0)`
+    - **Purpose**: *No description available*
+  - `protected function EnableStatusDbSync($bEnable = true)`
+    - **Purpose**: *No description available*
+  - `public function IsStatusDbSyncEnabled()`
+    - **Purpose**: *No description available*
+  - `public function SetStatusMask($mask = AA_Const::AA_STATUS_ALL)`
+    - **Purpose**: *No description available*
+  - `public function GetStatusMask()`
+    - **Purpose**: *No description available*
+  - `protected function SetTitolo($val = "")`
+    - **Purpose**: *No description available*
+  - `protected function SetDescrizione($val = "")`
+    - **Purpose**: *No description available*
+  - `public function __construct($user = null)`
+    - **Purpose**: *No description available*
+  - `public function EnablePermsCaching($bEnable = true)`
+    - **Purpose**: *No description available*
+  - `public function IsPermsCachingEnabled()`
+    - **Purpose**: *No description available*
+  - `public function ClearCache()`
+    - **Purpose**: *No description available*
+  - `public function GetUserCaps($user = null)`
+    - **Purpose**: *No description available*
+  - `public function GetID()`
+    - **Purpose**: *No description available*
+  - `public function isValid()`
+    - **Purpose**: *No description available*
+  - `public function GetStatus()`
+    - **Purpose**: *No description available*
+  - `public function GetTitolo()`
+    - **Purpose**: *No description available*
+  - `public function GetDescrizione()`
+    - **Purpose**: *No description available*
+  - `public function GetAggiornamento($bShort = false)`
+    - **Purpose**: *No description available*
+  - `public function GetUser()`
+    - **Purpose**: *No description available*
+  - `public function GetStruct()`
+    - **Purpose**: *No description available*
+  - `public function __toString()`
+    - **Purpose**: *No description available*
+  - `protected function Snapshot($date = "", $object = null)`
+    - **Purpose**: *No description available*
+  - `public function IsPublished()`
+    - **Purpose**: *No description available*
+  - `public function toXml()`
+    - **Purpose**: *No description available*
+  - `public function ToCsv($separator="|",$bHeader=true,$bDetail=true,$bToBrowser=true)`
+    - **Purpose**: *No description available*
+  - `protected function CsvDataHeader($separator="|")`
+    - **Purpose**: *No description available*
+  - `protected function CsvData($separator= "|")`
+    - **Purpose**: *No description available*
+  - `protected function SetChanged($bVal = true)`
+    - **Purpose**: *No description available*
+  - `public function IsChanged()`
+    - **Purpose**: *No description available*
+  - `public function GetBindings()`
+    - **Purpose**: *No description available*
+  - `public function IsDbSyncEnabled()`
+    - **Purpose**: *No description available*
+  - `protected function EnableDbSync($val = true)`
+    - **Purpose**: *No description available*
+  - `private function DbSync($user = null, $bForce = false)`
+    - **Purpose**: *No description available*
+  - `public function GetProp($prop = null)`
+    - **Purpose**: *No description available*
+  - `public function ParseData($data = null, $user = null)`
+    - **Purpose**: *No description available*
+  - `public function UpdateDb($user = null, $data = null, $bLog = true,$sDetailLog="")`
+    - **Purpose**: *No description available*
+  - `public function Trash($user = null, $bDelete = false)`
+    - **Purpose**: *No description available*
+  - `public function Resume($user = null)`
+    - **Purpose**: *No description available*
+  - `public function Reassign($params = null, $user = null)`
+    - **Purpose**: *No description available*
+  - `public function Publish($user = null)`
+    - **Purpose**: *No description available*
+  - `public function CanPublish()`
+    - **Purpose**: *No description available*
+  - `protected function VerifyDbSync($user = null)`
+    - **Purpose**: *No description available*
+  - `protected function VerifyDbLoad()`
+    - **Purpose**: *No description available*
+  - `protected function LoadFromDb($id = 0, $user = null)`
+    - **Purpose**: *No description available*
+
+## Class `AA_Object_Log`
+**Purpose**: *No description available*
+
+- **File**: `AA_Object_Log.php`
+- **Relative Path**: `AA_Object_Log.php`
+- **SHA-256 Hash**: `47fe635d643de98ed0b5c15b149a2f0199f7d47bfe1ab339ad49b4010962fc05`
+- **Methods**:
+  - `public function __construct($log = "")`
+    - **Purpose**: *No description available*
+  - `public function GetLog()`
+    - **Purpose**: *No description available*
+  - `public function GetLastLog()`
+    - **Purpose**: *No description available*
+
+## Class `AA_Object_V2`
+**Purpose**: *No description available*
+
+- **File**: `AA_Object_V2.php`
+- **Relative Path**: `AA_Object_V2.php`
+- **SHA-256 Hash**: `85163e60f3f3ddad82e47076fcc2413578287edab42bb74fb1fb35994781780a`
+- **Methods**:
+  - `public staticfunction GetObjectsDbDataTable()`
+    - **Purpose**: *No description available*
+  - `public function GetId()`
+    - **Purpose**: *No description available*
+  - `protected function SetId($var = 0)`
+    - **Purpose**: *No description available*
+  - `public function GetStatus()`
+    - **Purpose**: *No description available*
+  - `protected function SetStatus($var = 0)`
+    - **Purpose**: *No description available*
+  - `public function GetAggiornamento()`
+    - **Purpose**: *No description available*
+  - `public function GetName()`
+    - **Purpose**: *No description available*
+  - `protected function SetName($var = "")`
+    - **Purpose**: *No description available*
+  - `public function GetDescr()`
+    - **Purpose**: *No description available*
+  - `protected function SetDescr($var = "")`
+    - **Purpose**: *No description available*
+  - `public function GetStatusMask()`
+    - **Purpose**: *No description available*
+  - `protected function SetStatusMask($var = AA_Const::AA_STATUS_ALL)`
+    - **Purpose**: *No description available*
+  - `public function serialize()`
+    - **Purpose**: *No description available*
+  - `public function EnableRevision($var = true)`
+    - **Purpose**: *No description available*
+  - `public function GetIdData()`
+    - **Purpose**: *No description available*
+  - `protected function SetIdData($var = 0)`
+    - **Purpose**: *No description available*
+  - `public function GetIdDataRev()`
+    - **Purpose**: *No description available*
+  - `protected function SetIdDataRev($var = 0)`
+    - **Purpose**: *No description available*
+  - `public function GetClass()`
+    - **Purpose**: *No description available*
+  - `protected function SetClass($var = "AA_Object_V2")`
+    - **Purpose**: *No description available*
+  - `public function GetLog($bFormated = true)`
+    - **Purpose**: *No description available*
+  - `protected function AddLog($log = "", $actionType = "0", $user = null)`
+    - **Purpose**: *No description available*
+  - `protected function ResetLog()`
+    - **Purpose**: *No description available*
+  - `public function GetStruct()`
+    - **Purpose**: *No description available*
+  - `public function SetStruct($var = null)`
+    - **Purpose**: *No description available*
+  - `public function ToCsv($separator="|",$bHeader=true,$bDetail=true,$bToBrowser=true)`
+    - **Purpose**: *No description available*
+  - `protected function CsvDataHeader($separator="|")`
+    - **Purpose**: *No description available*
+  - `protected function CsvData($separator= "|")`
+    - **Purpose**: *No description available*
+  - `public function IsChanged()`
+    - **Purpose**: *No description available*
+  - `protected function SetChanged($var = true)`
+    - **Purpose**: *No description available*
+  - `protected staticfunction SaveToDb($object = null, $user = null, $bSaveData = false)`
+    - **Purpose**: *No description available*
+  - `protected function CloneData($idData = 0, $user = null)`
+    - **Purpose**: *No description available*
+  - `protected function DeleteData($idData = 0, $user = null)`
+    - **Purpose**: *No description available*
+  - `protected function SaveData()`
+    - **Purpose**: *No description available*
+  - `protected function Save($user = null, $bForce = false, $bSaveData = false)`
+    - **Purpose**: *No description available*
+  - `public function Publish($user = null, $bSaveData = false)`
+    - **Purpose**: *No description available*
+  - `public function AddNew($object = null, $user = null, $bSaveData = false)`
+    - **Purpose**: *No description available*
+  - `public function SetTemplateViewProps($props=null)`
+    - **Purpose**: *No description available*
+  - `public function GetTemplateViewProps()`
+    - **Purpose**: *No description available*
+  - `protected function SetDefaultTemplateViewProps()`
+    - **Purpose**: *No description available*
+  - `public function GetTemplateView($bRefresh=false)`
+    - **Purpose**: *No description available*
+  - `public function GetDefaultTemplateView()`
+    - **Purpose**: *No description available*
+  - `public function SetTemplateView($var = null)`
+    - **Purpose**: *No description available*
+  - `public function Update($user = null, $bSaveData = true, $logMsg = "")`
+    - **Purpose**: *No description available*
+  - `public function Trash($user = null, $bSaveData = false)`
+    - **Purpose**: *No description available*
+  - `public function Reassign($oStruct = null, $user = null, $bSaveData = false)`
+    - **Purpose**: *No description available*
+  - `public function Resume($user = null, $bSaveData = false)`
+    - **Purpose**: *No description available*
+  - `public function Delete($user = null)`
+    - **Purpose**: *No description available*
+  - `public function GetUserCaps($user = null)`
+    - **Purpose**: *No description available*
+  - `public function Load($id = 0, $user = null, $bLoadData = true, $bCheckPerms=true)`
+    - **Purpose**: *No description available*
+  - `protected function LoadData($user = null)`
+    - **Purpose**: *No description available*
+  - `public function IsValid()`
+    - **Purpose**: *No description available*
+  - `public function IsReadOnly()`
+    - **Purpose**: *No description available*
+  - `public function __construct($id = 0, $user = null, $bLoadData = true, $bCheckPerms=true)`
+    - **Purpose**: *No description available*
+  - `public function GetProp($prop = "")`
+    - **Purpose**: *No description available*
+  - `public function SetProp($prop = "", $val = null)`
+    - **Purpose**: *No description available*
+  - `public function AddProp($prop = "", $initValue="",$dbBind="")`
+    - **Purpose**: *No description available*
+  - `public function GetProps()`
+    - **Purpose**: *No description available*
+  - `public function Parse($data = array()`
+    - **Purpose**: *No description available*
+  - `public function SetBind($prop = "", $dbField = "", $bAddProp = true)`
+    - **Purpose**: *No description available*
+  - `public function GetBind($prop = "")`
+    - **Purpose**: *No description available*
+  - `public function GetDbBindings()`
+    - **Purpose**: *No description available*
+  - `public function GetDbDataTable()`
+    - **Purpose**: *No description available*
+  - `public function SetDbDataTable($var = "")`
+    - **Purpose**: *No description available*
+  - `public function Search($params = array()`
+    - **Purpose**: *No description available*
+
+## Class `if`
+**Purpose**: *No description available*
+
+- **File**: `AA_Object_V2.php`
+- **Relative Path**: `AA_Object_V2.php`
+- **SHA-256 Hash**: `85163e60f3f3ddad82e47076fcc2413578287edab42bb74fb1fb35994781780a`
+- **Methods**: None
+
+## Class `AA_SessionVar`
+**Purpose**: *No description available*
+
+- **File**: `AA_SessionVar.php`
+- **Relative Path**: `AA_SessionVar.php`
+- **SHA-256 Hash**: `40c2f47c0d72f73aa075161b18a59a6acc1f5596301f85a678c4155bd2b1c3db`
+- **Methods**:
+  - `public function GetName()`
+    - **Purpose**: *No description available*
+  - `public function GetValue()`
+    - **Purpose**: *No description available*
+  - `public function IsValid()`
+    - **Purpose**: *No description available*
+  - `public function UnsetVar($name="")`
+    - **Purpose**: *No description available*
+  - `protected function __construct($name = "varName", $value = "")`
+    - **Purpose**: *No description available*
+  - `public function Get($name = "varName")`
+    - **Purpose**: *No description available*
+  - `public function Set($name = "varName", $value = "", $parse=true)`
+    - **Purpose**: *No description available*
+
+## Class `AA_SessionFileUpload`
+**Purpose**: *No description available*
+
+- **File**: `AA_SessionFileUpload.php`
+- **Relative Path**: `AA_SessionFileUpload.php`
+- **SHA-256 Hash**: `a22a718921422100967e550deb1fd0a46d6c9520da6f35bbaeed77f3860accd2`
+- **Methods**:
+  - `public function GetId()`
+    - **Purpose**: *No description available*
+  - `public function GetValue()`
+    - **Purpose**: *No description available*
+  - `public function IsValid()`
+    - **Purpose**: *No description available*
+  - `protected function __construct($id = "", $value = "")`
+    - **Purpose**: *No description available*
+  - `public function Get($id = "")`
+    - **Purpose**: *No description available*
+  - `public function Add($id = "", $value = "")`
+    - **Purpose**: *No description available*
+
+## Class `AA_Platform`
+**Purpose**: *No description available*
+
+- **File**: `AA_Platform.php`
+- **Relative Path**: `AA_Platform.php`
+- **SHA-256 Hash**: `b303f50861308a60cefdb2ed798a146bbe335aee2ca726faa83aa50f774c3cab`
+- **Methods**:
+  - `public function IsValid()`
+    - **Purpose**: *No description available*
+  - `public staticfunction GetManutention()`
+    - **Purpose**: *No description available*
+  - `public staticfunction GetOverlay()`
+    - **Purpose**: *No description available*
+  - `public staticfunction SetOverlay($var="")`
+    - **Purpose**: *No description available*
+  - `public function GetInstance($user = null)`
+    - **Purpose**: *No description available*
+  - `public function GetModuleTaskManagerURL($id_module = "")`
+    - **Purpose**: *No description available*
+  - `public function GetModulePathURL($id_module = "")`
+    - **Purpose**: *No description available*
+  - `public staticfunction RegisterPublicService($service="",$serviceFunc=null)`
+    - **Purpose**: *No description available*
+  - `public staticfunction RunPublicService($service="")`
+    - **Purpose**: *No description available*
+  - `public function IsPublicServiceRegistered($service="")`
+    - **Purpose**: *No description available*
+  - `protected function __construct($user = null)`
+    - **Purpose**: *No description available*
+  - `protected function LoadModules($bDisableCache = false)`
+    - **Purpose**: *No description available*
+  - `public function RegisterModule($idMod = "", $class = "", $user = null)`
+    - **Purpose**: *No description available*
+  - `public function IsRegistered($id = "", $user = null)`
+    - **Purpose**: *No description available*
+  - `public function GetModule($id = "", $user = null)`
+    - **Purpose**: *No description available*
+  - `public function GetModules()`
+    - **Purpose**: *No description available*
+  - `public function GetModulesFlags()`
+    - **Purpose**: *No description available*
+  - `public function GetAllModulesFlags()`
+    - **Purpose**: *No description available*
+  - `public function GetLegacyFlags()`
+    - **Purpose**: *No description available*
+  - `public function GetCurrentUser()`
+    - **Purpose**: *No description available*
+  - `public function Auth($token = "", $user = "", $pwd = "")`
+    - **Purpose**: *No description available*
+
+## Class `AA_Log`
+**Purpose**: *No description available*
+
+- **File**: `AA_Log.php`
+- **Relative Path**: `AA_Log.php`
+- **SHA-256 Hash**: `5e27de63649b6c5e6ce40405a3ae8417f523eebeb813640880715be75d504a28`
+- **Methods**:
+  - `public function GetTime()`
+    - **Purpose**: *No description available*
+  - `public function GetLevel()`
+    - **Purpose**: *No description available*
+  - `public function GetMsg()`
+    - **Purpose**: *No description available*
+  - `public function GetBackTrace()`
+    - **Purpose**: *No description available*
+  - `public function GetUser()`
+    - **Purpose**: *No description available*
+  - `public function Log($msg, $level = 0, $bWithbacktrace = false, $bLogToSession = true, $user = null)`
+    - **Purpose**: *No description available*
+  - `public function __construct($level = 0, $msg = "", $time = "", $backtrace = null, $user = null)`
+    - **Purpose**: *No description available*
+  - `public function toHTML($bWithbacktrace = false)`
+    - **Purpose**: *No description available*
+  - `public function SetLogLevel($nNewLogLevel = 100)`
+    - **Purpose**: *No description available*
+  - `public function GetLog()`
+    - **Purpose**: *No description available*
+  - `public function LogAction($id_utente = 0, $op, $sql)`
+    - **Purpose**: *No description available*
+

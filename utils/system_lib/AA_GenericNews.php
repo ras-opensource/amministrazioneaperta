@@ -1,5 +1,5 @@
 <?php
-Class AA_GenericNews extends AA_GenericParsableDbObject
+class AA_GenericNews extends AA_GenericParsableDbObject
 {
     static protected $dbDataTable="aa_news";
     static protected $objectClass=__CLASS__;

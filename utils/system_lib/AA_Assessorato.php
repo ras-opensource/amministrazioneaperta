@@ -1,5 +1,5 @@
 <?php
-Class AA_Assessorato extends AA_Struttura
+class AA_Assessorato extends AA_Struttura
 {
     const AA_TIPO_ASSESSORATO=0;
     const AA_TIPO_AGENZIA=2;

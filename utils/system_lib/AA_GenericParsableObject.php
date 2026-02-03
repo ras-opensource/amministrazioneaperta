@@ -1,5 +1,5 @@
 <?php
-Class AA_GenericParsableObject
+class AA_GenericParsableObject
 {
     protected $aProps=array();
     

@@ -1,5 +1,5 @@
 <?php
-Class AA_GenericResources extends AA_GenericParsableDbObject
+class AA_GenericResources extends AA_GenericParsableDbObject
 {
     public function __construct($params = null)
     {

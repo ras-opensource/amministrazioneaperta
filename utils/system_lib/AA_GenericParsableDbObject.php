@@ -1,5 +1,5 @@
 <?php
-Class AA_GenericParsableDbObject extends AA_GenericParsableObject
+class AA_GenericParsableDbObject extends AA_GenericParsableObject
 {
     static protected $dbDataTable="";
     public static function GetDatatable()
