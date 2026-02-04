@@ -4,7 +4,6 @@
  * Classe AA_SicarImmobile per la gestione degli immobili
  */
 include_once "config.php";
-include_once "system_lib.php";
 
 /**
  * Costanti per il modulo SICAR
@@ -63,6 +62,23 @@ class AA_Sicar_Const extends AA_Const
         $options = array();
         $db = new AA_Database();
         $query = "SELECT id, descrizione FROM ".self::AA_DBTABLE_STATI_CONSERVAZIONE_ALL." ORDER BY descrizione";
+        if ($db->Query($query)) {
+            $rs = $db->GetResultSet();
+            foreach ($rs as $row) {
+                if(!$bSimpleArray) $options[] = array("id" => $row['id'], "value" => $row['descrizione']);
+                else $options[$row['id']] = $row['descrizione'];
+            }
+        }
+        return $options;
+    }
+
+     //tipo canone alloggio
+    const AA_DBTABLE_TIPOLOGIE_CANONE = 'aa_sicar_tipologie_canone_alloggio';
+    public static function GetListaTipologieCanoneAlloggio($bSimpleArray=false)
+    {
+        $options = array();
+        $db = new AA_Database();
+        $query = "SELECT id, descrizione FROM ".self::AA_DBTABLE_TIPOLOGIE_CANONE." ORDER BY descrizione";
         if ($db->Query($query)) {
             $rs = $db->GetResultSet();
             foreach ($rs as $row) {
@@ -1865,6 +1881,8 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         $this->aProps['comune']="";
         $this->aProps['indirizzo']="";
         $this->aProps['note']="";
+        $this->aProps['alloggio_attuale']=0;
+        $this->aProps['storico_assegnazioni']="";
         
         //template view props
         $this->aTemplateViewProps['descrizione']=array("label"=>"Descrizione","type"=>"text","maxlength"=>AA_Sicar_Const::MAX_DESCRIZIONE_LENGTH,"required"=>true,"visible"=>true);
@@ -1985,10 +2003,22 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         }
     }
 
-    //isee
-    public function GetIseePreview()
+    //Restituisce l'alloggio attuale se presente
+    public function GetAlloggioAttuale($bAsObject=true)
     {
-        return "n.d.";
+        if(!$bAsObject) return $this->GetProp('alloggio_attuale');
+
+        if($this->GetProp('alloggio_attuale')>0)
+        {
+            $alloggio=new AA_SicarAlloggio($this->GetProp("alloggio_attuale"));
+            if($alloggio->IsValid())
+            {
+                return $alloggio;
+            }
+            else return null;
+        }
+
+        return null;
     }
 
      public function GetComponenti($bAsObject=true)
@@ -2009,6 +2039,12 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         }
 
         return $this->aProps['componenti'];
+    }
+
+    //isee
+    public function GetIseePreview()
+    {
+        return "n.d.";
     }
 
     public function SetComponenti($var="")
@@ -2116,13 +2152,13 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
             $errors[] = "il codice fiscale è obbligatorio.";
         }
         
-        if (empty($this->GetIndirizzo())) {
-            $errors[] = "L'indirizzo è obbligatorio.";
-        }
+        //if (empty($this->GetIndirizzo())) {
+        //    $errors[] = "L'indirizzo è obbligatorio.";
+        //}
 
-        if (empty($this->GetComune(false))) {
-            $errors[] = "Il Comune di residenza è obbligatorio.";
-        }
+        //if (empty($this->GetComune(false))) {
+        //    $errors[] = "Il Comune di residenza è obbligatorio.";
+        //}
         
         return $errors;
     }
@@ -2141,7 +2177,12 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
      // Comune
     public function GetComune($bDescr=true)
     {
-        if($bDescr) return AA_Sicar_Const::GetComuneDescrFromCodiceIstat($this->GetProp("comune"));
+        if($bDescr) 
+        {
+            if(empty($this->GetProp("comune"))) return "n.d.";
+            else return AA_Sicar_Const::GetComuneDescrFromCodiceIstat($this->GetProp("comune"));
+        }
+
         return $this->GetProp("comune");
     }
 
@@ -2242,7 +2283,7 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
 
         if(!empty($this->Validate())) 
         {
-            AA_Log::Log(__METHOD__ . " - ERRORE: i dati dell'immobile non sono validi.", 100);
+            AA_Log::Log(__METHOD__ . " - ERRORE: i dati del nucleo non sono validi.", 100);
             return false;
         }
 
@@ -2412,7 +2453,13 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSicarModifyNucleoDlg");
         $taskManager->RegisterTask("UpdateNucleoSicar");
         $taskManager->RegisterTask("GetSicarSearchNucleiDlg");
-        
+
+        //stato occupazione
+        $taskManager->RegisterTask("GetSicarAddNewStatoOccupazioneAlloggioDlg");
+        $taskManager->RegisterTask("AddNewStatoOccupazioneAlloggioSicar");
+        $taskManager->RegisterTask("GetSicarModifyStatoOccupazioneAlloggioDlg");
+        $taskManager->RegisterTask("UpdateStatoOccupazioneAlloggioSicar");
+
         // Task per le operazioni CRUD
         $taskManager->RegisterTask("AddNewAlloggioSicar");        
         $taskManager->RegisterTask("UpdateSicar");
@@ -3391,6 +3438,189 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+    // Template per la finestra di dialogo di aggiunta nuovo stato occupazione dell'alloggio
+    public function Template_GetSicarAddNewStatoOccupazioneAlloggioDlg($object=null)
+    {
+        $id = $this->GetId() . "_AddNewStatoOccupazioneAlloggio_Dlg_" . uniqid();
+        if(!($object instanceof AA_SicarAlloggio) || $object===null || !$object->IsValid() || $object->GetId()==0)
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Aggiunta nuovo stato di occupazione", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Impossibile aggiungere un nuovo stato occupazione. Prima e' necessario selezionare un alloggio valido.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+        
+        $form_data = array();
+        $form_data['id']=$object->GetId();
+        $form_data['data_dal'] = date("Y-m-d");
+        $form_data['stato'] = 0; //"libero"
+        $form_data['occupazione_riserva'] = 0;
+        $form_data['occupazione_abusivo'] = 0;
+        $form_data['occupazione_id_nucleo'] = 0;
+        $form_data['occupazione_nucleo_desc'] = "";
+        $form_data['occupazione_data_assegnazione'] = date("Y-m-d");
+        $form_data['occupazione_tipo_canone'] = 0;
+        $form_data['occupazione_residenza'] = 0;
+        $form_data['note'] = "";
+
+        $wnd = new AA_GenericFormDlg($id, "Aggiungi nuovo Stato occupazione", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(600);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        //campo stato alloggio
+        $wnd->AddSwitchBoxField("stato", "Stato alloggio", ["onLabel"=>"occupato","offLabel"=>"libero", "relatedView"=>$id."_AA_SICAR_DETTAGLIO_OCCUPAZIONE", "relatedAction"=>"show"]);
+        
+        //campo data: data dal
+        $wnd->AddDateField("data_dal", "dal", ["required" => true,"validateFunction"=>"IsIsoDate", "bottomLabel" => "*Data di inizio dello stato dell'alloggio"], false);
+        
+        $dettaglioOccupazione = new AA_FieldSet($id."_AA_SICAR_DETTAGLIO_OCCUPAZIONE", "Dettaglio occupazione", $wnd->GetFormId(), 1,array("type"=>"clean","hidden"=>true));
+        // Campo booleano: occupazione riserva
+        $dettaglioOccupazione->AddCheckBoxField("occupazione_riserva", " ", ["required" => false,"labelWidth"=>10,"labelRight"=>"Occupazione con riserva","bottomPadding"=>36, "bottomLabel" => ""]);
+        // Campo booleano: occupazione abusivo
+        $dettaglioOccupazione->AddCheckBoxField("occupazione_abusivo", " ", ["required" => false,"labelWidth"=>10,"labelRight"=>"Occupazione abusiva","bottomPadding"=>36, "bottomLabel" => ""],false);
+        // Campo booleano: occupazione indirizzo di residenza
+        $dettaglioOccupazione->AddCheckBoxField("occupazione_residenza", " ", ["required" => false,"labelWidth"=>10,"labelRight"=>"indirizzo di residenza","bottomPadding"=>36, "bottomLabel" => "Aggiorna l'indirizzo del nucleo occupante."],false);
+        
+        //campo riferimento nucleo occupante
+        $dlgNucleiParams = array("task" => "GetSicarSearchNucleiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"occupazione_id_nucleo","field_desc"=>"occupazione_nucleo_desc"));
+        $dettaglioOccupazione->AddSearchField("dlg",$dlgNucleiParams,$this->GetId(),["required" => true,"gravity"=>2,"label"=>"Nucleo","name"=>"occupazione_nucleo_desc", "bottomLabel" => "*Cerca un nucleo gia' esistente o aggiungine uno se non e' presente."]);
+       
+        //campo tipo canone
+        $options = AA_Sicar_Const::GetListaTipologieCanoneAlloggio();
+        $dettaglioOccupazione->AddSelectField("occupazione_tipo_canone", "Tipo canone", ["required" => true,"validateFunction"=>"IsSelected", "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options]);
+        
+        //campo data assegnazione
+        $dettaglioOccupazione->AddDateField('occupazione_data_assegnazione','Assegnato dal',array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>150),false);
+
+        $wnd->AddGenericObject($dettaglioOccupazione);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Eventuali note aggiuntive"]);
+
+        $wnd->SetSaveTask("AddNewStatoOccupazioneAlloggioSicar");
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
+    // Template per la finestra di dialogo di modifica stato occupazione dell'alloggio
+    public function Template_GetSicarModifyStatoOccupazioneAlloggioDlg($object=null,$dal="")
+    {
+        $id = $this->GetId() . "_ModifyStatoOccupazioneAlloggio_Dlg_" . uniqid();
+        if(!($object instanceof AA_SicarAlloggio) || $object===null || !$object->IsValid() || $object->GetId()==0)
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Modifica stato di occupazione", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Impossibile modificare lo stato occupazione. Prima e' necessario selezionare un alloggio valido.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+        $occupazione=$object->GetOccupazione();
+        if(!isset($occupazione[$dal]) || empty($occupazione[$dal]))
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Modifica stato di occupazione", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Stato occupazione non trovato.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+
+        $occupazione=$occupazione[$dal];
+        if($occupazione['occupazione_id_nucleo']>0)
+        {
+            $nucleo = new AA_SicarNucleo();
+            if($nucleo->Load($occupazione['occupazione_id_nucleo']))
+            {
+                $occupazione['occupazione_nucleo_desc']=$nucleo->GetDescrizione();
+            }
+            else 
+            {
+                $occupazione['occupazione_nucleo_desc']="Nucleo non trovato.";
+            }
+        }
+       
+        $form_data = array();
+        $form_data['id']=$object->GetId();
+        $form_data['data_dal'] = $dal;
+        $form_data['stato'] = $occupazione['stato'];
+        $form_data['occupazione_riserva'] = $occupazione['occupazione_riserva'];
+        $form_data['occupazione_abusivo'] = $occupazione['occupazione_abusivo'];
+        $form_data['occupazione_id_nucleo'] = $occupazione['occupazione_id_nucleo'];
+        $form_data['occupazione_nucleo_desc'] = $occupazione['occupazione_nucleo_desc'];
+        $form_data['occupazione_data_assegnazione'] = $occupazione['occupazione_data_assegnazione'];
+        $form_data['occupazione_tipo_canone'] = $occupazione['occupazione_tipo_canone'];
+        $form_data['occupazione_residenza'] = $occupazione['occupazione_residenza'];
+        $form_data['note'] = "";
+
+        $wnd = new AA_GenericFormDlg($id, "Modifica Stato occupazione per data dal: ".$dal, $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(120);
+        $wnd->SetWidth(720);
+        $wnd->SetHeight(600);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        //campo stato alloggio
+        $wnd->AddSwitchBoxField("stato", "Stato alloggio", ["onLabel"=>"occupato","offLabel"=>"libero", "relatedView"=>$id."_AA_SICAR_DETTAGLIO_OCCUPAZIONE", "relatedAction"=>"show"]);
+        
+        //campo data: data dal
+        //$wnd->AddDateField("data_dal", "dal", ["required" => true,"validateFunction"=>"IsIsoDate", "bottomLabel" => "*Data di inizio dello stato dell'alloggio"], false);
+        
+        $dettaglioOccupazione = new AA_FieldSet($id."_AA_SICAR_DETTAGLIO_OCCUPAZIONE", "Dettaglio occupazione", $wnd->GetFormId(), 1,array("type"=>"clean","hidden"=>true));
+        // Campo booleano: occupazione riserva
+        $dettaglioOccupazione->AddCheckBoxField("occupazione_riserva", " ", ["required" => false,"labelWidth"=>10,"labelRight"=>"Occupazione con riserva","bottomPadding"=>36, "bottomLabel" => ""]);
+        // Campo booleano: occupazione abusivo
+        $dettaglioOccupazione->AddCheckBoxField("occupazione_abusivo", " ", ["required" => false,"labelWidth"=>10,"labelRight"=>"Occupazione abusiva","bottomPadding"=>36, "bottomLabel" => ""],false);
+        // Campo booleano: occupazione indirizzo di residenza
+        $dettaglioOccupazione->AddCheckBoxField("occupazione_residenza", " ", ["required" => false,"labelWidth"=>10,"labelRight"=>"indirizzo di residenza","bottomPadding"=>36, "bottomLabel" => "Aggiorna l'indirizzo del nucleo occupante."],false);
+        
+        //campo riferimento nucleo occupante
+        $dlgNucleiParams = array("task" => "GetSicarSearchNucleiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"occupazione_id_nucleo","field_desc"=>"occupazione_nucleo_desc"));
+        $dettaglioOccupazione->AddSearchField("dlg",$dlgNucleiParams,$this->GetId(),["required" => true,"gravity"=>2,"label"=>"Nucleo","name"=>"occupazione_nucleo_desc", "bottomLabel" => "*Cerca un nucleo gia' esistente o aggiungine uno se non e' presente."]);
+       
+        //campo tipo canone
+        $options = AA_Sicar_Const::GetListaTipologieCanoneAlloggio();
+        $dettaglioOccupazione->AddSelectField("occupazione_tipo_canone", "Tipo canone", ["required" => true,"validateFunction"=>"IsSelected", "bottomLabel" => "*Scegliere una voce dall'elenco", "options" => $options]);
+        
+        //campo data assegnazione
+        $dettaglioOccupazione->AddDateField('occupazione_data_assegnazione','Assegnato dal',array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>150),false);
+
+        $wnd->AddGenericObject($dettaglioOccupazione);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Eventuali note aggiuntive"]);
+
+        $wnd->SetSaveTask("UpdateStatoOccupazioneAlloggioSicar");
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
     // Template per la finestra di dialogo di modifica nucleo
     public function Template_GetSicarModifyNucleoDlg($object)
     {
@@ -4335,7 +4565,12 @@ class AA_SicarModule extends AA_GenericModule
         #criteri----------------------------------
         if($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) $canModify=true;
 
-        $nuclei=AA_SicarNucleo::Search();
+        //Solo nuclei senza alloggio attuale
+        $params=array();
+        $params['WHERE']=array(
+            array("FIELD"=>"alloggio_attuale","OPERATOR"=>"=","VALUE"=>0)
+        );
+        $nuclei=AA_SicarNucleo::Search($params);
         $data=[];
         //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
         //$modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
@@ -4671,6 +4906,68 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la finestra di aggiunta nuovo stato alloggio
+    public function Task_GetSicarAddNewStatoOccupazioneAlloggioDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarAlloggio($_REQUEST['id'], $this->oUser);
+        if (!$object->IsValid()) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarAddNewStatoOccupazioneAlloggioDlg($object),true);
+        return true;
+    }
+
+    // Task per la finestra di modifica stato alloggio
+    public function Task_GetSicarModifyStatoOccupazioneAlloggioDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarAlloggio($_REQUEST['id'], $this->oUser);
+        if (!$object->IsValid()) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento", false);
+            return false;
+        }
+
+         if (empty($_REQUEST['dal'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non e' stata specificato l'identificativo della data di inizio occupazione", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarModifyStatoOccupazioneAlloggioDlg($object,$_REQUEST['dal']),true);
+        return true;
+    }
+
     // Task per la finestra visualizzazione dettaglio immobile
     public function Task_GetSicarDetailImmobileDlg($task)
     {
@@ -4892,6 +5189,121 @@ class AA_SicarModule extends AA_GenericModule
 
         // Utilizza il metodo generico della classe base
         return $this->Task_GenericAddNew($task, $_REQUEST);
+    }
+
+    // Task per aggiungere un nuovo stato alloggio
+    public function Task_AddNewStatoOccupazioneAlloggioSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare lo stato di occupazione dell'alloggio", false);
+            return false;
+        }
+        
+        // Verifica che l'utente abbia i permessi di scrittura sull'oggetto specifico
+        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
+        if ($id > 0) {
+            $alloggio = new AA_SicarAlloggio($id, $this->oUser);
+            if ($alloggio->IsValid()) {
+                if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("L'utente corrente non ha i permessi di modifica dello stato di occupazione dell'alloggio", false);
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo non presente, aggiornamento non possibile.", false);
+            return false;
+        }
+
+        $occupazione=$alloggio->GetOccupazione();
+
+        if(empty($_REQUEST['data_dal']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare la data di inizio del nuovo stato di occupazione.", false);
+            return false;
+        }
+
+        $dettaglioOccupazione=array();
+        $dettaglioOccupazione['stato']=0;
+        $dettaglioOccupazione['note']=$_REQUEST['note'];
+
+        if(!empty($_REQUEST['stato']) && intval($_REQUEST['stato'])>=1)
+        {
+            $dettaglioOccupazione['stato']=1;
+            if(empty($_REQUEST['occupazione_id_nucleo']) || $_REQUEST['occupazione_id_nucleo']<=0)
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("E' necessario specificare il nucleo occupante per lo stato di occupazione selezionato.", false);
+                return false;
+            }
+            $dettaglioOccupazione['occupazione_id_nucleo']=$_REQUEST['occupazione_id_nucleo'];
+
+            if(empty($_REQUEST['occupazione_data_assegnazione']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("E' necessario specificare la data di assegnazione per lo stato di occupazione selezionato.", false);
+                return false;
+            }
+            $dettaglioOccupazione['occupazione_data_assegnazione']=mb_substr($_REQUEST['occupazione_data_assegnazione'],0,10);
+
+            $dettaglioOccupazione['occupazione_tipo_canone']=!empty($_REQUEST['occupazione_tipo_canone']) ? $_REQUEST['occupazione_tipo_canone'] : 0;
+
+            $dettaglioOccupazione['occupazione_riserva']=!empty($_REQUEST['occupazione_riserva']) ? 1 : 0;
+            $dettaglioOccupazione['occupazione_abusivo']=!empty($_REQUEST['occupazione_abusivo']) ? 1 : 0;
+        }
+        else
+        {
+            $dettaglioOccupazione['occupazione_id_nucleo']=0;
+            $dettaglioOccupazione['occupazione_data_assegnazione']="";
+            $dettaglioOccupazione['occupazione_tipo_canone']=0;
+            $dettaglioOccupazione['occupazione_riserva']=0;
+            $dettaglioOccupazione['occupazione_abusivo']=0;
+        }
+
+        $occupazione[mb_substr($_REQUEST['data_dal'],0,10)]=$dettaglioOccupazione;
+        
+        //ordina l'arrai in modo che la data piu' recente sia la prima
+        krsort($occupazione, SORT_STRING);
+
+        $_REQUEST['occupazione']=json_encode($occupazione);
+
+        $alloggio->Parse($_REQUEST);
+
+        $validate = $alloggio->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$alloggio->Update($this->oUser,true,"Aggiunta nuovo stato di occupazione"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiunta del nuovo stato di occupazione.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
     }
 
     //Task NavBarContent
@@ -5511,6 +5923,161 @@ class AA_SicarModule extends AA_GenericModule
             return true;
         }
     }
+
+    // Task per aggiornare un alloggio
+    public function Task_UpdateStatoOccupazioneAlloggioSicar($task)
+    {
+        // Verifica che l'utente abbia i permessi per modificare gli alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare gli alloggi", false);
+            return false;
+        }
+        
+        // Verifica che l'utente abbia i permessi di scrittura sull'oggetto specifico
+        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
+        if ($id > 0) {
+            $alloggio = new AA_SicarAlloggio($id, $this->oUser);
+            if ($alloggio->IsValid()) {
+                if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("L'utente corrente non ha i permessi di modifica dell'alloggio", false);
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo non presente, aggiornamento non possibile.", false);
+            return false;
+        }
+        
+        $occupazione=$alloggio->GetOccupazione();
+
+        if(empty($_REQUEST['data_dal']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Stato di occupazione non valido.", false);
+            return false;
+        }
+
+        $dettaglioOccupazione=array();
+        $dettaglioOccupazione['stato']=0;
+        $dettaglioOccupazione['note']=$_REQUEST['note'];
+
+        if(!empty($_REQUEST['stato']) && intval($_REQUEST['stato'])>=1)
+        {
+            $dettaglioOccupazione['stato']=1;
+            if(empty($_REQUEST['occupazione_id_nucleo']) || $_REQUEST['occupazione_id_nucleo']<=0)
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("E' necessario specificare il nucleo occupante per lo stato di occupazione selezionato.", false);
+                return false;
+            }
+            
+            if(empty($_REQUEST['occupazione_data_assegnazione']))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("E' necessario specificare la data di assegnazione per lo stato di occupazione selezionato.", false);
+                return false;
+            }
+
+            $dettaglioOccupazione['occupazione_id_nucleo']=$_REQUEST['occupazione_id_nucleo'];
+            //Aggiorna il nucleo per assegnare l'alloggio al nucleo
+            $nucleo=new AA_SicarNucleo();
+            if($nucleo->Load($_REQUEST['occupazione_id_nucleo']))
+            {
+                $nucleo->SetProp("alloggio_attuale",$alloggio->GetID());
+
+                //aggiorna l'indirizzo di residenza del nucleo se richiesto
+                if(!empty($_REQUEST['occupazione_residenza']) && $_REQUEST['occupazione_residenza']==1)
+                {
+                    $immobile=$alloggio->GetImmobile();
+                    $nucleo->SetProp("indirizzo",$immobile->GetIndirizzo());
+                    $nucleo->SetProp("comune",$immobile->GetComune(false));
+                }
+                $nucleo->Update($this->oUser);  
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$_REQUEST['occupazione_id_nucleo'],100);
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Nucleo occupante non trovato.", false);
+                return false;
+            }
+            $dettaglioOccupazione['occupazione_data_assegnazione']=mb_substr($_REQUEST['occupazione_data_assegnazione'],0,10);
+
+            $dettaglioOccupazione['occupazione_tipo_canone']=!empty($_REQUEST['occupazione_tipo_canone']) ? $_REQUEST['occupazione_tipo_canone'] : 0;
+
+            $dettaglioOccupazione['occupazione_riserva']=!empty($_REQUEST['occupazione_riserva']) ? 1 : 0;
+            $dettaglioOccupazione['occupazione_abusivo']=!empty($_REQUEST['occupazione_abusivo']) ? 1 : 0;
+            $dettaglioOccupazione['occupazione_residenza']=!empty($_REQUEST['occupazione_residenza']) ? 1 : 0;
+        }
+        else
+        {
+            if($occupazione[mb_substr($_REQUEST['data_dal'],0,10)]['occupazione_id_nucleo']>0)
+            {
+                //Aggiorna il nucleo per rimuovere l'alloggio assegnato
+                $nucleo=new AA_SicarNucleo();
+                if($nucleo->Load($occupazione[mb_substr($_REQUEST['data_dal'],0,10)]['occupazione_id_nucleo']))
+                {
+                    $nucleo->SetProp("alloggio_attuale",0);
+                    $nucleo->SetProp("indirizzo","n.d.");
+                    $nucleo->SetProp("comune","");
+                    $nucleo->Update($this->oUser);
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$occupazione['occupazione_id_nucleo'],100); 
+                }
+            }
+
+            $dettaglioOccupazione['occupazione_id_nucleo']=0;
+            $dettaglioOccupazione['occupazione_data_assegnazione']="";
+            $dettaglioOccupazione['occupazione_tipo_canone']=0;
+            $dettaglioOccupazione['occupazione_riserva']=0;
+            $dettaglioOccupazione['occupazione_abusivo']=0;
+            $dettaglioOccupazione['occupazione_residenza']=0;
+        }
+
+        $occupazione[mb_substr($_REQUEST['data_dal'],0,10)]=$dettaglioOccupazione;
+        
+        //ordina l'arrai in modo che la data piu' recente sia la prima
+        krsort($occupazione, SORT_STRING);
+
+        $_REQUEST['occupazione']=json_encode($occupazione);
+        
+        $alloggio->Parse($_REQUEST);
+
+        $validate = $alloggio->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$alloggio->Update($this->oUser,true,"Aggiornamento stato occupazione dal: ".mb_substr($_REQUEST['data_dal'],0,10)))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dello stato di occupazione.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
     
     // Task per eliminare un alloggio
     public function Task_DeleteSicar($task)
@@ -5928,8 +6495,8 @@ class AA_SicarModule extends AA_GenericModule
                 "label"=>"Aggiungi",
                 "align"=>"right",
                 "width"=>120,
-                "tooltip"=>"Aggiungi uno stato occupazione",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewOccupazioneDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+                "tooltip"=>"Aggiungi un nuovo stato occupazione",
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewStatoOccupazioneAlloggioDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
             ));
 
             $toolbar->AddElement($add_documento_btn);
@@ -5944,53 +6511,61 @@ class AA_SicarModule extends AA_GenericModule
         $occupazioni=$object->GetOccupazione();
         $occupazione_data=[];
         $tipologia_occupazione_desc=AA_Sicar_Const::GetListaTipologieOccupazione();
-        foreach($occupazioni as $curOccupazione)
+        foreach($occupazioni as $dal=>$curOccupazione)
         {
             $nucleo_desc="n.d.";
-            if($curOccupazione['tipologia_occupazione'] > 1)    
+            if($curOccupazione['stato'] >= 1)    
             {
                 
                 $nucleo=new AA_SicarNucleo();
-                if($nucleo->Load($curOccupazione['nucleo']))
+                if($nucleo->Load($curOccupazione['occupazione_id_nucleo']))
                 {
                     $nucleo_desc=$nucleo->GetDescrizione();
                 }
             }
 
-            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailOccupazioneDlg", params: [{id:"'.$curOccupazione->GetProp("id").'"}]},"'.$this->id.'")';
+            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailStatoOccupazioneAlloggioDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
             $detail_icon="mdi mdi-eye";
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteOccupazioneDlg", params: [{id:"'.$curOccupazione->GetProp("id").'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteStatoOccupazioneAlloggioDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
             $trash_icon="mdi mdi-trash-can";
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyOccupazioneDlg", params: [{id:"'.$curOccupazione->GetProp("id").'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyStatoOccupazioneAlloggioDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
             $modify_icon="mdi mdi-pencil";
             $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
             
+            if($curOccupazione['stato']>=1) 
+            {
+                $tipo_occupazione="occupato";
+                if($curOccupazione['occupazione_abusivo']==1) $tipo_occupazione.=" abusivamente";
+                elseif($curOccupazione['occupazione_riserva']==1) $tipo_occupazione.=" con riserva";
+            }
+            else $tipo_occupazione="libero";
+
             $occupazione_data[]=array(
-                "id"=>$curOccupazione['id'],
-                "data_inizio"=>$curOccupazione['data_inizio'],
-                "tipologia_desc"=>$tipologia_occupazione_desc[$curOccupazione['tipologia']],
-                "nucleo"=>$curOccupazione['nucleo'],
+                "id"=>$dal,
+                "dal"=>$dal,
+                "tipologia_desc"=>$tipo_occupazione,
+                "nucleo"=>$curOccupazione['occupazione_id_nucleo'],
                 "nucleo_desc"=>$nucleo_desc,
-                "canone"=>$curOccupazione['canone'],
+                "canone"=>$curOccupazione['occupazione_tipo_canone'],
                 "note"=>$curOccupazione['note'],
                 "ops"=>$ops
             );
         }
 
-        if(!$canModify) $template=new AA_GenericDatatableTemplate($id,"",5,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
-        else $template=new AA_GenericDatatableTemplate($id,"",6,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        if(!$canModify) $template=new AA_GenericDatatableTemplate($id,"",3,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",4,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
-        $template->EnableHeader(true);
-        $template->SetHeaderHeight(38);
+        $template->EnableHeader(false);
+        //$template->SetHeaderHeight(38);
         $template->EnableAddNew(false);
-        $template->SetColumnHeaderInfo(0,"tipologia_desc","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","GenericAutosizedRowTable_left");
-        $template->SetColumnHeaderInfo(1,"dal","<div style='text-align: center'>Tiplogia</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(2,"nucleo","<div style='text-align: center'>Nucleo</div>",250,"textFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(3,"canone","<div style='text-align: center'>Canone</div>",250,"textFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(4,"note","<div style='text-align: center'>Note</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(0,"tipologia_desc","<div style='text-align: center'>Tipo</div>",180,"selectFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"dal","<div style='text-align: center'>Dal</div>",90,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(2,"nucleo_desc","<div style='text-align: center'>Nucleo</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
+        //$template->SetColumnHeaderInfo(3,"canone","<div style='text-align: center'>Canone</div>",100,"textFilter","text","GenericAutosizedRowTable");
+        //$template->SetColumnHeaderInfo(4,"note","<div style='text-align: center'>Note</div>",90,"","","GenericAutosizedRowTable");
         //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        if($canModify) $template->SetColumnHeaderInfo(5,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
+        if($canModify) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
 
         $template->SetData($occupazione_data);
         #--------------------------------------
@@ -6300,12 +6875,26 @@ class AA_SicarModule extends AA_GenericModule
 
                 $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
                 
-                $last_stato_assegnazione=$curObj->GetStatoAssegnazione(false);
+                $AlloggioAttuale=$curObj->GetAlloggioAttuale(true);
+                if($AlloggioAttuale)
+                {
+                    $last_stato_assegnazione="<strong>".$AlloggioAttuale->GetDescrizione()."</strong>";
+                }
+                else
+                {
+                    $last_stato_assegnazione="Senza alloggio assegnato";
+                }
+
+                $indirizzo=$curObj->GetIndirizzo();
+                if(!empty($curObj->GetProp("comune")))
+                {
+                    $indirizzo.=" (".$curObj->GetComune().")";
+                }
 
                 $data[]=array(
                     "id"=>$curObj->GetProp("id"),
                     "descrizione"=>$curObj->GetDescrizione(),
-                    "indirizzo"=>$curObj->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")).")",
+                    "indirizzo"=>$indirizzo,
                     "stato_assegnazione"=>$last_stato_assegnazione,
                     "componenti"=>sizeof($curObj->GetComponenti()),
                     "isee"=>$curObj->GetIseePreview(),
@@ -6315,10 +6904,16 @@ class AA_SicarModule extends AA_GenericModule
             }
             else
             {
+                $indirizzo=$curObj->GetIndirizzo();
+                if(!empty($curObj->GetProp("comune")))
+                {
+                    $indirizzo.=" (".$curObj->GetComune().")";
+                }
+
                 $data[]=array(
                     "id"=>$curObj->GetProp("id"),
                     "descrizione"=>$curObj->GetDescrizione(),
-                    "indirizzo"=>$curObj->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curObj->GetProp("comune")).")",
+                    "indirizzo"=>$indirizzo,
                     "stato_assegnazione"=>$last_stato_assegnazione,
                     "componenti"=>sizeof($curObj->GetComponenti()),
                     "isee"=>$curObj->GetIseePreview(),
@@ -6342,9 +6937,9 @@ class AA_SicarModule extends AA_GenericModule
         }
 
         $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","int","GenericAutosizedRowTable_left");
-        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo di residenza</div>","fillspace","textFilter","text","GenericAutosizedRowTable_left");
         $template->SetColumnHeaderInfo(2,"cf","<div style='text-align: center'>Codice fiscale</div>",250,"textFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(3,"stato_assegnazione","<div style='text-align: center'>Assegnazioni</div>",250,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(3,"stato_assegnazione","<div style='text-align: center'>Alloggio assegnato</div>",250,"textFilter","text","GenericAutosizedRowTable");
         $template->SetColumnHeaderInfo(4,"componenti","<div style='text-align: center'>Componenti</div>",120,"textFilter","text","GenericAutosizedRowTable");
         $template->SetColumnHeaderInfo(5,"isee","<div style='text-align: center'>ISEE</div>",120,"textFilter","text","GenericAutosizedRowTable");
         //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
@@ -6519,20 +7114,6 @@ class AA_SicarAlloggio extends AA_Object_V2
     const AA_DBTABLE_DATA = "aa_sicar_data";
     static protected $AA_DBTABLE_OBJECTS="aa_sicar_objects";
 
-    // Proprietà dell'alloggio
-    protected $nImmobile = 0;
-    protected $sDescrizione = "";
-    protected $sTipologiaUtilizzo = "";
-    protected $sStatoConservazione = "";
-    protected $nAnnoRistrutturazione = 0;
-    protected $nPiano = 0;
-    protected $bAscensore = false;
-    protected $bFruibileDis = false;
-    protected $sNote = "";
-    protected $aGestione = array();
-    protected $aProprieta = array();
-    protected $aStato = array();
-
     public function __construct($id = 0, $user = null, $bLoadData = true, $bCheckPerms = true)
     {
         $this->sDbDataTable = self::AA_DBTABLE_DATA;
@@ -6554,7 +7135,7 @@ class AA_SicarAlloggio extends AA_Object_V2
         //da strutturare
         $this->SetBind("gestione", "gestione", true);
         $this->SetBind("proprieta", "proprieta", true);
-        $this->SetBind("stato", "stato", true);
+        $this->SetBind("occupazione", "occupazione", true);
 
         $this->SetClass("AA_SicarAlloggio");
         $this->EnableRevision(false);
@@ -6686,7 +7267,7 @@ class AA_SicarAlloggio extends AA_Object_V2
 
     public function GetGestione($bAsObject=true) 
     { 
-         if(!$bAsObject) return $this->GetProp("gestione");
+        if(!$bAsObject) return $this->GetProp("gestione");
         
         $val=json_decode($this->aProps['gestione'],true);
         if(is_array($val)) return $val;
@@ -6715,9 +7296,6 @@ class AA_SicarAlloggio extends AA_Object_V2
 
     public function GetProprieta() { return $this->GetProp("proprieta"); }
     public function SetProprieta($var = array()) { $this->SetProp("proprieta", $var); $this->SetChanged(true); return true; }
-
-    public function GetStato() { return $this->GetProp("stato"); }
-    public function SetStato($var = array()) { $this->SetProp("stato", $var); $this->SetChanged(true); return true; }
     public function SetOccupazione($var = array()) { $this->SetProp("occupazione", $var); $this->SetChanged(true); return true; }
     public function GetNote() { return $this->GetProp("note"); }
     public function SetNote($var = "") { $this->SetProp("note", $var); $this->SetChanged(true); return true; }
@@ -6727,10 +7305,13 @@ class AA_SicarAlloggio extends AA_Object_V2
         return parent::Update($user, $bSaveData, $logMsg);
     }
 
-    public function GetOccupazione() 
+    public function GetOccupazione($bAsObject=true) 
     { 
-        //to do
-        return array();
+        if(!$bAsObject) return $this->GetProp("occupazione");
+        
+        $val=json_decode($this->aProps['occupazione'],true);
+        if(is_array($val)) return $val;
+        else return array();
     }
 
     public function GetInterventi() 
