@@ -771,3 +771,284 @@ La classe `AA_SystemTask_GetStructTreeData` è un task di sistema che recupera e
 #### Methods
 - `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "GetStructTreeData" e l'utente corrente.
 - `Run()`: Il metodo principale che esegue la logica del task. Recupera le informazioni sulla struttura organizzativa in base ai parametri della richiesta e all'utente, e imposta il log del task con la rappresentazione JSON di questi dati.
+
+### Class: `AA_SystemTaskManager`
+
+**File:** `utils/system_lib/AA_SystemTaskManager.php`
+**SHA256:** `3598a84825f8917c800280f493a6c0dcb68d983d525b33f67f8e1a977a81883a`
+
+#### Description
+La classe `AA_SystemTaskManager` estende `AA_GenericTaskManager` e centralizza la gestione e la registrazione di tutti i task di sistema disponibili nell'applicazione. Questi task coprono un'ampia gamma di funzionalità, dalla gestione dell'interfaccia utente (menu laterali, finestre di dialogo, anteprime PDF, gallerie immagini) al recupero dello stato dell'applicazione e del server, fino alla gestione del profilo utente e del caricamento di file.
+
+#### Key Features
+- **Registrazione Centralizzata:** Tutti i task di sistema sono registrati in un unico punto, facilitando la manutenzione e l'espansione.
+- **Diversità Funzionale:** Gestisce task per diverse aree dell'applicazione, inclusi UI, stato del sistema, autenticazione e gestione file.
+- **Estensibilità:** Essendo un gestore generico esteso, permette l'aggiunta facile di nuovi task di sistema.
+
+#### Registered Tasks
+- `struttura-utente`: Gestisce l'albero delle strutture utente (`AA_SystemTask_TreeStruct`).
+- `GetAppStatus`: Restituisce lo stato corrente della piattaforma (`AA_SystemTask_GetAppStatus`).
+- `GetStructTreeData`: Restituisce i dati per l'albero delle strutture (`AA_SystemTask_GetStructTreeData`).
+- `GetSideMenuContent`: Restituisce il contenuto del menu laterale (`AA_SystemTask_GetSideMenuContent`).
+- `GetStructDlg`: Visualizza la finestra di dialogo per la selezione di una struttura (`AA_SystemTask_GetStructDlg`).
+- `AMAAI_Start`: Avvia l'interfaccia di navigazione assistita AMAAI (`AA_SystemTask_AMAAI_Start`).
+- `GetPdfPreviewDlg`: Visualizza la finestra di dialogo per l'anteprima di PDF (`AA_SystemTask_GetPdfPreviewDlg`).
+- `SetSessionVar`: Imposta una variabile di sessione (`AA_SystemTask_SetSessionVar`).
+- `UploadSessionFile`: Carica un file nella sessione (`AA_SystemTask_UploadSessionFile`).
+- `GetLogDlg`: Visualizza la finestra di dialogo dei log di un oggetto (`AA_SystemTask_GetLogDlg`).
+- `GetChangeCurrentUserPwdDlg`: Visualizza la finestra di dialogo per il cambio password dell'utente corrente (`AA_SystemTask_GetChangeCurrentUserPwdDlg`).
+- `GetCurrentUserProfileDlg`: Visualizza i dati del profilo dell'utente corrente (`AA_SystemTask_GetCurrentUserProfileDlg`).
+- `UpdateCurrentUserProfile`: Aggiorna il profilo dell'utente corrente (`AA_SystemTask_UpdateCurrentUserProfile`).
+- `UpdateCurrentUserPwd`: Aggiorna la password dell'utente corrente (`AA_SystemTask_UpdateCurrentUserPwd`).
+- `ChangeCurrentUserProfile`: Cambia il profilo utente corrente (`AA_SystemTask_ChangeCurrentUserProfile`).
+- `GetServerStatus`: Visualizza lo stato del server (`AA_SystemTask_GetServerStatus`).
+- `GetServerStatusDlg`: Visualizza la finestra di dialogo dello stato del server (`AA_SystemTask_GetServerStatusDlg`).
+- `UploadFromCKeditor5`: Caricamento file da CKEditor 5 (`AA_SystemTask_UploadFromCKeditor5`).
+- `UploadFromGallery`: Caricamento file dalla galleria (`AA_SystemTask_UploadFromGallery`).
+- `GetGalleryDlg`: Visualizza la finestra di dialogo della galleria immagini (`AA_SystemTask_GetGalleryDlg`).
+- `GetGalleryTrashDlg`: Visualizza la finestra di dialogo del cestino della galleria immagini (`AA_SystemTask_GetGalleryTrashDlg`).
+- `RefreshGalleryContent`: Aggiorna il contenuto della galleria immagini (`AA_SystemTask_GetGalleryData`).
+- `GetGalleryData`: Ottiene i dati della galleria immagini (`AA_SystemTask_GetGalleryData`).
+- `TrashFromGallery`: Sposta un elemento nel cestino dalla galleria immagini (`AA_SystemTask_TrashFromGallery`).
+
+### Class: `AA_SystemTask_RefreshGalleryContent`
+
+**File:** `utils/system_lib/AA_SystemTask_RefreshGalleryContent.php`
+**SHA256:** `56117aae3f80b0f80ed9c4ee775e37549f87828ae55ef19e649f17556922654b`
+
+#### Description
+La classe `AA_SystemTask_RefreshGalleryContent` è un task di sistema responsabile dell'aggiornamento del contenuto della galleria di immagini. Estende `AA_GenericTask`. Questo task recupera le risorse di tipo 'galleria' dal database e restituisce i dati delle immagini in formato JSON per l'aggiornamento dinamico della galleria nell'interfaccia utente.
+
+#### Key Features
+- **Recupero Contenuto Galleria:** Interroga il database per ottenere tutte le risorse (`AA_Risorse`) classificate come 'galleria'.
+- **Formattazione Dati:** Prepara un array di dati che include l'ID dell'immagine, l'URL completo dell'immagine e il nome URL.
+- **Output JSON:** Restituisce i dati della galleria in formato JSON, direttamente stampati (`die(json_encode($listData))`).
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "RefreshGalleryContent" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Recupera le risorse della galleria, le formatta in un array di dati e stampa l'output JSON.
+
+### Class: `AA_SystemTask_SetSessionVar`
+
+**File:** `utils/system_lib/AA_SystemTask_SetSessionVar.php`
+**SHA256:** `5f8215301c944f79f5129d15cb4a54eda80e8a1e5f041a702e473eb0149f95e0`
+
+#### Description
+La classe `AA_SystemTask_SetSessionVar` è un task di sistema che consente di impostare una variabile di sessione. Estende `AA_GenericTask`. Questo task prende un nome e un valore dalla richiesta (`$_REQUEST`) e li utilizza per impostare una variabile di sessione tramite la classe `AA_SessionVar`. Restituisce un feedback sullo stato dell'operazione.
+
+#### Key Features
+- **Impostazione Variabile di Sessione:** Imposta dinamicamente una variabile di sessione utilizzando i parametri `name` e `value` dalla richiesta HTTP.
+- **Validazione Input:** Verifica che il nome della variabile sia definito prima di procedere.
+- **Logging dell'Operazione:** Registra l'esecuzione del task tramite `AA_Log`.
+- **Feedback dello Stato:** Fornisce un messaggio di successo o di errore nel log del task (`sTaskLog`).
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "SetSessionVar" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Controlla la presenza del parametro 'name' nella richiesta, imposta la variabile di sessione tramite `AA_SessionVar::Set()`, e popola il log del task con lo stato e un messaggio descrittivo.
+
+### Class: `AA_SystemTask_TrashFromGallery`
+
+**File:** `utils/system_lib/AA_SystemTask_TrashFromGallery.php`
+**SHA256:** `19cdfc454cecae0d237ce06fd2f16b40d83ae15ac14bb30ebcf786e8c6a99f77`
+
+#### Description
+La classe `AA_SystemTask_TrashFromGallery` è un task di sistema che gestisce l'eliminazione (spostamento nel cestino o eliminazione definitiva) di un'immagine dalla galleria. Estende `AA_GenericTask`. Questo task verifica i permessi dell'utente, la validità dell'ID dell'immagine e, se tutto è corretto, procede con l'eliminazione della risorsa tramite la classe `AA_Risorse`. Fornisce un feedback sullo stato dell'operazione.
+
+#### Key Features
+- **Verifica Permessi:** Richiede che l'utente corrente sia un "SuperUser" per eseguire l'azione.
+- **Validazione Input:** Controlla che l'ID dell'immagine sia fornito nella richiesta.
+- **Caricamento Risorsa:** Tenta di caricare l'oggetto `AA_Risorse` corrispondente all'ID.
+- **Eliminazione Risorsa:** Se l'immagine viene trovata e i permessi sono sufficienti, elimina la risorsa tramite `AA_Risorse::Delete()`.
+- **Feedback Dinamico:** In caso di successo, imposta un'azione `RefreshGallery` per aggiornare l'interfaccia utente; in caso di errore, registra un messaggio di errore nel log.
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "TrashFromGallery" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Controlla i permessi, valida l'input, carica la risorsa immagine e tenta di eliminarla. Popola il log del task con lo stato e i messaggi appropriati.
+
+### Class: `AA_SystemTask_TreeStruct`
+
+**File:** `utils/system_lib/AA_SystemTask_TreeStruct.php`
+**SHA256:** `72af5d550a847c8543002aff7ab22348a4ed404b31074b1664748402afab88c1`
+
+#### Description
+La classe `AA_SystemTask_TreeStruct` è un task di sistema che recupera e formatta i dati della struttura organizzativa associata all'utente corrente. Estende `AA_GenericTask`. Questo task determina la struttura di riferimento (basata sull'utente o una struttura predefinita per gli ospiti) e la restituisce in formato XML o JSON, a seconda della richiesta.
+
+#### Key Features
+- **Recupero Struttura Utente:** Ottiene la struttura organizzativa (Assessorato, Direzione, Tipo) associata all'utente corrente. Se l'utente è un ospite, utilizza una struttura predefinita.
+- **Supporto `show_all`:** Permette di recuperare la struttura completa o solo una parte di essa, a seconda del parametro `show_all` nella richiesta.
+- **Formattazione Output:** Restituisce la struttura in formato XML o JSON (codificato in base64), in base al parametro `format` della richiesta.
+- **Logging:** Registra l'esecuzione del task.
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "struttura-utente" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Determina la struttura da recuperare, la formatta in XML o JSON e imposta il log del task con l'output generato.
+
+### Class: `AA_SystemTask_UpdateCurrentUserProfile`
+
+**File:** `utils/system_lib/AA_SystemTask_UpdateCurrentUserProfile.php`
+**SHA256:** `db5eac34df7366e7c854ca8a0c42864cd1d2341e7ff104d1eafd2f147f8585c0`
+
+#### Description
+La classe `AA_SystemTask_UpdateCurrentUserProfile` è un task di sistema che gestisce l'aggiornamento del profilo dell'utente corrente. Estende `AA_GenericTask`. Questo task include la validazione dei dati di input, la gestione del caricamento dell'immagine del profilo (inclusa la rimozione della vecchia immagine e il salvataggio della nuova, sia localmente che su storage esterno), e l'aggiornamento effettivo dei dati del profilo tramite `AA_User::UpdateCurrentUserProfile()`.
+
+#### Key Features
+- **Validazione Utente:** Verifica che l'utente corrente sia autenticato (non un ospite).
+- **Validazione Input:** Controlla che i campi essenziali (`email`, `nome`, `cognome`) non siano vuoti.
+- **Gestione Immagine Profilo:**
+    - Recupera l'immagine del profilo caricata (`UserProfileImage`) dalla sessione.
+    - Se presente, gestisce il salvataggio dell'immagine:
+        - Se `AA_Const::AA_ROOT_STORAGE_PATH` è vuoto, salva l'immagine localmente, eliminando quella precedente.
+        - Altrimenti, utilizza il sistema di storage (`AA_Storage`) per aggiungere l'immagine.
+- **Aggiornamento Profilo:** Delega l'aggiornamento dei dati del profilo e dell'immagine a `AA_User::UpdateCurrentUserProfile()`.
+- **Logging e Feedback:** Registra le operazioni e gli errori, fornendo un feedback dettagliato nel log del task.
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "UpdateCurrentUserProfile" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Controlla la validità dell'utente e dei parametri di input. Gestisce il caricamento e il salvataggio dell'immagine del profilo. Chiama `AA_User::UpdateCurrentUserProfile()` per l'aggiornamento del database e imposta il log del task con il risultato dell'operazione.
+
+### Class: `AA_SystemTask_UpdateCurrentUserPwd`
+
+**File:** `utils/system_lib/AA_SystemTask_UpdateCurrentUserPwd.php`
+**SHA256:** `a1ac45ad718fb4b2efe706da30aaf3dfba633665560ca3b90123a7b8cd4eb333`
+
+#### Description
+La classe `AA_SystemTask_UpdateCurrentUserPwd` è un task di sistema che gestisce l'aggiornamento della password dell'utente corrente. Estende `AA_GenericTask`. Questo task verifica che l'utente sia autenticato e, se lo è, tenta di modificare la password utilizzando i dati forniti nella richiesta (`$_REQUEST`) attraverso il metodo `AA_User::ChangePwd()`.
+
+#### Key Features
+- **Validazione Utente:** Assicura che l'utente corrente sia autenticato (non un ospite).
+- **Aggiornamento Password:** Tenta di modificare la password dell'utente tramite la logica implementata in `AA_User::ChangePwd()`.
+- **Logging e Feedback:** Registra le operazioni e gli errori, fornendo un feedback dettagliato nel log del task, inclusi messaggi di successo o eventuali errori.
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "UpdateCurrentUserPwd" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Controlla la validità dell'utente, chiama il metodo `ChangePwd()` dell'oggetto utente e imposta il log del task con il risultato dell'operazione, segnalando successo o errore.
+
+### Class: `AA_SystemTask_UploadFromCKeditor5`
+
+**File:** `utils/system_lib/AA_SystemTask_UploadFromCKeditor5.php`
+**SHA256:** `08129fc996f0852614c6e5bdccae3c610dbf8674f80978b7305b1eb922c5d996`
+
+#### Description
+La classe `AA_SystemTask_UploadFromCKeditor5` è un task di sistema che gestisce il caricamento di file immagine (principalmente dalla galleria o da CKEditor 5) e la loro integrazione come risorse nel sistema. Estende `AA_GenericTask`. Questo task valida l'utente, il file caricato, il tipo MIME, lo salva nello storage e crea una nuova risorsa (`AA_Risorse`) associata, rendendola disponibile tramite un URL.
+
+#### Key Features
+- **Validazione Utente:** Verifica che l'utente corrente sia valido prima di consentire il caricamento.
+- **Validazione File Caricato:** Controlla che un file sia effettivamente presente nella richiesta e che sia un'immagine.
+- **Integrazione Storage:** Utilizza la classe `AA_Storage` per salvare il file caricato.
+- **Creazione Risorsa:** Crea un nuovo oggetto `AA_Risorse` nel database, associando la risorsa caricata alle categorie "galleria" e "ckeditor5" e generando un `url_name` unico.
+- **Output JSON:** Restituisce un JSON contenente l'URL della risorsa caricata in caso di successo, o un messaggio di errore in caso di fallimento.
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "UploadFromCKeditor5" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Include la validazione dell'utente e del file, il salvataggio del file nello storage, la creazione della risorsa nel database e la generazione dell'output JSON. Utilizza `die(json_encode($return))` per terminare l'esecuzione e restituire la risposta JSON.
+
+### Class: `AA_SystemTask_UploadFromGallery`
+
+**File:** `utils/system_lib/AA_SystemTask_UploadFromGallery.php`
+**SHA256:** `1a3c3d5059a8b534d3dd8273d434275ac6cc76e88400c6c4dbaff4d36000e291`
+
+#### Description
+La classe `AA_SystemTask_UploadFromGallery` è un task di sistema che gestisce il caricamento di file immagine nella galleria. Estende `AA_GenericTask`. Questo task verifica i permessi dell'utente, la validità del file caricato, il tipo MIME, lo salva nello storage e crea una nuova risorsa (`AA_Risorse`) associata, rendendola disponibile tramite un URL. È specificamente progettato per essere utilizzato con interfacce che richiedono un output JSON strutturato per indicare lo stato dell'operazione e l'URL del file caricato.
+
+#### Key Features
+- **Verifica Permessi:** Richiede che l'utente corrente sia un "SuperUser" per eseguire l'azione.
+- **Validazione File Caricato:** Controlla che un file sia effettivamente presente nella richiesta e che sia un'immagine.
+- **Integrazione Storage:** Utilizza la classe `AA_Storage` per salvare il file caricato.
+- **Creazione Risorsa:** Crea un nuovo oggetto `AA_Risorse` nel database, associando la risorsa caricata alla categoria "galleria" e generando un `url_name` unico.
+- **Output JSON Strutturato:** Restituisce un JSON contenente lo `status` ("server" o "error"), eventuali `params` dalla richiesta originale e il `value` (URL della risorsa caricata in caso di successo, o un messaggio di errore in caso di fallimento).
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "UploadFromGallery" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Include la validazione dei permessi e del file, il salvataggio del file nello storage, la creazione della risorsa nel database e la generazione dell'output JSON strutturato. Utilizza `die(json_encode($return))` per terminare l'esecuzione e restituire la risposta JSON.
+
+### Class: `AA_SystemTask_UploadSessionFile`
+
+**File:** `utils/system_lib/AA_SystemTask_UploadSessionFile.php`
+**SHA256:** `9eecbb45b005d506958a7a4a192d9145364480ec14d441de1d1285adef25dd58`
+
+#### Description
+La classe `AA_SystemTask_UploadSessionFile` è un task di sistema che gestisce il caricamento di un file temporaneo e la sua memorizzazione nella sessione utente. Estende `AA_GenericTask`. Questo task processa i file inviati tramite `$_FILES`, li aggiunge alla gestione dei file di sessione (`AA_SessionFileUpload`) e restituisce un feedback JSON sullo stato dell'operazione.
+
+#### Key Features
+- **Caricamento File Temporaneo:** Processa i file inviati tramite una richiesta HTTP (`$_FILES`).
+- **Memorizzazione in Sessione:** Utilizza `AA_SessionFileUpload::Add()` per memorizzare le informazioni sul file nella sessione utente, associandole a un `file_id` fornito.
+- **Output JSON:** Restituisce un JSON che indica lo stato del caricamento ("server" per successo, "error" per fallimento) e, in caso di successo, il percorso temporaneo del file.
+- **Logging:** Registra l'esecuzione del task.
+
+#### Methods
+- `__construct($user = null)`: Costruttore della classe. Inizializza il task con il nome "UploadSessionFile" e l'utente corrente.
+- `Run()`: Il metodo principale che esegue la logica del task. Itera sui file caricati (`$_FILES`), tenta di aggiungerli alla sessione tramite `AA_SessionFileUpload::Add()`, e imposta il log del task (`sTaskLog`) con il risultato dell'operazione formattato come JSON.
+
+### Class: `AA_GenericTaskResponse`
+
+**File:** `utils/system_lib/AA_GenericTaskResponse.php`
+**SHA256:** `15a96beff69a973b81efdf88ab9d2f5c83cbe321bff94636e709fe32179d0045`
+
+#### Description
+La classe `AA_GenericTaskResponse` è una classe base generica progettata per incapsulare la risposta di un task. Contiene proprietà per lo stato del task (successo/fallimento), eventuali messaggi di errore e il contenuto risultante dal task.
+
+#### Key Features
+- **Stato del Task:** Memorizza lo stato del task (successo o fallimento) utilizzando costanti predefinite.
+- **Messaggi di Errore:** Permette di impostare e recuperare messaggi di errore associati all'esecuzione del task.
+- **Contenuto del Task:** Consente di archiviare e recuperare il contenuto generato dal task.
+
+#### Methods
+- `SetStatus($newStatus = AA_Const::AA_TASK_STATUS_OK)`: Imposta lo stato del task. Accetta `AA_Const::AA_TASK_STATUS_OK` o `AA_Const::AA_TASK_STATUS_FAIL`.
+- `GetStatus()`: Restituisce lo stato attuale del task.
+- `SetError($error = "")`: Imposta un messaggio di errore.
+- `GetError()`: Restituisce il messaggio di errore.
+- `SetMsg($error = "")`: Imposta un messaggio (alias per `SetError`).
+- `GetMsg()`: Restituisce il messaggio (alias per `GetError`).
+- `SetContent($val = "")`: Imposta il contenuto del task.
+- `GetContent()`: Restituisce il contenuto del task.
+- `toString()`: Metodo placeholder (non implementato in questa versione) per una rappresentazione stringa dell'oggetto.
+
+### Class: `AA_XML_FEED_ARCHIVIO`
+
+**File:** `utils/system_lib/AA_XML_FEED_ARCHIVIO.php`
+**SHA256:** `e9d4e78f7983fc7dd0470c2f8702a421c196f963176c1a24df98fd8b8992a3e4`
+
+#### Description
+La classe `AA_XML_FEED_ARCHIVIO` estende `AA_XML_FEED` e sembra essere una specializzazione per la gestione di feed XML relativi all'archivio. La sua implementazione attuale si limita a impostare un ID specifico per il feed.
+
+#### Key Features
+- **Estensione di `AA_XML_FEED`:** Eredita le funzionalità di base per la gestione di feed XML dalla classe padre.
+- **ID Specifico:** Imposta l'ID del feed a "AA_XML_FEED_ARCHIVIO", presumibilmente per identificarlo univocamente come feed dell'archivio.
+
+#### Methods
+- `__construct()`: Costruttore della classe. Inizializza l'ID del feed a "AA_XML_FEED_ARCHIVIO".
+
+### Class: `AA_XML_FEED`
+
+**File:** `utils/system_lib/AA_XML_FEED.php`
+**SHA256:** `a6afeb76317a008055a5c874cdcedddbceef605f627c2a37d80b7ea31a68aabf`
+
+#### Description
+La classe `AA_XML_FEED` è una classe base generica per la creazione e la gestione di feed XML all'interno del sistema. Fornisce una struttura standard per rappresentare un feed XML, includendo metadati come ID, versione, licenza, URL, timestamp, parametri e il contenuto principale del feed.
+
+#### Key Features
+- **Metadati del Feed:** Include proprietà per `id`, `version`, `sLicense` (licenza, predefinita a "IODL"), `sUrl` e `sTimestamp`.
+- **Parametri Configurabili:** Permette l'aggiunta di un array associativo di parametri (`aParams`) che vengono inclusi nel feed XML.
+- **Contenuto Personalizzabile:** Consente di impostare un contenuto XML o HTML personalizzato (`sContent`) che verrà inglobato nel feed.
+- **Generazione XML:** Il metodo `toXML()` costruisce la stringa XML completa, codificando correttamente i caratteri speciali per garantire la validità del XML.
+- **Supporto `__toString()`:** L'oggetto può essere convertito direttamente in una stringa XML chiamandolo in un contesto stringa.
+
+#### Properties
+- `protected $id = "AA_GENERIC_XML_FEED"`: Identificativo univoco del feed.
+- `protected $version = "1.0"`: Versione del formato del feed.
+- `protected $sLicense = "IODL"`: Licenza associata al contenuto del feed.
+- `protected $sUrl = ""` : URL associato al feed.
+- `protected $sTimestamp = ""` : Timestamp di generazione del feed.
+- `protected $aParams = array()`: Array associativo di parametri aggiuntivi.
+- `protected $sContent = ""` : Contenuto principale del feed.
+
+#### Methods
+- `SetURL($var = "")`: Imposta l'URL del feed.
+- `GetURL()`: Restituisce l'URL del feed.
+- `Timestamp()`: Restituisce il timestamp del feed.
+- `GetParams()`: Restituisce l'array di parametri.
+- `SetParams($params = array())`: Imposta l'array di parametri.
+- `GetContent()`: Restituisce il contenuto del feed.
+- `SetContent($var)`: Imposta il contenuto del feed.
+- `toXML()`: Costruisce e restituisce la rappresentazione XML completa dell'oggetto feed.
+- `__toString()`: Magic method che consente di trattare l'oggetto come una stringa, restituendo il suo output XML tramite `toXML()`.

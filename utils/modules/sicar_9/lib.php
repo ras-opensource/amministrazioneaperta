@@ -1941,7 +1941,51 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         //AA_Log::Log(__METHOD__ . " - INFO: generata la template view per l'immobile con ID: " . $this->GetProp("id")." - ".print_r($templateView,true), 100);
         return $templateView;
     }
+    
+    public function Delete($user = null)
+    {
         
+        if($user instanceof AA_User)
+        {
+            if(!$user->isCurrentUser())
+            {
+                $user = AA_User::GetCurrentUser();
+            }
+        }
+        else
+        {
+            $user = AA_User::GetCurrentUser();
+        }
+
+        // Controlla se il nucleo è assegnato ad un alloggio e in tal caso libera l'alloggio
+        $alloggioAttuale = $this->GetAlloggioAttuale();
+        AA_Log::Log(__METHOD__ . " - INFO: controllo l'alloggio attuale per il nucleo con ID: " . $this->GetProp('id')." - alloggio: ".($alloggioAttuale ? $alloggioAttuale->GetDisplayName() : "nessuno o non trovato"), 100);
+        if ($alloggioAttuale instanceof AA_SicarAlloggio) {
+            //AA_Log::Log(__METHOD__ . " - ERRORE: impossibile eliminare il nucleo in quanto è attualmente assegnato all'alloggio: " . $alloggioAttuale->GetDisplayName(), 100);
+            
+            $occupazione = $alloggioAttuale->GetOccupazione();
+            $lastAssegnazione = current($occupazione);
+            if($lastAssegnazione['occupazione_id_nucleo'] == $this->GetProp('id')) 
+            {
+                //imposto lo stato dell'alloggio a libero
+                $occupazione[array_key_first($occupazione)] = array(
+                    "tipo" => 0,
+                    "note"=>"Liberato il ".date("Y-m-d")." per eliminazione nucleo occupante.",
+                    'occupazione_id_nucleo' => 0,
+                    'occupazione_data_assegnazione'=>"",
+                    'occupazione_tipo_canone'=>0,
+                    'occupazione_riserva'=>0,
+                    'occupazione_abusivo'=>0,
+                    'occupazione_residenza'=>0
+                );
+                
+                $alloggioAttuale->SetOccupazione($occupazione);
+                $alloggioAttuale->Update($user ,true,"Aggiornamento stato occupazione - libero");
+            }
+        }
+
+        return parent::Delete($user);
+    }
     //stato assegnazione
     public function GetStatoAssegnazione($bAsObject=true,$last=true)
     {
@@ -2467,12 +2511,16 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSicarModifyNucleoDlg");
         $taskManager->RegisterTask("UpdateNucleoSicar");
         $taskManager->RegisterTask("GetSicarSearchNucleiDlg");
+        $taskManager->RegisterTask("GetSicarDeleteNucleoDlg");
+        $taskManager->RegisterTask("DeleteNucleoSicar");
 
         //stato occupazione
         $taskManager->RegisterTask("GetSicarAddNewStatoOccupazioneAlloggioDlg");
         $taskManager->RegisterTask("AddNewStatoOccupazioneAlloggioSicar");
         $taskManager->RegisterTask("GetSicarModifyStatoOccupazioneAlloggioDlg");
         $taskManager->RegisterTask("UpdateStatoOccupazioneAlloggioSicar");
+        $taskManager->RegisterTask("GetSicarDeleteStatoOccupazioneAlloggioDlg");
+        $taskManager->RegisterTask("DeleteStatoOccupazioneAlloggioSicar");
 
         // Task per le operazioni CRUD
         $taskManager->RegisterTask("AddNewAlloggioSicar");        
@@ -4003,6 +4051,188 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg delete nucleo
+    public function Template_GetSicarDeleteNucleoDlg($object=null)
+    {
+        $id=uniqid();
+        
+        $form = "";
+        if(!empty($_REQUEST['form']))
+        {
+            $form = $_REQUEST['form'];
+        }
+
+        $field_id="";
+        if(!empty($_REQUEST['field_id']))
+        {
+            $field_id = $_REQUEST['field_id'];
+        }
+
+        $field_desc="";
+        if(!empty($_REQUEST['field_desc']))
+        {
+            $field_desc = $_REQUEST['field_desc'];
+        }
+
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina nucleo", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(380);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+                
+        $tabledata=array();
+        $tabledata[]=array("descrizione"=>$object->GetDescrizione(),"cf"=>$object->GetProp("cf"));
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente nucleo verrà eliminato definitivamente, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"descrizione", "header"=>"Descrizione", "fillspace"=>true),
+              array("id"=>"cf", "header"=>"Codice Fiscale", "width"=>160)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteNucleoSicar");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetProp("id")));
+        if(!empty($form))
+        {
+            $wnd->SetSaveTaskParams(array("id"=>$object->GetProp("id"),"form" => $form,"field_id"=>$field_id,"field_desc"=>$field_desc));
+        }
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        return $wnd;
+    }
+
+    //Template dlg delete nucleo
+    public function Template_GetSicarDeleteStatoOccupazioneAlloggioDlg($object=null,$dal="")
+    {
+        $id=uniqid();
+        
+        $form = "";
+        if(!empty($_REQUEST['form']))
+        {
+            $form = $_REQUEST['form'];
+        }
+
+        $field_id="";
+        if(!empty($_REQUEST['field_id']))
+        {
+            $field_id = $_REQUEST['field_id'];
+        }
+
+        $field_desc="";
+        if(!empty($_REQUEST['field_desc']))
+        {
+            $field_desc = $_REQUEST['field_desc'];
+        }
+
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina stato assegnazione occupazione", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(380);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+
+        $nucleo=$object->GetNucleoAssegnatario($dal);
+        AA_Log::Log(__METHOD__." - Nucleo assegnatario dello stato di occupazione con data dal ".$dal.": ".print_r($nucleo,true),100);
+
+        if($nucleo)
+        {
+            $nucleo_desc=$nucleo->GetProp("descrizione")." (".$nucleo->GetProp("cf").")";
+        }
+        else $nucleo_desc="n.d.";
+
+        $tabledata=array();
+        $tabledata[]=array("data_stato_occupazione"=>$dal,"nucleo_assegnatario"=>$nucleo_desc);
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente stato di occupazione verrà eliminato definitivamente, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"data_stato_occupazione", "header"=>"Data dal", "width"=>120),
+              array("id"=>"nucleo_assegnatario", "header"=>"Codice Fiscale", "fillspace"=>true)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteStatoOccupazioneAlloggioSicar");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"dal"=>$dal));
+        if(!empty($form))
+        {
+            $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"dal"=>$dal,"form" => $form,"field_id"=>$field_id,"field_desc"=>$field_desc));
+        }
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        return $wnd;
+    }
+
+    // Task per la restituzione della finestra di dialogo di eliminazione immobile
+    public function Task_GetSicarDeleteNucleoDlg($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per eliminare il nucleo");
+            return false;
+        }
+
+        $nucleo=new AA_SicarNucleo();
+        if (!$nucleo->Load($_REQUEST['id'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Nucleo non trovato (id: ".$_REQUEST['id'].")");
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarDeleteNucleoDlg($nucleo), true);
+        return true;
+    }
+
     //restituisce la lista dei comuni
     public function Task_GetSicarListaCodiciIstat($task)
     {
@@ -4995,6 +5225,40 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la finestra di eliminazione stato alloggio
+    public function Task_GetSicarDeleteStatoOccupazioneAlloggioDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarAlloggio($_REQUEST['id'], $this->oUser);
+        if (!$object->IsValid()) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento", false);
+            return false;
+        }
+
+         if (empty($_REQUEST['dal'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non e' stata specificato l'identificativo della data di inizio occupazione", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarDeleteStatoOccupazioneAlloggioDlg($object,$_REQUEST['dal']),true);
+        return true;
+    }
+
     // Task per la finestra visualizzazione dettaglio immobile
     public function Task_GetSicarDetailImmobileDlg($task)
     {
@@ -5280,29 +5544,44 @@ class AA_SicarModule extends AA_GenericModule
                 return false;
             }
 
-            //Aggiorna il nucleo per assegnare l'alloggio al nucleo
-            $nucleo=new AA_SicarNucleo();
-            if($nucleo->Load($_REQUEST['occupazione_id_nucleo']))
+            //Aggiorna il nucleo per assegnare l'alloggio al nucleo se e' l'utlimo stato di occupazione
+            $update_nucleo=true;
+            if(!empty($occupazione))
             {
-                $nucleo->SetProp("alloggio_attuale",$alloggio->GetID());
-
-                //aggiorna l'indirizzo di residenza del nucleo se richiesto
-                if(!empty($_REQUEST['occupazione_residenza']) && $_REQUEST['occupazione_residenza']==1)
+                $last_date=current(array_keys($occupazione));
+                if(strtotime($last_date)>strtotime(mb_substr($_REQUEST['data_dal'],0,10)))
                 {
-                    $immobile=$alloggio->GetImmobile();
-                    $nucleo->SetProp("indirizzo",$immobile->GetIndirizzo());
-                    $nucleo->SetProp("comune",$immobile->GetComune(false));
+                    //non e' l'ultimo stato di occupazione, non aggiorna il nucleo
+                    AA_Log::Log(__METHOD__." - Lo stato di occupazione inserito non e' il piu' recente, non viene aggiornato il nucleo.",100);
+                    $update_nucleo=false;
                 }
-                $nucleo->Update($this->oUser);  
             }
-            else
+
+            if($update_nucleo)
             {
-                AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$_REQUEST['occupazione_id_nucleo'],100);
-                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                $task->SetError("Nucleo occupante non trovato.", false);
-                return false;
+                $nucleo=new AA_SicarNucleo();
+                if($nucleo->Load($_REQUEST['occupazione_id_nucleo']))
+                {
+                    $nucleo->SetProp("alloggio_attuale",$alloggio->GetID());
+
+                    //aggiorna l'indirizzo di residenza del nucleo se richiesto
+                    if(!empty($_REQUEST['occupazione_residenza']) && $_REQUEST['occupazione_residenza']==1)
+                    {
+                        $immobile=$alloggio->GetImmobile();
+                        $nucleo->SetProp("indirizzo",$immobile->GetIndirizzo());
+                        $nucleo->SetProp("comune",$immobile->GetComune(false));
+                    }
+                    $nucleo->Update($this->oUser);  
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$_REQUEST['occupazione_id_nucleo'],100);
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("Nucleo occupante non trovato.", false);
+                    return false;
+                }
             }
-            
+
             $dettaglioOccupazione['occupazione_data_assegnazione']=mb_substr($_REQUEST['occupazione_data_assegnazione'],0,10);
 
             $dettaglioOccupazione['occupazione_tipo_canone']=!empty($_REQUEST['occupazione_tipo_canone']) ? $_REQUEST['occupazione_tipo_canone'] : 0;
@@ -5908,6 +6187,44 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
     
+    // Task per eliminare un nucleo esistente
+    public function Task_DeleteNucleoSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per eliminare il nucleo", false);
+            return false;
+        }
+        
+        if(empty($_REQUEST))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Nessun dato indicato per nucleo", false);
+            return false;
+        }
+
+        $nucleo=new AA_SicarNucleo();
+        if(!$nucleo->Load($_REQUEST['id']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Nucleo non trovato (id: ".$_REQUEST['id'].")", false);
+            return false;
+        }
+
+        if(!$nucleo->Delete($this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'eliminazione del nucleo", false);
+            return false;
+        }
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent("Nucleo eliminato con successo", false);
+        return true;
+    }
+
     // Task per aggiornare un alloggio
     public function Task_UpdateSicar($task)
     {
@@ -5996,7 +6313,7 @@ class AA_SicarModule extends AA_GenericModule
         }
     }
 
-    // Task per aggiornare un alloggio
+    // Task per aggiornare uno stato di occupazione di un alloggio
     public function Task_UpdateStatoOccupazioneAlloggioSicar($task)
     {
         // Verifica che l'utente abbia i permessi per modificare gli alloggi
@@ -6037,6 +6354,19 @@ class AA_SicarModule extends AA_GenericModule
         $dettaglioOccupazione=array();
         $dettaglioOccupazione['stato']=0;
         $dettaglioOccupazione['note']=$_REQUEST['note'];
+        
+        //Aggiorna il nucleo associato se e' l'ultimo stato di occupazione
+        $update_nucleo=true;
+        if(!empty($occupazione))
+        {
+            $last_date=current(array_keys($occupazione));
+            if(strtotime($last_date) > strtotime(mb_substr($_REQUEST['data_dal'],0,10)))
+            {
+                //non e' l'ultimo stato di occupazione, non aggiorna il nucleo
+                AA_Log::Log(__METHOD__." - Lo stato di occupazione inserito non e' il piu' recente, non viene aggiornato il nucleo.",100);
+                $update_nucleo=false;
+            }
+        }
 
         if(!empty($_REQUEST['stato']) && intval($_REQUEST['stato'])>=1)
         {
@@ -6057,28 +6387,51 @@ class AA_SicarModule extends AA_GenericModule
 
             $dettaglioOccupazione['occupazione_id_nucleo']=$_REQUEST['occupazione_id_nucleo'];
             
-            //Aggiorna il nucleo per assegnare l'alloggio al nucleo
-            $nucleo=new AA_SicarNucleo();
-            if($nucleo->Load($_REQUEST['occupazione_id_nucleo']))
+            if($update_nucleo)
             {
-                $nucleo->SetProp("alloggio_attuale",$alloggio->GetID());
-
-                //aggiorna l'indirizzo di residenza del nucleo se richiesto
-                if(!empty($_REQUEST['occupazione_residenza']) && $_REQUEST['occupazione_residenza']==1)
+                //rimuove l'alloggio dal nucleo a cui era assegnato in precedenza, se presente
+                $last_occupazione=current($occupazione);
+                AA_Log::Log(__METHOD__." - Last occupazione: ".print_r($last_occupazione,true),100);
+                if($last_occupazione['occupazione_id_nucleo']>0 && $last_occupazione['occupazione_id_nucleo']!=$dettaglioOccupazione['occupazione_id_nucleo'])
                 {
-                    $immobile=$alloggio->GetImmobile();
-                    $nucleo->SetProp("indirizzo",$immobile->GetIndirizzo());
-                    $nucleo->SetProp("comune",$immobile->GetComune(false));
+                    $nucleo=new AA_SicarNucleo();
+                    if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
+                    {
+                        $nucleo->SetProp("alloggio_attuale",0);
+                        $nucleo->SetProp("indirizzo","n.d.");
+                        $nucleo->SetProp("comune","");
+                        $nucleo->Update($this->oUser);
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$last_occupazione['occupazione_id_nucleo'],100); 
+                    }
                 }
-                $nucleo->Update($this->oUser);  
+
+                //Aggiorna il nucleo per assegnare l'alloggio al nucleo
+                $nucleo=new AA_SicarNucleo();
+                if($nucleo->Load($_REQUEST['occupazione_id_nucleo']))
+                {
+                    $nucleo->SetProp("alloggio_attuale",$alloggio->GetID());
+
+                    //aggiorna l'indirizzo di residenza del nucleo se richiesto
+                    if(!empty($_REQUEST['occupazione_residenza']) && $_REQUEST['occupazione_residenza']==1)
+                    {
+                        $immobile=$alloggio->GetImmobile();
+                        $nucleo->SetProp("indirizzo",$immobile->GetIndirizzo());
+                        $nucleo->SetProp("comune",$immobile->GetComune(false));
+                    }
+                    $nucleo->Update($this->oUser);  
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$_REQUEST['occupazione_id_nucleo'],100);
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("Nucleo occupante non trovato.", false);
+                    return false;
+                }
             }
-            else
-            {
-                AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$_REQUEST['occupazione_id_nucleo'],100);
-                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                $task->SetError("Nucleo occupante non trovato.", false);
-                return false;
-            }
+
             $dettaglioOccupazione['occupazione_data_assegnazione']=mb_substr($_REQUEST['occupazione_data_assegnazione'],0,10);
 
             $dettaglioOccupazione['occupazione_tipo_canone']=!empty($_REQUEST['occupazione_tipo_canone']) ? $_REQUEST['occupazione_tipo_canone'] : 0;
@@ -6086,44 +6439,28 @@ class AA_SicarModule extends AA_GenericModule
             $dettaglioOccupazione['occupazione_riserva']=!empty($_REQUEST['occupazione_riserva']) ? 1 : 0;
             $dettaglioOccupazione['occupazione_abusivo']=!empty($_REQUEST['occupazione_abusivo']) ? 1 : 0;
             $dettaglioOccupazione['occupazione_residenza']=!empty($_REQUEST['occupazione_residenza']) ? 1 : 0;
-
-            //rimuove l'alloggio dal nucleo a cui era assegnato in precedenza, se presente
-            $last_occupazione=current($occupazione);
-            AA_Log::Log(__METHOD__." - Last occupazione: ".print_r($last_occupazione,true),100);
-            if($last_occupazione['occupazione_id_nucleo']>0 && $last_occupazione['occupazione_id_nucleo']!=$dettaglioOccupazione['occupazione_id_nucleo'])
-            {
-                $nucleo=new AA_SicarNucleo();
-                if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
-                {
-                    $nucleo->SetProp("alloggio_attuale",0);
-                    $nucleo->SetProp("indirizzo","n.d.");
-                    $nucleo->SetProp("comune","");
-                    $nucleo->Update($this->oUser);
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$last_occupazione['occupazione_id_nucleo'],100); 
-                }
-            }
         }
         else
         {
-            //rimuove l'alloggio dal nucleo a cui era assegnato in precedenza, se presente
-            $last_occupazione=current($occupazione);
-            AA_Log::Log(__METHOD__." - Last occupazione: ".print_r($last_occupazione,true),100);
-            if($last_occupazione['occupazione_id_nucleo']>0 && $last_occupazione['occupazione_id_nucleo']!=$dettaglioOccupazione['occupazione_id_nucleo'])
+            if($update_nucleo)
             {
-                $nucleo=new AA_SicarNucleo();
-                if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
+                //rimuove l'alloggio dal nucleo a cui era assegnato in precedenza, se presente
+                $last_occupazione=current($occupazione);
+                AA_Log::Log(__METHOD__." - Last occupazione: ".print_r($last_occupazione,true),100);
+                if($last_occupazione['occupazione_id_nucleo']>0 && $last_occupazione['occupazione_id_nucleo']!=$dettaglioOccupazione['occupazione_id_nucleo'])
                 {
-                    $nucleo->SetProp("alloggio_attuale",0);
-                    $nucleo->SetProp("indirizzo","n.d.");
-                    $nucleo->SetProp("comune","");
-                    $nucleo->Update($this->oUser);
-                }
-                else
-                {
-                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$last_occupazione['occupazione_id_nucleo'],100); 
+                    $nucleo=new AA_SicarNucleo();
+                    if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
+                    {
+                        $nucleo->SetProp("alloggio_attuale",0);
+                        $nucleo->SetProp("indirizzo","n.d.");
+                        $nucleo->SetProp("comune","");
+                        $nucleo->Update($this->oUser);
+                    }
+                    else
+                    {
+                        AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$last_occupazione['occupazione_id_nucleo'],100); 
+                    }
                 }
             }
 
@@ -6173,6 +6510,140 @@ class AA_SicarModule extends AA_GenericModule
         }
     }
     
+    // Task per rimuovere uno stato di occupazione di un alloggio
+    public function Task_DeleteStatoOccupazioneAlloggioSicar($task)
+    {
+        // Verifica che l'utente abbia i permessi per modificare gli alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare gli alloggi", false);
+            return false;
+        }
+        
+        // Verifica che l'utente abbia i permessi di scrittura sull'oggetto specifico
+        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
+        if ($id > 0) {
+            $alloggio = new AA_SicarAlloggio($id, $this->oUser);
+            if ($alloggio->IsValid()) {
+                if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("L'utente corrente non ha i permessi di modifica dell'alloggio", false);
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo non presente, aggiornamento non possibile.", false);
+            return false;
+        }
+        
+        $occupazione=$alloggio->GetOccupazione();
+        
+        //Verifica se deve agiornare il nucleo associato
+        $update_nucleo=true;
+        if(!empty($occupazione))
+        {
+            $last_date=current(array_keys($occupazione));
+            if(strtotime($last_date)>strtotime(mb_substr($_REQUEST['dal'],0,10)))
+            {
+                //non e' l'ultimo stato di occupazione, non aggiorna il nucleo
+                AA_Log::Log(__METHOD__." - Lo stato di occupazione inserito non e' il piu' recente, non viene aggiornato il nucleo.",100);
+                $update_nucleo=false;
+            }
+        }
+
+        if(empty($_REQUEST['dal']) || !isset($occupazione[mb_substr($_REQUEST['dal'],0,10)]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Stato di occupazione non valido o non presente.", false);
+            return false;
+        }
+
+        if(!isset($occupazione[mb_substr($_REQUEST['dal'],0,10)]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Stato di occupazione non valido o non presente.", false);
+            return false;
+        }
+
+        $thisOccupazione=$occupazione[mb_substr($_REQUEST['dal'],0,10)];
+        if(key($occupazione)==mb_substr($_REQUEST['dal'],0,10) && $update_nucleo)
+        {
+            //se si sta eliminando lo stato di occupazione piu' recente con un nucleo oassociato, occorre inserire un nuovo stato di occupazione libero come stato sostitutivo
+            $occupazione[mb_substr($_REQUEST['dal'],0,10)]=array(
+                'stato'=>0,
+                'occupazione_id_nucleo'=>0,
+                'occupazione_data_assegnazione'=>'',
+                'occupazione_tipo_canone'=>0,
+                'occupazione_riserva'=>0,
+                'occupazione_abusivo'=>0,
+                'occupazione_residenza'=>0,
+                'note'=>''
+            );
+        }
+        else
+        {
+            //rimuove lo stato di occupazione selezionato
+            unset($occupazione[mb_substr($_REQUEST['dal'],0,10)]);
+        }
+
+        if($update_nucleo)
+        {
+            //rimuove l'alloggio dal nucleo a cui era assegnato in precedenza, se presente
+            AA_Log::Log(__METHOD__." - Last occupazione: ".print_r($thisOccupazione,true),100);
+            if($thisOccupazione['occupazione_id_nucleo']>0)
+            {
+                $nucleo=new AA_SicarNucleo();
+                if($nucleo->Load($thisOccupazione['occupazione_id_nucleo']))
+                {
+                    $nucleo->SetProp("alloggio_attuale",0);
+                    $nucleo->SetProp("indirizzo","n.d.");
+                    $nucleo->SetProp("comune","");
+                    $nucleo->Update($this->oUser);
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$thisOccupazione['occupazione_id_nucleo'],100); 
+                }
+            }
+        }
+        
+        //ordina l'arrai in modo che la data piu' recente sia la prima
+        krsort($occupazione, SORT_STRING);
+        
+        $alloggio->setOccupazione($occupazione);
+
+        $validate = $alloggio->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$alloggio->Update($this->oUser,true,"Eliminazione stato occupazione dal: ".mb_substr($_REQUEST['dal'],0,10)))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento dello stato di occupazione.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
     // Task per eliminare un alloggio
     public function Task_DeleteSicar($task)
     {
@@ -7388,9 +7859,23 @@ class AA_SicarAlloggio extends AA_Object_V2
 
     public function SetGestione($var = array()) { $this->SetProp("gestione", $var); $this->SetChanged(true); return true; }
 
-    public function GetProprieta() { return $this->GetProp("proprieta"); }
+    public function GetProprieta($bAsObject=true) 
+    { 
+        if(!$bAsObject) return $this->GetProp("proprieta");
+        
+        $val=json_decode($this->aProps['proprieta'],true);
+        if(is_array($val)) return $val;
+        else return array();
+    }
+
     public function SetProprieta($var = array()) { $this->SetProp("proprieta", $var); $this->SetChanged(true); return true; }
-    public function SetOccupazione($var = array()) { $this->SetProp("occupazione", $var); $this->SetChanged(true); return true; }
+    public function SetOccupazione($var = null) 
+    { 
+        if(is_array($var)) $var=json_encode($var);
+        $this->SetProp("occupazione", $var); 
+        $this->SetChanged(true); 
+        return true; 
+    }
     public function GetNote() { return $this->GetProp("note"); }
     public function SetNote($var = "") { $this->SetProp("note", $var); $this->SetChanged(true); return true; }
 
@@ -7481,6 +7966,54 @@ class AA_SicarAlloggio extends AA_Object_V2
                $separator . $this->GetSuperficieNetta() . $separator . $this->GetSuperficieUtileAbitabile() .
                $separator . $this->GetPiano() . $separator . ($this->GetAscensore() ? 1 : 0) .
                $separator . ($this->GetFruibileDis() ? 1 : 0) . $separator . str_replace("\n", ' ', $this->GetNote());
+    }
+
+    //restituisce il nucleo assegnatario se presente
+    public function GetNucleoAssegnatario($dal="",$bAsObject=true)
+    {
+        $occupazione=$this->GetOccupazione();
+        if(empty($occupazione)) 
+        {
+            if($bAsObject) return null;
+            return 0;
+        }
+
+        if($dal=="") $lastOccupazione=current($occupazione);
+        else 
+        {
+            if(!isset($occupazione[$dal]))
+            {
+                if($bAsObject) return null;
+                else return 0;
+            }
+            $lastOccupazione=$occupazione[$dal];
+        }
+
+        //AA_Log::Log(__METHOD__." - occupazione: ".print_r($lastOccupazione,true),100);
+
+        if(!empty($lastOccupazione['occupazione_id_nucleo']))
+        {
+            $nucleo=new AA_SicarNucleo();
+            if($nucleo->Load($lastOccupazione['occupazione_id_nucleo']))
+            {
+                if($bAsObject) return $nucleo;
+                else return $lastOccupazione['occupazione_id_nucleo'];
+            }
+            else 
+            {
+                if($bAsObject) return null;
+                else return 0;
+            }
+        }
+
+        if($$bAsObject)
+        {
+            return null;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     //funzione di ricerca
