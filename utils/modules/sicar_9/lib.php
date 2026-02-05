@@ -2242,6 +2242,18 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
         return $perms;
     }
     
+    //verifica se il nucleo è attualmente assegnato ad un alloggio
+    public function HasAlloggio()
+    {   
+        $statoAssegnazione=$this->GetProp("alloggio_attuale");
+        if($statoAssegnazione > 0)
+        {
+            //AA_Log::Log(__METHOD__." - Il nucleo con ID: ".$this->GetProp("cf")." è attualmente assegnato all'alloggio con ID: ".$statoAssegnazione, 100);
+            return true;
+        } 
+        else return false;
+    }
+
     /**
      * Funzione statica per l'aggiunta di nuovi immobili
     * @param array $params dati dell'immobile
@@ -2249,7 +2261,9 @@ class AA_SicarNucleo extends AA_GenericParsableDbObject
      */
     static public function AddNew($params, $user = null)
     {
-        $object = new AA_SicarImmobile($params);
+        $object = new AA_SicarNucleo();
+        $object->Parse($params);
+        $object->SetProp("id",0);
 
         $validate=$object->Validate();
         if(sizeof($validate)>0)
@@ -4570,7 +4584,8 @@ class AA_SicarModule extends AA_GenericModule
         $params['WHERE']=array(
             array("FIELD"=>"alloggio_attuale","OPERATOR"=>"=","VALUE"=>0)
         );
-        $nuclei=AA_SicarNucleo::Search($params);
+
+        $nuclei=AA_SicarNucleo::Search();
         $data=[];
         //$trash='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopTrashComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
         //$modify='AA_MainApp.utils.callHandler("dlg", {task:"GetGecopModifyComponenteDlg", params: [{id:"'.$object->GetId().'"},{id_componente:"'.$id_componente.'"}]},"'.$this->id.'")';
@@ -4590,16 +4605,27 @@ class AA_SicarModule extends AA_GenericModule
             {
                 $select="try{if($$('".$form."')){ AA_MainApp.utils.callHandler('SicarSelectFormItem', {form:'".$form."', values:{'".$field_id."':'".$curNucleo->GetProp('id')."','".$field_desc."':'".$curNucleo->GetDescrizione()."'}},'".$this->GetId()."'); $$('".static::AA_UI_WND_SEARCH_NUCLEI."_Wnd').close();}}catch(msg){console.error(msg)}";
                 $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Scegli' onClick=\"".$select."\"><span class='mdi ".$select_icon."'></span></a></div>";
-                $data[]=array("id"=>$curNucleo->GetProp("id"),"denominazione"=>$curNucleo->GetDescrizione(),"cf"=>$curNucleo->GetCf(),"ops"=>$ops);
+                if(!$curNucleo->HasAlloggio())
+                { 
+                    $alloggio_attuale_str="<span class='AA_Label AA_Label_LightRed'>Nessun alloggio assegnato</span>";
+                }
+                else
+                {
+                    $alloggio_attuale=$curNucleo->GetAlloggioAttuale();
+                    $alloggio_attuale_str="<span class='AA_Label AA_Label_LightGreen'>".$alloggio_attuale->GetDescrizione()."</span>";
+                    $ops="&nbsp;"; //non mostrare il pulsante di selezione per i nuclei con alloggio attuale
+                }
+
+                $data[]=array("id"=>$curNucleo->GetProp("id"),"denominazione"=>$curNucleo->GetDescrizione(),"cf"=>$curNucleo->GetCf(),"alloggio_attuale"=>$alloggio_attuale_str,"ops"=>$ops);
             }
             else
             {
-                $data[]=array("id"=>$curNucleo->GetProp("id"),"denominazione"=>$curNucleo->GetDenominazione(),"cf"=>$curNucleo->GetCf());
+                $data[]=array("id"=>$curNucleo->GetProp("id"),"denominazione"=>$curNucleo->GetDenominazione(),"alloggio_attuale"=>$alloggio_attuale_str,"cf"=>$curNucleo->GetCf());
             }
         }
 
-        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id."_TableSearch_".uniqid(),"Ricerca nuclei",2,null,array("css"=>"AA_Header_DataTable"));
-        else $template=new AA_GenericDatatableTemplate($id."_TableSearch_".uniqid(),"Ricerca nuclei",3,null,array("css"=>"AA_Header_DataTable"));
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id."_TableSearch_".uniqid(),"Ricerca nuclei",3,null,array("css"=>"AA_Header_DataTable"));
+        else $template=new AA_GenericDatatableTemplate($id."_TableSearch_".uniqid(),"Ricerca nuclei",4,null,array("css"=>"AA_Header_DataTable"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader(false);
@@ -4615,9 +4641,10 @@ class AA_SicarModule extends AA_GenericModule
 
         $template->SetColumnHeaderInfo(0,"denominazione","<div style='text-align: center'>Descrizione</div>",250,"textFilter","text","ImmobiliTable_left");
         $template->SetColumnHeaderInfo(1,"cf","<div style='text-align: center'>Codice fiscale</div>","fillspace","textFilter","text","ImmobiliTable_left");
+        $template->SetColumnHeaderInfo(2,"alloggio_attuale","<div style='text-align: center'>Alloggio assegnato</div>","fillspace","textFilter","text","ImmobiliTable");
         //$template->SetColumnHeaderInfo(2,"comune","<div style='text-align: center'>Comune</div>",250,"textFilter","text","ImmobiliTable");
         //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        if(!empty($ops)) $template->SetColumnHeaderInfo(2,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(3,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"ImmobiliTable");
 
         $template->SetData($data);
 
@@ -5252,12 +5279,55 @@ class AA_SicarModule extends AA_GenericModule
                 $task->SetError("E' necessario specificare la data di assegnazione per lo stato di occupazione selezionato.", false);
                 return false;
             }
+
+            //Aggiorna il nucleo per assegnare l'alloggio al nucleo
+            $nucleo=new AA_SicarNucleo();
+            if($nucleo->Load($_REQUEST['occupazione_id_nucleo']))
+            {
+                $nucleo->SetProp("alloggio_attuale",$alloggio->GetID());
+
+                //aggiorna l'indirizzo di residenza del nucleo se richiesto
+                if(!empty($_REQUEST['occupazione_residenza']) && $_REQUEST['occupazione_residenza']==1)
+                {
+                    $immobile=$alloggio->GetImmobile();
+                    $nucleo->SetProp("indirizzo",$immobile->GetIndirizzo());
+                    $nucleo->SetProp("comune",$immobile->GetComune(false));
+                }
+                $nucleo->Update($this->oUser);  
+            }
+            else
+            {
+                AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$_REQUEST['occupazione_id_nucleo'],100);
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Nucleo occupante non trovato.", false);
+                return false;
+            }
+            
             $dettaglioOccupazione['occupazione_data_assegnazione']=mb_substr($_REQUEST['occupazione_data_assegnazione'],0,10);
 
             $dettaglioOccupazione['occupazione_tipo_canone']=!empty($_REQUEST['occupazione_tipo_canone']) ? $_REQUEST['occupazione_tipo_canone'] : 0;
 
             $dettaglioOccupazione['occupazione_riserva']=!empty($_REQUEST['occupazione_riserva']) ? 1 : 0;
             $dettaglioOccupazione['occupazione_abusivo']=!empty($_REQUEST['occupazione_abusivo']) ? 1 : 0;
+            $dettaglioOccupazione['occupazione_residenza']=!empty($_REQUEST['occupazione_residenza']) ? 1 : 0;
+
+            //rimuove l'alloggio dal nucleo a cui era assegnato in precedenza, se presente
+            $last_occupazione=current($occupazione);
+            if($last_occupazione['occupazione_id_nucleo']>0 && $last_occupazione['occupazione_id_nucleo']!=$dettaglioOccupazione['occupazione_id_nucleo'])
+            {
+                $nucleo=new AA_SicarNucleo();
+                if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
+                {
+                    $nucleo->SetProp("alloggio_attuale",0);
+                    $nucleo->SetProp("indirizzo","n.d.");
+                    $nucleo->SetProp("comune","");
+                    $nucleo->Update($this->oUser);
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$last_occupazione['occupazione_id_nucleo'],100); 
+                }
+            }
         }
         else
         {
@@ -5266,6 +5336,7 @@ class AA_SicarModule extends AA_GenericModule
             $dettaglioOccupazione['occupazione_tipo_canone']=0;
             $dettaglioOccupazione['occupazione_riserva']=0;
             $dettaglioOccupazione['occupazione_abusivo']=0;
+            $dettaglioOccupazione['occupazione_residenza']=0;
         }
 
         $occupazione[mb_substr($_REQUEST['data_dal'],0,10)]=$dettaglioOccupazione;
@@ -5893,12 +5964,13 @@ class AA_SicarModule extends AA_GenericModule
         $gestione=array(mb_substr($_REQUEST['gestione_dal'],0,10)=>$_REQUEST['gestione_ente']);
 
         $_REQUEST['gestione']=json_encode($gestione);
+    
         $alloggio->Parse($_REQUEST);
 
         $validate = $alloggio->Validate();
         if (sizeof($validate) > 0) 
         {
-            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true)." - ".print_r($alloggio, true), 100);
             $error = "Sono state riscontrate le seguenti criticita': <br>";
             foreach ($validate as $curError) {
                 $error .= "<li>" . $curError . "</li>";
@@ -5984,6 +6056,7 @@ class AA_SicarModule extends AA_GenericModule
             }
 
             $dettaglioOccupazione['occupazione_id_nucleo']=$_REQUEST['occupazione_id_nucleo'];
+            
             //Aggiorna il nucleo per assegnare l'alloggio al nucleo
             $nucleo=new AA_SicarNucleo();
             if($nucleo->Load($_REQUEST['occupazione_id_nucleo']))
@@ -6013,14 +6086,14 @@ class AA_SicarModule extends AA_GenericModule
             $dettaglioOccupazione['occupazione_riserva']=!empty($_REQUEST['occupazione_riserva']) ? 1 : 0;
             $dettaglioOccupazione['occupazione_abusivo']=!empty($_REQUEST['occupazione_abusivo']) ? 1 : 0;
             $dettaglioOccupazione['occupazione_residenza']=!empty($_REQUEST['occupazione_residenza']) ? 1 : 0;
-        }
-        else
-        {
-            if($occupazione[mb_substr($_REQUEST['data_dal'],0,10)]['occupazione_id_nucleo']>0)
+
+            //rimuove l'alloggio dal nucleo a cui era assegnato in precedenza, se presente
+            $last_occupazione=current($occupazione);
+            AA_Log::Log(__METHOD__." - Last occupazione: ".print_r($last_occupazione,true),100);
+            if($last_occupazione['occupazione_id_nucleo']>0 && $last_occupazione['occupazione_id_nucleo']!=$dettaglioOccupazione['occupazione_id_nucleo'])
             {
-                //Aggiorna il nucleo per rimuovere l'alloggio assegnato
                 $nucleo=new AA_SicarNucleo();
-                if($nucleo->Load($occupazione[mb_substr($_REQUEST['data_dal'],0,10)]['occupazione_id_nucleo']))
+                if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
                 {
                     $nucleo->SetProp("alloggio_attuale",0);
                     $nucleo->SetProp("indirizzo","n.d.");
@@ -6029,7 +6102,28 @@ class AA_SicarModule extends AA_GenericModule
                 }
                 else
                 {
-                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$occupazione['occupazione_id_nucleo'],100); 
+                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$last_occupazione['occupazione_id_nucleo'],100); 
+                }
+            }
+        }
+        else
+        {
+            //rimuove l'alloggio dal nucleo a cui era assegnato in precedenza, se presente
+            $last_occupazione=current($occupazione);
+            AA_Log::Log(__METHOD__." - Last occupazione: ".print_r($last_occupazione,true),100);
+            if($last_occupazione['occupazione_id_nucleo']>0 && $last_occupazione['occupazione_id_nucleo']!=$dettaglioOccupazione['occupazione_id_nucleo'])
+            {
+                $nucleo=new AA_SicarNucleo();
+                if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
+                {
+                    $nucleo->SetProp("alloggio_attuale",0);
+                    $nucleo->SetProp("indirizzo","n.d.");
+                    $nucleo->SetProp("comune","");
+                    $nucleo->Update($this->oUser);
+                }
+                else
+                {
+                    AA_Log::Log(__METHOD__." - Impossibile caricare il nucleo con id: ".$last_occupazione['occupazione_id_nucleo'],100); 
                 }
             }
 
@@ -6559,8 +6653,8 @@ class AA_SicarModule extends AA_GenericModule
         $template->EnableHeader(false);
         //$template->SetHeaderHeight(38);
         $template->EnableAddNew(false);
-        $template->SetColumnHeaderInfo(0,"tipologia_desc","<div style='text-align: center'>Tipo</div>",180,"selectFilter","text","GenericAutosizedRowTable_left");
-        $template->SetColumnHeaderInfo(1,"dal","<div style='text-align: center'>Dal</div>",90,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(0,"tipologia_desc","<div style='text-align: center'>Tipo</div>",160,"selectFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"dal","<div style='text-align: center'>Dal</div>",100,"textFilter","text","GenericAutosizedRowTable");
         $template->SetColumnHeaderInfo(2,"nucleo_desc","<div style='text-align: center'>Nucleo</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
         //$template->SetColumnHeaderInfo(3,"canone","<div style='text-align: center'>Canone</div>",100,"textFilter","text","GenericAutosizedRowTable");
         //$template->SetColumnHeaderInfo(4,"note","<div style='text-align: center'>Note</div>",90,"","","GenericAutosizedRowTable");
@@ -7337,15 +7431,18 @@ class AA_SicarAlloggio extends AA_Object_V2
         if (intval($this->GetAnnoRistrutturazione()) < 1900 || intval($this->GetAnnoRistrutturazione()) > intval(date("Y"))) {
             $errors[] = "Anno di ristrutturazione non valido";
         }
+        
         if (!is_numeric($this->GetProp("superficie_non_residenziale")) || floatval($this->GetProp("superficie_non_residenziale")) < 0) {
             $errors[] = "Superficie non residenziale non valida (".$this->GetProp("superficie_non_residenziale").")";
         }
         if (!is_numeric($this->GetProp("superficie_parcheggi")) || floatval($this->GetProp("superficie_parcheggi")) < 0) {
             $errors[] = "Superficie parcheggi non valida (".$this->GetProp("superficie_parcheggi").")";
         }
+        
         if (!is_numeric($this->GetProp("vani_abitabili")) || floatval($this->GetProp("vani_abitabili")) < 0) {
             $errors[] = "Vani abitabili non valida (".$this->GetProp("vani_abitabili").")";
         }
+
         if (!is_numeric($this->GetProp('superficie_utile_abitabile')) || floatval($this->GetProp('superficie_utile_abitabile')) <= 0) {
             $errors[] = "Superficie utile abitabile non valida (".$this->GetSuperficieUtileAbitabile().")";
         }

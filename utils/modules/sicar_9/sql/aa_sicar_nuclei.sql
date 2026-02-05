@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.3-1.fc43
+-- version 5.2.1-1.el9
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Creato il: Dic 03, 2025 alle 16:32
--- Versione del server: 10.11.13-MariaDB
--- Versione PHP: 8.4.15
+-- Creato il: Feb 05, 2026 alle 19:19
+-- Versione del server: 10.5.22-MariaDB
+-- Versione PHP: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `amministrazioneaperta`
+-- Database: `monitspese`
 --
 
 -- --------------------------------------------------------
@@ -36,7 +36,7 @@ CREATE TABLE `aa_sicar_nuclei` (
   `isee` varchar(4096) NOT NULL DEFAULT '',
   `note` varchar(1024) NOT NULL DEFAULT '',
   `comune` varchar(10) NOT NULL DEFAULT ''
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Indici per le tabelle scaricate
