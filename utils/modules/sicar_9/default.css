@@ -43,3 +43,64 @@
   align-items: center;
   justify-content: center;
 }
+
+.AA_DataViewSicarAlloggi
+{
+  display:flex;
+  align-items: center;
+  justify-content: left;
+  height:100%;
+}
+
+.AA_DataView_SicarAlloggiOccupazione
+{
+  display:flex;
+  flex-direction: column;
+  min-width: 300px;
+  width: 25vw;
+  height: 90%;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: rgb(250, 250, 250);
+  color: #0c467f;
+}
+
+.AA_DataView_SicarAlloggiInterventi
+{
+  display:flex;
+  flex-direction: column;
+  min-width: 300px;
+  width: 25vw;
+  height: 90%;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: rgb(250, 250, 250);
+  color: #0c467f;
+}
+
+.AA_DataView_SicarItemViewBoxLabel
+{
+  position: relative;
+  top:-10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  color: #002ab3;
+  background: rgb(250, 250, 250);
+  font-weight: 600;
+  font-size: smaller;
+  display:inline-block;
+  width: 30%;
+  min-width: 120px;
+  height: fit-content;
+  text-align: center;
+}

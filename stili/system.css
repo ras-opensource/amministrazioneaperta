@@ -998,3 +998,11 @@ div.AA_Footer_Gradient {
 .webix_rating_selected{
     color:gold;
 }
+
+.AA_Link
+{
+    color: #1ca1c1;
+    font-style: italic;
+    font-size: smaller;
+    text-decoration: none;
+}
