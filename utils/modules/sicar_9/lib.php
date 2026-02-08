@@ -2856,7 +2856,7 @@ class AA_SicarModule extends AA_GenericModule
             if(empty($occupazione))
             {
 
-                    $data['occupazione']="<span class='AA_DataView_Tag AA_Label AA_Label_LightGray' title='Stato occupazione'>Nessuna informazione disponibile</span>";
+                    $data['occupazione']="<span>Nessuna informazione disponibile</span><span>&nbsp;</span>";
             }
             else
             {
@@ -2872,7 +2872,6 @@ class AA_SicarModule extends AA_GenericModule
                 if($last_occupazione['occupazione_tipo']==0)
                 {
                     $data['occupazione'].="<div><span style='font-size:small'>dal: </span><span style='font-weight:600'>".key($occupazione)."</span></div>";
-                    $data['occupazione'].="<span>&nbsp;</span>";
                     $data['occupazione'].="<span>&nbsp;</span>";
                     if($last_occupazione['note']!="") $data['occupazione'].='<a href="#" onClick="'.$clickDetailOccupazione.'" class="AA_Link AA_Link_Icon AA_Link_Icon_Info" title="Dettagli occupazione">Fai click qui per visualizzare le note</a>';
                     else $data['occupazione'].="<span>&nbsp;</span>";
@@ -5850,7 +5849,7 @@ class AA_SicarModule extends AA_GenericModule
                         $nucleo->SetProp("indirizzo",$immobile->GetIndirizzo());
                         $nucleo->SetProp("comune",$immobile->GetComune(false));
                     }
-                    $nucleo->Update($this->oUser);  
+                    $nucleo->Sync($this->oUser);  
                 }
                 else
                 {
@@ -5878,7 +5877,7 @@ class AA_SicarModule extends AA_GenericModule
                     $nucleo->SetProp("alloggio_attuale",0);
                     $nucleo->SetProp("indirizzo","n.d.");
                     $nucleo->SetProp("comune","");
-                    $nucleo->Update($this->oUser);
+                    $nucleo->Sync($this->oUser);
                 }
                 else
                 {
@@ -6677,7 +6676,7 @@ class AA_SicarModule extends AA_GenericModule
                         $nucleo->SetProp("alloggio_attuale",0);
                         $nucleo->SetProp("indirizzo","n.d.");
                         $nucleo->SetProp("comune","");
-                        $nucleo->Update($this->oUser);
+                        $nucleo->Sync($this->oUser);
                     }
                     else
                     {
@@ -6698,7 +6697,7 @@ class AA_SicarModule extends AA_GenericModule
                         $nucleo->SetProp("indirizzo",$immobile->GetIndirizzo());
                         $nucleo->SetProp("comune",$immobile->GetComune(false));
                     }
-                    $nucleo->Update($this->oUser);  
+                    $nucleo->Sync($this->oUser);  
                 }
                 else
                 {
@@ -6731,7 +6730,7 @@ class AA_SicarModule extends AA_GenericModule
                         $nucleo->SetProp("alloggio_attuale",0);
                         $nucleo->SetProp("indirizzo","n.d.");
                         $nucleo->SetProp("comune","");
-                        $nucleo->Update($this->oUser);
+                        $nucleo->Sync($this->oUser);
                     }
                     else
                     {
