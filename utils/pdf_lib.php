@@ -1117,4 +1117,30 @@ Class AA_PDF_SARDEGNARICERCHE_TEMPLATE_A4_PORTRAIT extends AA_PDF_Document
     }
 }
 //-------------------------
+
+//Modelli FORESTAS
+Class AA_PDF_FORESTAS_TEMPLATE_A4_LANDSCAPE extends AA_PDF_Document
+{
+    public function __construct($id="generic_forestas_doc")
+    {
+        parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_LANDSCAPE);
+        $this->SetHeaderHeight(23);
+        $this->SetLogoImage("forestas_logo.jpg");
+        $this->SetDocumentStyle("font-family: sans-serif;");
+        $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
+    }
+}
+
+Class AA_PDF_FORESTAS_TEMPLATE_A4_PORTRAIT extends AA_PDF_Document
+{
+    public function __construct($id="generic_forestas_doc")
+    {
+        parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_PORTRAIT);
+        $this->SetHeaderHeight(23);
+        $this->SetLogoImage("forestas_logo.jpg");
+        $this->SetDocumentStyle("font-family: sans-serif;");
+        $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
+    }
+}
+//-------------------------
 ?>
