@@ -7312,10 +7312,36 @@ class AA_SicarModule extends AA_GenericModule
             ));
 
         }
+
+        //Proprietario
+        $proprietario_obj=$object->GetProprietario();
+        if($proprietario_obj) 
+        {
+            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailEnteProprietarioDlg", params: [{id:"'.$proprietario_obj->GetProp("id").'"}]},"'.$this->id.'")';
+            $detail_text=$proprietario_obj->GetDenominazione();
+            $proprietario=new AA_JSON_Template_Template("",array(
+                "maxHeight"=>100,
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "data"=>array("title"=>"Ente proprietario:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$detail_text."</a><br>dal ".$object->GetGestioneDaL()."</br>")
+            ));
+        }
+        else 
+        {
+            $detail_text="Ente proprietario non definito";
+            $proprietario=new AA_JSON_Template_Template("",array(
+                "maxHeight"=>100,
+                "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
+                "data"=>array("title"=>"Ente proprietario:","value"=>$detail_text)
+            ));
+
+        }
        
         $riga->addCol($gestore);
+        $riga->addCol($proprietario);
         $layout->AddRow($riga);
 
+        $riga=new AA_JSON_Template_Layout("",array("gravity"=>1,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+        
         //note
         $value = $object->GetNote();
         $note=new AA_JSON_Template_Template("",array(
@@ -7323,7 +7349,8 @@ class AA_SicarModule extends AA_GenericModule
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "data"=>array("title"=>"Note:","value"=>$value)
         ));
-        $layout->AddRow($note);
+        $riga->addCol($note);
+        $layout->AddRow($riga);
 
         $riga=new AA_JSON_Template_Layout("",array("type"=>"clean","css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
         //occupazione
@@ -8144,6 +8171,16 @@ class AA_SicarAlloggio extends AA_Object_V2
 
         $gestore=new AA_SicarEnte();
         if($gestore->Load(current($gestione))) return $gestore;
+        else return null;
+    }
+
+    public function GetProprietario()
+    {
+        $proprieta=$this->GetProprieta();
+        if(empty($proprieta)) return null;
+
+        $proprietario=new AA_SicarEnte();
+        if($proprietario->Load(current($proprieta))) return $proprietario;
         else return null;
     }
 
