@@ -51,6 +51,9 @@
   justify-content: left;
   height:100%;
 }
+.webix_selected>.AA_DataViewSicarAlloggi {
+    background: #fff !important;
+}
 
 .AA_DataView_SicarAlloggiOccupazione
 {

@@ -2632,8 +2632,8 @@ Class AA_GecoModule extends AA_GenericModule
         $form_data['Responsabile_nome']=$responsabile['nome'];
         $form_data['Responsabile_qualifica']=$responsabile['qualifica'];
 
-        $form_data['Importo_impegnato']=AA_utils::number_format(floatVal($object->GetProp('Importo_impegnato')),2,",",".");
-        $form_data['Importo_erogato']=AA_utils::number_format(floatVal($object->GetProp('Importo_erogato')),2,",",".");
+        $form_data['Importo_impegnato']=AA_Utils::number_format(floatVal($object->GetProp('Importo_impegnato')),2,",",".");
+        $form_data['Importo_erogato']=AA_Utils::number_format(floatVal($object->GetProp('Importo_erogato')),2,",",".");
 
         $form_data['Note']=$object->GetProp('Note');
 
@@ -3590,13 +3590,13 @@ Class AA_GecoModule extends AA_GenericModule
         $check_notes=false;
         if(isset($_REQUEST['Importo_impegnato'])) 
         {
-            $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
+            $importo['impegnato']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
 
             if(strcmp($importo['impegnato'],$object->GetProp('Importo_impegnato')) !=0) $check_notes=true;
         }
         if(isset($_REQUEST['Importo_erogato'])) 
         {
-            $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
+            $importo['erogato']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
             if(strcmp($importo['erogato'],$object->GetProp('Importo_erogato')) !=0) $check_notes=true;
         }
 
@@ -3952,8 +3952,8 @@ Class AA_GecoModule extends AA_GenericModule
             $beneficiario['privacy'] = 0;
         }
 
-        if(isset($_REQUEST['Importo_impegnato'])) $importo['impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
-        if(isset($_REQUEST['Importo_erogato'])) $importo['erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
+        if(isset($_REQUEST['Importo_impegnato'])) $importo['impegnato']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_impegnato']))),2,".");
+        if(isset($_REQUEST['Importo_erogato'])) $importo['erogato']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$_REQUEST['Importo_erogato']))),2,".");
         if($importo['impegnato'] <= 0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -4051,8 +4051,8 @@ Class AA_GecoModule extends AA_GenericModule
             }
 
             //importi
-            if(!empty($curData["importo_impegnato"])) $newData['Importo_impegnato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$curData['importo_impegnato']))),2,".");
-            if(!empty($curData["importo_erogato"])) $newData['Importo_erogato']=AA_utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$curData['importo_erogato']))),2,".");
+            if(!empty($curData["importo_impegnato"])) $newData['Importo_impegnato']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$curData['importo_impegnato']))),2,".");
+            if(!empty($curData["importo_erogato"])) $newData['Importo_erogato']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$curData['importo_erogato']))),2,".");
 
             //------------------------ links -----------------------------
             if(!empty($curData['link_curriculum']))

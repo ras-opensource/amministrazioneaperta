@@ -2683,11 +2683,14 @@ class AA_SicarModule extends AA_GenericModule
             if(empty($occupazione))
             {
 
-                    $data['occupazione']="<span class='AA_DataView_Tag AA_Label AA_Label_LightGray' title='Stato occupazione'>Nessuna informazione disponibile</span>";
+                    $data['occupazione']="<span>Nessuna informazione disponibile</span><span>&nbsp;</span>";
             }
             else
             {
                 $tipo_occupazione=AA_Sicar_Const::GetListaTipologieOccupazione(true);
+                
+                $clickDetailOccupazione="AA_MainApp.utils.callHandler('dlg', {task:'GetSicarDetailStatoOccupazioneAlloggioDlg', params: [{id: ".$object->GetId()."},{dal: '".key($occupazione)."'}]},'$this->id')";
+                
                 $colors=array(0=>"LightGray",1=>"LightGreen",2=>"LightYellow",3=>"LightOrange",4=>"LightRed");
                 if($last_occupazione['occupazione_tipo']>0) $data['occupazione']="<span class='AA_Label AA_Label_".$colors[$last_occupazione['occupazione_tipo']]."' style='font-size:large; padding:4px;font-weight:900' title='Stato occupazione'>".$tipo_occupazione[$last_occupazione['occupazione_tipo']]."</span>";
                 else $data['occupazione']="<span class='AA_Label AA_Label_".$colors[0]."' style='font-size:large; padding:4px;font-weight:900' title='Stato occupazione'>Libero</span>";
@@ -2696,43 +2699,54 @@ class AA_SicarModule extends AA_GenericModule
                 if($last_occupazione['occupazione_tipo']==0)
                 {
                     $data['occupazione'].="<div><span style='font-size:small'>dal: </span><span style='font-weight:600'>".key($occupazione)."</span></div>";
-                    $data['occupazione'].="</span>&nbsp;</span>";
-                    $data['occupazione'].="</span>&nbsp;</span>";
+                    $data['occupazione'].="<span>&nbsp;</span>";
+                    if($last_occupazione['note']!="") $data['occupazione'].='<a href="#" onClick="'.$clickDetailOccupazione.'" class="AA_Link AA_Link_Icon AA_Link_Icon_Info" title="Dettagli occupazione">Fai click qui per visualizzare le note</a>';
+                    else $data['occupazione'].="<span>&nbsp;</span>";
                 }
 
+                $nucleo=new AA_SicarNucleo();
+                $tipo_canone=AA_Sicar_Const::GetListaTipologieCanoneAlloggio(true);
+                
                 //assegnato
                 if($last_occupazione['occupazione_tipo']==1)
                 {
-                    $nucleo=new AA_SicarNucleo();
                     if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
                     {
                         $data['occupazione'].="<div><span style='font-size:small'>a: </span><span style='font-weight:600'>".$nucleo->GetDescrizione()."</span>";
                         $data['occupazione'].="<span style='font-size:small'> - dal: </span><span style='font-weight:600'>".key($occupazione)."</span></div>";
-                        $data['occupazione'].="</span>&nbsp;</span>";
+                        $data['occupazione'].="<span>&nbsp;</span>";
+                        if($last_occupazione['note']!="") $data['occupazione'].='<a href="#" onClick="'.$clickDetailOccupazione.'" class="AA_Link AA_Link_Icon AA_Link_Icon_Info" title="Dettagli occupazione">Fai click qui per visualizzare le note</a>';
+                        else $data['occupazione'].="<span>&nbsp;</span>";
                     }   
                     else
                     {
                         $data['occupazione'].="<div><span style='font-size:small'>a: </span><span style='font-weight:600'> n.d.</span>";
                         $data['occupazione'].="<span style='font-size:small'> - dal: </span><span style='font-weight:600'> n.d.</span></div>";
-                        $data['occupazione'].="</span>&nbsp;</span>";
+                        $data['occupazione'].="<span>&nbsp;</span>";
+                        if($last_occupazione['note']!="") $data['occupazione'].='<a href="#" onClick="'.$clickDetailOccupazione.'" class="AA_Link AA_Link_Icon AA_Link_Icon_Info" title="Dettagli occupazione">Fai click qui per visualizzare le note</a>';
+                        else $data['occupazione'].="<span>&nbsp;</span>";
                     }
                 }
 
                 //occupato
                 if($last_occupazione['occupazione_tipo']>1)
                 {
-                    $nucleo=new AA_SicarNucleo();
                     if($nucleo->Load($last_occupazione['occupazione_id_nucleo']))
                     {
                         $data['occupazione'].="<div><span style='font-size:small'>da: </span><span style='font-weight:600'>".$nucleo->GetDescrizione()."</span>";
                         $data['occupazione'].="<span style='font-size:small'> - dal: </span><span style='font-weight:600'>".key($occupazione)."</span></div>";
-                        $data['occupazione'].="</span>&nbsp;</span>";
+                        if($last_occupazione['occupazione_tipo']==2) $data['occupazione'].="<div><span style='font-size:small'>tipo canone: </span><span style='font-weight:600'>".$tipo_canone[$last_occupazione['occupazione_tipo_canone']]."</span></div>";
+                        else $data['occupazione'].="<span>&nbsp;</span>";
+                        if($last_occupazione['note']!="") $data['occupazione'].='<a href="#" onClick="'.$clickDetailOccupazione.'" class="AA_Link AA_Link_Icon AA_Link_Icon_Info" title="Dettagli occupazione">Fai click qui per visualizzare le note</a>';
+                        else $data['occupazione'].="<span>&nbsp;</span>";
                     }
                     else
                     {
                         $data['occupazione'].="<div><span style='font-size:small'>da: </span><span style='font-weight:600'> n.d.</span>";
                         $data['occupazione'].="<span style='font-size:small'> - dal: </span><span style='font-weight:600'> n.d.</span></div>";
-                        $data['occupazione'].="</span>&nbsp;</span>";
+                        $data['occupazione'].="<span>&nbsp;</span>";
+                        if($last_occupazione['note']!="") $data['occupazione'].='<a href="#" onClick="'.$clickDetailOccupazione.'" class="AA_Link AA_Link_Icon AA_Link_Icon_Info" title="Dettagli occupazione">Fai click qui per visualizzare le note</a>';
+                        else $data['occupazione'].="<span>&nbsp;</span>";
                     }
                 }
             }
@@ -2803,15 +2817,15 @@ class AA_SicarModule extends AA_GenericModule
         $bCanModify = $this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR);
         $params['enableAddNewMultiFromCsv'] = false;
 
-         $contentBoxTemplate = "<div class='AA_DataViewSicarAlloggi'><div style='width:33%; min-width:500px' class='AA_DataView_ItemContent'>"
+        $contentBoxTemplate = "<div class='AA_DataViewSicarAlloggi'><div style='width:33%; min-width:500px' class='AA_DataView_ItemContent'>"
             . "<div>#pretitolo#</div>"
             . "<div><span class='AA_DataView_ItemTitle'>#denominazione#</span></div>"
             . "<div>#tags#</div>"
             . "<div><span class='AA_DataView_ItemSubTitle'>#sottotitolo#</span></div>"
             . "<div><span class='AA_Label AA_Label_LightBlue' title='Stato elemento'>#stato#</span>&nbsp;<span class='AA_DataView_ItemDetails'>#dettagli#</span></div>"
             . "</div>"
-            . "<div class='AA_DataView_SicarAlloggiOccupazione'>#occupazione#</div>"
-            . "<div class='AA_DataView_SicarAlloggiInterventi'>#interventi#</div>"
+            . "<div class='AA_DataView_SicarAlloggiOccupazione'><span class='AA_DataView_SicarItemViewBoxLabel'>Stato occupazione</span>#occupazione#</span></div>"
+            . "<div class='AA_DataView_SicarAlloggiInterventi'><span class='AA_DataView_SicarItemViewBoxLabel'>Stato interventi</span>#interventi#</div>"
             . "</div>";
         
         // Qui puoi usare AA_GenericSection_Bozze o un template simile a GECOP
@@ -7258,11 +7272,20 @@ class AA_SicarModule extends AA_GenericModule
         
         //immobile
         $immobile_obj=$object->GetImmobile();
-        $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailImmobileDlg", params: [{id:"'.$immobile_obj->GetProp("id").'"}]},"'.$this->id.'")';
+        if($immobile_obj) 
+        {
+            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailImmobileDlg", params: [{id:"'.$immobile_obj->GetProp("id").'"}]},"'.$this->id.'")';
+            $immobile_data=array("title"=>"Immobile:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$immobile_obj->GetDescrizione()."</a><br>".$immobile_obj->GetIndirizzo()." (".$immobile_obj->GetComune().") <a href='https://www.google.com/maps/search/?api=1&query=".$immobile_obj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a><br><i>".$immobile_obj->GetTipologia()."</i>");
+        }
+        else 
+        {
+            $detail="";
+            $immobile_data=array("title"=>"Immobile:","value"=>"Immobile non definito");
+        }
         $immobile=new AA_JSON_Template_Template("",array(
             "maxHeight"=>100,
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-            "data"=>array("title"=>"Immobile:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$immobile_obj->GetDescrizione()."</a><br>".$immobile_obj->GetIndirizzo()." (".$immobile_obj->GetComune().") <a href='https://www.google.com/maps/search/?api=1&query=".$immobile_obj->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a><br><i>".$immobile_obj->GetTipologia()."</i>")
+            "data"=>$immobile_data
         ));
         $riga->addCol($immobile);
 
@@ -7989,6 +8012,7 @@ class AA_SicarAlloggio extends AA_Object_V2
         }
         else
         {
+            if($bAsObject) return null;
             return "Immobile non trovato (id: ".$this->GetProp("immobile").")";
         }
     }
@@ -8029,8 +8053,11 @@ class AA_SicarAlloggio extends AA_Object_V2
     public function GetCondominioMisto() 
     { 
         $immobile=$this->GetImmobile();
-        $attributi=$immobile->GetAttributi();
-        if(!empty($attributi['condominio_misto'])) return 1;
+        if($immobile) 
+        {
+            $attributi=$immobile->GetAttributi();
+            if(!empty($attributi['condominio_misto'])) return 1;
+        }
         else return 0; 
     }
 
