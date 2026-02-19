@@ -443,11 +443,11 @@ Class AA_SinesModule extends AA_GenericModule
             }
             else
             {
-                if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)
+                if($object->GetTipologia(true)!=AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO)
                 {
                     $partecipazione=$object->GetPartecipazione(true);
-                    if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
-                    if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
+                    if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Organismo direttamente partecipata dalla RAS'>diretta</span>";
+                    if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Organismo non direttamente partecipato dalla RAS'>indiretta</span>";
                 }
 
                 $data_fine=trim($object->GetDataFineImpegno());
@@ -797,11 +797,11 @@ Class AA_SinesModule extends AA_GenericModule
             }
             else
             {
-                if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)
+                if($object->GetTipologia(true)!=AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO)
                 {
                     $partecipazione=$object->GetPartecipazione(true);
-                    if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
-                    if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
+                    if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Organismo direttamente partecipato dalla RAS'>diretta</span>";
+                    if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Organismo non direttamente partecipato dalla RAS'>indiretta</span>";
                 }
 
                 $data_fine=trim($object->GetDataFineImpegno());
@@ -2058,7 +2058,7 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->AddTextField("sSitoWeb",$label,array("bottomLabel"=>"*URL ".$label." dell'organismo.", "placeholder"=>"Inserisci qui l'url del sito web"), false);
         
         //Partecipazione
-        if(($object->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0)
+        if(($object->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) >0 || ($object->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO) >0)
         {
             $section=new AA_FieldSet("","Partecipazione diretta RAS");
             
@@ -2075,7 +2075,7 @@ Class AA_SinesModule extends AA_GenericModule
         
         //Funzioni
         $label="Funzioni attribuite";
-        $wnd->AddTextareaField("sFunzioni",$label,array("bottomLabel"=>"*".$label." all'organismo.", "required"=>true,"placeHolder"=>"Inserisci qui le funzioni attribuite"));
+        $wnd->AddTextareaField("sFunzioni",$label,array("bottomLabel"=>"*".$label." all'organismo.", "required"=>true,"placeHolder"=>"Inserisci qui le funzioni attribuite se presenti, altrimenti inserisci la dicitura 'n.d.'"));
         
         //note
         $label="Note";
@@ -3332,20 +3332,23 @@ Class AA_SinesModule extends AA_GenericModule
         }
 
         $id_org=$organismo->GetID();
+
+        //partecipazione
+        $partecipazione=$organismo->GetPartecipazione(true);
         
         if(($perms & AA_Const::AA_PERMS_WRITE) ==0) $details.="&nbsp;<span class='AA_Label AA_Label_LightBlue' title=\" L'utente corrente non può apportare modifiche all'organismo\"><span class='mdi mdi-pencil-off'></span>&nbsp; sola lettura</span>";
         
         $header=new AA_JSON_Template_Layout($id."Header"."_$id_org",array("type"=>"clean", "height"=>38,"css"=>"AA_SectionContentHeader"));
         
         $detail_options=array(array("id"=>$id."Generale_Tab"."_$id_org", "value"=>"Generale"));
-        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) == 0)
+        if($partecipazione["percentuale"] > 0)
         {
             $detail_options[]=array("id"=>$id."DatiContabili_Tab"."_$id_org","value"=>"Dati contabili", "tooltip"=>"Dati contabili e dotazione organica");
             $detail_options[]=array("id"=>$id."Nomine_Tab"."_$id_org","value"=>"Nomine");
             $detail_options[]=array("id"=>$id."Organigramma_Tab"."_$id_org","value"=>"Organigrammi");
         }
 
-        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) > 0) 
+        //if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO) > 0) 
         {
             $detail_options[]=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PARTECIPAZIONI."_".$organismo->GetId(),"value"=>"Partecipazioni");
         }
@@ -3523,7 +3526,7 @@ Class AA_SinesModule extends AA_GenericModule
             "css"=>"AA_Detail_Content"
          ));
         $multiview->addCell($this->TemplateDettaglio_Generale_Tab($organismo));
-        if(($organismo->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)==0)
+        if($partecipazione["percentuale"] > 0)
         {
             $multiview->addCell($this->TemplateDettaglio_DatiContabili_Tab($organismo));
             $multiview->addCell($this->TemplateDettaglio_Nomine_Tab($organismo));
@@ -3533,7 +3536,7 @@ Class AA_SinesModule extends AA_GenericModule
         $canModify=false;
         if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
         
-        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) > 0) 
+        //if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO) > 0) 
         {
                 $multiview->addCell($this->TemplateDettaglio_Partecipazioni_Tab($organismo,$canModify));
         }
@@ -3722,7 +3725,7 @@ Class AA_SinesModule extends AA_GenericModule
         //terza riga
         $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>$rows_fixed_height));
         $riga->AddCol($pec);
-        if(($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) > 0) 
+        if(($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO) > 0) 
         {
             $riga->AddCol($partecipazione);
             $riga->AddCol($partecipazione_indiretta);
@@ -4643,7 +4646,7 @@ Class AA_SinesModule extends AA_GenericModule
         $template->EnableHeader();
         $template->SetHeaderHeight(38);
 
-        if($canModify) 
+        if($canModify && $object->GetTipologia(true) != AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO)
         {
             $template->EnableAddNew(true,"GetSinesAddNewPartecipazioneDlg");
             $template->SetAddNewTaskParams(array("postParams"=>array("id"=>$object->GetId())));
@@ -4664,7 +4667,7 @@ Class AA_SinesModule extends AA_GenericModule
         {
             $pratiche_data[]=array("id"=>$id_org,"denominazione"=>$curPartecipazione['denominazione'],"percentuale"=>AA_Utils::number_format($curPartecipazione['partecipazione']['partecipazioni'][$object->GetId()]['percentuale'],2,",","."),"euro"=>AA_Utils::number_format($curPartecipazione['partecipazione']['partecipazioni'][$object->GetId()]['euro'],2,",","."),"ops"=>$ops);
         }
-        $template=new AA_GenericDatatableTemplate($id."_attive","<span style='color:#003380'>Societa' di cui detiene quote di partecipazione</span>",3,array("css"=>"AA_PartecipazioniHeader_DataTable AA_PartecipazioniBoxBorderLeft"));
+        $template=new AA_GenericDatatableTemplate($id."_attive","<span style='color:#003380'>Organismi di cui detiene quote di partecipazione</span>",3,array("css"=>"AA_PartecipazioniHeader_DataTable AA_PartecipazioniBoxBorderLeft"));
         //$template->SetHeaderCss(array("background-color"=>"#dadee0 !important"));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
@@ -5979,7 +5982,7 @@ Class AA_SinesModule extends AA_GenericModule
         $partecipazione=array();
 
         //cambia la partecipazione a seconda del tipo di organismo
-        if(isset($_REQUEST['nTipologia']) && ($_REQUEST['nTipologia']==AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO || $_REQUEST['nTipologia']==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA))
+        if(isset($_REQUEST['nTipologia']) && ($_REQUEST['nTipologia']==AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO || $_REQUEST['nTipologia']==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA))
         {
             $partecipazione['percentuale']="0.00";
             $partecipazione['euro']="0.00";

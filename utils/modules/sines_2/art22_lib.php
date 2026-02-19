@@ -170,17 +170,17 @@ class AA_Organismi_Const extends AA_Const
         self::$TIPOLOGIA=array(
             self::AA_ORGANISMI_NONE=>"Nessuno",
             self::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"Ente pubblico vigilato",
-            self::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"Ente di diritto privato in controllo pubblico",
+            self::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"Ente di diritto privato",
             self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società partecipata",
-            self::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=>"Ente di diritto privato indiretto"
+            //self::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=>"Ente di diritto privato indiretto"
             );
 
         self::$TIPOLOGIA_PLURALI=array(
             self::AA_ORGANISMI_NONE=>"Nessuno",
             self::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"Enti pubblici vigilati",
-            self::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"Enti di diritto privato in controllo pubblico",
+            self::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"Enti di diritto privato",
             self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società partecipate",
-            self::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=>"Enti di diritto privato indiretti"
+            //self::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=>"Enti di diritto privato indiretti"
             );
         }
 
@@ -930,7 +930,7 @@ class AA_Organismi extends AA_Object
         }
 
         //solo societa'
-        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".(AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO)." > 0 ";
+        //$where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".(AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)." > 0 ";
 
         //partecipazioni attuali
         $partecipazione=$this->GetPartecipazione(true);
@@ -3069,26 +3069,27 @@ class AA_Organismi extends AA_Object
                     //pubblicazioni trasparenza
                     if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." = 0 OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO." = 0 OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO." > 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
                     break;
                 case 1:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%\"partecipazioni\":{%') ";
                     break;
                 case 2:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
                     break;
                 case 3:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
                     break;
                 case 4:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
                     break;
                 case 5:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
-                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":{%') ";
                     break;
             }
         }
@@ -9993,7 +9994,7 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
             $data_fine->SetStyle("width:100%; margin-bottom: .8em");
             $data_fine->SetText('<span style="font-weight:bold">Data cessazione:</span><br/>'.$val);
 
-            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)
+            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO)
             {
                 //partecipazione
                 $val=$organismo->GetPartecipazione(true);
