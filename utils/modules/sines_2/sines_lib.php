@@ -4761,7 +4761,7 @@ Class AA_SinesModule extends AA_GenericModule
         $riepilogo_layout=new AA_JSON_Template_Layout($id."_Riepilogo_Layout",array("type"=>"clean"));
 
         //rename
-        $onclickRename='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoRenameNominaDlg", postParams: {id: "'.$object->GetID().'",nome: "#nome#",cognome:"#cognome#",cf:"#cf#",ids:#ids#, refresh:1}},"'.$this->id.'")';
+        $onclickRename='AA_MainApp.utils.callHandler("dlg", {task:"GetOrganismoRenameNominaDlg", postParams: {id: "'.$object->GetID().'",nome: "#nome#",cognome:"#cognome#",cf:"#cf#",ids:"#ids#", refresh:1}},"'.$this->id.'")';
 
         //$onDblClickEvent="try{console.log('_TabBar')}catch(msg){console.error(msg)}";
         $riepilogo_template="<div style='display: flex; justify-content: space-between; align-items: center; height: 100%;'>"
