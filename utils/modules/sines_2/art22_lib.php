@@ -35,6 +35,7 @@ class AA_Organismi_Const extends AA_Const
     const AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=2;
     const AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=4;
     const AA_ORGANISMI_SOCIETA_PARTECIPATA=8;
+    const AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=16;
 
     //Tipo società
     static private $FORMA_GIURIDICA=null;
@@ -170,14 +171,16 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NONE=>"Nessuno",
             self::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"Ente pubblico vigilato",
             self::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"Ente di diritto privato in controllo pubblico",
-            self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società partecipata"
+            self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società partecipata",
+            self::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=>"Ente di diritto privato indiretto"
             );
 
         self::$TIPOLOGIA_PLURALI=array(
             self::AA_ORGANISMI_NONE=>"Nessuno",
             self::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"Enti pubblici vigilati",
             self::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"Enti di diritto privato in controllo pubblico",
-            self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società partecipate"
+            self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società partecipate",
+            self::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=>"Enti di diritto privato indiretti"
             );
         }
 
@@ -880,6 +883,7 @@ class AA_Organismi extends AA_Object
         else
         {
             if($this->nTipologia == AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO) return array("percentuale"=>100,"euro"=>0);
+            //if($this->nTipologia == AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) return array("percentuale"=>0,"euro"=>0);
             $partecipazione=json_decode($this->sPartecipazione,true);
             if($partecipazione) return $partecipazione;
             else 
@@ -889,14 +893,15 @@ class AA_Organismi extends AA_Object
                     $data=explode("/",$this->sPartecipazione);
                     $partecipazione=array(
                         "percentuale"=>str_replace(",",".",str_replace(".","",$data[1])),
-                        "euro"=>str_replace(",",".",str_replace(".","",$data[0]))
+                        "euro"=>str_replace(",",".",str_replace(".","",$data[0])),
+                        "partecipazioni"=>array()
                     );
 
                     return $partecipazione;
                 }
                 else
                 {
-                    return array("percentuale"=>0,"euro"=>0);
+                    return array("percentuale"=>"0.00","euro"=>"0.00","partecipazioni"=>array());
                 }
             }
         }
@@ -1079,7 +1084,7 @@ class AA_Organismi extends AA_Object
         $where.=" WHERE id <> ".$this->nID." AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".status ='".AA_Const::AA_STATUS_PUBBLICATA."' ";
 
         //solo societa'
-        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
+        //$where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
 
         //solo organismi che partecipano di questo organismo
         $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"".$this->nID."\":%' ";
@@ -3066,23 +3071,23 @@ class AA_Organismi extends AA_Object
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." = 0 OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
                     break;
                 case 1:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%\"partecipazioni\":{%') ";
                     break;
                 case 2:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
                     break;
                 case 3:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
                     break;
                 case 4:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '') ";
                     break;
                 case 5:
-                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA;
+                    if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO;
                     $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione NOT LIKE '' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"partecipazioni\":%') ";
                     break;
             }
@@ -9987,6 +9992,20 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
             $data_fine = new AA_XML_Div_Element("generale-tab-right-panel-data_fine",$right_panel);
             $data_fine->SetStyle("width:100%; margin-bottom: .8em");
             $data_fine->SetText('<span style="font-weight:bold">Data cessazione:</span><br/>'.$val);
+
+            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)
+            {
+                //partecipazione
+                $val=$organismo->GetPartecipazione(true);
+                if($val['percentuale']==0 && $val['euro']=="0") $val="nessuna";
+                else
+                {
+                    $val="€ ".AA_Utils::number_format($val['euro'],2,",",".")." pari al ".AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
+                }
+                $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
+                $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
+                $partecipazione->SetText('<span style="font-weight:bold">Partecipazione diretta RAS:</span><br/>'.$val);
+            }
         }
 
         //Funzioni attribuite

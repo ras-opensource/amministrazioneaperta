@@ -443,6 +443,13 @@ Class AA_SinesModule extends AA_GenericModule
             }
             else
             {
+                if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)
+                {
+                    $partecipazione=$object->GetPartecipazione(true);
+                    if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
+                    if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
+                }
+
                 $data_fine=trim($object->GetDataFineImpegno());
                 //Ente cessato
                 if(strcmp($data_fine,$now) <= 0 && strcmp($data_fine,"0000-00-00") != 0) $stato_org.="&nbsp;<span &nbsp;<span style='font-weight: 100;font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightRed'>Cessata</span>";
@@ -790,6 +797,13 @@ Class AA_SinesModule extends AA_GenericModule
             }
             else
             {
+                if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)
+                {
+                    $partecipazione=$object->GetPartecipazione(true);
+                    if($partecipazione['percentuale'] != 0) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società direttamente partecipata dalla RAS'>diretta</span>";
+                    if($partecipazione['percentuale'] == 0 || (isset($partecipazione['partecipazioni']) && sizeof($partecipazione['partecipazioni'])>0)) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
+                }
+
                 $data_fine=trim($object->GetDataFineImpegno());
                 //Ente cessato
                 if(strcmp($data_fine,$now) <= 0 && strcmp($data_fine,"0000-00-00") != 0) $stato_org.="&nbsp;<span &nbsp;<span style='font-weight: 100;font-size: .8em' class='AA_DataView_Tag AA_Label AA_Label_LightRed'>Cessata</span>";
@@ -3323,16 +3337,18 @@ Class AA_SinesModule extends AA_GenericModule
         
         $header=new AA_JSON_Template_Layout($id."Header"."_$id_org",array("type"=>"clean", "height"=>38,"css"=>"AA_SectionContentHeader"));
         
-        $detail_options=array(array("id"=>$id."Generale_Tab"."_$id_org", "value"=>"Generale"),
-        array("id"=>$id."DatiContabili_Tab"."_$id_org","value"=>"Dati contabili", "tooltip"=>"Dati contabili e dotazione organica"),
-        array("id"=>$id."Nomine_Tab"."_$id_org","value"=>"Nomine"));
-
-        //if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        $detail_options=array(array("id"=>$id."Generale_Tab"."_$id_org", "value"=>"Generale"));
+        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) == 0)
         {
+            $detail_options[]=array("id"=>$id."DatiContabili_Tab"."_$id_org","value"=>"Dati contabili", "tooltip"=>"Dati contabili e dotazione organica");
+            $detail_options[]=array("id"=>$id."Nomine_Tab"."_$id_org","value"=>"Nomine");
             $detail_options[]=array("id"=>$id."Organigramma_Tab"."_$id_org","value"=>"Organigrammi");
         }
 
-        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $detail_options[]=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PARTECIPAZIONI."_".$organismo->GetId(),"value"=>"Partecipazioni");
+        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) > 0) 
+        {
+            $detail_options[]=array("id"=>static::AA_UI_PREFIX."_".static::AA_UI_TEMPLATE_PARTECIPAZIONI."_".$organismo->GetId(),"value"=>"Partecipazioni");
+        }
 
         $header->addCol(new AA_JSON_Template_Generic($id."TabBar"."_$id_org",array(
             "view"=>"tabbar",
@@ -3507,16 +3523,20 @@ Class AA_SinesModule extends AA_GenericModule
             "css"=>"AA_Detail_Content"
          ));
         $multiview->addCell($this->TemplateDettaglio_Generale_Tab($organismo));
-        $multiview->addCell($this->TemplateDettaglio_DatiContabili_Tab($organismo));
-        $multiview->addCell($this->TemplateDettaglio_Nomine_Tab($organismo));
-        //if($this->oUser->HasFlag(AA_Const::AA_USER_FLAG_ART22_ADMIN))
+        if(($organismo->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)==0)
         {
-            $multiview->addCell($this->TemplateDettaglio_Organigramma_Tab($organismo));
+            $multiview->addCell($this->TemplateDettaglio_DatiContabili_Tab($organismo));
+            $multiview->addCell($this->TemplateDettaglio_Nomine_Tab($organismo));
+            $multiview->addCell($this->TemplateDettaglio_Organigramma_Tab($organismo)); 
         }
 
         $canModify=false;
         if(($perms & AA_Const::AA_PERMS_WRITE) > 0) $canModify=true;
-        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) $multiview->addCell($this->TemplateDettaglio_Partecipazioni_Tab($organismo,$canModify));
+        
+        if(($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($organismo->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) > 0) 
+        {
+                $multiview->addCell($this->TemplateDettaglio_Partecipazioni_Tab($organismo,$canModify));
+        }
         
         $content->AddRow($multiview);
         
@@ -3539,7 +3559,7 @@ Class AA_SinesModule extends AA_GenericModule
         if($object->IsInHouse() == true) $soc_tags.="<span class='AA_Label AA_Label_Green'>in house</span>&nbsp;";
         if($object->IsInTUSP() == true) $soc_tags.="<span class='AA_Label AA_Label_Green'>TUSP</span>&nbsp;";
         if($object->IsInMercatiReg() == true) $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green'>Mercati reg.</span>";
-        if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società non direttamente partecipata dalla RAS'>indiretta</span>";
+        if($object->GetPartecipazione() == "" || $object->GetPartecipazione() == "0") $soc_tags.="<span class='AA_DataView_Tag AA_Label AA_Label_Green' title='Società o organismo non direttamente partecipato dalla RAS'>indiretta</span>";
         
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
         $toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
@@ -3702,7 +3722,7 @@ Class AA_SinesModule extends AA_GenericModule
         //terza riga
         $riga=new AA_JSON_Template_Layout($id."_ThirdRow",array("height"=>$rows_fixed_height));
         $riga->AddCol($pec);
-        if(($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0) 
+        if(($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) > 0 || ($object->GetTipologia(true)&AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) > 0) 
         {
             $riga->AddCol($partecipazione);
             $riga->AddCol($partecipazione_indiretta);
@@ -5955,7 +5975,25 @@ Class AA_SinesModule extends AA_GenericModule
 
             return false;
         }
-        
+
+        $partecipazione=array();
+
+        //cambia la partecipazione a seconda del tipo di organismo
+        if(isset($_REQUEST['nTipologia']) && ($_REQUEST['nTipologia']==AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO || $_REQUEST['nTipologia']==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA))
+        {
+            $partecipazione['percentuale']="0.00";
+            $partecipazione['euro']="0.00";
+        }
+        else
+        {
+            $partecipazione['percentuale']="100.00";
+            $partecipazione['euro']="0.00";
+        }
+
+        $partecipazione['partecipazioni']=array();
+
+        $_REQUEST['partecipazione']=json_encode($partecipazione);
+
         $organismo= AA_Organismi::AddNewToDb($_REQUEST, $this->oUser);
         
         if(!($organismo instanceof AA_Organismi))
@@ -10155,19 +10193,26 @@ Class AA_SinesModule extends AA_GenericModule
             //$curNumPage++;
             //$curPage_row="";
             //$curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
-            $report = new AA_OrganismiFullReportTemplateDatiContabiliPageView("report_organismo_pdf_dati_contabili_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser,$doc);
-            $curNumPage+=$report->GetRelNumPage();
+            if($curOrganismo->GetTipologia(true)!=AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)
+            {
+                $report = new AA_OrganismiFullReportTemplateDatiContabiliPageView("report_organismo_pdf_dati_contabili_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser,$doc);
+                $curNumPage+=$report->GetRelNumPage();
+            }
             //$curPage_row.="</div>";
             //$curPage->SetContent($curPage_row);
             
 
-            //terza pagina
-            $curPage=$doc->AddPage();
-            $curNumPage++;
-            $curPage_row="";
-            $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
-            $curPage_row.=new AA_OrganismiFullReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
-            $curPage_row.="</div>";
+            if($curOrganismo->GetTipologia(true)!=AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO)
+            {
+                //terza pagina
+                $curPage=$doc->AddPage();
+                $curNumPage++;
+                $curPage_row="";
+                $curPage_row.="<div id='".$curOrganismo->GetID()."' style='display:flex;  flex-direction: column; width:100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;'>";
+                $curPage_row.=new AA_OrganismiFullReportTemplateNominePageView("report_organismo_pdf_nomine_page_".$curOrganismo->GetId(),null,$curOrganismo,$this->oUser);
+                $curPage_row.="</div>";
+            }
+            
             $curPage->SetFooterContent("<div style='font-style: italic; font-size: smaller; text-align: left; width: 100%;'>La dicitura 'n.d.' indica che l'informazione corrispondente non è disponibile o non è presente negli archivi dell'Amministrazione Regionale.<br><span>Le informazioni del presente organismo sono state aggiornate l'ultima volta il ".$curOrganismo->GetAggiornamento()."</span></div>");
             $curPage->SetContent($curPage_row);
 
