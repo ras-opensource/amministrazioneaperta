@@ -10217,8 +10217,8 @@ Class AA_SinesModule extends AA_GenericModule
             $curPage->SetContent($intestazione);
             $curNumPage++;
 
-            //pagine indice (50 nominativi per pagina)
-            $indiceNumVociPerPagina=50;
+            //pagine indice (42 nominativi per pagina)
+            $indiceNumVociPerPagina=42;
             for($i=0; $i<$count/$indiceNumVociPerPagina; $i++)
             {
               $curPage=$doc->AddPage();

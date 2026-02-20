@@ -10063,6 +10063,17 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
             $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
             $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
             $partecipazione->SetText('<span style="font-weight:bold">Partecipazione diretta RAS:</span><br/>'.$val);
+
+            //partecipazione indiretta
+            $value=$organismo->GetPartecipazioneIndiretta();
+            if($value['percentuale']==0) $value="nessuna";
+            else
+            {
+                $value=AA_Utils::number_format($value['percentuale'],2,",",".")."% per un totale di € ".AA_Utils::number_format($value['euro'],2,",",".");
+            }
+            $partecipazione_indiretta= new AA_XML_Div_Element("generale-right-panel-partecipazione-indiretta",$right_panel);
+            $partecipazione_indiretta->SetStyle("width:100%; margin-bottom: .8em");
+            $partecipazione_indiretta->SetText('<span style="font-weight:bold">Partecipazione indiretta RAS:</span><br/>'.$value);
         }
         else
         {
@@ -10198,7 +10209,11 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
         $curAnniRow=0;
         $curRelNumPage=0;
         
-        $curPage=$doc->AddPage();
+        if(sizeof($daticontabili) > 0)
+        {
+            $curRelNumPage=1;
+            $curPage=$doc->AddPage();
+        }
 
         $corpo_page=new AA_GenericObjectTemplateView($id."_corpo_page_".$curRelNumPage,null,$organismo);
         $corpo_page->SetStyle('display:flex;  flex-direction: column; width: 100%; align-items: center; justify-content: space-between; text-align: center; padding: 0mm; min-height: 9mm;');
