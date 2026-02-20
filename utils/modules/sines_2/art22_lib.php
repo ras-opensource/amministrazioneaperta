@@ -171,7 +171,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NONE=>"Nessuno",
             self::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"Ente pubblico vigilato",
             self::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"Ente di diritto privato",
-            self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società partecipata",
+            self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società",
             //self::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=>"Ente di diritto privato indiretto"
             );
 
@@ -179,7 +179,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_NONE=>"Nessuno",
             self::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO=>"Enti pubblici vigilati",
             self::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO=>"Enti di diritto privato",
-            self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società partecipate",
+            self::AA_ORGANISMI_SOCIETA_PARTECIPATA=>"Società",
             //self::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO=>"Enti di diritto privato indiretti"
             );
         }
@@ -769,6 +769,8 @@ class AA_Organismi extends AA_Object
         $this->oDbBind->AddBind("bMercatiReg","mercati_reg");
         $this->oDbBind->AddBind("nFormaSocietaria","forma_societaria");
         $this->oDbBind->AddBind("nStatoOrganismo","stato_organismo");
+        $this->oDbBind->AddBind("bPartecipabile","partecipabile");
+        $this->oDbBind->AddBind("bControllato","controllato");
         
         if($id > 0) $this->LoadFromDb($id,$user);
         else $this->SetId(0);
@@ -882,7 +884,7 @@ class AA_Organismi extends AA_Object
         if(!$bAsObject) return $this->sPartecipazione;
         else
         {
-            if($this->nTipologia == AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO) return array("percentuale"=>100,"euro"=>0);
+            //if($this->nTipologia == AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO) return array("percentuale"=>100,"euro"=>0);
             //if($this->nTipologia == AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_INDIRETTO) return array("percentuale"=>0,"euro"=>0);
             $partecipazione=json_decode($this->sPartecipazione,true);
             if($partecipazione) return $partecipazione;
@@ -1022,7 +1024,7 @@ class AA_Organismi extends AA_Object
         $where.=" WHERE id <> ".$idOrg." AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".status ='".AA_Const::AA_STATUS_PUBBLICATA."' ";
 
         //solo societa'
-        $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
+        //$where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo & ".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 ";
 
         //solo organismi che partecipano di questo organismo
         $where.=" AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione like '%\"".$idOrg."\":%' ";
@@ -1392,6 +1394,82 @@ class AA_Organismi extends AA_Object
         else return false;
     }
 
+    //flag società partecipabile
+    /**
+     * Summary of bPartecipabile
+     * @var int
+     */
+    protected $bPartecipabile=0;
+    /**
+     * Summary of SetPartecipabile
+     * @param mixed $var
+     * @return void
+     */
+    public function SetPartecipabile($var=1)
+    {
+        if($this->bPartecipabile != $var)
+        {
+            $this->SetChanged();
+            if($var !=0) $this->bPartecipabile=1;
+            else $this->bPartecipabile=0;
+        } 
+    }
+    /**
+     * Summary of GetPartecipabile
+     * @return int
+     */
+    public function GetPartecipabile()
+    {
+        return $this->bPartecipabile;
+    }
+    /**
+     * Summary of IsPartecipabile
+     * @return bool
+     */
+    public function IsPartecipabile()
+    {
+        if($this->bPartecipabile!=0) return true;
+        else return false;
+    }
+
+    //flag controllato
+    /**
+     * Summary of bControllato
+     * @var int
+     */
+    protected $bControllato=0;
+    /**
+     * Summary of SetControllato
+     * @param mixed $var
+     * @return void
+     */
+    public function SetControllato($var=1)
+    {
+        if($this->bControllato != $var)
+        {
+            $this->SetChanged();
+            if($var !=0) $this->bControllato=1;
+            else $this->bControllato=0;
+        } 
+    }
+    /**
+     * Summary of GetControllato
+     * @return int
+     */
+    public function GetControllato()
+    {
+        return $this->bControllato;
+    }
+    /**
+     * Summary of IsControllato
+     * @return bool
+     */
+    public function IsControllato()
+    {
+        if($this->bControllato!=0) return true;
+        else return false;
+    }
+
     //flag società in TUSP
     /**
      * Summary of bInTUSP
@@ -1533,7 +1611,7 @@ class AA_Organismi extends AA_Object
         $partecipazione_indiretta=$this->GetPartecipazioneIndiretta();
                 
         //Aggiunte per interoperabilita' partecipo
-        if($partecipazione['percentuale']+$partecipazione_indiretta['percentuale']>=100)
+        if(($partecipazione['percentuale']+$partecipazione_indiretta['percentuale']>=100)||$this->IsControllato())
         {
             $xml.="<soggetto_controllato>1</soggetto_controllato>";
         }
@@ -3068,8 +3146,7 @@ class AA_Organismi extends AA_Object
                 case 6:
                     //pubblicazioni trasparenza
                     if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
-                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." = 0 OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA." > 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
-                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO." = 0 OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo &".AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO." > 0 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
+                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".controllato = 1)";
                     break;
                 case 1:
                     //solo dirette
