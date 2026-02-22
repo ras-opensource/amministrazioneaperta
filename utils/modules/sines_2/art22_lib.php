@@ -890,7 +890,7 @@ class AA_Organismi extends AA_Object
             if($partecipazione) return $partecipazione;
             else 
             {
-                if($this->sPartecipazione!="")
+                if($this->sPartecipazione != "")
                 {
                     $data=explode("/",$this->sPartecipazione);
                     $partecipazione=array(
@@ -903,6 +903,7 @@ class AA_Organismi extends AA_Object
                 }
                 else
                 {
+                    if($this->nTipologia == AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO) return array("percentuale"=>"100.00","euro"=>"0.00","partecipazioni"=>array());
                     return array("percentuale"=>"0.00","euro"=>"0.00","partecipazioni"=>array());
                 }
             }
@@ -3146,7 +3147,7 @@ class AA_Organismi extends AA_Object
                 case 6:
                     //pubblicazioni trasparenza
                     if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
-                    $where.=" AND (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".controllato = 1)";
+                    $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".controllato = 1 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo != '".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA."') OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo == '".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
                     break;
                 case 1:
                     //solo dirette
@@ -10055,10 +10056,15 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
 
             //partecipazione
             $val=$organismo->GetPartecipazione(true);
-            if($val['percentuale']==0 && $val['euro']=="0") $val="nessuna";
+            if($val['percentuale']==0 && $val['euro']==0) $val="nessuna";
             else
             {
-                $val="€ ".AA_Utils::number_format($val['euro'],2,",",".")." pari al ".AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
+                if($val['euro'] > 0) 
+                {
+                    //AA_Log::Log(__METHOD__." - euro: ".floatval($val['euro'])." - percentuale: ".$val['percentuale'], 1);        
+                    $val="€ ".AA_Utils::number_format($val['euro'],2,",",".")." pari al ".AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
+                }
+                else $val=AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
             }
             $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
             $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
@@ -10069,7 +10075,8 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
             if($value['percentuale']==0) $value="nessuna";
             else
             {
-                $value=AA_Utils::number_format($value['percentuale'],2,",",".")."% per un totale di € ".AA_Utils::number_format($value['euro'],2,",",".");
+                if(floatval($value['euro'])>0) $value=AA_Utils::number_format($value['percentuale'],2,",",".")."% per un totale di € ".AA_Utils::number_format($value['euro'],2,",",".");
+                else $value=AA_Utils::number_format($value['percentuale'],2,",",".")."%";
             }
             $partecipazione_indiretta= new AA_XML_Div_Element("generale-right-panel-partecipazione-indiretta",$right_panel);
             $partecipazione_indiretta->SetStyle("width:100%; margin-bottom: .8em");
@@ -10092,18 +10099,35 @@ Class AA_OrganismiFullReportTemplateGeneralPageView extends AA_GenericObjectTemp
             $data_fine->SetStyle("width:100%; margin-bottom: .8em");
             $data_fine->SetText('<span style="font-weight:bold">Data cessazione:</span><br/>'.$val);
 
-            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO)
+            if($organismo->IsPartecipabile())
             {
                 //partecipazione
                 $val=$organismo->GetPartecipazione(true);
                 if($val['percentuale']==0 && $val['euro']=="0") $val="nessuna";
                 else
                 {
+                   if($val['euro'] > 0) 
+                {
+                    //AA_Log::Log(__METHOD__." - euro: ".floatval($val['euro'])." - percentuale: ".$val['percentuale'], 1);        
                     $val="€ ".AA_Utils::number_format($val['euro'],2,",",".")." pari al ".AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
+                }
+                else $val=AA_Utils::number_format($val['percentuale'],2,",",".")."% delle quote totali";
                 }
                 $partecipazione= new AA_XML_Div_Element("generale-right-panel-partecipazione",$right_panel);
                 $partecipazione->SetStyle("width:100%; margin-bottom: .8em");
                 $partecipazione->SetText('<span style="font-weight:bold">Partecipazione diretta RAS:</span><br/>'.$val);
+
+                //partecipazione indiretta
+                $value=$organismo->GetPartecipazioneIndiretta();
+                if($value['percentuale']==0) $value="nessuna";
+                else
+                {
+                    if(floatval($value['euro'])>0) $value=AA_Utils::number_format($value['percentuale'],2,",",".")."% per un totale di € ".AA_Utils::number_format($value['euro'],2,",",".");
+                    else $value=AA_Utils::number_format($value['percentuale'],2,",",".")."%";
+                }
+                $partecipazione_indiretta= new AA_XML_Div_Element("generale-right-panel-partecipazione-indiretta",$right_panel);
+                $partecipazione_indiretta->SetStyle("width:100%; margin-bottom: .8em");
+                $partecipazione_indiretta->SetText('<span style="font-weight:bold">Partecipazione indiretta RAS:</span><br/>'.$value);
             }
         }
 

@@ -69,6 +69,9 @@ Class AA_SinesModule extends AA_GenericModule
         $taskManager->RegisterTask("GetOrganismoTrashProvvedimentoDlg");
         $taskManager->RegisterTask("TrashOrganismoProvvedimento");
         
+        //aggiorna tutti gli organismi (da eseguire una tantum per aggiornamento infrastruttura)
+        $taskManager->RegisterTask("UpdateAllOrganismi");
+
         //partecipazioni
         $taskManager->RegisterTask("GetSinesAddNewPartecipazioneDlg");
         $taskManager->RegisterTask("AddNewSinesPartecipazione");
@@ -2082,17 +2085,23 @@ Class AA_SinesModule extends AA_GenericModule
         $label="Sito web";
         $wnd->AddTextField("sSitoWeb",$label,array("bottomLabel"=>"*URL ".$label." dell'organismo.", "placeholder"=>"Inserisci qui l'url del sito web"), false);
    
-        //partecipabile 
-        $wnd->AddCheckBoxField("bPartecipabile","Partecipabile",array("bottomPadding"=>42 ,"bottomLabel"=>"*Abilitare se l'organismo è partecipabile.","relatedView"=>$id."_PartecipazioneDirettaRAS", "relatedAction"=>"show"));
+        //partecipabile
+        $newRow=true;
+        if($object->GetTipologia(true) !=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)       
+        {
+            $wnd->AddCheckBoxField("bPartecipabile","Partecipabile",array("bottomPadding"=>38, "bottomLabel"=>"*Abilitare se l'organismo è partecipabile da altri organismi.","relatedView"=>$id."_PartecipazioneDirettaRAS", "relatedAction"=>"show"));
+            $newRow=false;
+        }
         
         //controllato 
         if(!($object->GetTipologia(true) & AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO))
         {
-            $wnd->AddCheckBoxField("bControllato","Controllato",array("bottomPadding"=>42 ,"bottomLabel"=>"*Abilitare se l'organismo è soggetto ad una qualsiasi forma di controllo da parte della RAS."),false);
+            $wnd->AddCheckBoxField("bControllato","Controllato",array("bottomPadding"=>42 ,"bottomLabel"=>"*Abilitare se l'organismo è soggetto ad una qualsiasi forma di controllo da parte della RAS."),$newRow);
         }
 
         //Partecipazione diretta RAS
-        $section=new AA_FieldSet($id."_PartecipazioneDirettaRAS","Partecipazione diretta RAS",$wnd->GetFormId(), 1,array("type"=>"clean","hidden"=>true));
+        if($object->GetTipologia(true) !=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) $section=new AA_FieldSet($id."_PartecipazioneDirettaRAS","Partecipazione diretta RAS",$wnd->GetFormId(), 1,array("type"=>"clean","hidden"=>true));
+        else $section=new AA_FieldSet($id."_PartecipazioneDirettaRAS","Partecipazione diretta RAS",$wnd->GetFormId(), 1,array("type"=>"clean"));
         
         //partecipazione
         $field_notes="*Quota di partecipazione diretta RAS in percentuale.<br>Indicare 0 se la RAS non detiene direttamente delle quote di partecipazione.";
@@ -5443,6 +5452,126 @@ Class AA_SinesModule extends AA_GenericModule
             $task->SetLog($sTaskLog);
 
             return false;       
+        }
+        
+        $sTaskLog="<status id='status'>0</status><content id='content'>";
+        $sTaskLog.= "Dati aggiornati con successo.";
+        $sTaskLog.="</content>";
+        
+        $task->SetLog($sTaskLog);
+        
+        return true;
+    }
+
+    //Task Update Organismo
+    public function Task_UpdateAllOrganismi($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        if(!$this->oUser->IsSuperUser())
+        {
+            $task->SetError("L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per eseguire l'operazione richiesta");
+            $sTaskLog="<status id='status'>-1</status><error id='error'>L'utente corrente (".$this->oUser->GetName().") non ha i privileggi per eseguire l'operazione richiesta</error>";
+            $task->SetLog($sTaskLog);
+
+            return false;
+        }
+        
+        //schede pubblicate
+        $organismi=AA_Organismi::Search(array("count"=>"all"),false,$this->oUser);
+
+        foreach($organismi[1] as $organismo)
+        {
+            //aggiorna il flag controllo
+            $organismo->SetControllato(1);
+           
+            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
+            {
+                $organismo->SetPartecipabile(1);
+            }
+            else
+            {
+                $organismo->SetPartecipabile(0);
+            }
+
+            $partecipazione=$organismo->GetPartecipazione(true);
+            if(!isset($partecipazione['partecipazioni'])) $partecipazione['partecipazioni']=array();
+
+            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO)
+            {
+                $partecipazione['percentuale']="100.00";
+                $partecipazione['euro']="0.00";
+            }
+
+            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO)
+            {
+                $partecipazione['percentuale']="0.00";
+                $partecipazione['euro']="0.00";
+            }
+            
+            if(sizeof($partecipazione)>0)
+            {
+                //AA_Log::Log(__METHOD__." partecipazione: ".print_r($partecipazione,true),100);
+                $organismo->SetPartecipazione(json_encode($partecipazione));
+            }
+            
+            //Salva i dati
+            if(!$organismo->UpdateDb($this->oUser,null,true," Aggiornamento dati nuova infrastruttura"))
+            {
+                $task->SetError(AA_Log::$lastErrorLog);
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salavataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;       
+            }
+        }
+
+        //bozze
+        $organismi=AA_Organismi::Search(array("count"=>"all","status"=>AA_Const::AA_STATUS_BOZZA),false,$this->oUser);
+
+        foreach($organismi[1] as $organismo)
+        {
+            //aggiorna il flag controllo
+            $organismo->SetControllato(1);
+           
+            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
+            {
+                $organismo->SetPartecipabile(1);
+            }
+            else
+            {
+                $organismo->SetPartecipabile(0);
+            }
+
+            $partecipazione=$organismo->GetPartecipazione(true);
+            if(!isset($partecipazione['partecipazioni'])) $partecipazione['partecipazioni']=array();
+
+            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO)
+            {
+                $partecipazione['percentuale']="100.00";
+                $partecipazione['euro']="0.00";
+            }
+
+            if($organismo->GetTipologia(true) == AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO)
+            {
+                $partecipazione['percentuale']="0.00";
+                $partecipazione['euro']="0.00";
+            }
+            
+            if(sizeof($partecipazione)>0)
+            {
+                //AA_Log::Log(__METHOD__." partecipazione: ".print_r($partecipazione,true),100);
+                $organismo->SetPartecipazione(json_encode($partecipazione));
+            }
+            
+            //Salva i dati
+            if(!$organismo->UpdateDb($this->oUser,null,true," Aggiornamento dati nuova infrastruttura"))
+            {
+                $task->SetError(AA_Log::$lastErrorLog);
+                $sTaskLog="<status id='status'>-1</status><error id='error'>Errore nel salavataggio dei dati. (".AA_Log::$lastErrorLog.")</error>";
+                $task->SetLog($sTaskLog);
+
+                return false;       
+            }
         }
         
         $sTaskLog="<status id='status'>0</status><content id='content'>";
