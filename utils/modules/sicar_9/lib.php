@@ -2533,6 +2533,7 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateStatoOccupazioneAlloggioSicar");
         $taskManager->RegisterTask("GetSicarDeleteStatoOccupazioneAlloggioDlg");
         $taskManager->RegisterTask("DeleteStatoOccupazioneAlloggioSicar");
+        $taskManager->RegisterTask("GetSicarDetailStatoOccupazioneAlloggioDlg");
 
         // Task per le operazioni CRUD
         $taskManager->RegisterTask("AddNewAlloggioSicar");        
@@ -3197,12 +3198,15 @@ class AA_SicarModule extends AA_GenericModule
         $form_data['ascensore'] = 0;
         $form_data['fruibile_dis'] = 0;
         $form_data['note'] = "";
+        $form_data['proprieta_ente']="";
+        $form_data['proprieta_ente_desc']="";
+        $form_data['proprieta_dal']="";
 
         $wnd = new AA_GenericFormDlg($id, "Aggiungi nuovo alloggio", $this->id, $form_data, $form_data);
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(150);
         $wnd->SetWidth(1280);
-        $wnd->SetHeight(600);
+        $wnd->SetHeight(800);
         $wnd->SetBottomPadding(36);
         $wnd->EnableValidation();
         $wnd->EnableCloseWndOnSuccessfulSave();
@@ -3251,9 +3255,16 @@ class AA_SicarModule extends AA_GenericModule
         // Campo booleano: condominio misto
         //$wnd->AddCheckBoxField("condominio_misto", " ", ["required" => false, "labelWidth"=>150,"labelRight" => "Condominio misto"]);
         
+        //ente proprietario
+        $dlgEntiParams = array("task" => "GetSicarSearchEntiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"proprieta_ente","field_desc"=>"proprieta_ente_desc"));
+        $ente=new AA_FieldSet("AA_SICAR_ENTE_PROPRIETARIO","Ente proprietario",$wnd->GetFormId(),1);
+        $ente->AddSearchField("dlg",$dlgEntiParams,$this->GetId(),["required" => true,"gravity"=>2,"label"=>"Denominazione","name"=>"proprieta_ente_desc", "bottomLabel" => "*Cerca un ente gia' esistente o aggiungine uno se non e' presente."]);
+        $ente->AddDateField('proprieta_dal','Dal',array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>80),false);
+        $wnd->AddGenericObject($ente);
+
         //ente gestore
         $dlgEntiParams = array("task" => "GetSicarSearchEntiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"gestione_ente","field_desc"=>"gestione_ente_desc"));
-        $ente=new AA_FieldSet("AA_SICAR_ENTE_GESTORE","Ente gestore",$wnd->GetFormId(),3);
+        $ente=new AA_FieldSet("AA_SICAR_ENTE_GESTORE","Ente gestore",$wnd->GetFormId(),1);
         $ente->AddSearchField("dlg",$dlgEntiParams,$this->GetId(),["required" => true,"gravity"=>2,"label"=>"Denominazione","name"=>"gestione_ente_desc", "bottomLabel" => "*Cerca un ente gia' esistente o aggiungine uno se non e' presente."]);
         $ente->AddDateField('gestione_dal','Dal',array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>80),false);
         $wnd->AddGenericObject($ente);
@@ -3267,7 +3278,7 @@ class AA_SicarModule extends AA_GenericModule
         // Campo booleano: ascensore
         $attributi->AddCheckBoxField("ascensore", " ", ["required" => false,"labelWidth"=>10,"width"=>160,"bottomPadding"=>0,"labelRight" => "Ascensore"],false);
         
-        $wnd->AddGenericObject($attributi,false);
+        $wnd->AddGenericObject($attributi);
         // Campo testuale: note
         $wnd->AddTextareaField("note", "Note", ["required" => false,"bottomPadding"=>0, "bottomLabel" => "Note aggiuntive"]);
 
@@ -3317,17 +3328,32 @@ class AA_SicarModule extends AA_GenericModule
         }
         else
         {
-            AA_Log::Log(__METHOD__." - Ente gestore non impostato o non trovato. (".print_r($object->GetProp("gestione")));
+            AA_Log::Log(__METHOD__." - Ente gestore non impostato o non trovato. (".print_r($object->GetProp("gestione"),true),100);
             $form_data['gestione_ente']="";
             $form_data['gestione_ente_desc']="";
             $form_data['gestione_dal']="";
+        }
+
+        $proprietario=$object->GetProprietario();
+        if($proprietario)
+        {
+            $form_data['proprieta_ente']=$proprietario->GetProp("id");
+            $form_data['proprieta_ente_desc']=$proprietario->GetDisplayName();
+            $form_data['proprieta_dal']=$object->GetProprietaDal();
+        }
+        else
+        {
+            AA_Log::Log(__METHOD__." - Ente proprietario non impostato o non trovato. (".print_r($object->GetProp("proprieta"),true),100);
+            $form_data['proprieta_ente']="";
+            $form_data['proprieta_ente_desc']="";
+            $form_data['proprieta_dal']="";
         }
 
         $wnd = new AA_GenericFormDlg($id, "Modifica alloggio", $this->id, $form_data, $form_data);
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(150);
         $wnd->SetWidth(1280);
-        $wnd->SetHeight(650);
+        $wnd->SetHeight(800);
         $wnd->SetBottomPadding(36);
         $wnd->EnableValidation();
         $wnd->EnableCloseWndOnSuccessfulSave();
@@ -3386,9 +3412,16 @@ class AA_SicarModule extends AA_GenericModule
         $altro->AddTextField("piano", "Piano", ["required" => true,"labelWidth"=>90,"width"=>170, "bottomLabel" => "Numero del piano"],false);
         $wnd->AddGenericObject($altro,false);
 
+        //ente proprietario
+        $dlgEntiParams = array("task" => "GetSicarSearchEntiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"proprieta_ente","field_desc"=>"proprieta_ente_desc"));
+        $ente=new AA_FieldSet("AA_SICAR_ENTE_PROPRIETARIO","Ente proprietario",$wnd->GetFormId(),1);
+        $ente->AddSearchField("dlg",$dlgEntiParams,$this->GetId(),["required" => true,"gravity"=>2,"label"=>"Denominazione","name"=>"proprieta_ente_desc", "bottomLabel" => "*Cerca un ente gia' esistente o aggiungine uno se non e' presente."]);
+        $ente->AddDateField('proprieta_dal','Dal',array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>80),false);
+        $wnd->AddGenericObject($ente);
+
         //ente gestore
         $dlgEntiParams = array("task" => "GetSicarSearchEntiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"gestione_ente","field_desc"=>"gestione_ente_desc"));
-        $ente=new AA_FieldSet("AA_SICAR_ENTE_GESTORE","Ente gestore",$wnd->GetFormId(),3);
+        $ente=new AA_FieldSet("AA_SICAR_ENTE_GESTORE","Ente gestore",$wnd->GetFormId(),1);
         $ente->AddSearchField("dlg",$dlgEntiParams,$this->GetId(),["required" => true,"gravity"=>2,"label"=>"Denominazione","name"=>"gestione_ente_desc", "bottomLabel" => "*Cerca un ente gia' esistente o aggiungine uno se non e' presente."]);
         $ente->AddDateField('gestione_dal','Dal',array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>80),false);
         $wnd->AddGenericObject($ente);
@@ -3402,7 +3435,7 @@ class AA_SicarModule extends AA_GenericModule
         // Campo booleano: ascensore
         $attributi->AddCheckBoxField("ascensore", " ", ["required" => false,"labelWidth"=>10,"width"=>160,"bottomPadding"=>0,"labelRight" => "Ascensore"],false);
         
-        $wnd->AddGenericObject($attributi,false);
+        $wnd->AddGenericObject($attributi);
 
         // Campo testuale: note
         $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Note aggiuntive"]);
@@ -4780,24 +4813,30 @@ class AA_SicarModule extends AA_GenericModule
         $wnd=new AA_GenericWindowTemplate($id, "Dettaglio stato occupazione alloggio", $this->id);
 
         $oTemplateView=new AA_GenericTemplate_Grid();
-        $templateAreas=array();
 
         if($stato['stato'] > 0)
         {
             $tipo_occupazione=AA_Sicar_Const::GetListaTipologieOccupazione(true);
+            $tipo_canone=AA_Sicar_Const::GetListaTipologieCanoneAlloggio(true);
+
+            $nucleo=new AA_SicarNucleo();
+            if($nucleo->Load($stato['occupazione_id_nucleo']))
+            {
+                $nucleo_desc=$nucleo->GetDescrizione();
+            }
+            else $nucleo_desc="n.d.";
 
             //template view props
             $aTemplateViewProps['stato']=array("label"=>"Stato occupazione","value"=>$tipo_occupazione[$stato['stato']],"visible"=>true);
-            $aTemplateViewProps['nucleo']=array("label"=>"Comune","type"=>"text","required"=>true,"bottomLabel"=>"Comune dove e' situato l'immobile","function"=>"GetComune","visible"=>true);
-            $aTemplateViewProps['canone']=array("label"=>"Ubicazione","type"=>"text","required"=>true,"bottomLabel"=>"Ubicazione dell'immobile all'interno del territorio comunale","function"=>"GetUbicazione","visible"=>true);
-            $aTemplateViewProps['data_assegnazione']=array("label"=>"Indirizzo","type"=>"text","required"=>true,"bottomLabel"=>"Indirizzo dell'immobile","visible"=>true);
-            $aTemplateViewProps['note']=array("label"=>"Dati catastali","type"=>"text","required"=>true,"function"=>"GetTemplateViewCatasto","visible"=>true);
+            $aTemplateViewProps['nucleo']=array("label"=>"Nucleo","value"=>$nucleo_desc,"visible"=>true);
+            $aTemplateViewProps['canone']=array("label"=>"Canone","value"=>$tipo_canone[$stato['occupazione_tipo_canone']],"visible"=>true);
+            $aTemplateViewProps['data_assegnazione']=array("label"=>"Data assegnazione","value"=>$stato['occupazione_data_assegnazione'],"visible"=>true);
+            $aTemplateViewProps['note']=array("label"=>"note","value"=>$stato['note'],"visible"=>true);
         
 
             $aTemplateViewProps['__areas']=array(
-                array("stato", "stato"),
-                array("nucleo","nucleo"),
-                array("canone", "data_assegnazione"),
+                array("stato", "data_assegnazione"),
+                array("nucleo","canone"),
                 array("note", "note")
             );
             $aTemplateViewProps['__cols']=array("2fr","1fr");
@@ -4805,12 +4844,12 @@ class AA_SicarModule extends AA_GenericModule
         }
         else
         {
-            $aTemplateViewProps['stato']=array("label"=>"Descrizione","type"=>"text","maxlength"=>AA_Sicar_Const::MAX_DESCRIZIONE_LENGTH,"required"=>true,"bottomLabel"=>"Inserisci la descrizione dell'immobile","visible"=>true);
-            $aTemplateViewProps['note']=array("label"=>"Note","type"=>"text","required"=>true,"function"=>"GetTemplateViewNote","visible"=>true);
+            $aTemplateViewProps['stato']=array("label"=>"Descrizione","value"=>"libero","visible"=>true);
+            $aTemplateViewProps['note']=array("label"=>"Note","value"=>$stato['note'],"visible"=>true);
 
             $aTemplateViewProps['__areas']=array(
-                array("descrizione", "descrizione","descrizione"),
-                array("note", "note", "note")
+                array("stato","stato"),
+                array("note", "note")
             );
             $aTemplateViewProps['__cols']=array("1fr","1fr");
             $aTemplateViewProps['__rows']=array("1fr","3fr");
@@ -4820,7 +4859,6 @@ class AA_SicarModule extends AA_GenericModule
         {
             if($propConfig['visible'])
             {
-                $templateAreas[]=$propName;
                 $class='';
                 if(!empty($propConfig['class'])) $class=$propConfig['class'];
                 else $class='aa-templateview-prop-'.$propName;
@@ -4844,7 +4882,7 @@ class AA_SicarModule extends AA_GenericModule
             }
         }
 
-        $oTemplateView->SetTemplateAreas($templateAreas);
+        $oTemplateView->SetTemplateAreas($aTemplateViewProps['__areas']);
         $oTemplateView->SetTemplateCols($aTemplateViewProps['__cols']);
         $oTemplateView->SetTemplateRows($aTemplateViewProps['__rows']);
 
@@ -5573,6 +5611,36 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la finestra visualizzazione dettaglio ocupazione
+    public function Task_GetSicarDetailStatoOccupazioneAlloggioDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarAlloggio($_REQUEST['id'],$this->oUser);
+        if (!$object->IsValid()) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $occupazione=$object->GetOccupazione();
+        if(!isset($occupazione[$_REQUEST['dal']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Dettaglio occupazione non presente (".$_REQUEST['dal'].").", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarDetailStatoOccupazioneAlloggioDlg($occupazione[$_REQUEST['dal']]),true);
+        return true;
+    }
+
     // Template per la finestra di dialogo di modifica alloggio
     public function Template_GetSicarModifyDlg($object)
     {
@@ -5769,6 +5837,17 @@ class AA_SicarModule extends AA_GenericModule
         $gestione=array(mb_substr($_REQUEST['gestione_dal'],0,10)=>$_REQUEST['gestione_ente']);
 
         $_REQUEST['gestione']=json_encode($gestione);
+
+        if(empty($_REQUEST['proprieta_ente']) || empty($_REQUEST['proprieta_dal']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare un ente proprietario e una data iniziale di proprieta'.", false);
+            return false;
+        }
+
+        $gestione=array(mb_substr($_REQUEST['proprieta_dal'],0,10)=>$_REQUEST['proprieta_ente']);
+
+        $_REQUEST['proprieta']=json_encode($gestione);
 
         // Utilizza il metodo generico della classe base
         return $this->Task_GenericAddNew($task, $_REQUEST);
@@ -6571,6 +6650,18 @@ class AA_SicarModule extends AA_GenericModule
         $gestione=array(mb_substr($_REQUEST['gestione_dal'],0,10)=>$_REQUEST['gestione_ente']);
 
         $_REQUEST['gestione']=json_encode($gestione);
+
+
+        if(empty($_REQUEST['proprieta_ente']) || empty($_REQUEST['proprieta_dal']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare un ente proprietario e una data iniziale di proprieta'.", false);
+            return false;
+        }
+
+        $proprieta=array(mb_substr($_REQUEST['proprieta_dal'],0,10)=>$_REQUEST['proprieta_ente']);
+
+        $_REQUEST['proprieta']=json_encode($proprieta);
     
         $alloggio->Parse($_REQUEST);
 
@@ -7322,7 +7413,7 @@ class AA_SicarModule extends AA_GenericModule
             $proprietario=new AA_JSON_Template_Template("",array(
                 "maxHeight"=>100,
                 "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
-                "data"=>array("title"=>"Ente proprietario:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$detail_text."</a><br>dal ".$object->GetGestioneDaL()."</br>")
+                "data"=>array("title"=>"Ente proprietario:","value"=>"<a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'>".$detail_text."</a><br>dal ".$object->GetProprietaDaL()."</br>")
             ));
         }
         else 
@@ -8204,6 +8295,16 @@ class AA_SicarAlloggio extends AA_Object_V2
     }
 
     public function SetProprieta($var = array()) { $this->SetProp("proprieta", $var); $this->SetChanged(true); return true; }
+
+    //restituisce la data iniziale di proprieta' dell'ultimo proprietario impostato
+    public function GetProprietaDal()
+    {
+        $proprieta=$this->GetProprieta();
+        if(empty($proprieta)) return "";
+        
+        return array_key_first($proprieta);
+    }
+
     public function SetOccupazione($var = null) 
     { 
         if(is_array($var)) $var=json_encode($var);
