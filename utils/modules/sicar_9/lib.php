@@ -2587,13 +2587,13 @@ class AA_SicarModule extends AA_GenericModule
         $this->AddSection($gest_immobili);
         #---------------------------------------------------------------
 
-        #----------------------- Gest enti -------------------------
+        #----------------------- Gest enti -----------------------------
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_ENTI,static::AA_UI_SECTION_ENTI_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_ENTI_BOX,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_ENTI_ICON,"TemplateSection_Enti");
         $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
         $this->AddSection($section);
         #---------------------------------------------------------------
 
-        #----------------------- Gest nuclei -------------------------
+        #----------------------- Gest nuclei ---------------------------
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_NUCLEI,static::AA_UI_SECTION_NUCLEI_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_NUCLEI_BOX,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_NUCLEI_ICON,"TemplateSection_Nuclei");
         $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
         $this->AddSection($section);
@@ -2603,13 +2603,13 @@ class AA_SicarModule extends AA_GenericModule
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_FINANZIAMENTI,static::AA_UI_SECTION_FINANZIAMENTI_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_FINANZIAMENTI_BOX,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_FINANZIAMENTI_ICON,"TemplateSection_Finanziamenti");
         $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
         $this->AddSection($section);
-        #---------------------------------------------------------------
+        #--------------------------------------------------------------------
 
         #----------------------- Gest graduatorie -------------------------
         $section=new AA_GenericModuleSection(static::AA_ID_SECTION_GRADUATORIE,static::AA_UI_SECTION_GRADUATORIE_NAME,true,static::AA_UI_PREFIX."_".static::AA_UI_SECTION_GRADUATORIE_BOX,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_FINANZIAMENTI_ICON,"TemplateSection_Graduatorie");
         $section->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
         $this->AddSection($section);
-        #---------------------------------------------------------------
+        #------------------------------------------------------------------
 
         $bozze=$this->GetSection(static::AA_ID_SECTION_BOZZE);
         $bozze->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Pubblicate(2,true)->toArray()));
