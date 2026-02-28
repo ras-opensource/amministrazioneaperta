@@ -6636,6 +6636,7 @@ class AA_SicarModule extends AA_GenericModule
             $_REQUEST['vani_abitabili']=str_replace(",",".",str_replace(".","",$_REQUEST['vani_abitabili']));
         }
         
+        //gestione
         if(empty($_REQUEST['gestione_ente']) || empty($_REQUEST['gestione_dal']))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -6643,11 +6644,14 @@ class AA_SicarModule extends AA_GenericModule
             return false;
         }
 
-        $gestione=array(mb_substr($_REQUEST['gestione_dal'],0,10)=>$_REQUEST['gestione_ente']);
+        $gestione=$alloggio->GetGestione();
+        $gestione[mb_substr($_REQUEST['gestione_dal'],0,10)]=$_REQUEST['gestione_ente'];
+        krsort($gestione);
 
         $_REQUEST['gestione']=json_encode($gestione);
-
-
+        //------------------------
+        
+        //proprieta
         if(empty($_REQUEST['proprieta_ente']) || empty($_REQUEST['proprieta_dal']))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
@@ -6655,10 +6659,14 @@ class AA_SicarModule extends AA_GenericModule
             return false;
         }
 
+        $proprieta=$alloggio->GetProprieta();
+        $proprieta[mb_substr($_REQUEST['proprieta_dal'],0,10)]=$_REQUEST['proprieta_ente'];
+        krsort($proprieta);
         $proprieta=array(mb_substr($_REQUEST['proprieta_dal'],0,10)=>$_REQUEST['proprieta_ente']);
 
         $_REQUEST['proprieta']=json_encode($proprieta);
-    
+        //---------------------------------
+
         $alloggio->Parse($_REQUEST);
 
         $validate = $alloggio->Validate();
