@@ -4800,17 +4800,14 @@ class AA_SicarModule extends AA_GenericModule
         $id=static::AA_UI_WND_DETAIL_STATO_OCCUPAZIONE_ALLOGGIO;
         
         $wnd=new AA_GenericWindowTemplate($id, "Dettaglio stato occupazione alloggio", $this->id);
-
-        $wnd->SetWidth(800);
-        $wnd->SetHeight(600);
+        $wnd->SetWidth(500);
+        $wnd->SetHeight(400);
         
         if(!is_array($stato))
         {
             $wnd->AddView(new AA_JSON_Template_Template("",array("template"=>"Stato occupazione alloggio non valido")));
             return $wnd;
         }
-
-        $wnd=new AA_GenericWindowTemplate($id, "Dettaglio stato occupazione alloggio", $this->id);
 
         $oTemplateView=new AA_GenericTemplate_Grid();
 
@@ -4833,7 +4830,6 @@ class AA_SicarModule extends AA_GenericModule
             $aTemplateViewProps['data_assegnazione']=array("label"=>"Data assegnazione","value"=>$stato['occupazione_data_assegnazione'],"visible"=>true);
             $aTemplateViewProps['note']=array("label"=>"note","value"=>$stato['note'],"visible"=>true);
         
-
             $aTemplateViewProps['__areas']=array(
                 array("stato", "data_assegnazione"),
                 array("nucleo","canone"),
