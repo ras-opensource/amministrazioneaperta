@@ -2583,7 +2583,7 @@ class AA_SicarModule extends AA_GenericModule
         
         #----------------------- Gest immobili -------------------------
         $gest_immobili=new AA_GenericModuleSection(static::AA_ID_SECTION_IMMOBILI,static::AA_UI_SECTION_IMMOBILI_NAME,true,static::AA_UI_PREFIX."_".static::AA_ID_SECTION_IMMOBILI,$this->GetId(),false,true,false,false,static::AA_UI_SECTION_IMMOBILI_ICON,"TemplateSection_Immobili");
-        $gest_immobili->SetNavbarTemplate(array($this->TemplateGenericNavbar_Desktop(1,true,true)->toArray()));
+        $gest_immobili->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Section($this->GetSection(static::AA_ID_SECTION_PUBBLICATE),2,true)->toArray()));
         $this->AddSection($gest_immobili);
         #---------------------------------------------------------------
 
@@ -2612,10 +2612,10 @@ class AA_SicarModule extends AA_GenericModule
         #---------------------------------------------------------------
 
         $bozze=$this->GetSection(static::AA_ID_SECTION_BOZZE);
-        $bozze->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Pubblicate(2,true)->toArray(),));
+        $bozze->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Pubblicate(2,true)->toArray()));
 
         $pubblicate=$this->GetSection(static::AA_ID_SECTION_PUBBLICATE);
-        $pubblicate->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Bozze(2,true)->toArray()));  
+        $pubblicate->SetNavbarTemplate(array($this->TemplateGenericNavbar_Section($desktop,1)->toArray(),$this->TemplateGenericNavbar_Bozze(2)->toArray(),$this->TemplateGenericNavbar_Section($gest_immobili,3,true)->toArray()));  
     }
     
     //Navbar Desktop
@@ -6650,7 +6650,7 @@ class AA_SicarModule extends AA_GenericModule
 
         $_REQUEST['gestione']=json_encode($gestione);
         //------------------------
-        
+
         //proprieta
         if(empty($_REQUEST['proprieta_ente']) || empty($_REQUEST['proprieta_dal']))
         {
