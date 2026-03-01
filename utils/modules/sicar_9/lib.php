@@ -2665,17 +2665,33 @@ class AA_SicarModule extends AA_GenericModule
     // Personalizza il template dei dati delle bozze per il modulo corrente
     protected function GetDataSectionBozze_CustomDataTemplate($data = array(), $object = null)
     {
-        if ($object instanceof AA_SicarAlloggio) {
-           $data['pretitolo'] = $object->GetImmobile(false);
-            $data['titolo'] = $object->GetDisplayName();
+        if ($object instanceof AA_SicarAlloggio) 
+        {
+            $immobile=$object->GetImmobile();
+            $anno_ultima_ristrutturazione="n.d.";
+            if(!empty($object->GetAnnoRistrutturazione())) $anno_ultima_ristrutturazione=$object->GetAnnoRistrutturazione();
+
+            $data['pretitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_Blue_Simo' title='ultima ristrutturazione'>Anno ultima ristrutturazione: ".$anno_ultima_ristrutturazione."</span>";
+            $data['denominazione'] = $immobile->GetDescrizione().", ".$object->GetDisplayName()." - ".$immobile->GetIndirizzo()." (".$immobile->GetComune().")";
+            $data['sottotitolo'] = "";
+            
+            $proprietario=$object->GetProprietario();
+            if($proprietario instanceof AA_SicarEnte)
+            {
+                $data['sottotitolo'] .=" <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente proprietario'>Ente proprietario: <b>".$proprietario->GetDenominazione()."</b></span>";
+            }
+            else $data['sottotitolo'] .= " <span class='AA_DataView_Tag AA_Label AA_Label_LightRed' title='Ente proprietario'>Nessuno</span>";
+
             $gestore=$object->GetGestore();
             if($gestore instanceof AA_SicarEnte)
             {
-                $data['sottotitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente gestore'>Ente gestore: <b>".$gestore->GetDenominazione()."</b></span>";
+                $data['sottotitolo'] .= " <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente gestore'>Ente gestore: <b>".$gestore->GetDenominazione()."</b></span>";
             }
-            else $data['sottotitolo'] = "Nessun ente gestore definito";
-            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>Tipologia di utilizzo: <b>".$object->GetTipologiaUtilizzo()."</b></span>";
-            if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Anno ultima ristrutturazione'>Anno ultima ristrutturazione: <b>".$object->GetAnnoRistrutturazione()."</b></span>";
+            else $data['sottotitolo'] .= " <span class='AA_DataView_Tag AA_Label AA_Label_LightRed' title='Ente gestore'>Nessuno</span>";
+
+            //$tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>Tipologia di utilizzo: <b>".$object->GetTipologiaUtilizzo()."</b></span>";
+            $tags="";
+            //if(!empty($object->GetAnnoRistrutturazione())) $tags=" <span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Anno ultima ristrutturazione'>Anno ultima ristrutturazione: <b>".$object->GetAnnoRistrutturazione()."</b></span>";
             $data['tags']=$tags;
 
             //occupazione
@@ -2852,17 +2868,33 @@ class AA_SicarModule extends AA_GenericModule
     // Personalizza il template dei dati delle pubblicate per il modulo corrente
     protected function GetDataSectionPubblicate_CustomDataTemplate($data = array(), $object = null)
     {
-        if ($object instanceof AA_SicarAlloggio) {
-            $data['pretitolo'] = $object->GetImmobile(false);
-            $data['titolo'] = $object->GetDisplayName();
+        if ($object instanceof AA_SicarAlloggio) 
+        {
+            $immobile=$object->GetImmobile();
+            $anno_ultima_ristrutturazione="n.d.";
+            if(!empty($object->GetAnnoRistrutturazione())) $anno_ultima_ristrutturazione=$object->GetAnnoRistrutturazione();
+
+            $data['pretitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_Blue_Simo' title='ultima ristrutturazione'>Anno ultima ristrutturazione: ".$anno_ultima_ristrutturazione."</span>";
+            $data['denominazione'] = $immobile->GetDescrizione().", ".$object->GetDisplayName()." - ".$immobile->GetIndirizzo()." (".$immobile->GetComune().")";
+            $data['sottotitolo'] = "";
+            
+            $proprietario=$object->GetProprietario();
+            if($proprietario instanceof AA_SicarEnte)
+            {
+                $data['sottotitolo'] .=" <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente proprietario'>Ente proprietario: <b>".$proprietario->GetDenominazione()."</b></span>";
+            }
+            else $data['sottotitolo'] .= " <span class='AA_DataView_Tag AA_Label AA_Label_LightRed' title='Ente proprietario'>Nessuno</span>";
+
             $gestore=$object->GetGestore();
             if($gestore instanceof AA_SicarEnte)
             {
-                $data['sottotitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente gestore'>Ente gestore: <b>".$gestore->GetDenominazione()."</b></span>";
+                $data['sottotitolo'] .= " <span class='AA_DataView_Tag AA_Label AA_Label_LightOrange' title='Ente gestore'>Ente gestore: <b>".$gestore->GetDenominazione()."</b></span>";
             }
-            else $data['sottotitolo'] = "Nessun ente gestore definito";
-            $tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>Tipologia di utilizzo: <b>".$object->GetTipologiaUtilizzo()."</b></span>";
-            if(!empty($object->GetAnnoRistrutturazione()))$tags.=" <span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Anno ultima ristrutturazione'>Anno ultima ristrutturazione: <b>".$object->GetAnnoRistrutturazione()."</b></span>";
+            else $data['sottotitolo'] .= " <span class='AA_DataView_Tag AA_Label AA_Label_LightRed' title='Ente gestore'>Nessuno</span>";
+
+            //$tags="<span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Tipo di utilizzo'>Tipologia di utilizzo: <b>".$object->GetTipologiaUtilizzo()."</b></span>";
+            $tags="";
+            //if(!empty($object->GetAnnoRistrutturazione())) $tags=" <span class='AA_DataView_Tag AA_Label AA_Label_LightYellow' title='Anno ultima ristrutturazione'>Anno ultima ristrutturazione: <b>".$object->GetAnnoRistrutturazione()."</b></span>";
             $data['tags']=$tags;
 
             //occupazione
@@ -3516,7 +3548,7 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->AddSelectField("zona_urbanistica", "Zona urb.", ["required" => true,"gravity"=>2, "bottomLabel" => "*Zona urbanistica dell'immobile", "options" => $options],false);
         
         // Campo numerico: piani
-        $wnd->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1,"validateFunction"=>"IsPositive", "bottomLabel" => "*Numero di piani dell'immobile"],false);
+        //$wnd->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1,"validateFunction"=>"IsPositive", "bottomLabel" => "*Numero di piani dell'immobile"],false);
 
         // Campo testuale: indirizzo
         $wnd->AddTextField("indirizzo", "Indirizzo", ["required" => true,"gravity"=>1, "bottomLabel" => "*Indirizzo dell'immobile comprensivo del numero civico."]);
@@ -3557,17 +3589,20 @@ class AA_SicarModule extends AA_GenericModule
         $ente=new AA_FieldSet("AA_SICAR_ENTE_GESTORE".uniqid(),"Ente gestore",$wnd->GetFormId(),3);
         $ente->AddSearchField("dlg",$dlgEntiParams,$this->GetId(),["required" => true,"gravity"=>2,"label"=>"Denominazione","name"=>"immobile_gestione_ente_desc", "bottomLabel" => "*Cerca un ente gia' esistente o aggiungine uno se non e' presente."]);
         $ente->AddDateField('immobile_gestione_dal','Dal',array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>80),false);
-        $wnd->AddGenericObject($ente);
+        //$wnd->AddGenericObject($ente);
 
-        //Attributi
-        $attributi = new AA_FieldSet("AA_SICAR_ATTRIBUTI".uniqid(),"Caratteristiche",$wnd->GetFormId(),2);
-        //alloggi totali
+        ///Attributi
+        $attributi = new AA_FieldSet("AA_SICAR_ATTRIBUTI".uniqid(),"Caratteristiche",$wnd->GetFormId(),1);
+
+        //piani
+        $attributi->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1,"validateFunction"=>"IsPositive", "bottomLabel" => "*Numero di piani dell'immobile"]);
+        
         $label="Alloggi tot.";
-        $attributi->AddTextField("attributi_alloggi",$label,array("gravity"=>2,"bottomLabel"=>"*Inserire il numero totale di alloggi (anche solo previsti).", "required"=>true,"placeholder"=>"..."));
-
+        $attributi->AddTextField("attributi_alloggi",$label,array("gravity"=>1,"bottomLabel"=>"*Inserire il numero totale di alloggi (anche solo previsti).", "required"=>true,"placeholder"=>"..."),false);
+        
         //condominio misto 
-        $attributi->AddCheckBoxField("attributi_condominio_misto", " ", ["required" => false,"labelWidth"=>10,"width"=>180,"labelRight"=>"Condominio misto","bottomPadding"=>36, "bottomLabel" => ""],false);
-        $wnd->AddGenericObject($attributi,false);
+        //$attributi->AddCheckBoxField("attributi_condominio_misto", " ", ["required" => false,"labelWidth"=>10,"width"=>180,"labelRight"=>"Condominio misto","bottomPadding"=>36, "bottomLabel" => ""],false);
+        $wnd->AddGenericObject($attributi);
 
         $wnd->SetSaveTask("AddNewImmobileSicar");
         if(!empty($form))
@@ -4101,7 +4136,7 @@ class AA_SicarModule extends AA_GenericModule
         }
         else
         {
-            AA_Log::Log(__METHOD__." - Ente gestore non impostato o non trovato. (".print_r($immobile->GetProp("attributi")));
+            AA_Log::Log(__METHOD__." - Ente gestore non impostato o non trovato. (".print_r($immobile->GetProp("attributi"),true));
             $form_data['immobile_gestione_ente']="";
             $form_data['immobile_gestione_ente_desc']="";
             $form_data['immobile_gestione_dal']="";
@@ -4139,7 +4174,7 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->AddSelectField("zona_urbanistica", "Zona urb.", ["required" => true,"gravity"=>2, "bottomLabel" => "*Zona urbanistica dell'immobile", "options" => $options],false);
         
         // Campo numerico: piani
-        $wnd->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1,"validateFunction"=>"IsPositive", "bottomLabel" => "*Numero di piani dell'immobile"],false);
+        //$wnd->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1,"validateFunction"=>"IsPositive", "bottomLabel" => "*Numero di piani dell'immobile"],false);
 
         // Campo testuale: indirizzo
         $wnd->AddTextField("indirizzo", "Indirizzo", ["required" => true,"gravity"=>1, "bottomLabel" => "*Indirizzo dell'immobile comprensivo del numero civico."]);
@@ -4148,7 +4183,7 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->AddTextField("geolocalizzazione", "Geoloc.", ["required" => true,"gravity"=>1, "bottomLabel" => "*Geolocalizzazione dell'immobile (latitudine e longitudine) in gradi decimali separate da virgola (es.: 39.22, 9.10)","placeholder"=>"es. 39.22, 9.10"],false);
 
         //Dati catastali
-        $catasto = new AA_FieldSet("AA_SICAR_CATASTO","Dati catastali");
+        $catasto = new AA_FieldSet("AA_SICAR_CATASTO","Dati catastali",$wnd->GetFormId(),1,array("type"=>"clean"));
 
         //sezione catasto
         $label="Sezione";
@@ -4180,17 +4215,21 @@ class AA_SicarModule extends AA_GenericModule
         $ente=new AA_FieldSet("AA_SICAR_ENTE_GESTORE".uniqid(),"Ente gestore",$wnd->GetFormId(),3);
         $ente->AddSearchField("dlg",$dlgEntiParams,$this->GetId(),["required" => true,"gravity"=>2,"label"=>"Denominazione","name"=>"immobile_gestione_ente_desc", "bottomLabel" => "*Cerca un ente gia' esistente o aggiungine uno se non e' presente."]);
         $ente->AddDateField('immobile_gestione_dal','Dal',array("required"=>true,"validateFunction"=>"IsIsoDate","bottomPadding"=>32,"labelWidth"=>80),false);
-        $wnd->AddGenericObject($ente);
+        //$wnd->AddGenericObject($ente);
 
         //Attributi
-        $attributi = new AA_FieldSet("AA_SICAR_ATTRIBUTI".uniqid(),"Caratteristiche",$wnd->GetFormId(),2);
-        //alloggi totali
-        $label="Alloggi tot.";
-        $attributi->AddTextField("attributi_alloggi",$label,array("gravity"=>2,"bottomLabel"=>"*Inserire il numero totale di alloggi (anche solo previsti).", "required"=>true,"placeholder"=>"..."));
+        $attributi = new AA_FieldSet("AA_SICAR_ATTRIBUTI".uniqid(),"Caratteristiche",$wnd->GetFormId(),1);
 
+        //piani
+        $attributi->AddTextField("piani", "Piani", ["required" => true,"gravity"=>1,"validateFunction"=>"IsPositive", "bottomLabel" => "*Numero di piani dell'immobile"]);
+        
+        $label="Alloggi tot.";
+        $attributi->AddTextField("attributi_alloggi",$label,array("gravity"=>1,"bottomLabel"=>"*Inserire il numero totale di alloggi (anche solo previsti).", "required"=>true,"placeholder"=>"..."),false);
+        
+        
         //condominio misto 
-        $attributi->AddCheckBoxField("attributi_condominio_misto", " ", ["required" => false,"labelWidth"=>10,"width"=>180,"labelRight"=>"Condominio misto","bottomPadding"=>36, "bottomLabel" => ""],false);
-        $wnd->AddGenericObject($attributi,false);
+        //$attributi->AddCheckBoxField("attributi_condominio_misto", " ", ["required" => false,"labelWidth"=>10,"width"=>180,"labelRight"=>"Condominio misto","bottomPadding"=>36, "bottomLabel" => ""],false);
+        $wnd->AddGenericObject($attributi);
 
         // Campo testuale: note
         $wnd->AddTextareaField("note", "Note", ["required" => false,"labelWidth"=>60, "bottomLabel" => "Note aggiuntive"]);
@@ -6124,9 +6163,11 @@ class AA_SicarModule extends AA_GenericModule
             }
             else
             {
-                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                $task->SetError("Occorre specificare un ente gestore e una data iniziale di gestione", false);
-                return false;
+                //$task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                //$task->SetError("Occorre specificare un ente gestore e una data iniziale di gestione", false);
+                //return false;
+
+                $attributi['gestione']=array();
             }
         }
 
@@ -6464,17 +6505,18 @@ class AA_SicarModule extends AA_GenericModule
             if(!empty($_REQUEST['attributi_alloggi'])) $attributi['alloggi']=intval($_REQUEST['attributi_alloggi']);
 
             //ente gestore
-            $attributi['gestione']=array();
+            $gestione=$immobile->GetGestione();
             if(!empty($_REQUEST['immobile_gestione_ente']) && !empty($_REQUEST['immobile_gestione_dal'])) 
             {
-                $attributi['gestione']=array(mb_substr($_REQUEST['immobile_gestione_dal'],0,10)=>$_REQUEST['immobile_gestione_ente']);
+                $gestione[mb_substr($_REQUEST['immobile_gestione_dal'],0,10)]=$_REQUEST['immobile_gestione_ente'];
             }
             else
             {
-                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                $task->SetError("Occorre specificare un ente gestore e una data iniziale di gestione", false);
-                return false;
+                //$task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                //$task->SetError("Occorre specificare un ente gestore e una data iniziale di gestione", false);
+                //return false;
             }
+            $attributi['gestione']=$gestione;
         }
         else
         {
@@ -7701,8 +7743,9 @@ class AA_SicarModule extends AA_GenericModule
                 if($curImmobile->IsCondominioMisto()) $condominio_misto="Si";
                 if($alloggi_censiti>0) $num_alloggi.=" (".sizeof($curImmobile->GetAlloggi())." <a class='AA_DataTable_Ops_Button' title='Visualizza gli alloggi censiti associati all&apos;immobile' onClick='".$alloggi_list."'><span class='".$alloggi_list_icon."'></span></a>)";
                 else $num_alloggi.=" (0)";
+                $localizzazione="<b>".$curImmobile->GetDescrizione()."</b> - ".$curImmobile->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")"; 
                 $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
-                $data[]=array("id"=>$curImmobile->GetProp("id"),"condominio_misto"=>$condominio_misto,"alloggi"=>$num_alloggi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc,"ops"=>$ops);
+                $data[]=array("id"=>$curImmobile->GetProp("id"),"localizzazione"=>$localizzazione,"condominio_misto"=>$condominio_misto,"alloggi"=>$num_alloggi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc,"ops"=>$ops);
             }
             else
             {
@@ -7718,12 +7761,13 @@ class AA_SicarModule extends AA_GenericModule
                 else $num_alloggi.=" (0)";
                 $condominio_misto="No";
                 if($curImmobile->IsCondominioMisto()) $condominio_misto="Si";
-                $data[]=array("id"=>$curImmobile->GetProp("id"),"condominio_misto"=>$condominio_misto,"alloggi"=>$num_alloggi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc);
+                $localizzazione=$curImmobile->GetDescrizione()." - ".$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")"; 
+                $data[]=array("id"=>$curImmobile->GetProp("id"),"localizzazione"=>$localizzazione,"condominio_misto"=>$condominio_misto,"alloggi"=>$num_alloggi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc);
             }
         }
 
-        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",5,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
-        else $template=new AA_GenericDatatableTemplate($id,"",6,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        if(empty($ops)) $template=new AA_GenericDatatableTemplate($id,"",2,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
+        else $template=new AA_GenericDatatableTemplate($id,"",3,array("type"=>"clean","name"=>static::AA_UI_SECTION_IMMOBILI_NAME),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id));
         $template->EnableScroll(false,true);
         $template->EnableRowOver();
         $template->EnableHeader(true);
@@ -7736,13 +7780,13 @@ class AA_SicarModule extends AA_GenericModule
             $template->SetAddNewTaskParams(array("postParams"=>array("refresh"=>1)));
         }
 
-        $template->SetColumnHeaderInfo(0,"descrizione","<div style='text-align: center'>Denominazione</div>",250,"textFilter","int","ImmobiliTable_left");
-        $template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
-        $template->SetColumnHeaderInfo(2,"condominio_misto","<div style='text-align: center'>Condominio Misto</div>",150,"selectFilter","text","ImmobiliTable");
-        $template->SetColumnHeaderInfo(3,"alloggi","<div style='text-align: center'>Alloggi</div>",130,null,null,"ImmobiliTable");
-        $template->SetColumnHeaderInfo(4,"gestore","<div style='text-align: center'>Gestore</div>",260,"textFilter","text","ImmobiliTable");
+        $template->SetColumnHeaderInfo(0,"localizzazione","<div style='text-align: center'>Localizzazione</div>","fillspace","textFilter","text","ImmobiliTable_left");
+        //$template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
+        //$template->SetColumnHeaderInfo(1,"condominio_misto","<div style='text-align: center'>Condominio Misto</div>",150,"selectFilter","text","ImmobiliTable");
+        $template->SetColumnHeaderInfo(1,"alloggi","<div style='text-align: center'>Alloggi ERP</div>",130,null,null,"ImmobiliTable");
+        //$template->SetColumnHeaderInfo(4,"gestore","<div style='text-align: center'>Gestore</div>",260,"textFilter","text","ImmobiliTable");
         //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
-        if(!empty($ops)) $template->SetColumnHeaderInfo(5,"ops","<div style='text-align: center'>Operazioni</div>",130,null,null,"ImmobiliTable");
+        if(!empty($ops)) $template->SetColumnHeaderInfo(2,"ops","<div style='text-align: center'>Operazioni</div>",130,null,null,"ImmobiliTable");
 
         $template->SetData($data);
 
