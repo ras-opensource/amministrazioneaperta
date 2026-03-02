@@ -2672,7 +2672,8 @@ class AA_SicarModule extends AA_GenericModule
             if(!empty($object->GetAnnoRistrutturazione())) $anno_ultima_ristrutturazione=$object->GetAnnoRistrutturazione();
 
             $data['pretitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_Blue_Simo' title='ultima ristrutturazione'>Anno ultima ristrutturazione: ".$anno_ultima_ristrutturazione."</span>";
-            $data['denominazione'] = $immobile->GetDescrizione().", ".$object->GetDisplayName()." - ".$immobile->GetIndirizzo()." (".$immobile->GetComune().")";
+            if($immobile instanceof AA_SicarImmobile) $data['denominazione'] = $immobile->GetDescrizione().", ".$object->GetDisplayName()." - ".$immobile->GetIndirizzo()." (".$immobile->GetComune().")";
+            else $data['denominazione'] = $object->GetDisplayName();
             $data['sottotitolo'] = "";
             
             $proprietario=$object->GetProprietario();
@@ -2875,7 +2876,8 @@ class AA_SicarModule extends AA_GenericModule
             if(!empty($object->GetAnnoRistrutturazione())) $anno_ultima_ristrutturazione=$object->GetAnnoRistrutturazione();
 
             $data['pretitolo'] =" <span class='AA_DataView_Tag AA_Label AA_Label_Blue_Simo' title='ultima ristrutturazione'>Anno ultima ristrutturazione: ".$anno_ultima_ristrutturazione."</span>";
-            $data['denominazione'] = $immobile->GetDescrizione().", ".$object->GetDisplayName()." - ".$immobile->GetIndirizzo()." (".$immobile->GetComune().")";
+            if($immobile instanceof AA_SicarImmobile) $data['denominazione'] = $immobile->GetDescrizione().", ".$object->GetDisplayName()." - ".$immobile->GetIndirizzo()." (".$immobile->GetComune().")";
+            else $data['denominazione'] = $object->GetDisplayName();
             $data['sottotitolo'] = "";
             
             $proprietario=$object->GetProprietario();
