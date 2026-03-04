@@ -3838,7 +3838,11 @@ Class AA_SinesModule extends AA_GenericModule
             $riga->AddCol($partecipazione);
             $riga->AddCol($partecipazione_indiretta);
         }
-        else $riga->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        else 
+        {
+            $riga->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+            $riga->AddCol(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        }
         $layout->AddRow($riga);
         
         //Quarta riga
@@ -3989,7 +3993,20 @@ Class AA_SinesModule extends AA_GenericModule
             $toolbar=new AA_JSON_Template_Toolbar($id."_Toolbar_".$idDato,array("height"=>38, "css"=>"AA_Header_Tabbar_Title"));
             $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer","width"=>120)));
             $toolbar->AddElement(new AA_JSON_Template_Generic($id."_Toolbar_".$curDato->GetID()."_Label",array("view"=>"label","label"=>"<span style='color:#003380'>Dati contabili e dotazione organica - anno ".$anno." ".$gap_label." ".$gbc_label."</span>", "align"=>"center")));
-                
+            
+            //Pulsante di esportazione csv dato contabile
+             $export_btn=new AA_JSON_Template_Generic($id."_Export_".$curDato->GetID()."_btn",array(
+                   "view"=>"button",
+                    "type"=>"icon",
+                    "icon"=>"mdi mdi-file-table",
+                    "label"=>"Esporta in csv",
+                    "align"=>"right",
+                    "width"=>160,
+                    "tooltip"=>"Esporta i dati contabili e dotazione organica per l'anno ".$anno." in formato csv",
+                    "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"GetOrganismoExportDatoContabile\", params: [{id: ".$object->GetId()."},{id_dato_contabile:".$curDato->GetId()."}]},'$this->id')"
+                ));                
+            $toolbar->AddElement($export_btn);
+            
             //Pulsante di Modifica dato contabile
             if($canModify)
             {
