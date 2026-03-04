@@ -4120,8 +4120,14 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $this->oDbBind->AddBind("nDipendentiDet","dipendenti_det");
         $this->oDbBind->AddBind("nDipendentiDetDir","dipendenti_det_dir");
         $this->oDbBind->AddBind("sSpesaDotazioneOrganica","spesa_complessiva_personale");
+        $this->oDbBind->AddBind("sSpesaDotazioneOrganicaImpegnato","spesa_dotazione_organica_impegnato");
         $this->oDbBind->AddBind("sSpesaLavoroFlessibile","spesa_lavoro_flessibile");
+        $this->oDbBind->AddBind("sSpesaLavoroFlessibileImpegnato","spesa_lavoro_flessibile_impegnato");
+        $this->oDbBind->AddBind("sSpesaLavoroFlessibileNum","spesa_lavoro_flessibile_num");
         $this->oDbBind->AddBind("sSpesaIncarichi","spesa_incarichi");
+        $this->oDbBind->AddBind("sSpesaIncarichiImpegnato","spesa_incarichi_impegnato");
+        $this->oDbBind->AddBind("sSpesaIncarichiNum","spesa_incarichi_num");
+
         $this->oDbBind->AddBind("sFatturato","fatturato");
         $this->oDbBind->AddBind("Gap","gap");
         $this->oDbBind->AddBind("Gbc","gbc");
@@ -4380,6 +4386,17 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $this->sSpesaDotazioneOrganica=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
     }
 
+    //Spesa complessiva dotazione organica impegnato
+    protected $sSpesaDotazioneOrganicaImpegnato="";
+    public function GetSpesaDotazioneOrganicaImpegnato()
+    {
+        return $this->sSpesaDotazioneOrganicaImpegnato;
+    }
+    public function SetSpesaDotazioneOrganicaImpegnato($val="")
+    {
+        $this->sSpesaDotazioneOrganicaImpegnato=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+    }
+
     //Spesa lavoro flessibile
     protected $sSpesaLavoroFlessibile="";
     public function GetSpesaLavoroFlessibile()
@@ -4391,6 +4408,28 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $this->sSpesaLavoroFlessibile=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
     }
 
+    //Spesa lavoro flessibile imp'egnato
+    protected $sSpesaLavoroFlessibileImpegnato="";
+    public function GetSpesaLavoroFlessibileImpegnato()
+    {
+        return $this->sSpesaLavoroFlessibileImpegnato;
+    }
+    public function SetSpesaLavoroFlessibileImpegnato($val="")
+    {
+        $this->sSpesaLavoroFlessibileImpegnato=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+    }
+
+    //Spesa lavoro flessibile num
+    protected $sSpesaLavoroFlessibileNum="";
+    public function GetSpesaLavoroFlessibileNum()
+    {
+        return $this->sSpesaLavoroFlessibileNum;
+    }
+    public function SetSpesaLavoroFlessibileNum($val="")
+    {
+        $this->sSpesaLavoroFlessibileNum=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+    }
+
     //Spesa incarichi
     protected $sSpesaIncarichi="";
     public function GetSpesaIncarichi()
@@ -4400,6 +4439,28 @@ Class AA_OrganismiDatiContabili extends AA_Object
     public function SetSpesaIncarichi($val="")
     {
         $this->sSpesaIncarichi=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+    }
+
+    //Spesa incarichi impegnato
+    protected $sSpesaIncarichiImpegnato="";
+    public function GetSpesaIncarichiImpegnato()
+    {
+        return $this->sSpesaIncarichiImpegnato;
+    }
+    public function SetSpesaIncarichiImpegnato($val="")
+    {
+        $this->sSpesaIncarichiImpegnato=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+    }
+
+    //Spesa incarichi num
+    protected $sSpesaIncarichiNum="";
+    public function GetSpesaIncarichiNum()
+    {
+        return $this->sSpesaIncarichiNum;
+    }
+    public function SetSpesaIncarichiNum($val="")
+    {
+        $this->sSpesaIncarichiNum=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
     }
     
     //Fatturato
@@ -10315,20 +10376,42 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             $piva->SetText('<span style="font-weight:bold">Oneri totali:</span><br/>€ '.$val);
 
             //spesa lavoro flessibile
-            $val=$curDatocontabile->GetSpesaLavoroFlessibile();
-            if($val=="") $val="n.d.";
-            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
+            if($curDatocontabile->GetSpesaLavoroFlessibileNum() != "")
+            {
+                $val="Numero incarichi: <b>".$curDatocontabile->GetSpesaLavoroFlessibileNum()."</b>";            
+            }
+            else $val = "Numero incarichi: <b>n.d.</b>";
+            
+            if($curDatocontabile->GetSpesaLavoroFlessibileImpegnato() == "") $val .= " - Impegnato: <b>n.d.</b>";
+            else $val.=" - Impegnato: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDatocontabile->GetSpesaLavoroFlessibileImpegnato())),2,",",".")."</b>";
+            
+            if($curDatocontabile->GetSpesaLavoroFlessibile() != "")
+            {
+                $val.=" - Pagamenti: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDatocontabile->GetSpesaLavoroFlessibile())),2,",",".")."</b>";
+            }
+            else $val .= " - Pagamenti: <b>n.d.</b>";
             $piva=new AA_XML_Div_Element($this_id."_lavoroflessibile",$left_panel);
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
-            $piva->SetText('<span style="font-weight:bold">Spesa lavoro flessibile:</span><br/>€ '.$val);
+            $piva->SetText('<span style="font-weight:bold">Lavoro flessibile:</span><br/>'.$val);
 
             //spesa incarichi
-            $val=$curDatocontabile->GetSpesaIncarichi();
-            if($val=="") $val="n.d.";
-            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
+           if($curDatocontabile->GetSpesaIncarichiNum() != "")
+            {
+                $val="Numero incarichi: <b>".$curDatocontabile->GetSpesaIncarichiNum()."</b>";            
+            }
+            else $val = "Numero incarichi: <b>n.d.</b>";
+            
+            if($curDatocontabile->GetSpesaIncarichiImpegnato() == "") $val .= " - Impegnato: <b>n.d.</b>";
+            else $val.=" - Impegnato: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDatocontabile->GetSpesaIncarichiImpegnato())),2,",",".")."</b>";
+            
+            if($curDatocontabile->GetSpesaIncarichi() != "")
+            {
+                $val.=" - Pagamenti: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDatocontabile->GetSpesaIncarichi())),2,",",".")."</b>";
+            }
+            else $val .= " - Pagamenti: <b>n.d.</b>";
             $piva=new AA_XML_Div_Element($this_id."_spesaincarichi",$left_panel);
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
-            $piva->SetText('<span style="font-weight:bold">Spesa incarichi:</span><br/>€ '.$val);
+            $piva->SetText('<span style="font-weight:bold">Incarichi di studio e consulenza:</span><br/>'.$val);
 
             if($organismo->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA)
             {
@@ -10377,12 +10460,15 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             $piva->SetText('<span style="font-weight:bold">Personale assunto a tempo determinato:</span><br/>'.$val);
             
             //spesa dotazione organica
-            $val=$curDatocontabile->GetSpesaDotazioneOrganica();
-            if($val=="") $val="n.d.";
-            else $val=number_format(floatVal(str_replace(array(".",","),array("","."),$val)),2,",",".");
+            if($curDatocontabile->GetSpesaDotazioneOrganicaImpegnato()=="") $val="Impegnato: <b>n.d.</b>";
+            else $val="Impegnato: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDatocontabile->GetSpesaDotazioneOrganicaImpegnato())),2,",",".")."</b>";
+
+            if($curDatocontabile->GetSpesaDotazioneOrganica()=="") $val.=" - Pagamenti: <b>n.d.</b>";
+            else $val.=" - Pagamenti: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDatocontabile->GetSpesaDotazioneOrganica())),2,",",".")."</b>";
+
             $piva=new AA_XML_Div_Element($this_id."_spesa_dotazione_organica",$right_panel);
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
-            $piva->SetText('<span style="font-weight:bold">Spesa dotazione organica:</span><br/>€ '.$val);
+            $piva->SetText('<span style="font-weight:bold">Spesa dotazione organica:</span><br/>'.$val);
 
             $bilanci=$curDatocontabile->GetBilanci();
             if(sizeof($bilanci) > 0)

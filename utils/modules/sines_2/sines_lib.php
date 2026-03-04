@@ -2153,53 +2153,87 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(1080);
-        $wnd->SetHeight(700);
+        $wnd->SetHeight(820);
         
         //anno
-        $wnd->AddTextField("nAnno","Anno",array("tooltip"=>"Anno di riferimento", "validateFunction"=>"IsNumber" ,"required"=>true,"bottomLabel"=>"*Inserire il valore numerico dell'anno a quattro cifre, es. 2021", "bottomPadding"=>30,"placeholder"=>"inserisci qui l'anno di riferimento"));
+        $wnd->AddTextField("nAnno","Anno",array("tooltip"=>"Anno di riferimento", "validateFunction"=>"isNumber", "invalidMessage"=>"L'anno deve essere un numero intero a quatttro cifre","required"=>true,"bottomLabel"=>"*Inserire il valore numerico dell'anno a quattro cifre, es. 2021", "bottomPadding"=>30, "placeholder"=>"inserisci qui l'anno di riferimento"));
 
         //gap
-        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30),false);
-
-        //oneri totali
-        $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"));
+        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento","labelWidth"=>50, "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30),false);
 
         //gbc
-        $wnd->AddCheckBoxField("Gbc","GBC",array("tooltip"=>"Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomPadding"=>30),false);
-        
-        //Spesa incarichi
-        $wnd->AddTextField("sSpesaIncarichi","Spesa per incarichi",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per incarichi"));
+        $wnd->AddCheckBoxField("Gbc","GBC",array("tooltip"=>"Impostare se l'organismo fa parte del GBC per l'anno di riferimento","labelWidth"=>50, "bottomLabel"=>"*Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomPadding"=>30),false);
 
-        //Spesa lavoro flessibile
-        $wnd->AddTextField("sSpesaLavoroFlessibile","Spesa per lavoro flessibile",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per il lavoro flessibile, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per lavoro flessibile"),false);
-
-        //spesa dotazione organica
-        $wnd->AddTextField("sSpesaDotazioneOrganica","Spesa dot. organica",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"));
-
+        //oneri totali
+        $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"));        
+       
         //Fatturato
         if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) $wnd->AddTextField("sFatturato","Fatturato",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"riportare il fatturato in euro per l'anno di riferimento,<br>inserire solamente valori numerici, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci il fatturato"),false);
         else $wnd->AddSpacer(false);
 
+        //------------- spesa dotazione organica ----------------
+        $dotazione_organica_box=new AA_FieldSet("AA_SINES_DOTAZIONE_ORGANICA_BOX_".uniqid(),"Dotazione organica",$wnd->GetFormId(),2);
+
+        $dotazione_organica_box->AddTextField("sSpesaDotazioneOrganicaImpegnato","Impegnato",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (impegni) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"));
+
+        $dotazione_organica_box->AddTextField("sSpesaDotazioneOrganica","Pagamenti",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (pagamenti) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"),false);
+
+        $wnd->AddGenericObject($dotazione_organica_box);
+        //---------------------------------------
+
+
+        //---------- Presonale assunto -------------------
         //field personale a tempo determinato
         $dotazione = new AA_FieldSet("AA_SINES_ORGANISMI_DOTAZIONE_ORGANICA","Personale assunto a tempo determinato");
 
         //personale a tempo determinato dirigenti
-        $dotazione->AddTextField("nDipendentiDetDir","Dirigenti",array("validateFunction"=>"IsInteger", "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui il numero di dipendenti"));
+        $dotazione->AddTextField("nDipendentiDetDir","Dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"));
 
         //personale a tempo determinato
-        $dotazione->AddTextField("nDipendentiDet","Non dirigenti",array("validateFunction"=>"IsInteger", "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
+        $dotazione->AddTextField("nDipendentiDet","Non dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
 
         //field dipendenti
-        $dip = new AA_FieldSet("AA_SINES_ORGANISMI_DIPENDENTI","Personale assunto a tempo indeterminato");
+        $dip = new AA_FieldSet("AA_SINES_ORGANISMI_DIPENDENTI","Personale assunto a tempo indeterminato",$wnd->GetFormId(),1);
 
         //dipendenti dirigenti
-        $dip->AddTextField("nDipendentiDir","Dirigenti",array("validateFunction"=>"IsInteger", "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui il numero di dipendenti"));
+        $dip->AddTextField("nDipendentiDir","Dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"));
 
         //dipendenti non dirigenti
-        $dip->AddTextField("nDipendenti","Non dirigenti",array("validateFunction"=>"IsInteger", "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
+        $dip->AddTextField("nDipendenti","Non dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
         
         $wnd->AddGenericObject($dip);
-        $wnd->AddGenericObject($dotazione);
+        $wnd->AddGenericObject($dotazione,false);
+        //-----------------------------------------------------
+
+        //-------------- lavoro flessibile -----------------
+        $lavoro_flessibile_box=new AA_FieldSet("AA_SINES_LAVORO_FLESSIBILE_BOX_".uniqid(),"Lavoro flessibile",$wnd->GetFormId(),2);
+        
+        //Lavoro flessibile num
+        $lavoro_flessibile_box->AddTextField("sSpesaLavoroFlessibileNum","Numero",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Inserire solo valori interi,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire il numero di incarichi,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di unità di personale"),false);
+      
+        //Lavoro flessibile impegnato
+        $lavoro_flessibile_box->AddTextField("sSpesaLavoroFlessibileImpegnato","Impegnato",array("validateFunction"=>"IsNumber","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (impegnato) per il lavoro flessibile, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui l'impegnato per lavoro flessibile"),false);
+
+        //Spesa lavoro flessibile
+        $lavoro_flessibile_box->AddTextField("sSpesaLavoroFlessibile","Pagamenti",array("validateFunction"=>"IsNumber","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per il lavoro flessibile, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui la spesa per lavoro flessibile"),false);
+       
+        $wnd->AddGenericObject($lavoro_flessibile_box);
+        //------------------------------------------
+       
+        //-------------- incarichi -----------------
+        $incarichi_box=new AA_FieldSet("AA_SINES_INCARICHI_BOX_".uniqid(),"Incarichi di studio e consulenza",$wnd->GetFormId(),2);
+
+        //Spesa incarichi num
+        $incarichi_box->AddTextField("sSpesaIncarichiNum","Numero",array("validateFunction"=>"IsInteger","labelWidth"=>90, "tooltip"=>"Inserire solo valori interi,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire il numero di incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di incarichi"),false);
+
+        //Spesa incarichi impegnato
+        $incarichi_box->AddTextField("sSpesaIncarichiImpegnato","Impegnato",array("validateFunction"=>"IsNumber","labelWidth"=>90, "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (impegnato) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui la il totale impegnato per incarichi"),false);
+
+        //Spesa incarichi
+        $incarichi_box->AddTextField("sSpesaIncarichi","Pagamenti",array("validateFunction"=>"IsNumber","labelWidth"=>90, "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il totale dei pagamenti per incarichi"),false);
+
+        $wnd->AddGenericObject($incarichi_box);
+        //------------------------------------------
 
         //note
         $label="Note";
@@ -2884,53 +2918,86 @@ Class AA_SinesModule extends AA_GenericModule
         $wnd->EnableValidation();
         
         $wnd->SetWidth(1080);
-        $wnd->SetHeight(700);
+        $wnd->SetHeight(820);
         
         //anno
         $wnd->AddTextField("nAnno","Anno",array("tooltip"=>"Anno di riferimento", "validateFunction"=>"isNumber", "invalidMessage"=>"L'anno deve essere un numero intero a quatttro cifre","required"=>true,"bottomLabel"=>"*Inserire il valore numerico dell'anno a quattro cifre, es. 2021", "bottomPadding"=>30, "placeholder"=>"inserisci qui l'anno di riferimento"));
 
         //gap
-        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30),false);
+        $wnd->AddCheckBoxField("Gap","GAP",array("tooltip"=>"Impostare se l'organismo fa parte del GAP per l'anno di riferimento","labelWidth"=>50, "bottomLabel"=>"*Impostare se l'organismo fa parte del GAP per l'anno di riferimento", "bottomPadding"=>30),false);
+
+        //gbc
+        $wnd->AddCheckBoxField("Gbc","GBC",array("tooltip"=>"Impostare se l'organismo fa parte del GBC per l'anno di riferimento","labelWidth"=>50, "bottomLabel"=>"*Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomPadding"=>30),false);
 
         //oneri totali
-        $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"));
-        
-        //gbc
-        $wnd->AddCheckBoxField("Gbc","GBC",array("tooltip"=>"Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomLabel"=>"*Impostare se l'organismo fa parte del GBC per l'anno di riferimento", "bottomPadding"=>30),false);
-
-        //Spesa incarichi
-        $wnd->AddTextField("sSpesaIncarichi","Spesa per incarichi",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per incarichi"));
-
-        //Spesa lavoro flessibile
-        $wnd->AddTextField("sSpesaLavoroFlessibile","Spesa per lavoro flessibile",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per il lavoro flessibile, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per lavoro flessibile"),false);
-
-        //spesa dotazione organica
-        $wnd->AddTextField("sSpesaDotazioneOrganica","Spesa dot. organica",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"));
-
+        $wnd->AddTextField("sOneriTotali","Oneri totali",array("validateFunction"=>"IsNumber", "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui gli oneri totali"));        
+       
         //Fatturato
         if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) $wnd->AddTextField("sFatturato","Fatturato",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"riportare il fatturato in euro per l'anno di riferimento,<br>inserire solamente valori numerici, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci il fatturato"),false);
         else $wnd->AddSpacer(false);
 
+       //------------- spesa dotazione organica ----------------
+        $dotazione_organica_box=new AA_FieldSet("AA_SINES_DOTAZIONE_ORGANICA_BOX_".uniqid(),"Dotazione organica",$wnd->GetFormId(),2);
+
+        $dotazione_organica_box->AddTextField("sSpesaDotazioneOrganicaImpegnato","Impegnato",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (impegni) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"));
+
+        $dotazione_organica_box->AddTextField("sSpesaDotazioneOrganica","Pagamenti",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (pagamenti) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"),false);
+
+        $wnd->AddGenericObject($dotazione_organica_box);
+        //---------------------------------------
+
+        //---------- Presonale assunto -------------------
         //field personale a tempo determinato
         $dotazione = new AA_FieldSet("AA_SINES_ORGANISMI_DOTAZIONE_ORGANICA","Personale assunto a tempo determinato");
 
         //personale a tempo determinato dirigenti
-        $dotazione->AddTextField("nDipendentiDetDir","Dirigenti",array("validateFunction"=>"IsInteger", "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui il numero di dipendenti"));
+        $dotazione->AddTextField("nDipendentiDetDir","Dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"));
 
         //personale a tempo determinato
-        $dotazione->AddTextField("nDipendentiDet","Non dirigenti",array("validateFunction"=>"IsInteger", "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
+        $dotazione->AddTextField("nDipendentiDet","Non dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare il numero di unità di personale sia esterno che interno,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
 
         //field dipendenti
-        $dip = new AA_FieldSet("AA_SINES_ORGANISMI_DIPENDENTI","Personale assunto a tempo indeterminato");
+        $dip = new AA_FieldSet("AA_SINES_ORGANISMI_DIPENDENTI","Personale assunto a tempo indeterminato",$wnd->GetFormId(),1);
 
         //dipendenti dirigenti
-        $dip->AddTextField("nDipendentiDir","Dirigenti",array("validateFunction"=>"IsInteger", "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui il numero di dipendenti"));
+        $dip->AddTextField("nDipendentiDir","Dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"));
 
         //dipendenti non dirigenti
-        $dip->AddTextField("nDipendenti","Non dirigenti",array("validateFunction"=>"IsInteger", "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
+        $dip->AddTextField("nDipendenti","Non dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
         
         $wnd->AddGenericObject($dip);
-        $wnd->AddGenericObject($dotazione);
+        $wnd->AddGenericObject($dotazione,false);
+        //-----------------------------------------------------
+
+        //-------------- lavoro flessibile -----------------
+        $lavoro_flessibile_box=new AA_FieldSet("AA_SINES_LAVORO_FLESSIBILE_BOX_".uniqid(),"Lavoro flessibile",$wnd->GetFormId(),2);
+        
+        //Lavoro flessibile num
+        $lavoro_flessibile_box->AddTextField("sSpesaLavoroFlessibileNum","Numero",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Inserire solo valori interi,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire il numero di incarichi,<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di unità di personale"),false);
+      
+        //Lavoro flessibile impegnato
+        $lavoro_flessibile_box->AddTextField("sSpesaLavoroFlessibileImpegnato","Impegnato",array("validateFunction"=>"IsNumber","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (impegnato) per il lavoro flessibile, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui l'impegnato per lavoro flessibile"),false);
+
+        //Spesa lavoro flessibile
+        $lavoro_flessibile_box->AddTextField("sSpesaLavoroFlessibile","Pagamenti",array("validateFunction"=>"IsNumber","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per il lavoro flessibile, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui la spesa per lavoro flessibile"),false);
+       
+        $wnd->AddGenericObject($lavoro_flessibile_box);
+        //------------------------------------------
+       
+        //-------------- incarichi -----------------
+        $incarichi_box=new AA_FieldSet("AA_SINES_INCARICHI_BOX_".uniqid(),"Incarichi di studio e consulenza",$wnd->GetFormId(),2);
+
+        //Spesa incarichi num
+        $incarichi_box->AddTextField("sSpesaIncarichiNum","Numero",array("validateFunction"=>"IsInteger","labelWidth"=>90, "tooltip"=>"Inserire solo valori interi,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire il numero di incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di incarichi"),false);
+
+        //Spesa incarichi impegnato
+        $incarichi_box->AddTextField("sSpesaIncarichiImpegnato","Impegnato",array("validateFunction"=>"IsNumber","labelWidth"=>90, "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (impegnato) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui la il totale impegnato per incarichi"),false);
+
+        //Spesa incarichi
+        $incarichi_box->AddTextField("sSpesaIncarichi","Pagamenti",array("validateFunction"=>"IsNumber","labelWidth"=>90, "tooltip"=>"Inserire solo valori numerici,<br>lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire la spesa (pagamenti) per incarichi di studio e consulenza, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il totale dei pagamenti per incarichi"),false);
+
+        $wnd->AddGenericObject($incarichi_box);
+        //------------------------------------------
 
         //note
         $label="Note";
@@ -3968,10 +4035,22 @@ Class AA_SinesModule extends AA_GenericModule
             $riga->AddCol($val1);$riga->AddCol($val2);
             $curAnno->AddRow($riga);
             
-            //Spesa lavoro flessibile
-            $value=$curDato->GetSpesaLavoroFlessibile();
-            if($value=="")$value="n.d.";
-            else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
+            //lavoro flessibile
+            if($curDato->GetSpesaLavoroFlessibileNum() != "")
+            {
+                $value="Numero incarichi: <b>".$curDato->GetSpesaLavoroFlessibileNum()."</b>";            
+            }
+            else $value = "Numero incarichi: <b>n.d.</b>";
+            
+            if($curDato->GetSpesaLavoroFlessibileImpegnato() == "") $value .= " - Impegnato: <b>n.d.</b>";
+            else $value.=" - Impegnato: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDato->GetSpesaLavoroFlessibileImpegnato())),2,",",".")."</b>";
+            
+            if($curDato->GetSpesaLavoroFlessibile() != "")
+            {
+                $value.=" - Pagamenti: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDato->GetSpesaLavoroFlessibile())),2,",",".")."</b>";
+            }
+            else $value .= " - Pagamenti: <b>n.d.</b>";
+
             $val1=new AA_JSON_Template_Template($id."_SpesaLavoroFlessibile_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
                 "data"=>array("title"=>"Spesa lavoro flessibile:","value"=>$value)
@@ -3997,9 +4076,23 @@ Class AA_SinesModule extends AA_GenericModule
 
 
             //spesa incarichi
-            $value=$curDato->GetSpesaIncarichi();
-            if($value=="")$value="n.d.";
-            else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
+            $value=$curDato->GetSpesaIncarichiImpegnato();
+            if($curDato->GetSpesaIncarichiNum() != "")
+            {
+                $value="Numero incarichi: <b>".$curDato->GetSpesaIncarichiNum()."</b>";            
+            }
+            else $value = "Numero incarichi: <b>n.d.</b>";
+
+            if($curDato->GetSpesaIncarichiImpegnato() == "") $value.=" - Impegnato: <b>n.d.</b>";
+            else $value .=" - Impegnato: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDato->GetSpesaIncarichiImpegnato())),2,",",".")."</b>";
+            
+            if($curDato->GetSpesaIncarichi() != "")
+            {
+                $value.=" - Pagamenti: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDato->GetSpesaIncarichi())),2,",",".")."</b>";
+            }
+            else $value .= " - Pagamenti: <b>n.d.</b>";
+
+
             $val1=new AA_JSON_Template_Template($id."_SpesaIncarichi_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
                 "data"=>array("title"=>"Spesa incarichi:","value"=>$value)
@@ -4040,9 +4133,16 @@ Class AA_SinesModule extends AA_GenericModule
             }
             
             //Spesa dotazione 
-            $value=$curDato->GetSpesaDotazioneOrganica();
-            if($value=="") $value="n.d.";
-            else $value="€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".");
+            $value=$curDato->GetSpesaDotazioneOrganicaImpegnato();
+            if($value=="") $value="Impegnato: <b>n.d.</b>";
+            else $value="Impegnato <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$value)),2,",",".")."</b>";
+
+            if($curDato->GetSpesaDotazioneOrganica() != "")
+            {
+                $value.=" - Pagamenti: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDato->GetSpesaDotazioneOrganica())),2,",",".")."</b>";
+            }
+            else $value .= " - Pagamenti: <b>n.d.</b>";
+            
             $val2=new AA_JSON_Template_Template($id."_SpesaDotazione_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
                 "data"=>array("title"=>"Spesa dotazione organica:","value"=>$value)
