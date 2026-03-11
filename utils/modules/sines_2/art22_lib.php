@@ -4234,6 +4234,16 @@ Class AA_OrganismiDatiContabili extends AA_Object
         return $parent;
     }
 
+    //Esporta i dati contabili in csv
+    public function ExportToCsv()
+    {
+        $result="\"Anno\";\"Oneri Totali\";\"Spesa complessiva dotazione organica (impegnato)\";\"Spesa complessiva dotazione organica (pagamenti)\";\"Dotazione organica\";\"Dipendenti non Dirigenti\";\"Dipendenti Dirigenti\";\"Dipendenti a tempo determinato non Dirigenti\";\"Dipendenti a tempo determinato Dirigenti\";\"Numero di incarichi per lavoro flessibile\";\"Spesa per lavoro flessibile (impegnato)\";\"Spesa per lavoro flessibile (pagamenti)\";\"Numero di incarichi\";\"Spesa per incarichi (impegnato)\";\"Spesa per incarichi (pagamenti)\";\"Note\"\n";
+        
+        $result.="\"".$this->GetAnno()."\";\"".$this->GetOneriTotali()."\";\"".$this->GetSpesaDotazioneOrganicaImpegnato()."\";\"".$this->GetSpesaDotazioneOrganica()."\";\"".intVal($this->GetDipendenti())."\";\"".intVal(intVal($this->GetDipendenti())-intVal($this->GetDipendentiDir()))."\";\"".intVal($this->GetDipendentiDir())."\";\"".intVal(intVal($this->GetDipendentiDet())-intVal($this->GetDipendentiDetDir()))."\";\"".intVal($this->GetDipendentiDetDir())."\";\"".intVal($this->GetSpesaLavoroFlessibileNum())."\";\"".$this->GetSpesaLavoroFlessibileImpegnato()."\";\"".$this->GetSpesaLavoroFlessibile()."\";\"".intVal($this->GetSpesaIncarichiNum())."\";\"".$this->GetSpesaIncarichiImpegnato()."\";\"".$this->GetSpesaIncarichi()."\";\"".str_replace("\"","\"\"", $this->GetNote())."\"\n";
+
+        return $result;
+    }
+
     //Imposta il genitore
     public function SetParent($parent=null,$user=null)
     {      

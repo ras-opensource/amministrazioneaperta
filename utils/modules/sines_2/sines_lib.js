@@ -51,6 +51,17 @@ AA_sines_module.eventHandlers['defaultHandlers'].CloseNominaDetailWnd = function
     }
 };
 
+//Esporta i dati contabili e dotazione organica per l'anno in formato csv
+AA_sines_module.eventHandlers['defaultHandlers'].ExportDatoContabileToCSV = function() {
+    try 
+    {
+        //console.log("eventHandlers.defaultHandlers.ExportDatoContabileToCSV", arguments,arguments[0].params[0].id);
+        window.open(AA_sines_module.taskManager+"?task="+arguments[0].task+"&id="+arguments[0].params[0].id+"&id_dato_contabile="+arguments[0].params[1].id_dato_contabile, '_blank');  
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.ExportDatoContabileToCSV", msg, this);
+    }
+};
+
 AA_sines_module.eventHandlers['defaultHandlers'].onFFChange = function() 
 {
     try 

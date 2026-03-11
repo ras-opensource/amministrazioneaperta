@@ -90,6 +90,7 @@ Class AA_SinesModule extends AA_GenericModule
         $taskManager->RegisterTask("AddNewOrganismoDatoContabile");
         $taskManager->RegisterTask("UpdateOrganismoDatoContabile");
         $taskManager->RegisterTask("TrashOrganismoDatoContabile");
+        $taskManager->RegisterTask("GetOrganismoExportDatoContabile");
         #------------------------------------------
         
         //bilanci
@@ -4003,7 +4004,7 @@ Class AA_SinesModule extends AA_GenericModule
                     "align"=>"right",
                     "width"=>160,
                     "tooltip"=>"Esporta i dati contabili e dotazione organica per l'anno ".$anno." in formato csv",
-                    "click"=>"AA_MainApp.utils.callHandler('doTask', {task:\"GetOrganismoExportDatoContabile\", params: [{id: ".$object->GetId()."},{id_dato_contabile:".$curDato->GetId()."}]},'$this->id')"
+                    "click"=>"AA_MainApp.utils.callHandler('ExportDatoContabileToCSV', {task:\"GetOrganismoExportDatoContabile\", params: [{id: ".$object->GetId()."},{id_dato_contabile:".$curDato->GetId()."}]},'$this->id')"
                 ));                
             $toolbar->AddElement($export_btn);
             
@@ -7155,7 +7156,7 @@ Class AA_SinesModule extends AA_GenericModule
     //Task modifica dato contabile
     public function Task_UpdateOrganismoDatoContabile($task)
     {
-        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         
         $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
         $dato=new AA_OrganismiDatiContabili($_REQUEST["id_dato_contabile"],null,$this->oUser);
@@ -10191,6 +10192,33 @@ Class AA_SinesModule extends AA_GenericModule
                 }
             }
         }
+    }
+
+    //Esporta in csv i dati contabili di un anno specifico
+    public function Task_GetOrganismoExportDatoContabile($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+
+        $organismo=new AA_Organismi($_REQUEST['id'], $this->oUser);
+        $dato=new AA_OrganismiDatiContabili($_REQUEST["id_dato_contabile"],null,$this->oUser);
+        if(!$organismo->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo organismonon valido: ".$_REQUEST['id'],false);
+            return false;
+        }
+        
+        if(!$dato->isValid())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo dato contabile non valido: ".$_REQUEST['id_dato_contabile'],false);
+            return false;
+        }
+
+        $csv_export=$dato->ExportToCsv();
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=dato_contabile_'.$organismo->GetID().'_'.$dato->GetAnno().'.csv');
+        die($csv_export);
     }
 
     //Funzione di esportazione in csv (da specializzare)
