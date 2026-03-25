@@ -1143,4 +1143,56 @@ Class AA_PDF_FORESTAS_TEMPLATE_A4_PORTRAIT extends AA_PDF_Document
     }
 }
 //-------------------------
+
+//Modelli argea
+Class AA_PDF_ARGEA_TEMPLATE_A4_LANDSCAPE extends AA_PDF_Document
+{
+    public function __construct($id="generic_argea_doc")
+    {
+        parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_LANDSCAPE);
+        $this->SetHeaderHeight(23);
+        $this->SetLogoImage("argea_logo.jpg");
+        $this->SetDocumentStyle("font-family: sans-serif;");
+        $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
+    }
+}
+
+Class AA_PDF_ARGEA_TEMPLATE_A4_PORTRAIT extends AA_PDF_Document
+{
+    public function __construct($id="generic_argea_doc")
+    {
+        parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_PORTRAIT);
+        $this->SetHeaderHeight(23);
+        $this->SetLogoImage("argea_logo.jpg");
+        $this->SetDocumentStyle("font-family: sans-serif;");
+        $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
+    }
+}
+//-------------------------
+
+//Modelli sfirs
+Class AA_PDF_SFIRS_TEMPLATE_A4_LANDSCAPE extends AA_PDF_Document
+{
+    public function __construct($id="generic_sfirs_doc")
+    {
+        parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_LANDSCAPE);
+        $this->SetHeaderHeight(23);
+        $this->SetLogoImage("sfirs_logo.jpg");
+        $this->SetDocumentStyle("font-family: sans-serif;");
+        $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
+    }
+}
+
+Class AA_PDF_SFIRS_TEMPLATE_A4_PORTRAIT extends AA_PDF_Document
+{
+    public function __construct($id="generic_sfirs_doc")
+    {
+        parent::__construct($id,AA_PDF_Document::AA_PDF_PAGE_FORMAT_A4_PORTRAIT);
+        $this->SetHeaderHeight(23);
+        $this->SetLogoImage("sfirs_logo.jpg");
+        $this->SetDocumentStyle("font-family: sans-serif;");
+        $this->SetPageTemplateClass("AA_PDF_PAGE_RAS_DEFAULT_TEMPLATE");
+    }
+}
+//-------------------------
 ?>
