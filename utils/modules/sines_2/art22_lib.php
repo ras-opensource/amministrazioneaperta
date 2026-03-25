@@ -210,7 +210,7 @@ class AA_Organismi_Const extends AA_Const
             self::AA_ORGANISMI_STATO_SOCIETA_IN_CONCORDATO_LIQUIDAZIONE=>"in concordato preventivo e in liquidazione",
             self::AA_ORGANISMI_STATO_SOCIETA_IN_FALLIMENTO=>"in fallimento",
             self::AA_ORGANISMI_STATO_SOCIETA_SCIOGLIMENTO_LIQUIDAZIONE=>"in scioglimento e liquidazione",
-            self::AA_ORGANISMI_STATO_SOCIETA_RIMESSA=>"rimessa"
+            self::AA_ORGANISMI_STATO_SOCIETA_RIMESSA=>"dismessa"
             );
         }
 
