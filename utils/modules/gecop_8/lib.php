@@ -2761,7 +2761,7 @@ Class AA_GecopModule extends AA_GenericModule
         ));
 
         //url bdncp
-        $value="<a href='https://dati.anticorruzione.it/superset/dashboard/dettaglio_cig/?cig=".$object->GetProp("Cig")."&standalone=2' target='_blank'>consulta...</a>";
+        $value="<a href='https://dettaglio-cig.anticorruzione.it/cig/".$object->GetProp("Cig")."' target='_blank'>consulta...</a>";
         $bdncp=new AA_JSON_Template_Template("",array(
             "template"=>"<span style='font-weight:700'>#title#</span><div>#value#</div>",
             "gravity"=>1,
@@ -5025,7 +5025,7 @@ Class AA_GecopPublicReportTemplateView extends AA_GenericObjectTemplateView
         $links=$object->GetLinks();
         $val=new AA_XML_Div_Element($id."_".uniqid(),$this);
         $val->SetStyle('width:7%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $val->SetText("<a href='".$links['atti']."' target='_blank'>Consulta gli atti</a><a href='https://dati.anticorruzione.it/superset/dashboard/dettaglio_cig/?cig=".$object->GetProp("Cig")."&standalone=2' target='_blank'>Consulta la BDNCP</a>");
+        $val->SetText("<a href='".$links['atti']."' target='_blank'>Consulta gli atti</a><a href='https://dettaglio-cig.anticorruzione.it/cig/".$object->GetProp("Cig")."' target='_blank'>Consulta la BDNCP</a>");
 
         //commissione
         $commissione=$object->GetCommissione();
