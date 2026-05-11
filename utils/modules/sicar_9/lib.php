@@ -35,6 +35,27 @@ class AA_Sicar_Const extends AA_Const
     }
 
     /**
+     * Restituisce la lista delle tipologie di programma di finanziamento
+     * @return array
+     */
+
+    const AA_DBTABLE_TIPOLOGIE_PROG_FIN = 'aa_sicar_tipologie_finanziamenti';
+    public static function GetListaTipologieProgFinanziamento($bSimpleArray=false)
+    {
+        $options = array();
+        $db = new AA_Database();
+        $query = "SELECT id, descrizione FROM ".self::AA_DBTABLE_TIPOLOGIE_PROG_FIN." ORDER BY descrizione";
+        if ($db->Query($query)) {
+            $rs = $db->GetResultSet();
+            foreach ($rs as $row) {
+                if(!$bSimpleArray) $options[] = array("id" => $row['id'], "value" => $row['descrizione']);
+                else $options[$row['id']] = $row['descrizione'];
+            }
+        }
+        return $options;
+    }
+
+    /**
      * Restituisce la lista delle tipologie di immobile
      * @return array
      */
@@ -1426,6 +1447,10 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
         
         // Imposta i binding tra proprietà e campi database
         $this->aProps['denominazione']="Nuovo finanziamento";
+        $this->aProps['estremi']="";
+        $this->aProps['data']="";
+        $this->aProps['tipologia']=0;
+
         $this->aProps['note']="";
         
         //template view props
@@ -2534,6 +2559,15 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSicarDeleteStatoOccupazioneAlloggioDlg");
         $taskManager->RegisterTask("DeleteStatoOccupazioneAlloggioSicar");
         $taskManager->RegisterTask("GetSicarDetailStatoOccupazioneAlloggioDlg");
+
+        //stato interventi
+        $taskManager->RegisterTask("GetSicarAddNewStatoInterventiAlloggioDlg");
+        $taskManager->RegisterTask("AddNewStatoInterventiAlloggioSicar");
+        $taskManager->RegisterTask("GetSicarModifyStatoInterventiAlloggioDlg");
+        $taskManager->RegisterTask("UpdateStatoInterventiAlloggioSicar");
+        $taskManager->RegisterTask("GetSicarDeleteStatoInterventiAlloggioDlg");
+        $taskManager->RegisterTask("DeleteStatoInterventiAlloggioSicar");
+        $taskManager->RegisterTask("GetSicarDetailStatoInterventiAlloggioDlg");
 
         // Task per le operazioni CRUD
         $taskManager->RegisterTask("AddNewAlloggioSicar");        
@@ -3841,6 +3875,102 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->AddTextareaField("note", "Note", ["required" => false, "bottomLabel" => "Eventuali note aggiuntive"]);
 
         $wnd->SetSaveTask("AddNewStatoOccupazioneAlloggioSicar");
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
+    // Template per la finestra di dialogo di aggiunta nuovo stato interventi dell'alloggio
+    public function Template_GetSicarAddNewStatoInterventiAlloggioDlg($object=null)
+    {
+        $id = $this->GetId() . "_AddNewStatoInterventiAlloggio_Dlg_" . uniqid();
+        if(!($object instanceof AA_SicarAlloggio) || $object===null || !$object->IsValid() || $object->GetId()==0)
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Aggiunta nuovo intervento", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Impossibile aggiungere un nuovo intervento. Prima e' necessario selezionare un alloggio valido.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+        
+        $form_data = array();
+        $form_data['id']=$object->GetId();
+        $form_data['data_dal'] = date("Y-m-d");
+        $form_data['tipologia'] = 0;
+        $form_data['stato_intervento'] = 0;
+        $form_data['importo_stimato'] = 0;
+        $form_data['importo_finanziato'] = 0;
+        $form_data['stato_lavori'] = 1; // "non avviati"
+        $form_data['id_finanziamento'] = 0;
+        $form_data['finanziamento_desc'] = 'Nessun finanziamento associato all\'intervento';
+        $form_data['id_richiesta_finanziamento'] = 0;
+        $form_data['richiesta_finanziamento_desc'] = "Nessuna richiesta di finanziamento associata all'intervento";
+        $form_data['programma_finanziamento'] = -1;
+        $form_data['note'] = "";
+
+        $wnd = new AA_GenericFormDlg($id, "Aggiungi nuovo Stato interventi", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(90);
+        $wnd->SetWidth(760);
+        $wnd->SetHeight(640);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        //campo stato
+        $wnd->AddSwitchBoxField("stato_intervento", "Stato", ["onLabel"=>"Intervento necessario","offLabel"=>"Nessun intervento necessario", "relatedView"=>$id."_AA_SICAR_DETTAGLIO_INTERVENTO", "relatedAction"=>"show"]);
+        
+        //campo data: data dal
+        $wnd->AddDateField("data_dal", "dal", ["required" => true,"validateFunction"=>"IsIsoDate", "bottomLabel" => "*Data di inizio del nuovo stato"], false);
+        
+        $dettaglioIntervento = new AA_FieldSet($id."_AA_SICAR_DETTAGLIO_INTERVENTO", "Dettaglio intervento", $wnd->GetFormId(), 1,array("type"=>"clean","hidden"=>true));
+        
+        $options=array(
+            array("id"=>1,"value"=>"Manutenzione ordinaria"),
+            array("id"=>2,"value"=>"Manutenzione straordinaria"),
+            array("id"=>3,"value"=>"Ristrutturazione"),
+            array("id"=>4,"value"=>"Nuova costruzione")
+        );
+        $dettaglioIntervento->AddSelectField("tipologia", "Tipologia", ["required" => true,"labelWidth"=>120,"options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere il tipo di intervento tra quelli disponibili."]);
+        
+        //importo stimato
+        $dettaglioIntervento->AddTextField("importo_stimato", "Importo stimato", ["required" => true,"labelWidth"=>130, "validateFunction"=>"IsPositive", "bottomLabel" => "*Inserire l'importo stimato per la realizzazione dell'intervento."],false);
+
+        //stato lavori  
+        $options=array(
+            array("id"=>1,"value"=>"Non avviati"),
+            array("id"=>2,"value"=>"Avviati"),
+            array("id"=>3,"value"=>"Conclusi")
+        );
+        $dettaglioIntervento->AddSelectField("stato_lavori", "Stato dei lavori", ["required" => true,"labelWidth"=>120,"options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere uno degli stati dei lavori tra quelli disponibili."]);
+        
+        //$dettaglioIntervento->AddSpacer(false);
+
+        $options = AA_Sicar_Const::GetListaTipologieProgFinanziamento();
+        array_unshift($options, array("id"=>-1,"value"=>"Nessuno"));
+        $dettaglioIntervento->AddSelectField("programma_finanziamento", "Programma", ["required" => false,"bottomPadding"=>42,"labelWidth"=>120,"validateFunction"=>"IsSelected", "bottomLabel" => "Scegliere il programma di finanziamento a cui associare la richiesta di intervento.", "options" => $options],false);
+
+        //richiesta di finanziamento
+        $dlgParams = array("task" => "GetSicarSearchRichiesteFinanziamentoDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"id_richiesta_finanziamento","field_desc"=>"richiesta_finanziamento_desc"));
+        $dettaglioIntervento->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => false,"gravity"=>2,"label"=>"Richiesta","labelWidth"=>130, "name"=>"richiesta_finanziamento_desc","bottomLabel" => "Fai click sulla lente per selezionare una richiesta di finanziamento da associare all'intervento, o lascia vuoto se vuoi generare una richiesta di finanziamento successivamente."]);
+
+        //campo riferimento finanziamento
+        $dlgParams = array("task" => "GetSicarSearchFinanziamentiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"id_finanziamento","field_desc"=>"finanziamento_desc"));
+        $dettaglioIntervento->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => false,"gravity"=>2,"label"=>"Finanziamento","labelWidth"=>130,"name"=>"finanziamento_desc", "bottomLabel" => "*Fai click sulla lente per selezionare un finanziamento dalla lista o lascia vuoto se vuoi utilizzare la funzione di associazione automatica dalla gestione dei finanziamenti."]);
+       
+        $wnd->AddGenericObject($dettaglioIntervento);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false,"bottomPadding"=>0, "bottomLabel" => "Eventuali note aggiuntive"]);
+
+        $wnd->SetSaveTask("AddNewStatoInterventiAlloggioSicar");
 
         if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
         if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
@@ -5527,6 +5657,34 @@ class AA_SicarModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetSicarModifyDlg($object),true);
+        return true;
+    }
+
+    // Task per la finestra di aggiunta nuovo intervento
+    public function Task_GetSicarAddNewStatoInterventiAlloggioDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarAlloggio($_REQUEST['id'], $this->oUser);
+        if (!$object->IsValid()) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarAddNewStatoInterventiAlloggioDlg($object),true);
         return true;
     }
 
@@ -7622,7 +7780,7 @@ class AA_SicarModule extends AA_GenericModule
                 "align"=>"right",
                 "width"=>120,
                 "tooltip"=>"Aggiungi un intervento",
-                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewInterventoDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
+                "click"=>"AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewStatoInterventiAlloggioDlg\", params: [{id: ".$object->GetId()."}]},'$this->id')"
             ));
 
             $toolbar->AddElement($add_documento_btn);
@@ -8163,6 +8321,7 @@ class AA_SicarAlloggio extends AA_Object_V2
         $this->SetBind("gestione", "gestione", true);
         $this->SetBind("proprieta", "proprieta", true);
         $this->SetBind("occupazione", "occupazione", true);
+        $this->SetBind("interventi", "interventi", true);
 
         $this->SetClass("AA_SicarAlloggio");
         $this->EnableRevision(false);
@@ -8362,6 +8521,14 @@ class AA_SicarAlloggio extends AA_Object_V2
         $this->SetChanged(true); 
         return true; 
     }
+
+    public function SetInterventi($var = null) 
+    { 
+        if(is_array($var)) $var=json_encode($var);
+        $this->SetProp("interventi", $var); 
+        $this->SetChanged(true); 
+        return true; 
+    }
     public function GetNote() { return $this->GetProp("note"); }
     public function SetNote($var = "") { $this->SetProp("note", $var); $this->SetChanged(true); return true; }
 
@@ -8379,10 +8546,13 @@ class AA_SicarAlloggio extends AA_Object_V2
         else return array();
     }
 
-    public function GetInterventi() 
+    public function GetInterventi($bAsObject=true) 
     { 
-        //to do
-        return array();
+       if(!$bAsObject) return $this->GetProp("interventi");
+        
+        $val=json_decode($this->aProps['interventi'],true);
+        if(is_array($val)) return $val;
+        else return array();
     }
 
     // Validazione campi obbligatori e di tipo
