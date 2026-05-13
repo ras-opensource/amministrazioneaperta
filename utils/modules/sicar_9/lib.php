@@ -3279,7 +3279,32 @@ class AA_SicarModule extends AA_GenericModule
             }
 
             //interventi
-            $data['interventi']="&nbsp;";
+            $interventi=$object->GetInterventi();
+            $stato_lavori=AA_Sicar_Const::GetListaStatoLavori(true);
+            if(empty($interventi))
+            {
+                $data['interventi']="<span>Nessuna informazione disponibile</span><span>&nbsp;</span>";
+            }
+            else
+            {
+                $lastIntervento=current($interventi);
+
+                if($lastIntervento['stato_intervento'] > 0)
+                {
+                    $tipo_intervento=AA_Sicar_Const::GetListaTipologieIntervento(true);
+                    $data['interventi']="<div style='text-align: center'><span style='font-weight:600'>".$tipo_intervento[$lastIntervento['stato_intervento']]."</span>";
+                    $data['interventi'].="<span style='font-size:small'> - dal: </span><span style='font-weight:600'>".key($interventi)."</span>";
+                    $data['interventi'].="<br><small><span style='font-weight:600'>Stato intervento: </span>".$stato_lavori[$lastIntervento['stato_lavori']]."</small></div>";
+                }
+                else
+                {
+                    $data['interventi']="<div style='text-align: center'><span style='font-weight:900'>Nessun intervento necessario</span><br><span style='font-size:small'>dal: </span><span style='font-weight:600'>".key($interventi)."</span></div>";
+                }
+
+                $clickDetailInterventi="AA_MainApp.utils.callHandler('dlg', {task:'GetSicarDetailStatoInterventoAlloggioDlg', params: [{id: ".$object->GetId()."},{dal: '".key($interventi)."'}]},'$this->id')";
+                if($lastIntervento['note']!="") $data['interventi'].='<a href="#" onClick="'.$clickDetailInterventi.'" class="AA_Link AA_Link_Icon AA_Link_Icon_Info" title="Dettagli interventi">Fai click qui per visualizzare i dettagli dell&apos;intervento</a>';
+                else $data['interventi'].="<span>&nbsp;</span>";
+            }
         }
         else
         {
@@ -4182,7 +4207,7 @@ class AA_SicarModule extends AA_GenericModule
         $form_data['finanziamento_desc'] = 'Nessun finanziamento associato all\'intervento';
         $form_data['id_richiesta_finanziamento'] = 0;
         $form_data['richiesta_finanziamento_desc'] = "Nessuna richiesta di finanziamento associata all'intervento";
-        $form_data['programma_finanziamento'] = -1;
+        $form_data['programma_finanziamento'] = 1; // "Nessuno"
         $form_data['note'] = "";
 
         $wnd = new AA_GenericFormDlg($id, "Aggiungi nuovo Stato interventi", $this->id, $form_data, $form_data);
@@ -4217,15 +4242,13 @@ class AA_SicarModule extends AA_GenericModule
         //stato lavori  
         $options=array(
             array("id"=>1,"value"=>"Non avviati"),
-            array("id"=>2,"value"=>"Avviati"),
-            array("id"=>3,"value"=>"Conclusi")
+            array("id"=>2,"value"=>"Avviati")
         );
         $dettaglioIntervento->AddSelectField("stato_lavori", "Stato dei lavori", ["required" => true,"labelWidth"=>120,"options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere uno degli stati dei lavori tra quelli disponibili."]);
         
         //$dettaglioIntervento->AddSpacer(false);
 
         $options = AA_Sicar_Const::GetListaTipologieProgFinanziamento();
-        array_unshift($options, array("id"=>-1,"value"=>"Nessuno"));
         $dettaglioIntervento->AddSelectField("programma_finanziamento", "Programma", ["required" => false,"bottomPadding"=>42,"labelWidth"=>120,"validateFunction"=>"IsSelected", "bottomLabel" => "Scegliere il programma di finanziamento a cui associare la richiesta di intervento.", "options" => $options],false);
 
         //richiesta di finanziamento
@@ -4242,6 +4265,137 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->AddTextareaField("note", "Note", ["required" => false,"bottomPadding"=>0, "bottomLabel" => "Eventuali note aggiuntive"]);
 
         $wnd->SetSaveTask("AddNewStatoInterventiAlloggioSicar");
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
+    // Template per la finestra di dialogo di modifica stato interventi dell'alloggio
+    public function Template_GetSicarModifyStatoInterventiAlloggioDlg($object=null,$dal)
+    {
+        $id = $this->GetId() . "_ModifyStatoInterventiAlloggio_Dlg_" . uniqid();
+        if(!($object instanceof AA_SicarAlloggio) || $object===null || !$object->IsValid() || $object->GetId()==0)
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Modifica intervento", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Impossibile modificare l'intervento. Prima e' necessario selezionare un alloggio valido.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+        
+        $interventi=$object->GetInterventi();
+        if(!isset($interventi[$dal]) || $interventi[$dal]===null)
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Modifica intervento", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Impossibile modificare l'intervento. Prima e' necessario selezionare un intervento valido.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+
+        $curIntervento=$interventi[$dal];
+
+        $form_data = array();
+        $form_data['id']=$object->GetId();
+        $form_data['data_dal'] = $dal;
+        $form_data['tipologia'] = $curIntervento["tipologia"];
+        $form_data['stato_intervento'] = $curIntervento["stato_intervento"];
+        $form_data['importo_stimato'] = AA_Utils::number_format($curIntervento["importo_stimato"],2,",",".");
+        $form_data['importo_finanziato'] = AA_Utils::number_format($curIntervento["importo_finanziato"],2,",",".");
+        $form_data['stato_lavori'] = $curIntervento["stato_lavori"];
+        
+        //campo riferimento finanziamento
+        $form_data['id_finanziamento'] = $curIntervento["id_finanziamento"];
+        $finanziamento=new AA_SicarFinanziamento();
+        if(!$finanziamento->Load($form_data['id_finanziamento']))
+        {
+            $form_data['finanziamento_desc'] = "Nessun finanziamento associato all'intervento";
+        }
+        else
+        {
+            $form_data['finanziamento_desc'] = $finanziamento->GetName();
+        }
+
+        //campo riferimento richiesta di finanziamento
+        $form_data['id_richiesta_finanziamento'] = $curIntervento["id_richiesta_finanziamento"];
+        $richiestaFinanziamento=new AA_SicarRichiestaFinanziamento();
+        if(!$richiestaFinanziamento->Load($form_data['id_richiesta_finanziamento']))
+        {            
+            $form_data['richiesta_finanziamento_desc'] = "Nessuna richiesta di finanziamento associata all'intervento";
+        }
+        else        
+        {
+            $form_data['richiesta_finanziamento_desc'] = $richiestaFinanziamento->GetName();
+        }
+
+        $form_data['programma_finanziamento'] = $curIntervento["programma_finanziamento"];
+        $form_data['note'] = $curIntervento["note"];
+
+        $wnd = new AA_GenericFormDlg($id, "Modifica Stato interventi", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(90);
+        $wnd->SetWidth(760);
+        $wnd->SetHeight(640);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+
+        //campo stato
+        $wnd->AddSwitchBoxField("stato_intervento", "Stato", ["onLabel"=>"Intervento necessario","offLabel"=>"Nessun intervento necessario", "relatedView"=>$id."_AA_SICAR_DETTAGLIO_INTERVENTO", "relatedAction"=>"show"]);
+        
+        //campo data: data dal
+        $wnd->AddDateField("data_dal", "dal", ["required" => true,"readonly"=>true,"validateFunction"=>"IsIsoDate", "bottomLabel" => "*Data di inizio (sola lettura)"], false);
+        
+        $dettaglioIntervento = new AA_FieldSet($id."_AA_SICAR_DETTAGLIO_INTERVENTO", "Dettaglio intervento", $wnd->GetFormId(), 1,array("type"=>"clean","hidden"=>true));
+        
+        $options=array(
+            array("id"=>1,"value"=>"Manutenzione ordinaria"),
+            array("id"=>2,"value"=>"Manutenzione straordinaria"),
+            array("id"=>3,"value"=>"Ristrutturazione"),
+            array("id"=>4,"value"=>"Nuova costruzione")
+        );
+        $dettaglioIntervento->AddSelectField("tipologia", "Tipologia", ["required" => true,"labelWidth"=>120,"validateFunction"=>"IsSelected","options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere il tipo di intervento tra quelli disponibili."]);
+        
+        //importo stimato
+        $dettaglioIntervento->AddTextField("importo_stimato", "Importo stimato", ["required" => true,"labelWidth"=>130, "validateFunction"=>"IsPositive", "bottomLabel" => "*Inserire l'importo stimato per la realizzazione dell'intervento."],false);
+
+        //stato lavori  
+        $options=array(
+            array("id"=>1,"value"=>"Non avviati"),
+            array("id"=>2,"value"=>"Avviati")
+        );
+        $dettaglioIntervento->AddSelectField("stato_lavori", "Stato dei lavori", ["required" => true,"labelWidth"=>120,"options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere uno degli stati dei lavori tra quelli disponibili."]);
+        
+        //$dettaglioIntervento->AddSpacer(false);
+
+        $options = AA_Sicar_Const::GetListaTipologieProgFinanziamento();
+        $dettaglioIntervento->AddSelectField("programma_finanziamento", "Programma", ["required" => false,"bottomPadding"=>42,"labelWidth"=>120,"validateFunction"=>"IsSelected", "bottomLabel" => "Scegliere il programma di finanziamento a cui associare la richiesta di intervento.", "options" => $options],false);
+
+        //richiesta di finanziamento
+        $dlgParams = array("task" => "GetSicarSearchRichiesteFinanziamentoDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"id_richiesta_finanziamento","field_desc"=>"richiesta_finanziamento_desc"));
+        $dettaglioIntervento->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => false,"gravity"=>2,"label"=>"Richiesta","labelWidth"=>130, "name"=>"richiesta_finanziamento_desc","bottomLabel" => "Fai click sulla lente per selezionare una richiesta di finanziamento da associare all'intervento, o lascia vuoto se vuoi generare una richiesta di finanziamento successivamente."]);
+
+        //campo riferimento finanziamento
+        $dlgParams = array("task" => "GetSicarSearchFinanziamentiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"id_finanziamento","field_desc"=>"finanziamento_desc"));
+        $dettaglioIntervento->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => false,"gravity"=>2,"label"=>"Finanziamento","labelWidth"=>130,"name"=>"finanziamento_desc", "bottomLabel" => "*Fai click sulla lente per selezionare un finanziamento dalla lista o lascia vuoto se vuoi utilizzare la funzione di associazione automatica dalla gestione dei finanziamenti."]);
+       
+        $wnd->AddGenericObject($dettaglioIntervento);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false,"bottomPadding"=>0, "bottomLabel" => "Eventuali note aggiuntive"]);
+
+        $wnd->SetSaveTask("UpdateStatoInterventiAlloggioSicar");
 
         if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
         if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
@@ -5959,6 +6113,41 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la finestra di modifica stato alloggio
+    public function Task_GetSicarModifyStatoInterventiAlloggioDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarAlloggio($_REQUEST['id'], $this->oUser);
+        if (!$object->IsValid()) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento", false);
+            return false;
+        }
+
+        if (empty($_REQUEST['dal'])) 
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non e' stata specificato l'identificativo della data di inizio dell'intervento", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarModifyStatoInterventiAlloggioDlg($object,$_REQUEST['dal']),true);
+        return true;
+    }
+
     // Task per la finestra di aggiunta nuovo stato alloggio
     public function Task_GetSicarAddNewStatoOccupazioneAlloggioDlg($task)
     {
@@ -6533,17 +6722,6 @@ class AA_SicarModule extends AA_GenericModule
 
         $dettaglioInterventi=array();
         $dettaglioInterventi['stato_intervento']=0;
-        $dettaglioInterventi['data_dal']=date("Y-m-d");
-        $dettaglioInterventi['tipologia']=0;
-        $dettaglioInterventi['importo_stimato']=0;
-        $dettaglioInterventi['importo_finanziato']=0;
-        $dettaglioInterventi['stato_lavori']=1; // "non avviati"
-        $dettaglioInterventi['id_finanziamento']=0;
-        $dettaglioInterventi['finanziamento_desc']="Nessun finanziamento associato all'intervento";
-        $dettaglioInterventi['id_richiesta_finanziamento']=0;
-        $dettaglioInterventi['richiesta_finanziamento_desc']="Nessuna richiesta di finanziamento associata all'intervento";
-        $dettaglioInterventi['programma_finanziamento']=-1;
-        $dettaglioInterventi['note']=$_REQUEST['note'];
 
         //data dal
         if(!empty($_REQUEST['data_dal']))
@@ -6605,7 +6783,7 @@ class AA_SicarModule extends AA_GenericModule
         else
         {
             $dettaglioInterventi['stato_intervento']=0;
-            $dettaglioInterventi['data_dal']="";
+            $dettaglioInterventi['data_dal']=date("Y-m-d");
             $dettaglioInterventi['tipologia']=0;
             $dettaglioInterventi['importo_stimato']=0;
             $dettaglioInterventi['importo_finanziato']=0;
@@ -6615,6 +6793,162 @@ class AA_SicarModule extends AA_GenericModule
             $dettaglioInterventi['id_richiesta_finanziamento']=0;
             $dettaglioInterventi['richiesta_finanziamento_desc']="";
             $dettaglioInterventi['programma_finanziamento']=-1;
+        }
+
+        //aggiunge il nuovo stato di intervento all'elenco degli interventi dell'alloggio, utilizzando la data di inizio come chiave
+        $interventi[mb_substr($_REQUEST['data_dal'],0,10)]=$dettaglioInterventi;
+
+        //ordina l'arrai in modo che la data piu' recente sia la prima
+        krsort($interventi, SORT_STRING);
+
+        $_REQUEST['interventi']=json_encode($interventi);
+
+        $alloggio->Parse($_REQUEST);
+
+        $validate = $alloggio->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$alloggio->Update($this->oUser,true,"Aggiunta nuovo stato interventi"))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiunta del nuovo stato interventi.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
+    // Task per aggiornare uno stato interventi
+    public function Task_UpdateStatoInterventiAlloggioSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare lo stato d'interventi dell'alloggio", false);
+            return false;
+        }
+        
+        // Verifica che l'utente abbia i permessi di scrittura sull'oggetto specifico
+        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
+        if ($id > 0) {
+            $alloggio = new AA_SicarAlloggio($id, $this->oUser);
+            if ($alloggio->IsValid()) {
+                if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("L'utente corrente non ha i permessi di modifica dello stato d'interventi dell'alloggio", false);
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo non presente, aggiornamento non possibile.", false);
+            return false;
+        }
+
+        $interventi=$alloggio->GetInterventi();
+
+        if(empty($_REQUEST['data_dal']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare la data di inizio del nuovo stato di occupazione.", false);
+            return false;
+        }
+
+        if(!isset($interventi[mb_substr($_REQUEST['data_dal'],0,10)]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Lo stato intervento per la data specificata (" . mb_substr($_REQUEST['data_dal'],0,10) . ") non esiste.", false);
+            return false;
+        }
+
+        $dettaglioInterventi=$interventi[mb_substr($_REQUEST['data_dal'],0,10)];
+
+        if(!empty($_REQUEST['stato_intervento']) && intval($_REQUEST['stato_intervento'])>=1)
+        {
+            $dettaglioInterventi['stato_intervento']=1;
+
+            //tipologia dell'intervento
+            if(empty($_REQUEST['tipologia']) || $_REQUEST['tipologia']<=0) {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("E' necessario specificare la tipologia dell'intervento per lo stato d'intervento selezionato.", false);
+                return false;
+            }
+            $dettaglioInterventi['tipologia']=$_REQUEST['tipologia'];
+
+            if(!empty($_REQUEST['importo_stimato']) || $_REQUEST['importo_stimato']=="0")
+            {
+                $dettaglioInterventi['importo_stimato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_stimato']));
+                $dettaglioInterventi['importo_stimato']=AA_Utils::number_format($dettaglioInterventi['importo_stimato'],2,'.');
+            }
+
+            if(!empty($_REQUEST['importo_finanziato']) || $_REQUEST['importo_finanziato']=="0")
+            {
+                $dettaglioInterventi['importo_finanziato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_finanziato']));
+                $dettaglioInterventi['importo_finanziato']=AA_Utils::number_format($dettaglioInterventi['importo_finanziato'],2,'.');
+            }
+
+            if(!empty($_REQUEST['stato_lavori']) && intval($_REQUEST['stato_lavori'])>1)
+            {
+                $dettaglioInterventi['stato_lavori']=$_REQUEST['stato_lavori'];
+            }
+
+            //id finanziamento
+            if(!empty($_REQUEST['id_finanziamento']) && $_REQUEST['id_finanziamento']>0)
+            {
+                $dettaglioInterventi['id_finanziamento']=$_REQUEST['id_finanziamento'];
+                $finanziamento=new AA_SicarFinanziamento();
+                if($finanziamento->Load($_REQUEST['id_finanziamento'],$this->oUser))
+                {
+                    $dettaglioInterventi['finanziamento_desc']=$finanziamento->GetName();
+                }
+            }
+
+            //richiesta finanziamento
+            if(!empty($_REQUEST['id_richiesta_finanziamento']) && $_REQUEST['id_richiesta_finanziamento']>0)
+            {
+                $dettaglioInterventi['id_richiesta_finanziamento']=$_REQUEST['id_richiesta_finanziamento'];
+                $richiestaFinanziamento=new AA_SicarRichiestaFinanziamento();
+                if($richiestaFinanziamento->Load($_REQUEST['id_richiesta_finanziamento'],$this->oUser))
+                {
+                    $dettaglioInterventi['richiesta_finanziamento_desc']=$richiestaFinanziamento->GetName();
+                }
+            }
+
+            $dettaglioInterventi['programma_finanziamento']=!empty($_REQUEST['programma_finanziamento']) ? $_REQUEST['programma_finanziamento'] : 1; // "Nessuno"
+        }
+        else
+        {
+            $dettaglioInterventi['stato_intervento']=0;
+            $dettaglioInterventi['data_dal']=date("Y-m-d");
+            $dettaglioInterventi['tipologia']=0;
+            $dettaglioInterventi['importo_stimato']=0;
+            $dettaglioInterventi['importo_finanziato']=0;
+            $dettaglioInterventi['stato_lavori']=1; // "non avviati"
+            $dettaglioInterventi['id_finanziamento']=0;
+            $dettaglioInterventi['finanziamento_desc']="";
+            $dettaglioInterventi['id_richiesta_finanziamento']=0;
+            $dettaglioInterventi['richiesta_finanziamento_desc']="";
+            $dettaglioInterventi['programma_finanziamento']=1; // "Nessuno"
         }
 
         //aggiunge il nuovo stato di intervento all'elenco degli interventi dell'alloggio, utilizzando la data di inizio come chiave
@@ -8233,7 +8567,7 @@ class AA_SicarModule extends AA_GenericModule
         $tipologia_intervento_desc=AA_Sicar_Const::GetListaTipologieIntervento(true);
         $stato_lavori_desc=AA_Sicar_Const::GetListaStatoLavori(true);
 
-        foreach($interventi as $curIntervento)
+        foreach($interventi as $dal=>$curIntervento)
         {
             $finanziamento_desc="n.d.";
             if($curIntervento['id_finanziamento'] > 0)    
@@ -8255,20 +8589,26 @@ class AA_SicarModule extends AA_GenericModule
                 }
             }
 
-            $dal=$curIntervento['data_dal'];
-            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailInterventoDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
+            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailStatoInterventiAlloggioDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
             $detail_icon="mdi mdi-eye";
-            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteInterventoDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteStatoInterventiAlloggioDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
             $trash_icon="mdi mdi-trash-can";
-            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyInterventoDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyStatoInterventiAlloggioDlg", params: [{id:"'.$object->GetId().'"},{dal:"'.$dal.'"}]},"'.$this->id.'")';
             $modify_icon="mdi mdi-pencil";
             $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
-            
+            $tipologia_intervento="Nessun intervento richiesto";
+            $stato_lavori="n.d.";
+            if(!empty($curIntervento['tipologia'])) 
+            {
+                $tipologia_intervento=$tipologia_intervento_desc[$curIntervento['tipologia']];
+                $stato_lavori=$stato_lavori_desc[$curIntervento['stato_lavori']];
+            }
+        
             $intervento_data[]=array(
                 "id"=>$dal,
-                "data_dal"=>$curIntervento['data_dal'],
-                "tipologia_desc"=>$tipologia_intervento_desc[$curIntervento['tipologia']],
-                "stato_lavori"=>$stato_lavori_desc[$curIntervento['stato_lavori']],
+                "data_dal"=>$dal,
+                "tipologia_desc"=>$tipologia_intervento,
+                "stato_lavori"=>$stato_lavori,
                 "importo_stimato"=>AA_Utils::number_format($curIntervento['importo_stimato'],2,",","."),
                 "finanziamento"=>$curIntervento['id_finanziamento'],
                 "finanziamento_desc"=>$finanziamento_desc,
@@ -8285,8 +8625,8 @@ class AA_SicarModule extends AA_GenericModule
         $template->SetHeaderHeight(38);
         $template->EnableAddNew(false);
         $template->SetColumnHeaderInfo(0,"tipologia_desc","<div style='text-align: center'>Tipologia</div>",230,"selectFilter","text","GenericAutosizedRowTable_left");
-        $template->SetColumnHeaderInfo(1,"data_dal","<div style='text-align: center'>Dal</div>",90,"textFilter","text","GenericAutosizedRowTable");
-        $template->SetColumnHeaderInfo(2,"importo_stimato","<div style='text-align: center'>Importo stimato</div>",120,"textFilter","int","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(1,"data_dal","<div style='text-align: center'>Dal</div>",100,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(2,"importo_stimato","<div style='text-align: center'>Costo stimato</div>",120,"textFilter","int","GenericAutosizedRowTable");
         $template->SetColumnHeaderInfo(3,"stato_lavori","<div style='text-align: center'>Stato lavori</div>",130,"selectFilter","text","GenericAutosizedRowTable");
         $template->SetColumnHeaderInfo(4,"finanziamento_desc","<div style='text-align: center'>Finanziamento</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
         $template->SetColumnHeaderInfo(5,"richiesta_finanziamento_desc","<div style='text-align: center'>Richiesta Finanziamento</div>","fillspace","textFilter","text","GenericAutosizedRowTable");

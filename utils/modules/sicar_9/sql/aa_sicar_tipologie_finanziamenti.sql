@@ -37,12 +37,13 @@ CREATE TABLE `aa_sicar_tipologie_finanziamenti` (
 --
 
 INSERT INTO `aa_sicar_tipologie_finanziamenti` (`id`, `descrizione`) VALUES
-(1, 'Pruacs'),
-(2, 'CQII'),
-(3, 'PNEA'),
-(4, 'FSC 2021/2027'),
-(5, 'Ex Gescal'),
-(6, 'Rinnovarea');
+(1, 'Nessuno'),
+(2, 'Pruacs'),
+(3, 'CQII'),
+(4, 'PNEA'),
+(5, 'FSC 2021/2027'),
+(6, 'Ex Gescal'),
+(7, 'Rinnovarea');
 
 --
 -- Indici per le tabelle scaricate

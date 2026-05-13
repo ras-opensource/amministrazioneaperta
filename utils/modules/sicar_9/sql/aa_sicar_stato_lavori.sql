@@ -38,8 +38,7 @@ CREATE TABLE `aa_sicar_stato_lavori` (
 
 INSERT INTO `aa_sicar_stato_lavori` (`id`, `descrizione`) VALUES
 (1, 'Non avviati'),
-(2, 'Avviati'),
-(3, 'Conclusi');
+(2, 'Avviati');
 
 --
 -- Indici per le tabelle scaricate
