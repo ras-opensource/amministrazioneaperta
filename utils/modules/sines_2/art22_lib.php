@@ -3149,7 +3149,7 @@ class AA_Organismi extends AA_Object
                 case 6:
                     //pubblicazioni trasparenza
                     if(empty($params['tipo'])) $params['tipo']=AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA|AA_Organismi_Const::AA_ORGANISMI_ENTE_PUBBLICO_VIGILATO|AA_Organismi_Const::AA_ORGANISMI_ENTE_PRIVATO_CONTROLLATO;
-                    $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".controllato = 1 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo != '".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA."') OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo == '".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
+                    $where.=" AND ((".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".controllato = 1 AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo != '".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA."') OR (".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".tipo = '".AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA."' AND ".AA_Organismi_Const::AA_ORGANISMI_DB_TABLE.".partecipazione not like '%{\"percentuale\":\"0.00\"%'))";
                     break;
                 case 1:
                     //solo dirette

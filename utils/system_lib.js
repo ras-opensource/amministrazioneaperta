@@ -3761,7 +3761,7 @@ function AA_AlertModalDlg(msg = "", title = "ERRORE", type = "alert-error") {
 }
 
 //Funzione per i messaggi bloccanti box
-function AA_CustomModalDlg(msg = "", titleText = "", buttonsArray = ["chiudi"],type = "",width=640) {
+function AA_CustomModalDlg(msg = "", titleText = "", buttonsArray = ["chiudi"],type = "confirm-error",width=640) {
 
     if(Array.isArray(msg))
     {

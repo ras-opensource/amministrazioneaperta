@@ -799,6 +799,9 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecoRevisionDlg");
         $taskManager->RegisterTask("GetGecoRevisionViewDlg");
         $taskManager->RegisterTask("UpdateGecoDatiRevoca");
+
+        //Errori importazione
+        $taskManager->RegisterTask("GetGecoCsvImportErrorDetailDlg");
         
         //criteri
         $taskManager->RegisterTask("GetGecoAddNewCriteriDlg");
@@ -1392,8 +1395,10 @@ Class AA_GecoModule extends AA_GenericModule
         );
 
         $data=AA_SessionVar::Get("GecoAddNewMultiFromCSV_ParsedData")->GetValue();
+        $errors=AA_SessionVar::Get("GecoAddNewMultiFromCSV_ParsedErrors")->GetValue();
         
         //AA_SessionVar::UnsetVar("GecoAddNewMultiFromCSV_ParsedData");
+        AA_SessionVar::UnsetVar("GecoAddNewMultiFromCSV_ParsedErrors");
 
         if(!is_array($data))
         {
@@ -1408,12 +1413,26 @@ Class AA_GecoModule extends AA_GenericModule
             $wnd= new AA_GenericWindowTemplate(uniqid(),"Caricamento multiplo da file CSV - Errore file csv",$this->id);
             $wnd->SetWidth(480);
             $desc="<p>Non sono state riconosciute delle voci importabili, verificare che il file csv sia conforme alle specifiche e che i campi obbligatori siano valorizzati.</p>";
+            if(sizeof($errors) >= 0)
+            {
+                $json_errors=json_encode($errors);
+                $click='AA_MainApp.utils.callHandler("onCsvImportErrorsDetail", '.$json_errors.', "'.$this->id.'")';
+                $desc.= "<p><a href='#' onclick='".$click."'>fai click qui per maggiori dettagli</a></p>";
+            }
             $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
 
             return $wnd;
         }
 
-        $desc="<p>Sono stati riconosciute <b>".sizeof((array)$data)." voci</b> differenti.</p>";
+        $desc="<p>Sono stati riconosciute <b>".sizeof((array)$data)." voci</b> differenti.";
+        if(sizeof($errors) >= 0)
+        {
+            $json_errors=json_encode($errors);
+            $click='AA_MainApp.utils.callHandler("onCsvImportErrorsDetail", '.$json_errors.', "'.$this->id.'")';
+            $desc.= " Alcune righe non sono state importate, <a href='#' onclick='".$click."'>fai click qui per maggiori dettagli</a>";
+        }
+        $desc.="</p>";
+
         $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
 
         $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
@@ -1537,6 +1556,34 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $wnd->AddView(new AA_JSON_Template_Generic());
         }
+        
+        return $wnd;
+    }
+
+    //Template view revision 
+    public function Template_GetGecoCsvImportErrorDetailDlg($errors=array())
+    {
+        $id=$this->GetId()."_".uniqid();
+
+        $wnd=new AA_GenericWindowTemplate($id, "Dettagli errori importazione CSV", $this->id);
+        
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        $data=array();
+        foreach($errors as $key=>$val)
+        {
+            $data[]=array("id"=>$key,"errore"=>$val);
+        }
+
+        $table=new AA_GenericDatatableTemplate($id."_Table","",1);
+        $table->EnableScroll(false,true);
+        $table->EnableRowOver();
+        $table->EnableAutoRowsHeight();
+        $table->SetColumnHeaderInfo(0,"errore","Errori riscontrati","fillSpace","","text","CriteriTable");
+        $table->SetData($data);
+
+        $wnd->AddView($table);
         
         return $wnd;
     }
@@ -4519,7 +4566,17 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
 
-        $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        $csv_content=file_get_contents($csv["tmp_name"]);
+        if(mb_check_encoding($csv_content, 'UTF-8'))
+        {
+            $csv_content=mb_convert_encoding($csv_content, 'UTF-8', 'UTF-8');
+        }
+        else
+        {
+            $csv_content=mb_convert_encoding($csv_content, 'UTF-8', 'ISO-8859-1');
+        }
+
+        $csvRows=explode("\n",str_replace("\r","",$csv_content));
         //Elimina il file temporaneo
         if(is_file($csv["tmp_name"]))
         {
@@ -4528,8 +4585,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //Parsing della posizione dei campi
         $fieldPos=array(
-            "anno"=>-1,
-            "titolo"=>-1,
+            "titolo"=>-1,'anno'=>-1,
             "descrizione"=>-1,
             "responsabile_nome"=>-1,
             "responsabile_qualifica"=>-1,
@@ -4550,21 +4606,32 @@ Class AA_GecoModule extends AA_GenericModule
             "note"=>-1
         );
         
+        //AA_Log::Log(__METHOD__."() - array posizione anno: ".$fieldPos['anno'],100);
+        //AA_Log::Log(__METHOD__."() - array posizioni csv: ".print_r($fieldPos,true),100);
+        
+
         $recognizedFields=0;
-        foreach(explode("|",$csvRows[0]) as $pos=>$curFieldName)
+        $headerFields=explode("|",$csvRows[0]);
+        //AA_Log::Log(__METHOD__."() - parsing campi - header: ".print_r($headerFields,true),100);
+
+        foreach($headerFields as $pos=>$curFieldName)
         {
-            if($fieldPos[trim(strtolower($curFieldName))] == -1)
+            //AA_Log::Log(__METHOD__."() - Cerco il campo: ".trim(mb_strtolower($curFieldName))." - curVal: ".$fieldPos[$curFieldName],100);
+            if($fieldPos[trim(mb_strtolower($curFieldName))] == -1)
             {
-                $fieldPos[trim(strtolower($curFieldName))] = $pos;
+                //AA_Log::Log(__METHOD__."() - campo trovato: ".trim(mb_strtolower($curFieldName))." - posizione: ".$pos,100);
+                $fieldPos[trim(mb_strtolower($curFieldName))] = $pos;
                 $recognizedFields++;
             }
         }
         //----------------------------------------
 
-        if($fieldPos['titolo']==-1 || $fieldPos['responsabile_nome'] ==-1 || $fieldPos['responsabile_qualifica'] ==-1 || $fieldPos['norma_estremi'] ==-1 || $fieldPos['norma_link'] ==-1 || $fieldPos['modalita_tipo'] ==-1 || $fieldPos['modalita_link'] ==-1 || $fieldPos['importo_impegnato'] ==-1 || $fieldPos['beneficiario_nominativo'] ==-1 || $fieldPos['beneficiario_cf'] ==-1 || $fieldPos['beneficiario_persona_fisica'] ==-1 || $fieldPos['beneficiario_privacy'] ==-1)
+        if($fieldPos['anno']==-1 || $fieldPos['modalita_tipo']==-1 || $fieldPos['titolo']==-1 || $fieldPos['responsabile_nome'] ==-1 || $fieldPos['responsabile_qualifica'] ==-1 || $fieldPos['norma_estremi'] ==-1 || $fieldPos['norma_link'] ==-1 || $fieldPos['modalita_tipo'] ==-1 || $fieldPos['modalita_link'] ==-1 || $fieldPos['importo_impegnato'] ==-1 || $fieldPos['beneficiario_nominativo'] ==-1 || $fieldPos['beneficiario_cf'] ==-1 || $fieldPos['beneficiario_persona_fisica'] ==-1 || $fieldPos['beneficiario_privacy'] ==-1)
         {
+            AA_Log::Log(__METHOD__."() - campi riconosciuti: ".print_r($fieldPos,true),100);
+
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Non sono stati trovati tutti i campi relativi a: titolo,responsabile_nome,responsabile_qualifica,norma_estremi,norma_link,modalita_tipo,modalita_link,importo_impegnato,beneficiario_nominativo,beneficiario_cf,beneficiario_persona_fisica,beneficiario_privacy. Verificare che il file csv sia strutturato correttamente e riprovare",false);
+            $task->SetError("Non sono stati trovati tutti i campi relativi a: anno,modalita_tipo,titolo,responsabile_nome,responsabile_qualifica,norma_estremi,norma_link,modalita_tipo,modalita_link,importo_impegnato,beneficiario_nominativo,beneficiario_cf,beneficiario_persona_fisica,beneficiario_privacy. Verificare che il file csv sia strutturato correttamente e riprovare",false);
             return false;
         }
 
@@ -4572,6 +4639,7 @@ Class AA_GecoModule extends AA_GenericModule
         $data=array();
         $curRowNum=0;
         $modalita=AA_Geco_Const::GetListaModalita();
+        $errors=array();
 
         foreach($csvRows as $curCsvRow)
         {
@@ -4579,41 +4647,60 @@ Class AA_GecoModule extends AA_GenericModule
             if($curRowNum > 0 && $curCsvRow !="")
             {
                 $csvValues=explode("|",$curCsvRow);
+                
                 if(sizeof($csvValues) >= $recognizedFields)
                 {
                     $bAdd=true;
+                    $curError= "";
                     //------------- verifica dati ------------------------
+                    //anno
+                    if(intVal(trim($csvValues[$fieldPos['anno']])) < 2020)
+                    {
+                        AA_Log::Log(__METHOD__." - riga esclusa: ".$curRowNum." (anno): ".print_r($csvValues,true),100);
+                        $curError.="(riga: ".$curRowNum.") - anno non conforme alle specifiche. (".intVal(trim($csvValues[$fieldPos['anno']])).") ";
+                        $bAdd=false;
+                    }
+
                     //titolo e descrizione
                     if(trim($csvValues[$fieldPos['titolo']])=="" || trim($csvValues[$fieldPos['descrizione']])=="")
                     {
-                        AA_Log::Log(__METHOD__." - riga esclusa (titolo o descrizione vuoti): ".print_r($csvValues,true),100);
+                        AA_Log::Log(__METHOD__." - riga esclusa: ".$curRowNum." (titolo o descrizione vuoti): ".print_r($csvValues,true),100);
+                        $curError.="(riga: ".$curRowNum.") - titolo o descrizione vuoti. ";
                         $bAdd=false;
                     }
 
                     //modalita'
-                    if(trim($csvValues[$fieldPos['modalita_tipo']])=="" || strpos($csvValues[$fieldPos['modalita_link']],"https")===false)
+                    if(trim($csvValues[$fieldPos['modalita_tipo']])=="" || empty($modalita[$curDataValues['modalita_tipo']]) || strpos($csvValues[$fieldPos['modalita_link']],"https")===false)
                     {
-                        AA_Log::Log(__METHOD__." - riga esclusa (modalita' non conforme): ".print_r($csvValues,true),100);
+                        AA_Log::Log(__METHOD__." - riga esclusa: ".$curRowNum." (modalita' non conforme): ".print_r($csvValues,true),100);
+                        $curError.="(riga: ".$curRowNum.") - modalità non conforme alle specifiche. ";
+
                         $bAdd=false;
                     }
 
                     //responsabile
                     if(trim($csvValues[$fieldPos['responsabile_nome']])=="" || trim($csvValues[$fieldPos['responsabile_qualifica']])=="")
                     {
-                        AA_Log::Log(__METHOD__." - riga esclusa (responsabile non conforme): ".print_r($csvValues,true),100);
+                        AA_Log::Log(__METHOD__." - riga esclusa: ".$curRowNum." (responsabile non conforme): ".print_r($csvValues,true),100);
+                        $curError.="(riga: ".$curRowNum.") - informazioni sul responsabile non presenti o carenti. ";
+
                         $bAdd=false;
                     }
                     
                     //norma
                     if(trim($csvValues[$fieldPos['norma_estremi']])=="" || strpos($csvValues[$fieldPos['norma_link']],"https")===false)
                     {
-                        AA_Log::Log(__METHOD__." - riga esclusa (norma non conforme): ".print_r($csvValues,true),100);
+                        AA_Log::Log(__METHOD__." - riga esclusa: ".$curRowNum." (norma non conforme): ".print_r($csvValues,true),100);
+                        $curError.="(riga: ".$curRowNum.") - Informazioni sulla norma non presenti o carenti. ";
+
                         $bAdd=false;
                     }
 
                     if(trim($csvValues[$fieldPos['importo_impegnato']])=="")
                     {
-                        AA_Log::Log(__METHOD__." - riga esclusa (importo non conforme): ".print_r($csvValues,true),100);
+                        AA_Log::Log(__METHOD__." - riga esclusa: ".$curRowNum." (importo non conforme): ".print_r($csvValues,true),100);
+                        $curError.="(riga: ".$curRowNum.") - Importo impegnato presente. ";
+
                         $bAdd=false;
                     }
                     //----------------------------------------------------
@@ -4642,12 +4729,15 @@ Class AA_GecoModule extends AA_GenericModule
                         
                         $data[]=$curDataValues;
                     }
+
+                    if(!empty($curError)) $errors[]=$curError;
                 }
             }
             $curRowNum++;
         }
 
         AA_SessionVar::Set("GecoAddNewMultiFromCSV_ParsedData",$data,false);
+        AA_SessionVar::Set("GecoAddNewMultiFromCSV_ParsedErrors",$errors,false);
         
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetStatusAction('dlg',array("task"=>"GetGecoAddNewMultiPreviewDlg"),true);
@@ -4656,6 +4746,24 @@ Class AA_GecoModule extends AA_GenericModule
         return true;
     }
 
+    //Task report errori importazione multipla
+    public function Task_GetGecoCsvImportErrorDetailDlg($task)
+    {
+        AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+       
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per istanziare nuovi elementi.",false);
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent($this->Template_GetGecoCsvImportErrorDetailDlg($_REQUEST['errors']),true);
+            return true;
+        }
+    }
     //Task aggiungi allegato
     public function Task_GetGecoAddNewAllegatoDlg($task)
     {

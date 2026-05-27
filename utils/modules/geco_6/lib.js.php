@@ -81,7 +81,23 @@ var <?php echo AA_GecoModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Geco
     }
 };
 
-//imposta o rimuove il flag di oscuramento dei dati eprsonali
+//Visualizza i dettagli realtivi all'errore di importazione da csv
+<?php echo AA_GecoModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onCsvImportErrorsDetail = function() {
+    try 
+    {
+        //console.log(arguments);
+
+        params={task:"GetGecoCsvImportErrorDetailDlg", postParams: {errors: arguments[0]}};
+
+        AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_GecoModule::AA_ID_MODULE?>');
+
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onCsvImportErrorsDetail", msg, this);
+    }
+};
+
+
+//imposta o rimuove il flag di oscuramento dei dati personali
 <?php echo AA_GecoModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].flagPrivacy = function() {
     try 
     {
@@ -93,7 +109,7 @@ var <?php echo AA_GecoModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Geco
             form.setValues(values,true);
         }
     } catch (msg) {
-        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onPersonaFisicaChange", msg, this);
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.flagPrivacy", msg, this);
     }
 };
 
