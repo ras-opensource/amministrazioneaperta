@@ -1429,7 +1429,7 @@ Class AA_GecoModule extends AA_GenericModule
         {
             $json_errors=json_encode($errors);
             $click='AA_MainApp.utils.callHandler("onCsvImportErrorsDetail", '.$json_errors.', "'.$this->id.'")';
-            $desc.= " Alcune righe non sono state importate, <a href='#' onclick='".$click."'>fai click qui per maggiori dettagli</a>";
+            $desc.= " Alcune righe non sono importabili, <a href='#' onclick='".$click."'>fai click qui per maggiori dettagli</a>";
         }
         $desc.="</p>";
 
@@ -4670,10 +4670,10 @@ Class AA_GecoModule extends AA_GenericModule
                     }
 
                     //modalita'
-                    if(trim($csvValues[$fieldPos['modalita_tipo']])=="" || empty($modalita[$curDataValues['modalita_tipo']]) || strpos($csvValues[$fieldPos['modalita_link']],"https")===false)
+                    if(trim($csvValues[$fieldPos['modalita_tipo']])=="" || !isset($modalita[trim($csvValues[$fieldPos['modalita_tipo']])]) || strpos($csvValues[$fieldPos['modalita_link']],"https")===false)
                     {
                         AA_Log::Log(__METHOD__." - riga esclusa: ".$curRowNum." (modalita' non conforme): ".print_r($csvValues,true),100);
-                        $curError.="(riga: ".$curRowNum.") - modalità non conforme alle specifiche. ";
+                        $curError.="(riga: ".$curRowNum.") - modalità di scelta del beneficiario non conforme alle specifiche o link non valido. ";
 
                         $bAdd=false;
                     }
