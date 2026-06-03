@@ -6721,85 +6721,97 @@ class AA_SicarModule extends AA_GenericModule
         }
 
         $dettaglioInterventi=array();
-        $dettaglioInterventi['stato_intervento']=0;
+        $dettaglioInterventi['data_dal']=date("Y-m-d");
+        $dettaglioInterventi['data_al']="";
+        $dettaglioInterventi['tipologia']=0;
+        $dettaglioInterventi['importo_stimato']=0;
+        $dettaglioInterventi['importo_finanziato']=0;
+        $dettaglioInterventi['stato_lavori']=1; // "non avviati"
+        $dettaglioInterventi['id_finanziamento']=0;
+        $dettaglioInterventi['finanziamento_desc']="";
+        $dettaglioInterventi['cup']="";
+        $dettaglioInterventi['id_richiesta_finanziamento']=0;
+        $dettaglioInterventi['richiesta_finanziamento_desc']="";
+        $dettaglioInterventi['programma_finanziamento']=-1;
 
         //data dal
         if(!empty($_REQUEST['data_dal']))
         {
             $dettaglioInterventi['data_dal']=mb_substr($_REQUEST['data_dal'],0,10);
         }
-
-        if(!empty($_REQUEST['stato_intervento']) && intval($_REQUEST['stato_intervento'])>=1)
+        
+        //data al
+        if(!empty($_REQUEST['data_al']))
         {
-            $dettaglioInterventi['stato_intervento']=1;
+            $dettaglioInterventi['data_al']=mb_substr($_REQUEST['data_al'],0,10);
+        }
 
-            //tipologia dell'intervento
-            if(empty($_REQUEST['tipologia']) || $_REQUEST['tipologia']<=0) {
-                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                $task->SetError("E' necessario specificare la tipologia dell'intervento per lo stato d'intervento selezionato.", false);
-                return false;
-            }
-            $dettaglioInterventi['tipologia']=$_REQUEST['tipologia'];
+        //tipologia dell'intervento
+        if(empty($_REQUEST['tipologia']) || $_REQUEST['tipologia']<=0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare la tipologia dell'intervento per lo stato d'intervento selezionato.", false);
+            return false;
+        }
+        $dettaglioInterventi['tipologia']=$_REQUEST['tipologia'];
 
-            if(!empty($_REQUEST['importo_stimato']) || $_REQUEST['importo_stimato']=="0")
+        if(!empty($_REQUEST['importo_stimato']) || $_REQUEST['importo_stimato']=="0")
+        {
+            $dettaglioInterventi['importo_stimato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_stimato']));
+            $dettaglioInterventi['importo_stimato']=AA_Utils::number_format($dettaglioInterventi['importo_stimato'],2,'.');
+        }
+
+        if(!empty($_REQUEST['importo_finanziato']) || $_REQUEST['importo_finanziato']=="0")
+        {
+            $dettaglioInterventi['importo_finanziato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_finanziato']));
+            $dettaglioInterventi['importo_finanziato']=AA_Utils::number_format($dettaglioInterventi['importo_finanziato'],2,'.');
+        }
+
+        if(!empty($_REQUEST['stato_lavori']) && intval($_REQUEST['stato_lavori'])>1)
+        {
+            $dettaglioInterventi['stato_lavori']=$_REQUEST['stato_lavori'];
+        }
+
+        //id finanziamento
+        if(!empty($_REQUEST['id_finanziamento']) && $_REQUEST['id_finanziamento']>0)
+        {
+            $dettaglioInterventi['id_finanziamento']=$_REQUEST['id_finanziamento'];
+            $finanziamento=new AA_SicarFinanziamento();
+            if($finanziamento->Load($_REQUEST['id_finanziamento'],$this->oUser))
             {
-                $dettaglioInterventi['importo_stimato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_stimato']));
-                $dettaglioInterventi['importo_stimato']=AA_Utils::number_format($dettaglioInterventi['importo_stimato'],2,'.');
-            }
-
-            if(!empty($_REQUEST['importo_finanziato']) || $_REQUEST['importo_finanziato']=="0")
-            {
-                $dettaglioInterventi['importo_finanziato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_finanziato']));
-                $dettaglioInterventi['importo_finanziato']=AA_Utils::number_format($dettaglioInterventi['importo_finanziato'],2,'.');
-            }
-
-            if(!empty($_REQUEST['stato_lavori']) && intval($_REQUEST['stato_lavori'])>1)
-            {
-                $dettaglioInterventi['stato_lavori']=$_REQUEST['stato_lavori'];
-            }
-
-            //id finanziamento
-            if(!empty($_REQUEST['id_finanziamento']) && $_REQUEST['id_finanziamento']>0)
-            {
-                $dettaglioInterventi['id_finanziamento']=$_REQUEST['id_finanziamento'];
-                $finanziamento=new AA_SicarFinanziamento();
-                if($finanziamento->Load($_REQUEST['id_finanziamento'],$this->oUser))
-                {
-                    $dettaglioInterventi['finanziamento_desc']=$finanziamento->GetName();
-                }
-            }
-
-            //richiesta finanziamento
-            if(!empty($_REQUEST['id_richiesta_finanziamento']) && $_REQUEST['id_richiesta_finanziamento']>0)
-            {
-                $dettaglioInterventi['id_richiesta_finanziamento']=$_REQUEST['id_richiesta_finanziamento'];
-                $richiestaFinanziamento=new AA_SicarRichiestaFinanziamento();
-                if($richiestaFinanziamento->Load($_REQUEST['id_richiesta_finanziamento'],$this->oUser))
-                {
-                    $dettaglioInterventi['richiesta_finanziamento_desc']=$richiestaFinanziamento->GetName();
-                }
+                $dettaglioInterventi['finanziamento_desc']=$finanziamento->GetName();
             }
         }
-        else
+
+        //richiesta finanziamento
+        if(!empty($_REQUEST['id_richiesta_finanziamento']) && $_REQUEST['id_richiesta_finanziamento']>0)
         {
-            $dettaglioInterventi['stato_intervento']=0;
-            $dettaglioInterventi['data_dal']=date("Y-m-d");
-            $dettaglioInterventi['tipologia']=0;
-            $dettaglioInterventi['importo_stimato']=0;
-            $dettaglioInterventi['importo_finanziato']=0;
-            $dettaglioInterventi['stato_lavori']=1; // "non avviati"
-            $dettaglioInterventi['id_finanziamento']=0;
-            $dettaglioInterventi['finanziamento_desc']="";
-            $dettaglioInterventi['id_richiesta_finanziamento']=0;
-            $dettaglioInterventi['richiesta_finanziamento_desc']="";
-            $dettaglioInterventi['programma_finanziamento']=-1;
+            $dettaglioInterventi['id_richiesta_finanziamento']=$_REQUEST['id_richiesta_finanziamento'];
+            $richiestaFinanziamento=new AA_SicarRichiestaFinanziamento();
+            if($richiestaFinanziamento->Load($_REQUEST['id_richiesta_finanziamento'],$this->oUser))
+            {
+                $dettaglioInterventi['richiesta_finanziamento_desc']=$richiestaFinanziamento->GetName();
+            }
+        }
+
+        //programma finanziamento
+        if(!empty($_REQUEST['programma_finanziamento']) && $_REQUEST['programma_finanziamento']>0)
+        {
+            $dettaglioInterventi['programma_finanziamento']=$_REQUEST['programma_finanziamento'];
+        }
+
+        //cup
+        if(!empty($_REQUEST['cup']))
+        {
+            $dettaglioInterventi['cup']=$_REQUEST['cup'];
         }
 
         //aggiunge il nuovo stato di intervento all'elenco degli interventi dell'alloggio, utilizzando la data di inizio come chiave
-        $interventi[mb_substr($_REQUEST['data_dal'],0,10)]=$dettaglioInterventi;
+        $interventi[uniqid()]=$dettaglioInterventi;
 
         //ordina l'arrai in modo che la data piu' recente sia la prima
-        krsort($interventi, SORT_STRING);
+        usort($interventi, function($a, $b) {
+            return strcmp($b['data_dal'], $a['data_dal']);
+        });
 
         $_REQUEST['interventi']=json_encode($interventi);
 
@@ -6865,97 +6877,101 @@ class AA_SicarModule extends AA_GenericModule
             return false;
         }
 
+        // Verifica che sia impostato l'identificativo dell'intervento da aggiornare
+        $id_intervento = $_REQUEST['id_intervento'];
+        if(empty($id_intervento))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo intervento non presente, aggiornamento non possibile.", false);
+            return false;
+        }
+
         $interventi=$alloggio->GetInterventi();
+        if(!isset($interventi[$id_intervento]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Intervento specificato (" . $id_intervento . ") non presente, aggiornamento non possibile.", false);
+            return false;
+        }
 
         if(empty($_REQUEST['data_dal']))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("E' necessario specificare la data di inizio del nuovo stato di occupazione.", false);
+            $task->SetError("E' necessario specificare la data di inizio.", false);
             return false;
-        }
-
-        if(!isset($interventi[mb_substr($_REQUEST['data_dal'],0,10)]))
-        {
-            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Lo stato intervento per la data specificata (" . mb_substr($_REQUEST['data_dal'],0,10) . ") non esiste.", false);
-            return false;
-        }
-
-        $dettaglioInterventi=$interventi[mb_substr($_REQUEST['data_dal'],0,10)];
-
-        if(!empty($_REQUEST['stato_intervento']) && intval($_REQUEST['stato_intervento'])>=1)
-        {
-            $dettaglioInterventi['stato_intervento']=1;
-
-            //tipologia dell'intervento
-            if(empty($_REQUEST['tipologia']) || $_REQUEST['tipologia']<=0) {
-                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                $task->SetError("E' necessario specificare la tipologia dell'intervento per lo stato d'intervento selezionato.", false);
-                return false;
-            }
-            $dettaglioInterventi['tipologia']=$_REQUEST['tipologia'];
-
-            if(!empty($_REQUEST['importo_stimato']) || $_REQUEST['importo_stimato']=="0")
-            {
-                $dettaglioInterventi['importo_stimato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_stimato']));
-                $dettaglioInterventi['importo_stimato']=AA_Utils::number_format($dettaglioInterventi['importo_stimato'],2,'.');
-            }
-
-            if(!empty($_REQUEST['importo_finanziato']) || $_REQUEST['importo_finanziato']=="0")
-            {
-                $dettaglioInterventi['importo_finanziato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_finanziato']));
-                $dettaglioInterventi['importo_finanziato']=AA_Utils::number_format($dettaglioInterventi['importo_finanziato'],2,'.');
-            }
-
-            if(!empty($_REQUEST['stato_lavori']) && intval($_REQUEST['stato_lavori'])>1)
-            {
-                $dettaglioInterventi['stato_lavori']=$_REQUEST['stato_lavori'];
-            }
-
-            //id finanziamento
-            if(!empty($_REQUEST['id_finanziamento']) && $_REQUEST['id_finanziamento']>0)
-            {
-                $dettaglioInterventi['id_finanziamento']=$_REQUEST['id_finanziamento'];
-                $finanziamento=new AA_SicarFinanziamento();
-                if($finanziamento->Load($_REQUEST['id_finanziamento'],$this->oUser))
-                {
-                    $dettaglioInterventi['finanziamento_desc']=$finanziamento->GetName();
-                }
-            }
-
-            //richiesta finanziamento
-            if(!empty($_REQUEST['id_richiesta_finanziamento']) && $_REQUEST['id_richiesta_finanziamento']>0)
-            {
-                $dettaglioInterventi['id_richiesta_finanziamento']=$_REQUEST['id_richiesta_finanziamento'];
-                $richiestaFinanziamento=new AA_SicarRichiestaFinanziamento();
-                if($richiestaFinanziamento->Load($_REQUEST['id_richiesta_finanziamento'],$this->oUser))
-                {
-                    $dettaglioInterventi['richiesta_finanziamento_desc']=$richiestaFinanziamento->GetName();
-                }
-            }
-
-            $dettaglioInterventi['programma_finanziamento']=!empty($_REQUEST['programma_finanziamento']) ? $_REQUEST['programma_finanziamento'] : 1; // "Nessuno"
         }
         else
         {
-            $dettaglioInterventi['stato_intervento']=0;
-            $dettaglioInterventi['data_dal']=date("Y-m-d");
-            $dettaglioInterventi['tipologia']=0;
-            $dettaglioInterventi['importo_stimato']=0;
-            $dettaglioInterventi['importo_finanziato']=0;
-            $dettaglioInterventi['stato_lavori']=1; // "non avviati"
-            $dettaglioInterventi['id_finanziamento']=0;
-            $dettaglioInterventi['finanziamento_desc']="";
-            $dettaglioInterventi['id_richiesta_finanziamento']=0;
-            $dettaglioInterventi['richiesta_finanziamento_desc']="";
-            $dettaglioInterventi['programma_finanziamento']=1; // "Nessuno"
+            $_REQUEST['data_dal']=mb_substr($_REQUEST['data_dal'],0,10);
+        }
+        
+        //data al
+        if(!empty($_REQUEST['data_al']))
+        {
+            $_REQUEST['data_al']=mb_substr($_REQUEST['data_al'],0,10);
         }
 
-        //aggiunge il nuovo stato di intervento all'elenco degli interventi dell'alloggio, utilizzando la data di inizio come chiave
-        $interventi[mb_substr($_REQUEST['data_dal'],0,10)]=$dettaglioInterventi;
+        $dettaglioInterventi=$interventi[$id_intervento];
 
-        //ordina l'arrai in modo che la data piu' recente sia la prima
-        krsort($interventi, SORT_STRING);
+        //tipologia dell'intervento
+        if(empty($_REQUEST['tipologia']) || $_REQUEST['tipologia']<=0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare la tipologia dell'intervento per lo stato d'intervento selezionato.", false);
+            return false;
+        }
+        $dettaglioInterventi['tipologia']=$_REQUEST['tipologia'];
+
+        if(!empty($_REQUEST['importo_stimato']) || $_REQUEST['importo_stimato']=="0")
+        {
+            $dettaglioInterventi['importo_stimato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_stimato']));
+            $dettaglioInterventi['importo_stimato']=AA_Utils::number_format($dettaglioInterventi['importo_stimato'],2,'.');
+        }
+
+        if(!empty($_REQUEST['importo_finanziato']) || $_REQUEST['importo_finanziato']=="0")
+        {
+            $dettaglioInterventi['importo_finanziato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_finanziato']));
+            $dettaglioInterventi['importo_finanziato']=AA_Utils::number_format($dettaglioInterventi['importo_finanziato'],2,'.');
+        }
+
+        if(!empty($_REQUEST['stato_lavori']) && intval($_REQUEST['stato_lavori'])>1)
+        {
+            $dettaglioInterventi['stato_lavori']=$_REQUEST['stato_lavori'];
+        }
+
+        //id finanziamento
+        if(!empty($_REQUEST['id_finanziamento']) && $_REQUEST['id_finanziamento']>0)
+        {
+            $dettaglioInterventi['id_finanziamento']=$_REQUEST['id_finanziamento'];
+            $finanziamento=new AA_SicarFinanziamento();
+            if($finanziamento->Load($_REQUEST['id_finanziamento'],$this->oUser))
+            {
+                $dettaglioInterventi['finanziamento_desc']=$finanziamento->GetName();
+            }
+        }
+
+        //richiesta finanziamento
+        if(!empty($_REQUEST['id_richiesta_finanziamento']) && $_REQUEST['id_richiesta_finanziamento']>0)
+        {
+            $dettaglioInterventi['id_richiesta_finanziamento']=$_REQUEST['id_richiesta_finanziamento'];
+            $richiestaFinanziamento=new AA_SicarRichiestaFinanziamento();
+            if($richiestaFinanziamento->Load($_REQUEST['id_richiesta_finanziamento'],$this->oUser))
+            {
+                $dettaglioInterventi['richiesta_finanziamento_desc']=$richiestaFinanziamento->GetName();
+            }
+        }
+
+        $dettaglioInterventi['programma_finanziamento']=!empty($_REQUEST['programma_finanziamento']) ? $_REQUEST['programma_finanziamento'] : 1; // "Nessuno"
+
+        //cup
+        if(!empty($_REQUEST['cup'])) $dettaglioInterventi['cup']=$_REQUEST['cup'];
+
+        //aggiunge il nuovo stato di intervento all'elenco degli interventi dell'alloggio, utilizzando la data di inizio come chiave
+        $interventi[$id_intervento]=$dettaglioInterventi;
+
+       //ordina l'arrai in modo che la data piu' recente sia la prima
+        usort($interventi, function($a, $b) {
+            return strcmp($b['data_dal'], $a['data_dal']);
+        });
 
         $_REQUEST['interventi']=json_encode($interventi);
 
