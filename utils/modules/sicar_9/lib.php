@@ -3075,7 +3075,45 @@ class AA_SicarModule extends AA_GenericModule
             }
 
             //interventi
-            $data['interventi']="&nbsp;";
+            $interventi=$object->GetInterventi();
+            $stato_lavori=AA_Sicar_Const::GetListaStatoLavori(true);
+            if(empty($interventi))
+            {
+                $data['interventi']="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'><span style='text-align: center'>Nessun intervento in corso</span></div>";
+            }
+            else
+            {
+                $tipo_intervento=AA_Sicar_Const::GetListaTipologieIntervento(true);
+                $data['interventi']="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'><div style='text-align: center;border-bottom: 1px solid #ccc;font-weight:600;font-size:smaller'><span style='display: inline-block; width: 24%;'>Tipologia</span><span style='display: inline-block; width: 24%;'>Data inizio</span><span style='display: inline-block; width: 24%;'>Stato lavori</span><span style='display: inline-block; width: 24%;'>CUP</span></div>";
+                $count_interventi=0;
+                $count_max=2;
+                foreach($interventi as $id_intervento=>$intervento)
+                {
+                    if(($intervento['data_al'] == "" || $intervento['data_al'] >= date("Y-m-d")) && $count_interventi<$count_max)
+                    {
+                        $data['interventi'].="<div style='text-align: center;font-size: smaller'><span style='display: inline-block; width: 24%; font-weight:600'>".$tipo_intervento[$intervento['tipologia']]."</span>";
+                        $data['interventi'].="<span style='display: inline-block; width: 24%;'>".$intervento['data_dal']."</span>";
+                        $data['interventi'].="<span style='display: inline-block; width: 24%;'>".$stato_lavori[$intervento['stato_lavori']]."</span>";
+                        if($intervento['cup']!="") $data['interventi'].="<span style='display: inline-block; width: 24%;'>".$intervento['cup']."</span>";
+                        else $data['interventi'].="<span style='display: inline-block; width: 24%;'>&nbsp;</span>";
+                        $data['interventi'].="</div>";
+                    
+                        $count_interventi++;
+                    }
+                }
+               
+                if($count_interventi==0)
+                {
+                    $data['interventi'].="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'><span style='font-weight:900'>Nessun intervento in corso</span>";
+                }
+                else
+                {
+                   
+                    //$clickDetailInterventi="AA_MainApp.utils.callHandler('dlg', {task:'GetSicarDetailStatoInterventoAlloggioDlg', params: [{id: ".$object->GetId()."},{dal: '".key($interventi)."'}]},'$this->id')";
+                    //$data['interventi'].='<a href="#" onClick="'.$clickDetailInterventi.'" class="AA_Link AA_Link_Icon AA_Link_Icon_Info" title="Dettagli interventi">Fai click qui per visualizzare i dettagli dell&apos;intervento</a>';
+                }
+                $data['interventi'].="</div>";
+            }
         }
         else
         {
@@ -3283,28 +3321,32 @@ class AA_SicarModule extends AA_GenericModule
             $stato_lavori=AA_Sicar_Const::GetListaStatoLavori(true);
             if(empty($interventi))
             {
-                $data['interventi']="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'><span style='text-align: center'>Nessuna informazione disponibile</span></div>";
+                $data['interventi']="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'><span style='text-align: center'>Nessun intervento in corso</span></div>";
             }
             else
             {
                 $tipo_intervento=AA_Sicar_Const::GetListaTipologieIntervento(true);
-                $data['interventi']="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'>";
+                $data['interventi']="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'><div style='text-align: center;border-bottom: 1px solid #ccc;font-weight:600;font-size:smaller'><span style='display: inline-block; width: 24%;'>Tipologia</span><span style='display: inline-block; width: 24%;'>Data inizio</span><span style='display: inline-block; width: 24%;'>Stato lavori</span><span style='display: inline-block; width: 24%;'>CUP</span></div>";
+                $count_interventi=0;
+                $count_max=2;
                 foreach($interventi as $id_intervento=>$intervento)
                 {
-                    if($intervento['data_al'] == "" || $intervento['data_al'] >= date("Y-m-d"))
+                    if(($intervento['data_al'] == "" || $intervento['data_al'] >= date("Y-m-d")) && $count_interventi<$count_max)
                     {
-                        $data['interventi'].="<div style='text-align: center'><span style='display: inline-block; width: 24%; font-weight:600'>".$tipo_intervento[$intervento['tipologia']]."</span>";
-                        $data['interventi'].="<span style='display: inline-block; width: 24%; font-size:small'>dal: ".$intervento['data_dal']."</span>";
-                        $data['interventi'].="<span style='display: inline-block; width: 24%;'><small>stato lavori: ".$stato_lavori[$intervento['stato_lavori']]."</small></span>";
-                        if($intervento['cup']!="") $data['interventi'].="<span style='display: inline-block; width: 24%;'><small>CUP: ".$intervento['cup']."</small></span>";
+                        $data['interventi'].="<div style='text-align: center;font-size: smaller'><span style='display: inline-block; width: 24%; font-weight:600'>".$tipo_intervento[$intervento['tipologia']]."</span>";
+                        $data['interventi'].="<span style='display: inline-block; width: 24%;'>".$intervento['data_dal']."</span>";
+                        $data['interventi'].="<span style='display: inline-block; width: 24%;'>".$stato_lavori[$intervento['stato_lavori']]."</span>";
+                        if($intervento['cup']!="") $data['interventi'].="<span style='display: inline-block; width: 24%;'>".$intervento['cup']."</span>";
                         else $data['interventi'].="<span style='display: inline-block; width: 24%;'>&nbsp;</span>";
                         $data['interventi'].="</div>";
+                    
+                        $count_interventi++;
                     }
                 }
                
-                if($data['interventi']=="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'>")
+                if($count_interventi==0)
                 {
-                    $data['interventi'].="<span style='font-weight:900'>Nessun intervento in corso</span>";
+                    $data['interventi'].="<div style='flex-direction: column; display:flex; gap:4px; item-align: center; justify-content: center;height:100%;width: 98%;'><span style='font-weight:900'>Nessun intervento in corso</span>";
                 }
                 else
                 {
@@ -5065,6 +5107,86 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg delete intervento
+    public function Template_GetSicarDeleteStatoInterventiAlloggioDlg($object=null,$id_intervento=null)
+    {
+        $id=uniqid();
+        
+        $form = "";
+        if(!empty($_REQUEST['form']))
+        {
+            $form = $_REQUEST['form'];
+        }
+
+        $field_id="";
+        if(!empty($_REQUEST['field_id']))
+        {
+            $field_id = $_REQUEST['field_id'];
+        }
+
+        $field_desc="";
+        if(!empty($_REQUEST['field_desc']))
+        {
+            $field_desc = $_REQUEST['field_desc'];
+        }
+
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina intervento", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(380);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+
+        $interventi=$object->GetInterventi();
+        $intervento=$interventi[$id_intervento];
+        $tipologiaIntervento=AA_Sicar_Const::GetListaTipologieIntervento(true);
+
+        $tabledata=array();
+        $tabledata[]=array("id_intervento"=>$id_intervento,"dal"=>$intervento['data_dal'],"tipologia"=>$tipologiaIntervento[$intervento['tipologia']],"cup"=>$intervento['cup']);
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente intervento verrà eliminato definitivamente, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"dal", "header"=>"Data dal", "width"=>120),
+              array("id"=>"tipologia", "header"=>"Tipologia", "fillspace"=>true),
+              array("id"=>"cup", "header"=>"CUP", "width"=>120)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteStatoInterventiAlloggioSicar");
+        $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_intervento"=>$id_intervento));
+        if(!empty($form))
+        {
+            $wnd->SetSaveTaskParams(array("id"=>$object->GetId(),"id_intervento"=>$id_intervento,"form" => $form,"field_id"=>$field_id,"field_desc"=>$field_desc));
+        }
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        return $wnd;
+    }
+
     // Task per la restituzione della finestra di dialogo di eliminazione immobile
     public function Task_GetSicarDeleteNucleoDlg($task)
     {
@@ -6270,6 +6392,49 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la finestra di eliminazione stato interventi
+    public function Task_GetSicarDeleteStatoInterventiAlloggioDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id']) || $_REQUEST['id'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarAlloggio($_REQUEST['id'], $this->oUser);
+        if (!$object->IsValid()) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento", false);
+            return false;
+        }
+
+         if (!isset($_REQUEST['id_intervento'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non e' stata specificato l'identificativo intervento", false);
+            return false;
+        }
+
+        $interventi=$object->GetInterventi();
+        if(!isset($interventi[$_REQUEST['id_intervento']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Dettaglio intervento non presente (".$_REQUEST['id_intervento'].").", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarDeleteStatoInterventiAlloggioDlg($object,$_REQUEST['id_intervento']),true);
+        return true;
+    }
+
+
     // Task per la finestra visualizzazione dettaglio immobile
     public function Task_GetSicarDetailImmobileDlg($task)
     {
@@ -7030,10 +7195,99 @@ class AA_SicarModule extends AA_GenericModule
             return false;
         }
 
-        if(!$alloggio->Update($this->oUser,true,"Aggiunta nuovo stato interventi"))
+        if(!$alloggio->Update($this->oUser,true,"Aggiornamento intervento"))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'aggiunta del nuovo stato interventi.",false);
+            $task->SetError("Errore nell'aggiornamento dell'intervento.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
+
+    // Task per eliminare uno stato interventi
+    public function Task_DeleteStatoInterventiAlloggioSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare lo stato d'interventi dell'alloggio", false);
+            return false;
+        }
+        
+        // Verifica che l'utente abbia i permessi di scrittura sull'oggetto specifico
+        $id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
+        if ($id > 0) {
+            $alloggio = new AA_SicarAlloggio($id, $this->oUser);
+            if ($alloggio->IsValid()) {
+                if (($alloggio->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0) {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("L'utente corrente non ha i permessi di modifica dello stato d'interventi dell'alloggio", false);
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo non presente, eliminazione non possibile.", false);
+            return false;
+        }
+
+        // Verifica che sia impostato l'identificativo dell'intervento da eliminare
+        $id_intervento = $_REQUEST['id_intervento'];
+        if(!isset($_REQUEST['id_intervento']) || $_REQUEST['id_intervento']=="")
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo intervento non presente, eliminazione non possibile.", false);
+            return false;
+        }
+
+        $interventi=$alloggio->GetInterventi();
+        if(!isset($interventi[$id_intervento]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Intervento specificato (" . $id_intervento . ") non presente, eliminazione non possibile.", false);
+            return false;
+        }
+        
+        unset($interventi[$id_intervento]);
+        
+        //ordina l'arrai in modo che la data piu' recente sia la prima
+        usort($interventi, function($a, $b) {
+            return strcmp($b['data_dal'], $a['data_dal']);
+        });
+
+        $_REQUEST['interventi']=json_encode($interventi);
+
+        $alloggio->Parse($_REQUEST);
+
+        $validate = $alloggio->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$alloggio->Update($this->oUser,true,"L'intervento indicato e' stato eliminato."))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'eliminazione dell'intervento.",false);
 
             return false;
         }
