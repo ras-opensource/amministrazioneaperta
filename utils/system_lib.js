@@ -489,6 +489,7 @@ function AA_Module(id = "AA_MODULE_DUMMY", name = "Modulo generico") {
                 if (bRefreshContent || !$$(idObj).config.initialized) {
                     //aggiorna il contenuto dell'oggetto
                     let postParams = "";
+                    //console.log(this.name+"::refreshUiObjectDefault("+idObj+")", obj);
                     if (obj.config.filtered == true) {
                         let filter_id = obj.config.filter_id;
                         if (!AA_MainApp.utils.isDefined(filter_id)) filter_id = module.getActiveView();

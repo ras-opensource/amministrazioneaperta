@@ -2789,6 +2789,10 @@ class AA_SicarModule extends AA_GenericModule
     const AA_UI_WND_SEARCH_IMMOBILI = "SicarSearchWnd";
     const AA_UI_WND_DETAIL_IMMOBILI = "SicarDetailImmobileWnd";
 
+    //interventi immobili
+    const AA_UI_WND_INTERVENTI_IMMOBILE = "SicarInterventiImmobileWnd";
+    const AA_UI_TABLE_INTERVENTI_IMMOBILE = "SicarInterventiImmobileTable";
+    
     //ricerca enti
     const AA_UI_WND_SEARCH_ENTI = "SicarSearchEntiWnd";
     const AA_UI_WND_DETAIL_ENTI = "SicarDetailEnteWnd";
@@ -2823,6 +2827,15 @@ class AA_SicarModule extends AA_GenericModule
         $taskManager->RegisterTask("GetSicarDeleteImmobileDlg");
         $taskManager->RegisterTask("DeleteImmobileSicar");
         $taskManager->RegisterTask("GetSicarDetailImmobileDlg");
+        $taskManager->RegisterTask("GetSicarInterventiImmobileDlg");
+        $taskManager->RegisterTask("GetSicarAddNewInterventoImmobileDlg");
+        $taskManager->RegisterTask("AddNewInterventoImmobileSicar");
+        $taskManager->RegisterTask("GetSicarModifyInterventoImmobileDlg");
+        $taskManager->RegisterTask("UpdateInterventoImmobileSicar");
+        $taskManager->RegisterTask("GetSicarDeleteInterventoImmobileDlg");
+        $taskManager->RegisterTask("DeleteInterventoImmobileSicar");
+        //$taskManager->RegisterTask("GetSicarModifyStatoInterventiImmobileDlg");
+        //$taskManager->RegisterTask("GetSicarDeleteStatoInterventiImmobileDlg");
 
         //enti
         $taskManager->RegisterTask("GetSicarAddNewEnteDlg");
@@ -2884,6 +2897,10 @@ class AA_SicarModule extends AA_GenericModule
 
         #----------------------search immobili --------------------
         $this->AddObjectTemplate(static::AA_UI_WND_SEARCH_IMMOBILI."_".static::AA_UI_TABLE_SEARCH_IMMOBILI,"Template_DatatableSearchImmobili");
+        #---------------------------------------------------------------
+
+        #----------------------lista interventi immobili --------------------
+        $this->AddObjectTemplate(static::AA_UI_WND_INTERVENTI_IMMOBILE."_".static::AA_UI_TABLE_INTERVENTI_IMMOBILE,"Template_DatatableInterventiImmobile");
         #---------------------------------------------------------------
 
         #----------------------search enti --------------------
@@ -4350,6 +4367,214 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+    // Template per la finestra di dialogo di aggiunta nuovo intervento dell'immobile
+    public function Template_GetSicarAddNewInterventoImmobileDlg($object=null)
+    {
+        $id = $this->GetId() . "_AddNewInterventoImmobile_Dlg_" . uniqid();
+        if(!($object instanceof AA_SicarImmobile))
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Aggiunta nuovo intervento", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Impossibile aggiungere un nuovo intervento. Prima e' necessario selezionare un immobile valido.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+        
+        $form_data = array();
+        $form_data['id_immobile']=$object->GetProp('id');
+        $form_data['data_dal'] = date("Y-m-d");
+        $form_data['data_al'] = "";
+        $form_data['tipologia'] = 0;
+        $form_data['stato_intervento'] = 0;
+        $form_data['importo_stimato'] = 0;
+        $form_data['importo_finanziato'] = 0;
+        $form_data['stato_lavori'] = 1; // "non avviati"
+        $form_data['id_finanziamento'] = 0;
+        $form_data['finanziamento_desc'] = 'Nessun finanziamento associato all\'intervento';
+        $form_data['id_richiesta_finanziamento'] = 0;
+        $form_data['richiesta_finanziamento_desc'] = "Nessuna richiesta di finanziamento associata all'intervento";
+        $form_data['programma_finanziamento'] = 1; // "Nessuno"
+        $form_data['cup'] = "";
+        $form_data['note'] = "";
+
+        $wnd = new AA_GenericFormDlg($id, "Aggiungi nuovo intervento su parti comuni", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(90);
+        $wnd->SetWidth(760);
+        $wnd->SetHeight(640);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+    
+        //campo data: data dal
+        $wnd->AddDateField("data_dal", "dal", ["required" => true,"validateFunction"=>"IsIsoDate", "bottomLabel" => "*Data di inizio"], false);
+
+        //campo data: data al
+        $wnd->AddDateField("data_al", "al", ["required" => false,"validateFunction"=>"IsIsoDate", "bottomLabel" => "*Data di fine"], false);
+        
+        $dettaglioIntervento = new AA_FieldSet($id."_AA_SICAR_DETTAGLIO_INTERVENTO", "Dettaglio intervento", $wnd->GetFormId(), 1,array("type"=>"clean","hidden"=>false));
+        
+        $options=array(
+            array("id"=>1,"value"=>"Manutenzione ordinaria"),
+            array("id"=>2,"value"=>"Manutenzione straordinaria"),
+            array("id"=>3,"value"=>"Ristrutturazione"),
+            array("id"=>4,"value"=>"Nuova costruzione")
+        );
+        $dettaglioIntervento->AddSelectField("tipologia", "Tipologia", ["required" => true,"labelWidth"=>120,"validateFunction"=>"IsSelected","options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere il tipo di intervento tra quelli disponibili."]);
+        
+        //importo stimato
+        $dettaglioIntervento->AddTextField("importo_stimato", "Importo stimato", ["required" => true,"labelWidth"=>130, "validateFunction"=>"IsPositive", "bottomLabel" => "*Inserire l'importo stimato per la realizzazione dell'intervento."],false);
+
+        //stato lavori  
+        $options=array(
+            array("id"=>1,"value"=>"Non avviati"),
+            array("id"=>2,"value"=>"Avviati")
+        );
+        $dettaglioIntervento->AddSelectField("stato_lavori", "Stato dei lavori", ["required" => true,"labelWidth"=>120,"options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere uno degli stati dei lavori tra quelli disponibili."]);
+        
+        //$dettaglioIntervento->AddSpacer(false);
+
+        $options = AA_Sicar_Const::GetListaTipologieProgFinanziamento();
+        $dettaglioIntervento->AddSelectField("programma_finanziamento", "Programma", ["required" => false,"bottomPadding"=>42,"labelWidth"=>120,"validateFunction"=>"IsSelected", "bottomLabel" => "Scegliere il programma di finanziamento a cui associare la richiesta di intervento.", "options" => $options],false);
+
+        //richiesta di finanziamento
+        $dlgParams = array("task" => "GetSicarSearchRichiesteFinanziamentoDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"id_richiesta_finanziamento","field_desc"=>"richiesta_finanziamento_desc"));
+        $dettaglioIntervento->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => false,"gravity"=>2,"label"=>"Richiesta","labelWidth"=>130, "name"=>"richiesta_finanziamento_desc","bottomLabel" => "Fai click sulla lente per selezionare una richiesta di finanziamento da associare all'intervento, o lascia vuoto se vuoi generare una richiesta di finanziamento successivamente."]);
+
+        //campo riferimento finanziamento
+        //$dlgParams = array("task" => "GetSicarSearchFinanziamentiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"id_finanziamento","field_desc"=>"finanziamento_desc"));
+        //$dettaglioIntervento->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => false,"gravity"=>2,"label"=>"Finanziamento","labelWidth"=>130,"name"=>"finanziamento_desc", "bottomLabel" => "*Fai click sulla lente per selezionare un finanziamento dalla lista o lascia vuoto se vuoi utilizzare la funzione di associazione automatica dalla gestione dei finanziamenti."]);
+       
+        //cup
+        $dettaglioIntervento->AddTextField("cup", "CUP", ["required" => false,"labelWidth"=>130, "bottomLabel" => "Inserire il codice CUP associato all'intervento."]);
+
+        $wnd->AddGenericObject($dettaglioIntervento);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false,"bottomPadding"=>0, "bottomLabel" => "Eventuali note aggiuntive"]);
+
+        $wnd->SetSaveTask("AddNewInterventoImmobileSicar");
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
+    // Template per la finestra di dialogo di modifica intervento dell'immobile
+    public function Template_GetSicarModifyInterventoImmobileDlg($object=null,$id_intervento)
+    {
+        $id = $this->GetId() . "_ModifyInterventoImmobile_Dlg_" . uniqid();
+        if(!($object instanceof AA_SicarImmobile))
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Modifica intervento", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Impossibile modificare l'intervento. Prima e' necessario selezionare un immobile valido.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+
+        $interventi = $object->GetInterventi();
+        if(!isset($interventi[$id_intervento]))
+        {
+            $wnd = new AA_GenericWindowTemplate($id, "Modifica intervento", $this->id);
+            $wnd->AddView(new AA_JSON_Template_Generic("",array(
+                "view"=>"label",
+                "label"=>"Impossibile modificare l'intervento. Prima e' necessario selezionare un intervento valido.",
+                "align"=>"center",
+                "autowidth"=>true,
+                "height"=>100
+            )));
+            return $wnd;
+        }
+       
+        $intervento = $interventi[$id_intervento];
+
+        $form_data = array();
+        $form_data['id_immobile']=$object->GetProp('id');
+        $form_data['id_intervento']=$id_intervento;
+        foreach($intervento as $prop=>$value)
+        {
+            $form_data[$prop] = $value;
+        }
+        
+        $form_data['importo_stimato'] = AA_Utils::number_format($intervento["importo_stimato"],2,",",".");
+        $form_data['importo_finanziato'] = AA_Utils::number_format($intervento["importo_finanziato"],2,",",".");
+
+        $wnd = new AA_GenericFormDlg($id, "Modifica intervento su parti comuni", $this->id, $form_data, $form_data);
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(90);
+        $wnd->SetWidth(760);
+        $wnd->SetHeight(640);
+        $wnd->SetBottomPadding(36);
+        $wnd->EnableValidation();
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+    
+        //campo data: data dal
+        $wnd->AddDateField("data_dal", "dal", ["required" => true,"validateFunction"=>"IsIsoDate", "bottomLabel" => "*Data di inizio"], false);
+
+        //campo data: data al
+        $wnd->AddDateField("data_al", "al", ["required" => false,"validateFunction"=>"IsIsoDate", "bottomLabel" => "*Data di fine"], false);
+        
+        $dettaglioIntervento = new AA_FieldSet($id."_AA_SICAR_DETTAGLIO_INTERVENTO", "Dettaglio intervento", $wnd->GetFormId(), 1,array("type"=>"clean","hidden"=>false));
+        
+        $options=array(
+            array("id"=>1,"value"=>"Manutenzione ordinaria"),
+            array("id"=>2,"value"=>"Manutenzione straordinaria"),
+            array("id"=>3,"value"=>"Ristrutturazione"),
+            array("id"=>4,"value"=>"Nuova costruzione")
+        );
+        $dettaglioIntervento->AddSelectField("tipologia", "Tipologia", ["required" => true,"labelWidth"=>120,"validateFunction"=>"IsSelected","options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere il tipo di intervento tra quelli disponibili."]);
+        
+        //importo stimato
+        $dettaglioIntervento->AddTextField("importo_stimato", "Importo stimato", ["required" => true,"labelWidth"=>130, "validateFunction"=>"IsPositive", "bottomLabel" => "*Inserire l'importo stimato per la realizzazione dell'intervento."],false);
+
+        //stato lavori  
+        $options=array(
+            array("id"=>1,"value"=>"Non avviati"),
+            array("id"=>2,"value"=>"Avviati")
+        );
+        $dettaglioIntervento->AddSelectField("stato_lavori", "Stato dei lavori", ["required" => true,"labelWidth"=>120,"options"=>$options, "bottomPadding"=>36, "bottomLabel" => "*Scegliere uno degli stati dei lavori tra quelli disponibili."]);
+        
+        //$dettaglioIntervento->AddSpacer(false);
+
+        $options = AA_Sicar_Const::GetListaTipologieProgFinanziamento();
+        $dettaglioIntervento->AddSelectField("programma_finanziamento", "Programma", ["required" => false,"bottomPadding"=>42,"labelWidth"=>120,"validateFunction"=>"IsSelected", "bottomLabel" => "Scegliere il programma di finanziamento a cui associare la richiesta di intervento.", "options" => $options],false);
+
+        //richiesta di finanziamento
+        $dlgParams = array("task" => "GetSicarSearchRichiesteFinanziamentoDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"id_richiesta_finanziamento","field_desc"=>"richiesta_finanziamento_desc"));
+        $dettaglioIntervento->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => false,"gravity"=>2,"label"=>"Richiesta","labelWidth"=>130, "name"=>"richiesta_finanziamento_desc","bottomLabel" => "Fai click sulla lente per selezionare una richiesta di finanziamento da associare all'intervento, o lascia vuoto se vuoi generare una richiesta di finanziamento successivamente."]);
+
+        //campo riferimento finanziamento
+        //$dlgParams = array("task" => "GetSicarSearchFinanziamentiDlg", "postParams" => array("form" => $wnd->GetFormId(),"field_id"=>"id_finanziamento","field_desc"=>"finanziamento_desc"));
+        //$dettaglioIntervento->AddSearchField("dlg",$dlgParams,$this->GetId(),["required" => false,"gravity"=>2,"label"=>"Finanziamento","labelWidth"=>130,"name"=>"finanziamento_desc", "bottomLabel" => "*Fai click sulla lente per selezionare un finanziamento dalla lista o lascia vuoto se vuoi utilizzare la funzione di associazione automatica dalla gestione dei finanziamenti."]);
+       
+        //cup
+        $dettaglioIntervento->AddTextField("cup", "CUP", ["required" => false,"labelWidth"=>130, "bottomLabel" => "Inserire il codice CUP associato all'intervento."]);
+
+        $wnd->AddGenericObject($dettaglioIntervento);
+
+        // Campo testuale: note
+        $wnd->AddTextareaField("note", "Note", ["required" => false,"bottomPadding"=>0, "bottomLabel" => "Eventuali note aggiuntive"]);
+
+        $wnd->SetSaveTask("UpdateInterventoImmobileSicar");
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+
+        return $wnd;
+    }
+
     // Template per la finestra di dialogo di modifica stato interventi dell'alloggio
     public function Template_GetSicarModifyStatoInterventiAlloggioDlg($object=null,$id_intervento=null)
     {
@@ -5206,6 +5431,86 @@ class AA_SicarModule extends AA_GenericModule
         return $wnd;
     }
 
+    //Template dlg delete intervento
+    public function Template_GetSicarDeleteInterventoImmobileDlg($object=null,$id_intervento=null)
+    {
+        $id=uniqid();
+        
+        $form = "";
+        if(!empty($_REQUEST['form']))
+        {
+            $form = $_REQUEST['form'];
+        }
+
+        $field_id="";
+        if(!empty($_REQUEST['field_id']))
+        {
+            $field_id = $_REQUEST['field_id'];
+        }
+
+        $field_desc="";
+        if(!empty($_REQUEST['field_desc']))
+        {
+            $field_desc = $_REQUEST['field_desc'];
+        }
+
+        $form_data=array();
+        
+        $wnd=new AA_GenericFormDlg($id, "Elimina intervento", $this->id,$form_data,$form_data);
+        
+        $wnd->SetLabelAlign("right");
+        $wnd->SetLabelWidth(80);
+        
+        $wnd->SetWidth(580);
+        $wnd->SetHeight(380);
+        
+        //Disattiva il pulsante di reset
+        $wnd->EnableResetButton(false);
+
+        //Imposta il nome del pulsante di conferma
+        $wnd->SetApplyButtonName("Procedi");
+
+        $interventi=$object->GetInterventi();
+        $intervento=$interventi[$id_intervento];
+        $tipologiaIntervento=AA_Sicar_Const::GetListaTipologieIntervento(true);
+
+        $tabledata=array();
+        $tabledata[]=array("id_intervento"=>$id_intervento,"dal"=>$intervento['data_dal'],"tipologia"=>$tipologiaIntervento[$intervento['tipologia']],"cup"=>$intervento['cup']);
+
+        $template="<div style='display: flex; justify-content: center; align-items: center; flex-direction:column'><p class='blinking' style='font-size: larger;font-weight:900;color: red'>ATTENZIONE!</p></div>";
+        $wnd->AddGenericObject(new AA_JSON_Template_Template($id."_Content",array("type"=>"clean","autoheight"=>true,"template"=>$template)));
+      
+        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("view"=>"label","label"=>"Il seguente intervento verrà eliminato definitivamente, vuoi procedere?")));
+
+        $table=new AA_JSON_Template_Generic($id."_Table", array(
+            "view"=>"datatable",
+            "autoheight"=>true,
+            "scrollX"=>false,
+            "columns"=>array(
+              array("id"=>"dal", "header"=>"Data dal", "width"=>120),
+              array("id"=>"tipologia", "header"=>"Tipologia", "fillspace"=>true),
+              array("id"=>"cup", "header"=>"CUP", "width"=>120)
+            ),
+            "select"=>false,
+            "data"=>$tabledata
+        ));
+
+        $wnd->AddGenericObject($table);
+
+        $wnd->EnableCloseWndOnSuccessfulSave();
+        $wnd->enableRefreshOnSuccessfulSave();
+        $wnd->SetSaveTask("DeleteInterventoImmobileSicar");
+        $wnd->SetSaveTaskParams(array("id_immobile"=>$object->GetProp("id"),"id_intervento"=>$id_intervento));
+        if(!empty($form))
+        {
+            $wnd->SetSaveTaskParams(array("id_immobile"=>$object->GetProp("id"),"id_intervento"=>$id_intervento,"form" => $form,"field_id"=>$field_id,"field_desc"=>$field_desc));
+        }
+
+        if(isset($_REQUEST['refresh']) && $_REQUEST['refresh'] !="") $wnd->enableRefreshOnSuccessfulSave();
+        if(isset($_REQUEST['refresh_obj_id']) && $_REQUEST['refresh_obj_id'] !="") $wnd->SetRefreshObjId($_REQUEST['refresh_obj_id']);
+        return $wnd;
+    }
+
     // Task per la restituzione della finestra di dialogo di eliminazione immobile
     public function Task_GetSicarDeleteNucleoDlg($task)
     {
@@ -5310,6 +5615,20 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    //Task list interventi
+    public function Task_GetSicarInterventiImmobileDlg($task)
+    {
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per visualizzare gli immobili", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarInterventiImmobileDlg(),true);
+        return true;
+    }
+
     //Task search Enti
     public function Task_GetSicarSearchEntiDlg($task)
     {
@@ -5371,6 +5690,21 @@ class AA_SicarModule extends AA_GenericModule
         $wnd->SetHeight(640);
         
         $wnd->AddView($this->Template_DatatableSearchImmobili($id));
+        
+        return $wnd;
+    }
+
+    //Template dlg lista interventi immobili
+    public function Template_GetSicarInterventiImmobileDlg()
+    {
+        $id=static::AA_UI_WND_INTERVENTI_IMMOBILE;
+        
+        $wnd=new AA_GenericWindowTemplate($id, "Interventi su parti comuni", $this->id);
+        
+        $wnd->SetWidth(1080);
+        $wnd->SetHeight(640);
+        
+        $wnd->AddView($this->Template_DatatableInterventiImmobile($id));
         
         return $wnd;
     }
@@ -5747,6 +6081,163 @@ class AA_SicarModule extends AA_GenericModule
 
         $template->SetData($data);
 
+        $layout->AddRow($template);
+        return $layout;
+    }
+
+    //Template data table Interventi partti comune
+    public function Template_DatatableInterventiImmobile($id="",$object=null,$canModify=false)
+    {
+        if($id=="") $id=static::AA_UI_WND_INTERVENTI_IMMOBILE;
+        $id.="_".static::AA_UI_TABLE_INTERVENTI_IMMOBILE;
+        
+        if(empty($_REQUEST['id_immobile']) && $object==null)
+        {
+            
+            $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+            $layout->addRow(new AA_JSON_Template_Template($id,array("template"=>"Immobile non specificato.")));
+            return $layout;
+        }
+
+        //immobile di riferimento
+        if(!empty($_REQUEST['id_immobile']) && $object==null)
+        {
+            $id_immobile=trim($_REQUEST['id_immobile']);
+            $object=new AA_SicarImmobile();
+            if(!$object->Load($id_immobile))
+            {
+                $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean"));
+                $layout->addRow(new AA_JSON_Template_Template($id,array("template"=>"Immobile non trovato.")));
+                return $layout;
+            }
+        }
+
+        // Verifica che l'utente abbia i permessi per gestire gli interventi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+               $canModify=false;
+        }
+        else $canModify=true;
+
+        //form di destinazione
+        if(!empty($_REQUEST['form'])) $form=trim($_REQUEST['form']);
+
+        //campo di destinazione
+        if(!empty($_REQUEST['field_id'])) $field_id=trim($_REQUEST['field_id']);
+        if(!empty($_REQUEST['field_desc'])) $field_desc=trim($_REQUEST['field_desc']);
+
+        $layout=new AA_JSON_Template_Layout($id,array("type"=>"clean", "pippo"=>"pippo","filtered"=>true,"filter_id"=>$id));
+        
+        $toolbar=new AA_JSON_Template_Toolbar("",array("height"=>38,"css"=>array("border-bottom"=>"1px solid #dadee0 !important")));
+
+        $filter="";
+
+        //if($filter=="") $filter="<span class='AA_Label AA_Label_LightOrange'>tutti</span>";
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic($id."_FilterLabel",array("view"=>"label","align"=>"left","label"=>"<div>Visualizza: ".$filter."</div>")));
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //$toolbar->addElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        
+        //Aggiunta
+        if(!empty($form) && !empty($field_id) && !empty($field_desc)) $filter=array("refresh"=>1,"id_immobile"=>$object->GetProp("id"),"refresh_obj_id"=>$id,"form"=>$form,"field_id"=>$field_id,"field_desc"=>$field_desc);
+        else $filter=array("refresh"=>1,"refresh_obj_id"=>$id,"id_immobile"=>$object->GetProp("id"));
+        
+        if($canModify)
+        {
+             $modify_btn=new AA_JSON_Template_Generic("",array(
+            "view"=>"button",
+             "type"=>"icon",
+             "icon"=>"mdi mdi-filter-cog",
+             "label"=>"Aggiungi",
+             "align"=>"right",
+             "width"=>120,
+             "tooltip"=>"Aggiungi un nuovo immobile",
+             "click"=>"AA_MainApp.curModule.setRuntimeValue('" . $id . "','filter_data',".json_encode($filter)."); AA_MainApp.utils.callHandler('dlg', {task:\"GetSicarAddNewInterventoImmobileDlg\",postParams: AA_MainApp.curModule.getRuntimeValue('" . $id . "','filter_data'), module: '" . $this->id . "'},'".$this->id."')"
+            ));
+            $toolbar->AddElement($modify_btn);
+        }
+        else
+        {
+            $toolbar->AddElement(new AA_JSON_Template_Generic("",array("view"=>"spacer")));
+        }
+       
+        $layout->addRow($toolbar);
+
+        $interventi=$object->GetInterventi();
+        $interventi_data=[];
+        $tipologia_intervento_desc=AA_Sicar_Const::GetListaTipologieIntervento(true);
+        $stato_lavori_desc=AA_Sicar_Const::GetListaStatoLavori(true);
+
+        foreach($interventi as $id_intervento=>$curIntervento)
+        {
+            $finanziamento_desc="n.d.";
+            if($curIntervento['id_finanziamento'] > 0)    
+            {
+                $finanziamento=new AA_SicarFinanziamento();
+                if($finanziamento->Load($curIntervento['id_finanziamento']))
+                {
+                    $finanziamento_desc=$finanziamento->GetDenominazione();
+                }
+            }
+
+            $richiesta_finanziamento_desc="n.d.";
+            if($curIntervento['id_richiesta_finanziamento'] > 0)    
+            {
+                $richiesta_finanziamento=new AA_SicarRichiestaFinanziamento();
+                if($richiesta_finanziamento->Load($curIntervento['id_richiesta_finanziamento']))
+                {
+                    $richiesta_finanziamento_desc=$richiesta_finanziamento->GetDenominazione();
+                }
+            }
+
+            $detail='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDetailInterventoImmobileDlg", params: [{id_immobile:"'.$object->GetProp("id").'"},{id_intervento:"'.$id_intervento.'"},{refresh:1},{refresh_section:1},{refresh_obj_id:"'.$id.'"}]},"'.$this->id.'")';
+            $detail_icon="mdi mdi-eye";
+            $trash='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarDeleteInterventoImmobileDlg", params: [{id_immobile:"'.$object->GetProp("id").'"},{id_intervento:"'.$id_intervento.'"},{refresh:1},{refresh_section:1},{refresh_obj_id:"'.$id.'"}]},"'.$this->id.'")';
+            $trash_icon="mdi mdi-trash-can";
+            $modify='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarModifyInterventoImmobileDlg", params: [{id_immobile:"'.$object->GetProp("id").'"},{id_intervento:"'.$id_intervento.'"},{refresh:1},{refresh_section:1},{refresh_obj_id:"'.$id.'"}]},"'.$this->id.'")';
+            $modify_icon="mdi mdi-pencil";
+            $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
+            $tipologia_intervento="Nessun intervento richiesto";
+            $stato_lavori="n.d.";
+            if(!empty($curIntervento['tipologia'])) 
+            {
+                $tipologia_intervento=$tipologia_intervento_desc[$curIntervento['tipologia']];
+                $stato_lavori=$stato_lavori_desc[$curIntervento['stato_lavori']];
+            }
+        
+            $intervento_data[]=array(
+                "id"=>$id_intervento,
+                "data_dal"=>$curIntervento['data_dal'],
+                "data_al"=>$curIntervento['data_al'],
+                "tipologia_desc"=>$tipologia_intervento,
+                "stato_lavori"=>$stato_lavori,
+                "importo_stimato"=>AA_Utils::number_format($curIntervento['importo_stimato'],2,",","."),
+                "cup"=>$curIntervento['cup'],
+                "ops"=>$ops
+            );
+        }
+
+        $id_table=$id."_TableInterventi_".uniqid();
+        if(!$canModify) $template=new AA_GenericDatatableTemplate($id_table,6,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id_table));
+        else $template=new AA_GenericDatatableTemplate($id_table,"",7,array("type"=>"clean"),array("css"=>"AA_Header_DataTable","filtered"=>true,"filter_id"=>$id_table));
+        $template->EnableScroll(false,true);
+        $template->EnableRowOver();
+        $template->EnableHeader(false);
+        $template->SetHeaderHeight(38);
+        $template->EnableAddNew(false);
+        $template->SetColumnHeaderInfo(0,"tipologia_desc","<div style='text-align: center'>Tipologia</div>",230,"selectFilter","text","GenericAutosizedRowTable_left");
+        $template->SetColumnHeaderInfo(1,"data_dal","<div style='text-align: center'>Dal</div>",100,"textFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(2,"data_al","<div style='text-align: center'>Al</div>",100,"textFilter","int","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(3,"importo_stimato","<div style='text-align: center'>Costo stimato</div>",120,"textFilter","int","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(4,"stato_lavori","<div style='text-align: center'>Stato lavori</div>",130,"selectFilter","text","GenericAutosizedRowTable");
+        $template->SetColumnHeaderInfo(5,"cup","<div style='text-align: center'>CUP</div>","fillspace","textFilter","text","GenericAutosizedRowTable");
+        //$template->SetColumnHeaderInfo(6,"note","<div style='text-align: center'>Note</div>","fillspace","textFilter","text","GenericAutosizedRowTable_left");
+        //$template->SetColumnHeaderInfo(4,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");
+        if($canModify) $template->SetColumnHeaderInfo(6,"ops","<div style='text-align: center'>Operazioni</div>",120,null,null,"GenericAutosizedRowTable");
+
+        $template->SetData($intervento_data);
+        #--------------------------------------
+        
         $layout->AddRow($template);
         return $layout;
     }
@@ -6280,7 +6771,80 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
-    // Task per la finestra di modifica stato alloggio
+    // Task per la finestra di aggiunta nuovo intervento immobile
+    public function Task_GetSicarAddNewInterventoImmobileDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id_immobile']) || $_REQUEST['id_immobile'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo immobile non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarImmobile();
+        if (!$object->Load($_REQUEST['id_immobile'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo immobile non valido.", false);
+            return false;
+        }
+
+       // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi interventi", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarAddNewInterventoImmobileDlg($object),true);
+        return true;
+    }
+
+    // Task per la finestra di modifica intervento immobile
+    public function Task_GetSicarModifyInterventoImmobileDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id_immobile']) || $_REQUEST['id_immobile'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo immobile non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarImmobile();
+        if (!$object->Load($_REQUEST['id_immobile'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo immobile non valido.", false);
+            return false;
+        }
+
+       // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi interventi", false);
+            return false;
+        }
+
+        //verifica che sia stato specificato l'id dell'intervento da modificare
+        if (!isset($_REQUEST['id_intervento'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo intervento non valido.", false);
+            return false;
+        }
+
+        $interventi = $object->GetInterventi();
+        if(!isset($interventi[$_REQUEST['id_intervento']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo intervento non valido.", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarModifyInterventoImmobileDlg($object, $_REQUEST['id_intervento']),true);
+        return true;
+    }
+
+    // Task per la finestra di modifica stato interventoalloggio
     public function Task_GetSicarModifyStatoInterventiAlloggioDlg($task)
     {
         // Controllo permessi e validità id
@@ -6314,6 +6878,8 @@ class AA_SicarModule extends AA_GenericModule
         $task->SetContent($this->Template_GetSicarModifyStatoInterventiAlloggioDlg($object,$_REQUEST['id_intervento']),true);
         return true;
     }
+
+    
 
     // Task per la finestra di aggiunta nuovo stato alloggio
     public function Task_GetSicarAddNewStatoOccupazioneAlloggioDlg($task)
@@ -6453,6 +7019,47 @@ class AA_SicarModule extends AA_GenericModule
         return true;
     }
 
+    // Task per la finestra di eliminazione intervento immobile
+    public function Task_GetSicarDeleteInterventoImmobileDlg($task)
+    {
+        // Controllo permessi e validità id
+        if (!isset($_REQUEST['id_immobile']) || $_REQUEST['id_immobile'] <= 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        $object = new AA_SicarImmobile();
+        if (!$object->Load($_REQUEST['id_immobile'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo oggetto non valido.", false);
+            return false;
+        }
+
+        if (($this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) == 0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi di modifica dell'elemento", false);
+            return false;
+        }
+
+         if (!isset($_REQUEST['id_intervento'])) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Non e' stata specificato l'identificativo intervento", false);
+            return false;
+        }
+
+        $interventi=$object->GetInterventi();
+        if(!isset($interventi[$_REQUEST['id_intervento']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Dettaglio intervento non presente (".$_REQUEST['id_intervento'].").", false);
+            return false;
+        }
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetSicarDeleteInterventoImmobileDlg($object,$_REQUEST['id_intervento']),true);
+        return true;
+    }
 
     // Task per la finestra visualizzazione dettaglio immobile
     public function Task_GetSicarDetailImmobileDlg($task)
@@ -7056,6 +7663,329 @@ class AA_SicarModule extends AA_GenericModule
         }
     }
 
+    // Task per aggiungere un nuovo intervento sull'immobile
+    public function Task_AddNewInterventoImmobileSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi interventi sull'immobile", false);
+            return false;
+        }
+        
+        // Verifica che l'utente abbia i permessi di scrittura sull'oggetto specifico
+        $id = isset($_REQUEST['id_immobile']) ? intval($_REQUEST['id_immobile']) : 0;
+        if ($id > 0) {
+            $immobile = new AA_SicarImmobile();
+            if (!$immobile->Load($id)) {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("L'utente corrente non ha i permessi di modifica dello stato d'interventi dell'immobile", false);
+                    return false;
+            }
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo immobile non presente, aggiornamento non possibile.", false);
+            return false;
+        }
+
+        $interventi=$immobile->GetInterventi();
+
+        if(empty($_REQUEST['data_dal']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare la data di inizio del nuovo stato di occupazione.", false);
+            return false;
+        }
+
+        $dettaglioInterventi=array();
+        $dettaglioInterventi['data_dal']=date("Y-m-d");
+        $dettaglioInterventi['data_al']="";
+        $dettaglioInterventi['tipologia']=0;
+        $dettaglioInterventi['importo_stimato']=0;
+        $dettaglioInterventi['importo_finanziato']=0;
+        $dettaglioInterventi['stato_lavori']=1; // "non avviati"
+        $dettaglioInterventi['id_finanziamento']=0;
+        $dettaglioInterventi['finanziamento_desc']="";
+        $dettaglioInterventi['cup']="";
+        $dettaglioInterventi['id_richiesta_finanziamento']=0;
+        $dettaglioInterventi['richiesta_finanziamento_desc']="";
+        $dettaglioInterventi['programma_finanziamento']=-1;
+
+        //data dal
+        if(!empty($_REQUEST['data_dal']))
+        {
+            $dettaglioInterventi['data_dal']=mb_substr($_REQUEST['data_dal'],0,10);
+        }
+        
+        //data al
+        if(!empty($_REQUEST['data_al']))
+        {
+            $dettaglioInterventi['data_al']=mb_substr($_REQUEST['data_al'],0,10);
+        }
+
+        //tipologia dell'intervento
+        if(empty($_REQUEST['tipologia']) || $_REQUEST['tipologia']<=0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare la tipologia dell'intervento per lo stato d'intervento selezionato.", false);
+            return false;
+        }
+        $dettaglioInterventi['tipologia']=$_REQUEST['tipologia'];
+
+        if(!empty($_REQUEST['importo_stimato']) || $_REQUEST['importo_stimato']=="0")
+        {
+            $dettaglioInterventi['importo_stimato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_stimato']));
+            $dettaglioInterventi['importo_stimato']=AA_Utils::number_format($dettaglioInterventi['importo_stimato'],2,'.');
+        }
+
+        if(!empty($_REQUEST['importo_finanziato']) || $_REQUEST['importo_finanziato']=="0")
+        {
+            $dettaglioInterventi['importo_finanziato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_finanziato']));
+            $dettaglioInterventi['importo_finanziato']=AA_Utils::number_format($dettaglioInterventi['importo_finanziato'],2,'.');
+        }
+
+        if(!empty($_REQUEST['stato_lavori']) && intval($_REQUEST['stato_lavori'])>1)
+        {
+            $dettaglioInterventi['stato_lavori']=$_REQUEST['stato_lavori'];
+        }
+
+        //id finanziamento
+        if(!empty($_REQUEST['id_finanziamento']) && $_REQUEST['id_finanziamento']>0)
+        {
+            $dettaglioInterventi['id_finanziamento']=$_REQUEST['id_finanziamento'];
+            $finanziamento=new AA_SicarFinanziamento();
+            if($finanziamento->Load($_REQUEST['id_finanziamento'],$this->oUser))
+            {
+                $dettaglioInterventi['finanziamento_desc']=$finanziamento->GetName();
+            }
+        }
+
+        //richiesta finanziamento
+        if(!empty($_REQUEST['id_richiesta_finanziamento']) && $_REQUEST['id_richiesta_finanziamento']>0)
+        {
+            $dettaglioInterventi['id_richiesta_finanziamento']=$_REQUEST['id_richiesta_finanziamento'];
+            $richiestaFinanziamento=new AA_SicarRichiestaFinanziamento();
+            if($richiestaFinanziamento->Load($_REQUEST['id_richiesta_finanziamento'],$this->oUser))
+            {
+                $dettaglioInterventi['richiesta_finanziamento_desc']=$richiestaFinanziamento->GetName();
+            }
+        }
+
+        //programma finanziamento
+        if(!empty($_REQUEST['programma_finanziamento']) && $_REQUEST['programma_finanziamento']>0)
+        {
+            $dettaglioInterventi['programma_finanziamento']=$_REQUEST['programma_finanziamento'];
+        }
+
+        //cup
+        if(!empty($_REQUEST['cup']))
+        {
+            $dettaglioInterventi['cup']=trim($_REQUEST['cup']);
+        }
+
+        //aggiunge il nuovo stato di intervento all'elenco degli interventi dell'alloggio, utilizzando la data di inizio come chiave
+        $interventi[uniqid()]=$dettaglioInterventi;
+
+        //ordina l'arrai in modo che la data piu' recente sia la prima
+        usort($interventi, function($a, $b) {
+            return strcmp($b['data_dal'], $a['data_dal']);
+        });
+
+        $_REQUEST['interventi']=json_encode($interventi);
+
+        $immobile->Parse($_REQUEST);
+
+        $validate = $immobile->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$immobile->Update(null,$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiunta del nuovo intervento.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
+    // Task per aggiornamento intervento sull'immobile
+    public function Task_UpdateInterventoImmobileSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per aggiungere nuovi alloggi
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi interventi sull'immobile", false);
+            return false;
+        }
+        
+        // Verifica che l'utente abbia i permessi di scrittura sull'oggetto specifico
+        $id = isset($_REQUEST['id_immobile']) ? intval($_REQUEST['id_immobile']) : 0;
+        if ($id > 0) {
+            $immobile = new AA_SicarImmobile();
+            if (!$immobile->Load($id)) {
+                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                    $task->SetError("L'utente corrente non ha i permessi di modifica dello stato d'interventi dell'immobile", false);
+                    return false;
+            }
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo immobile non presente, aggiornamento non possibile.", false);
+            return false;
+        }
+
+        $interventi=$immobile->GetInterventi();
+
+        if(empty($_REQUEST['data_dal']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare la data di inizio del nuovo stato di occupazione.", false);
+            return false;
+        }
+
+        if(!isset($interventi[$_REQUEST['id_intervento']]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo intervento errato, aggiornamento non possibile.", false);
+            return false;
+        }
+
+        $dettaglioInterventi=$interventi[$_REQUEST['id_intervento']];
+
+        //data dal
+        if(!empty($_REQUEST['data_dal']))
+        {
+            $dettaglioInterventi['data_dal']=mb_substr($_REQUEST['data_dal'],0,10);
+        }
+        
+        //data al
+        if(!empty($_REQUEST['data_al']))
+        {
+            $dettaglioInterventi['data_al']=mb_substr($_REQUEST['data_al'],0,10);
+        }
+
+        //tipologia dell'intervento
+        if(empty($_REQUEST['tipologia']) || $_REQUEST['tipologia']<=0) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("E' necessario specificare la tipologia dell'intervento per lo stato d'intervento selezionato.", false);
+            return false;
+        }
+        $dettaglioInterventi['tipologia']=$_REQUEST['tipologia'];
+
+        if(!empty($_REQUEST['importo_stimato']) || $_REQUEST['importo_stimato']=="0")
+        {
+            $dettaglioInterventi['importo_stimato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_stimato']));
+            $dettaglioInterventi['importo_stimato']=AA_Utils::number_format($dettaglioInterventi['importo_stimato'],2,'.');
+        }
+
+        if(!empty($_REQUEST['importo_finanziato']) || $_REQUEST['importo_finanziato']=="0")
+        {
+            $dettaglioInterventi['importo_finanziato']=str_replace(',', '.', str_replace(".","",$_REQUEST['importo_finanziato']));
+            $dettaglioInterventi['importo_finanziato']=AA_Utils::number_format($dettaglioInterventi['importo_finanziato'],2,'.');
+        }
+
+        if(!empty($_REQUEST['stato_lavori']) && intval($_REQUEST['stato_lavori'])>1)
+        {
+            $dettaglioInterventi['stato_lavori']=$_REQUEST['stato_lavori'];
+        }
+
+        //id finanziamento
+        if(!empty($_REQUEST['id_finanziamento']) && $_REQUEST['id_finanziamento']>0)
+        {
+            $dettaglioInterventi['id_finanziamento']=$_REQUEST['id_finanziamento'];
+            $finanziamento=new AA_SicarFinanziamento();
+            if($finanziamento->Load($_REQUEST['id_finanziamento'],$this->oUser))
+            {
+                $dettaglioInterventi['finanziamento_desc']=$finanziamento->GetName();
+            }
+        }
+
+        //richiesta finanziamento
+        if(!empty($_REQUEST['id_richiesta_finanziamento']) && $_REQUEST['id_richiesta_finanziamento']>0)
+        {
+            $dettaglioInterventi['id_richiesta_finanziamento']=$_REQUEST['id_richiesta_finanziamento'];
+            $richiestaFinanziamento=new AA_SicarRichiestaFinanziamento();
+            if($richiestaFinanziamento->Load($_REQUEST['id_richiesta_finanziamento'],$this->oUser))
+            {
+                $dettaglioInterventi['richiesta_finanziamento_desc']=$richiestaFinanziamento->GetName();
+            }
+        }
+
+        //programma finanziamento
+        if(!empty($_REQUEST['programma_finanziamento']) && $_REQUEST['programma_finanziamento']>0)
+        {
+            $dettaglioInterventi['programma_finanziamento']=$_REQUEST['programma_finanziamento'];
+        }
+
+        //cup
+        if(!empty($_REQUEST['cup']))
+        {
+            $dettaglioInterventi['cup']=trim($_REQUEST['cup']);
+        }
+
+        //aggiunge il nuovo stato di intervento all'elenco degli interventi dell'alloggio, utilizzando la data di inizio come chiave
+        $interventi[$_REQUEST['id_intervento']]=$dettaglioInterventi;
+
+        //ordina l'arrai in modo che la data piu' recente sia la prima
+        usort($interventi, function($a, $b) {
+            return strcmp($b['data_dal'], $a['data_dal']);
+        });
+
+        $_REQUEST['interventi']=json_encode($interventi);
+
+        $immobile->Parse($_REQUEST);
+
+        $validate = $immobile->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$immobile->Update(null,$this->oUser))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'aggiornamento del intervento.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
     // Task per aggiornare uno stato interventi
     public function Task_UpdateStatoInterventiAlloggioSicar($task)
     {
@@ -7304,6 +8234,84 @@ class AA_SicarModule extends AA_GenericModule
         }
 
         if(!$alloggio->Update($this->oUser,true,"L'intervento indicato e' stato eliminato."))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Errore nell'eliminazione dell'intervento.",false);
+
+            return false;
+        }
+        else
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+            $task->SetContent("Dati aggiornati.",false);
+
+            return true;
+        }
+    }
+
+    // Task per eliminare uno stato interventi immobile
+    public function Task_DeleteInterventoImmobileSicar($task)
+    {
+        //AA_Log::Log(__METHOD__ . "() - task: " . $task->GetName());
+        
+        // Verifica che l'utente abbia i permessi per eliminare l'immobile
+        if (!$this->oUser->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per rimuovere l'intervento dell'immobile", false);
+            return false;
+        }
+        
+        // Verifica l'immobile sia impostato
+        $immobile = new AA_SicarImmobile();
+        if (!$immobile->Load($_REQUEST['id_immobile'])) 
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Immobile non presente", false);
+            return false;
+        }
+ 
+        // Verifica che sia impostato l'identificativo dell'intervento da eliminare
+        $id_intervento = $_REQUEST['id_intervento'];
+        if(!isset($_REQUEST['id_intervento']))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Identificativo intervento non presente, eliminazione non possibile.", false);
+            return false;
+        }
+
+        $interventi=$immobile->GetInterventi();
+        if(!isset($interventi[$id_intervento]))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("Intervento specificato (" . $id_intervento . ") non presente, eliminazione non possibile.", false);
+            return false;
+        }
+        
+        unset($interventi[$id_intervento]);
+        
+        //ordina l'arrai in modo che la data piu' recente sia la prima
+        usort($interventi, function($a, $b) {
+            return strcmp($b['data_dal'], $a['data_dal']);
+        });
+
+        $_REQUEST['interventi']=json_encode($interventi);
+
+        $immobile->Parse($_REQUEST);
+
+        $validate = $immobile->Validate();
+        if (sizeof($validate) > 0) 
+        {
+            AA_Log::Log(__METHOD__ . " - Sono stati trovati i seguenti errori: " . print_r($validate, true), 100);
+            $error = "Sono state riscontrate le seguenti criticita': <br>";
+            foreach ($validate as $curError) {
+                $error .= "<li>" . $curError . "</li>";
+            }
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError($error, false);
+            return false;
+        }
+
+        if(!$immobile->Update(null,$this->oUser))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("Errore nell'eliminazione dell'intervento.",false);
@@ -9027,7 +10035,7 @@ class AA_SicarModule extends AA_GenericModule
                 else $num_alloggi.=" (0)";
 
                 //interventi
-                $interventi_list='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarListInterventiImmobileDlg", params: [{id:"'.$curImmobile->GetProp("id").'"}]},"'.$this->id.'")';
+                $interventi_list='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarInterventiImmobileDlg", params: [{id_immobile:"'.$curImmobile->GetProp("id").'"}]},"'.$this->id.'")';
                 $interventi_list_icon="mdi mdi-table-search";
                 $num_interventi=sizeof($curImmobile->GetInterventi())." <a class='AA_DataTable_Ops_Button' title='Visualizza gli interventi associati all&apos;immobile' onClick='".$interventi_list."'><span class='".$interventi_list_icon."'></span></a>";
                 
@@ -9049,7 +10057,7 @@ class AA_SicarModule extends AA_GenericModule
                 else $num_alloggi.=" (0)";
                 
                 //interventi
-                $interventi_list='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarListInterventiImmobileDlg", params: [{id:"'.$curImmobile->GetProp("id").'"}]},"'.$this->id.'")';
+                $interventi_list='AA_MainApp.utils.callHandler("dlg", {task:"GetSicarInterventiImmobileDlg", params: [{id_immobile:"'.$curImmobile->GetProp("id").'"}]},"'.$this->id.'")';
                 $interventi_list_icon="mdi mdi-table-search";
                 $num_interventi=sizeof($curImmobile->GetInterventi())." - <a class='AA_DataTable_Ops_Button' title='Visualizza gli interventi associati all&apos;immobile' onClick='".$interventi_list."'><span class='".$interventi_list_icon."'></span></a>";
                 
