@@ -811,6 +811,7 @@ Class AA_GecoModule extends AA_GenericModule
         $taskManager->RegisterTask("UpdateGecoCriteri");
         $taskManager->RegisterTask("GetGecoTrashCriteriDlg");
         $taskManager->RegisterTask("DeleteGecoCriteri");
+        $taskManager->RegisterTask("GecoCriteriPdfExport");
 
         //Allegati
         $taskManager->RegisterTask("GetGecoAddNewAllegatoDlg");
@@ -4866,6 +4867,23 @@ Class AA_GecoModule extends AA_GenericModule
         return true;
     }
     
+    public function Task_GecoCriteriPdfExport($task)
+    {
+        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
+        
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
+            return false;
+        }
+
+        $criteri=AA_Geco_Criteri::Search();
+        
+        $this->Template_CriteriPdfExport($criteri);
+        
+    }
+
     //Task aggiorna allegato
     public function Task_UpdateGecoAllegato($task)
     {
@@ -5434,6 +5452,13 @@ Class AA_GecoModule extends AA_GenericModule
         return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.26 e 27 del d.lgs. 33/2013","Template_GecoPdfExport", 12, false,$subTitle,$layoutTemplate,99,"Template_PublicReportPageHeaderPdf");
     }
 
+    //Funzione di esportazione in pdf (criteri e modalita')
+    public function Template_CriteriPdfExport($ids=array(),$subTitle="Criteri e modalità",$layoutTemplate="AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE")
+    {
+        //return $this->Template_GenericPdfExport($ids,$toBrowser,$title,"Template_GecoPdfExport", $rowsForPage, $index,$subTitle);
+        return $this->Template_GenericPdfExport($ids,true,"Pubblicazione ai sensi dell'art.26 e 27 del d.lgs. 33/2013","Template_GecoCriteriPdfExport", 12, false,$subTitle,$layoutTemplate,99,"Template_CriteriPublicReportPageHeaderPdf");
+    }
+
     //funzione di esportazione in pdf async
     public function Template_PdfExportAsync($ids=array(),$subTitle="",$layoutTemplate="AA_PDF_RAS_TEMPLATE_A4_LANDSCAPE")
     {
@@ -5466,6 +5491,19 @@ Class AA_GecoModule extends AA_GenericModule
         if($id=="") $id="Template_GecoPdfExport_".$object->GetId();
 
         return new AA_GecoPublicReportTemplateView($id,$parent,$object);
+    }
+
+    //Template pdf export single criterio
+    public function Template_GecoCriteriPdfExport($id="", $parent=null,$object=null,$user=null)
+    {
+        if(!($object instanceof AA_GecoCriteri))
+        {
+            return "";
+        }
+        
+        if($id=="") $id="Template_GecoCriteriPdfExport_".$object->GetId();
+
+        return new AA_GecoCriteriPublicReportTemplateView($id,$parent,$object);
     }
 
     //header public report pdf export
@@ -5518,6 +5556,35 @@ Class AA_GecoModule extends AA_GenericModule
         $val=new AA_XML_Div_Element($id."_links",$header);
         $val->SetStyle($border.'width:7%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
         $val->SetText("<span><b>Allegati e links</b></span>");
+
+        return $header->__toString();
+    }
+
+    //header public report pdf export header for criteri and modalita'
+    public function Template_CriteriPublicReportPageHeaderPdf($object=null)
+    {
+        $id=uniqid();
+        $header=new AA_XML_Div_Element();
+        $header->SetStyle("width: 100%; display:flex; flex-direction: row; align-items: center; justify-content: space-between; background-color: #dedede; height: 5%");
+
+        //$border="border: 1px solid red;";
+        $border="";
+        //anno
+        $cig=new AA_XML_Div_Element($id."_anno",$header);
+        $cig->SetStyle($border.'width:5%; font-size: .6em; padding: .1em; height:100%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $cig->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Anno</div><div style='display: flex; justify-content:space-evenly; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'>Identificativo</div>");
+
+        #estremi----------------------------------
+        $oggetto=new AA_XML_Div_Element($id."_estremi",$header);
+        $oggetto->SetStyle($border.'width:25%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $oggetto->SetText("<span><b>Estremi</b></span>");
+        #-----------------------------------------------
+
+        #descrizione----------------------------------
+        $oggetto=new AA_XML_Div_Element($id."_descrizione",$header);
+        $oggetto->SetStyle($border.'width:69%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $oggetto->SetText("<span><b>Descrizione</b></span>");
+        #-----------------------------------------------
 
         return $header->__toString();
     }
@@ -5791,6 +5858,62 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
             #-----------------------------------------------
         }
         
+    }
+}
+
+#Classe template per la gestione del report pdf dell'oggetto
+Class AA_GecoCriteriPublicReportTemplateView extends AA_GenericObjectTemplateView
+{
+    public function __construct($id="AA_GecoCriteriPublicReportTemplateView",$parent=null,$object=null)
+    {
+        if(!($object instanceof AA_GecoCriteri))
+        {
+            AA_Log::Log(__METHOD__." - oggetto non valido.", 100,false,true);
+            return;
+        }
+
+        //Chiama il costruttore della classe base
+        parent::__construct($id,$parent,$object);
+        
+        $this->SetStyle("width: 100%; display:flex; flex-direction: row; align-items: center; justify-content: space-between; border-bottom: 1px solid  gray; height: 100%");
+
+        //$border="border: 1px solid red;";
+        $border="";
+
+        //Anno
+        $field=new AA_XML_Div_Element($id."_anno",$this);
+        $field->SetStyle($border.'width:5%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $field->SetText("<span><b>".$object->GetProp("Anno")."</b></span><span>".$object->GetId()."</span>");
+
+        #estremi----------------------------------
+        $estremi=new AA_XML_Div_Element($id."_estremi",$this);
+        $estremi->SetStyle($border.'width:25.2%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $estremi->SetText(substr($object->GetProp("estremi"),0,320));
+        #-----------------------------------------------
+
+        #descrizione----------------------------------
+        $storage=new AA_Storage();
+        $url="";
+        if($object->GetProp("url") == "")
+        {
+            if($storage->IsValid())
+            {
+                $file=$storage->GetFileByHash($object->GetProp("file"));
+                if($file->IsValid())
+                {
+                    $url="storage.php?object=".$object->GetProp("file");
+                }
+            }
+        }
+        else 
+        {
+            $url=$object->GetProp("url");
+        }
+            
+        $descrizione=new AA_XML_Div_Element($id."_descrizione",$this);
+        $descrizione->SetStyle($border.'width:69%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $descrizione->SetText("<a href='".$url."' target='_blank'>".$object->GetProp("descrizione")."</a>");
+        #-----------------------------------------------
     }
 }
 
