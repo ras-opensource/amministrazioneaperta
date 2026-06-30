@@ -3407,17 +3407,20 @@ Class AA_HomeModule extends AA_GenericModule
         if(AA_Const::AA_ENABLE_LEGACY_DATA)
         {
             $section=new AA_FieldSet($id."_Section_LegacyFlags","Abilitazioni legacy",$wnd->GetFormId());
-            if($this->oUser->IsSuperUser())
+            if($this->oUser->IsSuperUser() || $this->oUser->GetRuolo(true) == AA_User::AA_USER_GROUP_SERVEROPERATORS)
             {
                 //--------------- Legacy flags --------------
                 $legacyFlags=AA_Platform::GetLegacyFlags();
                 $curRow=0;
                 foreach($legacyFlags as $curFlag=>$descr)
                 {
-                    $newLine=false;
-                    if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-                    $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>0,"bottomPadding"=>8),$newLine);
-                    $curRow++;
+                    if($this->oUser->IsSuperUser() || $this->oUser->HasFlag($curFlag))  
+                    {
+                        $newLine=false;
+                        if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+                        $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>0,"bottomPadding"=>8),$newLine);
+                        $curRow++;
+                    }
                 }
                 //-------------------------------------------
                 for($i=$curRow;$i<4;$i++)
@@ -3606,10 +3609,16 @@ Class AA_HomeModule extends AA_GenericModule
                 $curRow=0;
                 foreach($legacyFlags as $curFlag=>$descr)
                 {
-                    $newLine=false;
-                    if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
-                    $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>0,"bottomPadding"=>8),$newLine);
-                    $curRow++;
+                    if($this->oUser->IsSuperUser() || $this->oUser->GetRuolo(true) == AA_User::AA_USER_GROUP_SERVEROPERATORS)
+                    {
+                        if($this->oUser->IsSuperUser() || $this->oUser->HasFlag($curFlag))  
+                        {
+                            $newLine=false;
+                            if($curRow%4 == 0 && $curRow >= 4) $newLine=true;
+                            $section->AddCheckBoxField("legacyFlag_".$curFlag, $descr, array("value"=>0,"bottomPadding"=>8),$newLine);
+                            $curRow++;
+                        }
+                    }
                 }
                 //-------------------------------------------
                 for($i=$curRow;$i<4;$i++)

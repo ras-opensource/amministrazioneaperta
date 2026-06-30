@@ -3137,7 +3137,7 @@ class AA_User
         $separatore = "";
 
         //Solo admin imposta le flags
-        if ($this->IsSuperUser()) {
+        if ($this->IsSuperUser() || $this->CanGestUtenti()) {
             if (!isset($params['gest_utenti'])) {
                 $flags .= $separatore . "U0";
                 $separatore = "|";
