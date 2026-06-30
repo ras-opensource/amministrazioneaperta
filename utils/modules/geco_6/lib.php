@@ -4880,6 +4880,8 @@ Class AA_GecoModule extends AA_GenericModule
 
         $criteri=AA_Geco_Criteri::Search();
         
+        //AA_Log::Log(__METHOD__."() - criteri: ".print_r($criteri,true),100);
+
         $this->Template_CriteriPdfExport($criteri);
         
     }
@@ -5496,8 +5498,9 @@ Class AA_GecoModule extends AA_GenericModule
     //Template pdf export single criterio
     public function Template_GecoCriteriPdfExport($id="", $parent=null,$object=null,$user=null)
     {
-        if(!($object instanceof AA_GecoCriteri))
+        if(!($object instanceof AA_Geco_Criteri))
         {
+            AA_Log::Log(__METHOD__."() - object is not an instance of AA_GecoCriteri",100);
             return "";
         }
         
@@ -5572,7 +5575,7 @@ Class AA_GecoModule extends AA_GenericModule
         //anno
         $cig=new AA_XML_Div_Element($id."_anno",$header);
         $cig->SetStyle($border.'width:5%; font-size: .6em; padding: .1em; height:100%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $cig->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Anno</div><div style='display: flex; justify-content:space-evenly; align-items: center; width:100%; height:40%; font-size:smaller; background:#f0f0f0;'>Identificativo</div>");
+        $cig->SetText("<div style='display: flex; justify-content: center; align-items: center; font-weight: 900; height:60%;width:100%;'>Anno</div>");
 
         #estremi----------------------------------
         $oggetto=new AA_XML_Div_Element($id."_estremi",$header);
@@ -5866,7 +5869,7 @@ Class AA_GecoCriteriPublicReportTemplateView extends AA_GenericObjectTemplateVie
 {
     public function __construct($id="AA_GecoCriteriPublicReportTemplateView",$parent=null,$object=null)
     {
-        if(!($object instanceof AA_GecoCriteri))
+        if(!($object instanceof AA_Geco_Criteri))
         {
             AA_Log::Log(__METHOD__." - oggetto non valido.", 100,false,true);
             return;
@@ -5883,16 +5886,9 @@ Class AA_GecoCriteriPublicReportTemplateView extends AA_GenericObjectTemplateVie
         //Anno
         $field=new AA_XML_Div_Element($id."_anno",$this);
         $field->SetStyle($border.'width:5%; font-size: .6em; padding: .1em; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $field->SetText("<span><b>".$object->GetProp("Anno")."</b></span><span>".$object->GetId()."</span>");
+        $field->SetText("<span><b>".$object->GetProp("anno")."</b></span>");
 
-        #estremi----------------------------------
-        $estremi=new AA_XML_Div_Element($id."_estremi",$this);
-        $estremi->SetStyle($border.'width:25.2%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $estremi->SetText(substr($object->GetProp("estremi"),0,320));
-        #-----------------------------------------------
-
-        #descrizione----------------------------------
-        $storage=new AA_Storage();
+        $storage=AA_Storage::GetInstance();
         $url="";
         if($object->GetProp("url") == "")
         {
@@ -5909,10 +5905,17 @@ Class AA_GecoCriteriPublicReportTemplateView extends AA_GenericObjectTemplateVie
         {
             $url=$object->GetProp("url");
         }
-            
+
+        #estremi----------------------------------
+        $estremi=new AA_XML_Div_Element($id."_estremi",$this);
+        $estremi->SetStyle($border.'width:25.2%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
+        $estremi->SetText(substr("<a href='".$url."' target='_blank'>".$object->GetProp("estremi")."</a>",0,320));
+        #-----------------------------------------------
+
+        #descrizione----------------------------------
         $descrizione=new AA_XML_Div_Element($id."_descrizione",$this);
-        $descrizione->SetStyle($border.'width:69%; font-size: .6em; padding: .1em; text-align: justify; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:center');
-        $descrizione->SetText("<a href='".$url."' target='_blank'>".$object->GetProp("descrizione")."</a>");
+        $descrizione->SetStyle($border.'width:69%; font-size: .6em; padding: .1em; text-align: left; height:91%; display: flex;flex-direction:column;justify-content:space-evenly;align-items:start');
+        $descrizione->SetText($object->GetProp("descrizione"));
         #-----------------------------------------------
     }
 }
@@ -5923,6 +5926,13 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
 {
     protected static $dbDataTable=AA_Geco_Const::AA_GECO_DBTABLE_CRITERI;
     protected static $ObjectClass=__CLASS__;
+
+    //funzione che restituisce il valore della proprieta' "nome" dell'oggetto - compatibilita' per costruire l'indice del report pubblico
+    public function GetName()
+    {
+        return $this->GetProp("descrizione");
+    }
+
     public function __construct($params=null,$user=null)
     {
         if(!($user instanceof AA_User))

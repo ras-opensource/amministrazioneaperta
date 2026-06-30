@@ -116,6 +116,12 @@ class AA_GenericParsableObject
         if(is_array($params)) $this->Parse($params);
     }
 
+    //funzione di default che restituisce il valore della proprietà id
+    public function GetId()
+    {
+        return $this->GetProp("id");
+    }
+
     //imposta il valore di una propietà
     public function SetProp($prop="",$value="")
     {
