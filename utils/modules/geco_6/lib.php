@@ -2622,7 +2622,7 @@ Class AA_GecoModule extends AA_GenericModule
 
     public function Task_DeleteGecoCriteri($task)
     {        
-        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI) && !$this->oUser->IsSuperUser())
+        if(!$this->oUser->HasFlag(AA_Geco_Const::AA_USER_FLAG_GECO_CRITERI))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per modificare elementi.",false);
@@ -5257,12 +5257,13 @@ Class AA_GecoModule extends AA_GenericModule
             return false;
         }
         
+        /*
         if(($object->GetUserCaps($this->oUser) & AA_Const::AA_PERMS_WRITE) == 0)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per poter modificare l'elemento (".$object->GetProp("id").").",false);
             return true;
-        }
+        }*/
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent($this->Template_GetGecoTrashCriteriDlg($object),true);
@@ -6041,6 +6042,8 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
             return false;
         }
 
+        //da sistemare
+        
         $struct=$user->GetStruct();
 
         if($this->aProps['id']>0)
@@ -6048,69 +6051,30 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
             $user_struct_level_0=intVal($struct->GetAssessorato(true));
             $user_struct_level_1=intVal($struct->GetDirezione(true));
             $user_struct_level_2=intVal($struct->GetServizio(true));
-            if($user_struct_level_0 > 0)
+
+            $structCalc=$user_struct_level_0*10000000+$user_struct_level_1*10000+$user_struct_level_2;
+
+            AA_Log::Log(__METHOD__." - ".intval($this->aProps['struttura']),100);
+
+            if(intVal($this->aProps['struttura'])-$structCalc != 0)
             {
-                if($user_struct_level_0-intVal($this->aProps['struttura']*0.000001) != 0)
-                {
-                    AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
-                    return false;
-                }            
-            }
-    
-            if($user_struct_level_1 > 0)
-            {
-                if($user_struct_level_1-intVal(($this->aProps['struttura']*0.001-$user_struct_level_0*1000) != 0))
-                {
-                    AA_Log::Log(__METHOD__." - Direzione differente.", 100);
-                    return false;
-                }            
-            }
-    
-            if($user_struct_level_2 > 0)
-            {
-                if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
-                {
-                    AA_Log::Log(__METHOD__." - Servizio differente.", 100);
-                    return false;
-                }            
-            }
+                AA_Log::Log(__METHOD__." - Struttura differente (".$this->aProps['struttura']." - ".$structCalc.").", 100);
+                return false;
+            }            
     
             if(is_array($params))
             {
                 if(isset($params['id'])) unset($params['id']);
     
-                if(isset($params['struttura']))
-                {
-                    if($user_struct_level_0 > 0)
-                    {
-                        if(($user_struct_level_0-$params['struttura']*0.000001) != 0)
-                        {
-                           $params['struttura']=$this->aProps['struttura'];
-                        }            
-                    }
-    
-                    if($user_struct_level_1 > 0)
-                    {
-                        if($user_struct_level_1-intVal(($params['struttura']*0.001-$user_struct_level_0*1000)) != 0)
-                        {
-                            $params['struttura']=$this->aProps['struttura'];
-                        }            
-                    }
-    
-                    if($user_struct_level_2 > 0)
-                    {
-                        if($user_struct_level_2-intVal($params['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
-                        {
-                            $params['struttura']=$this->aProps['struttura'];
-                        }            
-                    }
-                }
+                $params['struttura']=str_pad($struct->GetAssessorato(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetDirezione(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetServizio(true),4,"0",STR_PAD_LEFT);
+                
             }
         }
         else
         {
-            $params['struttura']=str_pad($struct->GetAssessorato(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetDirezione(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetServizio(true),3,"0",STR_PAD_LEFT);
+            $params['struttura']=str_pad($struct->GetAssessorato(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetDirezione(true),3,"0",STR_PAD_LEFT).str_pad($struct->GetServizio(true),4,"0",STR_PAD_LEFT);
         }
+        
 
         return parent::Update($params, $user);
     }
@@ -6132,32 +6096,18 @@ Class AA_Geco_Criteri extends AA_GenericParsableDbObject
         $user_struct_level_0=intVal($struct->GetAssessorato(true));
         $user_struct_level_1=intVal($struct->GetDirezione(true));
         $user_struct_level_2=intVal($struct->GetServizio(true));
-        if($user_struct_level_0 > 0)
-        {
-            if($user_struct_level_0-intVal($this->aProps['struttura']*0.000001) != 0)
-            {
-                AA_Log::Log(__METHOD__." - Assessorato differente.", 100);
-                return false;
-            }            
-        }
 
-        if($user_struct_level_1 > 0)
-        {
-            if($user_struct_level_1-intVal(($this->aProps['struttura']*0.001-$user_struct_level_0*1000) != 0))
-            {
-                AA_Log::Log(__METHOD__." - Direzione differente.", 100);
-                return false;
-            }            
-        }
+        $structCalc=$user_struct_level_0*10000000+$user_struct_level_1*10000+$user_struct_level_2;
 
-        if($user_struct_level_2 > 0)
+        AA_Log::Log(__METHOD__." - ".intval($this->aProps['struttura']),100);
+
+        if(intVal($this->aProps['struttura'])-$structCalc != 0)
         {
-            if($user_struct_level_2-intVal($this->aProps['struttura']-$user_struct_level_0*1000000-$user_struct_level_1*1000) != 0)
-            {
-                AA_Log::Log(__METHOD__." - Servizio differente.", 100);
-                return false;
-            }            
-        }
+            AA_Log::Log(__METHOD__." - Struttura differente (".$this->aProps['struttura']." - ".$structCalc.").", 100);
+            return false;
+        }            
+
+
 
         $storage=AA_Storage::GetInstance($user);
         if($storage->IsValid())
