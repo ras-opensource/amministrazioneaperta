@@ -1,7 +1,7 @@
 <?php
 class AA_SicarFinanziamento extends AA_GenericParsableDbObject
 {
-    // Tabella dati per gli enti
+    // Tabella dati per i finanziamenti
     static protected $dbDataTable="aa_sicar_finanziamenti";
     static protected $ObjectClass=__CLASS__;
     
@@ -18,23 +18,19 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
         $this->aProps['note']="";
         
         //template view props
-        $this->aTemplateViewProps['denominazione']=array("label"=>"Descrizione","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['denominazione']=array("label"=>"Denominazione","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['estremi']=array("label"=>"Estremi","type"=>"text","visible"=>true);
+        $this->aTemplateViewProps['data']=array("label"=>"Data","type"=>"text","visible"=>true);
         $this->aTemplateViewProps['tipologia']=array("label"=>"Tipologia","type"=>"text","function"=>"GetTipologia","visible"=>true);
-        $this->aTemplateViewProps['indirizzo']=array("label"=>"Indirizzo","type"=>"text","visible"=>true);
-        $this->aTemplateViewProps['web']=array("label"=>"SitoWeb","type"=>"text","function"=>"GetSitoWebView","visible"=>true);
-        $this->aTemplateViewProps['pec']=array("label"=>"PEC","type"=>"text","function"=>"GetPecView","visible"=>true);
-        $this->aTemplateViewProps['operatori']=array("label"=>"Contatti","type"=>"text","function"=>"GetOperatoriView","visible"=>true);
         $this->aTemplateViewProps['note']=array("label"=>"Note","type"=>"textarea","visible"=>true);
 
         //areas, cols e rows di default
         $this->aTemplateViewProps['__areas']=array(
             array("denominazione", "denominazione","tipologia"),
-            array("indirizzo","web","pec"),
-            array("note", "note", "operatori"),
-            array("note", "note", "operatori")
+            array("estremi", "data","note"),
         );
         $this->aTemplateViewProps['__cols']=array("1fr","1fr","1fr");
-        $this->aTemplateViewProps['__rows']=array("1fr","1fr","1fr","1fr");
+        $this->aTemplateViewProps['__rows']=array("1fr","1fr","1fr");
 
         // Chiama il costruttore padre
         parent::__construct($params);
@@ -45,11 +41,11 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
         return parent::GetTemplateView($bRefresh);
     }
         
-    //lista degli enti
+    //lista dei finanziamenti
     public static function GetListaFinanziamenti()
     {
         $db = new AA_Database();
-        $query = "SELECT * FROM ".static::$dbDataTable." ORDER BY descrizione";
+        $query = "SELECT * FROM ".static::$dbDataTable." ORDER BY denominazione";
         
         $return = array();
 
@@ -92,12 +88,36 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
         return true;
     }
 
+    // Estremi
+    public function GetEstremi()
+    {
+        return $this->GetProp("estremi");
+    }
+    
+    public function SetEstremi($var = "")
+    {
+        $this->SetProp("estremi", $var);
+        return true;
+    }
+
+    // Data
+    public function GetData()
+    {
+        return $this->GetProp("data");
+    }
+    
+    public function SetData($var = "")
+    {
+        $this->SetProp("data", $var);
+        return true;
+    }
+
     // Tipologia
     public function GetTipologia($bAsText=true)
     {
         if(!$bAsText) return $this->GetProp("tipologia"); 
         
-        $tipo=AA_Sicar_Const::GetListaTipologieEnte(true);
+        $tipo=AA_Sicar_Const::GetListaTipologieProgFinanziamento(true);
         if(!empty($tipo[$this->GetProp("tipologia")])) return $tipo[$this->GetProp("tipologia")];
         else return "n.d.";
         
@@ -138,7 +158,7 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
         return $errors;
     }
     
-    // Metodo per ottenere una rappresentazione testuale dell'immobile
+    // Metodo per ottenere una rappresentazione testuale del finanziamento
     public function GetDisplayName()
     {
         $display = strval($this->GetDenominazione());
@@ -149,13 +169,15 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
     // Metodo per l'esportazione CSV
     protected function CsvDataHeader($separator = "|")
     {
-        return "descrizione".$separator . "tipologia" . 
-               $separator . "indirizzo" . $separator . "note";
+        return "denominazione".$separator . "tipologia" . 
+               $separator . "estremi" . $separator . "data" . 
+               $separator . "note";
     }
     
     protected function CsvData($separator = "|")
     {
         return $this->GetDenominazione().$separator . $this->GetTipologia() . 
+               $separator . $this->GetEstremi() . $separator . $this->GetData() .
                $separator . str_replace("\n", ' ', $this->GetNote());
     }
     
@@ -187,7 +209,7 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
         
         $perms = AA_Const::AA_PERMS_READ;
         
-        // Se l'utente ha il flag e può modificare l'immobile allora può fare tutto
+        // Se l'utente ha il flag e può modificare il finanziamento allora può fare tutto
         if ($user->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
             $perms = AA_Const::AA_PERMS_ALL;
         }
@@ -196,9 +218,9 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
     }
     
     /**
-     * Funzione statica per l'aggiunta di nuovi immobili
-    * @param array $params dati dell'immobile
-     * @return bool|int ID dell'immobile creato o false in caso di errore
+     * Funzione statica per l'aggiunta di nuovi finanziamenti
+    * @param array $params dati del finanziamento
+     * @return bool|int ID del finanziamento creato o false in caso di errore
      */
     static public function AddNew($params, $user = null)
     {
@@ -236,11 +258,10 @@ class AA_SicarFinanziamento extends AA_GenericParsableDbObject
 
         if(!empty($this->Validate())) 
         {
-            AA_Log::Log(__METHOD__ . " - ERRORE: i dati dell'ente non sono validi.", 100);
+            AA_Log::Log(__METHOD__ . " - ERRORE: i dati del finanziamento non sono validi.", 100);
             return false;
         }
 
         return parent::Sync();
     }
 }
-
