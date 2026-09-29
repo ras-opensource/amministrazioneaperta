@@ -1074,7 +1074,7 @@ class AA_User
         }
 
         $curUser=AA_User::GetCurrentUser();
-        
+
         $rs=$db->GetResultSet();
         foreach($rs as $curToken)
         {
@@ -1652,7 +1652,7 @@ class AA_User
         $db = new AA_AccountsDatabase();
         $query = "SELECT email from email_login where email='" . str_replace("'", "", trim($email)) . "' LIMIT 1";
         if (!$db->Query($query)) {
-            AA_Log::Log(get_class() . "->MailOTPAuthIsMailRegistered($email) - errore: " . $db->lastError . " - nella query: " . $query, 100, true, true);
+            AA_Log::Log(get_class() . "->MailOTPAuthIsMailRegistered($email) - errore: " . $db->GetErrorMessage() . " - nella query: " . $query, 100, true, true);
             return false;
         }
 
