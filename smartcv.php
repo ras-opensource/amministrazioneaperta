@@ -410,7 +410,7 @@ if(isset($_SESSION['MailOTP-user']) && $_SESSION['MailOTP-user'] > 0)
   $curriculum_file=md5($email).".pdf";
   if(file_exists($path.$curriculum_file))
   {
-    $curriculum="<a href='https://sitod.regione.sardegna.it/web/amministrazione_trasparente/pubblicazioni/art14/curriculum/?email=".$email."&po=1' title='Fai click per scaricare il curriculum'><img src='immagini/icon-pdf.png' class='aa-icon-pdf' alt='scarica il curriculum'/></a>";
+    $curriculum="<a href='https://amministrazioneaperta.regione.sardegna.it/web/amministrazione_trasparente/pubblicazioni/art14/curriculum/?email=".$email."&po=1' title='Fai click per scaricare il curriculum'><img src='immagini/icon-pdf.png' class='aa-icon-pdf' alt='scarica il curriculum'/></a>";
   }
   else
   {
