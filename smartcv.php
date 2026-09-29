@@ -65,7 +65,7 @@ if($task=="verify")
     $curriculum_file=md5($email).".pdf";
     if(file_exists($path.$curriculum_file))
     {
-      $curriculum="<a href='https://sitod.regione.sardegna.it/web/amministrazione_trasparente/pubblicazioni/art14/curriculum/?email=".$mail."&po=1'>presente</a>";
+      $curriculum="<a href='https://amministrazioneaperta.regione.sardegna.it/web/amministrazione_trasparente/pubblicazioni/art14/curriculum/?email=".$mail."&po=1'>presente</a>";
     }
     else
     {
