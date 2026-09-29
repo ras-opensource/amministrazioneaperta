@@ -1066,33 +1066,58 @@ class AA_User
 
         $db=new AA_AccountsDatabase();
 
-        $query="SELECT token FROM tokens ORDER by data_rilascio DESC";
+        $query="SELECT token,id_utente FROM tokens ORDER by data_rilascio DESC";
 
         if(!$db->Query($query))
         {
             AA_Log::Log(__METHOD__," - errore: ".$db->GetErrorMessage(),100);
         }
 
+        $curUser=AA_User::GetCurrentUser();
+        
         $rs=$db->GetResultSet();
         foreach($rs as $curToken)
         {
             if (crypt($curToken['token'], $token)==$token)
             {
-                $savedToken = $_SESSION['token'];
-                $curUser=AA_User::UserAuth($curToken['token']);
-
-                if($curUser->IsValid()) 
+                //verifica che il token corrisponda all'utente corrente qualora sia presente
+                if($curUser->IsValid() && $curToken["id_utente"] == $curUser->GetId())
                 {
-                    if(!$bRegisterToken) AA_User::UserAuth($savedToken);
+                    $savedToken = $_SESSION['token'];
+                    $curUser=AA_User::UserAuth($curToken['token']);
+                    
+                     if($curUser->IsValid()) 
+                    {
+                        if(!$bRegisterToken) AA_User::UserAuth($savedToken);
 
-                    return true;
+                        return true;
+                    }
+                    else
+                    {
+                        if(!$bRegisterToken) AA_User::UserAuth($savedToken);
+
+                        AA_Log::Log(__METHOD__," - errore: sso token scaduto o non valido.",100);
+                        return false;
+                    }
                 }
                 else
                 {
-                    if(!$bRegisterToken) AA_User::UserAuth($savedToken);
+                    $savedToken = $_SESSION['token'];
+                    $curUser=AA_User::UserAuth($curToken['token']);
+                    
+                     if($curUser->IsValid()) 
+                    {
+                        if(!$bRegisterToken) AA_User::UserAuth($savedToken);
 
-                    AA_Log::Log(__METHOD__," - errore: sso token scaduto o non valido.",100);
-                    return false;
+                        return true;
+                    }
+                    else
+                    {
+                        if(!$bRegisterToken) AA_User::UserAuth($savedToken);
+
+                        AA_Log::Log(__METHOD__," - errore: sso token scaduto o non valido.",100);
+                        return false;
+                    }
                 }
             }
         }
