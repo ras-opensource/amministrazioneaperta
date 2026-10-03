@@ -2,198 +2,577 @@
 
 ## Descrizione
 
-Il modulo SICAR è un sistema per la gestione informatizzata del catasto e delle risorse immobiliari dell'Amministrazione. Il modulo permette di gestire in modo completo gli immobili, dalle informazioni base ai dati catastali e urbanistici.
+Il modulo **SICAR** è un sistema completo per la gestione informatizzata della capacita' abitativa Regionale. Permette di gestire in modo integrato:
+
+- **Immobili**: dati catastali, urbanistici e caratteristiche
+- **Alloggi**: assegnazione a nuclei familiari, stato occupazione, interventi
+- **Nuclei Familiari**: gestione anagrafica e assegnazioni
+- **Enti**: operatori e gestione relazioni
+- **Finanziamenti**: programmi e richieste
+- **Graduatorie**: gestione graduatorie per assegnazione alloggi
 
 ## Struttura del Modulo
 
 ### File Principali
 
-- `lib.php` - Libreria principale con le classi `AA_Immobile` e `AA_SicarModule`
-- `sicar_ops.php` - Task manager per le operazioni del modulo
-- `sicar.css` - Stili CSS personalizzati per il modulo
-- `sql/aa_sicar_immobili.sql` - Struttura database per gli immobili
-- `config.php` - Configurazione del modulo
+| File | Funzione |
+|------|----------|
+| `lib.php` | Autoloader classi (carica automaticamente da `classes/`) |
+| `taskmanager.php` | Entry point AJAX per le operazioni del modulo |
+| `config.php` | Configurazione (include system_lib) |
+| `default.css` | Stili CSS personalizzati |
 
-### Classi
+### Directory
 
-#### AA_Immobile
-Classe derivata da `AA_Object_V2` per la gestione degli immobili.
+| Path | Contenuto |
+|------|-----------|
+| `classes/` | Classi PHP del modulo |
+| `sql/` | Script SQL per la creazione tabelle |
+| `docs/` | Documentazione aggiuntiva (SRS PDF) |
 
-**Proprietà:**
-- `tipologia` - Tipologia di immobile (tabellato)
-- `comune` - Codice ISTAT del Comune
-- `ubicazione` - Ubicazione nel territorio comunale (tabellato)
-- `indirizzo` - Indirizzo completo con numero civico
-- `catasto` - Dati catastali (Foglio, mappale, particella, subalterno)
-- `zona_urbanistica` - Codice zona urbanistica
-- `piani` - Numero di piani dell'immobile
-- `note` - Note aggiuntive
-
-**Metodi principali:**
-- `Validate()` - Validazione dei dati
-- `GetDisplayName()` - Nome visualizzato dell'immobile
-- `ToCsv()` - Esportazione in formato CSV
-
-#### AA_SicarModule
-Classe principale del modulo che estende `AA_GenericModule`.
-
-**Funzionalità:**
-- Gestione delle sezioni del modulo
-- Operazioni CRUD sugli immobili
-- Ricerca e filtri
-- Esportazione dati
-- Task management integrato
-
-**Task implementati:**
-- `GetSicarTipologie` - Recupero tipologie immobili
-- `GetSicarUbicazioni` - Recupero ubicazioni
-- `GetSicarZoneUrbanistiche` - Recupero zone urbanistiche
-- `GetSicarComuni` - Recupero comuni
-- `AddNewSicar` - Aggiunta nuovo immobile
-- `UpdateSicar` - Aggiornamento immobile
-- `DeleteSicar` - Eliminazione immobile
-- `PublishSicar` - Pubblicazione immobile
-- `TrashSicar` - Cestinazione immobile
-- `ResumeSicar` - Ripristino immobile
-- `ReassignSicar` - Riassegnazione immobile
-- `ExportSicarCsv` - Esportazione CSV
+---
 
 ## Architettura
 
-Il modulo utilizza l'architettura standard di Amministrazione Aperta:
-
 ### Pattern AA_GenericModule
-- **Ereditarietà**: Estende `AA_GenericModule` per funzionalità standard
-- **Task Management**: Utilizza `AA_GenericModuleTaskManager` per la gestione dei task
-- **Sezioni**: Implementa sezioni standard (Bozze, Pubblicate, Dettaglio)
-- **Permessi**: Integrazione con il sistema di permessi di `AA_Object_V2`
 
-### Task System
+Il modulo segue l'architettura standard di Amministrazione Aperta:
+
+- **Ereditarietà**: `AA_SicarModule` estende `AA_GenericModule`
+- **Task Management**: utilizza `AA_GenericModuleTaskManager` per registrazione ed esecuzione task
+- **Sezioni UI**: implementa sezioni custom con navbar e template Webix
+- **Permessi**: integrazione con il sistema di permessi tramite flag utente
+
+### Autoloader Classi
+
+Il file `lib.php` registra un autoloader SPL che carica automaticamente le classi dalla directory `classes/`:
+
+```php
+spl_autoload_register(function ($className) {
+    $filePath = __DIR__ . '/classes/' . $className . '.php';
+    if (file_exists($filePath)) {
+        require_once $filePath;
+    }
+});
+```
+
+### Sistema di Task
+
 I task sono implementati come metodi nella classe `AA_SicarModule` seguendo la convenzione:
-- Nome metodo: `Task_[NomeTask]`
-- Parametro: Oggetto `AA_GenericTask`
-- Ritorno: `true` per successo, `false` per errore
-- Gestione stato: `SetStatus()`, `SetContent()`, `SetError()`
+- **Nome metodo**: `Task_[NomeTask]`
+- **Parametro**: Oggetto `AA_GenericTask`
+- **Ritorno**: `true` per successo, `false` per errore
+- **Gestione stato**: `SetStatus()`, `SetContent()`, `SetError()`
+
+I task vengono registrati nel costruttore del modulo tramite `$taskManager->RegisterTask()`.
+
+---
+
+## Classi Principali
+
+### AA_SicarModule (classe principale)
+
+**File**: `classes/AA_SicarModule.php` (~387KB)
+
+Classe principale del modulo che estende `AA_GenericModule`. Gestisce:
+- Registrazione task e sezioni UI
+- Template navbar e layout
+- Rendering dati per sezioni (bozze, pubblicate, dettaglio)
+- Integrazione con tutti i sotto-moduli (immobili, alloggi, nuclei, enti, finanziamenti)
+
+**Costanti principali:**
+```php
+const AA_ID_MODULE = "AA_MODULE_SICAR";
+const AA_UI_PREFIX = "AA_Sicar";
+const AA_MODULE_OBJECTS_CLASS = "AA_SicarAlloggio";
+```
+
+### AA_SicarImmobile
+
+**File**: `classes/AA_SicarImmobile.php` (~17KB)
+
+**Estende**: `AA_GenericParsableDbObject`
+
+Gestisce gli immobili con tutti i dati catastali e urbanistici.
+
+**Tabella database**: `aa_sicar_immobili`
+
+**Proprietà:**
+| Proprietà | Tipo | Descrizione |
+|-----------|------|-------------|
+| `descrizione` | text | Nome/descrizione dell'immobile |
+| `tipologia` | int | ID tipologia (tabellato) |
+| `comune` | string | Codice ISTAT del Comune |
+| `ubicazione` | int | ID ubicazione (tabellato) |
+| `indirizzo` | text | Indirizzo completo con numero civico |
+| `catasto` | JSON | Dati catastali (foglio, mappale, particella, subalterno, sezione) |
+| `zona_urbanistica` | int | ID zona urbanistica |
+| `piani` | int | Numero di piani |
+| `attributi` | JSON | Caratteristiche (condominio misto, gestione, alloggio_count) |
+| `interventi` | JSON | Storico interventi |
+| `geolocalizzazione` | text | Coordinate o riferimento geografico |
+| `note` | textarea | Note aggiuntive |
+
+**Template View Props**: configurato con aree, colonne e righe per il rendering Webix.
+
+**Metodi principali:**
+- `Validate()` - Validazione campi obbligatori
+- `GetDisplayName()` - Restituisce "descrizione - indirizzo (comune)"
+- `GetCatasto($bAsObject)` - Ritorna oggetto JSON o stringa
+- `GetAttributi($bAsObject)` - Ritorna array di attributi
+- `GetGestore()` - Ritorna oggetto `AA_SicarEnte` gestore
+- `GetNumeroAlloggiTot()` - Conteggio alloggi associati
+- `GetListaImmobili($comune)` - Lista statica filtrata per comune
+- `GetAlloggi($bBozze, $bCestinate)` - Alloggi associati
+
+### AA_SicarAlloggio
+
+**File**: `classes/AA_SicarAlloggio.php` (~18KB)
+
+**Estende**: `AA_Object_V2`
+
+Gestisce gli alloggi e la loro assegnazione.
+
+**Tabelle database:**
+- `aa_sicar_data` (dati principali)
+- `aa_sicar_objects` (versionamento)
+
+**Proprietà:**
+| Proprietà | Descrizione |
+|-----------|-------------|
+| `immobile` | ID immobile associato |
+| `tipologia_utilizzo` | Tipo di utilizzo (tabellato) |
+| `stato_conservazione` | Stato conservativo (tabellato) |
+| `anno_ristrutturazione` | Anno ultima ristrutturazione |
+| `superficie_utile_abitabile` | Superficie abitabile |
+| `superficie_non_residenziale` | Superficie non residenziale |
+| `superficie_parcheggi` | Superficie parcheggi |
+| `vani_abitabili` | Numero vani |
+| `piano` | Piano dell'alloggio |
+| `ascensore` | Presenza ascensore |
+| `fruibile_dis` | Fruibilità disabilità |
+| `note` | Note |
+| `gestione` | JSON gestione |
+| `proprieta` | JSON proprietà |
+| `occupazione` | JSON occupazione attuale |
+| `interventi` | JSON interventi storici |
+
+**Metodi principali:**
+- `GetImmobile($bAsObject)` - Ritorna l'immobile associato
+- `GetTipologiaUtilizzo($asText)` - Tipologia testuale o ID
+- `GetStatoConservazione($asText)` - Stato testuale o ID
+- `GetOccupazione()` - Gestione occupazione corrente
+- `AddNew($params, $user)` - Creazione statica
+
+### AA_SicarNucleo
+
+**File**: `classes/AA_SicarNucleo.php` (~16KB)
+
+**Estende**: `AA_GenericParsableDbObject`
+
+Gestisce i nuclei familiari.
+
+**Tabella database**: `aa_sicar_nuclei`
+
+**Proprietà:**
+| Proprietà | Descrizione |
+|-----------|-------------|
+| `descrizione` | Nome/descrizione nucleo |
+| `cf` | Codice fiscale |
+| `comune` | Comune di residenza |
+| `indirizzo` | Indirizzo di residenza |
+| `note` | Note |
+| `alloggio_attuale` | ID alloggio assegnato |
+| `storico_assegnazioni` | JSON storico |
+
+### AA_SicarEnte
+
+**File**: `classes/AA_SicarEnte.php` (~11KB)
+
+**Estende**: `AA_GenericParsableDbObject`
+
+Gestisce gli enti e i loro operatori.
+
+**Tabella database**: `aa_sicar_enti`
+
+**Proprietà:**
+| Proprietà | Descrizione |
+|-----------|-------------|
+| `denominazione` | Nome ente |
+| `tipologia` | ID tipologia ente (tabellato) |
+| `indirizzo` | Indirizzo |
+| `web` | Sito web |
+| `pec` | PEC |
+| `geolocalizzazione` | Coordinate |
+| `operatori` | JSON contatti/operatori |
+| `note` | Note |
+
+### AA_SicarFinanziamento
+
+**File**: `classes/AA_SicarFinanziamento.php` (~7.6KB)
+
+**Estende**: `AA_GenericParsableDbObject`
+
+Gestisce i programmi di finanziamento.
+
+**Tabella database**: `aa_sicar_finanziamenti`
+
+### AA_SicarGraduatoria
+
+**File**: `classes/AA_SicarGraduatoria.php` (~7KB)
+
+**Estende**: `AA_GenericParsableDbObject`
+
+Gestisce le graduatorie per assegnazione alloggi.
+
+**Tabella database**: `aa_sicar_graduatorie`
+
+### AA_SicarRichiestaFinanziamento
+
+**File**: `classes/AA_SicarRichiestaFinanziamento.php` (~7.4KB)
+
+**Estende**: `AA_GenericParsableDbObject`
+
+Gestisce le richieste di finanziamento.
+
+**Tabella database**: `aa_sicar_richieste_finanziamento`
+
+### AA_Sicar_Const
+
+**File**: `classes/AA_Sicar_Const.php` (~18KB)
+
+Costanti e metodi statici per i dati tabellati:
+- Tipologie immobili, enti, programmi finanziamento
+- Ubicazioni, zone urbanistiche, comuni ISTAT
+- Stati conservazione alloggi, stato lavori interventi
+- Flag utente: `AA_USER_FLAG_SICAR = "sicar"`
+
+---
+
+## Sezioni UI
+
+Il modulo definisce le seguenti sezioni principali:
+
+| ID | Nome | Icona | Descrizione |
+|----|------|-------|-------------|
+| `sicar_desktop` | Cruscotto | `mdi mdi-desktop-classic` | Dashboard principale |
+| `GestImmobili` | Gestione immobili | `mdi mdi-office-building-marker` | Lista e dettaglio immobili |
+| `GestEnti` | Gestione enti | `mdi mdi-home-group` | Lista e dettaglio enti |
+| `GestNuclei` | Gestione nuclei | `mdi mdi-account-group` | Lista e dettaglio nuclei familiari |
+| `GestFinanziamenti` | Gestione finanziamenti | `mdi mdi-cash-fast` | Programmi di finanziamento |
+| `GestGraduatorie` | Gestione graduatorie | `mdi mdi-format-list-numbered` | Graduatorie assegnazione |
+| `GestTables` | Enti, immobili e nuclei | `mdi mdi-table` | Tabelle dati generiche |
+| `Bozze` | Alloggi (bozze) | - | Alloggi in stato bozza |
+| `Pubblicate` | Alloggi (pubblicate) | `mdi mdi-home-city` | Alloggi pubblicati |
+
+---
+
+## Task Registrati
+
+### Task Standard (Gestione Oggetti)
+| Task | Metodo | Descrizione |
+|------|--------|-------------|
+| `GetSicarPubblicateFilterDlg` | - | Dialog filtro pubblicate |
+| `GetSicarBozzeFilterDlg` | - | Dialog filtro bozze |
+| `GetSicarReassignDlg` | - | Dialog riassegnazione |
+| `GetSicarPublishDlg` | - | Dialog pubblicazione |
+| `GetSicarTrashDlg` | - | Dialog cestinazione |
+| `GetSicarResumeDlg` | - | Dialog ripristino |
+| `GetSicarDeleteDlg` | - | Dialog eliminazione |
+| `GetSicarAddNewDlg` | - | Dialog nuovo alloggio |
+| `GetSicarModifyDlg` | - | Dialog modifica alloggio |
+
+### Task Immobili
+| Task | Descrizione |
+|------|-------------|
+| `GetSicarAddNewImmobileDlg` | Dialog nuovo immobile |
+| `AddNewImmobileSicar` | Creazione immobile |
+| `GetSicarModifyImmobileDlg` | Dialog modifica immobile |
+| `UpdateImmobileSicar` | Aggiornamento immobile |
+| `GetSicarDeleteImmobileDlg` | Dialog eliminazione immobile |
+| `DeleteImmobileSicar` | Eliminazione immobile |
+| `GetSicarDetailImmobileDlg` | Dettaglio immobile |
+| `GetSicarInterventiImmobileDlg` | Interventi immobile |
+| `GetSicarAddNewInterventoImmobileDlg` | Nuovo intervento |
+| `AddNewInterventoImmobileSicar` | Creazione intervento |
+| `GetSicarModifyInterventoImmobileDlg` | Modifica intervento |
+| `UpdateInterventoImmobileSicar` | Aggiornamento intervento |
+| `GetSicarDeleteInterventoImmobileDlg` | Eliminazione intervento |
+| `DeleteInterventoImmobileSicar` | Eliminazione intervento |
+
+### Task Enti
+| Task | Descrizione |
+|------|-------------|
+| `GetSicarAddNewEnteDlg` | Dialog nuovo ente |
+| `AddNewEnteSicar` | Creazione ente |
+| `GetSicarModifyEnteDlg` | Dialog modifica ente |
+| `UpdateEnteSicar` | Aggiornamento ente |
+| `GetSicarOperatoriEnteDlg` | Operatori ente |
+| `GetSicarSearchEntiDlg` | Ricerca enti |
+
+### Task Nuclei
+| Task | Descrizione |
+|------|-------------|
+| `GetSicarAddNewNucleoDlg` | Dialog nuovo nucleo |
+| `AddNewNucleoSicar` | Creazione nucleo |
+| `GetSicarModifyNucleoDlg` | Dialog modifica nucleo |
+| `UpdateNucleoSicar` | Aggiornamento nucleo |
+| `GetSicarSearchNucleiDlg` | Ricerca nuclei |
+| `GetSicarDeleteNucleoDlg` | Dialog eliminazione nucleo |
+| `DeleteNucleoSicar` | Eliminazione nucleo |
+
+### Task Stato Occupazione Alloggio
+| Task | Descrizione |
+|------|-------------|
+| `GetSicarAddNewStatoOccupazioneAlloggioDlg` | Nuovo stato occupazione |
+| `AddNewStatoOccupazioneAlloggioSicar` | Creazione stato occupazione |
+| `GetSicarModifyStatoOccupazioneAlloggioDlg` | Modifica stato occupazione |
+| `UpdateStatoOccupazioneAlloggioSicar` | Aggiornamento stato occupazione |
+| `GetSicarDeleteStatoOccupazioneAlloggioDlg` | Eliminazione stato occupazione |
+| `DeleteStatoOccupazioneAlloggioSicar` | Eliminazione stato occupazione |
+| `GetSicarDetailStatoOccupazioneAlloggioDlg` | Dettaglio stato occupazione |
+
+### Task Stato Interventi Alloggio
+| Task | Descrizione |
+|------|-------------|
+| `GetSicarAddNewStatoInterventiAlloggioDlg` | Nuovo stato interventi |
+| `AddNewStatoInterventiAlloggioSicar` | Creazione stato interventi |
+| `GetSicarModifyStatoInterventiAlloggioDlg` | Modifica stato interventi |
+| `UpdateStatoInterventiAlloggioSicar` | Aggiornamento stato interventi |
+| `GetSicarDeleteStatoInterventiAlloggioDlg` | Eliminazione stato interventi |
+| `DeleteStatoInterventiAlloggioSicar` | Eliminazione stato interventi |
+| `GetSicarDetailStatoInterventiAlloggioDlg` | Dettaglio stato interventi |
+
+### Task CRUD Alloggi
+| Task | Descrizione |
+|------|-------------|
+| `AddNewAlloggioSicar` | Creazione alloggio |
+| `UpdateSicar` | Aggiornamento alloggio |
+| `DeleteSicar` | Eliminazione alloggio |
+| `PublishSicar` | Pubblicazione alloggio |
+| `TrashSicar` | Cestinazione alloggio |
+| `ResumeSicar` | Ripristino alloggio |
+| `ReassignSicar` | Riassegnazione alloggio |
+
+### Task Dati Tabellati e Utilità
+| Task | Descrizione |
+|------|-------------|
+| `GetSicarTipologie` | Recupero tipologie immobili |
+| `GetSicarUbicazioni` | Recupero ubicazioni |
+| `GetSicarZoneUrbanistiche` | Recupero zone urbanistiche |
+| `GetSicarComuni` | Recupero comuni (codici ISTAT) |
+| `ExportSicarCsv` | Esportazione CSV |
+| `GetSicarListaCodiciIstat` | Lista codici ISTAT |
+| `GetSicarSearchImmobiliDlg` | Dialog ricerca immobili |
+
+---
+
+## Relazioni tra Entità
+
+```
+                    ┌──────────────┐
+                    │ AA_SicarEnte │
+                    └──────┬───────┘
+                           │ gestisce (1:n)
+                    ┌──────▼───────┐     ┌──────────────────┐
+                    │AA_SicarImmobile│◄────│ AA_SicarAlloggio │
+                    └──────┬───────┘     └──────────────────┘
+                           │ contiene (1:n)         │ occupa (1:1)
+                    ┌──────▼───────┐                │
+                    │ Interventi   │◄───────────────┘
+                    └──────────────┘
+
+                    ┌──────────────────┐
+                    │AA_SicarNucleo    │
+                    └──────────────────┘
+                           │ assegna (1:1)
+                    ┌──────▼───────┐
+                    │AA_SicarAlloggio│
+```
+
+### Relazioni Principali
+- **Immobile → Alloggi**: 1:n (un immobile contiene molti alloggi)
+- **Ente → Immobili**: 1:n (un ente gestisce molti immobili)
+- **Nucleo → Alloggio**: 1:1 (un nucleo ha un alloggio assegnato)
+- **Alloggio → Occupazione**: 1:1 (stato occupazione corrente)
+- **Immobile → Interventi**: 1:n (storico interventi)
+- **Alloggio → Interventi**: 1:n (storico interventi sull'alloggio)
+
+---
 
 ## Struttura Database
 
-### Tabelle Principali
+### Tabelle Dati Principali
 
-#### aa_sicar_immobili
-Tabella principale per i dati degli immobili.
+| Tabella | Classe | Descrizione |
+|---------|--------|-------------|
+| `aa_sicar_immobili` | `AA_SicarImmobile` | Dati immobili |
+| `aa_sicar_data` | `AA_SicarAlloggio` | Dati alloggi (con versionamento) |
+| `aa_sicar_objects` | `AA_SicarAlloggio` | Versioni oggetti alloggio |
+| `aa_sicar_nuclei` | `AA_SicarNucleo` | Nuclei familiari |
+| `aa_sicar_enti` | `AA_SicarEnte` | Enti e organizzazioni |
+| `aa_sicar_finanziamenti` | `AA_SicarFinanziamento` | Programmi finanziamento |
+| `aa_sicar_graduatorie` | `AA_SicarGraduatoria` | Graduatorie |
+| `aa_sicar_richieste_finanziamento` | `AA_SicarRichiestaFinanziamento` | Richieste finanziamento |
 
-#### aa_sicar_tipologie
-Tabella per le tipologie di immobile (Ufficio, Magazzino, Officina, etc.).
+### Tabelle Tabellati (Dizionario)
 
-#### aa_sicar_ubicazioni
-Tabella per le ubicazioni nel territorio comunale.
+| Tabella | Utilizzato da |
+|---------|---------------|
+| `aa_sicar_tipologie_immobile` | Tipologie immobili |
+| `aa_sicar_tipologie_ente` | Tipologie enti |
+| `aa_sicar_tipologie_finanziamenti` | Tipologie programmi finanziamento |
+| `aa_sicar_ubicazioni` | Ubicazioni comunali |
+| `aa_sicar_zone_urbanistiche` | Zone urbanistiche |
+| `aa_sicar_stati_conservazione_alloggio` | Stati conservazione alloggi |
+| `aa_sicar_stato_lavori` | Stato lavori interventi |
 
-#### aa_sicar_zone_urbanistiche
-Tabella per le zone urbanistiche comunali.
+---
 
-## Funzionalità
+## Workflow Tipico
 
-### Gestione Immobili
-- **Inserimento**: Creazione di nuovi immobili con tutti i dati richiesti
-- **Modifica**: Aggiornamento dei dati esistenti
-- **Eliminazione**: Rimozione logica degli immobili
-- **Pubblicazione**: Gestione dello stato di pubblicazione
-- **Cestinazione**: Gestione dello stato di cestinazione
-- **Ripristino**: Ripristino di immobili cestinati
-- **Riassegnazione**: Cambio di struttura organizzativa
+### 1. Creazione Nuovo Immobile
 
-### Ricerca e Filtri
-- Ricerca testuale su descrizione e indirizzo
-- Filtri per tipologia, comune, ubicazione
-- Paginazione dei risultati
-- Filtri per stato (bozza, pubblicato, cestinato)
+```
+Frontend (Webix UI)
+    ↓ click "Nuovo"
+callHandler('dlg', {task: 'GetSicarAddNewImmobileDlg'})
+    ↓
+taskmanager.php → TaskManager->RunTask()
+    ↓
+Task_GetSicarAddNewImmobileDlg($task)
+    ↓ renderizza form HTML
+Frontend → webix.ui(result.content.value)
+    ↓ utente compila e conferma
+callHandler('action', {task: 'AddNewImmobileSicar'})
+    ↓
+Task_AddNewImmobileSicar() → AA_SicarImmobile::AddNew()
+    ↓ validazione + DB insert
+Risposta XML/JSON → Refresh UI
+```
 
-### Esportazione
-- Esportazione in formato CSV
-- Inclusione di tutti i campi principali
-- Filtri per stato di pubblicazione
+### 2. Assegnazione Alloggio a Nucleo
 
-### Validazione
-- Controllo campi obbligatori
-- Validazione formato dati catastali
-- Verifica numeri di piani
-- Validazione codici ISTAT comuni
+```
+Frontend → seleziona nucleo e alloggio
+callHandler('action', {task: 'AddNewStatoOccupazioneAlloggioSicar'})
+    ↓
+Task_AddNewStatoOccupazioneAlloggioSicar()
+    ↓ crea relazione nucleo↔alloggio
+    aggiorna aa_sicar_nuclei.alloggio_attuale
+Risposta → Refresh UI nuclei/alloggi
+```
 
-## Interfaccia Utente
+---
 
-### Sezioni Standard
-1. **Bozze**: Vista tabellare degli immobili in stato bozza
-2. **Pubblicate**: Vista tabellare degli immobili pubblicati
-3. **Dettaglio**: Form per la modifica dei dati
+## Template UI
 
-### Componenti UI
-- DataTable per la lista degli immobili
-- Form con validazione per i dettagli
-- Toolbar con azioni principali
-- Campo di ricerca con filtro automatico
-- Paginazione
-- Menu contestuali per azioni
+### Template View (Dettaglio Oggetti)
+
+Ogni oggetto definisce `aTemplateViewProps` per il rendering del dettaglio:
+
+```php
+$this->aTemplateViewProps['descrizione'] = array(
+    "label" => "Descrizione",
+    "type" => "text",
+    "maxlength" => 255,
+    "required" => true,
+    "visible" => true
+);
+
+// Layout areas e grid
+$this->aTemplateViewProps['__areas'] = array(
+    array("prop1", "prop1", "prop2"),
+    array("prop3", "prop4", "prop5"),
+);
+$this->aTemplateViewProps['__cols'] = array("1fr","1fr","1fr");
+$this->aTemplateViewProps['__rows'] = array("1fr","1fr","1fr");
+```
+
+### Template Datatable
+
+Definiti per ogni tabella di ricerca:
+- `Template_DatatableSearchImmobili`
+- `Template_DatatableSearchEnti`
+- `Template_DatatableSearchNuclei`
+- `Template_DatatableOperatoriEnte`
+- `Template_DatatableInterventiImmobile`
+
+---
+
+## Permessi
+
+### Flag Utente
+
+```php
+const AA_USER_FLAG_SICAR = "sicar";
+```
+
+Gli utenti con questo flag hanno accesso completo (`AA_PERMS_ALL`). Senza flag, accesso in sola lettura (`AA_PERMS_READ`).
+
+### Verifica Permessi
+
+Ogni classe oggetto implementa `GetUserCaps($user)`:
+
+```php
+public function GetUserCaps($user = null)
+{
+    $perms = AA_Const::AA_PERMS_READ;
+    
+    if ($user->HasFlag(AA_Sicar_Const::AA_USER_FLAG_SICAR)) {
+        $perms = AA_Const::AA_PERMS_ALL;
+    }
+    
+    return $perms;
+}
+```
+
+---
 
 ## Installazione
 
 ### 1. Creazione Tabelle Database
-Eseguire lo script SQL:
-```sql
-source utils/modules/sicar_9/sql/aa_sicar_immobili.sql
+
+Eseguire gli script SQL nella directory `sql/`:
+
+```bash
+source utils/modules/sicar_9/sql/*.sql
 ```
 
-### 2. Configurazione Modulo
-Il modulo si integra automaticamente nel sistema esistente utilizzando il pattern standard dei moduli AA.
+### 2. Popolazione Tabelle Tabellati
 
-### 3. Permessi
-Il modulo utilizza il sistema di permessi standard di AA_Object_V2:
-- **Lettura**: Visualizzazione degli immobili
-- **Scrittura**: Modifica dei dati
-- **Eliminazione**: Rimozione degli immobili
-- **Pubblicazione**: Gestione dello stato
+Inserire i dati nei dizionari:
 
-## Utilizzo
+```sql
+-- Tipologie immobili
+INSERT INTO aa_sicar_tipologie_immobile (descrizione) VALUES ('Ufficio');
+INSERT INTO aa_sicar_tipologie_immobile (descrizione) VALUES ('Magazzino');
 
-### Accesso al Modulo
-Il modulo è accessibile tramite il menu principale dell'applicazione con l'icona "home-city".
+-- Ubicazioni
+INSERT INTO aa_sicar_ubicazioni (codice, descrizione, comune, ordine) 
+VALUES ('01', 'Centro', '092009', 1);
 
-### Operazioni Base
-1. **Visualizzare gli immobili**: Selezionare la sezione "Bozze" o "Pubblicate"
-2. **Aggiungere un immobile**: Cliccare su "Nuovo" nella toolbar
-3. **Modificare un immobile**: Selezionare l'immobile e cliccare "Modifica"
-4. **Eliminare un immobile**: Selezionare l'immobile e cliccare "Elimina"
-5. **Pubblicare un immobile**: Selezionare l'immobile e cliccare "Pubblica"
-6. **Cestinare un immobile**: Selezionare l'immobile e cliccare "Cestina"
+-- Zone urbanistiche
+INSERT INTO aa_sicar_zone_urbanistiche (id, denominazione) VALUES (1, 'A');
+```
 
-### Ricerca
-Utilizzare il campo di ricerca per filtrare gli immobili per descrizione o indirizzo.
+### 3. Configurazione Permessi
 
-### Esportazione
-Cliccare su "Esporta CSV" per scaricare tutti gli immobili pubblicati in formato CSV.
+Assegnare il flag `sicar` agli utenti abilitati nel sistema di autenticazione.
+
+---
 
 ## Personalizzazione
 
 ### Aggiungere Nuove Tipologie
-Inserire nuovi record nella tabella `aa_sicar_tipologie`:
+
 ```sql
-INSERT INTO aa_sicar_tipologie (codice, descrizione, ordine) 
-VALUES ('011', 'Nuova Tipologia', 11);
+INSERT INTO aa_sicar_tipologie_immobile (descrizione) VALUES ('Nuova Tipologia');
 ```
 
-### Aggiungere Nuove Ubicazioni
-Inserire nuovi record nella tabella `aa_sicar_ubicazioni`:
-```sql
-INSERT INTO aa_sicar_ubicazioni (codice, descrizione, comune, ordine) 
-VALUES ('011', 'Nuova Ubicazione', '092009', 11);
-```
+### Aggiungere Nuovo Task
 
-### Modificare gli Stili
-Personalizzare il file `sicar.css` per modificare l'aspetto del modulo.
-
-### Aggiungere Nuovi Task
-Per aggiungere nuovi task:
-
-1. **Registrare il task** nel costruttore:
+1. **Registrare il task** nel costruttore `AA_SicarModule::__construct()`:
 ```php
 $taskManager->RegisterTask("NuovoTask");
 ```
@@ -212,29 +591,37 @@ public function Task_NuovoTask($task)
 }
 ```
 
+### Personalizzare Template View
+
+Modificare `aTemplateViewProps` nel costruttore della classe:
+
+```php
+$this->aTemplateViewProps['nuovo_campo'] = array(
+    "label" => "Nuovo Campo",
+    "type" => "text",
+    "required" => true,
+    "visible" => true
+);
+```
+
+---
+
 ## Estensioni Future
 
 ### Possibili Sviluppi
-- Gestione delle foto degli immobili
-- Integrazione con mappe geografiche
-- Gestione delle manutenzioni
-- Reportistica avanzata
-- Integrazione con sistemi catastali esterni
-- Gestione delle planimetrie
+- Gestione foto/pianimetrie degli immobili
+- Integrazione con mappe geografiche (GIS)
+- Gestione manutenzioni programmate
+- Reportistica avanzata con grafici
+- Integrazione con sistemi catastali esterni (ACI, AGENZIA TERRITORIO)
 - Sistema di notifiche per scadenze
+- API REST per integrazioni esterne
+- Mobile app per ispezioni sul campo
 
-### API
-Il modulo è predisposto per l'integrazione con API esterne per:
-- Verifica dati catastali
-- Geocoding degli indirizzi
-- Integrazione con sistemi urbanistici
-- Sincronizzazione con sistemi esterni
-
-## Supporto
-
-Per problemi o richieste di modifica, contattare il team di sviluppo del sistema Amministrazione Aperta.
+---
 
 ## Versioni
 
 - **v1.0** - Versione iniziale con gestione base degli immobili
-- **v1.1** - Migrazione a AA_GenericModule per standardizzazione
+- **v1.1** - Migrazione a `AA_GenericModule` per standardizzazione
+- **v2.0** - Introduzione autoloader classi, gestione alloggi, nuclei, enti, finanziamenti
