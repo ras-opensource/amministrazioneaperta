@@ -7362,7 +7362,10 @@ class AA_SicarModule extends AA_GenericModule
                 $interventi_list_icon="mdi mdi-table-search";
                 $num_interventi=sizeof($curImmobile->GetInterventi())." <a class='AA_DataTable_Ops_Button' title='Visualizza gli interventi associati all&apos;immobile' onClick='".$interventi_list."'><span class='".$interventi_list_icon."'></span></a>";
                 
-                $localizzazione="<b>".$curImmobile->GetDescrizione()."</b> - ".$curImmobile->GetIndirizzo()." (".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")"; 
+                $localizzazione=$curImmobile->GetIndirizzo().", Comune di ".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune"));
+                if(!empty($curImmobile->GetDescrizione())) {
+                    $localizzazione .= " (".$curImmobile->GetDescrizione().")";
+                }
                 $ops="<div class='AA_DataTable_Ops' style='justify-content: space-evenly;width: 100%'><a class='AA_DataTable_Ops_Button' title='Dettagli' onClick='".$detail."'><span class='mdi ".$detail_icon."'></span></a><a class='AA_DataTable_Ops_Button' title='Modifica' onClick='".$modify."'><span class='mdi ".$modify_icon."'></span></a><a class='AA_DataTable_Ops_Button_Red' title='Elimina' onClick='".$trash."'><span class='mdi ".$trash_icon."'></span></a></div>";
                 $data[]=array("id"=>$curImmobile->GetProp("id"),"localizzazione"=>$localizzazione,"condominio_misto"=>$condominio_misto,"alloggi"=>$num_alloggi,"interventi"=>$num_interventi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc,"ops"=>$ops);
             }
@@ -7386,7 +7389,10 @@ class AA_SicarModule extends AA_GenericModule
                 
                 $condominio_misto="No";
                 if($curImmobile->IsCondominioMisto()) $condominio_misto="Si";
-                $localizzazione=$curImmobile->GetDescrizione()." - ".$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")"; 
+                $localizzazione=$curImmobile->GetIndirizzo().", Comune di ".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune"));
+                if(!empty($curImmobile->GetDescrizione())) {
+                    $localizzazione .= " (".$curImmobile->GetDescrizione().")";
+                }
                 $data[]=array("id"=>$curImmobile->GetProp("id"),"localizzazione"=>$localizzazione,"condominio_misto"=>$condominio_misto,"alloggi"=>$num_alloggi,"interventi"=>$num_interventi,"descrizione"=>$curImmobile->GetDescrizione(),"indirizzo"=>$curImmobile->GetIndirizzo()."(".AA_Sicar_Const::GetComuneDescrFromCodiceIstat($curImmobile->GetProp("comune")).")<a href='https://www.google.com/maps/search/?api=1&query=".$curImmobile->GetGeolocalizzazione()."' target='_blank' alt='Visualizza su Google Maps' title='Visualizza su Google Maps'><span class='mdi mdi-google-maps'></a>","gestore"=>$gestore_desc);
             }
         }
@@ -7408,7 +7414,7 @@ class AA_SicarModule extends AA_GenericModule
         $template->SetColumnHeaderInfo(0,"localizzazione","<div style='text-align: center'>Localizzazione</div>","fillspace","textFilter","text","ImmobiliTable_left");
         //$template->SetColumnHeaderInfo(1,"indirizzo","<div style='text-align: center'>Indirizzo</div>","fillspace","textFilter","text","ImmobiliTable_left");
         //$template->SetColumnHeaderInfo(1,"condominio_misto","<div style='text-align: center'>Condominio Misto</div>",150,"selectFilter","text","ImmobiliTable");
-        $template->SetColumnHeaderInfo(1,"alloggi","<div style='text-align: center'>Alloggi ERP</div>",130,null,null,"ImmobiliTable");
+        $template->SetColumnHeaderInfo(1,"alloggi","<div style='text-align: center;height: 100%'>Alloggi ERP (Tot n./censiti n.)</div>",230,null,null,"ImmobiliTable");
         $template->SetColumnHeaderInfo(2,"interventi","<div style='text-align: center'>Interventi</div>",130,null,null,"ImmobiliTable");
         //$template->SetColumnHeaderInfo(4,"gestore","<div style='text-align: center'>Gestore</div>",260,"textFilter","text","ImmobiliTable");
         //$template->SetColumnHeaderInfo(3,"tipoDescr","<div style='text-align: center'>Categorie</div>","fillspace","textFilter","text","CriteriTable");

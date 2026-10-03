@@ -78,18 +78,9 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
         if(sizeof($attributi) > 0)
         {
             $content="<div style='display: flex, flex-direction: column;'>";
-            //condominio misto
-            if(isset($attributi['condominio_misto'])) 
-            {
-                $content.="<div style='display: flex'><div style='min-width:50%; font-weight: 300'>Condominio misto:</div>";
-                if($attributi['condominio_misto']) $content.="<div style='width:100%;'>Si</div>";
-                else $content.="<div style='width:100%;'>No</div>";
-                $content.="</div>";
-            }
-            else
-            {
-                $content.="<div style='display: flex'><div style='min-width:30%; font-weight: 300'>Condominio misto</div><div style='width:100%;'>No</div></div>";
-            }
+           
+            //numero alloggi
+            $content.="<div style='display: flex'><div style='min-width:45%; font-weight: 300'>Alloggi (n.):</div><div style='width:100%;'>".$this->GetNumeroAlloggiTot()."</div></div>";
 
             $content.="</div>";
             //AA_Log::Log(__METHOD__." - content: ".$content,100);
@@ -242,8 +233,8 @@ class AA_SicarImmobile extends AA_GenericParsableDbObject
     //numero alloggi
     public function GetNumeroAlloggiTot()
     {
-        $attirbuti=$this->GetAttributi();
-        if(isset($attirbuti['alloggi'])) return $attirbuti['alloggi'];
+        $attributi=$this->GetAttributi();
+        if(isset($attributi['alloggi'])) return $attributi['alloggi'];
         else return 0;
     }
 
