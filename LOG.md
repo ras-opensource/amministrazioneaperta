@@ -16,6 +16,15 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Cronologia
 
+### 2026-10-30 — README: rimozione percorso locale config (doc)
+- Su richiesta utente: da `README.md` (§Configurazione Principale) rimosso il
+  riferimento al percorso locale macchina della cartella del progetto
+  → sostituito col percorso relativo `utils/config.php` (relativo alla root del progetto).
+- Verifica: nessun altro riferimento a percorsi locali macchina (`/home/…`, `progetti`)
+  nel README.
+- API-doc: nessun impatto.
+- Branch `docs/readme-remove-local-path` (da `main`); merge/push su conferma utente.
+
 ### 2026-10-30 — Rotazione password DB `aauser` (ops)
 - Su richiesta utente: rotata la password MariaDB dell'account `aauser@%`
   (la precedente era quella esposta in README, v. entry sotto).

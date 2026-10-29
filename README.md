@@ -132,7 +132,7 @@ amministrazioneaperta/
 
 ## Configurazione Principale
 
-Percorso: `/home/elia/progetti/amministrazioneaperta/utils/config.php`
+Percorso: `utils/config.php` (relativo alla root del progetto)
 
 Parametri chiave:
 - Database connessione
