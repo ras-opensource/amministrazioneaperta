@@ -1,14 +1,14 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-30 (README: rimozione footer di provenienza — branch in attesa di merge)
+**Aggiornato**: 2026-10-30 (README: rimozione footer di provenienza — mergiato e pushato)
 
 ## Stato
 
-- **In corso su branch `docs/readme-remove-goose-footer`** (da `main`, non ancora mergiato):
-  rimosso dal fondo di `README.md` il footer di provenienza (segnalazione generazione
-  automatica con assistente AI + data, e separatore residuo). Nessun riferimento al
-  footer nel README. Attesa conferma utente per merge in `main` + push.
+- **Completato** (branch `docs/readme-remove-goose-footer`, mergiato in `main` e
+  pushato a `origin/main`): rimosso dal fondo di `README.md` il footer di
+  provenienza (segnalazione generazione automatica con assistente AI + data, e
+  separatore residuo). Nessun riferimento al footer nel README.
 
 - **Password DB ruotata** (su richiesta utente): account MariaDB `aauser@%`, nuova pwd
   casuale 20 char; aggiornati `AA_DBPWD` + `AA_ACCOUNTS_DBPWD` in entrambi i
