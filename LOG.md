@@ -6,12 +6,28 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Stato attuale
 
-- **Lavoro attivo**: nessun TODO aperto (M0 baseline chiusa). Prossimo: definizione F01 dall'utente.
+- **Lavoro attivo**: branch `chore/api-doc-module-scan` — API-doc moduli + rimozione endpoint
+  legacy `ws.php` + suite E2E Playwright; in corso: run E2E, poi commit e merge su `main`.
 - **Puntatore**: leggere per primo `TODO/STATUS.md`; poi il file TODO non-✅ con NN più alto.
-- **Branch corrente**: `chore/api-doc-module-scan` — API-doc esteso a `utils/modules/**`,
-  testato, in attesa di conferma utente per merge su `main`.
+- **Backlog**: F01 da definire = reingegnerizzazione service XML pubblicazioni (ex `ws.php`);
+  `utils/lib_ws.php` mantenuto come libreria di funzioni utility, da verificare/aggiornare
+  per compatibilità col framework attuale nel momento della reingegnerizzazione.
 
 ## Cronologia
+
+### 2026-10-29 — Rimozione endpoint legacy `ws.php`
+- Su richiesta utente: `ws.php` (service XML pubblicazioni, ereditato da vecchia versione)
+  rimosso dal codice (`git rm`) e **escluso da API-doc e documenti di progetto**.
+- `scripts/gen_api.py`: rimossa la riga hardcoded `POST /ws.php`; `docs/API.md` +
+  `docs/api.sha256` rigenerati (119 file PHP, checksum OK).
+- Puliti i riferimenti: `README.md` (struttura cartelle + sezione service XML),
+  `docs/SPECIFICATION.md` (FR-API-03 rimosso), `docs/PROJECT_PLAN.md` (§1.4 entry point).
+- Verifica pre-eliminazione: nessun caller runtime di `ws.php` in JS/PHP del repo →
+  l'app non dipende dall'endpoint.
+- **Decisione utente**: `utils/lib_ws.php` (funzioni utility usate da `ws.php`) **non**
+  viene eliminato; resta come libreria di funzioni, con verifica compatibilità e
+  eventuale aggiornamento da fare in un secondo momento (reingegnerizzazione endpoint).
+- `.gitignore`: aggiunti `node_modules/`, `test-results/`, `playwright-report/`.
 
 ### 2026-10-29 — Chore: API-doc esteso a `utils/modules/**`
 - Branch `chore/api-doc-module-scan`: `scripts/gen_api.py` scansiona ora ricorsivamente
