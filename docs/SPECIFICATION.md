@@ -71,8 +71,6 @@ core (`utils/system_core/`), libreria generica per moduli (`utils/system_lib/`),
   `<error>`, `<content>` (base64, type json/html).
 - **FR-API-02** `storage.php?object=HASH`: accesso a file pubblici con verifica hash,
   header MIME appropriati.
-- **FR-API-03** `ws.php`: service XML per pubblicazioni (categorie art. 12/14/20
-  D.Lgs. 33/39/2013, es. `14_1b` Dirigenti, `20_39`, `pubblicazioni_dirigenti`).
 
 ### Area SEC — Sicurezza
 - **FR-SEC-01** Header anti-cache su tutte le risposte (`no-store, no-cache, must-revalidate`).

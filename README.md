@@ -15,7 +15,6 @@ amministrazioneaperta/
 │   └── [varie librerie]       # Webix, CKEditor, jQuery, ecc.
 ├── index.2.0.php             # Main entry point
 ├── storage.php                # Servizio file pubblico
-├── ws.php                     # Service web/XML per pubblicazioni
 ├── composer.json             # Dipendenze (MongoDB)
 ├── LICENSE, README.md, .gitignore
 ```
@@ -74,15 +73,6 @@ amministrazioneaperta/
    ```
    - Verifica autenticazione tramite hash
    - Restituisce file con header MIME appropriato
-
-5. **Service XML XML (ws.php)**
-   - API XML per pubblicazioni (Art.12-14-20 D.Lgs.33/39/2013)
-   - Gestisce parametri XML con tag `<param>` e attributo `art`
-   - Esempi di categorie:
-     - `14_1b`: Dirigenti (art. 14)
-     - `14_1d_1e`: Pubblicazioni (art. 14)
-     - `20_39`: Dirigenti (art. 20)
-     - `pubblicazioni_dirigenti`: Dirigenti (art. 14 e 20)
 
 ---
 

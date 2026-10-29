@@ -46,8 +46,8 @@ Guide: `utils/docs/system_lib.js.md`, `event_handlers_guide.md`, `template_ui_gu
 
 ### 1.4 Entry point HTTP
 `index.2.0.php` (UI), `utils/system_ops.php` (task di sistema),
-`utils/modules/<id>/taskmanager.php` (task modulo), `storage.php` (file pubblici),
-`ws.php` (feed XML). Contratti: `docs/SPECIFICATION.md` §Area API + `docs/API.md`.
+`utils/modules/<id>/taskmanager.php` (task modulo), `storage.php` (file pubblici).
+Contratti: `docs/SPECIFICATION.md` §Area API + `docs/API.md`.
 
 ## 2. Milestone
 

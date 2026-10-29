@@ -12,7 +12,6 @@
 | `GET/POST /utils/system_ops.php` | `utils/system_ops.php` | Dispatcher task di sistema (AA_SystemTaskManager) |
 | `GET/POST /utils/modules/<id>/taskmanager.php` | per-modulo | Entry point AJAX dei task del modulo (`?task=<NomeTask>`) |
 | `GET /storage.php?object=HASH` | `storage.php` | Accesso file pubblico autenticato (hash) |
-| `POST /ws.php` | `ws.php` | Service XML pubblicazioni (D.Lgs. 33/2013, 39/2013), parametri `<param art=..>` |
 
 ## Protocollo task (frontend → backend)
 
