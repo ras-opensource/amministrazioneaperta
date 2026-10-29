@@ -6,14 +6,29 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Stato attuale
 
-- **Lavoro attivo**: branch `chore/api-doc-module-scan` — API-doc moduli + rimozione endpoint
-  legacy `ws.php` + suite E2E Playwright; in corso: run E2E, poi commit e merge su `main`.
+- **Lavoro attivo**: branch `docs/system-lib-core-analysis` (da `main` @ `a6ad7c7`) —
+  analisi core frontend `utils/system_lib.js` → `utils/docs/system_lib.js.md`; in corso:
+  commit sul branch, poi merge su `main`.
 - **Puntatore**: leggere per primo `TODO/STATUS.md`; poi il file TODO non-✅ con NN più alto.
 - **Backlog**: F01 da definire = reingegnerizzazione service XML pubblicazioni (ex `ws.php`);
   `utils/lib_ws.php` mantenuto come libreria di funzioni utility, da verificare/aggiornare
   per compatibilità col framework attuale nel momento della reingegnerizzazione.
 
 ## Cronologia
+
+### 2026-10-29 — Analisi core frontend `utils/system_lib.js` (doc)
+- Su richiesta utente: analisi completa di `utils/system_lib.js` (~5.000 righe, runtime
+  frontend) con focus sul dialogo login email.
+- Sostituito `utils/docs/system_lib.js.md` (schizzo impreciso, es. `AA_MainApp`
+  descritto come classe): doc verificata sul codice — layout del file, modello moduli
+  `AA_Module` (metodi + punti di estensione `…Default`), singleton `AA_MainApp`, boot
+  `AA_DefaultSystemInitialization` (default login email: hook `logIn`/`userAuth`
+  riscritti se `?emailLogin` ≠ `"false"`), client task manager (`AA_Task`/`AA_VerboseTask`
+  → POST `utils/system_ops.php`), dialoghi auth `AA_UserAuth` / `AA_MailUserAuth` /
+  `AA_MailUserAuthVerify` (task `UserAuth`, `MailUserAuth`, `MailUserAuthChallengeVerify`)
+  con ID Webix stabili come selettori E2E.
+- API-doc: nessun impatto (`docs/API.md` generato; funzioni backend già documentate:
+  `AA_User::UserAuth()`, `MailOTPAuthChallenge()`, `MailOTPAuthChallengeVerify()`).
 
 ### 2026-10-29 — Rimozione endpoint legacy `ws.php`
 - Su richiesta utente: `ws.php` (service XML pubblicazioni, ereditato da vecchia versione)
