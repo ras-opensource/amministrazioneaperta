@@ -9,4 +9,7 @@ elezioni2024.php
 elezioni2019.php
 sso_legacy_login.php
 test.php
+node_modules/
+test-results/
+playwright-report/
 
