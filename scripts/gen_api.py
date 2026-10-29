@@ -1,7 +1,8 @@
 import hashlib, os, re, sys
 
 ROOT = "utils"
-DIRS = ["system_core", "system_lib"]
+CORE_DIRS = ["system_core", "system_lib"]
+MODULES_DIR = os.path.join(ROOT, "modules")
 OUT = "docs/API.md"
 SUM = "docs/api.sha256"
 
@@ -14,23 +15,52 @@ def scan(path):
     classes = [(m.group(1), m.group(2) or "", i+1) for i,l in enumerate(lines) if (m:=class_re.search(l))]
     methods = []
     for i,l in enumerate(lines):
-        m = func_re.match(l.strip()) if l.strip().startswith(("public","private","protected","static")) else None
+        s = l.strip()
+        if s.startswith("function"):
+            m = re.match(r'function\s+(\w+)\s*\(([^)]*)\)', s)
+        elif re.match(r'(public|private|protected|static)\b', s):
+            m = func_re.match(s)
+        else:
+            m = None
         if m:
             params = re.sub(r'\s+',' ', m.group(2)).strip()
             methods.append((m.group(1), params, i+1))
     return classes, methods
 
+def collect_files(base, recursive=False):
+    """[(relpath_da_base, abspath)] dei file .php da scansionare."""
+    out = []
+    if recursive:
+        for dirpath, dirnames, filenames in os.walk(base):
+            dirnames.sort()
+            for f in sorted(filenames):
+                if f.endswith(".php"):
+                    pth = os.path.join(dirpath, f)
+                    out.append((os.path.relpath(pth, base).replace(os.sep, "/"), pth))
+    else:
+        for f in sorted(os.listdir(base)):
+            pth = os.path.join(base, f)
+            if f.endswith(".php") and os.path.isfile(pth):
+                out.append((f, pth))
+    return out
+
 sections = []
 sums = []
-for d in DIRS:
+for d in CORE_DIRS:
     base = os.path.join(ROOT, d)
-    files = sorted(f for f in os.listdir(base) if f.endswith(".php"))
-    sections.append((d, [(f, scan(os.path.join(base,f))) for f in files]))
+    sections.append((d, [(rel, apath, scan(apath)) for rel, apath in collect_files(base)]))
+for mod in sorted(os.listdir(MODULES_DIR)):
+    base = os.path.join(MODULES_DIR, mod)
+    if not os.path.isdir(base):
+        continue
+    files = [(rel, apath, scan(apath)) for rel, apath in collect_files(base, recursive=True)]
+    if files:
+        sections.append((f"modules/{mod}", files))
 
 with open(OUT,"w",encoding="utf-8") as out:
     out.write("# API Reference - Amministrazione Aperta\n\n")
     out.write("> Generato automaticamente dal codice (script `scripts/gen_api.py`). Non modificare a mano:\n")
-    out.write("> rigenerare dopo ogni cambio di firma in `utils/system_core/` e `utils/system_lib/`.\n")
+    out.write("> Rigenerare dopo ogni cambio di firma in `utils/system_core/`, `utils/system_lib/` e `utils/modules/**`.\n")
     out.write("> Verifica coerenza doc/codice: `sha256sum -c docs/api.sha256`\n\n")
     out.write("## Superficie HTTP (entry point)\n\n")
     out.write("| Endpoint | File | Descrizione |\n|---|---|---|\n")
@@ -47,9 +77,9 @@ with open(OUT,"w",encoding="utf-8") as out:
     out.write("- Client: `AA_Task()` / `AA_VerboseTask()` / `AA_Module.doTask()` / `AA_MainApp.utils.callHandler()` in `utils/system_lib.js`\n\n")
     for d, files in sections:
         out.write(f"## `{d}/`\n\n")
-        for f,(classes,methods) in files:
-            rel = f"{ROOT}/{d}/{f}"
-            out.write(f"### `{rel}`\n\n")
+        for rel, apath, (classes, methods) in files:
+            full = f"{ROOT}/{d}/{rel}"
+            out.write(f"### `{full}`\n\n")
             if classes:
                 out.write("| Classe | Estende | Linea |\n|---|---|---|\n")
                 for name,parent,ln in classes:
@@ -61,7 +91,7 @@ with open(OUT,"w",encoding="utf-8") as out:
                     p = params if params else "—"
                     out.write(f"| `{name}()` | `{p}` | {ln} |\n")
                 out.write("\n")
-            sums.append((rel, hashlib.sha256(open(rel,'rb').read()).hexdigest()))
+            sums.append((full, hashlib.sha256(open(apath,'rb').read()).hexdigest()))
 
 with open(SUM,"w",encoding="utf-8") as s:
     for rel,h in sums:
