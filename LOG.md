@@ -16,6 +16,19 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Cronologia
 
+### 2026-10-30 — Rotazione password DB `aauser` (ops)
+- Su richiesta utente: rotata la password MariaDB dell'account `aauser@%`
+  (la precedente era quella esposta in README, v. entry sotto).
+- Script dedicato `sandbox/rotate_db_pwd.sh` (log `sandbox/logs/rotate_db_pwd.log`,
+  nessuna password stampata): generazione pwd casuale 20 char, aggiornamento
+  `AA_DBPWD` + `AA_ACCOUNTS_DBPWD` in entrambi i `utils/config.php` (sandbox e progetto
+  principale `/home/elia/progetti/amministrazioneaperta`), `SET PASSWORD FOR 'aauser'@'%'`,
+  verifiche: connessione con nuova pwd OK, vecchia pwd rifiutata (ERROR 1045).
+- Verifica end-to-end post-rotazione: suite E2E **5/5 passed** incluso login live
+  email+OTP (log `sandbox/logs/run_e2e_suite.log`).
+- I due `config.php` sono file non tracciati in git → nessuna credenziale committata.
+- API-doc: nessun impatto.
+
 ### 2026-10-30 — README: rimozione impostazioni accesso DB (doc)
 - Su richiesta utente: rimossa da `README.md` (§Dati e Database) la riga con le
   impostazioni di accesso al DB relazionale (`AA_DBHOST`/`AA_DBNAME`/

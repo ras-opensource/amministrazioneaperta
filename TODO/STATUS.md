@@ -1,14 +1,17 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-30 (README: rimozione impostazioni accesso DB — branch in attesa di merge)
+**Aggiornato**: 2026-10-30 (rotazione password DB `aauser` — log/STATUS su branch `chore/db-pwd-rotation-log`)
 
 ## Stato
 
-- **In corso su branch `docs/readme-remove-db-creds`** (da `main`, non ancora mergiato):
-  rimossa da `README.md` la riga con le credenziali DB reali (`AA_DBHOST`/`AA_DBNAME`/
-  `AA_DBUSER`/`AA_DBPWD`); nessun'altra occorrenza nel README, `config_sample.php`
-  solo placeholder. Attesa conferma utente per merge in `main` + push.
+- **Password DB ruotata** (su richiesta utente): account MariaDB `aauser@%`, nuova pwd
+  casuale 20 char; aggiornati `AA_DBPWD` + `AA_ACCOUNTS_DBPWD` in entrambi i
+  `utils/config.php` (sandbox + `/home/elia/progetti/amministrazioneaperta`, file non
+  tracciati). Verifiche: nuova pwd OK, vecchia rifiutata (1045), suite E2E **5/5**
+  post-rotazione. Script `sandbox/rotate_db_pwd.sh`, log in `sandbox/logs/`.
+- `main` sincronizzato con `origin/main`: README senza credenziali DB spinto
+  (`bc0b31c`).
 
 - `main` locale: tutto il lavoro merged — API-doc moduli, rimozione `ws.php`, suite E2E
   smoke, convenzione debug `session_log.php`, analisi core frontend `utils/system_lib.js`,
