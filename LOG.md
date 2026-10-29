@@ -8,9 +8,18 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 - **Lavoro attivo**: nessun TODO aperto (M0 baseline chiusa). Prossimo: definizione F01 dall'utente.
 - **Puntatore**: leggere per primo `TODO/STATUS.md`; poi il file TODO non-✅ con NN più alto.
-- **Branch corrente atteso**: `main` (stato verificato).
+- **Branch corrente**: `chore/api-doc-module-scan` — API-doc esteso a `utils/modules/**`,
+  testato, in attesa di conferma utente per merge su `main`.
 
 ## Cronologia
+
+### 2026-10-29 — Chore: API-doc esteso a `utils/modules/**`
+- Branch `chore/api-doc-module-scan`: `scripts/gen_api.py` scansiona ora ricorsivamente
+  tutti i `.php` sotto `utils/modules/` (sottocartelle incluse, es. `sicar_9/classes/`)
+  e cattura anche metodi legacy senza keyword di visibilità (`function foo(...)`).
+- Rigenerati `docs/API.md` (119 file PHP: core + lib + 10 moduli) e `docs/api.sha256`;
+  verifica `sha256sum -c docs/api.sha256` tutta OK. Spot-check: `AA_SierModule::Task_GetSierModifyDlg()` presente.
+- Commits sul branch: `e444be9` (chore scripts), `fe04d85` (docs rigenerati).
 
 ### 2026-10-29 — M0: baseline sandbox e struttura documentale
 - Clone repo `ras-opensource/amministrazioneaperta` in sandbox (`sandbox/amministrazioneaperta/`),

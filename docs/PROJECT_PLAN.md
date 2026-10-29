@@ -68,7 +68,8 @@ singola sessione; se l'attività è più grande, suddividerla in sotto-milestone
   `main` contiene solo stati verificati. Commit: uno per step di checklist completato,
   `<tipo>(<scope>): descrizione` con tipo ∈ `feat|fix|docs|test|chore`.
 - **API-doc-first**: prima del codice consultare `docs/API.md` (riutilizzare classi/metodi
-  esistenti); dopo ogni cambio di firme in `system_core/`/`system_lib/` rigenerare
+  esistenti); dopo ogni cambio di firme in `system_core/`, `system_lib/` o
+  `utils/modules/**` rigenerare
   `python3 scripts/gen_api.py` e verificare `sha256sum -c docs/api.sha256`.
 - **Test E2E**: suite unica Playwright headless `tests/e2e/e2e.mjs`
   (default `BASE_URL=http://localhost:8081`); estendere la suite a ogni feature UI,
