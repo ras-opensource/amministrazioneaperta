@@ -16,6 +16,15 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Cronologia
 
+### 2026-10-30 — README: rimozione footer di provenienza (doc)
+- Su richiesta utente: rimosso dal fondo di `README.md` il blocco footer che
+  segnalava la generazione automatica del documento con assistente AI (nome tool +
+  data) e il separatore `---` residuo che lo introduceva.
+- Verifica: nessun riferimento al footer nel README; il file termina con l'ultima
+  sezione (§Note di Analisi) senza footer.
+- API-doc: nessun impatto.
+- Branch `docs/readme-remove-goose-footer` (da `main`); merge/push su conferma utente.
+
 ### 2026-10-30 — README: rimozione percorso locale config (doc)
 - Su richiesta utente: da `README.md` (§Configurazione Principale) rimosso il
   riferimento al percorso locale macchina della cartella del progetto
