@@ -59,3 +59,11 @@ _(nessuno)_
 3. Problema risolto → annotarlo qui con sintomo, causa, fix.
 4. Ogni variazione tracciata in Git: commit per step completato,
    `<tipo>(<scope>): descrizione` (tipo ∈ `feat|fix|docs|test|chore`).
+5. **Debug lato server**: usare `session_log.php` — rende il log della sessione
+   corrente (`AA_Utils::GetSessionLog()`, voci più recenti per prime) e con
+   `?reset=1` lo svuota (`AA_Utils::ResetSessionLog()`). Le voci arrivano da
+   `AA_Log::Log($msg, $level, ...)` nel codice (es. login fallito): attenzione
+   che vengono scritte in `$_SESSION['log']` solo con **livello ≥ 100**
+   (soglia `AA_Log::$nLogLevel`) o con backtrace esplicito, max 200 voci.
+   In E2E (Playwright): dopo l'azione nel browser, fare `GET /session_log.php`
+   **nello stesso context** (stesso cookie di sessione) per leggere i log server.

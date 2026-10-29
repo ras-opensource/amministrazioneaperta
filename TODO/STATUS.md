@@ -1,7 +1,7 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-29 (rimozione ws.php + suite E2E)
+**Aggiornato**: 2026-10-29 (nota debug `session_log.php`)
 
 ## Stato
 
@@ -13,6 +13,9 @@
 - Test: `sha256sum -c docs/api.sha256` tutti OK; grep: zero riferimenti a `ws.php` in doc di progetto.
 - Decisione utente: `utils/lib_ws.php` **mantenuto** (libreria funzioni utility, ex ws.php);
   verifica compatibilità/aggiornamento al momento della reingegnerizzazione dell'endpoint.
+- Tooling debug: `session_log.php` per log lato server (`AA_Log::Log()` → `$_SESSION['log']`,
+  solo livello ≥ 100 o backtrace, max 200 voci; `?reset=1` per svuotare) — convenzione in
+  `LOG.md` §Convenzioni (punto 5); in E2E da leggere nello stesso browser context.
 
 ## Azioni successive
 
