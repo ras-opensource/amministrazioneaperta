@@ -152,8 +152,3 @@ Parametri chiave:
 - Sistema di logging interno per tracciamento attività
 - Supporto per versionamento e workflow di approvazione (bozza → revisionata → pubblicata)
 - Architettura modulare per facilitare espansioni future
-
----
-
-*Generato da Goose AI Assistant*
-*Data: 2026-02-17*

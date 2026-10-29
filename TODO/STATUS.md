@@ -1,14 +1,14 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-30 (README: rimozione percorso locale config — branch in attesa di merge)
+**Aggiornato**: 2026-10-30 (README: rimozione footer di provenienza — branch in attesa di merge)
 
 ## Stato
 
-- **In corso su branch `docs/readme-remove-local-path`** (da `main`, non ancora mergiato):
-  `README.md` §Configurazione Principale senza più il riferimento al percorso locale
-  macchina → ora `utils/config.php` relativo alla root. Nessun altro riferimento a
-  percorsi locali nel README. Attesa conferma utente per merge in `main` + push.
+- **In corso su branch `docs/readme-remove-goose-footer`** (da `main`, non ancora mergiato):
+  rimosso dal fondo di `README.md` il footer di provenienza (segnalazione generazione
+  automatica con assistente AI + data, e separatore residuo). Nessun riferimento al
+  footer nel README. Attesa conferma utente per merge in `main` + push.
 
 - **Password DB ruotata** (su richiesta utente): account MariaDB `aauser@%`, nuova pwd
   casuale 20 char; aggiornati `AA_DBPWD` + `AA_ACCOUNTS_DBPWD` in entrambi i
