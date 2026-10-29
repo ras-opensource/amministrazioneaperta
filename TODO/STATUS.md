@@ -1,31 +1,29 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-29 (analisi core frontend `utils/system_lib.js`)
+**Aggiornato**: 2026-10-30 (suite E2E estesa al flusso login email+OTP, verde 5/5)
 
 ## Stato
 
-- `main` locale: lavoro precedente già merged (API-doc moduli, rimozione `ws.php`,
-  suite E2E smoke, convenzione debug `session_log.php`) — **8 commit ahead / 0 behind**
-  rispetto a `origin/main`; push in attesa di conferma utente.
-- Branch attivo `docs/system-lib-core-analysis` (da `main` @ `a6ad7c7`):
-  - `utils/docs/system_lib.js.md` riscritto: analisi verificata del runtime frontend
-    (`AA_Module`, `AA_MainApp`, boot, client task manager, dialoghi login credenziali +
-    email/OTP con ID Webix stabili per E2E). Working tree da commit.
+- `main` locale: tutto il lavoro merged — API-doc moduli, rimozione `ws.php`, suite E2E
+  smoke, convenzione debug `session_log.php`, analisi core frontend `utils/system_lib.js`,
+  **suite E2E estesa al flusso login email+OTP** (commit `9ce1de0`). Ahead di 10 commit
+  rispetto a `origin/main`; push autorizzato dall'utente ("dopo che hai esteso la suite E2E")
+  ed eseguito in questa sessione.
+- Suite E2E: **5/5 passed** — boot anonimo, asset statici, endpoint pubblici e flusso
+  autenticazione completo: dialogo `AA_MailUserAuth` → task `MailUserAuth` → OTP letto da
+  `/session_log.php` nello stesso browser context (XHR) → `AA_MailUserAuthVerify` → task
+  `MailUserAuthChallengeVerify` → reload + boot autenticato (overlay nascosto, nessun gate
+  anonimo, nessun pageerror post-reload).
+- Utente di test: `esaiucarta@regione.sardegna.it`; preflight CLI
+  `php scripts/check_auth_user.php [email]` (exit 0 = trovato e abilitato).
 - API-doc: invariato e coerente col codice (`docs/API.md` generato; funzioni auth backend
   già documentate — `AA_User::UserAuth()`, `MailOTPAuthChallenge()`,
-  `MailOTPAuthChallengeVerify()`).
+  `MailOTPAuthChallengeVerify()`). Nessun nuovo endpoint in questa sessione.
 - Tooling debug: convenzione `session_log.php` in `LOG.md` §Convenzioni (punto 5);
-  in E2E da leggere nello stesso browser context.
+  note E2E webix/Playwright in punto 6.
 
 ## Azioni successive
 
-1. Commit sul branch: `docs(system_lib): analisi core frontend — MainApp, Module,
-   task manager, dialoghi login email+OTP`.
-2. **Merge in `main` locale** — attende conferma utente.
-3. Push verso GitHub (`origin/main`): **in attesa di conferma esplicita utente**
-   (verificare ahead/behind al merge).
-4. E2E: estendere la suite al caso autenticato (login email/OTP leggendo il codice OTP
-   da `session_log.php` nello stesso browser context) + run smoke completo.
-5. Backlog F01: reingegnerizzazione service XML pubblicazioni (ex `ws.php`) + verifica
+1. Backlog F01: reingegnerizzazione service XML pubblicazioni (ex `ws.php`) + verifica
    compatibilità `utils/lib_ws.php` col framework attuale → `TODO/F01-<slug>.md` + branch dedicato.

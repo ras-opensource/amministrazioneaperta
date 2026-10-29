@@ -6,15 +6,35 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Stato attuale
 
-- **Lavoro attivo**: branch `docs/system-lib-core-analysis` (da `main` @ `a6ad7c7`) —
-  analisi core frontend `utils/system_lib.js` → `utils/docs/system_lib.js.md`; in corso:
-  commit sul branch, poi merge su `main`.
+- **Lavoro attivo**: nessun lavoro aperto. Suite E2E estesa al flusso login email+OTP,
+  verde 5/5; tutto merged in `main` locale e pushato a `origin/main`
+  (commit test: `9ce1de0`).
 - **Puntatore**: leggere per primo `TODO/STATUS.md`; poi il file TODO non-✅ con NN più alto.
 - **Backlog**: F01 da definire = reingegnerizzazione service XML pubblicazioni (ex `ws.php`);
   `utils/lib_ws.php` mantenuto come libreria di funzioni utility, da verificare/aggiornare
   per compatibilità col framework attuale nel momento della reingegnerizzazione.
 
 ## Cronologia
+
+### 2026-10-30 — Suite E2E estesa al flusso login email+OTP (test)
+- Esteso `tests/e2e/e2e.mjs` con il test "autenticazione email/OTP": boot anonimo →
+  dialogo `AA_MailUserAuth` (email via `setValues`/`getValues` API webix) → task
+  `MailUserAuth` → OTP letto da `/session_log.php` **nello stesso browser context**
+  (XHR, perché l'app shadowa il globale `fetch`) → dialogo `AA_MailUserAuthVerify`
+  (campo `codice`) → task `MailUserAuthChallengeVerify` → `window.location.reload()` →
+  boot autenticato: overlay `#AA_MainOverlay` nascosto (stesso criterio di
+  `AA_MainApp.ui.overlay.isVisible`: `display != "block"`), nessun gate anonimo,
+  nessun pageerror post-reload.
+- Nuovi: `scripts/check_auth_user.php` (preflight CLI utente di test, default
+  `esaiucarta@regione.sardegna.it`; exit 0 = trovato e status>0).
+- Calibrazione selettori DOM (vedi §Problemi risolti): window webix senza id nel DOM →
+  targeting per classe `div.webix_window.AA_Wnd` + `getByRole('button')`;
+  interstiziale cookie/privacy accettato prima delle interazioni.
+- Suite: **5/5 passed** (run via `sandbox/run_e2e_suite.sh`, log
+  `sandbox/logs/run_e2e_suite.log`).
+- API-doc: nessun impatto (nessun nuovo endpoint).
+- Commit `9ce1de0` su branch `test/e2e-auth-login`, merge fast-forward in `main`,
+  push a `origin/main` (autorizzato dall'utente dopo estensione suite E2E).
 
 ### 2026-10-29 — Analisi core frontend `utils/system_lib.js` (doc)
 - Su richiesta utente: analisi completa di `utils/system_lib.js` (~5.000 righe, runtime
@@ -64,7 +84,26 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Problemi risolti
 
-_(nessuno)_
+### 2026-10-30 — Test E2E autenticazione: fallimenti di calibrazione (4 iterazioni)
+- **Sintomo 1**: `toBeVisible('#AA_MailUserAuthDlg')` non risolveva mai.
+  **Causa**: i window Webix non espongono l'id nel DOM (l'id vive solo nel registry
+  interno `$$()`); il nodo finestra è `<div class="webix_view webix_window AA_Wnd">`.
+  **Fix**: targeting per classe `div.webix_window.AA_Wnd` + `getByRole('button')`
+  (primo bottone = Apply/Accedi).
+- **Sintomo 2**: click sul dialogo bloccato da overlay coprente.
+  **Causa**: interstiziale cookie/privacy (`#privacypolicies-com---nb-interstiti`,
+  widget privacypolicies.com) sopra tutta la UI.
+  **Fix**: se presente, accettare (bottone "Accetto") prima delle interazioni.
+- **Sintomo 3**: `TypeError: (intermediate value).then is not a function` nel fetch
+  dell'OTP.
+  **Causa**: l'app shadowa il globale `fetch` (layer task/ajax interno).
+  **Fix**: lettura `/session_log.php` via `XMLHttpRequest` in pagina (same-origin,
+  stesso cookie PHP session).
+- **Sintomo 4**: `Cannot read properties of undefined (reading 'display')` nel poll
+  dell'overlay post-reload.
+  **Causa**: `page.evaluate(() => document.getElementById(...))` restituisce il nodo
+  wrap-pato in un `ElementHandle` → `.style` undefined sull'handle.
+  **Fix**: calcolare il boolean dentro la pagina e restituire il valore serializzabile.
 
 ## Convenzioni per le sessioni successive
 
@@ -82,3 +121,10 @@ _(nessuno)_
    (soglia `AA_Log::$nLogLevel`) o con backtrace esplicito, max 200 voci.
    In E2E (Playwright): dopo l'azione nel browser, fare `GET /session_log.php`
    **nello stesso context** (stesso cookie di sessione) per leggere i log server.
+6. **E2E webix/Playwright**: (a) i componenti Webix non espongono l'id nel DOM —
+   targeting per classe (`div.webix_window.AA_Wnd`) o via API `$$('id')` dentro
+   `page.evaluate`; (b) valori form: `setValues()`/`getValues()` sull'oggetto webix,
+   mai manipolazione DOM degli input; (c) `page.evaluate` deve restituire solo valori
+   serializzabili (boolean/primitive), non nodi DOM; (d) il globale `fetch` è
+   shadowato dall'app → in pagina usare `XMLHttpRequest`; (e) prima delle interazioni
+   verificare/accettare l'interstiziale cookie/privacy (`[id^="privacypolicies"]`).
