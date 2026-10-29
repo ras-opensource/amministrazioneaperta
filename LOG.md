@@ -16,6 +16,20 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Cronologia
 
+### 2026-10-30 — README: rimozione impostazioni accesso DB (doc)
+- Su richiesta utente: rimossa da `README.md` (§Dati e Database) la riga con le
+  impostazioni di accesso al DB relazionale (`AA_DBHOST`/`AA_DBNAME`/
+  `AA_DBUSER`/`AA_DBPWD` con valori reali); il bullet resta senza blocco codice,
+  riferendo a `config.php`.
+- Verifica: nessun'altra occorrenza delle credenziali nel README; `utils/config_sample.php`
+  contiene solo placeholder (`dbuser`/`dbpwd`); `config.php` reale non tracciato in git.
+- Nota sicurezza: i valori reali sono già nella storia upstream di `origin/main`
+  (presenti almeno da `297b820`, lineage dal commit iniziale `828c814`) →
+  rimozione completa richiede history rewrite e/o rotazione della password DB
+  (decisione utente).
+- API-doc: nessun impatto.
+- Branch `docs/readme-remove-db-creds` (da `main`); merge/push su conferma utente.
+
 ### 2026-10-30 — Suite E2E estesa al flusso login email+OTP (test)
 - Esteso `tests/e2e/e2e.mjs` con il test "autenticazione email/OTP": boot anonimo →
   dialogo `AA_MailUserAuth` (email via `setValues`/`getValues` API webix) → task

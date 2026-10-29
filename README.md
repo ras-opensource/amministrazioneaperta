@@ -92,10 +92,7 @@ amministrazioneaperta/
 
 ## Dati e Database
 
-- Database relazionale (PostgreSQL/MySQL) configurato in `config.php`:
-  ```php
-  AA_DBHOST="localhost"; AA_DBNAME="amministrazioneaperta"; AA_DBUSER="aauser"; AA_DBPWD="Ab123456";
-  ```
+- Database relazionale (PostgreSQL/MySQL) configurato in `config.php`
 - Supporto MongoDB (via `mongodb/mongodb` >= 1.16)
 - Almeno 6 tabelle rilevate in `AA_Const.php`:
   - `AA_DBTABLE_ASSESSORATI` = "assessorati"

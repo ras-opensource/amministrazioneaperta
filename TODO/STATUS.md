@@ -1,9 +1,14 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-30 (suite E2E estesa al flusso login email+OTP, verde 5/5)
+**Aggiornato**: 2026-10-30 (README: rimozione impostazioni accesso DB — branch in attesa di merge)
 
 ## Stato
+
+- **In corso su branch `docs/readme-remove-db-creds`** (da `main`, non ancora mergiato):
+  rimossa da `README.md` la riga con le credenziali DB reali (`AA_DBHOST`/`AA_DBNAME`/
+  `AA_DBUSER`/`AA_DBPWD`); nessun'altra occorrenza nel README, `config_sample.php`
+  solo placeholder. Attesa conferma utente per merge in `main` + push.
 
 - `main` locale: tutto il lavoro merged — API-doc moduli, rimozione `ws.php`, suite E2E
   smoke, convenzione debug `session_log.php`, analisi core frontend `utils/system_lib.js`,
