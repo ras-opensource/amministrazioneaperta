@@ -12,4 +12,5 @@ test.php
 node_modules/
 test-results/
 playwright-report/
+sandbox/
 
