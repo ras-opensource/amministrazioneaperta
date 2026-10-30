@@ -1,9 +1,15 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-30 (SPECIFICATION: convenzione percorsi relativi + generalizzazioni LOG/STATUS — branch in attesa di merge)
+**Aggiornato**: 2026-10-30 (SPECIFICATION: convenzione percorsi relativi + generalizzazioni LOG/STATUS — mergiato e pushato)
 
 ## Stato
+
+- **Completato** (branch `docs/status-generalize-local-path`, mergiato in `main` e
+  pushato, `c3d9209`): nuova regola di progetto in `docs/SPECIFICATION.md` §5 —
+  **Convenzione percorsi**: tutti i percorsi nei file tracciati vanno indicati
+  relativamente alla root della cartella di progetto, vietati path assoluti legati
+  a una postazione; generalizzati i riferimenti residui in LOG/STATUS.
 
 - **Completato** (branch `chore/gitignore-sandbox`, mergiato in `main` e pushato,
   `581a250`): `.gitignore` ignora la cartella scratch locale `sandbox/` (artefatti
