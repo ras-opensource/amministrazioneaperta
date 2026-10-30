@@ -1,7 +1,7 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-30 (.gitignore: sandbox/ ignorata — mergiato e pushato)
+**Aggiornato**: 2026-10-30 (SPECIFICATION: convenzione percorsi relativi + generalizzazioni LOG/STATUS — branch in attesa di merge)
 
 ## Stato
 
@@ -17,8 +17,8 @@
 
 - **Password DB ruotata** (su richiesta utente): account MariaDB `aauser@%`, nuova pwd
   casuale 20 char; aggiornati `AA_DBPWD` + `AA_ACCOUNTS_DBPWD` in entrambi i
-  `utils/config.php` (sandbox + `/home/elia/progetti/amministrazioneaperta`, file non
-  tracciati). Verifiche: nuova pwd OK, vecchia rifiutata (1045), suite E2E **5/5**
+  `utils/config.php` (sandbox + copia del progetto principale su questa postazione,
+  file non tracciati). Verifiche: nuova pwd OK, vecchia rifiutata (1045), suite E2E **5/5**
   post-rotazione. Script `sandbox/rotate_db_pwd.sh`, log in `sandbox/logs/`.
 - `main` sincronizzato con `origin/main`: README senza credenziali DB spinto
   (`bc0b31c`).

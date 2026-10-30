@@ -16,6 +16,16 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Cronologia
 
+### 2026-10-30 — Convenzione percorsi relativi: specifica + generalizzazioni (doc)
+- Nuova regola in `docs/SPECIFICATION.md` §5 (Vincoli non funzionali): **Convenzione
+  percorsi** — in tutti i file tracciati ogni percorso va indicato relativamente alla
+  root della cartella di progetto; vietati percorsi assoluti legati a una postazione.
+- Su richiesta utente: nelle note sulla rotazione password, sostituito il path
+  assoluto della copia del progetto principale su questa postazione con la dicitura
+  generica "copia del progetto principale su questa postazione".
+- Verifica: nessun path `/home/...` residuo in `LOG.md`, `TODO/STATUS.md`, `README.md`
+  né in `docs/`. API-doc: nessun impatto.
+
 ### 2026-10-30 — .gitignore: cartella scratch sandbox/ ignorata (chore)
 - Su richiesta utente: aggiunta riga `sandbox/` a `.gitignore`.
 - Motivo: la cartella contiene solo artefatti locali (wrapper E2E con log+timeout,
@@ -49,8 +59,8 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
   (la precedente era quella esposta in README, v. entry sotto).
 - Script dedicato `sandbox/rotate_db_pwd.sh` (log `sandbox/logs/rotate_db_pwd.log`,
   nessuna password stampata): generazione pwd casuale 20 char, aggiornamento
-  `AA_DBPWD` + `AA_ACCOUNTS_DBPWD` in entrambi i `utils/config.php` (sandbox e progetto
-  principale `/home/elia/progetti/amministrazioneaperta`), `SET PASSWORD FOR 'aauser'@'%'`,
+  `AA_DBPWD` + `AA_ACCOUNTS_DBPWD` in entrambi i `utils/config.php` (sandbox e copia del
+  progetto principale su questa postazione), `SET PASSWORD FOR 'aauser'@'%'`,
   verifiche: connessione con nuova pwd OK, vecchia pwd rifiutata (ERROR 1045).
 - Verifica end-to-end post-rotazione: suite E2E **5/5 passed** incluso login live
   email+OTP (log `sandbox/logs/run_e2e_suite.log`).
