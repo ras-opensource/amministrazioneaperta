@@ -1,7 +1,7 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-30 (LOG/STATUS: generalizzati path locali macchina — branch in attesa di merge)
+**Aggiornato**: 2026-10-30 (SPECIFICATION: convenzione percorsi relativi + generalizzazioni LOG/STATUS — branch in attesa di merge)
 
 ## Stato
 

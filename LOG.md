@@ -16,7 +16,10 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Cronologia
 
-### 2026-10-30 — LOG/STATUS: generalizzati riferimenti a percorso locale macchina (doc)
+### 2026-10-30 — Convenzione percorsi relativi: specifica + generalizzazioni (doc)
+- Nuova regola in `docs/SPECIFICATION.md` §5 (Vincoli non funzionali): **Convenzione
+  percorsi** — in tutti i file tracciati ogni percorso va indicato relativamente alla
+  root della cartella di progetto; vietati percorsi assoluti legati a una postazione.
 - Su richiesta utente: nelle note sulla rotazione password, sostituito il path
   assoluto della copia del progetto principale su questa postazione con la dicitura
   generica "copia del progetto principale su questa postazione".

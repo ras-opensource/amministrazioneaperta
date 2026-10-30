@@ -116,3 +116,7 @@ core (`utils/system_core/`), libreria generica per moduli (`utils/system_lib/`),
   test E2E Playwright (`tests/e2e/e2e.mjs`) per la superficie UI, rigenerazione `docs/API.md`
   se cambiano firme in `system_core/`, `system_lib/` o `utils/modules/**`.
 - Nessuna modifica al progetto principale senza conferma esplicita dell'utente (sandbox-first).
+- **Convenzione percorsi**: in tutti i file tracciati (documentazione, `README.md`,
+  `LOG.md`, `TODO/`, codice) ogni percorso va indicato relativamente alla root della
+  cartella di progetto; sono vietati percorsi assoluti legati a una specifica postazione
+  (es. `/home/<utente>/…`).
