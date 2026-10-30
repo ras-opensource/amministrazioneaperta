@@ -16,6 +16,16 @@ Regole di ripresa e convenzioni: `TODO/README.md` (§8 feature-checkpoint-workfl
 
 ## Cronologia
 
+### 2026-10-30 — .gitignore: cartella scratch sandbox/ ignorata (chore)
+- Su richiesta utente: aggiunta riga `sandbox/` a `.gitignore`.
+- Motivo: la cartella contiene solo artefatti locali (wrapper E2E con log+timeout,
+  script one-shot rotazione password, diagnostica Playwright, log) — nulla di
+  riproducibile necessario su altre postazioni; la suite E2E vera è tracked in
+  `tests/e2e/`. Evita che `?? sandbox/` sporchi `git status` su ogni macchina.
+- Verifica: `git status` pulito dalla voce untracked; nessun file tracked toccato.
+- API-doc: nessun impatto. Branch `chore/gitignore-sandbox`, mergiato in `main`
+  e pushato (`581a250`).
+
 ### 2026-10-30 — README: rimozione footer di provenienza (doc)
 - Su richiesta utente: rimosso dal fondo di `README.md` il blocco footer che
   segnalava la generazione automatica del documento con assistente AI (nome tool +

@@ -1,9 +1,14 @@
 # STATUS — stato e azioni successive
 
 > Sovrascritto integralmente a ogni aggiornamento (non incrementale). Leggere per primo.
-**Aggiornato**: 2026-10-30 (README: rimozione footer di provenienza — mergiato e pushato)
+**Aggiornato**: 2026-10-30 (.gitignore: sandbox/ ignorata — mergiato e pushato)
 
 ## Stato
+
+- **Completato** (branch `chore/gitignore-sandbox`, mergiato in `main` e pushato,
+  `581a250`): `.gitignore` ignora la cartella scratch locale `sandbox/` (artefatti
+  locali: wrapper E2E, script one-shot, log). `git status` pulito; su altre
+  postazioni servono solo repo + `npm install`.
 
 - **Completato** (branch `docs/readme-remove-goose-footer`, mergiato in `main` e
   pushato a `origin/main`): rimosso dal fondo di `README.md` il footer di
