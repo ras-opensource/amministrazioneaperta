@@ -14,3 +14,10 @@ test-results/
 playwright-report/
 sandbox/
 
+# file/cartelle di workflow — locali, non condivisi nel repo
+TODO/
+docs/
+tests/
+scripts/
+LOG.md
+
