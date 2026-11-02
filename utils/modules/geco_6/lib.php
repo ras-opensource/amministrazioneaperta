@@ -5793,7 +5793,7 @@ Class AA_GecoPublicReportTemplateView extends AA_GenericObjectTemplateView
             {
                 $text="<div><b>".$beneficiario['nome']."</b></div>";
                 if(!empty($beneficiario['cf']) && $beneficiario['tipo'] == 0) $text.="<div style='font-size:smaller;'>Cf: ".$beneficiario['cf']."</div>";
-                if(!empty($beneficiario['piva'])) $text.="<div style='font-size:smaller;'>P.iva: ".$beneficiario['cf']."</div>";
+                if(!empty($beneficiario['piva'])) $text.="<div style='font-size:smaller;'>P.iva: ".$beneficiario['piva']."</div>";
             }
             else $text="<div style='font-size:smaller;'>informazioni oscurate ai sensi dell'art. 26, comma 4 del d.lgs 33/2013</div>";
             $val=new AA_XML_Div_Element($id."_beneficiario",$this);
