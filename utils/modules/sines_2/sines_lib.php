@@ -2172,18 +2172,27 @@ Class AA_SinesModule extends AA_GenericModule
         if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) $wnd->AddTextField("sFatturato","Fatturato",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"riportare il fatturato in euro per l'anno di riferimento,<br>inserire solamente valori numerici, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci il fatturato"),false);
         else $wnd->AddSpacer(false);
 
-        //------------- spesa dotazione organica ----------------
+        //------------- dotazione organica ----------------
         $dotazione_organica_box=new AA_FieldSet("AA_SINES_DOTAZIONE_ORGANICA_BOX_".uniqid(),"Dotazione organica",$wnd->GetFormId(),2);
 
-        $dotazione_organica_box->AddTextField("sSpesaDotazioneOrganicaImpegnato","Impegnato",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (impegni) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"));
+        //dirigenti
+        $dotazione_organica_box->AddTextField("nDotazioneOrganicaDir","Dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la massima capacità assunzionale (dirigenti),<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare la massima capacità assunzionale (dirigenti),<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"));
 
-        $dotazione_organica_box->AddTextField("sSpesaDotazioneOrganica","Pagamenti",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (pagamenti) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"),false);
+        //personale a tempo determinato
+        $dotazione_organica_box->AddTextField("nDotazioneOrganicaDip","Non dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la massima capacità assunzionale (non dirigenti),<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare la massima capacità assunzionale (non dirigenti),<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
 
         $wnd->AddGenericObject($dotazione_organica_box);
-        //---------------------------------------
+        //------------------------------------------------
 
+        //------------- spesa personale -------------------
+        $spesa_personale_box=new AA_FieldSet("AA_SINES_SPESA_PERSONALE_BOX_".uniqid(),"Spesa per il personale",$wnd->GetFormId(),2);
 
-        //---------- Presonale assunto -------------------
+        $spesa_personale_box->AddTextField("sSpesaDotazioneOrganicaImpegnato","Impegnato",array("validateFunction"=>"IsNumber","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (impegni) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui la spesa per la dotazione organica"));
+        $spesa_personale_box->AddTextField("sSpesaDotazioneOrganica","Pagamenti",array("validateFunction"=>"IsNumber","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (pagamenti) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui la spesa per la dotazione organica"),false);
+        $wnd->AddGenericObject($spesa_personale_box,false);
+        //--------------------------------------------------
+
+        //---------- Personale assunto -------------------
         //field personale a tempo determinato
         $dotazione = new AA_FieldSet("AA_SINES_ORGANISMI_DOTAZIONE_ORGANICA","Personale assunto a tempo determinato");
 
@@ -2199,9 +2208,9 @@ Class AA_SinesModule extends AA_GenericModule
         //dipendenti dirigenti
         $dip->AddTextField("nDipendentiDir","Dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"));
 
-        //dipendenti non dirigenti
-        $dip->AddTextField("nDipendenti","Non dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
-        
+        //non dirigenti
+        $dip->AddTextField("nDipendenti","Non dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare il numero di dipendenti (personale dirigente e non assunto a tempo indeterminato),<br>riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"),false);                
+
         $wnd->AddGenericObject($dip);
         $wnd->AddGenericObject($dotazione,false);
         //-----------------------------------------------------
@@ -2937,15 +2946,25 @@ Class AA_SinesModule extends AA_GenericModule
         if($object->GetTipologia(true)==AA_Organismi_Const::AA_ORGANISMI_SOCIETA_PARTECIPATA) $wnd->AddTextField("sFatturato","Fatturato",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"riportare il fatturato in euro per l'anno di riferimento,<br>inserire solamente valori numerici, lasciare vuoto in caso di dati assenti", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci il fatturato"),false);
         else $wnd->AddSpacer(false);
 
-       //------------- spesa dotazione organica ----------------
+       //------------- dotazione organica ----------------
         $dotazione_organica_box=new AA_FieldSet("AA_SINES_DOTAZIONE_ORGANICA_BOX_".uniqid(),"Dotazione organica",$wnd->GetFormId(),2);
 
-        $dotazione_organica_box->AddTextField("sSpesaDotazioneOrganicaImpegnato","Impegnato",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (impegni) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"));
+        //dirigenti
+        $dotazione_organica_box->AddTextField("nDotazioneOrganicaDir","Dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la massima capacità assunzionale (dirigenti),<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare la massima capacità assunzionale (dirigenti),<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"));
 
-        $dotazione_organica_box->AddTextField("sSpesaDotazioneOrganica","Pagamenti",array("validateFunction"=>"IsNumber", "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (pagamenti) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>30,"placeholder"=>"inserisci qui la spesa per la dotazione organica"),false);
+        //personale a tempo determinato
+        $dotazione_organica_box->AddTextField("nDotazioneOrganicaDip","Non dirigenti",array("validateFunction"=>"IsInteger","labelWidth"=>90, "invalidMessage"=>"*Inserire solo numeri interi, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la massima capacità assunzionale (non dirigenti),<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti","bottomLabel"=>"*Indicare la massima capacità assunzionale (non dirigenti),<br> riportare solo valori numerici interi, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui il numero di dipendenti"),false);
 
         $wnd->AddGenericObject($dotazione_organica_box);
-        //---------------------------------------
+        //------------------------------------------------
+
+        //------------- spesa personale -------------------
+        $spesa_personale_box=new AA_FieldSet("AA_SINES_SPESA_PERSONALE_BOX_".uniqid(),"Spesa per il personale",$wnd->GetFormId(),2);
+
+        $spesa_personale_box->AddTextField("sSpesaDotazioneOrganicaImpegnato","Impegnato",array("validateFunction"=>"IsNumber","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (impegni) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui la spesa per la dotazione organica"));
+        $spesa_personale_box->AddTextField("sSpesaDotazioneOrganica","Pagamenti",array("validateFunction"=>"IsNumber","labelWidth"=>90, "invalidMessage"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti","tooltip"=>"Indicare la spesa complessiva (pagamenti) per la dotazione organica,<br>inserire solo valori numerici, lasciare vuoto in caso di dati assenti.", "bottomLabel"=>"*Inserire solo valori numerici, lasciare vuoto in caso di dati assenti", "bottomPadding"=>42,"placeholder"=>"inserisci qui la spesa per la dotazione organica"),false);
+        $wnd->AddGenericObject($spesa_personale_box,false);
+        //--------------------------------------------------
 
         //---------- Presonale assunto -------------------
         //field personale a tempo determinato
@@ -4163,7 +4182,7 @@ Class AA_SinesModule extends AA_GenericModule
             
             $val2=new AA_JSON_Template_Template($id."_SpesaDotazione_".$curDato->GetID(),array(
                 "template"=>"<span style='font-weight:700'>#title#</span><br><span>#value#</span>",
-                "data"=>array("title"=>"Spesa dotazione organica:","value"=>$value)
+                "data"=>array("title"=>"Spesa per il personale:","value"=>$value)
             ));
 
             //riga

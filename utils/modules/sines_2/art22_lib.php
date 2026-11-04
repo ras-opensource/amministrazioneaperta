@@ -4119,6 +4119,8 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $this->oDbBind->AddBind("nDipendentiDir","dipendenti_dir");
         $this->oDbBind->AddBind("nDipendentiDet","dipendenti_det");
         $this->oDbBind->AddBind("nDipendentiDetDir","dipendenti_det_dir");
+        $this->oDbBind->AddBind("nDotazioneOrganicaDir","dotazione_organica_dir");
+        $this->oDbBind->AddBind("nDotazioneOrganicaDip","dotazione_organica_dip");
         $this->oDbBind->AddBind("sSpesaDotazioneOrganica","spesa_complessiva_personale");
         $this->oDbBind->AddBind("sSpesaDotazioneOrganicaImpegnato","spesa_dotazione_organica_impegnato");
         $this->oDbBind->AddBind("sSpesaLavoroFlessibile","spesa_lavoro_flessibile");
@@ -4237,7 +4239,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
     //Esporta i dati contabili in csv
     public function ExportToCsv()
     {
-        $result="\"Anno\";\"Oneri Totali\";\"Spesa complessiva dotazione organica (impegnato)\";\"Spesa complessiva dotazione organica (pagamenti)\";\"Dotazione organica\";\"Dipendenti Dirigenti\";\"Dipendenti non Dirigenti\";\"Dipendenti a tempo determinato Dirigenti\";\"Dipendenti a tempo determinato non Dirigenti\";\"Numero di incarichi per lavoro flessibile\";\"Spesa per lavoro flessibile (impegnato)\";\"Spesa per lavoro flessibile (pagamenti)\";\"Numero di incarichi\";\"Spesa per incarichi (impegnato)\";\"Spesa per incarichi (pagamenti)\";\"Note\"\n";
+        $result="\"Anno\";\"Oneri Totali\";\"Spesa complessiva per il personale (impegnato)\";\"Spesa complessiva per il personale (pagamenti)\";\"Dotazione organica\";\"Dipendenti Dirigenti\";\"Dipendenti non Dirigenti\";\"Dipendenti a tempo determinato Dirigenti\";\"Dipendenti a tempo determinato non Dirigenti\";\"Numero di incarichi per lavoro flessibile\";\"Spesa per lavoro flessibile (impegnato)\";\"Spesa per lavoro flessibile (pagamenti)\";\"Numero di incarichi\";\"Spesa per incarichi (impegnato)\";\"Spesa per incarichi (pagamenti)\";\"Note\"\n";
         
         $result.="\"".$this->GetAnno()."\";\"".$this->GetOneriTotali()."\";\"".$this->GetSpesaDotazioneOrganicaImpegnato()."\";\"".$this->GetSpesaDotazioneOrganica()."\";\"".intVal($this->GetDotazioneOrganica())."\";\"".intVal($this->GetDipendentiDir())."\";\"".intVal($this->GetDipendenti())."\";\"".intVal($this->GetDipendentiDetDir())."\";\"".intVal($this->GetDipendentiDet())."\";\"".intVal($this->GetDipendentiDetDir())."\";\"".intVal($this->GetSpesaLavoroFlessibileNum())."\";\"".$this->GetSpesaLavoroFlessibileImpegnato()."\";\"".$this->GetSpesaLavoroFlessibile()."\";\"".intVal($this->GetSpesaIncarichiNum())."\";\"".$this->GetSpesaIncarichiImpegnato()."\";\"".$this->GetSpesaIncarichi()."\";\"".nl2br(str_replace("\"","\"\"", $this->GetNote()))."\"\n";
 
@@ -4338,7 +4340,8 @@ Class AA_OrganismiDatiContabili extends AA_Object
     //Dotazione organica
     public function GetDotazioneOrganica()
     {
-        return intVal($this->nDipendenti)+intVal($this->nDipendentiDet)+intVal($this->nDipendentiDir)+intVal($this->nDipendentiDetDir);
+        return intVal($this->nDotazioneOrganicaDip)+intVal($this->nDotazioneOrganicaDir);
+        //return intVal($this->nDipendenti)+intVal($this->nDipendentiDet)+intVal($this->nDipendentiDir)+intVal($this->nDipendentiDetDir); 
     }
 
     //dipendenti
@@ -4385,7 +4388,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
          $this->nDipendentiDetDir=preg_replace("/[€|\ |A-Za-z_\,]/", "",$val);
      }
  
-    //Spesa complessiva dotazione organica
+    //Spesa complessiva per il personale
     protected $sSpesaDotazioneOrganica="";
     public function GetSpesaDotazioneOrganica()
     {
@@ -4395,8 +4398,38 @@ Class AA_OrganismiDatiContabili extends AA_Object
     {
         $this->sSpesaDotazioneOrganica=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
     }
+    public function GetSpesaPersonale()
+    {
+        return $this->sSpesaDotazioneOrganica;
+    }
+    public function SetSpesaPersonale($val="")
+    {
+        $this->sSpesaDotazioneOrganica=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+    }
 
-    //Spesa complessiva dotazione organica impegnato
+    //Dotazione organica dipendenti
+    protected $nDotazioneOrganicaDip="";
+    public function GetDotazioneOrganicaDip()
+    {
+        return $this->nDotazioneOrganicaDip;
+    }
+    public function SetDotazioneOrganicaDip($val="")
+    {
+        $this->nDotazioneOrganicaDip=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+    }
+
+    //Dotazione organica dipendenti
+    protected $nDotazioneOrganicaDir="";
+    public function GetDotazioneOrganicaDir()
+    {
+        return $this->nDotazioneOrganicaDir;
+    }
+    public function SetDotazioneOrganicaDir($val="")
+    {
+        $this->nDotazioneOrganicaDir=preg_replace("/[€|\ |A-Za-z_]/", "",$val);
+    }
+
+    //Spesa complessiva per il personale impegnato
     protected $sSpesaDotazioneOrganicaImpegnato="";
     public function GetSpesaDotazioneOrganicaImpegnato()
     {
@@ -4566,6 +4599,7 @@ Class AA_OrganismiDatiContabili extends AA_Object
         $return.="<spesa_incarichi>".$this->GetSpesaIncarichi()."</spesa_incarichi>";
         $return.="<dotazione_organica>".$this->GetDotazioneOrganica()."</dotazione_organica>";
         $return.="<dipendenti>".$this->GetDipendenti()."</dipendenti>";
+        $return.="<dirigenti>".$this->GetDipendentiDir()."</dirigenti>";
         $return.="<spesa_dotazione_organica>".$this->GetSpesaDotazioneOrganica()."</spesa_dotazione_organica>";
         $return.="<note>".AA_Utils::xmlentities($this->GetNote())."</note>";
         $return.="<bilanci>";
@@ -10469,7 +10503,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
             $piva->SetText('<span style="font-weight:bold">Personale assunto a tempo determinato:</span><br/>'.$val);
             
-            //spesa dotazione organica
+            //spesa per il personale
             if($curDatocontabile->GetSpesaDotazioneOrganicaImpegnato()=="") $val="Impegnato: <b>n.d.</b>";
             else $val="Impegnato: <b>€ ".number_format(floatVal(str_replace(array(".",","),array("","."),$curDatocontabile->GetSpesaDotazioneOrganicaImpegnato())),2,",",".")."</b>";
 
@@ -10478,7 +10512,7 @@ Class AA_OrganismiFullReportTemplateDaticontabiliPageView extends AA_GenericObje
 
             $piva=new AA_XML_Div_Element($this_id."_spesa_dotazione_organica",$right_panel);
             $piva->SetStyle("width: 100%; margin-bottom: .8em");
-            $piva->SetText('<span style="font-weight:bold">Spesa dotazione organica:</span><br/>'.$val);
+            $piva->SetText('<span style="font-weight:bold">Spesa per il personale:</span><br/>'.$val);
 
             $bilanci=$curDatocontabile->GetBilanci();
             if(sizeof($bilanci) > 0)
