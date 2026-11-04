@@ -734,6 +734,8 @@ class AA_Object
         if (is_array($data) && isset($data['id_direzione']) && $data['id_direzione'] >= 0) $direzione = $data['id_direzione'];
         if (is_array($data) && isset($data['id_servizio']) && $data['id_servizio'] >= 0) $servizio = $data['id_servizio'];
 
+        if (!is_array($data)) $data = array();
+
         foreach ($data as $key => $value) {
             if (property_exists($this, $key)) {
                 $this->$key = $value;
