@@ -697,7 +697,7 @@ class AA_Object
             }
         }
 
-        if ($assessorato != "") $this->oStruct = AA_Struct::GetStruct($assessorato, $direzione, $servizio);
+        if (!empty($assessorato)) $this->oStruct = AA_Struct::GetStruct($assessorato, isset($direzione) ? $direzione : '', isset($servizio) ? $servizio : '');
         $this->oUser = $user;
 
         if (isset($data['status'])) {
