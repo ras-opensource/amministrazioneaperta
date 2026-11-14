@@ -196,6 +196,78 @@ Class AA_Gecop extends AA_Object_V2
         return $this->gestione_finanziaria;
     }
 
+    //Esportazione CSV — intestazione colonne dati (specializzazione hook AA_Object_V2::ToCsv)
+    protected function CsvDataHeader($separator="|")
+    {
+        $header=$separator."note".$separator."cig".$separator."anno";
+        $header.=$separator."aggiudicatario_nominativo".$separator."aggiudicatario_cf";
+        $header.=$separator."links_atti";
+        $header.=$separator."data_inizio".$separator."data_fine".$separator."data_fine_effettiva";
+        $header.=$separator."importo_aggiudicazione".$separator."importo_liquidato";
+        $header.=$separator."commissione";
+
+        return $header;
+    }
+
+    //Esportazione CSV — dati (specializzazione hook AA_Object_V2::ToCsv)
+    protected function CsvData($separator="|")
+    {
+        if(!$this->IsValid()) return "";
+
+        $data=$separator.$this->CsvCell($this->GetProp("Note"),$separator);
+        $data.=$separator.$this->CsvCell($this->GetProp("Cig"),$separator);
+        $data.=$separator.$this->CsvCell($this->GetProp("Anno"),$separator);
+
+        //Aggiudicatario (oggetto JSON singolo)
+        $aggiudicatario=$this->GetAggiudicatario();
+        $data.=$separator.$this->CsvCell(isset($aggiudicatario['nominativo']) ? $aggiudicatario['nominativo'] : "",$separator);
+        $data.=$separator.$this->CsvCell(isset($aggiudicatario['cf']) ? $aggiudicatario['cf'] : "",$separator);
+
+        //Links (url documenti)
+        $links=$this->GetLinks();
+        $data.=$separator.$this->CsvCell(isset($links['atti']) ? $links['atti'] : "",$separator);
+
+        //Rendiconto finanziario (oggetto JSON singolo)
+        $gestione=$this->GetGestioneFinanziaria();
+        $data.=$separator.$this->CsvCell(isset($gestione['data_inizio']) ? $gestione['data_inizio'] : "",$separator);
+        $data.=$separator.$this->CsvCell(isset($gestione['data_fine']) ? $gestione['data_fine'] : "",$separator);
+        $data.=$separator.$this->CsvCell(isset($gestione['data_fine_effettiva']) ? $gestione['data_fine_effettiva'] : "",$separator);
+        $data.=$separator.$this->CsvCell(isset($gestione['importo_aggiudicazione']) ? $gestione['importo_aggiudicazione'] : "",$separator);
+        $data.=$separator.$this->CsvCell(isset($gestione['importo_liquidato']) ? $gestione['importo_liquidato'] : "",$separator);
+
+        //Commissione (campo multiplo: una sola colonna, separatore interno diverso dal generale)
+        $ruoli=AA_Gecop_Const::GetListaRuoloComponente();
+        $components=array();
+        foreach($this->GetCommissione() as $curComponente)
+        {
+            if(!is_array($curComponente)) continue;
+
+            $nominativo=isset($curComponente['nominativo']) ? trim((string)$curComponente['nominativo']) : "";
+            if($nominativo=="") continue;
+
+            $ruolo="";
+            if(isset($curComponente['ruolo']) && isset($ruoli[$curComponente['ruolo']]))
+                $ruolo=$ruoli[$curComponente['ruolo']];
+            $cf=isset($curComponente['cf']) ? (string)$curComponente['cf'] : "";
+            $professione=isset($curComponente['professione']) ? (string)$curComponente['professione'] : "";
+
+            $components[]=$nominativo." - ".trim($ruolo)." - ".trim($cf)." - ".trim($professione);
+        }
+        $data.=$separator.$this->CsvCell(implode(" ; ",$components),$separator);
+
+        return $data;
+    }
+
+    //Esportazione CSV — sanitizzazione cella (helper interno)
+    protected function CsvCell($value,$separator="|")
+    {
+        if(!is_scalar($value)) $value="";
+        $value=(string)$value;
+        $value=str_replace(array("\r","\n")," ",$value);
+
+        return trim(str_replace($separator," ",$value));
+    }
+
     //Funzione di clonazione dei dati
     protected function CloneData($idData = 0, $user = null)
     {
