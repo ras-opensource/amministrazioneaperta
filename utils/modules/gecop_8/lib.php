@@ -979,7 +979,8 @@ Class AA_GecopModule extends AA_GenericModule
         $descr.="<li>la prima riga deve contenere i nomi dei campi;</li>";
         $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8 (è accettato anche ISO-8859-1);</li>";
         $descr.="<li>il carattere \"|\" (pipe) deve essere utilizzato come separatore dei campi;</li>";
-        $descr.="<li>i campi obbligatori sono: <b>cig</b>, <b>anno</b>, <b>aggiudicatario_nominativo</b>, <b>aggiudicatario_cf</b>.</li>";
+        $descr.="<li>i campi obbligatori sono: <b>cig</b>, <b>anno</b>, <b>nome</b> (oggetto), <b>links_atti</b> (url ai documenti);</li>";
+        $descr .= "<li><b>aggiudicatario_nominativo</b> e <b>aggiudicatario_cf</b> sono obbligatori solo se la riga contiene date o importi (data_inizio, data_fine, data_fine_effettiva, importo_aggiudicazione, importo_liquidato).</li>";
         $descr.="</ul>";
         $descr.="<p>Ogni riga del file genera una <b>nuova bozza</b>: i campi di sistema (id, aggiornamento, stato, struttura) non vengono importati e sono assegnati alla creazione.</p>";
         $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di generare più bozze tramite importazione da file csv.".$descr."</div>")));
@@ -3308,19 +3309,13 @@ Class AA_GecopModule extends AA_GenericModule
             }
 
             $newGecop=new AA_Gecop(0,$this->oUser);
-            $newGecop->SetProp("nome",$cur['nome']);
-            $newGecop->SetProp("Cig",$cur['cig']);
-            $newGecop->SetProp("Anno",$cur['anno']);
-            $newGecop->SetProp("Note",$cur['note']);
 
             //Aggiudicatario (oggetto JSON singolo)
             $aggiudicatario=array("nominativo"=>$cur['aggiudicatario_nominativo'],"cf"=>$cur['aggiudicatario_cf']);
-            $newGecop->SetProp("Aggiudicatario",json_encode($aggiudicatario));
 
             //Links (url documenti)
             $links=array();
             if($cur['links_atti']!=="") $links['atti']=$cur['links_atti'];
-            $newGecop->SetProp("Links",json_encode($links));
 
             //Rendiconto finanziario (oggetto JSON singolo)
             $gestione=array(
@@ -3330,7 +3325,6 @@ Class AA_GecopModule extends AA_GenericModule
                 "importo_aggiudicazione"=>$cur['importo_aggiudicazione'],
                 "importo_liquidato"=>$cur['importo_liquidato']
             );
-            $newGecop->SetProp("GestioneFinanziaria",json_encode($gestione));
 
             //Commissione (campo multiplo)
             $commissione=array();
@@ -3343,7 +3337,19 @@ Class AA_GecopModule extends AA_GenericModule
                     "professione"=>$comp['professione']
                 );
             }
-            $newGecop->SetProp("Commissione",json_encode($commissione));
+
+            //Parsing dei dati: Parse() mappa "nome"/"descrizione" sui campi base dell'oggetto
+            //(SetName/SetDescr) e scrive solo sulle property registrate (Cig, Anno, Note, ...)
+            $newGecop->Parse(array(
+                "nome"=>$cur['nome'],
+                "Cig"=>$cur['cig'],
+                "Anno"=>$cur['anno'],
+                "Note"=>$cur['note'],
+                "Aggiudicatario"=>json_encode($aggiudicatario),
+                "Links"=>json_encode($links),
+                "GestioneFinanziaria"=>json_encode($gestione),
+                "Commissione"=>json_encode($commissione)
+            ));
 
             if(!AA_Gecop::AddNew($newGecop,$this->oUser))
             {
@@ -3360,7 +3366,7 @@ Class AA_GecopModule extends AA_GenericModule
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
         $task->SetContent("Bozze aggiunte con successo",false);
-        $task->SetStatusAction("dlg",json_encode(array("params"=>array("task"=>"GetGecopAddNewMultiResultDlg"))));
+        $task->SetStatusAction('dlg',array("task"=>"GetGecopAddNewMultiResultDlg"),true);
 
         return true;
     }
@@ -4061,7 +4067,7 @@ Class AA_GecopModule extends AA_GenericModule
             if(in_array($name,$fields)) $colIndex[$name]=$idx;
         }
 
-        $required=array("cig","anno","nome");
+        $required=array("cig","anno","nome","links_atti");
         $missing=array();
         foreach($required as $req)
         {
