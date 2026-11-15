@@ -26,6 +26,18 @@ var <?php echo AA_GecopModule::AA_ID_MODULE?> = new AA_Module("<?php echo AA_Gec
     }
 };
 
+
+//Visualizza i dettagli relativi all'errore di importazione da csv
+<?php echo AA_GecopModule::AA_ID_MODULE?>.eventHandlers['defaultHandlers'].onCsvImportErrorsDetail = function() {
+    try 
+    {
+        params={task:"GetGecopCsvImportErrorDetailDlg", postParams: {errors: arguments[0]}};
+
+        AA_MainApp.utils.callHandler('dlg',params,'<?php echo AA_GecopModule::AA_ID_MODULE?>');
+    } catch (msg) {
+        console.error(AA_MainApp.curModule.name + "eventHandlers.defaultHandlers.onCsvImportErrorsDetail", msg, this);
+    }
+};
 //Registrazione modulo
 AA_MainApp.registerModule(<?php echo AA_GecopModule::AA_ID_MODULE?>);
 

@@ -600,6 +600,7 @@ Class AA_GecopModule extends AA_GenericModule
         $taskManager->RegisterTask("GetGecopAddNewMultiPreviewDlg");
         $taskManager->RegisterTask("AddNewMultiGecop");
         $taskManager->RegisterTask("GetGecopAddNewMultiResultDlg");
+        $taskManager->RegisterTask("GetGecopCsvImportErrorDetailDlg");
 
         $taskManager->RegisterTask("GetGecopTrashDlg");
         $taskManager->RegisterTask("TrashGecop");
@@ -711,7 +712,7 @@ Class AA_GecopModule extends AA_GenericModule
             $bCanModify=true;
         }
 
-        $params['enableAddNewMultiFromCsv']=false;
+        $params['enableAddNewMultiFromCsv']=true;
         $content=$this->TemplateGenericSection_Bozze($params,null);
 
         return $content->toObject();
@@ -957,19 +958,18 @@ Class AA_GecopModule extends AA_GenericModule
     }
 
     //Template dlg addnew geco da csv
+//Template dlg addnew geco da csv
     public function Template_GetGecopAddNewMultiDlg()
     {
-        $id=static::AA_UI_PREFIX."_GetGecopAddNewMultiDlg_".uniqid();
+        $id=$this->GetId()."_GetGecopAddNewMultiDlg_".uniqid();
 
         $form_data=array();
 
-        $platform=AA_Platform::GetInstance($this->oUser);
-
         $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV", $this->id,$form_data,$form_data);
-        
+
         $wnd->SetLabelAlign("right");
         $wnd->SetLabelWidth(120);
-        
+
         $wnd->SetWidth(720);
         $wnd->SetHeight(600);
         $wnd->SetBottomPadding(36);
@@ -977,64 +977,46 @@ Class AA_GecopModule extends AA_GenericModule
 
         $descr="<ul>Il file csv deve avere le seguenti caratteristiche:";
         $descr.="<li>la prima riga deve contenere i nomi dei campi;</li>";
-        $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8;</li>";
+        $descr.="<li>la codifica dei caratteri deve essere in formato UTF-8 (è accettato anche ISO-8859-1);</li>";
         $descr.="<li>il carattere \"|\" (pipe) deve essere utilizzato come separatore dei campi;</li>";
+        $descr.="<li>i campi obbligatori sono: <b>cig</b>, <b>anno</b>, <b>aggiudicatario_nominativo</b>, <b>aggiudicatario_cf</b>.</li>";
         $descr.="</ul>";
-        //$descr.="<p>Tramite il seguente <a href='".$platform->GetModulePathURL($this->GetId())."/docs/geco_addnew_multi.ods' target='_blank'>link</a> è possibile scaricare un foglio elettronico da utilizzarsi come base per la predisposizione del file csv.</p>";
-        $descr.="<p>Per la generazione del file csv si consiglia l'utilizzo del software opensource <a href='https://www.libreoffice.org' target='_blank'>Libreoffice</a> in quanto consente di impostare il carattere di delimitazione dei campi e la codifica dei caratteri in fase di esportazione senza dover apportare modifiche al sistema.</p>";
-        $descr.="<hr/>";
-
+        $descr.="<p>Ogni riga del file genera una <b>nuova bozza</b>: i campi di sistema (id, aggiornamento, stato, struttura) non vengono importati e sono assegnati alla creazione.</p>";
         $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di generare più bozze tramite importazione da file csv.".$descr."</div>")));
-        $wnd->AddGenericObject(new AA_JSON_Template_Generic("",array("height"=>30)));
 
-        $options=array(
-            array("id"=>1,"value"=>"Terna"),
-            array("id"=>2,"value"=>"Ass. Industria"),
-            array("id"=>3,"value"=>"Suape")
-        );
-
-        $wnd->AddSelectField("tracciato","Tipo tracciato",array("required"=>true,"validateFunction"=>"IsSelected","bottomPadding"=>32, "bottomLabel"=>"*Selezionare il tipo di importazione.", "placeholder"=>"...","options"=>$options));
-        
-        //csv
         $wnd->AddFileUploadField("GecopAddNewMultiCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 2Mb).","accept"=>"application/csv"));
 
         $wnd->EnableCloseWndOnSuccessfulSave();
-
         $wnd->enableRefreshOnSuccessfulSave(false);
-
         $wnd->SetApplyButtonName("Procedi");
 
         $wnd->SetSaveTask("GetGecopAddNewMultiPreviewCalc");
-        
+
         return $wnd;
     }
 
     //Template dlg addnew multi preview
+//Template dlg addnew multi preview
     public function Template_GetGecopAddNewMultiPreviewDlg()
     {
-        $id=static::AA_UI_PREFIX."_GetGecopAddNewMultiPreviewDlg_".uniqid();
+        $id=$this->GetId()."_GetGecopAddNewMultiPreviewDlg_".uniqid();
 
         $form_data=array();
-        
+
         $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV - fase 2 di 3", $this->id,$form_data,$form_data);
-        
-        //$wnd->SetLabelAlign("right");
-        //$wnd->SetLabelWidth(120);
-        
+
         $wnd->SetWidth(1280);
         $wnd->SetHeight(720);
-        //$wnd->SetBottomPadding(36);
-        //$wnd->EnableValidation();
-        //anno	titolo	descrizione	responsabile	norma_estremi	norma_link	modalita_tipo	modalita_link	importo_impegnato	importo_erogato	beneficiario_nominativo	beneficiario_cf	beneficiario_piva	beneficiario_persona_fisica	beneficiario_privacy	note
 
         $columns=array(
-            //array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"selectFilter")),"width"=>60, "css"=>array("text-align"=>"left"),"sort"=>"text"),
-            array("id"=>"titolo","header"=>array("<div style='text-align: center'>Descrizione</div>",array("content"=>"textFilter")),"fillspace"=>true,"sort"=>"text","css"=>"PraticheTable_left"),
-            array("id"=>"tipologia","header"=>array("<div style='text-align: center'>Tipologia</div>",array("content"=>"selectFilter")),"width"=>200, "sort"=>"text","css"=>"PraticheTable"),
-            array("id"=>"potenza","header"=>array("<div style='text-align: center'>Potenza (MW)</div>",array("content"=>"textFilter")),"width"=>90, "sort"=>"text","css"=>"PraticheTable"),
-            array("id"=>"comune","header"=>array("<div style='text-align: center'>Comune</div>",array("content"=>"selectFilter")),"width"=>250, "sort"=>"text","css"=>"PraticheTable"),
-            array("id"=>"date","header"=>array("<div style='text-align: center'>Date</div>",array("content"=>"textFilter")),"width"=>250, "css"=>"PraticheTable_left"),
-            array("id"=>"nuovo","header"=>array("<div style='text-align: center'>Nuovo</div>",array("content"=>"selectFilter")),"width"=>60, "css"=>"PraticheTable")
+            array("id"=>"riga","header"=>array("<div style='text-align: center'>Riga</div>",array("content"=>"textFilter")),"width"=>60, "sort"=>"text","css"=>"PraticheTable"),
+            array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"textFilter")),"width"=>70, "sort"=>"text","css"=>"PraticheTable"),
+            array("id"=>"cig","header"=>array("<div style='text-align: center'>Cig</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>"PraticheTable"),
+            array("id"=>"nominativo","header"=>array("<div style='text-align: center'>Aggiudicatario</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"PraticheTable_left"),
+            array("id"=>"cf","header"=>array("<div style='text-align: center'>Cf/Piva</div>",array("content"=>"textFilter")),"width"=>140, "sort"=>"text","css"=>"PraticheTable"),
+            array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo aggiudicazione</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"PraticheTable"),
+            array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"textFilter")),"width"=>90, "sort"=>"text","css"=>"PraticheTable"),
+            array("id"=>"errori","header"=>array("<div style='text-align: center'>Errori</div>",array("content"=>"textFilter")),"width"=>130, "sort"=>"text","css"=>"PraticheTable")
         );
 
         $data=AA_SessionVar::Get("GecopAddNewMultiFromCSV_ParsedData")->GetValue();
@@ -1045,41 +1027,61 @@ Class AA_GecopModule extends AA_GenericModule
             $data=array();
         }
 
-        $tipologiaImpianti=AA_Gecop_Const::GetListaTipoImpianti();
-        $tabledata=array();
-        $nuovi_inserimenti=0;
-        foreach($data as $key=>$row)
+        $ok=0; $err=0;
+        foreach($data as $cur)
         {
-            if($row['id_impianto']!=0) 
+            if(empty($cur['errore'])) $ok++; else $err++;
+        }
+
+        $desc="<p>Sono state riconosciute <b>".sizeof((array)$data)." righe</b>: <b>".$ok." pronte per l'importazione</b>";
+        if($err > 0)
+        {
+            $all_errors=array();
+            foreach($data as $cur)
             {
-                $impianto=new AA_Gecop($row['id_impianto'],$this->oUser);
-                $geolocalizzazione=$impianto->GetProp('geolocalizzazione');
-                $tabledata[]=array(
-                    "titolo"=>$impianto->GetProp('nome'),
-                    "tipologia"=>$impianto->GetTipo(),
-                    "potenza"=>AA_Utils::number_format($impianto->GetProp('Potenza'),2,",","."),
-                    "comune"=>$geolocalizzazione['comune'],
-                    "date"=>"<div style='display: flex;flex-direction: column;justify-content: space-between;align-items: start;font-size: smaller;'><div>autorizzazione: ".$impianto->GetProp('AnnoAutorizzazione')."</div><div>costruzione: ".$impianto->GetProp('AnnoCostruzione')."</div><div>esercizio: ".$impianto->GetProp('AnnoEsercizio')."</div><div>dismissione: ".$impianto->GetProp('AnnoDismissione')."</div></div>",
-                    "nuovo"=>"No"
-                );
+                if(!empty($cur['errore']))
+                    foreach($cur['errors'] as $e) $all_errors[]="Riga ".$cur['linea'].": ".$e;
+            }
+            $json_errors=htmlspecialchars(json_encode($all_errors), ENT_QUOTES);
+            $click='AA_MainApp.utils.callHandler("onCsvImportErrorsDetail", '.$json_errors.')';
+            $desc.="<b>, ".$err." con errori</b> (non verranno importate). <a href='#' onclick='".$click."'>fai click qui per maggiori dettagli</a>";
+        }
+        else
+        {
+            $desc.=".</p>";
+        }
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>$desc)));
+
+        $tabledata=array();
+        foreach($data as $cur)
+        {
+            if(!empty($cur['errore']))
+            {
+                $stato="<b style='color: red'>Errore</b>";
+                $json_errors=htmlspecialchars(json_encode($cur['errors']), ENT_QUOTES);
+                $click='AA_MainApp.utils.callHandler("onCsvImportErrorsDetail", '.$json_errors.')';
+                $errori="<a href='#' onclick='".$click."'>".sizeof((array)$cur['errors'])." errori</a>";
             }
             else
             {
-                $tabledata[]=array(
-                    "titolo"=>$row['nome'],
-                    "tipologia"=>$tipologiaImpianti[$row['Tipologia']],
-                    "potenza"=>AA_Utils::number_format($row['Potenza'],2,",","."),
-                    "comune"=>$row['Geo_comune'],
-                    "date"=>"<div style='display: flex;flex-direction: column;justify-content: space-between;align-items: start;font-size: smaller;'><div>autorizzazione: ".$row['AnnoAutorizzazione']."</div><div>costruzione: ".$row['AnnoCostruzione']."</div><div>esercizio: ".$row['AnnoEsercizio']."</div><div>dismissione: ".$row['AnnoDismissione']."</div></div>",
-                    "nuovo"=>"Si"
-                );
-                $nuovi_inserimenti++;
+                $stato="<b style='color: green'>OK</b>";
+                $errori="";
             }
-        }
-        //AA_Log::Log(__METHOD__." - dati csv: ".print_r($data,TRUE),100);
 
-        $desc="<p>Sono stati riconosciuti <b>".$nuovi_inserimenti." nuovi impianti</b>.<br>Verranno aggiornati ".(sizeof((array)$data)-$nuovi_inserimenti)." impianti esistenti</p>";
-        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+            $imp=str_replace($cur['importo_aggiudicazione'],".","");
+            $imp=str_replace($imp,",",".");
+
+            $tabledata[]=array(
+                "riga"=>$cur['linea'],
+                "anno"=>$cur['anno'],
+                "cig"=>$cur['cig'],
+                "nominativo"=>$cur['aggiudicatario_nominativo'],
+                "cf"=>$cur['aggiudicatario_cf'],
+                "importo"=>number_format(floatval($imp),2,",","."),
+                "stato"=>$stato,
+                "errori"=>$errori
+            );
+        }
 
         $scrollview=new AA_JSON_Template_Generic($id."_ScrollCsvImportPreviewTable",array(
             "type"=>"clean",
@@ -1091,7 +1093,7 @@ Class AA_GecopModule extends AA_GenericModule
             "css"=>"AA_Header_DataTable",
             "hover"=>"AA_DataTable_Row_Hover",
             "fixedRowHeight"=>false,
-            "rowHeight"=>80,
+            "rowHeight"=>40,
             "rowLineHeight"=>18,
             "eventHandlers"=>array("onresize"=>array("handler"=>"adjustRowHeight","module_id"=>$this->GetId())),
             "columns"=>$columns,
@@ -1102,30 +1104,23 @@ Class AA_GecopModule extends AA_GenericModule
         $wnd->AddGenericObject($scrollview);
 
         $wnd->EnableCloseWndOnSuccessfulSave();
-
-        //$wnd->enableRefreshOnSuccessfulSave();
-
         $wnd->SetApplyButtonName("Procedi");
 
         $wnd->SetSaveTask("AddNewMultiGecop");
-        
+
         return $wnd;
     }
 
     //Visualizza il risultato dell'importazione da csv
+//Visualizza il risultato dell'importazione da csv
     public function Template_GetGecopAddNewMultiResultDlg()
     {
-        $id=$this->GetId()."_AddNewMultiResult_Dlg_".uniqid();
-        
+        $id=$this->GetId()."_AddNewMultiResult_".uniqid();
+
         $wnd=new AA_GenericWindowTemplate($id, "Caricamento multiplo da file CSV - fase 3 di 3");
-        
-        //$wnd->SetLabelAlign("right");
-        //$wnd->SetLabelWidth(120);
-        
+
         $wnd->SetWidth(720);
         $wnd->SetHeight(350);
-        //$wnd->SetBottomPadding(36);
-        //$wnd->EnableValidation();
 
         $data=AA_SessionVar::Get("GecopAddNewMultiResult")->GetValue();
         //elimina le variabili di sessione
@@ -1134,16 +1129,24 @@ Class AA_GecopModule extends AA_GenericModule
         if(!is_array($data))
         {
             AA_Log::Log(__METHOD__." - dati result non validi: ".print_r($data,TRUE),100);
-            $data=array();
             $desc="Non sono stati trovati i risultati di importazione da csv.";
-            $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
+            $wnd->AddView(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>$desc)));
+
             return $wnd;
         }
 
-        $desc="<p>Sono stati inseriti <b>".$data[0]." nuovi impianti in bozza</b>.</p>";
-        if($data[1] > 0) $desc.="<p>Sono stati modificati <b>".$data[1]." impianti pubblicati esistenti</b>.</p>";
-        $wnd->AddView(new AA_JSON_Template_Template("",array("style"=>"clean","template"=>$desc,"autoheight"=>true)));
-        
+        $totali=isset($data['totali']) ? intval($data['totali']) : 0;
+        $importati=isset($data['importati']) ? intval($data['importati']) : 0;
+        $con_errore=isset($data['con_errore']) ? intval($data['con_errore']) : 0;
+
+        $desc="<p>Sono state create <b>".$importati." bozze</b> da un totale di <b>".$totali." righe</b> riconosciute nel file.</p>";
+        if($con_errore > 0)
+        {
+            $desc.="<p><b>".$con_errore." righe con errori</b> non sono state importate: verificare i dettagli nella fase di anteprima e correggere il file csv prima di un nuovo caricamento.</p>";
+        }
+
+        $wnd->AddView(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>$desc)));
+
         return $wnd;
     }
 
@@ -3263,17 +3266,18 @@ Class AA_GecopModule extends AA_GenericModule
     }
 
     //Task Aggiungi nuovi impianti da csv
+//Task aggiunta geco da csv, passo 3 di 3
     public function Task_AddNewMultiGecop($task)
     {
-        //AA_Log::Log(__METHOD__."() - task: ".$task->GetName());
         if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("L'utente corrente non ha i permessi per aggiungere nuovi elementi",false);
 
             return false;
+
         }
-        
+
         $data=AA_SessionVar::Get("GecopAddNewMultiFromCSV_ParsedData")->GetValue();
         AA_SessionVar::UnsetVar("GecopAddNewMultiFromCSV_ParsedData");
 
@@ -3287,118 +3291,74 @@ Class AA_GecopModule extends AA_GenericModule
             return false;
         }
 
-        $count=array("inseriti"=>0,"modificati"=>0);
+        $count=array("totali"=>0,"importati"=>0,"con_errore"=>0);
 
-        foreach($data as $curData)
+        foreach($data as $cur)
         {
-            if($curData['id_impianto'] > 0)
+            $count['totali']++;
+
+            //Righe con errori nella fase di anteprima: non importate
+            if(!empty($cur['errore']))
             {
-                if($curData['societa'] !="")
-                {
-                    $impianto=new AA_Gecop($curData['id_impianto'],$this->oUser);
-                    if($impianto->IsValid())
-                    {
-                        $pratiche=$impianto->GetPratiche();
-                        $pratica=array();
-                        if(isset($curData['pratica_tipo'])) $pratica["tipo"]=$curData['pratica_tipo'];
-                        else $pratica["tipo"]=AA_Gecop_Const::AA_GECOP_TIPO_PRATICA_AU;
-                        if(isset($curData['pratica_stato'])) $pratica["stato"]=$curData['pratica_stato'];
-                        else $pratica["stato"]=AA_Gecop_Const::AA_GECOP_STATO_PRATICA_DAISTRUIRE;
-                        if(isset($curData['pratica_estremi'])) $pratica["estremi"]=$curData['pratica_estremi'];
-                        else $pratica["estremi"]='';
-                        if(isset($curData['pratica_descrizione'])) $pratica["descrizione"]=$curData['pratica_descrizione'];
-                        else $pratica["descrizione"]='';
-                        if(isset($curData['pratica_via'])) $pratica["via"]=$curData['pratica_via'];
-                        else $pratica["via"]=AA_Gecop_Const::AA_GECOP_TIPO_VIA_NESSUNO;
-                        if(isset($curData['pratica_societa'])) $pratica["societa"]=trim($curData['pratica_societa']);
-                        else $pratica["societa"]='';
-                        if(isset($curData['pratica_data_inizio'])) $pratica["data_inizio"]=$curData['pratica_data_inizio'];
-                        else $pratica["data_inizio"]='';
-                        if(isset($curData['pratica_data_fine'])) $pratica["data_fine"]=$curData['pratica_data_fine'];
-                        else $pratica["data_fine"]='';
-                        if(isset($curData['pratica_note'])) $pratica["note"]=$curData['pratica_note'];
-                        else $pratica["note"]='';
-                        $newId=uniqid();
-                        $pratiche[$newId]=$pratica;
-                        $impianto->SetProp('pratiche',json_encode($pratiche));
-                        
-                        if(!$impianto->Update($this->oUser,true,"Aggiunta pratica - id: ".$newId))
-                        {
-                            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                            $task->SetError("Errore nell'aggiunta della nuova pratica all'impianto: ".$impianto->GetName(),false);
-    
-                            return false;
-                        }
-
-                        $count['modificati']++;
-                    }
-                }
+                $count['con_errore']++;
+                continue;
             }
-            else
+
+            $newGecop=new AA_Gecop(0,$this->oUser);
+            $newGecop->SetProp("nome",$cur['nome']);
+            $newGecop->SetProp("Cig",$cur['cig']);
+            $newGecop->SetProp("Anno",$cur['anno']);
+            $newGecop->SetProp("Note",$cur['note']);
+
+            //Aggiudicatario (oggetto JSON singolo)
+            $aggiudicatario=array("nominativo"=>$cur['aggiudicatario_nominativo'],"cf"=>$cur['aggiudicatario_cf']);
+            $newGecop->SetProp("Aggiudicatario",json_encode($aggiudicatario));
+
+            //Links (url documenti)
+            $links=array();
+            if($cur['links_atti']!=="") $links['atti']=$cur['links_atti'];
+            $newGecop->SetProp("Links",json_encode($links));
+
+            //Rendiconto finanziario (oggetto JSON singolo)
+            $gestione=array(
+                "data_inizio"=>$cur['data_inizio'],
+                "data_fine"=>$cur['data_fine'],
+                "data_fine_effettiva"=>$cur['data_fine_effettiva'],
+                "importo_aggiudicazione"=>$cur['importo_aggiudicazione'],
+                "importo_liquidato"=>$cur['importo_liquidato']
+            );
+            $newGecop->SetProp("GestioneFinanziaria",json_encode($gestione));
+
+            //Commissione (campo multiplo)
+            $commissione=array();
+            foreach($cur['commissione'] as $comp)
             {
-                $newImpianto=new AA_Gecop(0,$this->oUser);
-                $geolocalizzazione=array();
-                $geolocalizzazione['comune']=$curData['Geo_comune'];
-                $geolocalizzazione['localita']=$curData['Geo_localita'];
-                $geolocalizzazione['coordinate']=$curData['Geo_coordinate'];
-                $newImpianto->SetProp('Geolocalizzazione',json_encode($geolocalizzazione));
-
-                $newImpianto->Parse($curData);
-
-                if(!AA_Gecop::AddNew($newImpianto,$this->oUser))
-                {
-                    $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                    $task->SetError("Errore nell'aggiunta del nuovo impianto: ".$newImpianto->GetName(),false);
-
-                    return false;
-                }
-
-                if($newImpianto->IsValid())
-                {
-                    $pratiche=$newImpianto->GetPratiche();
-                    $pratica=array();
-                    if(isset($curData['pratica_tipo'])) $pratica["tipo"]=$curData['pratica_tipo'];
-                    else $pratica["tipo"]=AA_Gecop_Const::AA_GECOP_TIPO_PRATICA_AU;
-                    if(isset($curData['pratica_stato'])) $pratica["stato"]=$curData['pratica_stato'];
-                    else $pratica["stato"]=AA_Gecop_Const::AA_GECOP_STATO_PRATICA_DAISTRUIRE;
-                    if(isset($curData['pratica_estremi'])) $pratica["estremi"]=$curData['pratica_estremi'];
-                    else $pratica["estremi"]='';
-                    if(isset($curData['pratica_descrizione'])) $pratica["descrizione"]=$curData['pratica_descrizione'];
-                    else $pratica["descrizione"]='';
-                    if(isset($curData['pratica_via'])) $pratica["via"]=$curData['pratica_via'];
-                    else $pratica["via"]=AA_Gecop_Const::AA_GECOP_TIPO_VIA_NESSUNO;
-                    if(isset($curData['pratica_societa'])) $pratica["societa"]=trim($curData['pratica_societa']);
-                    else $pratica["societa"]='';
-                    if(isset($curData['pratica_data_inizio'])) $pratica["data_inizio"]=$curData['pratica_data_inizio'];
-                    else $pratica["data_inizio"]='';
-                    if(isset($curData['pratica_data_fine'])) $pratica["data_fine"]=$curData['pratica_data_fine'];
-                    else $pratica["data_fine"]='';
-                    if(isset($curData['pratica_note'])) $pratica["note"]=$curData['pratica_note'];
-                    else $pratica["note"]='';
-
-                    $newId=uniqid();
-                    $pratiche[$newId]=$pratica;
-
-                    $newImpianto->SetProp('Pratiche',json_encode($pratiche));
-                    
-                    if(!$newImpianto->Update($this->oUser,true,"Aggiunta pratica - id: ".$newId))
-                    {
-                        $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-                        $task->SetError("Errore nell'aggiunta della nuova pratica all'impianto: ".$impianto->GetName(),false);
-
-                        return false;
-                    }
-
-                    $count['inseriti']++;
-                }
+                $commissione[]=array(
+                    "nominativo"=>$comp['nominativo'],
+                    "ruolo"=>$comp['ruolo'],
+                    "cf"=>$comp['cf'],
+                    "professione"=>$comp['professione']
+                );
             }
+            $newGecop->SetProp("Commissione",json_encode($commissione));
+
+            if(!AA_Gecop::AddNew($newGecop,$this->oUser))
+            {
+                $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+                $task->SetError("Errore nella creazione della bozza (riga ".$cur['linea']."): Cig ".$cur['cig'],false);
+
+                return false;
+            }
+
+            $count['importati']++;
         }
 
         AA_SessionVar::Set("GecopAddNewMultiResult",$count,false);
 
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetContent("Impianti aggiunti con successo",false);
+        $task->SetContent("Bozze aggiunte con successo",false);
         $task->SetStatusAction("dlg",json_encode(array("params"=>array("task"=>"GetGecopAddNewMultiResultDlg"))));
+
         return true;
     }
 
@@ -4037,13 +3997,15 @@ Class AA_GecopModule extends AA_GenericModule
     }
 
     //Task aggiunta geco da csv, passo 2 di 3
+//Task aggiunta geco da csv, passo 2 di 3
     public function Task_GetGecopAddNewMultiPreviewCalc($task)
     {
         $csvFile=AA_SessionFileUpload::Get("GecopAddNewMultiCSV");
         if(!$csvFile->IsValid())
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("File non valido",false);        
+            $task->SetError("File non valido",false);
+
             return false;
         }
 
@@ -4052,49 +4014,149 @@ Class AA_GecopModule extends AA_GenericModule
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
             $task->SetError("File non valido (1)",false);
+
             return false;
         }
 
-        $csvRows=explode("\n",str_replace("\r","",file_get_contents($csv["tmp_name"])));
+        $content=file_get_contents($csv["tmp_name"]);
         //Elimina il file temporaneo
         if(is_file($csv["tmp_name"]))
         {
             unlink($csv["tmp_name"]);
         }
 
-        $data=false;
-
-        if($_REQUEST['tracciato']==1)
+        //Codifica: strip BOM + fallback ISO-8859-1 se non è UTF-8 valido
+        $content=preg_replace("/\\xEF\\xBB\\xBF/","",trim($content),1);
+        if($content !== utf8_decode(utf8_encode($content)))
         {
-            $data=$this->ElaborateCsvImportTerna($csvRows);
-        }
-        
-        if($_REQUEST['tracciato']==2)
-        {
-            $data=$this->ElaborateCsvImportAssIndustria($csvRows);
+            $conv=@iconv("ISO-8859-1","UTF-8",$content);
+            if(is_string($conv)) $content=$conv;
         }
 
-        if($_REQUEST['tracciato']==3)
+        $csvRows=explode("\n",str_replace("\r","",$content));
+        $nonEmpty=array();
+        foreach($csvRows as $curLine)
         {
-            $data=$this->ElaborateCsvImportSuape($csvRows);
+            if(trim((string)$curLine)!=="") $nonEmpty[]=$curLine;
         }
 
-        if($data===false)
+        if(sizeof($nonEmpty) < 2)
         {
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Errore nell'elaborazione del file",false);
+            $task->SetError("Il file non contiene righe dati",false);
+
             return false;
         }
 
-        if(is_array($data) && sizeof($data) > 0)
+        //Header: mappatura nome campo -> indice colonna
+        $fields=array("nome","descrizione","note","cig","anno","aggiudicatario_nominativo","aggiudicatario_cf","links_atti","data_inizio","data_fine","data_fine_effettiva","importo_aggiudicazione","importo_liquidato","commissione");
+        $colIndex=array();
+        $header=explode("|",trim($nonEmpty[0]));
+        foreach($header as $idx=>$name)
         {
-            AA_SessionVar::Set("GecopAddNewMultiFromCSV_ParsedData",$data,false);
+            $name=trim((string)$name);
+            if(in_array($name,$fields)) $colIndex[$name]=$idx;
         }
 
+        $required=array("cig","anno","aggiudicatario_nominativo","aggiudicatario_cf");
+        $missing=array();
+        foreach($required as $req)
+        {
+            if(!isset($colIndex[$req])) $missing[]=$req;
+        }
+        if(sizeof($missing)>0)
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("File non conforme: mancano i campi obbligatori (".implode(", ",$missing).") nell'intestazione",false);
+
+            return false;
+        }
+
+        $ruoli=array_flip(AA_Gecop_Const::GetListaRuoloComponente()); //label -> id
+        $cigSeen=array();
+        $data=array();
+
+        for($i=1;$i<sizeof($nonEmpty);$i++)
+        {
+            $lineNo=$i+1; //numero riga file (header = riga 1)
+            $vals=explode("|",trim($nonEmpty[$i]));
+
+            $row=array("linea"=>$lineNo);
+            foreach($fields as $f) $row[$f]="";
+            foreach($colIndex as $name=>$idx)
+            {
+                if(isset($vals[$idx])) $row[$name]=trim((string)$vals[$idx]);
+            }
+
+            $errors=array();
+
+            //Obbligatori
+            foreach($required as $req)
+            {
+                if($row[$req]==="") $errors[]="Campo obbligatorio mancante: ".$req;
+            }
+
+            //Anno
+            if($row['anno']!="" && (!is_numeric($row['anno']) || intval($row['anno']) < 2024 || intval($row['anno']) > 2099))
+                $errors[]="Anno non valido: ".$row['anno'];
+
+            //Cig: unicità nel sistema + duplicati dentro lo stesso file
+            if($row['cig']!=="")
+            {
+                $lc=strtolower($row['cig']);
+                if(isset($cigSeen[$lc]))
+                    $errors[]="CIG duplicato nel file (prima occorrenza riga ".$cigSeen[$lc].")";
+                else
+                {
+                    $cigSeen[$lc]=$lineNo;
+                    if(!AA_Gecop::CigIsValid($row['cig']))
+                        $errors[]="CIG già presente nel sistema";
+                }
+            }
+
+            //Commissione: "nominativo - ruolo - cf - professione" uniti da " ; "
+            $commissione=array();
+            if($row['commissione']!=="")
+            {
+                foreach(explode(" ; ",$row['commissione']) as $part)
+                {
+                    $part=trim($part);
+                    if($part==="") continue;
+
+                    $p=explode(" - ",$part);
+                    $nominativo=isset($p[0]) ? trim($p[0]) : "";
+                    $ruoloLabel=isset($p[1]) ? trim($p[1]) : "";
+                    $cf=isset($p[2]) ? trim($p[2]) : "";
+                    $professione=isset($p[3]) ? trim(implode(" - ",array_slice($p,3))) : "";
+
+                    if($nominativo==="")
+                    {
+                        $errors[]="Componente commissione non riconosciuto: ".$part;
+                        continue;
+                    }
+                    if(!isset($ruoli[$ruoloLabel]))
+                    {
+                        $errors[]="Ruolo commissione non riconosciuto: ".$ruoloLabel." (componente: ".$nominativo.")";
+                        continue;
+                    }
+
+                    $commissione[]=array("nominativo"=>$nominativo,"ruolo"=>$ruoli[$ruoloLabel],"cf"=>$cf,"professione"=>$professione);
+                }
+            }
+
+            $row['commissione']=$commissione;
+            $row['errore']=sizeof($errors)>0;
+            $row['errors']=$errors;
+
+            $data[]=$row;
+        }
+
+        AA_SessionVar::Set("GecopAddNewMultiFromCSV_ParsedData",$data,false);
+
         $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
-        $task->SetStatusAction('dlg',array("task"=>"GetGecopAddNewMultiPreviewDlg"),true);
         $task->SetContent("Csv elaborato.",false);
-                
+        $task->SetStatusAction('dlg',array("task"=>"GetGecopAddNewMultiPreviewDlg"),true);
+
         return true;
     }
 
@@ -5039,6 +5101,60 @@ Class AA_GecopModule extends AA_GenericModule
         $sTaskLog .= "</content>";
 
         $task->SetLog($sTaskLog);
+
+        return true;
+    }
+
+//Template view dettagli errori importazione csv
+    public function Template_GetGecopCsvImportErrorDetailDlg($errors=array())
+    {
+        $id=$this->GetId()."_CsvImportErrorDetail_".uniqid();
+
+        $wnd=new AA_GenericWindowTemplate($id, "Dettagli errori importazione CSV");
+
+        $wnd->SetWidth(640);
+        $wnd->SetHeight(480);
+
+        $data=array();
+        foreach((array)$errors as $key=>$val)
+        {
+            if(is_array($val))
+            {
+                foreach($val as $v) $data[]=array("errore"=>$v);
+            }
+            else
+            {
+                $data[]=array("errore"=>$val);
+            }
+        }
+
+        $table=new AA_GenericDatatableTemplate($id."_Table","",1);
+        $table->EnableScroll(false,true);
+        $table->EnableRowOver();
+        $table->EnableAutoRowsHeight();
+        $table->SetColumnHeaderInfo(0,"errore","Errori riscontrati","fillSpace","","text","CriteriTable");
+        $table->SetData($data);
+
+        $wnd->AddView($table);
+
+        return $wnd;
+    }
+
+    //Task dettagli errori importazione csv
+    public function Task_GetGecopCsvImportErrorDetailDlg($task)
+    {
+        if(!$this->oUser->HasFlag(AA_Gecop_Const::AA_USER_FLAG_GECOP))
+        {
+            $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
+            $task->SetError("L'utente corrente non ha i permessi per questa operazione.",false);
+
+            return false;
+        }
+
+        $errors=isset($_REQUEST['errors']) ? $_REQUEST['errors'] : array();
+
+        $task->SetStatus(AA_GenericTask::AA_STATUS_SUCCESS);
+        $task->SetContent($this->Template_GetGecopCsvImportErrorDetailDlg($errors),true);
 
         return true;
     }
