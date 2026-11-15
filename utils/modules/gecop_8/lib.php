@@ -1011,10 +1011,8 @@ Class AA_GecopModule extends AA_GenericModule
         $columns=array(
             array("id"=>"riga","header"=>array("<div style='text-align: center'>Riga</div>",array("content"=>"textFilter")),"width"=>60, "sort"=>"text","css"=>"PraticheTable"),
             array("id"=>"anno","header"=>array("<div style='text-align: center'>Anno</div>",array("content"=>"textFilter")),"width"=>70, "sort"=>"text","css"=>"PraticheTable"),
+            array("id"=>"oggetto","header"=>array("<div style='text-align: center'>Oggetto</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"PraticheTable_left"),
             array("id"=>"cig","header"=>array("<div style='text-align: center'>Cig</div>",array("content"=>"textFilter")),"width"=>200, "sort"=>"text","css"=>"PraticheTable"),
-            array("id"=>"nominativo","header"=>array("<div style='text-align: center'>Aggiudicatario</div>",array("content"=>"textFilter")),"fillspace"=>true, "sort"=>"text","css"=>"PraticheTable_left"),
-            array("id"=>"cf","header"=>array("<div style='text-align: center'>Cf/Piva</div>",array("content"=>"textFilter")),"width"=>140, "sort"=>"text","css"=>"PraticheTable"),
-            array("id"=>"importo","header"=>array("<div style='text-align: center'>Importo aggiudicazione</div>",array("content"=>"textFilter")),"width"=>150, "sort"=>"text","css"=>"PraticheTable"),
             array("id"=>"stato","header"=>array("<div style='text-align: center'>Stato</div>",array("content"=>"textFilter")),"width"=>90, "sort"=>"text","css"=>"PraticheTable"),
             array("id"=>"errori","header"=>array("<div style='text-align: center'>Errori</div>",array("content"=>"textFilter")),"width"=>130, "sort"=>"text","css"=>"PraticheTable")
         );
@@ -1033,24 +1031,34 @@ Class AA_GecopModule extends AA_GenericModule
             if(empty($cur['errore'])) $ok++; else $err++;
         }
 
-        $desc="<p>Sono state riconosciute <b>".sizeof((array)$data)." righe</b>: <b>".$ok." pronte per l'importazione</b>";
+        //Errori per riga (per la lista inline e il dettaglio)
+        $all_errors=array();
+        foreach($data as $cur)
+        {
+            if(!empty($cur['errore']))
+                foreach($cur['errors'] as $e) $all_errors[]="Riga ".$cur['linea'].": ".$e;
+        }
+
+        //Descrizione: div chiusi (no <p>), errori inline; height esplicito in funzione del contenuto
+        $desc="<div style='padding:4px 6px;font-size:13px;'>";
+        $desc.="<div>Sono state riconosciute <b>".sizeof((array)$data)." righe</b>: <b>".$ok." pronte per l'importazione</b>";
         if($err > 0)
         {
-            $all_errors=array();
-            foreach($data as $cur)
-            {
-                if(!empty($cur['errore']))
-                    foreach($cur['errors'] as $e) $all_errors[]="Riga ".$cur['linea'].": ".$e;
-            }
-            $json_errors=htmlspecialchars(json_encode($all_errors), ENT_QUOTES);
-            $click='AA_MainApp.utils.callHandler("onCsvImportErrorsDetail", '.$json_errors.')';
-            $desc.="<b>, ".$err." con errori</b> (non verranno importate). <a href='#' onclick='".$click."'>fai click qui per maggiori dettagli</a>";
+            $desc.="<b>, ".$err." con errori</b> (non verranno importate).</div>";
+            $desc.="<div style='margin-top:4px;padding:4px 6px;background-color:#fff3f3;border:1px solid #e0a0a0;'>";
+            foreach($all_errors as $e) $desc.="<div>".htmlspecialchars($e)."</div>";
+            $desc.="</div>";
         }
         else
         {
-            $desc.=".</p>";
+            $desc.=".</div>";
         }
-        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>$desc)));
+        $desc.="</div>";
+
+        //Height: base se tutto ok, cresce con il numero di errori (tetto 360px)
+        $height=50;
+        if(sizeof($all_errors)>0) $height=min(60+sizeof($all_errors)*18,360);
+        $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","height"=>$height,"template"=>$desc)));
 
         $tabledata=array();
         foreach($data as $cur)
@@ -1068,16 +1076,11 @@ Class AA_GecopModule extends AA_GenericModule
                 $errori="";
             }
 
-            $imp=str_replace($cur['importo_aggiudicazione'],".","");
-            $imp=str_replace($imp,",",".");
-
             $tabledata[]=array(
                 "riga"=>$cur['linea'],
                 "anno"=>$cur['anno'],
+                "oggetto"=>$cur['nome'],
                 "cig"=>$cur['cig'],
-                "nominativo"=>$cur['aggiudicatario_nominativo'],
-                "cf"=>$cur['aggiudicatario_cf'],
-                "importo"=>number_format(floatval($imp),2,",","."),
                 "stato"=>$stato,
                 "errori"=>$errori
             );
@@ -4049,7 +4052,7 @@ Class AA_GecopModule extends AA_GenericModule
         }
 
         //Header: mappatura nome campo -> indice colonna
-        $fields=array("nome","descrizione","note","cig","anno","aggiudicatario_nominativo","aggiudicatario_cf","links_atti","data_inizio","data_fine","data_fine_effettiva","importo_aggiudicazione","importo_liquidato","commissione");
+        $fields=array("nome","note","cig","anno","aggiudicatario_nominativo","aggiudicatario_cf","links_atti","data_inizio","data_fine","data_fine_effettiva","importo_aggiudicazione","importo_liquidato","commissione");
         $colIndex=array();
         $header=explode("|",trim($nonEmpty[0]));
         foreach($header as $idx=>$name)
@@ -4058,7 +4061,7 @@ Class AA_GecopModule extends AA_GenericModule
             if(in_array($name,$fields)) $colIndex[$name]=$idx;
         }
 
-        $required=array("cig","anno","aggiudicatario_nominativo","aggiudicatario_cf");
+        $required=array("cig","anno","nome");
         $missing=array();
         foreach($required as $req)
         {
@@ -4095,6 +4098,44 @@ Class AA_GecopModule extends AA_GenericModule
             {
                 if($row[$req]==="") $errors[]="Campo obbligatorio mancante: ".$req;
             }
+
+            //Aggiudicatario: obbligatorio solo se sono valorizzati importi o date di inizio/fine
+            $haDatiFin=false;
+            foreach(array("data_inizio","data_fine","data_fine_effettiva","importo_aggiudicazione","importo_liquidato") as $f)
+            {
+                if($row[$f]!=="") $haDatiFin=true;
+            }
+            if($haDatiFin)
+            {
+                if($row['aggiudicatario_nominativo']==="") $errors[]="Campo obbligatorio mancante: aggiudicatario_nominativo";
+                if($row['aggiudicatario_cf']==="") $errors[]="Campo obbligatorio mancante: aggiudicatario_cf";
+            }
+
+            //Date: validità formato e coerenza
+            $tsInizio=false; $tsFine=false; $tsFineEff=false;
+            if($row['data_inizio']!=="")
+            {
+                $tsInizio=self::ParseCsvDate($row['data_inizio']);
+                if($tsInizio===false) $errors[]="Data non valida: ".$row['data_inizio'];
+            }
+            if($row['data_fine']!=="")
+            {
+                $tsFine=self::ParseCsvDate($row['data_fine']);
+                if($tsFine===false) $errors[]="Data non valida: ".$row['data_fine'];
+            }
+            if($row['data_fine_effettiva']!=="")
+            {
+                $tsFineEff=self::ParseCsvDate($row['data_fine_effettiva']);
+                if($tsFineEff===false) $errors[]="Data non valida: ".$row['data_fine_effettiva'];
+            }
+            if($tsFine!==false && $tsInizio===false)
+                $errors[]="Data fine senza data inizio";
+            if($tsInizio!==false && $tsFine!==false && $tsInizio>$tsFine)
+                $errors[]="Data inizio successiva a data fine";
+            if($tsFineEff!==false && $tsInizio===false)
+                $errors[]="Data fine effettiva senza data inizio";
+            if($tsFineEff!==false && $tsInizio!==false && $tsFineEff<$tsInizio)
+                $errors[]="Data fine effettiva precedente a data inizio";
 
             //Anno
             if($row['anno']!="" && (!is_numeric($row['anno']) || intval($row['anno']) < 2024 || intval($row['anno']) > 2099))
@@ -4158,6 +4199,26 @@ Class AA_GecopModule extends AA_GenericModule
         $task->SetStatusAction('dlg',array("task"=>"GetGecopAddNewMultiPreviewDlg"),true);
 
         return true;
+    }
+
+    //Converte una data CSV (formati: yyyy-mm-dd o dd/mm/yyyy) in timestamp; false se non valida
+    private static function ParseCsvDate($dateStr)
+    {
+        $dateStr=trim((string)$dateStr);
+        if(preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/",$dateStr))
+        {
+            list($y,$m,$d)=explode("-",$dateStr);
+            if(checkdate(intval($m),intval($d),intval($y))) return mktime(0,0,0,intval($m),intval($d),intval($y));
+            return false;
+        }
+        if(preg_match("/^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}$/",$dateStr))
+        {
+            list($d,$m,$y)=explode("/",$dateStr);
+            if(checkdate(intval($m),intval($d),intval($y))) return mktime(0,0,0,intval($m),intval($d),intval($y));
+            return false;
+        }
+
+        return false;
     }
 
     //Task aggiungi allegato
