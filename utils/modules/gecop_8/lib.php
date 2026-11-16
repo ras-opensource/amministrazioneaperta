@@ -4217,7 +4217,7 @@ Class AA_GecopModule extends AA_GenericModule
             if(checkdate(intval($m),intval($d),intval($y))) return mktime(0,0,0,intval($m),intval($d),intval($y));
             return false;
         }
-        if(preg_match("/^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}$/",$dateStr))
+        if(preg_match("#^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}$#",$dateStr))
         {
             list($d,$m,$y)=explode("/",$dateStr);
             if(checkdate(intval($m),intval($d),intval($y))) return mktime(0,0,0,intval($m),intval($d),intval($y));
