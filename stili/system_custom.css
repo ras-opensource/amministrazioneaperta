@@ -1,0 +1,30 @@
+/* =====================================================================
+   AmministrazioneAperta — classi CSS generali (riusabili in tutti i moduli)
+   Caricate globalmente da index.2.0.php (stili/system_custom.css).
+   ===================================================================== */
+
+/* Allineamento verticale + orizzontale delle celle dei datatable.
+   Da passare come "css" a livello di colonna (come .PraticheTable / .CriteriTable
+   definite nei default.css dei singoli moduli, che restano valide per compatibilità). */
+.AA_TableCell_Center .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.AA_TableCell_Left .webix_cell
+{
+  display:flex;
+  align-items: center;
+  justify-content: start;
+}
+
+/* Box riepilogo errori inline (es. preview import CSV). */
+.AA_ErrorBox
+{
+  margin-top:4px;
+  padding:4px 6px;
+  background-color:#fff3f3;
+  border:1px solid #e0a0a0;
+}
