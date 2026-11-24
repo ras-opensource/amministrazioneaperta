@@ -1362,6 +1362,7 @@ Class AA_GecoModule extends AA_GenericModule
         $descr.="<li>i campi obbligatori per riga sono: <b>anno</b>, <b>titolo</b> (o <b>nome</b>), <b>descrizione</b>, <b>responsabile_nome</b>, <b>responsabile_qualifica</b>, <b>norma_estremi</b>, <b>norma_link</b>, <b>modalita_tipo</b>, <b>modalita_link</b>, <b>beneficiario_nominativo</b>, <b>beneficiario_cf</b>, <b>importo_impegnato</b>, <b>importo_erogato</b>; gli altri campi (beneficiario_piva, beneficiario_persona_fisica, beneficiario_privacy, link_curriculum, link_progetto, link_normativa, note) sono opzionali;</li>";
         $descr.="</ul>";
         $descr.="<p>Tramite il seguente <a href='".$platform->GetModulePathURL($this->GetId())."/docs/geco_addnew_multi.ods' target='_blank'>link</a> è possibile scaricare un foglio elettronico da utilizzarsi come base per la predisposizione del file csv.</p>";
+        $descr.="<p>Per un riferimento completo sull'utilizzo di questa funzionalità, consultare la <a href='".$platform->GetModulePathURL($this->GetId())."/docs/guida_import_geco.pdf' target='_blank'>guida all'importazione da file CSV (PDF)</a>.</p>";
         $descr.="<p>Per la generazione del file csv si consiglia l'utilizzo del software opensource <a href='https://www.libreoffice.org' target='_blank'>Libreoffice</a> in quanto consente di impostare il carattere di delimitazione dei campi e la codifica dei caratteri in fase di esportazione senza dover apportare modifiche al sistema.</p>";
         $descr.="<hr/>";
 

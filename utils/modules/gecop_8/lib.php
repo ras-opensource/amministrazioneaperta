@@ -963,6 +963,8 @@ Class AA_GecopModule extends AA_GenericModule
     {
         $id=$this->GetId()."_GetGecopAddNewMultiDlg_".uniqid();
 
+        $platform=AA_Platform::GetInstance($this->oUser);
+
         $form_data=array();
 
         $wnd=new AA_GenericFormDlg($id, "Caricamento multiplo da file CSV", $this->id,$form_data,$form_data);
@@ -983,6 +985,7 @@ Class AA_GecopModule extends AA_GenericModule
         $descr .= "<li><b>aggiudicatario_nominativo</b> e <b>aggiudicatario_cf</b> sono obbligatori solo se la riga contiene date o importi (data_inizio, data_fine, data_fine_effettiva, importo_aggiudicazione, importo_liquidato).</li>";
         $descr.="</ul>";
         $descr.="<p>Ogni riga del file genera una <b>nuova bozza</b>: i campi di sistema (id, aggiornamento, stato, struttura) non vengono importati e sono assegnati alla creazione.</p>";
+        $descr.="<p>Per un riferimento completo sull'utilizzo di questa funzionalità, consultare la <a href='".$platform->GetModulePathURL($this->GetId())."/docs/guida_import_gecop.pdf' target='_blank'>guida all'importazione da file CSV (PDF)</a>.</p>";
         $wnd->AddGenericObject(new AA_JSON_Template_Template("",array("type"=>"clean","autoheight"=>true,"template"=>"<div style='margin-bottom: 1em;'>Questa funzionalità permette di generare più bozze tramite importazione da file csv.".$descr."</div>")));
 
         $wnd->AddFileUploadField("GecopAddNewMultiCSV","Scegli il file csv...", array("required"=>true,"validateFunction"=>"IsFile","bottomLabel"=>"*Caricare solo documenti in formato csv (dimensione max: 2Mb).","accept"=>"application/csv"));
