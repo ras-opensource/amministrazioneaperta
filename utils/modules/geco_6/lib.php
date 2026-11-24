@@ -4598,7 +4598,7 @@ Class AA_GecoModule extends AA_GenericModule
 
         //Parsing della posizione dei campi
         $fieldPos=array(
-            "titolo"=>-1,'anno'=>-1,
+            "titolo"=>-1,"nome"=>-1,'anno'=>-1,
             "descrizione"=>-1,
             "responsabile_nome"=>-1,
             "responsabile_qualifica"=>-1,
@@ -4637,6 +4637,8 @@ Class AA_GecoModule extends AA_GenericModule
                 $recognizedFields++;
             }
         }
+        //FR-GECO-02 - alias titolo/nome: l'export app emette la colonna base "nome" (ToCsv), i file legacy usano "titolo"
+        if($fieldPos['titolo']==-1 && $fieldPos['nome']>=0) $fieldPos['titolo']=$fieldPos['nome'];
         //----------------------------------------
 
         if($fieldPos['anno']==-1 || $fieldPos['modalita_tipo']==-1 || $fieldPos['titolo']==-1 || $fieldPos['responsabile_nome'] ==-1 || $fieldPos['responsabile_qualifica'] ==-1 || $fieldPos['norma_estremi'] ==-1 || $fieldPos['norma_link'] ==-1 || $fieldPos['modalita_tipo'] ==-1 || $fieldPos['modalita_link'] ==-1 || $fieldPos['importo_impegnato'] ==-1 || $fieldPos['beneficiario_nominativo'] ==-1 || $fieldPos['beneficiario_cf'] ==-1 || $fieldPos['beneficiario_persona_fisica'] ==-1 || $fieldPos['beneficiario_privacy'] ==-1)
@@ -4644,7 +4646,7 @@ Class AA_GecoModule extends AA_GenericModule
             AA_Log::Log(__METHOD__."() - campi riconosciuti: ".print_r($fieldPos,true),100);
 
             $task->SetStatus(AA_GenericTask::AA_STATUS_FAILED);
-            $task->SetError("Non sono stati trovati tutti i campi relativi a: anno,modalita_tipo,titolo,responsabile_nome,responsabile_qualifica,norma_estremi,norma_link,modalita_tipo,modalita_link,importo_impegnato,beneficiario_nominativo,beneficiario_cf,beneficiario_persona_fisica,beneficiario_privacy. Verificare che il file csv sia strutturato correttamente e riprovare",false);
+            $task->SetError("Non sono stati trovati tutti i campi relativi a: anno,modalita_tipo,titolo/nome,responsabile_nome,responsabile_qualifica,norma_estremi,norma_link,modalita_tipo,modalita_link,importo_impegnato,beneficiario_nominativo,beneficiario_cf,beneficiario_persona_fisica,beneficiario_privacy. Verificare che il file csv sia strutturato correttamente e riprovare",false);
             return false;
         }
 
