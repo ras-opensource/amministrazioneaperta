@@ -700,9 +700,24 @@ Class AA_Geco extends AA_Object_V2
     }
 
     //da specializzare
+    //FR-GECO-02 - URL degli allegati di un tipo per l'export CSV; multipli -> separatore interno " ; "
+    protected function CsvAllegatiLinks($allegati=array(), $tipo=0)
+    {
+        $urls=array();
+        foreach($allegati as $curAllegato)
+        {
+            if(!is_array($curAllegato)) continue;
+            if(isset($curAllegato['tipo']) && (int)$curAllegato['tipo']==(int)$tipo && trim((string)$curAllegato['url'])!='')
+            {
+                $urls[]=trim($curAllegato['url']);
+            }
+        }
+        return implode(" ; ", $urls);
+    }
+
     protected function CsvDataHeader($separator="|")
     {
-        return $separator."anno".$separator."responsabile_nome".$separator."responsabile_qualifica".$separator."norma_estremi".$separator."norma_link".$separator."modalita_tipo".$separator."modalita_link".$separator."importo_impegnato".$separator."importo_erogato".$separator."beneficiario_nominativo".$separator."beneficiario_cf".$separator."beneficiario_piva".$separator."beneficiario_persona_fisica".$separator."beneficiario_privacy".$separator."note";
+        return $separator."anno".$separator."responsabile_nome".$separator."responsabile_qualifica".$separator."norma_estremi".$separator."norma_link".$separator."modalita_tipo".$separator."modalita_link".$separator."importo_impegnato".$separator."importo_erogato".$separator."beneficiario_nominativo".$separator."beneficiario_cf".$separator."beneficiario_piva".$separator."beneficiario_persona_fisica".$separator."beneficiario_privacy".$separator."link_curriculum".$separator."link_progetto".$separator."link_normativa".$separator."note";
     }
 
     //da specializzare
@@ -713,7 +728,12 @@ Class AA_Geco extends AA_Object_V2
         $norma=$this->GetNorma();
         $modalita=$this->GetModalita();
         $allegati=$this->GetAllegati();
-        return $separator.$this->GetProp("Anno").$separator.$responsabile['nome'].$separator.$responsabile['qualifica'].$separator.$norma['estremi'].$separator.$norma['link'].$separator.$modalita['tipo'].$separator.$modalita['link'].$separator.AA_Utils::number_format($this->GetProp('Importo_impegnato'),2,",",".").$separator.AA_Utils::number_format($this->GetProp("Importo_erogato"),2,",",".").$separator.$beneficiario['nome'].$separator.$beneficiario['cf'].$separator.$beneficiario['piva'].$separator.$beneficiario['tipo'].$separator.$beneficiario['privacy'].$separator.$this->GetProp("Note");
+        return $separator.$this->GetProp("Anno").$separator.$responsabile['nome'].$separator.$responsabile['qualifica'].$separator.$norma['estremi'].$separator.$norma['link'].$separator.$modalita['tipo'].$separator.$modalita['link'].$separator.AA_Utils::number_format($this->GetProp('Importo_impegnato'),2,",",".").$separator.AA_Utils::number_format($this->GetProp("Importo_erogato"),2,",",".").$separator.$beneficiario['nome'].$separator.$beneficiario['cf'].$separator.$beneficiario['piva'].$separator.$beneficiario['tipo']
+            .$separator.$beneficiario['privacy']
+            .$separator.$this->CsvAllegatiLinks($allegati, AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_CURRICULUM)
+            .$separator.$this->CsvAllegatiLinks($allegati, AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_PROGETTO)
+            .$separator.$this->CsvAllegatiLinks($allegati, AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_LINK_NORMA)
+            .$separator.$this->GetProp("Note");
     }
     //--------------------------------------------
 }
@@ -4103,34 +4123,26 @@ Class AA_GecoModule extends AA_GenericModule
             if(!empty($curData["importo_erogato"])) $newData['Importo_erogato']=AA_Utils::number_format(floatVal(str_replace(",",".",str_replace(".","",$curData['importo_erogato']))),2,".");
 
             //------------------------ links -----------------------------
-            if(!empty($curData['link_curriculum']))
+            //FR-GECO-02 - colonne link_*: un allegato per URL; multipli separati da " ; " (simmetrico all'export)
+            $linkCols=array(
+                "link_curriculum"=>array("label"=>"Curriculum","tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_CURRICULUM),
+                "link_progetto"=>array("label"=>"Link al progetto","tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_PROGETTO),
+                "link_normativa"=>array("label"=>"Link alla normativa","tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_LINK_NORMA)
+            );
+            foreach($linkCols as $colName=>$colDef)
             {
-                $links[uniqid()]=array(
-                    "descrizione"=>"Curriculum",
-                    "tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_CURRICULUM,
-                    "url"=>trim($curData['link_curriculum']),
-                    "filehash"=>""
-                );
-            }
-
-            if(!empty($curData['link_progetto']))
-            {
-                $links[uniqid()]=array(
-                    "descrizione"=>"Link al progetto",
-                    "tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_PROGETTO,
-                    "url"=>trim($curData['link_progetto']),
-                    "filehash"=>""
-                );
-            }
-
-            if(!empty($curData['link_normativa']))
-            {
-                $links[uniqid()]=array(
-                    "descrizione"=>"Link alla normativa",
-                    "tipo"=>AA_Geco_Const::AA_GECO_TIPO_ALLEGATO_LINK_NORMA,
-                    "url"=>trim($curData['link_normativa']),
-                    "filehash"=>""
-                );
+                if(empty($curData[$colName])) continue;
+                foreach(explode(" ; ",$curData[$colName]) as $oneUrl)
+                {
+                    $oneUrl=trim($oneUrl);
+                    if($oneUrl=="") continue;
+                    $links[uniqid()]=array(
+                        "descrizione"=>$colDef["label"],
+                        "tipo"=>$colDef["tipo"],
+                        "url"=>$oneUrl,
+                        "filehash"=>""
+                    );
+                }
             }
 
             if(sizeof($links)>0)
